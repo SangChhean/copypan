@@ -1,0 +1,45 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #eee;
+}
+
+@font-face {
+  font-family: pan;
+  src: url(/fonts/pan.ttf) format("truetype");
+}
+
+:where(.css-dev-only-do-not-override-19iuou).ant-input-group .ant-input-group-addon {
+  background: #1677ff;
+  color: #fff;
+}
+
+:where(.css-dev-only-do-not-override-19iuou).ant-select-single .ant-select-selector,
+.ant-select-focused {
+  color: #fff;
+}
+
+:where(.css-dev-only-do-not-override-19iuou).ant-input-group .ant-input-group-addon .ant-select-focused .ant-select-selector {
+  color: #fff;
+}
+
+em {
+  font-style: normal;
+  color: tomato;
+}
+
+cn > a {
+  font-weight: bold;
+}
+en > p {
+  margin: 0;
+}
+
+:where(.css-dev-only-do-not-override-19iuou).ant-table-wrapper .ant-table-thead th.ant-table-column-sort {
+  background: #fafafa;
+}
+
+:where(.css-dev-only-do-not-override-19iuou).ant-pagination {
+  padding-right: 20px;
+}

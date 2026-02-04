@@ -1,0 +1,13 @@
+es_data/
+es_plugins/
+__pycache__/
+*.log
+logs/
+.env
+.env.local
+node_modules/
+dist/
+*.tmp
+backup/
+*.tar.gz
+*.zip

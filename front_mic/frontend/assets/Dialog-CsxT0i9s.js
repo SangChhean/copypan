@@ -1,0 +1,1 @@
+import{M as t}from"./checkAuth-CI9FN3Gw.js";import{aV as a,aU as i}from"./index-B40VE47m.js";const r=o=>{t.error({title:o,okText:"确定"})},c=(o,s=null)=>{t.success({title:o,okText:"确定",onOk(){s&&(window.location.hash=s)}})},p=o=>{i.info(o,2)},l=o=>{a.open({message:o,duration:2,top:"120px"})};export{c as a,p as b,r as s,l as t};

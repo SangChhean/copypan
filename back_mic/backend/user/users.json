@@ -1,0 +1,30 @@
+{
+  "stephen": {
+    "pass": "Pansearchmima617",
+    "role": "t0"
+  },
+  "admin": {
+    "pass": "Pass2Pansearch",
+    "role": "t0"
+  },
+  "editor": {
+    "pass": "Pass2Pansearch",
+    "role": "t1"
+  },
+  "reader": {
+    "pass": "Pass2Pansearch",
+    "role": "t2"
+  },
+  "Bethany": {
+    "pass": "Bethany123",
+    "role": "t0"
+  },
+  "Pansearch": {
+    "pass": "Pansearch123",
+    "role": "t0"
+  },
+  "Samuel": {
+    "pass": "Samuel123",
+    "role": "t1"
+  }
+}
