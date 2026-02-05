@@ -1,20 +1,26 @@
 """
 修复 Elasticsearch 红色索引（关闭后重新打开）。
 
+搜索报错 "no_shard_available_action_exception" / "all shards failed" 时，
+多为索引处于 red 状态，可先运行本脚本尝试修复。
+
 失败原因说明：
   若报错 "analyzer [ik_max_word] has not been conf"，说明索引的 mapping 使用了
   IK 中文分词器，但当前集群未安装 IK 插件。必须先安装插件再重试本脚本。
 
-  安装 IK 插件（版本需与 Elasticsearch 一致，例如 ES 8.11）：
+  安装 IK 插件（版本需与 Elasticsearch 一致，例如 ES 7.17）：
     cd <ES安装目录>
-    bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v8.11.0/elasticsearch-analysis-ik-8.11.0.zip
+    bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.17.9/elasticsearch-analysis-ik-7.17.9.zip
   安装后需重启 Elasticsearch，再运行本脚本。
 """
-from elasticsearch import Elasticsearch
+import sys
+from pathlib import Path
+
+# 与后端使用同一 ES 配置
+sys.path.insert(0, str(Path(__file__).resolve().parent / "back_mic" / "backend"))
+from es_config import es
 from elasticsearch.exceptions import ApiError
 import time
-
-es = Elasticsearch(hosts=['http://localhost:9200'])
 
 print("=" * 50)
 print("开始修复红色索引")

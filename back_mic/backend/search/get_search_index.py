@@ -9,7 +9,7 @@ args 正确格式（5 段，用 "-" 连接）：
   各段含义：
   - cat1: 分类，取值 a/b/c 或 1~8（a=全部分类, b=含6/7, c=含8; 1~8 为单类）
   - cat2: 子类型，取值 a~m（a=无后缀, b~m 对应不同后缀如 _booknames 等）
-  - cat3: 匹配模式，取值 a/b/c（a=简单, b=and, c=全文）
+  - cat3: 匹配模式，取值 a/b/c（a=模糊/or, b=平衡/and, c=全文）
   - page: 页码，正整数，默认 1
   - pageSize: 每页条数，1~100，默认 10
 
@@ -107,16 +107,17 @@ def get_index(cat1, cat2):
 
 
 def get_match_info(cat3, input):
+    # 与前端约定：a=模糊(or), b=平衡(and), c=全文(text)
     operator = "or"
     if contains_chinese(input):
         field = "zh"
         if cat3 == "c":
             field = "text"
         elif cat3 == "b":
-            operator = "and"
+            operator = "and"   # 平衡：词条均需匹配
     else:
         field = "en"
-        if cat3 in "bc":
+        if cat3 in "bc":       # 平衡(b) 与 全文(c) 用 and
             operator = "and"
     return field, operator
 
@@ -151,9 +152,9 @@ def get_matchs(field, operator, input):
     else:
         should.append({"match": {field: {"query": q, "operator": operator}}})
 
-    # 全文 text 字段（与主字段不同时也查）
+    # 全文 text 字段（与主字段不同时也查，operator 与主字段一致，平衡时才能真 and）
     if field != "text":
-        should.append({"match": {"text": {"query": q, "operator": "or"}}})
+        should.append({"match": {"text": {"query": q, "operator": operator}}})
 
     # title 为 keyword，用 wildcard 做包含匹配
     if q:
