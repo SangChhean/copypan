@@ -27,6 +27,7 @@ from database.datalist import datalist
 from user.users import user_opt
 from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
+from ai_search import ai_router
 import asyncio
 from pathlib import Path as pt
 from es_config import es
@@ -283,3 +284,7 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
         )
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+# AI 搜索路由（Claude 问答 / RAG）
+app.include_router(ai_router)
