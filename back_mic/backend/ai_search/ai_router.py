@@ -18,13 +18,13 @@ router = APIRouter(prefix="/api")
 class SearchRequest(BaseModel):
     """AI搜索请求模型"""
     question: str = Field(..., min_length=1, max_length=500, description="用户问题")
-    max_results: Optional[int] = Field(10, ge=1, le=20, description="最多返回结果数")
+    max_results: Optional[int] = Field(30, ge=1, le=50, description="最多返回结果数")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "question": "圣经如何定义爱？",
-                "max_results": 10
+                "max_results": 30
             }
         }
 

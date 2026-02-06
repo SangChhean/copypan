@@ -48,13 +48,15 @@ except Exception as e:
     logger.error(f"Claude 客户端初始化失败: {e}")
     claude_client = None
 
-# 索引配置（基于您的实际数据：685万+文档，62个索引）
+# 索引配置（平均权重）
 INDEXES_CONFIG = {
-    "pano": 0.5,           # 主经文 265万条，权重50%
-    "pano_msg": 0.2,       # 注释 146万条，权重20%
-    "pano_outlines": 0.15, # 大纲 114万条，权重15%
-    "pano_headings": 0.1,  # 标题 48万条，权重10%
-    "pan_reading": 0.05    # 读经 37万条，权重5%
+    "cwwl": 1.0,    # 李常受文集
+    "cwwn": 1.0,    # 倪柝声文集
+    "life": 1.0,    # 生命读经
+    "feasts": 1.0,  # 特会信息
+    "others": 1.0,  # 其他
+    "hymn": 1.0,    # 诗歌
+    "bib": 1.0      # 圣经
 }
 
 
@@ -69,7 +71,7 @@ class AISearchService:
 
         logger.info("AISearchService初始化完成")
 
-    def search(self, question: str, max_results: int = 10) -> Dict:
+    def search(self, question: str, max_results: int = 30) -> Dict:
         """
         AI智能搜索主函数
 
@@ -187,10 +189,10 @@ class AISearchService:
                 "message": "问题过长（最多500字符），请简化您的问题"
             }
 
-        if max_results < 1 or max_results > 20:
+        if max_results < 1 or max_results > 50:
             return {
                 "valid": False,
-                "message": "max_results必须在1-20之间"
+                "message": "max_results必须在1-50之间"
             }
 
         return {"valid": True, "message": ""}
@@ -381,28 +383,53 @@ class AISearchService:
 
     def _format_reference(self, source: Dict) -> str:
         """格式化经文引用"""
-        book = source.get('book', '')
-        chapter = source.get('chapter', '')
-        verse = source.get('verse', '')
-
+        # 尝试多种可能的字段名
+        book = source.get('book') or source.get('title') or source.get('bookname') or ''
+        chapter = source.get('chapter') or source.get('chap') or ''
+        verse = source.get('verse') or source.get('vs') or ''
+        
+        # 尝试获取其他标识信息
+        volume = source.get('volume') or source.get('vol') or ''
+        page = source.get('page') or source.get('pg') or ''
+        section = source.get('section') or source.get('sec') or ''
+        
+        # 优先使用书卷+章节+节
         if book and chapter and verse:
             return f"{book} {chapter}:{verse}"
         elif book and chapter:
             return f"{book} {chapter}"
         elif book:
             return book
+        
+        # 尝试使用卷+页
+        if volume and page:
+            return f"卷{volume} 第{page}页"
+        elif volume:
+            return f"卷{volume}"
+        
+        # 尝试使用章节信息
+        if section:
+            return f"第{section}节"
+        
+        # 最后尝试ID或其他标识
+        doc_id = source.get('id') or source.get('_id') or ''
+        if doc_id:
+            return f"文档 {doc_id}"
+        
         return "未知来源"
 
     def _get_source_type(self, index_name: str) -> str:
         """获取来源类型标签"""
         type_map = {
-            "pano": "[经文]",
-            "pano_msg": "[注释]",
-            "pano_outlines": "[大纲]",
-            "pano_headings": "[标题]",
-            "pan_reading": "[读经]"
+            "cwwl": "[李常受文集]",
+            "cwwn": "[倪柝声文集]",
+            "life": "[生命读经]",
+            "feasts": "[节期纲目]",
+            "others": "[其他]",
+            "hymn": "[诗歌]",
+            "bib": "[圣经]"
         }
-        return type_map.get(index_name, "[其他]")
+        return type_map.get(index_name, "[未分类]")
 
     def _extract_sources(self, search_results: List[Dict]) -> List[Dict]:
         """提取引用来源"""
