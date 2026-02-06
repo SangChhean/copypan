@@ -35,6 +35,10 @@ from es_config import es
 
 app = FastAPI()
 
+# 创建API路由器（所有路由带/api前缀）
+from fastapi import APIRouter
+api_router = APIRouter(prefix="/api")
+
 # CORS：携带 cookie 时不能使用 allow_origins=["*"]，必须写具体来源
 _CORS_ORIGINS = [
     "http://localhost:5173",
@@ -62,7 +66,7 @@ async def checkAdmin(text):
         raise ERR_403
 
 
-@app.get("/")
+@api_router.get("/")
 async def root():
     return {"message": "Hello World"}
 
@@ -73,7 +77,7 @@ SESSION_COOKIE_NAME = "session"
 SESSION_COOKIE_MAX_AGE = 30 * 24 * 3600
 
 
-@app.post("/token")
+@api_router.post("/token")
 def login(
     remember: Annotated[str, Form()], form_data: OAuth2PasswordRequestForm = Depends()
 ):
@@ -102,14 +106,14 @@ def login(
     return response
 
 
-@app.get("/testToken")
+@api_router.get("/testToken")
 def test_token_fun(userinfo: dict = Depends(test_token)):
     if userinfo:
         return {"status": "OK", "userinfo": userinfo}
     return {"status": "NG"}
 
 
-@app.post("/signup")
+@api_router.post("/signup")
 def signup(username: str = Form(), password: str = Form(), ivcode: str = Form()):
     try:
         return signup_fun(username, password, ivcode)
@@ -117,7 +121,7 @@ def signup(username: str = Form(), password: str = Form(), ivcode: str = Form())
         pass
 
 
-@app.post("/changePass", dependencies=[Depends(test_token)])
+@api_router.post("/changePass", dependencies=[Depends(test_token)])
 def chanPass(username: str = Form(), old_pass: str = Form(), new_pass: str = Form()):
     try:
         return change_pass(username, old_pass, new_pass)
@@ -125,7 +129,7 @@ def chanPass(username: str = Form(), old_pass: str = Form(), new_pass: str = For
         pass
 
 
-@app.post("/search", dependencies=[Depends(test_token)])
+@api_router.post("/search", dependencies=[Depends(test_token)])
 def search(input: str = Form(), args: str = Form()):
     try:
         result = search_fun(input, args)
@@ -136,7 +140,7 @@ def search(input: str = Form(), args: str = Form()):
         return {"total": 0, "msg": []}
 
 
-@app.post("/cws", dependencies=[Depends(test_token)])
+@api_router.post("/cws", dependencies=[Depends(test_token)])
 def get_map(input: str = Form(), fwds: str = Form(), index: str = Form()):
     try:
         return search_cwws(input, fwds, index)
@@ -144,7 +148,7 @@ def get_map(input: str = Form(), fwds: str = Form(), index: str = Form()):
         pass
 
 
-@app.post("/reading", dependencies=[Depends(test_token)])
+@api_router.post("/reading", dependencies=[Depends(test_token)])
 def get_map(refid: str = Form()):
     try:
         return search_reading(refid)
@@ -152,7 +156,7 @@ def get_map(refid: str = Form()):
         pass
 
 
-@app.post("/getvers", dependencies=[Depends(test_token)])
+@api_router.post("/getvers", dependencies=[Depends(test_token)])
 def get_vers(input: str = Form()):
     try:
         return biblecollection(input)
@@ -160,7 +164,7 @@ def get_vers(input: str = Form()):
         return JSONResponse(content={"error": "404 Not Found"}, status_code=404)
 
 
-@app.post("/datalist")
+@api_router.post("/datalist")
 async def datalist_fun(r: Request, index: str = Form(), opt: str = Form()):
     session = r.cookies.get("session")
     try:
@@ -173,7 +177,7 @@ async def datalist_fun(r: Request, index: str = Form(), opt: str = Form()):
 clients: List[WebSocket] = []
 
 
-@app.websocket("/ws/progress")
+@api_router.websocket("/ws/progress")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.append(websocket)
@@ -185,7 +189,7 @@ async def websocket_endpoint(websocket: WebSocket):
         clients.remove(websocket)
 
 
-@app.post("/process")
+@api_router.post("/process")
 async def start_process(r: Request, filename: str = Form(), action: str = Form()):
     session = r.cookies.get("session")
     try:
@@ -237,7 +241,7 @@ async def send_progress_to_clients(progress: dict):
             clients.remove(client)
 
 
-@app.post("/upopt")
+@api_router.post("/upopt")
 async def upopt_fun(r: Request, filename: str = Form(), action: str = Form()):
     session = r.cookies.get("session")
     try:
@@ -247,7 +251,7 @@ async def upopt_fun(r: Request, filename: str = Form(), action: str = Form()):
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
 
-@app.post("/iv_opts")
+@api_router.post("/iv_opts")
 async def iv_opts_fun(
     r: Request, iv: str = Form(), action: str = Form(), role: str = Form()
 ):
@@ -259,7 +263,7 @@ async def iv_opts_fun(
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
 
-@app.post("/usr_opts")
+@api_router.post("/usr_opts")
 async def usr_opts(
     r: Request, username: str = Form(), action: str = Form(), role: str = Form()
 ):
@@ -271,7 +275,7 @@ async def usr_opts(
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
 
-@app.post("/upload")
+@api_router.post("/upload")
 async def upload_file_fun(r: Request, file: UploadFile = File(...)):
     session = r.cookies.get("session")
     await checkAdmin(session)
@@ -288,3 +292,6 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 
 # AI 搜索路由（Claude 问答 / RAG）
 app.include_router(ai_router)
+
+# 注册API路由器
+app.include_router(api_router)
