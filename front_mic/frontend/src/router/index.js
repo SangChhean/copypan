@@ -26,10 +26,6 @@ const routes = [
     component: () => import("../components/management/ManaIndex.vue"),
   },
   {
-    path: "/map",
-    component: () => import("../components/map/Map.vue"),
-  },
-  {
     path: "/test",
     component: () => import("../components/test/Test.vue"),
   },

@@ -23,8 +23,6 @@ def get_index(index):
         "10": "map_others",
         "11": "map_feasts_bookname",
         "12": "map_feasts_title",
-        "13": "map_pano_bookname",
-        "14": "map_pano_title",
         "15": "map_hymn",
     }
     return indies[index]

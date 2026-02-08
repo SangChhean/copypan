@@ -52,8 +52,6 @@ onBeforeMount(() => {
 watch(selectedIndex, () => {
   if (selectedIndex.value == "9") {
     open_hash("/tools");
-  } else if (selectedIndex.value == "10") {
-    open_hash("/map");
   }
 });
 </script>

@@ -15,8 +15,7 @@ print("=" * 70)
 # 打开所有关闭的索引
 print("\n检查并打开关闭的索引...")
 closed_indices = ['bib', 'cwwl', 'cwwn', 'feasts', 'foo', 'hymn', 'life', 'others', 
-                  'pano', 'pano_msg', 'pano_outlines', 'pano_booknames', 'pano_titles', 
-                  'pano_headings', 'pano_ot1', 'cwwl_headings', 'cwwl_titles', 'cwwl_booknames',
+                  'cwwl_headings', 'cwwl_titles', 'cwwl_booknames',
                   'cwwn_headings', 'cwwn_titles', 'cwwn_booknames', 'feasts_titles', 'feasts_ot1',
                   'feasts_booknames', 'life_titles', 'life_headings', 'others_titles', 
                   'others_headings', 'others_booknames']

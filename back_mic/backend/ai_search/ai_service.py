@@ -14,6 +14,8 @@ from es_config import es
 import anthropic
 from dotenv import load_dotenv
 
+from .monitoring import get_monitoring
+
 # 加载环境变量
 load_dotenv()
 
@@ -48,15 +50,14 @@ except Exception as e:
     logger.error(f"Claude 客户端初始化失败: {e}")
     claude_client = None
 
-# 索引配置（平均权重）
+# 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 INDEXES_CONFIG = {
-    "cwwl": 1.0,    # 李常受文集
-    "cwwn": 1.0,    # 倪柝声文集
-    "life": 1.0,    # 生命读经
-    "feasts": 1.0,  # 特会信息
-    "others": 1.0,  # 其他
-    "hymn": 1.0,    # 诗歌
-    "bib": 1.0      # 圣经
+    "life": {"weight": 1.3},    # 生命读经
+    "cwwl": {"weight": 1.5},    # 李常受文集
+    "cwwn": {"weight": 1.3},    # 倪柝声文集
+    "bib": {"weight": 1.2},     # 圣经
+    "others": {"weight": 1.0},  # 其他
+    "hymn": {"weight": 0.8}     # 诗歌
 }
 
 
@@ -111,11 +112,26 @@ class AISearchService:
             if cached_result:
                 logger.info("缓存命中")
                 cached_result["cached"] = True
+                # 监控：记录缓存命中
+                try:
+                    response_time_ms = (time.time() - start_time) * 1000
+                    tokens = cached_result.get("tokens") or {}
+                    get_monitoring(self.redis).record_query(
+                        question=question[:500],
+                        response_time_ms=response_time_ms,
+                        cache_hit=True,
+                        input_tokens=int(tokens.get("input", 0) or 0),
+                        output_tokens=int(tokens.get("output", 0) or 0),
+                        cost=tokens.get("cost"),
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
                 return cached_result
 
-            # 3. 搜索Elasticsearch
+            # 3. 搜索Elasticsearch（至少取 100 条给 AI 上下文，引用来源最多 50 条）
             search_start = time.time()
-            search_results = self._multi_index_search(question, max_results * 2)
+            fetch_size = max(100, max_results * 2)  # 至少 100 条供 AI 使用
+            search_results = self._multi_index_search(question, fetch_size)
             search_time = (time.time() - search_start) * 1000
 
             if not search_results:
@@ -132,7 +148,7 @@ class AISearchService:
             if not self.claude:
                 return {
                     "answer": "AI 服务未配置（请设置 CLAUDE_API_KEY）。",
-                    "sources": self._extract_sources(search_results[:max_results]),
+                    "sources": self._extract_sources(search_results[:50]),
                     "cached": False,
                     "search_time": round(search_time, 0),
                     "error": True
@@ -143,10 +159,10 @@ class AISearchService:
 
             logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
 
-            # 5. 构造返回结果
+            # 5. 构造返回结果（引用来源最多 50 条）
             result = {
                 "answer": ai_response["answer"],
-                "sources": self._extract_sources(search_results[:max_results]),
+                "sources": self._extract_sources(search_results[:50]),
                 "cached": False,
                 "tokens": ai_response.get("tokens"),
                 "search_time": round(search_time, 0),
@@ -158,11 +174,39 @@ class AISearchService:
             # 6. 写入缓存
             self._save_to_cache(cache_key, result)
 
+            # 监控：记录成功查询（未命中缓存）
+            try:
+                tokens = result.get("tokens") or {}
+                input_tok = int(tokens.get("input", 0) or 0)
+                output_tok = int(tokens.get("output", 0) or 0)
+                if not input_tok and not output_tok:
+                    answer_text = result.get("answer", "") or ""
+                    input_tok = int((len(question) + len(answer_text)) * 1.3)
+                    output_tok = int(len(answer_text) * 1.3)
+                get_monitoring(self.redis).record_query(
+                    question=question[:500],
+                    response_time_ms=result["total_time"],
+                    cache_hit=False,
+                    input_tokens=input_tok,
+                    output_tokens=output_tok,
+                    cost=tokens.get("cost"),
+                )
+            except Exception as _e:
+                logger.debug(f"监控记录失败: {_e}")
+
             logger.info(f"搜索完成: 总耗时{result['total_time']}ms")
             return result
 
         except Exception as e:
             logger.error(f"搜索失败: {e}", exc_info=True)
+            # 监控：记录错误
+            try:
+                get_monitoring(self.redis).record_error(
+                    str(e),
+                    extra={"question": (question[:200] if question else "")},
+                )
+            except Exception as _e:
+                logger.debug(f"监控记录失败: {_e}")
             return {
                 "answer": f"搜索出错: {str(e)}\n请稍后重试或联系管理员。",
                 "sources": [],
@@ -210,32 +254,33 @@ class AISearchService:
         """
         all_results = []
 
-        for index_name, weight in INDEXES_CONFIG.items():
+        for index_name, config in INDEXES_CONFIG.items():
+            weight = config["weight"]
             try:
                 # 构建搜索查询
                 search_body = {
                     "query": {
                         "bool": {
                             "should": [
-                                # 精确短语匹配（最高权重）
+                                # 精确短语匹配（最高权重）；项目 mapping 主字段为 text，无 content
                                 {
                                     "match_phrase": {
-                                        "content": {
+                                        "text": {
                                             "query": query,
-                                            "boost": 3.0
+                                            "boost": 2.5
                                         }
                                     }
                                 },
-                                # 多字段匹配
+                                # 多字段匹配（text 为主；content/outline 若数据有则参与）
                                 {
                                     "multi_match": {
                                         "query": query,
                                         "fields": [
-                                            "content^3",    # content字段权重×3
-                                            "text^3",       # text字段权重×3
-                                            "msg^2",        # msg字段权重×2
-                                            "outline^2",    # outline字段权重×2
-                                            "title^1.5"     # title字段权重×1.5
+                                            "text^4",       # 正文权重最高
+                                            "content^2.5",
+                                            "msg^2",
+                                            "outline^2",    # 大纲
+                                            "title^1.5"     # 降低标题（避免标题党）
                                         ],
                                         "type": "best_fields",
                                         "fuzziness": "AUTO",  # 模糊匹配
@@ -246,7 +291,7 @@ class AISearchService:
                             "minimum_should_match": 1
                         }
                     },
-                    "size": int(size * weight * 2),  # 根据权重获取候选
+                    "size": int(size * weight * 1.2),  # 每索引取数：如 100*1.0*1.2=120
                     "_source": [
                         "book", "chapter", "verse",
                         "content", "text", "msg", "outline", "title"
@@ -278,6 +323,17 @@ class AISearchService:
         # 按加权分数排序
         all_results.sort(key=lambda x: x['_weighted_score'], reverse=True)
 
+        # 检索统计：总检索条数、使用条数、浪费率，打日志并写入监控供后台展示
+        total = len(all_results)
+        used = min(size, total)
+        waste_rate = round((total - used) / total * 100, 1) if total else 0.0
+        question_preview = (query[:30] + "…") if len(query) > 30 else query
+        logger.info(f"检索统计 - 问题:{question_preview} | 总检索:{total}条 | 使用:{used}条 | 浪费率:{waste_rate}%")
+        try:
+            get_monitoring(self.redis).record_retrieval_stats(question_preview, total, used, waste_rate)
+        except Exception as _e:
+            logger.debug(f"记录检索统计失败: {_e}")
+
         return all_results[:size]
 
     def _generate_answer(self, question: str, search_results: List[Dict]) -> Dict:
@@ -291,9 +347,9 @@ class AISearchService:
         Returns:
             {"answer": str, "tokens": dict}
         """
-        # 构建上下文
+        # 构建上下文：最多使用前100条给 Claude 生成答案
         context_parts = []
-        for i, hit in enumerate(search_results[:10], 1):  # 最多使用前10条
+        for i, hit in enumerate(search_results[:100], 1):
             source = hit['_source']
             reference = self._format_reference(source)
 
@@ -319,26 +375,29 @@ class AISearchService:
         context = "\n".join(context_parts)
 
         # 构建prompt
-        system_prompt = """你是圣经知识助手。请基于提供的经文内容回答问题。
+        system_prompt = """你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者，请基于提供的内容回答问题。
 
 要求：
-1. 回答要简洁准确（3-5句话）
-2. 必须基于提供的经文，不要编造
-3. 引用经文时标注出处（格式：书卷 章:节）
-4. 如果经文不足以回答问题，请诚实说明"""
+1. 严格要求你所回答的每一句话，都必须从所提供给你的原文文章中直接提取句子来构建，这是必须的。
+2. 你的回答不可改写原文，不可使用自己总结的话，不可使用自己概括的话，不可以通过概括或重述的方式改写，所有回答的内容必须完全从所提供的原文当中直接提取。
+3. 不是简单的按照顺序列出，要综合文章的所有点，给出关于用户所提的问题来回答，内容全面，结构清晰，逻辑合理。
+4. 如果所提供的内容不足以回答问题，请诚实说明，而不是编造答案。
+5. 若需要列出纲目的层级序号，请严格按照：壹的下一级是一，一的下一级是1，1 的下一级是 a，即一级序号为壹、贰，以此类推，二级为一、二以此类推，三级为 1、2 以此类推，四级为 a、b 以此类推，注意，纲目层级后面不是加、而是全角空格。
+6. 请用纯文本作答，不要使用 Markdown 格式：不要使用 #、*、** 等符号，不要用井号当标题、不要用星号加粗，层级与强调仅用序号（壹、一、1、a）和换行区分即可。
+7. 在回答末尾，另起一段列出最相关的10条引用的出处，每条一行（引用出处：1. xxx \\n 2. xxx），不要给出处加引号，不要出现多余的 ""。"""
 
-        user_prompt = f"""问题：{question}
+        user_prompt = f"""用户的问题：{question}
 
-参考经文：
+参考内容：
 {context}
 
-请基于以上经文回答问题："""
+请基于以上内容回答问题："""
 
         # 调用Claude API
         try:
             message = self.claude.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=800,
+                max_tokens=4000,
                 temperature=0.3,  # 降低温度提高准确性
                 system=system_prompt,
                 messages=[
@@ -424,7 +483,6 @@ class AISearchService:
             "cwwl": "[李常受文集]",
             "cwwn": "[倪柝声文集]",
             "life": "[生命读经]",
-            "feasts": "[节期纲目]",
             "others": "[其他]",
             "hymn": "[诗歌]",
             "bib": "[圣经]"

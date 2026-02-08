@@ -28,6 +28,8 @@ from user.users import user_opt
 from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
 from ai_search import ai_router
+from ai_search.monitoring import get_monitoring
+from ai_search.ai_service import redis_client
 import asyncio
 from pathlib import Path as pt
 from es_config import es
@@ -35,15 +37,24 @@ from es_config import es
 
 app = FastAPI()
 
+# 应用启动时初始化监控模块（复用 ai_search 的 Redis 客户端）
+get_monitoring(redis_client)
+
 # 创建API路由器（所有路由带/api前缀）
 from fastapi import APIRouter
 api_router = APIRouter(prefix="/api")
 
 # CORS：携带 cookie 时不能使用 allow_origins=["*"]，必须写具体来源
 _CORS_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://localhost:80",
     "http://localhost:5173",
+    "http://localhost:5182",
     "http://localhost:3000",
+    "http://127.0.0.1",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:5182",
     "http://127.0.0.1:3000",
 ]
 app.add_middleware(

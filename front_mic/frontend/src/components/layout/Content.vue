@@ -325,7 +325,7 @@ onMounted(() => {
         <ul>
           <li>A类：经文、注解、生命读经、倪文集、李文集、其他</li>
           <li>B类：A类、诗歌、节期</li>
-          <li>C类：B类、上河图</li>
+          <li>C类：同B类</li>
         </ul>
       </a-alert>
     </a-col>

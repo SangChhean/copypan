@@ -174,7 +174,7 @@ def search(input: str = Form(), args: str = Form()):
 **read**（阅读用，如 pan_reading）  
 - refid, bread, zh, en, cells, type, toc（含 nested）
 
-**index**（主检索用，如 bib, life, cwwn, cwwl, feasts, hymn, others, pano, foo 及各类 _booknames/_titles/_headings 等）  
+**index**（主检索用，如 bib, life, cwwn, cwwl, feasts, hymn, others, foo 及各类 _booknames/_titles/_headings 等）  
 - id, text, zh（ik_max_word）, en, title（keyword）, order, type, tags, source
 
 **map**（思路/词典类，如 map_*、cws_*）  
@@ -184,10 +184,10 @@ def search(input: str = Form(), args: str = Form()):
 
 | 索引名 | 类型 | 用途简述 |
 |--------|------|----------|
-| bib, foo, life, cwwn, cwwl, others, hymn, feasts, pano | index | 主分类检索 |
-| life_titles, cwwn_booknames, cwwl_headings, feasts_ot1, pano_titles, ... | index | 带后缀的细分检索 |
+| bib, foo, life, cwwn, cwwl, others, hymn, feasts | index | 主分类检索 |
+| life_titles, cwwn_booknames, cwwl_headings, feasts_ot1, ... | index | 带后缀的细分检索 |
 | pan_reading | read | 按 refid 阅读章节 |
-| map_note, map_life, map_nee_bookname, map_lee_title, map_cont_bookname, map_feasts_title, map_pano_title, map_hymn, ... | map | 思路/地图类检索 |
+| map_note, map_life, map_nee_bookname, map_lee_title, map_cont_bookname, map_feasts_title, map_hymn, ... | map | 词典类检索 |
 | cws_nee, cws_lee, cws_cont, cws_life_titles, cws_nee_titles, ... | map | 新约职事词典 |
 
 ### 3.3 数据关系

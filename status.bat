@@ -30,6 +30,16 @@ if %errorlevel% equ 0 (
 )
 echo.
 
+echo [Redis]
+docker ps --filter "name=redis" --format "{{.Status}}" | find "Up" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✓ 运行中
+    echo   端口: localhost:6379 （AI 缓存与统计）
+) else (
+    echo ❌ 未运行
+)
+echo.
+
 echo [后端服务]
 tasklist /fi "imagename eq python.exe" | find "python.exe" >nul
 if %errorlevel% equ 0 (

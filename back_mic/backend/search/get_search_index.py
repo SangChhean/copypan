@@ -7,7 +7,7 @@ args 正确格式（5 段，用 "-" 连接）：
   示例: "a-a-a-1-10"
 
   各段含义：
-  - cat1: 分类，取值 a/b/c 或 1~8（a=全部分类, b=含6/7, c=含8; 1~8 为单类）
+  - cat1: 分类，取值 a/b/c 或 1~7（a=全部分类, b=含6/7, c=同b; 1~7 为单类）
   - cat2: 子类型，取值 a~m（a=无后缀, b~m 对应不同后缀如 _booknames 等）
   - cat3: 匹配模式，取值 a/b/c（a=模糊/or, b=平衡/and, c=全文）
   - page: 页码，正整数，默认 1
@@ -21,7 +21,7 @@ from response.excptions import ERR_403
 DEFAULT_ARGS = "a-a-a-1-10"
 
 # 合法取值，用于校验
-VALID_CAT1 = frozenset("abc") | frozenset("12345678")
+VALID_CAT1 = frozenset("abc") | frozenset("1234567")
 VALID_CAT2 = frozenset("abcdefghijklm")
 VALID_CAT3 = frozenset("abc")
 
@@ -34,13 +34,12 @@ indies = {
     "5": "others",
     "6": "hymn",
     "7": "feasts",
-    "8": "pano",
 }
 
-# cat1='a' 查询 bib, foo, life, cwwn, cwwl, others；'b' 增加 hymn, feasts；'c' 增加 pano
+# cat1='a' 查询 bib, foo, life, cwwn, cwwl, others；'b' 增加 hymn, feasts；'c' 同 b
 cat_a = ["bib", "foo", "2", "3", "4", "5"]
 cat_b = cat_a + ["6", "7"]
-cat_c = cat_b + ["8"]
+cat_c = cat_b
 cats = {"a": cat_a, "b": cat_b, "c": cat_c}
 
 

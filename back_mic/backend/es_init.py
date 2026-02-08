@@ -83,20 +83,11 @@ all_index = [
     ["map_nee_title", "map"],
     ["map_note", "map"],
     ["map_others", "map"],
-    ["map_pano_bookname", "map"],
-    ["map_pano_title", "map"],
     ["others", "index"],
     ["others_booknames", "index"],
     ["others_headings", "index"],
     ["others_titles", "index"],
     ["pan_reading", "read"],
-    ["pano", "index"],
-    ["pano_booknames", "index"],
-    ["pano_headings", "index"],
-    ["pano_msg", "index"],
-    ["pano_ot1", "index"],
-    ["pano_outlines", "index"],
-    ["pano_titles", "index"],
 ]
 
 

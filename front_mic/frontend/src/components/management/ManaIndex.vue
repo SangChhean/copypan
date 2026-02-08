@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { h, ref } from "vue";
-import { DatabaseOutlined, TeamOutlined, ArrowLeftOutlined, FileAddOutlined, UserOutlined, CodeOutlined, InboxOutlined, CloudUploadOutlined } from "@ant-design/icons-vue";
+import { DatabaseOutlined, TeamOutlined, ArrowLeftOutlined, FileAddOutlined, UserOutlined, CodeOutlined, InboxOutlined, CloudUploadOutlined, BarChartOutlined, DashboardOutlined, WarningOutlined } from "@ant-design/icons-vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../../store/index";
 import ShowMsg from "../tools/ShowMsg.vue";
@@ -9,6 +9,9 @@ import type { UploadChangeParam } from "ant-design-vue";
 import { checkSession } from "../utils";
 import DataList from "./DataList.vue";
 import UserOpts from "./UserOpts.vue";
+import AIStats from "./AIStats.vue";
+import AIStatsRetrieval from "./AIStatsRetrieval.vue";
+import AIStatsErrors from "./AIStatsErrors.vue";
 checkSession("t0");
 
 const fileList = ref([]);
@@ -84,6 +87,32 @@ const items = ref([
       },
     ],
   },
+  {
+    key: "sub3",
+    icon: () => h(BarChartOutlined),
+    label: "AI使用统计",
+    title: "ai-stats",
+    children: [
+      {
+        icon: () => h(DashboardOutlined),
+        key: "6",
+        label: "统计概览",
+        title: "stats",
+      },
+      {
+        icon: () => h(BarChartOutlined),
+        key: "8",
+        label: "检索统计日志",
+        title: "retrieval",
+      },
+      {
+        icon: () => h(WarningOutlined),
+        key: "7",
+        label: "错误记录",
+        title: "errors",
+      },
+    ],
+  },
 ]);
 
 const navClick = (item: any) => {
@@ -128,6 +157,15 @@ const navClick = (item: any) => {
           </div>
           <div v-if="key === '5'">
             <IvOpts />
+          </div>
+          <div v-if="key === '6'">
+            <AIStats />
+          </div>
+          <div v-if="key === '8'">
+            <AIStatsRetrieval />
+          </div>
+          <div v-if="key === '7'">
+            <AIStatsErrors />
           </div>
         </div>
       </a-col>

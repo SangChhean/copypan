@@ -18,7 +18,6 @@ const go = (val = "/") => {
         <template #title>
           <div class="card_title"><SearchOutlined /> 定制搜索</div>
         </template>
-        <a-card-grid class="card c1" @click="go('/map')"><span class="card_text">思路搜索</span></a-card-grid>
         <a-card-grid class="card c1" @click="go('/cws')"><span class="card_text">新约职事的词典搜索</span></a-card-grid>
       </a-card>
     </div>
@@ -62,8 +61,10 @@ const go = (val = "/") => {
   font-weight: bold;
   font-size: large;
 }
-.c1 {
-  width: 50%;
+/* 覆盖 a-card-grid 默认 33.33% 宽度；:deep 使样式作用到子组件根节点 */
+:deep(.c1) {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 .c2 {
   width: 25%;

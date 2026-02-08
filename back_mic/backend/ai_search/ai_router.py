@@ -1,13 +1,14 @@
 """
 AI搜索API路由
-提供/api/ai_search接口
+提供/api/ai_search接口（问答、健康检查、监控统计）
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional
 import logging
 
 from .ai_service import ai_service
+from .monitoring import get_monitoring
 
 logger = logging.getLogger(__name__)
 
@@ -152,16 +153,52 @@ async def health_check():
         }
 
 
-@router.get("/ai_search/stats", summary="获取统计信息")
-async def get_stats():
-    """
-    获取统计信息（可选功能）
+# ========== 监控统计 API ==========
 
-    返回缓存命中率、请求统计等信息。
-
-    **注意：** 此功能需要额外实现统计逻辑，当前为占位接口。
+@router.get("/ai_search/stats", summary="获取统计数据")
+async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含的最近天数")):
     """
-    return {
-        "message": "统计功能开发中",
-        "note": "可在此添加缓存命中率、请求量等统计信息"
-    }
+    获取 AI 搜索统计数据。
+
+    - **days**：可选，1-30，默认 7。返回最近 N 天的每日统计。
+    - 返回：总查询数、缓存命中率、平均响应时间(ms)、总费用、每日明细。
+    """
+    try:
+        monitoring = get_monitoring()
+        data = monitoring.get_stats(days=days)
+        return {"status": "success", "data": data}
+    except Exception as e:
+        logger.error(f"获取统计失败: {e}", exc_info=True)
+        return {"status": "error", "data": None, "message": str(e)}
+
+
+@router.get("/ai_search/stats/errors", summary="获取最近错误记录")
+async def get_recent_errors(limit: int = Query(20, ge=1, le=200, description="最多返回条数")):
+    """
+    获取最近的 AI 搜索错误记录。
+
+    - **limit**：可选，1-200，默认 20。
+    """
+    try:
+        monitoring = get_monitoring()
+        data = monitoring.get_recent_errors(limit=limit)
+        return {"status": "success", "data": data}
+    except Exception as e:
+        logger.error(f"获取错误记录失败: {e}", exc_info=True)
+        return {"status": "error", "data": None, "message": str(e)}
+
+
+@router.post("/ai_search/stats/reset", summary="重置统计数据")
+async def reset_stats():
+    """
+    重置所有监控统计（全局统计、每日统计、错误列表）。
+
+    谨慎调用，不可恢复。
+    """
+    try:
+        monitoring = get_monitoring()
+        monitoring.reset_stats()
+        return {"status": "success", "data": {"message": "统计已重置"}}
+    except Exception as e:
+        logger.error(f"重置统计失败: {e}", exc_info=True)
+        return {"status": "error", "data": None, "message": str(e)}

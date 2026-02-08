@@ -1,0 +1,25 @@
+# Nginx 配置示例 - 前端网站不白屏需保证 root 指向「构建后的 dist」，不能指源码目录
+# 用法：把下面 server 块合并到你的 nginx.conf 的 http { } 里，或替换默认 server
+
+server {
+    listen       80;
+    server_name  localhost;
+
+    # 二选一：指项目里的 dist（推荐），或指 start_all 复制后的目录
+    root   E:/copypan/front_mic/frontend/dist;
+    # root   C:/nginx-1.24.0/html;
+    index  index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 后端 API 代理：/api/* 原样转发到 8000（后端路由为 /api/token、/api/search 等）
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -98,6 +98,28 @@ const placeholder = ref("输入搜索内容");
 const loadingAI = ref(false);
 const aiResult = ref(null);
 
+// 将 AI 回答中的整条纲目（从层级标记到行末）加粗显示；「引用出处：」及之后不加粗
+const aiAnswerFormatted = computed(() => {
+  const raw = aiResult.value?.answer;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  // 「引用出处：」及之后不算纲目，只对前面部分加粗
+  const refIdx = withBr.search(/引用出处[：:]/i);
+  const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
+  const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
+  // 一级纲目支持 叁/参
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000]|贰[、，\u3000]|(?:叁|参)[、，\u3000]|肆[、，\u3000]|伍[、，\u3000]|陆[、，\u3000]|柒[、，\u3000]|捌[、，\u3000]|玖[、，\u3000]|拾[、，\u3000])[^<]*?)(?=<br>|$)/g;
+  const mid = /(^|<br>)([\s#*]*)((?:一[、，\u3000]|二[、，\u3000]|三[、，\u3000]|四[、，\u3000]|五[、，\u3000]|六[、，\u3000]|七[、，\u3000]|八[、，\u3000]|九[、，\u3000]|十[、，\u3000])[^<]*?)(?=<br>|$)/g;
+  const num = /(^|<br>)([\s#*]*)((?:\d+\.)\s[^<]*?)(?=<br>|$)/g;
+  const letter = /(^|<br>)([\s#*]*)((?:[a-z]\.)\s[^<]*?)(?=<br>|$)/g;
+  let s = toBold.replace(big, "$1$2<strong>$3</strong>");
+  s = s.replace(mid, "$1$2<strong>$3</strong>");
+  s = s.replace(num, "$1$2<strong>$3</strong>");
+  s = s.replace(letter, "$1$2<strong>$3</strong>");
+  return s + afterRef;
+});
+
 const onSearch = (inp) => {
   if (!run.value) run.value = true;
   showInfo.value = 4;
@@ -242,7 +264,7 @@ const onAISearch = async () => {
   try {
     const res = await axios.post("/api/ai_search", {
       question: input,
-      max_results: 30
+      max_results: 50
     });
     
     aiResult.value = res.data;
@@ -383,7 +405,7 @@ const onAISearch = async () => {
         <span style="font-weight: bold; color: #667eea;">📝 AI 回答</span>
       </div>
       <a-divider style="margin: 8px 0"></a-divider>
-      <div class="ai-answer-content" v-html="aiResult.answer"></div>
+      <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
     </div>
     
     <!-- 引用来源 -->
@@ -554,6 +576,10 @@ const onAISearch = async () => {
   font-size: 16px;
   color: #333;
   white-space: pre-wrap;
+}
+.ai-answer-content strong {
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
 .ai-sources {
