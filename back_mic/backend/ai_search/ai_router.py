@@ -20,12 +20,14 @@ class SearchRequest(BaseModel):
     """AI搜索请求模型"""
     question: str = Field(..., min_length=1, max_length=500, description="用户问题")
     max_results: Optional[int] = Field(30, ge=1, le=50, description="最多返回结果数")
+    depth: Optional[str] = Field("general", description="搜索深度：general(一般)或deep(深度)")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "question": "圣经如何定义爱？",
-                "max_results": 30
+                "max_results": 30,
+                "depth": "general"
             }
         }
 
@@ -58,9 +60,14 @@ async def ai_search(request: SearchRequest):
     ```json
     {
         "question": "什么是信心？",
-        "max_results": 10
+        "max_results": 10,
+        "depth": "general"
     }
     ```
+    
+    **depth参数说明：**
+    - "general"（一般）：使用50条上下文，速度快，费用低
+    - "deep"（深度）：使用200条上下文，内容更全面，费用更高
 
     **响应示例：**
     ```json
@@ -98,7 +105,8 @@ async def ai_search(request: SearchRequest):
         # 调用服务层
         result = ai_service.search(
             question=request.question,
-            max_results=request.max_results
+            max_results=request.max_results,
+            depth=request.depth
         )
 
         # 检查是否有错误
@@ -201,4 +209,19 @@ async def reset_stats():
         return {"status": "success", "data": {"message": "统计已重置"}}
     except Exception as e:
         logger.error(f"重置统计失败: {e}", exc_info=True)
+        return {"status": "error", "data": None, "message": str(e)}
+
+
+@router.post("/ai_search/cache/clear", summary="清理 AI 搜索缓存")
+async def clear_cache():
+    """
+    清空 AI 搜索的 Redis 缓存（所有 ai_search:* 键）。
+
+    清理后，相同问题将重新调用 Claude 生成答案。
+    """
+    try:
+        result = ai_service.clear_cache()
+        return {"status": "success", "data": result}
+    except Exception as e:
+        logger.error(f"清理缓存失败: {e}", exc_info=True)
         return {"status": "error", "data": None, "message": str(e)}

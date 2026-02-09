@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
 import { ref, onMounted, watch } from "vue";
-import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons-vue";
+import { ReloadOutlined, DeleteOutlined, ClearOutlined } from "@ant-design/icons-vue";
 import { tip } from "../utils";
 
 const showSpin = ref(false);
@@ -49,6 +49,28 @@ const onReset = () => {
     });
 };
 
+const clearingCache = ref(false);
+const onClearCache = () => {
+  clearingCache.value = true;
+  axios
+    .post("api/ai_search/cache/clear")
+    .then((res) => {
+      if (res.data.status === "success") {
+        const data = res.data.data || {};
+        tip(data.message || `已清理 ${data.cleared ?? 0} 条缓存`);
+        fetchStats();
+      } else {
+        tip("清理失败：" + (res.data.message || ""));
+      }
+    })
+    .catch((e) => {
+      tip("清理失败：" + (e.message || ""));
+    })
+    .finally(() => {
+      clearingCache.value = false;
+    });
+};
+
 watch(days, () => fetchStats());
 onMounted(() => fetchStats());
 </script>
@@ -65,6 +87,20 @@ onMounted(() => fetchStats());
         <template #icon><ReloadOutlined /></template>
         刷新
       </a-button>
+      <a-popconfirm
+        title="确定要清理 AI 搜索缓存吗？"
+        ok-text="确定清理"
+        cancel-text="取消"
+        @confirm="onClearCache"
+      >
+        <template #description>
+          <span>清理后，相同问题将重新调用 Claude 生成答案，可能产生费用。</span>
+        </template>
+        <a-button :loading="clearingCache">
+          <template #icon><ClearOutlined /></template>
+          清理缓存
+        </a-button>
+      </a-popconfirm>
       <a-popconfirm
         title="确定要重置所有 AI 统计吗？"
         ok-text="确定重置"

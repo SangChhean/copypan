@@ -97,26 +97,24 @@ const placeholder = ref("输入搜索内容");
 // AI 问答相关状态
 const loadingAI = ref(false);
 const aiResult = ref(null);
+const aiDepth = ref("general"); // 搜索深度：general(一般-50条) 或 deep(深度-200条)
+const showAISources = ref(false); // 是否显示引用来源
+const showAIAnswer = ref(false); // 是否显示AI答案
+const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 
-// 将 AI 回答中的整条纲目（从层级标记到行末）加粗显示；「引用出处：」及之后不加粗
+// 仅将 AI 回答中的大点（壹、贰、叁/参…拾）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
   const raw = aiResult.value?.answer;
   if (!raw) return "";
   const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
-  // 「引用出处：」及之后不算纲目，只对前面部分加粗
-  const refIdx = withBr.search(/引用出处[：:]/i);
+  // 「参考与参读资料：」及之后不加粗
+  const refIdx = withBr.search(/参考与参读资料[：:]/i);
   const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
   const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
-  // 一级纲目支持 叁/参
-  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000]|贰[、，\u3000]|(?:叁|参)[、，\u3000]|肆[、，\u3000]|伍[、，\u3000]|陆[、，\u3000]|柒[、，\u3000]|捌[、，\u3000]|玖[、，\u3000]|拾[、，\u3000])[^<]*?)(?=<br>|$)/g;
-  const mid = /(^|<br>)([\s#*]*)((?:一[、，\u3000]|二[、，\u3000]|三[、，\u3000]|四[、，\u3000]|五[、，\u3000]|六[、，\u3000]|七[、，\u3000]|八[、，\u3000]|九[、，\u3000]|十[、，\u3000])[^<]*?)(?=<br>|$)/g;
-  const num = /(^|<br>)([\s#*]*)((?:\d+\.)\s[^<]*?)(?=<br>|$)/g;
-  const letter = /(^|<br>)([\s#*]*)((?:[a-z]\.)\s[^<]*?)(?=<br>|$)/g;
-  let s = toBold.replace(big, "$1$2<strong>$3</strong>");
-  s = s.replace(mid, "$1$2<strong>$3</strong>");
-  s = s.replace(num, "$1$2<strong>$3</strong>");
-  s = s.replace(letter, "$1$2<strong>$3</strong>");
+  // 只匹配大点：壹、贰、叁/参、肆…拾 整行（纲目后可为 Tab、顿号、全角空格等）
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t]|贰[、，\u3000\t]|(?:叁|参)[、，\u3000\t]|肆[、，\u3000\t]|伍[、，\u3000\t]|陆[、，\u3000\t]|柒[、，\u3000\t]|捌[、，\u3000\t]|玖[、，\u3000\t]|拾[、，\u3000\t])[^<]*?)(?=<br>|$)/g;
+  const s = toBold.replace(big, "$1$2<strong>$3</strong>");
   return s + afterRef;
 });
 
@@ -257,18 +255,55 @@ const onAISearch = async () => {
     return;
   }
   
+  // 重置状态
   loadingAI.value = true;
-  showInfo.value = 5; // 使用新的状态值显示 AI 结果
+  showInfo.value = 6; // 6表示AI正在思考
   aiResult.value = null;
+  showAISources.value = false;
+  showAIAnswer.value = false;
+  aiLoadingText.value = "🤔 AI 正在分析问题...";
   
   try {
+    // 模拟进度更新
+    setTimeout(() => {
+      if (loadingAI.value) {
+        aiLoadingText.value = "🔍 正在检索相关内容...";
+      }
+    }, 800);
+    
+    setTimeout(() => {
+      if (loadingAI.value) {
+        aiLoadingText.value = "💡 正在生成答案...";
+      }
+    }, 1600);
+    
     const res = await axios.post("/api/ai_search", {
       question: input,
-      max_results: 50
+      max_results: 50,
+      depth: aiDepth.value
     });
     
     aiResult.value = res.data;
-    showInfo.value = 5;
+    
+    // API返回后，先显示引用来源，保持loading状态
+    showAISources.value = true;
+    showAIAnswer.value = false;
+    // 保持 showInfo = 6，显示"AI正在整理答案"
+    
+    // 延迟800ms后，显示AI答案
+    setTimeout(() => {
+      showInfo.value = 5; // 切换到结果显示状态
+      showAIAnswer.value = true;
+      
+      // 平滑滚动到AI答案位置
+      setTimeout(() => {
+        const aiAnswerCard = document.querySelector('.ai-answer-card');
+        if (aiAnswerCard) {
+          aiAnswerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }, 800);
+    
   } catch (err) {
     console.error("AI搜索失败:", err);
     tip("AI搜索失败，请稍后重试");
@@ -298,6 +333,14 @@ const onAISearch = async () => {
       <div class="model">
         <a-radio-group v-model:value="search_cat" button-style="solid">
           <a-radio-button v-for="item in plainOptions" :value="item.val">{{ item.lab }}</a-radio-button>
+        </a-radio-group>
+        <a-radio-group 
+          v-model:value="aiDepth" 
+          button-style="solid" 
+          style="margin-left: 10px;"
+        >
+          <a-radio-button value="general">一般</a-radio-button>
+          <a-radio-button value="deep">深度</a-radio-button>
         </a-radio-group>
         <a-button 
           type="primary" 
@@ -390,23 +433,93 @@ const onAISearch = async () => {
     </div>
     <div style="margin-bottom: 360px"></div>
   </div>
+  <!-- AI 正在思考的加载动画 -->
+  <div class="ai-loading-container" v-if="showInfo == 6">
+    <!-- 如果还没有引用来源，显示加载动画 -->
+    <div class="ai-loading" v-if="!showAISources">
+      <div class="ai-loading-card">
+        <div class="loading-content">
+          <a-spin size="large">
+            <template #indicator>
+              <div class="custom-spinner">
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+              </div>
+            </template>
+          </a-spin>
+          <div class="loading-text">{{ aiLoadingText }}</div>
+          <div class="loading-tips">
+            <span v-if="aiDepth === 'general'">正在使用一般模式（50条上下文）</span>
+            <span v-else>正在使用深度模式（200条上下文）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- API返回后，显示引用来源 + "AI正在整理答案"提示 -->
+    <div class="ai-result-loading" v-if="showAISources && aiResult">
+      <a-alert type="info" show-icon>
+        <template #message>
+          <span style="font-size: 16px">📚 已找到相关内容</span>
+        </template>
+      </a-alert>
+      <a-divider style="margin: 10px 0"></a-divider>
+      
+      <!-- AI 正在整理答案提示 -->
+      <div class="ai-preparing">
+        <div class="preparing-content">
+          <div class="preparing-spinner">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span>✨ AI 正在整理答案...</span>
+        </div>
+      </div>
+      
+      <!-- 引用来源 -->
+      <transition name="fade-slide">
+        <div v-if="aiResult.sources && aiResult.sources.length > 0" class="ai-sources">
+          <div class="ai-sources-header">
+            <span style="font-weight: bold; color: #764ba2;">📚 引用来源 ({{ aiResult.sources.length }} 条)</span>
+          </div>
+          <a-divider style="margin: 8px 0"></a-divider>
+          <div v-for="(source, idx) in aiResult.sources" :key="idx" class="source-item">
+            <div class="source-title">
+              <span style="color: #1677ff; font-weight: bold;">{{ idx + 1 }}. </span>
+              <a-tag v-if="source.type" color="purple" :bordered="false" style="margin-right: 8px;">{{ source.type }}</a-tag>
+              <span v-text="source.reference"></span>
+              <a-tag v-if="source.score" color="blue" :bordered="false" style="margin-left: 8px; font-size: 11px;">相关度: {{ source.score }}</a-tag>
+            </div>
+            <div class="source-content" v-if="source.content">
+              <span v-html="source.content"></span>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </div>
+
   <!-- AI 问答结果显示 -->
   <div class="ai-result" v-if="showInfo == 5 && aiResult">
-    <a-alert type="info" show-icon>
+    <a-alert type="success" show-icon>
       <template #message>
-        <span style="font-size: 16px">AI 智能问答结果</span>
+        <span style="font-size: 16px">✨ AI 智能问答结果</span>
       </template>
     </a-alert>
     <a-divider style="margin: 10px 0"></a-divider>
     
-    <!-- AI 答案卡片 -->
-    <div class="ai-answer-card">
-      <div class="ai-answer-header">
-        <span style="font-weight: bold; color: #667eea;">📝 AI 回答</span>
+    <!-- AI 答案卡片（从上方滑入） -->
+    <transition name="slide-down">
+      <div v-if="showAIAnswer" class="ai-answer-card">
+        <div class="ai-answer-header">
+          <span style="font-weight: bold; color: #667eea;">📝 AI 回答</span>
+        </div>
+        <a-divider style="margin: 8px 0"></a-divider>
+        <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
       </div>
-      <a-divider style="margin: 8px 0"></a-divider>
-      <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
-    </div>
+    </transition>
     
     <!-- 引用来源 -->
     <div v-if="aiResult.sources && aiResult.sources.length > 0" class="ai-sources">
@@ -555,6 +668,210 @@ const onAISearch = async () => {
 /* AI 问答样式 */
 .ai-result {
   margin: 0 2em;
+}
+
+/* AI 加载动画容器 */
+.ai-loading-container {
+  margin: 0 2em;
+}
+
+.ai-loading {
+  margin: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.ai-result-loading {
+  margin-top: 20px;
+}
+
+.ai-loading-card {
+  background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+  border: 2px solid #667eea;
+  border-radius: 16px;
+  padding: 60px 80px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  }
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.custom-spinner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.spinner-dot {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite;
+}
+
+.spinner-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.spinner-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.spinner-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.loading-text {
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-glow 2s ease-in-out infinite;
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.loading-tips {
+  font-size: 14px;
+  color: #666;
+  margin-top: -5px;
+}
+
+/* 渐进显示过渡效果 */
+.fade-slide-enter-active {
+  animation: fadeSlideIn 0.6s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* AI答案从上方滑入效果 */
+.slide-down-enter-active {
+  animation: slideDownIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideDownIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 淡入淡出效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* AI正在整理答案提示 */
+.ai-preparing {
+  background: linear-gradient(135deg, #ffeaa710 0%, #ffdd5710 100%);
+  border: 2px dashed #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.preparing-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #d97706;
+}
+
+.preparing-spinner {
+  display: flex;
+  gap: 6px;
+}
+
+.preparing-spinner .dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 50%;
+  animation: preparingBounce 1.2s ease-in-out infinite;
+}
+
+.preparing-spinner .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.preparing-spinner .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.preparing-spinner .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes preparingBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
 }
 
 .ai-answer-card {
