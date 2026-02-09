@@ -7,6 +7,7 @@ import json
 import hashlib
 import logging
 import time
+import uuid
 from typing import Dict, List, Optional
 from datetime import datetime
 
@@ -217,6 +218,190 @@ class AISearchService:
                 "error": True
             }
 
+    def search_only(self, question: str, depth: str = "general") -> Dict:
+        """
+        方案A - 第一步：仅执行ES搜索，返回引用来源，将完整结果存入Redis供generate使用。
+        若缓存命中，直接返回完整结果（含 answer），前端无需再调 generate。
+
+        Returns:
+            {"sources": [...], "search_id": str, "search_time": float} 或
+            {"sources": [...], "answer": str, "tokens": {...}, "cached": True} 缓存命中时
+        """
+        try:
+            if not self.redis:
+                return {"error": True, "message": "Redis 未启用，无法使用分步搜索"}
+            if not question or len(question.strip()) < 2:
+                return {"error": True, "message": "问题太短，请输入至少2个字符"}
+            if len(question) > 500:
+                return {"error": True, "message": "问题过长（最多500字符）"}
+
+            question = question.strip()
+            depth = depth or "general"
+
+            # 检查缓存（与一步接口共用）
+            cache_key = self._get_cache_key(question, depth)
+            cached = self._get_from_cache(cache_key)
+            if cached:
+                logger.info("search_only 缓存命中")
+                cached["cached"] = True
+                try:
+                    get_monitoring(self.redis).record_query(
+                        question=question[:500],
+                        response_time_ms=50,
+                        cache_hit=True,
+                        input_tokens=int(cached.get("tokens", {}).get("input", 0) or 0),
+                        output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
+                        cost=cached.get("tokens", {}).get("cost"),
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
+                return cached
+
+            context_size = 50 if depth == "general" else 200
+            search_start = time.time()
+            search_results = self._multi_index_search(question, context_size)
+            search_time = (time.time() - search_start) * 1000
+
+            if not search_results:
+                return {
+                    "sources": [],
+                    "search_id": None,
+                    "search_time": round(search_time, 0),
+                    "error": True,
+                    "message": "没有找到相关的经文内容"
+                }
+
+            search_id = str(uuid.uuid4())
+            context_key = f"ai_search:context:{search_id}"
+            context_data = {
+                "question": question,
+                "depth": depth,
+                "search_results": search_results,
+                "context_size": context_size,
+            }
+            self.redis.setex(
+                context_key,
+                300,  # 5分钟过期
+                json.dumps(context_data, ensure_ascii=False, default=str)
+            )
+
+            sources = self._extract_sources(search_results[:50])
+            logger.info(f"search_only 完成: search_id={search_id}, {len(sources)}条来源, 耗时{search_time:.0f}ms")
+            return {
+                "sources": sources,
+                "search_id": search_id,
+                "search_time": round(search_time, 0),
+            }
+        except Exception as e:
+            logger.error(f"search_only 失败: {e}", exc_info=True)
+            return {"error": True, "message": str(e)}
+
+    def generate_only(self, question: str, search_id: str, max_results: int = 30) -> Dict:
+        """
+        方案A - 第二步：从Redis获取上下文，调用Claude生成答案。
+        若缓存命中，直接返回，不调用 Claude。
+
+        Returns:
+            与 search() 相同的返回格式
+        """
+        start_time = time.time()
+        try:
+            if not self.redis:
+                return {"answer": "Redis 未启用", "sources": [], "cached": False, "error": True}
+            if not self.claude:
+                return {"answer": "AI 服务未配置", "sources": [], "cached": False, "error": True}
+
+            context_key = f"ai_search:context:{search_id}"
+            raw = self.redis.get(context_key)
+            if not raw:
+                return {
+                    "answer": "搜索会话已过期，请重新提问",
+                    "sources": [],
+                    "cached": False,
+                    "error": True
+                }
+
+            ctx = json.loads(raw)
+            search_results = ctx.get("search_results", [])
+            stored_question = ctx.get("question", "")
+            stored_depth = ctx.get("depth", "general")
+            context_size = ctx.get("context_size", 200)
+
+            # 检查缓存
+            cache_key = self._get_cache_key(question or stored_question, stored_depth)
+            cached = self._get_from_cache(cache_key)
+            if cached:
+                logger.info("generate_only 缓存命中")
+                cached["cached"] = True
+                try:
+                    self.redis.delete(context_key)
+                except Exception:
+                    pass
+                try:
+                    get_monitoring(self.redis).record_query(
+                        question=(question or stored_question)[:500],
+                        response_time_ms=int((time.time() - start_time) * 1000),
+                        cache_hit=True,
+                        input_tokens=int(cached.get("tokens", {}).get("input", 0) or 0),
+                        output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
+                        cost=cached.get("tokens", {}).get("cost"),
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
+                return cached
+
+            if not search_results:
+                return {
+                    "answer": "未找到相关上下文",
+                    "sources": [],
+                    "cached": False,
+                    "error": True
+                }
+
+            ai_start = time.time()
+            ai_response = self._generate_answer(question or stored_question, search_results, context_size)
+            ai_time = (time.time() - ai_start) * 1000
+
+            sources = self._extract_sources(search_results[:max_results])
+            total_time = (time.time() - start_time) * 1000
+
+            result = {
+                "answer": ai_response["answer"],
+                "sources": sources,
+                "cached": False,
+                "tokens": ai_response.get("tokens"),
+                "search_time": 0,
+                "ai_time": round(ai_time, 0),
+                "total_time": round(total_time, 0),
+                "timestamp": datetime.now().isoformat()
+            }
+
+            # 写入缓存（与一步接口共用 key）
+            self._save_to_cache(cache_key, result)
+
+            try:
+                self.redis.delete(context_key)
+            except Exception:
+                pass
+
+            try:
+                tokens = result.get("tokens") or {}
+                get_monitoring(self.redis).record_query(
+                    question=(question or stored_question)[:500],
+                    response_time_ms=result["total_time"],
+                    cache_hit=False,
+                    input_tokens=int(tokens.get("input", 0) or 0),
+                    output_tokens=int(tokens.get("output", 0) or 0),
+                    cost=tokens.get("cost"),
+                )
+            except Exception as _e:
+                logger.debug(f"监控记录失败: {_e}")
+
+            return result
+        except Exception as e:
+            logger.error(f"generate_only 失败: {e}", exc_info=True)
+            return {"answer": f"生成失败: {str(e)}", "sources": [], "cached": False, "error": True}
+
     def _validate_input(self, question: str, max_results: int) -> Dict:
         """
         输入验证
@@ -274,20 +459,14 @@ class AISearchService:
                                         }
                                     }
                                 },
-                                # 多字段匹配（text 为主；content/outline 若数据有则参与）
+                                # 单字段匹配（仅 text，与 index mapping 一致）
                                 {
-                                    "multi_match": {
-                                        "query": query,
-                                        "fields": [
-                                            "text^4",       # 正文权重最高
-                                            "content^2.5",
-                                            "msg^2",
-                                            "outline^2",    # 大纲
-                                            "title^1.5"     # 降低标题（避免标题党）
-                                        ],
-                                        "type": "best_fields",
-                                        "fuzziness": "AUTO",  # 模糊匹配
-                                        "boost": 2.0
+                                    "match": {
+                                        "text": {
+                                            "query": query,
+                                            "fuzziness": "AUTO",
+                                            "boost": 2.0
+                                        }
                                     }
                                 }
                             ],
@@ -297,7 +476,7 @@ class AISearchService:
                     "size": int(size * weight * 1.2),  # 每索引取数：如 100*1.0*1.2=120
                     "_source": [
                         "book", "chapter", "verse",
-                        "content", "text", "msg", "outline", "title"
+                        "text", "title"
                     ]
                 }
 

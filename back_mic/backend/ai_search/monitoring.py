@@ -112,11 +112,13 @@ class AIMonitoring:
             cost = self._cost_from_tokens(input_tokens, output_tokens)
         try:
             # 全局统计：使用 hash 累加
+            # 响应时间只记录非缓存命中（真实 AI 回答）的查询，否则平均响应时间不准确
             pipe = self.redis.pipeline()
             pipe.hincrby(KEY_STATS, "total_queries", 1)
             if cache_hit:
                 pipe.hincrby(KEY_STATS, "cache_hits", 1)
-            pipe.hincrbyfloat(KEY_STATS, "total_response_time_ms", response_time_ms)
+            else:
+                pipe.hincrbyfloat(KEY_STATS, "total_response_time_ms", response_time_ms)
             pipe.hincrby(KEY_STATS, "total_input_tokens", input_tokens)
             pipe.hincrby(KEY_STATS, "total_output_tokens", output_tokens)
             pipe.hincrbyfloat(KEY_STATS, "total_cost", round(cost, 6))
@@ -125,7 +127,8 @@ class AIMonitoring:
             pipe.hincrby(day_key, "total_queries", 1)
             if cache_hit:
                 pipe.hincrby(day_key, "cache_hits", 1)
-            pipe.hincrbyfloat(day_key, "total_response_time_ms", response_time_ms)
+            else:
+                pipe.hincrbyfloat(day_key, "total_response_time_ms", response_time_ms)
             pipe.hincrby(day_key, "total_input_tokens", input_tokens)
             pipe.hincrby(day_key, "total_output_tokens", output_tokens)
             pipe.hincrbyfloat(day_key, "total_cost", round(cost, 6))
@@ -227,7 +230,9 @@ class AIMonitoring:
             total_response_time_ms = float(raw.get("total_response_time_ms", 0) or 0)
             total_cost = float(raw.get("total_cost", 0) or 0)
             cache_hit_rate = (cache_hits / total_queries * 100) if total_queries else 0.0
-            avg_response_time_ms = (total_response_time_ms / total_queries) if total_queries else 0.0
+            # 平均响应时间只按真实 AI 回答的查询计算，不含缓存命中
+            non_cache_queries = total_queries - cache_hits
+            avg_response_time_ms = (total_response_time_ms / non_cache_queries) if non_cache_queries > 0 else 0.0
 
             # 每日统计（最近 days 天）
             daily = []
@@ -242,11 +247,12 @@ class AIMonitoring:
                 ch = int(day_raw.get("cache_hits", 0) or 0)
                 tr = float(day_raw.get("total_response_time_ms", 0) or 0)
                 c = float(day_raw.get("total_cost", 0) or 0)
+                nc = q - ch  # 非缓存命中的查询数
                 daily.append({
                     "date": d.strftime("%Y-%m-%d"),
                     "queries": q,
                     "cache_hits": ch,
-                    "avg_ms": round(tr / q, 2) if q else 0,
+                    "avg_ms": round(tr / nc, 2) if nc > 0 else 0,
                     "cost": round(c, 4),
                 })
             retrieval_log = self.get_recent_retrieval_log(limit=50)

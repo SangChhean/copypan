@@ -32,6 +32,19 @@ class SearchRequest(BaseModel):
         }
 
 
+class SearchOnlyRequest(BaseModel):
+    """方案A - 第一步：仅搜索"""
+    question: str = Field(..., min_length=1, max_length=500)
+    depth: Optional[str] = Field("general", description="general 或 deep")
+
+
+class GenerateOnlyRequest(BaseModel):
+    """方案A - 第二步：生成答案"""
+    question: str = Field(..., min_length=1, max_length=500)
+    search_id: str = Field(..., description="第一步返回的 search_id")
+    max_results: Optional[int] = Field(30, ge=1, le=50)
+
+
 class SearchResponse(BaseModel):
     """AI搜索响应模型"""
     answer: str
@@ -43,7 +56,50 @@ class SearchResponse(BaseModel):
     total_time: Optional[float] = None
 
 
-@router.post("/ai_search", response_model=SearchResponse, summary="AI智能搜索")
+# ========== 方案A：分步搜索接口 ==========
+
+@router.post("/ai_search/search", summary="第一步：仅检索（返回引用来源）")
+async def ai_search_step1(request: SearchOnlyRequest):
+    """
+    方案A 第一步：仅执行 ES 搜索，快速返回引用来源。
+    用户可在等待 AI 生成期间浏览这些来源。
+    返回 search_id 供第二步使用。
+    """
+    try:
+        result = ai_service.search_only(question=request.question, depth=request.depth or "general")
+        if result.get("error"):
+            raise HTTPException(status_code=400, detail=result.get("message", "搜索失败"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ai_search/search 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/generate", response_model=SearchResponse, summary="第二步：生成答案")
+async def ai_search_step2(request: GenerateOnlyRequest):
+    """
+    方案A 第二步：使用 search_id 从 Redis 获取上下文，调用 Claude 生成答案。
+    search_id 有效期为 5 分钟。
+    """
+    try:
+        result = ai_service.generate_only(
+            question=request.question,
+            search_id=request.search_id,
+            max_results=request.max_results or 30
+        )
+        if result.get("error"):
+            raise HTTPException(status_code=400, detail=result.get("answer", "生成失败"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ai_search/generate 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search", response_model=SearchResponse, summary="AI智能搜索（一步完成）")
 async def ai_search(request: SearchRequest):
     """
     AI智能问答接口

@@ -102,6 +102,23 @@ const showAISources = ref(false); // 是否显示引用来源
 const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 
+// AI 回答复制
+const aiAnswerCopied = ref(false);
+const copyAiAnswer = async () => {
+  const text = aiResult.value?.answer;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    aiAnswerCopied.value = true;
+    tip("已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
 // 仅将 AI 回答中的大点（壹、贰、叁/参…拾）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
   const raw = aiResult.value?.answer;
@@ -245,7 +262,7 @@ const addTag = (val) => {
   } else return val;
 };
 
-// AI 问答功能
+// AI 问答功能（方案A：分步调用）
 const onAISearch = async () => {
   let input = inputVar.value.trim();
   
@@ -255,58 +272,66 @@ const onAISearch = async () => {
     return;
   }
   
-  // 重置状态
   loadingAI.value = true;
-  showInfo.value = 6; // 6表示AI正在思考
+  showInfo.value = 6;
   aiResult.value = null;
   showAISources.value = false;
   showAIAnswer.value = false;
-  aiLoadingText.value = "🤔 AI 正在分析问题...";
+  aiLoadingText.value = "🔍 正在检索相关内容...";
   
   try {
-    // 模拟进度更新
-    setTimeout(() => {
-      if (loadingAI.value) {
-        aiLoadingText.value = "🔍 正在检索相关内容...";
-      }
-    }, 800);
-    
-    setTimeout(() => {
-      if (loadingAI.value) {
-        aiLoadingText.value = "💡 正在生成答案...";
-      }
-    }, 1600);
-    
-    const res = await axios.post("/api/ai_search", {
+    // 第一步：仅检索，快速返回引用来源
+    const searchRes = await axios.post("/api/ai_search/search", {
       question: input,
-      max_results: 50,
       depth: aiDepth.value
     });
     
-    aiResult.value = res.data;
+    const data = searchRes.data;
     
-    // API返回后，先显示引用来源，保持loading状态
-    showAISources.value = true;
-    showAIAnswer.value = false;
-    // 保持 showInfo = 6，显示"AI正在整理答案"
-    
-    // 延迟800ms后，显示AI答案
-    setTimeout(() => {
-      showInfo.value = 5; // 切换到结果显示状态
+    // 缓存命中：search 直接返回完整结果（含 answer），无需再调 generate
+    if (data.answer) {
+      aiResult.value = data;
+      showInfo.value = 5;
+      showAISources.value = true;
       showAIAnswer.value = true;
-      
-      // 平滑滚动到AI答案位置
       setTimeout(() => {
-        const aiAnswerCard = document.querySelector('.ai-answer-card');
-        if (aiAnswerCard) {
-          aiAnswerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 800);
+      return;
+    }
+    
+    const { sources, search_id } = data;
+    
+    if (!search_id) {
+      tip(data.message || "未找到相关内容");
+      showInfo.value = 3;
+      return;
+    }
+    
+    // 立即显示引用来源，用户可浏览
+    aiResult.value = { sources, answer: null };
+    showAISources.value = true;
+    aiLoadingText.value = "💡 AI 正在生成答案...";
+    
+    // 第二步：生成答案（耗时 20-30 秒）
+    const generateRes = await axios.post("/api/ai_search/generate", {
+      question: input,
+      search_id,
+      max_results: 50
+    });
+    
+    aiResult.value = generateRes.data;
+    showInfo.value = 5;
+    showAIAnswer.value = true;
+    
+    // 平滑滚动到页面最顶端
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
     
   } catch (err) {
     console.error("AI搜索失败:", err);
-    tip("AI搜索失败，请稍后重试");
+    tip(err.response?.data?.detail || "AI搜索失败，请稍后重试");
     showInfo.value = 3;
   } finally {
     loadingAI.value = false;
@@ -515,8 +540,12 @@ const onAISearch = async () => {
       <div v-if="showAIAnswer" class="ai-answer-card">
         <div class="ai-answer-header">
           <span style="font-weight: bold; color: #667eea;">📝 AI 回答</span>
+          <a-button type="text" size="small" @click="copyAiAnswer" class="ai-copy-btn">
+            <CheckOutlined v-if="aiAnswerCopied" style="color: #52c41a;" />
+            <CopyOutlined v-else />
+            {{ aiAnswerCopied ? "已复制" : "复制" }}
+          </a-button>
         </div>
-        <a-divider style="margin: 8px 0"></a-divider>
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
       </div>
     </transition>
@@ -878,14 +907,37 @@ const onAISearch = async () => {
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   border: 2px solid #667eea;
   border-radius: 12px;
-  padding: 20px;
+  padding: 28px 20px;
   margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .ai-answer-header {
   font-size: 18px;
-  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.ai-copy-btn {
+  color: #667eea;
+  font-size: 14px;
+  background-color: rgba(102, 126, 234, 0.2);
+  border-radius: 6px;
+  padding: 5px 14px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ai-copy-btn:hover {
+  color: #764ba2;
+  background-color: rgba(118, 75, 162, 0.25);
 }
 
 .ai-answer-content {
