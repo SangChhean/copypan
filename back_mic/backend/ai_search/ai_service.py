@@ -53,12 +53,12 @@ except Exception as e:
 
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 INDEXES_CONFIG = {
-    "life": {"weight": 1.3},    # 生命读经
     "cwwl": {"weight": 1.5},    # 李常受文集
     "cwwn": {"weight": 1.3},    # 倪柝声文集
-    "bib": {"weight": 1.2},     # 圣经
+    "life": {"weight": 1.3},    # 生命读经
+    "map_note": {"weight": 1.5},  # 注解
+    "bib": {"weight": 1.0},     # 圣经
     "others": {"weight": 1.0},  # 其他
-    "hymn": {"weight": 0.8}     # 诗歌
 }
 
 
@@ -158,7 +158,10 @@ class AISearchService:
                     "error": True
                 }
             ai_start = time.time()
-            ai_response = self._generate_answer(question, search_results, context_size)
+            context_items = self._build_context_from_hits(search_results, context_size)
+            if not context_items:
+                context_items = self._fallback_context_from_hits(search_results, context_size)
+            ai_response = self._generate_answer(question, context_items, context_size)
             ai_time = (time.time() - ai_start) * 1000
 
             logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
@@ -166,7 +169,7 @@ class AISearchService:
             # 5. 构造返回结果（引用来源最多 50 条）
             result = {
                 "answer": ai_response["answer"],
-                "sources": self._extract_sources(search_results[:50]),
+                "sources": self._extract_sources_from_context(context_items[:50]),
                 "cached": False,
                 "tokens": ai_response.get("tokens"),
                 "search_time": round(search_time, 0),
@@ -359,10 +362,15 @@ class AISearchService:
                 }
 
             ai_start = time.time()
-            ai_response = self._generate_answer(question or stored_question, search_results, context_size)
+            context_items = self._build_context_from_hits(search_results, context_size)
+            if not context_items:
+                context_items = self._fallback_context_from_hits(search_results, context_size)
+            ai_response = self._generate_answer(
+                question or stored_question, context_items, context_size
+            )
             ai_time = (time.time() - ai_start) * 1000
 
-            sources = self._extract_sources(search_results[:max_results])
+            sources = self._extract_sources_from_context(context_items[:max_results])
             total_time = (time.time() - start_time) * 1000
 
             result = {
@@ -473,9 +481,9 @@ class AISearchService:
                             "minimum_should_match": 1
                         }
                     },
-                    "size": int(size * weight * 1.2),  # 每索引取数：如 100*1.0*1.2=120
+                    "size": int(size * weight),  # 每索引取数
                     "_source": [
-                        "book", "chapter", "verse",
+                        "id", "type", "book", "chapter", "verse",
                         "text", "title"
                     ]
                 }
@@ -492,7 +500,13 @@ class AISearchService:
 
                 # 为每条结果添加加权分数
                 for hit in hits:
-                    hit['_weighted_score'] = hit['_score'] * weight
+                    score = hit['_score'] * weight
+                    # cwwl 中 id 含 cwwl_1994-1997 的（该年份文集很重要）再加权 1.2
+                    if index_name == "cwwl":
+                        doc_id = (hit.get("_source") or {}).get("id") or hit.get("_id") or ""
+                        if "cwwl_1994-1997" in doc_id:
+                            score *= 1.2
+                    hit['_weighted_score'] = score
                     hit['_index_name'] = index_name
                     all_results.append(hit)
 
@@ -518,42 +532,210 @@ class AISearchService:
 
         return all_results[:size]
 
-    def _generate_answer(self, question: str, search_results: List[Dict], context_size: int = 200) -> Dict:
+    # 按 type 分类：取整节 / 只取该段 / 不取
+    _HEADING_TYPES = frozenset({"heading", "heading_1", "heading_2", "heading_3", "heading_4"})
+    _SINGLE_PARAGRAPH_TYPES = frozenset({"text", "ot1", "ot2", "ot3", "ot4"})
+
+    def _parse_doc_id(self, doc_id: str) -> tuple:
+        """解析文档 id，提取 message 前缀和段号。如 others_1_1-4 -> (others_1_1-, 4)"""
+        if not doc_id or "-" not in doc_id:
+            return ("", 0)
+        last_dash = doc_id.rfind("-")
+        prefix = doc_id[: last_dash + 1]
+        try:
+            seg = int(doc_id[last_dash + 1 :])
+        except ValueError:
+            seg = 0
+        return (prefix, seg)
+
+    def _fetch_message_docs(self, index_name: str, message_prefix: str) -> List[Dict]:
+        """从 ES 获取同一篇（message）内的所有文档，按段号排序"""
+        try:
+            resp = self.es.search(
+                index=index_name,
+                body={
+                    "query": {"prefix": {"id": message_prefix}},
+                    "size": 500,
+                    "_source": ["id", "type", "text", "title", "book", "chapter", "verse"],
+                },
+                request_timeout=10,
+            )
+            hits = resp.get("hits", {}).get("hits", [])
+            docs = []
+            for h in hits:
+                src = h.get("_source", {})
+                pid, seg = self._parse_doc_id(src.get("id", ""))
+                docs.append((seg, src))
+            docs.sort(key=lambda x: x[0])
+            return [d[1] for d in docs]
+        except Exception as e:
+            logger.warning(f"获取 message 文档失败: {e}")
+            return []
+
+    def _get_section_from_heading(
+        self, docs: List[Dict], heading_idx: int
+    ) -> tuple:
+        """
+        从 heading 起，取到下一个非 text 的文档为止。
+        返回 (拼接后的内容, 本 section 内所有 doc 的 id 列表)
+        """
+        if heading_idx >= len(docs):
+            return ("", [])
+        section_ids = []
+        parts = []
+        for i in range(heading_idx, len(docs)):
+            doc = docs[i]
+            doc_id = doc.get("id", "")
+            dtype = doc.get("type", "")
+            text = doc.get("text", "")
+            if not text:
+                continue
+            if i == heading_idx:
+                section_ids.append(doc_id)
+                parts.append(text)
+                continue
+            if dtype == "text":
+                section_ids.append(doc_id)
+                parts.append(text)
+            else:
+                break
+        return ("\n".join(parts), section_ids)
+
+    def _build_context_from_hits(
+        self, search_results: List[Dict], context_size: int
+    ) -> List[Dict]:
+        """
+        根据 type 规则构建上下文：heading 取整节，text/ot1-4 只取该段，其他不取。
+        去重：已被整节覆盖的段落不再单独加入。
+        返回 [{"reference": str, "content": str, "source_type": str, "score": float}, ...]
+        """
+        included_ids = set()
+        context_items = []
+        seen_sections = set()
+
+        for hit in search_results:
+            if len(context_items) >= context_size:
+                break
+            source = hit.get("_source", {})
+            doc_id = source.get("id") or hit.get("_id", "")
+            dtype = source.get("type", "")
+            index_name = hit.get("_index_name", hit.get("_index", ""))
+            score = hit.get("_weighted_score", hit.get("_score", 0))
+
+            if doc_id in included_ids:
+                continue
+
+            if dtype in self._HEADING_TYPES:
+                prefix, seg = self._parse_doc_id(doc_id)
+                if not prefix:
+                    continue
+                section_key = (index_name, prefix)
+                if section_key in seen_sections:
+                    continue
+                docs = self._fetch_message_docs(index_name, prefix)
+                if not docs:
+                    continue
+                heading_idx = next(
+                    (i for i, d in enumerate(docs) if d.get("id") == doc_id),
+                    -1,
+                )
+                if heading_idx < 0:
+                    continue
+                content, section_ids = self._get_section_from_heading(
+                    docs, heading_idx
+                )
+                if not content:
+                    continue
+                seen_sections.add(section_key)
+                for sid in section_ids:
+                    included_ids.add(sid)
+                ref = self._format_reference(docs[0] if docs else source)
+                context_items.append({
+                    "reference": ref,
+                    "content": content,
+                    "source_type": self._get_source_type(index_name),
+                    "score": score,
+                })
+                continue
+
+            if dtype in self._SINGLE_PARAGRAPH_TYPES:
+                text = source.get("text", "")
+                if not text:
+                    continue
+                ref = self._format_reference(source)
+                context_items.append({
+                    "reference": ref,
+                    "content": text,
+                    "source_type": self._get_source_type(index_name),
+                    "score": score,
+                })
+                included_ids.add(doc_id)
+
+        return context_items
+
+    def _fallback_context_from_hits(
+        self, search_results: List[Dict], context_size: int
+    ) -> List[Dict]:
+        """当 _build_context_from_hits 无结果时回退：按原逻辑取 text 构建上下文（如 bib/hymn 等）"""
+        items = []
+        for hit in search_results[:context_size]:
+            source = hit.get("_source", {})
+            text = source.get("text", "")
+            if not text:
+                continue
+            if len(text) > 300:
+                text = text[:300] + "..."
+            items.append({
+                "reference": self._format_reference(source),
+                "content": text,
+                "source_type": self._get_source_type(
+                    hit.get("_index_name", hit.get("_index", ""))
+                ),
+                "score": hit.get("_weighted_score", hit.get("_score", 0)),
+            })
+        return items
+
+    def _extract_sources_from_context(
+        self, context_items: List[Dict]
+    ) -> List[Dict]:
+        """从 context_items 提取引用来源（供前端展示）"""
+        sources = []
+        for item in context_items:
+            content = item.get("content", "")
+            preview = content[:150] + "..." if len(content) > 150 else content
+            sources.append({
+                "reference": item.get("reference", ""),
+                "content": preview,
+                "score": round(item.get("score", 0), 2),
+                "type": item.get("source_type", ""),
+            })
+        return sources
+
+    def _generate_answer(
+        self,
+        question: str,
+        context_items: List[Dict],
+        context_size: int = 200,
+    ) -> Dict:
         """
         调用Claude生成答案
 
         Args:
             question: 用户问题
-            search_results: ES搜索结果
-            context_size: 使用的上下文数量（默认200条）
+            context_items: 上下文项列表 [{"reference", "content", "source_type"}, ...]
+            context_size: 最多使用的条数
 
         Returns:
             {"answer": str, "tokens": dict}
         """
-        # 构建上下文：根据context_size参数决定使用多少条
         context_parts = []
-        for i, hit in enumerate(search_results[:context_size], 1):
-            source = hit['_source']
-            reference = self._format_reference(source)
-
-            # 提取内容（尝试多个可能的字段）
-            content = (
-                source.get('content') or
-                source.get('text') or
-                source.get('msg') or
-                source.get('outline') or
-                ''
-            )
-
-            # 限制每条内容长度，避免Token超限
-            if len(content) > 300:
-                content = content[:300] + "..."
-
-            # 标注来源类型
-            index_name = hit.get('_index_name', '')
-            source_type = self._get_source_type(index_name)
-
-            context_parts.append(f"{i}. {source_type} {reference}\n{content}\n")
+        for i, item in enumerate(context_items[:context_size], 1):
+            ref = item.get("reference", "")
+            content = item.get("content", "")
+            stype = item.get("source_type", "")
+            if not content:
+                continue
+            context_parts.append(f"{i}. {stype} {ref}\n{content}\n")
 
         context = "\n".join(context_parts)
 
@@ -823,8 +1005,8 @@ class AISearchService:
             "cwwn": "[倪柝声文集]",
             "life": "[生命读经]",
             "others": "[其他]",
-            "hymn": "[诗歌]",
-            "bib": "[圣经]"
+            "bib": "[圣经]",
+            "map_note": "[注解]",
         }
         return type_map.get(index_name, "[未分类]")
 
