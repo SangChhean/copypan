@@ -28,7 +28,7 @@
       </button>
       <button
         :class="['search-tab', { active: mode === 'ai' }]"
-        @click="mode = 'ai'"
+        @click="enableAIMode"
       >
         AI问答
       </button>
@@ -88,49 +88,122 @@
       </div>
 
       <!-- AI 问答模式 -->
-      <div v-show="mode === 'ai'" class="search-mode-content">
-      <div class="search-form ai-form">
-        <textarea
-          v-model="aiQuestion"
-          class="search-input ai-question-input"
-          placeholder="输入问题，例如：圣经如何定义爱？"
-          rows="2"
-          :disabled="loadingAI"
-          @keydown.enter.exact.prevent="doAISearch"
-        />
-        <button
-          class="search-btn"
-          :disabled="loadingAI || !aiQuestion.trim()"
-          @click="doAISearch"
-        >
-          {{ loadingAI ? '回答中…' : '提问' }}
-        </button>
-      </div>
-      <!-- AI 结果：答案卡片 + 来源列表 -->
-      <div v-if="aiResult !== null" class="ai-result-wrap">
-        <div v-if="loadingAI" class="search-loading">
-          <div class="search-loading-dots"><span></span><span></span><span></span></div>
-          <span>AI 思考中…</span>
+      <div v-show="mode === 'ai'" class="search-mode-content ai-mode">
+        <div class="search-form ai-form" @click="expandAIPanel">
+          <textarea
+            v-model="aiForm.question"
+            class="search-input ai-question-input"
+            placeholder="点击输入问题，展开下方栏位后补充纲目主题等信息…"
+            rows="2"
+            :disabled="loadingAI"
+            @focus="expandAIPanel"
+            @keydown.enter.exact.prevent="doAISearch"
+          />
         </div>
-        <template v-else>
-          <div class="ai-answer-card">
-            <div class="ai-answer-label">回答</div>
-            <div class="ai-answer-content" v-html="formatAnswer(aiResult.answer)"></div>
-            <div v-if="aiResult.cached" class="ai-cached-tag">缓存</div>
-          </div>
-          <div v-if="aiResult.sources && aiResult.sources.length" class="ai-sources">
-            <div class="ai-sources-label">参考来源</div>
-            <div
-              v-for="(src, i) in aiResult.sources"
-              :key="i"
-              class="ai-source-item"
-            >
-              <span class="ai-source-type">{{ src.type }}</span>
-              <span class="ai-source-ref">{{ src.reference }}</span>
-              <p class="ai-source-content">{{ src.content }}</p>
+
+        <transition name="ai-meta-panel">
+          <div v-if="showAIDetails" class="ai-meta-panel">
+            <div class="ai-meta-grid">
+              <label class="ai-meta-field">
+                <span>纲目主题</span>
+                <input
+                  v-model="aiForm.outlineTopic"
+                  type="text"
+                  placeholder="本次纲目的核心题目"
+                  :disabled="loadingAI"
+                />
+              </label>
+              <label class="ai-meta-field">
+                <span>面对对象</span>
+                <input
+                  v-model="aiForm.audience"
+                  type="text"
+                  placeholder="例如：青职弟兄、初信者、小排服事者..."
+                  :disabled="loadingAI"
+                />
+              </label>
+              <label class="ai-meta-field full">
+                <span>负担说明</span>
+                <textarea
+                  v-model="aiForm.burdenDescription"
+                  rows="2"
+                  placeholder="用简短段落说明本次聚会或分享的负担"
+                  :disabled="loadingAI"
+                />
+              </label>
+              <label class="ai-meta-field full">
+                <span>特殊需要</span>
+                <textarea
+                  v-model="aiForm.specialNeeds"
+                  rows="2"
+                  placeholder="列出需要 Claude 特别注意的额外要求"
+                  :disabled="loadingAI"
+                />
+              </label>
+            </div>
+
+            <div class="ai-depth-select">
+              <span>检索深度</span>
+              <div class="ai-depth-buttons">
+                <button
+                  type="button"
+                  :class="['ai-depth-btn', { active: aiForm.depth === 'general' }]"
+                  :disabled="loadingAI"
+                  @click="aiForm.depth = 'general'"
+                >
+                  一般（快速）
+                </button>
+                <button
+                  type="button"
+                  :class="['ai-depth-btn', { active: aiForm.depth === 'deep' }]"
+                  :disabled="loadingAI"
+                  @click="aiForm.depth = 'deep'"
+                >
+                  深度（更全面）
+                </button>
+              </div>
+            </div>
+
+          <div class="ai-panel-actions">
+            <div v-if="!aiFormValid" class="ai-panel-hint">
+              请先填写「问题」与「纲目主题」后再发送。
+            </div>
+              <button
+                class="search-btn"
+                :disabled="loadingAI || !aiFormValid"
+                @click="doAISearch"
+              >
+                {{ loadingAI ? '发送中…' : '发送给 Claude' }}
+              </button>
             </div>
           </div>
-        </template>
+        </transition>
+
+        <!-- AI 结果：答案卡片 + 来源列表 -->
+        <div v-if="aiResult !== null" class="ai-result-wrap">
+          <div v-if="loadingAI" class="search-loading">
+            <div class="search-loading-dots"><span></span><span></span><span></span></div>
+            <span>AI 思考中…</span>
+          </div>
+          <template v-else>
+            <div class="ai-answer-card">
+              <div class="ai-answer-label">回答</div>
+              <div class="ai-answer-content" v-html="formatAnswer(aiResult.answer)"></div>
+              <div v-if="aiResult.cached" class="ai-cached-tag">缓存</div>
+            </div>
+            <div v-if="aiResult.sources && aiResult.sources.length" class="ai-sources">
+              <div class="ai-sources-label">参考来源</div>
+              <div
+                v-for="(src, i) in aiResult.sources"
+                :key="i"
+                class="ai-source-item"
+              >
+                <span class="ai-source-type">{{ src.type }}</span>
+                <span class="ai-source-ref">{{ src.reference }}</span>
+                <p class="ai-source-content">{{ src.content }}</p>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -138,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -147,11 +220,43 @@ const apiBase = import.meta.env?.VITE_API_BASE || ''
 const mode = ref('traditional') // 'traditional' | 'ai'
 const searchInput = ref('')
 const searchArgs = ref('')
-const aiQuestion = ref('')
+const aiForm = reactive({
+  question: '',
+  outlineTopic: '',
+  burdenDescription: '',
+  specialNeeds: '',
+  audience: '',
+  depth: 'general'
+})
+const showAIDetails = ref(false)
 const loadingTraditional = ref(false)
 const loadingAI = ref(false)
 const traditionalResult = ref(null) // { total, msg[] }
 const aiResult = ref(null) // { answer, sources[], cached?, ... }
+
+const aiFormValid = computed(() => {
+  const q = aiForm.question.trim().length > 0
+  const outline = aiForm.outlineTopic.trim().length > 0
+  return q && outline
+})
+
+function expandAIPanel() {
+  showAIDetails.value = true
+}
+
+function enableAIMode() {
+  mode.value = 'ai'
+  showAIDetails.value = true
+}
+watch(
+  () => route.hash || route.path,
+  () => {
+    if (route.path === '/search' && route.hash === '#ai') {
+      enableAIMode()
+    }
+  },
+  { immediate: true }
+)
 
 function highlight(text) {
   if (!text) return ''
@@ -195,16 +300,28 @@ function formatAnswer(text) {
 }
 
 async function doAISearch() {
-  const question = aiQuestion.value?.trim()
-  if (!question || loadingAI.value) return
+  const question = aiForm.question?.trim()
+  if (!question || loadingAI.value || !aiFormValid.value) {
+    showAIDetails.value = true
+    return
+  }
   loadingAI.value = true
   aiResult.value = null
+  const payload = {
+    question,
+    max_results: 10,
+    depth: aiForm.depth,
+    outline_topic: aiForm.outlineTopic.trim(),
+    burden_description: aiForm.burdenDescription.trim(),
+    special_needs: aiForm.specialNeeds.trim(),
+    audience: aiForm.audience.trim()
+  }
   try {
     const res = await fetch(`${apiBase}/api/ai_search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ question, max_results: 10 })
+      body: JSON.stringify(payload)
     })
     const data = await res.json().catch(() => ({}))
     aiResult.value = {
@@ -212,6 +329,7 @@ async function doAISearch() {
       sources: data.sources || [],
       cached: !!data.cached
     }
+    aiForm.question = ''
   } catch (e) {
     aiResult.value = { answer: '请求失败，请稍后重试。', sources: [], cached: false }
   } finally {
@@ -362,6 +480,112 @@ async function doAISearch() {
 
 .search-form.ai-form {
   flex-direction: column;
+}
+
+.ai-meta-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e6f4ff;
+  border-radius: 8px;
+  background: #fafdff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ai-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.ai-meta-field.full {
+  grid-column: 1 / -1;
+}
+
+.ai-meta-field input,
+.ai-meta-field textarea {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s;
+}
+
+.ai-meta-field input:focus,
+.ai-meta-field textarea:focus {
+  outline: none;
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.08);
+}
+
+.ai-depth-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-depth-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-depth-btn {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-depth-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
+}
+
+.ai-depth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-panel-hint {
+  font-size: 0.85rem;
+  color: #fa8c16;
+}
+
+.ai-meta-panel-enter-active,
+.ai-meta-panel-leave-active {
+  transition: all 0.2s ease;
+}
+
+.ai-meta-panel-enter-from,
+.ai-meta-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .search-input,

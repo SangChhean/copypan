@@ -73,7 +73,13 @@ class AISearchService:
 
         logger.info("AISearchService初始化完成")
 
-    def search(self, question: str, max_results: int = 30, depth: str = "general") -> Dict:
+    def search(
+        self,
+        question: str,
+        max_results: int = 30,
+        depth: str = "general",
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Dict:
         """
         AI智能搜索主函数
 
@@ -109,7 +115,8 @@ class AISearchService:
             logger.info(f"收到问题: {question}")
 
             # 2. 检查缓存（缓存key包含问题和深度参数）
-            cache_key = self._get_cache_key(question, depth)
+            normalized_metadata = self._normalize_metadata(metadata)
+            cache_key = self._get_cache_key(question, depth, normalized_metadata)
             cached_result = self._get_from_cache(cache_key)
             if cached_result:
                 logger.info("缓存命中")
@@ -161,7 +168,12 @@ class AISearchService:
             context_items = self._build_context_from_hits(search_results, context_size)
             if not context_items:
                 context_items = self._fallback_context_from_hits(search_results, context_size)
-            ai_response = self._generate_answer(question, context_items, context_size)
+            ai_response = self._generate_answer(
+                question,
+                context_items,
+                context_size,
+                normalized_metadata
+            )
             ai_time = (time.time() - ai_start) * 1000
 
             logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
@@ -221,7 +233,12 @@ class AISearchService:
                 "error": True
             }
 
-    def search_only(self, question: str, depth: str = "general") -> Dict:
+    def search_only(
+        self,
+        question: str,
+        depth: str = "general",
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Dict:
         """
         方案A - 第一步：仅执行ES搜索，返回引用来源，将完整结果存入Redis供generate使用。
         若缓存命中，直接返回完整结果（含 answer），前端无需再调 generate。
@@ -242,7 +259,8 @@ class AISearchService:
             depth = depth or "general"
 
             # 检查缓存（与一步接口共用）
-            cache_key = self._get_cache_key(question, depth)
+            normalized_metadata = self._normalize_metadata(metadata)
+            cache_key = self._get_cache_key(question, depth, normalized_metadata)
             cached = self._get_from_cache(cache_key)
             if cached:
                 logger.info("search_only 缓存命中")
@@ -281,6 +299,7 @@ class AISearchService:
                 "depth": depth,
                 "search_results": search_results,
                 "context_size": context_size,
+                "metadata": normalized_metadata,
             }
             self.redis.setex(
                 context_key,
@@ -299,7 +318,13 @@ class AISearchService:
             logger.error(f"search_only 失败: {e}", exc_info=True)
             return {"error": True, "message": str(e)}
 
-    def generate_only(self, question: str, search_id: str, max_results: int = 30) -> Dict:
+    def generate_only(
+        self,
+        question: str,
+        search_id: str,
+        max_results: int = 30,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Dict:
         """
         方案A - 第二步：从Redis获取上下文，调用Claude生成答案。
         若缓存命中，直接返回，不调用 Claude。
@@ -331,7 +356,13 @@ class AISearchService:
             context_size = ctx.get("context_size", 200)
 
             # 检查缓存
-            cache_key = self._get_cache_key(question or stored_question, stored_depth)
+            ctx_metadata = ctx.get("metadata") or {}
+            normalized_metadata = self._normalize_metadata(metadata or ctx_metadata)
+            cache_key = self._get_cache_key(
+                question or stored_question,
+                stored_depth,
+                normalized_metadata
+            )
             cached = self._get_from_cache(cache_key)
             if cached:
                 logger.info("generate_only 缓存命中")
@@ -366,7 +397,10 @@ class AISearchService:
             if not context_items:
                 context_items = self._fallback_context_from_hits(search_results, context_size)
             ai_response = self._generate_answer(
-                question or stored_question, context_items, context_size
+                question or stored_question,
+                context_items,
+                context_size,
+                normalized_metadata
             )
             ai_time = (time.time() - ai_start) * 1000
 
@@ -716,6 +750,7 @@ class AISearchService:
         question: str,
         context_items: List[Dict],
         context_size: int = 200,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> Dict:
         """
         调用Claude生成答案
@@ -746,7 +781,7 @@ class AISearchService:
 逐字引用（verbatim quotes）是最核心的要求，优先级高于所有其他要求。当任何要求与"逐字引用"冲突时，优先保证逐字引用。特别注意：大纲（壹、贰、叁）最容易被总结改写，必须严格遵守逐字引用原则。
 
 要求：
-1. 你的回答必须以原文的 verbatim quotes（逐字引用）为核心内容，所有实质性观点、论述和纲目都必须直接从原文提取，不可改写、总结、概括或重述。
+1. 你的回答必须以原文的 verbatim quotes（逐字引用）为核心内容，所有实质性观点、论述和纲目都必须直接从原文提取，不可改写、总结、概括或重述。verbatim quote（逐字引用）比例越高越好。
     【可以做的】：
     - 从原文中选择哪些句子
     - 调整句子的排列顺序
@@ -876,6 +911,10 @@ class AISearchService:
 
 18. 纲目的逻辑顺序应符合原文的神学论述逻辑，而非仅按原文出现的先后顺序排列。
 
+19. 纲目中涉及主观经历的条目数量占比约15%的篇幅；涉及实行应用的条目数量占比约15%的篇幅。
+
+20. 总体篇幅以A4纸3~4页为准。
+
 【完整格式示例】
 
     读经：创一1，26～28，二7，约一1，14，罗八2，29
@@ -904,10 +943,25 @@ class AISearchService:
     ✓ 序号格式正确（壹贰叁、一二三、123、abc）
     ✓ 缩进正确（第一级顶格，第二级1个Tab，第三级2个Tab，第四级3个Tab）
     ✓ 标点符号正确（有下级用冒号，无下级用句号）
-    ✓ 纲目之间无空行，紧密排列
+    ✓ 纲目之间无空行，紧密排列 
 """
 
-        user_prompt = f"""用户的问题：{question}
+        metadata_lines = []
+        if metadata:
+            label_map = {
+                "outline_topic": "纲目主题",
+                "burden_description": "负担说明",
+                "special_needs": "特殊需要",
+                "audience": "面对对象",
+            }
+            for key, label in label_map.items():
+                value = metadata.get(key)
+                if value:
+                    metadata_lines.append(f"{label}：{value}")
+        metadata_text = "\n".join(metadata_lines)
+        metadata_block = f"\n{metadata_text}" if metadata_text else ""
+
+        user_prompt = f"""用户的问题：{question}{metadata_block}
 
 参考内容：
 {context}
@@ -1038,10 +1092,32 @@ class AISearchService:
 
         return sources
 
-    def _get_cache_key(self, question: str, depth: str = "general") -> str:
+    def _normalize_metadata(self, metadata: Optional[Dict[str, str]]) -> Dict[str, str]:
+        """去除空白并统一元数据"""
+        if not metadata:
+            return {}
+        normalized = {}
+        for key, value in metadata.items():
+            if value is None:
+                continue
+            text = str(value).strip()
+            if text:
+                normalized[key] = text
+        return normalized
+
+    def _get_cache_key(
+        self,
+        question: str,
+        depth: str = "general",
+        metadata: Optional[Dict[str, str]] = None
+    ) -> str:
         """生成缓存key（包含问题和深度参数）"""
-        # 使用MD5哈希问题和深度生成唯一key
+        # 使用MD5哈希问题、深度及元数据生成唯一key
         cache_content = f"{question}:{depth}"
+        if metadata:
+            meta_items = sorted(metadata.items())
+            meta_str = "|".join(f"{k}={v}" for k, v in meta_items)
+            cache_content = f"{cache_content}:{meta_str}"
         question_hash = hashlib.md5(cache_content.encode()).hexdigest()
         return f"ai_search:{question_hash}"
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, reactive } from "vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined } from "@ant-design/icons-vue";
@@ -102,6 +102,18 @@ const showAISources = ref(false); // 是否显示引用来源
 const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 
+const aiPanelVisible = ref(false);
+const aiForm = reactive({
+  outlineTopic: "",
+  burdenDescription: "",
+  specialNeeds: "",
+  audience: ""
+});
+const aiFormValid = computed(() => {
+  const outline = aiForm.outlineTopic.trim().length > 0;
+  return outline;
+});
+
 // AI 回答复制
 const aiAnswerCopied = ref(false);
 const copyAiAnswer = async () => {
@@ -133,6 +145,21 @@ const aiAnswerFormatted = computed(() => {
   const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t]|贰[、，\u3000\t]|(?:叁|参)[、，\u3000\t]|肆[、，\u3000\t]|伍[、，\u3000\t]|陆[、，\u3000\t]|柒[、，\u3000\t]|捌[、，\u3000\t]|玖[、，\u3000\t]|拾[、，\u3000\t])[^<]*?)(?=<br>|$)/g;
   const s = toBold.replace(big, "$1$2<strong>$3</strong>");
   return s + afterRef;
+});
+
+const toggleAiPanel = () => {
+  aiPanelVisible.value = !aiPanelVisible.value;
+  if (aiPanelVisible.value) {
+    inputVar.value = "";
+    status.value = "";
+  }
+};
+
+const buildAiMetadata = () => ({
+  outline_topic: aiForm.outlineTopic.trim(),
+  burden_description: aiForm.burdenDescription.trim(),
+  special_needs: aiForm.specialNeeds.trim(),
+  audience: aiForm.audience.trim(),
 });
 
 const onSearch = (inp) => {
@@ -264,14 +291,19 @@ const addTag = (val) => {
 
 // AI 问答功能（方案A：分步调用）
 const onAISearch = async () => {
-  let input = inputVar.value.trim();
+  let question = aiForm.outlineTopic.trim();
   
-  if (input == "") {
-    status.value = "error";
-    placeholder.value = "搜索内容不能为空";
+  if (!question) {
+    tip("请至少填写纲目主题");
     return;
   }
   
+  if (!aiFormValid.value) {
+    tip("请至少填写纲目主题");
+    return;
+  }
+  
+  const metadataPayload = buildAiMetadata();
   loadingAI.value = true;
   showInfo.value = 6;
   aiResult.value = null;
@@ -282,8 +314,9 @@ const onAISearch = async () => {
   try {
     // 第一步：仅检索，快速返回引用来源
     const searchRes = await axios.post("/api/ai_search/search", {
-      question: input,
-      depth: aiDepth.value
+      question,
+      depth: aiDepth.value,
+      ...metadataPayload
     });
     
     const data = searchRes.data;
@@ -315,9 +348,10 @@ const onAISearch = async () => {
     
     // 第二步：生成答案（耗时 20-30 秒）
     const generateRes = await axios.post("/api/ai_search/generate", {
-      question: input,
+      question,
       search_id,
-      max_results: 50
+      max_results: 50,
+      ...metadataPayload
     });
     
     aiResult.value = generateRes.data;
@@ -343,7 +377,16 @@ const onAISearch = async () => {
   <div class="search-box">
     <div class="search-bar">
       <div class="search">
-        <a-input-search :disabled="inputDis" v-model:value="inputVar" :status="status" :placeholder="placeholder" enter-button @search="onSearch" @change="onChange" allowClear>
+        <a-input-search
+          :disabled="inputDis || aiPanelVisible"
+          v-model:value="inputVar"
+          :status="status"
+          :placeholder="aiPanelVisible ? 'AI纲目模式：问题将根据纲目主题生成' : placeholder"
+          enter-button
+          @search="onSearch"
+          @change="onChange"
+          allowClear
+        >
           <template #addonBefore>
             <a-select v-model:value="selVar1" :showArrow="false" v-if="selectedIndex[0] == '0'" :style="{ width: '60px' }" :bordered="false">
               <a-select-option v-for="item in showCatsOne" :value="item.val">{{ item.lab }}</a-select-option>
@@ -359,23 +402,77 @@ const onAISearch = async () => {
         <a-radio-group v-model:value="search_cat" button-style="solid">
           <a-radio-button v-for="item in plainOptions" :value="item.val">{{ item.lab }}</a-radio-button>
         </a-radio-group>
-        <a-radio-group 
-          v-model:value="aiDepth" 
-          button-style="solid" 
-          style="margin-left: 10px;"
-        >
-          <a-radio-button value="general">一般</a-radio-button>
-          <a-radio-button value="deep">深度</a-radio-button>
-        </a-radio-group>
         <a-button 
           type="primary" 
           :loading="loadingAI" 
-          @click="onAISearch" 
+          @click="toggleAiPanel" 
           style="margin-left: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
         >
-          AI问答
+          {{ aiPanelVisible ? "收起AI纲目面板" : "AI纲目制作面板" }}
         </a-button>
       </div>
+      <transition name="ai-meta-panel">
+        <div v-if="aiPanelVisible" class="ai-meta-panel">
+          <div class="ai-meta-grid">
+            <label class="ai-meta-field">
+              <span>纲目主题*（必填项目）</span>
+              <input
+                type="text"
+                v-model="aiForm.outlineTopic"
+                :disabled="loadingAI"
+                placeholder="纲目的题目"
+              />
+            </label>
+            <label class="ai-meta-field">
+              <span>面对对象</span>
+              <input
+                type="text"
+                v-model="aiForm.audience"
+                :disabled="loadingAI"
+                placeholder="例如：初信者、大专学生..."
+              />
+            </label>
+            <label class="ai-meta-field full">
+              <span>负担说明</span>
+              <textarea
+                rows="2"
+                v-model="aiForm.burdenDescription"
+                :disabled="loadingAI"
+                placeholder="简要说明纲目的主要负担"
+              ></textarea>
+            </label>
+            <label class="ai-meta-field full">
+              <span>特殊需要</span>
+              <textarea
+                rows="2"
+                v-model="aiForm.specialNeeds"
+                :disabled="loadingAI"
+                placeholder="列出需要特别注意的额外要求"
+              ></textarea>
+            </label>
+          </div>
+          <div class="ai-panel-actions">
+            <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题后再开始制作</div>
+            <div class="ai-panel-cta">
+              <div class="ai-depth-inline">
+                <span>模式选择</span>
+                <a-radio-group v-model:value="aiDepth" button-style="solid">
+                  <a-radio-button value="general">普通</a-radio-button>
+                  <a-radio-button value="deep">深度</a-radio-button>
+                </a-radio-group>
+              </div>
+              <a-button
+                type="primary"
+                :loading="loadingAI"
+                :disabled="loadingAI || !aiFormValid"
+                @click="onAISearch"
+              >
+                {{ loadingAI ? "加载中…" : "开始AI纲目制作" }}
+              </a-button>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
   </div>
   <a-divider style="margin: 30px 0 10px 0"></a-divider>
@@ -672,6 +769,106 @@ const onAISearch = async () => {
 }
 .model {
   margin-top: 5px;
+}
+
+.ai-meta-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e6f4ff;
+  background: #fafdff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.08);
+}
+
+.ai-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ai-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.ai-meta-field > span {
+  font-weight: 600;
+  color: #222;
+}
+
+.ai-meta-field.full {
+  grid-column: 1 / -1;
+}
+
+.ai-meta-field input,
+.ai-meta-field textarea {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s;
+}
+
+.ai-meta-field input:focus,
+.ai-meta-field textarea:focus {
+  outline: none;
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+}
+
+.ai-panel-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-panel-hint {
+  font-size: 13px;
+  color: #fa8c16;
+}
+
+.ai-panel-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.ai-panel-cta :deep(.ant-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 20px;
+}
+
+.ai-depth-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #555;
+}
+
+.ai-meta-panel-enter-active,
+.ai-meta-panel-leave-active {
+  transition: all 0.2s ease;
+}
+
+.ai-meta-panel-enter-from,
+.ai-meta-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .text_tag {

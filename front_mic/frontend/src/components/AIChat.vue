@@ -40,35 +40,128 @@
       </div>
     </div>
 
-    <div class="ai-chat-input-wrap">
+    <div class="ai-chat-input-wrap" @click="expandForm">
       <textarea
-        v-model="inputText"
+        v-model="form.question"
         class="ai-chat-input"
-        placeholder="输入你的问题…"
+        placeholder="点击输入问题，展开下方栏位后补充纲目主题等信息…"
         rows="2"
         :disabled="loading"
+        @focus="expandForm"
         @keydown.enter.exact.prevent="send"
       />
-      <button
-        class="ai-chat-send"
-        :disabled="loading || !inputText.trim()"
-        @click="send"
-      >
-        {{ loading ? '发送中…' : '发送' }}
-      </button>
     </div>
+
+    <transition name="ai-chat-panel">
+      <div v-if="showFormDetails" class="ai-chat-details-panel">
+        <div class="ai-chat-details-grid">
+          <label class="ai-chat-field">
+            <span>纲目主题</span>
+            <input
+              v-model="form.outlineTopic"
+              type="text"
+              placeholder="本次纲目的核心题目"
+              :disabled="loading"
+            />
+          </label>
+          <label class="ai-chat-field">
+            <span>面对对象</span>
+            <input
+              v-model="form.audience"
+              type="text"
+              placeholder="例如：青职弟兄、初信者、小排服事者..."
+              :disabled="loading"
+            />
+          </label>
+          <label class="ai-chat-field full">
+            <span>负担说明</span>
+            <textarea
+              v-model="form.burdenDescription"
+              rows="2"
+              placeholder="用简短段落说明本次聚会或分享的负担"
+              :disabled="loading"
+            />
+          </label>
+          <label class="ai-chat-field full">
+            <span>特殊需要</span>
+            <textarea
+              v-model="form.specialNeeds"
+              rows="2"
+              placeholder="列出需要 Claude 特别注意的额外要求"
+              :disabled="loading"
+            />
+          </label>
+        </div>
+
+        <div class="ai-chat-depth-select">
+          <span>检索深度</span>
+          <div class="ai-chat-depth-buttons">
+            <button
+              type="button"
+              :class="['ai-chat-depth-btn', { active: form.depth === 'general' }]"
+              :disabled="loading"
+              @click="form.depth = 'general'"
+            >
+              一般（快速）
+            </button>
+            <button
+              type="button"
+              :class="['ai-chat-depth-btn', { active: form.depth === 'deep' }]"
+              :disabled="loading"
+              @click="form.depth = 'deep'"
+            >
+              深度（更全面）
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-chat-panel-actions">
+          <div v-if="!formValid" class="ai-chat-hint">
+            请填写【问题】及四个栏位后再发送。
+          </div>
+          <button
+            class="ai-chat-send"
+            :disabled="loading || !formValid"
+            @click="send"
+          >
+            {{ loading ? '发送中…' : '发送给 Claude' }}
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick } from 'vue'
 
 const messagesRef = ref(null)
-const inputText = ref('')
 const loading = ref(false)
 const messages = ref([])
+const showFormDetails = ref(false)
+const form = reactive({
+  question: '',
+  outlineTopic: '',
+  burdenDescription: '',
+  specialNeeds: '',
+  audience: '',
+  depth: 'general'
+})
 
 const apiBase = import.meta.env?.VITE_API_BASE || ''
+
+const formValid = computed(() => {
+  const questionFilled = form.question.trim().length > 0
+  const outlineFilled = form.outlineTopic.trim().length > 0
+  const burdenFilled = form.burdenDescription.trim().length > 0
+  const needsFilled = form.specialNeeds.trim().length > 0
+  const audienceFilled = form.audience.trim().length > 0
+  return questionFilled && outlineFilled && burdenFilled && needsFilled && audienceFilled
+})
+
+function expandForm() {
+  showFormDetails.value = true
+}
 
 function formatContent(text) {
   if (!text) return ''
@@ -79,12 +172,35 @@ function formatContent(text) {
     .replace(/\n/g, '<br>')
 }
 
-async function send() {
-  const question = inputText.value?.trim()
-  if (!question || loading.value) return
+function buildUserPreview() {
+  return [
+    `【问题】${form.question.trim()}`,
+    `【纲目主题】${form.outlineTopic.trim()}`,
+    `【负担说明】${form.burdenDescription.trim()}`,
+    `【特殊需要】${form.specialNeeds.trim()}`,
+    `【面对对象】${form.audience.trim()}`,
+    `【检索深度】${form.depth === 'deep' ? '深度' : '一般'}`
+  ].join('\n')
+}
 
-  messages.value.push({ role: 'user', content: question })
-  inputText.value = ''
+async function send() {
+  if (loading.value || !formValid.value) {
+    showFormDetails.value = true
+    return
+  }
+
+  const question = form.question.trim()
+  const payload = {
+    question,
+    max_results: 8,
+    depth: form.depth,
+    outline_topic: form.outlineTopic.trim(),
+    burden_description: form.burdenDescription.trim(),
+    special_needs: form.specialNeeds.trim(),
+    audience: form.audience.trim()
+  }
+
+  messages.value.push({ role: 'user', content: buildUserPreview() })
   loading.value = true
 
   try {
@@ -92,7 +208,7 @@ async function send() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ question, max_results: 8 })
+      body: JSON.stringify(payload)
     })
     const data = await res.json().catch(() => ({}))
     const answer = data.answer || '抱歉，暂无回答。'
@@ -104,6 +220,7 @@ async function send() {
       sources,
       cached
     })
+    form.question = ''
   } catch (e) {
     messages.value.push({
       role: 'assistant',
@@ -325,5 +442,108 @@ async function send() {
 .ai-chat-send:disabled {
   background: #bfbfbf;
   cursor: not-allowed;
+}
+
+.ai-chat-details-panel {
+  background: #fff;
+  border-top: 1px solid #eee;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-chat-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ai-chat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.ai-chat-field.full {
+  grid-column: 1 / -1;
+}
+
+.ai-chat-field input,
+.ai-chat-field textarea {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s;
+}
+
+.ai-chat-field input:focus,
+.ai-chat-field textarea:focus {
+  outline: none;
+  border-color: #1677ff;
+}
+
+.ai-chat-depth-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-chat-depth-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-chat-depth-btn {
+  border: 1px solid #d9d9d9;
+  background: #f5f5f5;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-chat-depth-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
+}
+
+.ai-chat-depth-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ai-chat-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-chat-hint {
+  color: #fa8c16;
+  font-size: 0.85rem;
+}
+
+.ai-chat-panel-enter-active,
+.ai-chat-panel-leave-active {
+  transition: all 0.2s ease;
+}
+
+.ai-chat-panel-enter-from,
+.ai-chat-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

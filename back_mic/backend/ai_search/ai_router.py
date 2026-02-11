@@ -16,11 +16,30 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 
+def _extract_metadata(payload) -> dict:
+    """从请求中提取额外提示信息"""
+    fields = {
+        "outline_topic": getattr(payload, "outline_topic", None),
+        "burden_description": getattr(payload, "burden_description", None),
+        "special_needs": getattr(payload, "special_needs", None),
+        "audience": getattr(payload, "audience", None),
+    }
+    return {
+        key: value.strip()
+        for key, value in fields.items()
+        if isinstance(value, str) and value.strip()
+    }
+
+
 class SearchRequest(BaseModel):
     """AI搜索请求模型"""
     question: str = Field(..., min_length=1, max_length=500, description="用户问题")
     max_results: Optional[int] = Field(30, ge=1, le=50, description="最多返回结果数")
     depth: Optional[str] = Field("general", description="搜索深度：general(一般)或deep(深度)")
+    outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题")
+    burden_description: Optional[str] = Field(None, max_length=300, description="负担说明")
+    special_needs: Optional[str] = Field(None, max_length=300, description="特殊需要")
+    audience: Optional[str] = Field(None, max_length=200, description="面对对象")
 
     class Config:
         json_schema_extra = {
@@ -36,6 +55,10 @@ class SearchOnlyRequest(BaseModel):
     """方案A - 第一步：仅搜索"""
     question: str = Field(..., min_length=1, max_length=500)
     depth: Optional[str] = Field("general", description="general 或 deep")
+    outline_topic: Optional[str] = Field(None, max_length=200)
+    burden_description: Optional[str] = Field(None, max_length=300)
+    special_needs: Optional[str] = Field(None, max_length=300)
+    audience: Optional[str] = Field(None, max_length=200)
 
 
 class GenerateOnlyRequest(BaseModel):
@@ -43,6 +66,10 @@ class GenerateOnlyRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500)
     search_id: str = Field(..., description="第一步返回的 search_id")
     max_results: Optional[int] = Field(30, ge=1, le=50)
+    outline_topic: Optional[str] = Field(None, max_length=200)
+    burden_description: Optional[str] = Field(None, max_length=300)
+    special_needs: Optional[str] = Field(None, max_length=300)
+    audience: Optional[str] = Field(None, max_length=200)
 
 
 class SearchResponse(BaseModel):
@@ -66,7 +93,12 @@ async def ai_search_step1(request: SearchOnlyRequest):
     返回 search_id 供第二步使用。
     """
     try:
-        result = ai_service.search_only(question=request.question, depth=request.depth or "general")
+        metadata = _extract_metadata(request)
+        result = ai_service.search_only(
+            question=request.question,
+            depth=request.depth or "general",
+            metadata=metadata
+        )
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result.get("message", "搜索失败"))
         return result
@@ -84,10 +116,12 @@ async def ai_search_step2(request: GenerateOnlyRequest):
     search_id 有效期为 5 分钟。
     """
     try:
+        metadata = _extract_metadata(request)
         result = ai_service.generate_only(
             question=request.question,
             search_id=request.search_id,
-            max_results=request.max_results or 30
+            max_results=request.max_results or 30,
+            metadata=metadata
         )
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result.get("answer", "生成失败"))
@@ -159,10 +193,12 @@ async def ai_search(request: SearchRequest):
         logger.info(f"收到AI搜索请求: {request.question[:50]}...")
 
         # 调用服务层
+        metadata = _extract_metadata(request)
         result = ai_service.search(
             question=request.question,
             max_results=request.max_results,
-            depth=request.depth
+            depth=request.depth,
+            metadata=metadata
         )
 
         # 检查是否有错误
