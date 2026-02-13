@@ -52,14 +52,50 @@ except Exception as e:
     claude_client = None
 
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
-INDEXES_CONFIG = {
-    "cwwl": {"weight": 1.5},    # 李常受文集
-    "cwwn": {"weight": 1.3},    # 倪柝声文集
-    "life": {"weight": 1.3},    # 生命读经
-    "map_note": {"weight": 1.5},  # 注解
-    "bib": {"weight": 1.0},     # 圣经
-    "others": {"weight": 1.0},  # 其他
+# 按纲目性质（special_needs）选择不同权重
+INDEXES_CONFIG_BY_NATURE = {
+    "高真理浓度": {
+        "map_note": {"weight": 1.5},
+        "map_7feasts": {"weight": 1.3},
+        "map_dictionary": {"weight": 1.3},
+        "map_pano": {"weight": 1.3},
+        "cwwl": {"weight": 1.3},
+        "cwwn": {"weight": 1.3},
+        "life": {"weight": 1.3},
+        "bib": {"weight": 1.0},
+        "others": {"weight": 1.0},
+    },
+    "高生命浓度": {
+        "map_note": {"weight": 1.5},
+        "map_7feasts": {"weight": 1.3},
+        "map_dictionary": {"weight": 1.3},
+        "map_pano": {"weight": 1.3},
+        "cwwl": {"weight": 1.3},
+        "cwwn": {"weight": 1.5},
+        "life": {"weight": 1.5},
+        "bib": {"weight": 1.0},
+        "others": {"weight": 1.0},
+    },
+    "重实行应用": {
+        "map_note": {"weight": 1.5},
+        "map_7feasts": {"weight": 1.5},
+        "map_dictionary": {"weight": 1.5},
+        "map_pano": {"weight": 1.5},
+        "cwwl": {"weight": 1.5},
+        "cwwn": {"weight": 1.3},
+        "life": {"weight": 1.3},
+        "bib": {"weight": 1.0},
+        "others": {"weight": 1.0},
+    },
 }
+# 默认使用高真理浓度
+INDEXES_CONFIG = INDEXES_CONFIG_BY_NATURE["高真理浓度"]
+
+# cwwl 额外 ×1.3 的年份/范围
+_CWWL_EXTRA_WEIGHT_PATTERNS_实行 = (  # 重实行应用：85–93，不含 94–97
+    "cwwl_1985", "cwwl_1986", "cwwl_1987", "cwwl_1988", "cwwl_1989",
+    "cwwl_1990", "cwwl_1991-92", "cwwl_1993",
+)
 
 
 class AISearchService:
@@ -142,7 +178,8 @@ class AISearchService:
             # 根据深度参数决定上下文数量：一般50条，深度200条
             context_size = 50 if depth == "general" else 200
             fetch_size = context_size  # 直接使用设定的上下文数量
-            search_results = self._multi_index_search(question, fetch_size)
+            outline_nature = (normalized_metadata or {}).get("special_needs", "")
+            search_results = self._multi_index_search(question, fetch_size, outline_nature)
             search_time = (time.time() - search_start) * 1000
 
             if not search_results:
@@ -184,6 +221,7 @@ class AISearchService:
                 "sources": self._extract_sources_from_context(context_items[:50]),
                 "cached": False,
                 "tokens": ai_response.get("tokens"),
+                "claude_payload": ai_response.get("claude_payload"),
                 "search_time": round(search_time, 0),
                 "ai_time": round(ai_time, 0),
                 "total_time": round((time.time() - start_time) * 1000, 0),
@@ -280,7 +318,8 @@ class AISearchService:
 
             context_size = 50 if depth == "general" else 200
             search_start = time.time()
-            search_results = self._multi_index_search(question, context_size)
+            outline_nature = (normalized_metadata or {}).get("special_needs", "")
+            search_results = self._multi_index_search(question, context_size, outline_nature)
             search_time = (time.time() - search_start) * 1000
 
             if not search_results:
@@ -412,6 +451,7 @@ class AISearchService:
                 "sources": sources,
                 "cached": False,
                 "tokens": ai_response.get("tokens"),
+                "claude_payload": ai_response.get("claude_payload"),
                 "search_time": 0,
                 "ai_time": round(ai_time, 0),
                 "total_time": round(total_time, 0),
@@ -471,56 +511,71 @@ class AISearchService:
 
         return {"valid": True, "message": ""}
 
-    def _multi_index_search(self, query: str, size: int) -> List[Dict]:
+    def _multi_index_search(
+        self, query: str, size: int, outline_nature: str = ""
+    ) -> List[Dict]:
         """
         多索引搜索并按权重排序
 
         Args:
             query: 搜索关键词
             size: 返回结果数量
+            outline_nature: 纲目性质（高真理浓度/高生命浓度/重实行应用），影响各索引权重
 
         Returns:
             加权排序后的搜索结果列表
         """
+        indexes_config = INDEXES_CONFIG_BY_NATURE.get(
+            outline_nature, INDEXES_CONFIG_BY_NATURE["高真理浓度"]
+        )
         all_results = []
 
-        for index_name, config in INDEXES_CONFIG.items():
+        for index_name, config in indexes_config.items():
             weight = config["weight"]
             try:
-                # 构建搜索查询
-                search_body = {
-                    "query": {
-                        "bool": {
-                            "should": [
-                                # 精确短语匹配（最高权重）；项目 mapping 主字段为 text，无 content
-                                {
-                                    "match_phrase": {
-                                        "text": {
-                                            "query": query,
-                                            "boost": 2.5
-                                        }
+                if index_name in self._MAP_LIKE_INDICES:
+                    # map_note/map_7feasts/map_dictionary：检索 msg 中 text 和 type，用 inner_hits 定位
+                    search_body = {
+                        "query": {
+                            "nested": {
+                                "path": "msg",
+                                "query": {
+                                    "bool": {
+                                        "should": [
+                                            {"match_phrase": {"msg.text": {"query": query, "boost": 2.5}}},
+                                            {"match": {"msg.text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}},
+                                            {"match": {"msg.type": {"query": query, "boost": 1.5}}}
+                                        ],
+                                        "minimum_should_match": 1,
+                                        "filter": [
+                                            {"terms": {"msg.type": list(self._MAP_NOTE_MSG_TYPES)}}
+                                        ]
                                     }
                                 },
-                                # 单字段匹配（仅 text，与 index mapping 一致）
-                                {
-                                    "match": {
-                                        "text": {
-                                            "query": query,
-                                            "fuzziness": "AUTO",
-                                            "boost": 2.0
-                                        }
-                                    }
+                                "inner_hits": {
+                                    "name": "matched_msg",
+                                    "size": 50
                                 }
-                            ],
-                            "minimum_should_match": 1
-                        }
-                    },
-                    "size": int(size * weight),  # 每索引取数
-                    "_source": [
-                        "id", "type", "book", "chapter", "verse",
-                        "text", "title"
-                    ]
-                }
+                            }
+                        },
+                        "size": int(size * weight),
+                        "_source": ["id", "text", "msg", "source", "sn", "bookname", "title", "bookname2"]
+                    }
+                else:
+                    # 其他索引：查顶层 text
+                    search_body = {
+                        "query": {
+                            "bool": {
+                                "should": [
+                                    {"match_phrase": {"text": {"query": query, "boost": 2.5}}},
+                                    {"match": {"text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}}
+                                ],
+                                "minimum_should_match": 1
+                            }
+                        },
+                        "size": int(size * weight),
+                        "_source": ["id", "type", "book", "chapter", "verse", "text", "title"]
+                    }
 
                 # 执行搜索（使用项目统一 es，忽略不可用索引）
                 response = self.es.search(
@@ -535,11 +590,17 @@ class AISearchService:
                 # 为每条结果添加加权分数
                 for hit in hits:
                     score = hit['_score'] * weight
-                    # cwwl 中 id 含 cwwl_1994-1997 的（该年份文集很重要）再加权 1.2
+                    # cwwl 特殊年份再加权 1.3
                     if index_name == "cwwl":
                         doc_id = (hit.get("_source") or {}).get("id") or hit.get("_id") or ""
-                        if "cwwl_1994-1997" in doc_id:
-                            score *= 1.2
+                        if outline_nature == "重实行应用":
+                            # 重实行应用：1985-1993 年份文集加权（94-97 不加权）
+                            if any(p in doc_id for p in _CWWL_EXTRA_WEIGHT_PATTERNS_实行):
+                                score *= 1.3
+                        else:
+                            # 高真理浓度/高生命浓度：仅 1994-1997
+                            if "cwwl_1994-1997" in doc_id:
+                                score *= 1.3
                     hit['_weighted_score'] = score
                     hit['_index_name'] = index_name
                     all_results.append(hit)
@@ -569,6 +630,95 @@ class AISearchService:
     # 按 type 分类：取整节 / 只取该段 / 不取
     _HEADING_TYPES = frozenset({"heading", "heading_1", "heading_2", "heading_3", "heading_4"})
     _SINGLE_PARAGRAPH_TYPES = frozenset({"text", "ot1", "ot2", "ot3", "ot4"})
+    # map_note / map_7feasts / map_dictionary：nested msg 结构，参与检索的纲目层级
+    _MAP_NOTE_MSG_TYPES = frozenset({"ot1", "ot2", "ot3", "ot4"})
+    _MAP_LIKE_INDICES = frozenset({"map_note", "map_7feasts", "map_dictionary", "map_pano"})
+
+    def _get_map_note_section_range(
+        self, msg: List[Dict], start_idx: int
+    ) -> tuple:
+        """
+        根据命中的 msg 项索引，返回该小节在 msg 中的 (start, end) 范围。
+        ot1: 到下一个 ot1 之前；ot2: 到下一个 ot2/ot1 或非 ot 之前；ot3/ot4 同理。
+        """
+        if start_idx >= len(msg):
+            return (start_idx, start_idx)
+        item_type = msg[start_idx].get("type", "")
+        if item_type not in self._MAP_NOTE_MSG_TYPES:
+            return (start_idx, start_idx + 1)
+        if item_type == "ot1":
+            stop_at = {"ot1"}
+        elif item_type == "ot2":
+            stop_at = {"ot1", "ot2"}
+        elif item_type == "ot3":
+            stop_at = {"ot1", "ot2", "ot3"}
+        else:  # ot4
+            stop_at = {"ot1", "ot2", "ot3", "ot4"}
+        end_idx = start_idx + 1
+        while end_idx < len(msg):
+            t = msg[end_idx].get("type", "")
+            if t in stop_at or t not in self._MAP_NOTE_MSG_TYPES:
+                break
+            end_idx += 1
+        return (start_idx, end_idx)
+
+    def _extract_map_note_sections_from_inner_hits(
+        self, source: Dict, hit: Dict
+    ) -> str:
+        """
+        从 inner_hits 获取命中的 msg 索引，按小节提取并拼接，多个 ot1 小节分别提取后拼接。
+        若无 inner_hits 则回退：拼接所有 ot1~ot4 的 text。
+        """
+        msg_list = source.get("msg") or []
+        if not msg_list:
+            return source.get("text", "")
+
+        inner = hit.get("inner_hits", {}).get("matched_msg", {})
+        inner_hits_list = inner.get("hits", {}).get("hits", [])
+
+        if not inner_hits_list:
+            # 无 inner_hits，回退：全部 ot1~ot4
+            parts = []
+            for m in msg_list:
+                if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
+                    parts.append(m["text"])
+            return "\n".join(parts)
+
+        matched_indices = set()
+        for ih in inner_hits_list:
+            nested = ih.get("_nested", {})
+            offset = nested.get("offset")
+            if isinstance(offset, int) and 0 <= offset < len(msg_list):
+                matched_indices.add(offset)
+
+        if not matched_indices:
+            parts = []
+            for m in msg_list:
+                if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
+                    parts.append(m["text"])
+            return "\n".join(parts)
+
+        ranges = []
+        for idx in matched_indices:
+            s, e = self._get_map_note_section_range(msg_list, idx)
+            ranges.append((s, e))
+
+        ranges.sort(key=lambda x: x[0])
+        merged = []
+        for s, e in ranges:
+            if merged and s <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+            else:
+                merged.append((s, e))
+
+        parts = []
+        for s, e in merged:
+            for i in range(s, e):
+                m = msg_list[i]
+                if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
+                    parts.append(m["text"])
+
+        return "\n".join(parts) if parts else source.get("text", "")
 
     def _parse_doc_id(self, doc_id: str) -> tuple:
         """解析文档 id，提取 message 前缀和段号。如 others_1_1-4 -> (others_1_1-, 4)"""
@@ -659,6 +809,21 @@ class AISearchService:
             if doc_id in included_ids:
                 continue
 
+            # map_note / map_7feasts / map_dictionary：按 inner_hits 定位命中的 msg 项，提取对应小节
+            if index_name in self._MAP_LIKE_INDICES:
+                content = self._extract_map_note_sections_from_inner_hits(source, hit)
+                if not content:
+                    continue
+                ref = self._get_map_note_reference_from_hit(source, hit, index_name)
+                context_items.append({
+                    "reference": ref,
+                    "content": content,
+                    "source_type": self._get_source_type(index_name),
+                    "score": score,
+                })
+                included_ids.add(doc_id)
+                continue
+
             if dtype in self._HEADING_TYPES:
                 prefix, seg = self._parse_doc_id(doc_id)
                 if not prefix:
@@ -714,13 +879,19 @@ class AISearchService:
         items = []
         for hit in search_results[:context_size]:
             source = hit.get("_source", {})
-            text = source.get("text", "")
+            index_name = hit.get("_index_name", hit.get("_index", ""))
+            if index_name in self._MAP_LIKE_INDICES:
+                # map 类：用 inner_hits 按小节提取；若无则回退为全部 ot1~ot4
+                text = self._extract_map_note_sections_from_inner_hits(source, hit)
+            else:
+                text = source.get("text", "")
             if not text:
                 continue
             if len(text) > 300:
                 text = text[:300] + "..."
+            ref = self._get_map_note_reference_from_hit(source, hit, index_name) if index_name in self._MAP_LIKE_INDICES else self._format_reference(source)
             items.append({
-                "reference": self._format_reference(source),
+                "reference": ref,
                 "content": text,
                 "source_type": self._get_source_type(
                     hit.get("_index_name", hit.get("_index", ""))
@@ -896,19 +1067,14 @@ class AISearchService:
 16. 请不要写 python 代码来生成纲目，不要生成 txt 或 docx，而是直接生成纲目。
 
 17. 在回答末尾，另起段落列出"参考与参读资料"，5～10条，每条一行。若同一书有多篇，必须分开列出，不可合并。参考资料格式规则：
-    - 文集类：倪柝声/李常受文集[年份][册数]，[书名/主题]，第[X]章
-      示例：李常受文集一九九四至一九九七年第二册，神人，第四章
-    - 生命读经类：[书卷名]生命读经，第[X]篇
-      示例：启示录生命读经，第五十九篇
-    - 专书类：[书名]，第[X]章
-      示例：属灵的实际，第四章
-    
-    输出格式：
     参考与参读资料：
     1. 李常受文集一九九四至一九九七年第二册，神人，第四章
     2. 启示录生命读经，第五十九篇
-    3. 属灵的实际，第四章
-
+    3. 恢复本圣经，创一1，注1
+    4. 主恢复真理的词典，爱，3a　职事信息的鸟瞰
+    5. 2025年秋季长老训练，第六篇
+    6. ......
+    
 18. 纲目的逻辑顺序应符合原文的神学论述逻辑，而非仅按原文出现的先后顺序排列。
 
 19. 纲目中涉及主观经历的条目数量占比约15%的篇幅；涉及实行应用的条目数量占比约15%的篇幅。
@@ -933,7 +1099,7 @@ class AISearchService:
     参考与参读资料：
     1. 约翰福音生命读经，第一篇
     2. 约翰福音生命读经，第二篇
-    3. 生命的经历，第五篇
+    3. 
 
 【最后检查清单】
     生成纲目后，请确认：
@@ -951,7 +1117,7 @@ class AISearchService:
             label_map = {
                 "outline_topic": "纲目主题",
                 "burden_description": "负担说明",
-                "special_needs": "特殊需要",
+                "special_needs": "纲目性质",
                 "audience": "面对对象",
             }
             for key, label in label_map.items():
@@ -967,6 +1133,11 @@ class AISearchService:
 {context}
 
 请基于以上内容回答问题："""
+
+        claude_payload = {
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+        }
 
         # 调用Claude API
         try:
@@ -996,7 +1167,8 @@ class AISearchService:
 
             return {
                 "answer": answer,
-                "tokens": tokens
+                "tokens": tokens,
+                "claude_payload": claude_payload
             }
 
         except anthropic.RateLimitError as e:
@@ -1014,6 +1186,70 @@ class AISearchService:
         except Exception as e:
             logger.error(f"生成答案失败: {e}")
             raise
+
+    def _get_map_note_reference_from_hit(self, source: Dict, hit: Dict, index_name: str = "") -> str:
+        """
+        map 类索引的引用：去掉括号，只保留文本。
+        - map_note：msg 项内有 source，优先从命中的 msg 项取
+        - map_7feasts：用文档外层 source
+        - map_dictionary：用文档外层 text
+        """
+        def _strip_parens(t: str) -> str:
+            t = (t or "").strip()
+            for left, right in [("（", "）"), ("(", ")")]:
+                if t.startswith(left) and t.endswith(right):
+                    t = t[len(left):-len(right)].strip()
+            return t
+
+        # map_dictionary：引用 = 第一个bookname + ", " + title + ", " + 第二个bookname（从 msg 中取）
+        if index_name == "map_dictionary":
+            msg_list = source.get("msg") or []
+            booknames = [m.get("text") or "" for m in msg_list if (m.get("type") or "") == "bookname"]
+            titles = [m.get("text") or "" for m in msg_list if (m.get("type") or "") == "title"]
+            b1 = booknames[0].strip() if len(booknames) >= 1 else ""
+            t = titles[0].strip() if titles else ""
+            b2 = booknames[1].strip() if len(booknames) >= 2 else ""
+            parts = [p for p in [b1, t, b2] if p]
+            if parts:
+                return "，".join(parts)
+            s = _strip_parens(source.get("text") or "")
+            if s:
+                return s
+            return _strip_parens(source.get("id") or source.get("_id") or "") or "未知来源"
+
+        # map_pano：清明上河图，+ 外层 text
+        if index_name == "map_pano":
+            t = (source.get("text") or "").strip()
+            if t:
+                return f"清明上河图，{t}"
+            s = _strip_parens(source.get("source") or "")
+            if s:
+                return f"清明上河图，{s}"
+            return _strip_parens(source.get("id") or source.get("_id") or "") or "清明上河图"
+
+        # map_7feasts：msg 内无 source，用文档级 source
+        if index_name == "map_7feasts":
+            s = _strip_parens(source.get("source") or "")
+            if s:
+                return s
+            return _strip_parens(source.get("id") or source.get("_id") or "") or "未知来源"
+
+        # map_note：优先从命中的 msg 项取 source
+        inner = hit.get("inner_hits", {}).get("matched_msg", {})
+        msg_list = source.get("msg") or []
+        for ih in inner.get("hits", {}).get("hits", []):
+            s = _strip_parens(ih.get("_source", {}).get("source") or "")
+            if s:
+                return s
+            offset = (ih.get("_nested") or {}).get("offset")
+            if isinstance(offset, int) and 0 <= offset < len(msg_list):
+                s = _strip_parens(msg_list[offset].get("source") or "")
+                if s:
+                    return s
+        s = _strip_parens(source.get("source") or "")
+        if s:
+            return s
+        return _strip_parens(source.get("id") or source.get("_id") or "") or "未知来源"
 
     def _format_reference(self, source: Dict) -> str:
         """格式化经文引用"""
@@ -1061,6 +1297,9 @@ class AISearchService:
             "others": "[其他]",
             "bib": "[圣经]",
             "map_note": "[注解]",
+            "map_7feasts": "[复合节期]",
+            "map_dictionary": "[词典]",
+            "map_pano": "[上河图]",
         }
         return type_map.get(index_name, "[未分类]")
 
@@ -1070,6 +1309,7 @@ class AISearchService:
 
         for hit in search_results:
             source = hit['_source']
+            index_name = hit.get('_index_name', '')
 
             # 提取内容预览
             content = (
@@ -1083,8 +1323,9 @@ class AISearchService:
             # 限制预览长度
             preview = content[:150] + "..." if len(content) > 150 else content
 
+            ref = self._get_map_note_reference_from_hit(source, hit, index_name) if index_name in self._MAP_LIKE_INDICES else self._format_reference(source)
             sources.append({
-                "reference": self._format_reference(source),
+                "reference": ref,
                 "content": preview,
                 "score": round(hit.get('_weighted_score', hit.get('_score', 0)), 2),
                 "type": self._get_source_type(hit.get('_index_name', ''))
@@ -1139,9 +1380,10 @@ class AISearchService:
         if not self.redis:
             return False
         try:
-            # 移除不需要缓存的字段
+            # 移除不需要缓存的字段（claude_payload 体积大，不缓存）
             cache_data = result.copy()
             cache_data.pop("cached", None)
+            cache_data.pop("claude_payload", None)
 
             self.redis.setex(
                 cache_key,

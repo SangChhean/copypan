@@ -131,15 +131,21 @@
                   :disabled="loadingAI"
                 />
               </label>
-              <label class="ai-meta-field full">
-                <span>特殊需要</span>
-                <textarea
-                  v-model="aiForm.specialNeeds"
-                  rows="2"
-                  placeholder="列出需要 Claude 特别注意的额外要求"
-                  :disabled="loadingAI"
-                />
-              </label>
+              <div class="ai-meta-field full">
+                <span>纲目性质*（必选）</span>
+                <div class="ai-nature-btns">
+                  <button
+                    type="button"
+                    v-for="opt in AI_NATURE_OPTIONS"
+                    :key="opt"
+                    :class="['ai-nature-btn', { active: aiForm.specialNeeds === opt }]"
+                    :disabled="loadingAI"
+                    @click="aiForm.specialNeeds = aiForm.specialNeeds === opt ? '' : opt"
+                  >
+                    {{ opt }}
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="ai-depth-select">
@@ -166,7 +172,7 @@
 
           <div class="ai-panel-actions">
             <div v-if="!aiFormValid" class="ai-panel-hint">
-              请先填写「问题」与「纲目主题」后再发送。
+              请先填写「问题」「纲目主题」并选择「纲目性质」后再发送。
             </div>
               <button
                 class="search-btn"
@@ -220,11 +226,12 @@ const apiBase = import.meta.env?.VITE_API_BASE || ''
 const mode = ref('traditional') // 'traditional' | 'ai'
 const searchInput = ref('')
 const searchArgs = ref('')
+const AI_NATURE_OPTIONS = ['高真理浓度', '高生命浓度', '重实行应用']
 const aiForm = reactive({
   question: '',
   outlineTopic: '',
   burdenDescription: '',
-  specialNeeds: '',
+  specialNeeds: '高真理浓度',
   audience: '',
   depth: 'general'
 })
@@ -237,7 +244,8 @@ const aiResult = ref(null) // { answer, sources[], cached?, ... }
 const aiFormValid = computed(() => {
   const q = aiForm.question.trim().length > 0
   const outline = aiForm.outlineTopic.trim().length > 0
-  return q && outline
+  const nature = aiForm.specialNeeds.trim().length > 0
+  return q && outline && nature
 })
 
 function expandAIPanel() {
@@ -527,6 +535,39 @@ async function doAISearch() {
   outline: none;
   border-color: #1677ff;
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.08);
+}
+
+.ai-nature-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-nature-btn {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.ai-nature-btn:hover:not(:disabled):not(.active) {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.ai-nature-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.ai-nature-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .ai-depth-select {

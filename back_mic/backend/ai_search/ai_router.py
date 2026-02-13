@@ -38,7 +38,7 @@ class SearchRequest(BaseModel):
     depth: Optional[str] = Field("general", description="搜索深度：general(一般)或deep(深度)")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题")
     burden_description: Optional[str] = Field(None, max_length=300, description="负担说明")
-    special_needs: Optional[str] = Field(None, max_length=300, description="特殊需要")
+    special_needs: Optional[str] = Field(None, max_length=300, description="纲目性质")
     audience: Optional[str] = Field(None, max_length=200, description="面对对象")
 
     class Config:
@@ -81,6 +81,7 @@ class SearchResponse(BaseModel):
     search_time: Optional[float] = None
     ai_time: Optional[float] = None
     total_time: Optional[float] = None
+    claude_payload: Optional[dict] = None
 
 
 # ========== 方案A：分步搜索接口 ==========

@@ -103,15 +103,17 @@ const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 
 const aiPanelVisible = ref(false);
+const AI_NATURE_OPTIONS = ["高真理浓度", "高生命浓度", "重实行应用"];
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
-  specialNeeds: "",
+  specialNeeds: "高真理浓度",
   audience: ""
 });
 const aiFormValid = computed(() => {
   const outline = aiForm.outlineTopic.trim().length > 0;
-  return outline;
+  const nature = aiForm.specialNeeds.trim().length > 0;
+  return outline && nature;
 });
 
 // AI 回答复制
@@ -294,12 +296,12 @@ const onAISearch = async () => {
   let question = aiForm.outlineTopic.trim();
   
   if (!question) {
-    tip("请至少填写纲目主题");
+    tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
   
   if (!aiFormValid.value) {
-    tip("请至少填写纲目主题");
+    tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
   
@@ -429,7 +431,7 @@ const onAISearch = async () => {
                 type="text"
                 v-model="aiForm.audience"
                 :disabled="loadingAI"
-                placeholder="例如：初信者、大专学生..."
+                placeholder="例如：一般性、初信者、大专学生..."
               />
             </label>
             <label class="ai-meta-field full">
@@ -441,18 +443,24 @@ const onAISearch = async () => {
                 placeholder="简要说明纲目的主要负担"
               ></textarea>
             </label>
-            <label class="ai-meta-field full">
-              <span>特殊需要</span>
-              <textarea
-                rows="2"
-                v-model="aiForm.specialNeeds"
-                :disabled="loadingAI"
-                placeholder="列出需要特别注意的额外要求"
-              ></textarea>
-            </label>
+            <div class="ai-meta-field full">
+              <span>纲目性质*（必选项目）</span>
+              <div class="ai-nature-btns">
+                <button
+                  type="button"
+                  v-for="opt in AI_NATURE_OPTIONS"
+                  :key="opt"
+                  :class="['ai-nature-btn', { active: aiForm.specialNeeds === opt }]"
+                  :disabled="loadingAI"
+                  @click="aiForm.specialNeeds = aiForm.specialNeeds === opt ? '' : opt"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+            </div>
           </div>
           <div class="ai-panel-actions">
-            <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题后再开始制作</div>
+            <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
                 <span>模式选择</span>
@@ -665,6 +673,24 @@ const onAISearch = async () => {
         </div>
       </div>
     </div>
+
+    <!-- 发给 Claude 的数据（调试用） -->
+    <div v-if="aiResult.claude_payload" class="claude-payload-section">
+      <a-collapse>
+        <a-collapse-panel key="1" header="🔧 查看发给 Claude 的数据">
+          <div class="claude-payload-panel">
+            <div class="claude-payload-block">
+              <div class="claude-payload-label">System Prompt（系统提示词）</div>
+              <pre class="claude-payload-pre">{{ aiResult.claude_payload.system_prompt }}</pre>
+            </div>
+            <div class="claude-payload-block">
+              <div class="claude-payload-label">User Prompt（用户提示词 + 参考内容）</div>
+              <pre class="claude-payload-pre">{{ aiResult.claude_payload.user_prompt }}</pre>
+            </div>
+          </div>
+        </a-collapse-panel>
+      </a-collapse>
+    </div>
     
     <div style="margin-bottom: 360px"></div>
   </div>
@@ -819,6 +845,39 @@ const onAISearch = async () => {
   outline: none;
   border-color: #1677ff;
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+}
+
+.ai-nature-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-nature-btn {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.ai-nature-btn:hover:not(:disabled):not(.active) {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.ai-nature-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.ai-nature-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .ai-panel-actions {
@@ -1184,5 +1243,42 @@ const onAISearch = async () => {
 
 .source-meta {
   margin-top: 8px;
+}
+
+.claude-payload-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.claude-payload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.claude-payload-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claude-payload-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 13px;
+}
+
+.claude-payload-pre {
+  margin: 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>

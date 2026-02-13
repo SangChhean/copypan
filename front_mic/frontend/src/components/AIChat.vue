@@ -82,15 +82,21 @@
               :disabled="loading"
             />
           </label>
-          <label class="ai-chat-field full">
-            <span>特殊需要</span>
-            <textarea
-              v-model="form.specialNeeds"
-              rows="2"
-              placeholder="列出需要 Claude 特别注意的额外要求"
-              :disabled="loading"
-            />
-          </label>
+          <div class="ai-chat-field full">
+            <span>纲目性质*（必选）</span>
+            <div class="ai-nature-btns">
+              <button
+                type="button"
+                v-for="opt in AI_NATURE_OPTIONS"
+                :key="opt"
+                :class="['ai-nature-btn', { active: form.specialNeeds === opt }]"
+                :disabled="loading"
+                @click="form.specialNeeds = form.specialNeeds === opt ? '' : opt"
+              >
+                {{ opt }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="ai-chat-depth-select">
@@ -117,7 +123,7 @@
 
         <div class="ai-chat-panel-actions">
           <div v-if="!formValid" class="ai-chat-hint">
-            请填写【问题】及四个栏位后再发送。
+            请填写【问题】、【纲目主题】、【负担说明】、【纲目性质】、【面对对象】后再发送。
           </div>
           <button
             class="ai-chat-send"
@@ -139,11 +145,12 @@ const messagesRef = ref(null)
 const loading = ref(false)
 const messages = ref([])
 const showFormDetails = ref(false)
+const AI_NATURE_OPTIONS = ['高真理浓度', '高生命浓度', '重实行应用']
 const form = reactive({
   question: '',
   outlineTopic: '',
   burdenDescription: '',
-  specialNeeds: '',
+  specialNeeds: '高真理浓度',
   audience: '',
   depth: 'general'
 })
@@ -154,9 +161,9 @@ const formValid = computed(() => {
   const questionFilled = form.question.trim().length > 0
   const outlineFilled = form.outlineTopic.trim().length > 0
   const burdenFilled = form.burdenDescription.trim().length > 0
-  const needsFilled = form.specialNeeds.trim().length > 0
+  const natureFilled = form.specialNeeds.trim().length > 0
   const audienceFilled = form.audience.trim().length > 0
-  return questionFilled && outlineFilled && burdenFilled && needsFilled && audienceFilled
+  return questionFilled && outlineFilled && burdenFilled && natureFilled && audienceFilled
 })
 
 function expandForm() {
@@ -173,14 +180,16 @@ function formatContent(text) {
 }
 
 function buildUserPreview() {
-  return [
+  const lines = [
     `【问题】${form.question.trim()}`,
     `【纲目主题】${form.outlineTopic.trim()}`,
     `【负担说明】${form.burdenDescription.trim()}`,
-    `【特殊需要】${form.specialNeeds.trim()}`,
     `【面对对象】${form.audience.trim()}`,
     `【检索深度】${form.depth === 'deep' ? '深度' : '一般'}`
-  ].join('\n')
+  ]
+  const nature = form.specialNeeds.trim()
+  if (nature) lines.splice(3, 0, `【纲目性质】${nature}`)
+  return lines.join('\n')
 }
 
 async function send() {
@@ -519,6 +528,39 @@ async function send() {
 }
 
 .ai-chat-depth-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ai-nature-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-nature-btn {
+  border: 1px solid #d9d9d9;
+  background: #f5f5f5;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.ai-nature-btn:hover:not(:disabled):not(.active) {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.ai-nature-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.ai-nature-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
