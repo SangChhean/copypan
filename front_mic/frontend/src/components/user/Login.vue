@@ -4,8 +4,6 @@ import { UserOutlined, LockOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { showErr } from "../utils";
 
-localStorage.removeItem("token");
-
 interface FormState {
   username: string;
   password: string;
@@ -15,7 +13,7 @@ interface FormState {
 const formState = reactive<FormState>({
   username: "",
   password: "",
-  remember: false,
+  remember: true,
 });
 
 const setCookie = (cname, cvalue, exdays) => {

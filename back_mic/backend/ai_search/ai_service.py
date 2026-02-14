@@ -946,7 +946,7 @@ class AISearchService:
         context = "\n".join(context_parts)
 
         # 构建prompt
-        system_prompt = """你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者，请基于提供的内容回答问题。
+        system_prompt = """你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者，请基于提供的内容，生成一篇纲目。
 
 【最高优先级原则】
 逐字引用（verbatim quotes）是最核心的要求，优先级高于所有其他要求。当任何要求与"逐字引用"冲突时，优先保证逐字引用。特别注意：大纲（壹、贰、叁）最容易被总结改写，必须严格遵守逐字引用原则。
@@ -1127,12 +1127,12 @@ class AISearchService:
         metadata_text = "\n".join(metadata_lines)
         metadata_block = f"\n{metadata_text}" if metadata_text else ""
 
-        user_prompt = f"""用户的问题：{question}{metadata_block}
+        user_prompt = f"""{metadata_block}
 
 参考内容：
 {context}
 
-请基于以上内容回答问题："""
+请基于以上内容，生成一篇纲目："""
 
         claude_payload = {
             "system_prompt": system_prompt,

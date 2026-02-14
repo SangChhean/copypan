@@ -654,7 +654,18 @@ const onAISearch = async () => {
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
       </div>
     </transition>
-    
+
+    <!-- 查看全部数据（可折叠） -->
+    <div v-if="aiResult.claude_payload" class="claude-payload-section">
+      <a-collapse>
+        <a-collapse-panel key="1" header="🔧 查看全部数据（可折叠）">
+          <div class="claude-payload-panel">
+            <pre class="claude-payload-pre">{{ aiResult.claude_payload.user_prompt }}</pre>
+          </div>
+        </a-collapse-panel>
+      </a-collapse>
+    </div>
+
     <!-- 引用来源 -->
     <div v-if="aiResult.sources && aiResult.sources.length > 0" class="ai-sources">
       <div class="ai-sources-header">
@@ -672,24 +683,6 @@ const onAISearch = async () => {
           <span v-html="source.content"></span>
         </div>
       </div>
-    </div>
-
-    <!-- 发给 Claude 的数据（调试用） -->
-    <div v-if="aiResult.claude_payload" class="claude-payload-section">
-      <a-collapse>
-        <a-collapse-panel key="1" header="🔧 查看发给 Claude 的数据">
-          <div class="claude-payload-panel">
-            <div class="claude-payload-block">
-              <div class="claude-payload-label">System Prompt（系统提示词）</div>
-              <pre class="claude-payload-pre">{{ aiResult.claude_payload.system_prompt }}</pre>
-            </div>
-            <div class="claude-payload-block">
-              <div class="claude-payload-label">User Prompt（用户提示词 + 参考内容）</div>
-              <pre class="claude-payload-pre">{{ aiResult.claude_payload.user_prompt }}</pre>
-            </div>
-          </div>
-        </a-collapse-panel>
-      </a-collapse>
     </div>
     
     <div style="margin-bottom: 360px"></div>
