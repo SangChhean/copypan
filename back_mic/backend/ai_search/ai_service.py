@@ -55,11 +55,11 @@ except Exception as e:
 # 按纲目性质（special_needs）选择不同权重
 INDEXES_CONFIG_BY_NATURE = {
     "高真理浓度": {
-        "map_note": {"weight": 1.5},
-        "map_7feasts": {"weight": 1.3},
+        "map_note": {"weight": 2.0},
         "map_dictionary": {"weight": 1.3},
+        "cwwl": {"weight": 1.5},
+        "map_7feasts": {"weight": 1.3},
         "map_pano": {"weight": 1.3},
-        "cwwl": {"weight": 1.3},
         "cwwn": {"weight": 1.3},
         "life": {"weight": 1.3},
         "bib": {"weight": 1.0},
@@ -534,28 +534,45 @@ class AISearchService:
             weight = config["weight"]
             try:
                 if index_name in self._MAP_LIKE_INDICES:
-                    # map_note/map_7feasts/map_dictionary：检索 msg 中 text 和 type，用 inner_hits 定位
+                    # map_note/map_7feasts/map_dictionary/map_pano：检索 msg 中 text/type + 外层 text
+                    # 若命中来自外层 text（无 inner_hits），则发送全篇内容
                     search_body = {
                         "query": {
-                            "nested": {
-                                "path": "msg",
-                                "query": {
-                                    "bool": {
-                                        "should": [
-                                            {"match_phrase": {"msg.text": {"query": query, "boost": 2.5}}},
-                                            {"match": {"msg.text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}},
-                                            {"match": {"msg.type": {"query": query, "boost": 1.5}}}
-                                        ],
-                                        "minimum_should_match": 1,
-                                        "filter": [
-                                            {"terms": {"msg.type": list(self._MAP_NOTE_MSG_TYPES)}}
-                                        ]
+                            "bool": {
+                                "should": [
+                                    {
+                                        "nested": {
+                                            "path": "msg",
+                                            "query": {
+                                                "bool": {
+                                                    "should": [
+                                                        {"match_phrase": {"msg.text": {"query": query, "boost": 2.5}}},
+                                                        {"match": {"msg.text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}},
+                                                        {"match": {"msg.type": {"query": query, "boost": 1.5}}}
+                                                    ],
+                                                    "minimum_should_match": 1,
+                                                    "filter": [
+                                                        {"terms": {"msg.type": list(self._MAP_NOTE_MSG_TYPES)}}
+                                                    ]
+                                                }
+                                            },
+                                            "inner_hits": {
+                                                "name": "matched_msg",
+                                                "size": 50
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {"match_phrase": {"text": {"query": query, "boost": 2.5}}},
+                                                {"match": {"text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}}
+                                            ],
+                                            "minimum_should_match": 1
+                                        }
                                     }
-                                },
-                                "inner_hits": {
-                                    "name": "matched_msg",
-                                    "size": 50
-                                }
+                                ],
+                                "minimum_should_match": 1
                             }
                         },
                         "size": int(size * weight),
@@ -590,16 +607,12 @@ class AISearchService:
                 # 为每条结果添加加权分数
                 for hit in hits:
                     score = hit['_score'] * weight
-                    # cwwl 特殊年份再加权 1.3
+                    # cwwl 特殊年份再加权 1.3（仅重实行应用）
                     if index_name == "cwwl":
                         doc_id = (hit.get("_source") or {}).get("id") or hit.get("_id") or ""
                         if outline_nature == "重实行应用":
                             # 重实行应用：1985-1993 年份文集加权（94-97 不加权）
                             if any(p in doc_id for p in _CWWL_EXTRA_WEIGHT_PATTERNS_实行):
-                                score *= 1.3
-                        else:
-                            # 高真理浓度/高生命浓度：仅 1994-1997
-                            if "cwwl_1994-1997" in doc_id:
                                 score *= 1.3
                     hit['_weighted_score'] = score
                     hit['_index_name'] = index_name
@@ -662,12 +675,27 @@ class AISearchService:
             end_idx += 1
         return (start_idx, end_idx)
 
+    def _get_map_note_full_content(self, source: Dict) -> str:
+        """
+        获取 map 类文档的全篇内容：优先用外层 text，否则拼接所有 ot1~ot4。
+        当命中来自外层 text 相关度高时，用于发送全篇给 Claude。
+        """
+        outer_text = (source.get("text") or "").strip()
+        if outer_text:
+            return outer_text
+        msg_list = source.get("msg") or []
+        parts = []
+        for m in msg_list:
+            if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
+                parts.append(m["text"])
+        return "\n".join(parts)
+
     def _extract_map_note_sections_from_inner_hits(
         self, source: Dict, hit: Dict
     ) -> str:
         """
         从 inner_hits 获取命中的 msg 索引，按小节提取并拼接，多个 ot1 小节分别提取后拼接。
-        若无 inner_hits 则回退：拼接所有 ot1~ot4 的 text。
+        若无 inner_hits（命中来自外层 text）：返回全篇内容，供 Claude 使用。
         """
         msg_list = source.get("msg") or []
         if not msg_list:
@@ -677,12 +705,8 @@ class AISearchService:
         inner_hits_list = inner.get("hits", {}).get("hits", [])
 
         if not inner_hits_list:
-            # 无 inner_hits，回退：全部 ot1~ot4
-            parts = []
-            for m in msg_list:
-                if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
-                    parts.append(m["text"])
-            return "\n".join(parts)
+            # 无 inner_hits：命中来自外层 text，相关度够高，发送全篇内容
+            return self._get_map_note_full_content(source)
 
         matched_indices = set()
         for ih in inner_hits_list:
