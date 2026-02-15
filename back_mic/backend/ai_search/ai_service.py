@@ -835,10 +835,11 @@ class AISearchService:
         included_ids = set()
         context_items = []
         seen_sections = set()
-        # 深度模式：限制单条内容长度，防止总 tokens 超限（Claude API 200K 限制）
-        # 深度模式(200条)：每条1200字 ≈ 1800 tokens，总计约360K tokens（会触发高价区）
-        # 一般模式(50条)：每条2500字 ≈ 3750 tokens，总计约187K tokens（安全）
-        max_content_length = 1200 if context_size >= 150 else 2500
+        # 深度模式：限制单条内容长度，防止总 tokens 超限（Claude API 1M 限制）
+        # 实测发现中文 token 转换率约 1:1.5（1字≈1.5 tokens）
+        # 深度模式(200条)：每条1000字 ≈ 1500 tokens，总计约300K tokens（高价区，可接受）
+        # 一般模式(50条)：每条2500字 ≈ 3750 tokens，总计约187K tokens（标准区）
+        max_content_length = 1000 if context_size >= 150 else 2500
 
         for hit in search_results:
             if len(context_items) >= context_size:
@@ -929,8 +930,8 @@ class AISearchService:
     ) -> List[Dict]:
         """当 _build_context_from_hits 无结果时回退：按原逻辑取 text 构建上下文（如 bib/hymn 等）"""
         items = []
-        # 深度模式限制单条长度，防止总 tokens 超限
-        max_content_length = 1200 if context_size >= 150 else 2500
+        # 深度模式限制单条长度，防止总 tokens 超限（实测中文约 1字≈1.5 tokens）
+        max_content_length = 1000 if context_size >= 150 else 2500
         
         for hit in search_results[:context_size]:
             source = hit.get("_source", {})
@@ -1197,13 +1198,16 @@ class AISearchService:
 
         # 调用Claude API
         try:
-            # 添加 token 估算日志
-            estimated_input_tokens = len(system_prompt) // 3 + len(user_prompt) // 3
+            # 添加 token 估算日志（改进估算算法，中文约 1字≈1.5 tokens）
+            estimated_input_tokens = int((len(system_prompt) + len(user_prompt)) * 0.7)
             context_count = len(context_items[:context_size])
             logger.info(f"准备调用 Claude - 上下文数: {context_count}条, 预估输入tokens: {estimated_input_tokens}")
             
-            if estimated_input_tokens > 180000:
-                logger.warning(f"⚠️ 输入可能超限！预估: {estimated_input_tokens} tokens (建议 < 180K)")
+            # 硬性上限 1M tokens（超过会失败），保守提示 900K
+            if estimated_input_tokens > 900000:
+                logger.warning(f"⚠️ 输入可能超过1M上限！预估: {estimated_input_tokens} tokens")
+            elif estimated_input_tokens > 200000:
+                logger.info(f"ℹ️ 输入超过200K，将使用高价区定价: ${estimated_input_tokens / 1000000 * 6:.3f}")
             
             message = self.claude.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -1251,7 +1255,7 @@ class AISearchService:
             # 判断是否为 token 超限错误
             if any(keyword in error_msg.lower() for keyword in ["too long", "token", "context", "limit", "exceed"]):
                 return {
-                    "answer": f"输入内容过长，无法处理。\n\n详细信息：\n- 预估输入: {estimated_tokens:,} tokens\n- 上下文条数: {context_count}条\n- Claude API 限制: 200,000 tokens\n\n建议：切换为「一般模式」（50条上下文）后重试。",
+                    "answer": f"输入内容过长，超过 Claude API 限制。\n\n详细信息：\n- 预估输入: {estimated_tokens:,} tokens\n- 上下文条数: {context_count}条\n- Claude API 上限: 1,000,000 tokens\n\n建议：切换为「一般模式」（50条上下文）后重试。",
                     "tokens": {"error": str(e), "estimated_tokens": estimated_tokens, "context_count": context_count}
                 }
             
