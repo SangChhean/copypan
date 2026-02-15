@@ -66,7 +66,7 @@ INDEXES_CONFIG_BY_NATURE = {
         "others": {"weight": 1.0},
     },
     "高真理浓度": {
-        "map_note": {"weight": 1.5},
+        "map_note": {"weight": 1.0},
         "map_dictionary": {"weight": 1.0},
         "map_7feasts": {"weight": 1.0},
         "map_pano": {"weight": 1.0},
