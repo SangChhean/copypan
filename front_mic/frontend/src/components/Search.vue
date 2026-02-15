@@ -314,12 +314,12 @@ const onAISearch = async () => {
   aiLoadingText.value = "🔍 正在检索相关内容...";
   
   try {
-    // 第一步：仅检索，快速返回引用来源
-    const searchRes = await axios.post("/api/ai_search/search", {
-      question,
-      depth: aiDepth.value,
-      ...metadataPayload
-    });
+    // 第一步：仅检索，快速返回引用来源（超时 60 秒）
+    const searchRes = await axios.post(
+      "/api/ai_search/search",
+      { question, depth: aiDepth.value, ...metadataPayload },
+      { timeout: 60000 }
+    );
     
     const data = searchRes.data;
     
@@ -348,13 +348,12 @@ const onAISearch = async () => {
     showAISources.value = true;
     aiLoadingText.value = "💡 AI 正在生成答案...";
     
-    // 第二步：生成答案（耗时 20-30 秒）
-    const generateRes = await axios.post("/api/ai_search/generate", {
-      question,
-      search_id,
-      max_results: 50,
-      ...metadataPayload
-    });
+    // 第二步：生成答案（耗时 20-30 秒，在线环境需更长超时）
+    const generateRes = await axios.post(
+      "/api/ai_search/generate",
+      { question, search_id, max_results: 50, ...metadataPayload },
+      { timeout: 120000 }
+    );
     
     aiResult.value = generateRes.data;
     showInfo.value = 5;
@@ -367,7 +366,11 @@ const onAISearch = async () => {
     
   } catch (err) {
     console.error("AI搜索失败:", err);
-    tip(err.response?.data?.detail || "AI搜索失败，请稍后重试");
+    const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
+    const msg = isTimeout
+      ? "请求超时，AI 生成时间较长，请稍后重试"
+      : (err.response?.data?.detail || "AI搜索失败，请稍后重试");
+    tip(msg);
     showInfo.value = 3;
   } finally {
     loadingAI.value = false;

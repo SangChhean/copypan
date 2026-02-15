@@ -15,11 +15,15 @@ server {
     }
 
     # 后端 API 代理：/api/* 原样转发到 8000（后端路由为 /api/token、/api/search 等）
+    # AI 生成答案接口耗时 20–30+ 秒，需加长超时，否则在线环境会显示「AI搜索失败」但后端已返回
     location /api/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
     }
 }
