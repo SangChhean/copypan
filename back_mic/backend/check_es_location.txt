@@ -1,0 +1,5 @@
+﻿# 妫€鏌?ES 鏁版嵁瀹為檯浣嶇疆
+docker inspect elasticsearch | ConvertFrom-Json | Select-Object -ExpandProperty Mounts
+
+# 鎴栨煡鐪?ES 閰嶇疆
+docker exec elasticsearch cat /usr/share/elasticsearch/config/elasticsearch.yml
