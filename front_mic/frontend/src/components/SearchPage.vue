@@ -226,12 +226,12 @@ const apiBase = import.meta.env?.VITE_API_BASE || ''
 const mode = ref('traditional') // 'traditional' | 'ai'
 const searchInput = ref('')
 const searchArgs = ref('')
-const AI_NATURE_OPTIONS = ['高真理浓度', '高生命浓度', '重实行应用']
+const AI_NATURE_OPTIONS = ['一般性', '高真理浓度', '高生命浓度', '重实行应用']
 const aiForm = reactive({
   question: '',
   outlineTopic: '',
   burdenDescription: '',
-  specialNeeds: '高真理浓度',
+  specialNeeds: '一般性',
   audience: '',
   depth: 'general'
 })

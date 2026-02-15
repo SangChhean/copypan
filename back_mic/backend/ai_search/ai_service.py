@@ -54,44 +54,55 @@ except Exception as e:
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 # 按纲目性质（special_needs）选择不同权重
 INDEXES_CONFIG_BY_NATURE = {
+    "一般性": {
+        "map_note": {"weight": 1.0},
+        "map_dictionary": {"weight": 1.0},
+        "map_7feasts": {"weight": 1.0},
+        "map_pano": {"weight": 1.0},
+        "cwwl": {"weight": 1.0},
+        "cwwn": {"weight": 1.0},
+        "life": {"weight": 1.0},
+        "bib": {"weight": 1.0},
+        "others": {"weight": 1.0},
+    },
     "高真理浓度": {
-        "map_note": {"weight": 2.0},
-        "map_dictionary": {"weight": 1.3},
-        "cwwl": {"weight": 1.5},
-        "map_7feasts": {"weight": 1.3},
-        "map_pano": {"weight": 1.3},
-        "cwwn": {"weight": 1.3},
-        "life": {"weight": 1.3},
+        "map_note": {"weight": 1.5},
+        "map_dictionary": {"weight": 1.0},
+        "map_7feasts": {"weight": 1.0},
+        "map_pano": {"weight": 1.0},
+        "cwwl": {"weight": 1.0},  # 94-97 额外 1.5
+        "cwwn": {"weight": 1.0},
+        "life": {"weight": 1.0},
         "bib": {"weight": 1.0},
         "others": {"weight": 1.0},
     },
     "高生命浓度": {
-        "map_note": {"weight": 1.5},
-        "map_7feasts": {"weight": 1.3},
-        "map_dictionary": {"weight": 1.3},
-        "map_pano": {"weight": 1.3},
-        "cwwl": {"weight": 1.3},
+        "map_note": {"weight": 1.0},
+        "map_dictionary": {"weight": 1.0},
+        "map_7feasts": {"weight": 1.0},
+        "map_pano": {"weight": 1.0},
+        "cwwl": {"weight": 1.0},
         "cwwn": {"weight": 1.5},
         "life": {"weight": 1.5},
         "bib": {"weight": 1.0},
         "others": {"weight": 1.0},
     },
     "重实行应用": {
-        "map_note": {"weight": 1.5},
-        "map_7feasts": {"weight": 1.5},
-        "map_dictionary": {"weight": 1.5},
-        "map_pano": {"weight": 1.5},
-        "cwwl": {"weight": 1.5},
-        "cwwn": {"weight": 1.3},
-        "life": {"weight": 1.3},
+        "map_note": {"weight": 1.0},
+        "map_dictionary": {"weight": 1.0},
+        "map_7feasts": {"weight": 1.0},
+        "map_pano": {"weight": 1.0},
+        "cwwl": {"weight": 1.0},  # 85-93 额外 1.5
+        "cwwn": {"weight": 1.0},
+        "life": {"weight": 1.0},
         "bib": {"weight": 1.0},
         "others": {"weight": 1.0},
     },
 }
-# 默认使用高真理浓度
-INDEXES_CONFIG = INDEXES_CONFIG_BY_NATURE["高真理浓度"]
+# 默认使用一般性
+INDEXES_CONFIG = INDEXES_CONFIG_BY_NATURE["一般性"]
 
-# cwwl 额外 ×1.3 的年份/范围
+# cwwl 额外 ×1.5 的年份/范围
 _CWWL_EXTRA_WEIGHT_PATTERNS_实行 = (  # 重实行应用：85–93，不含 94–97
     "cwwl_1985", "cwwl_1986", "cwwl_1987", "cwwl_1988", "cwwl_1989",
     "cwwl_1990", "cwwl_1991-92", "cwwl_1993",
@@ -526,7 +537,7 @@ class AISearchService:
             加权排序后的搜索结果列表
         """
         indexes_config = INDEXES_CONFIG_BY_NATURE.get(
-            outline_nature, INDEXES_CONFIG_BY_NATURE["高真理浓度"]
+            outline_nature, INDEXES_CONFIG_BY_NATURE["一般性"]
         )
         all_results = []
 
@@ -607,13 +618,17 @@ class AISearchService:
                 # 为每条结果添加加权分数
                 for hit in hits:
                     score = hit['_score'] * weight
-                    # cwwl 特殊年份再加权 1.3（仅重实行应用）
+                    # cwwl 特殊年份再加权 1.5
                     if index_name == "cwwl":
                         doc_id = (hit.get("_source") or {}).get("id") or hit.get("_id") or ""
                         if outline_nature == "重实行应用":
                             # 重实行应用：1985-1993 年份文集加权（94-97 不加权）
                             if any(p in doc_id for p in _CWWL_EXTRA_WEIGHT_PATTERNS_实行):
-                                score *= 1.3
+                                score *= 1.5
+                        elif outline_nature == "高真理浓度":
+                            # 高真理浓度：仅 1994-1997
+                            if "cwwl_1994-1997" in doc_id:
+                                score *= 1.5
                     hit['_weighted_score'] = score
                     hit['_index_name'] = index_name
                     all_results.append(hit)
@@ -820,6 +835,10 @@ class AISearchService:
         included_ids = set()
         context_items = []
         seen_sections = set()
+        # 深度模式：限制单条内容长度，防止总 tokens 超限（Claude API 200K 限制）
+        # 深度模式(200条)：每条1200字 ≈ 1800 tokens，总计约360K tokens（会触发高价区）
+        # 一般模式(50条)：每条2500字 ≈ 3750 tokens，总计约187K tokens（安全）
+        max_content_length = 1200 if context_size >= 150 else 2500
 
         for hit in search_results:
             if len(context_items) >= context_size:
@@ -838,6 +857,9 @@ class AISearchService:
                 content = self._extract_map_note_sections_from_inner_hits(source, hit)
                 if not content:
                     continue
+                # 限制单条长度
+                if len(content) > max_content_length:
+                    content = content[:max_content_length] + "..."
                 ref = self._get_map_note_reference_from_hit(source, hit, index_name)
                 context_items.append({
                     "reference": ref,
@@ -869,6 +891,9 @@ class AISearchService:
                 )
                 if not content:
                     continue
+                # 限制单条长度
+                if len(content) > max_content_length:
+                    content = content[:max_content_length] + "..."
                 seen_sections.add(section_key)
                 for sid in section_ids:
                     included_ids.add(sid)
@@ -885,6 +910,9 @@ class AISearchService:
                 text = source.get("text", "")
                 if not text:
                     continue
+                # 限制单条长度
+                if len(text) > max_content_length:
+                    text = text[:max_content_length] + "..."
                 ref = self._format_reference(source)
                 context_items.append({
                     "reference": ref,
@@ -901,6 +929,9 @@ class AISearchService:
     ) -> List[Dict]:
         """当 _build_context_from_hits 无结果时回退：按原逻辑取 text 构建上下文（如 bib/hymn 等）"""
         items = []
+        # 深度模式限制单条长度，防止总 tokens 超限
+        max_content_length = 1200 if context_size >= 150 else 2500
+        
         for hit in search_results[:context_size]:
             source = hit.get("_source", {})
             index_name = hit.get("_index_name", hit.get("_index", ""))
@@ -911,8 +942,9 @@ class AISearchService:
                 text = source.get("text", "")
             if not text:
                 continue
-            if len(text) > 300:
-                text = text[:300] + "..."
+            # 限制单条长度
+            if len(text) > max_content_length:
+                text = text[:max_content_length] + "..."
             ref = self._get_map_note_reference_from_hit(source, hit, index_name) if index_name in self._MAP_LIKE_INDICES else self._format_reference(source)
             items.append({
                 "reference": ref,
@@ -1165,6 +1197,14 @@ class AISearchService:
 
         # 调用Claude API
         try:
+            # 添加 token 估算日志
+            estimated_input_tokens = len(system_prompt) // 3 + len(user_prompt) // 3
+            context_count = len(context_items[:context_size])
+            logger.info(f"准备调用 Claude - 上下文数: {context_count}条, 预估输入tokens: {estimated_input_tokens}")
+            
+            if estimated_input_tokens > 180000:
+                logger.warning(f"⚠️ 输入可能超限！预估: {estimated_input_tokens} tokens (建议 < 180K)")
+            
             message = self.claude.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=4000,
@@ -1187,7 +1227,7 @@ class AISearchService:
                    (tokens["output"] / 1_000_000) * 15
             tokens["cost"] = round(cost, 6)
 
-            logger.info(f"Claude调用成功: Token={tokens['total']}, 费用=${tokens['cost']}")
+            logger.info(f"Claude调用成功: 实际输入={tokens['input']} tokens, 总计={tokens['total']}, 费用=${tokens['cost']}")
 
             return {
                 "answer": answer,
@@ -1202,13 +1242,25 @@ class AISearchService:
                 "tokens": {"error": str(e)}
             }
         except anthropic.APIError as e:
-            logger.error(f"API错误: {e}")
+            # 详细记录错误信息
+            error_msg = str(e)
+            estimated_tokens = len(system_prompt) // 3 + len(user_prompt) // 3
+            logger.error(f"❌ Claude API错误: {error_msg}")
+            logger.error(f"详细 - 预估tokens: {estimated_tokens}, 上下文数: {context_count}条, system长度: {len(system_prompt)}, user长度: {len(user_prompt)}")
+            
+            # 判断是否为 token 超限错误
+            if any(keyword in error_msg.lower() for keyword in ["too long", "token", "context", "limit", "exceed"]):
+                return {
+                    "answer": f"输入内容过长，无法处理。\n\n详细信息：\n- 预估输入: {estimated_tokens:,} tokens\n- 上下文条数: {context_count}条\n- Claude API 限制: 200,000 tokens\n\n建议：切换为「一般模式」（50条上下文）后重试。",
+                    "tokens": {"error": str(e), "estimated_tokens": estimated_tokens, "context_count": context_count}
+                }
+            
             return {
-                "answer": "AI服务暂时不可用，请稍后重试。",
+                "answer": f"AI服务暂时不可用，请稍后重试。\n\n错误信息: {error_msg}",
                 "tokens": {"error": str(e)}
             }
         except Exception as e:
-            logger.error(f"生成答案失败: {e}")
+            logger.error(f"生成答案失败: {e}", exc_info=True)
             raise
 
     def _get_map_note_reference_from_hit(self, source: Dict, hit: Dict, index_name: str = "") -> str:
@@ -1258,7 +1310,14 @@ class AISearchService:
                 return s
             return _strip_parens(source.get("id") or source.get("_id") or "") or "未知来源"
 
-        # map_note：优先从命中的 msg 项取 source
+        # map_note：圣经真理题库，+ 外层 text
+        if index_name == "map_note":
+            t = (source.get("text") or "").strip()
+            if t:
+                return f"圣经真理题库，{t}"
+            return "圣经真理题库"
+
+        # 其他 map 类回退
         inner = hit.get("inner_hits", {}).get("matched_msg", {})
         msg_list = source.get("msg") or []
         for ih in inner.get("hits", {}).get("hits", []):

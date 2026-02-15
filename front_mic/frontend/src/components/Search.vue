@@ -103,11 +103,11 @@ const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 
 const aiPanelVisible = ref(false);
-const AI_NATURE_OPTIONS = ["高真理浓度", "高生命浓度", "重实行应用"];
+const AI_NATURE_OPTIONS = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
-  specialNeeds: "高真理浓度",
+  specialNeeds: "一般性",
   audience: ""
 });
 const aiFormValid = computed(() => {

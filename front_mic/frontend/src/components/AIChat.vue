@@ -145,12 +145,12 @@ const messagesRef = ref(null)
 const loading = ref(false)
 const messages = ref([])
 const showFormDetails = ref(false)
-const AI_NATURE_OPTIONS = ['高真理浓度', '高生命浓度', '重实行应用']
+const AI_NATURE_OPTIONS = ['一般性', '高真理浓度', '高生命浓度', '重实行应用']
 const form = reactive({
   question: '',
   outlineTopic: '',
   burdenDescription: '',
-  specialNeeds: '高真理浓度',
+  specialNeeds: '一般性',
   audience: '',
   depth: 'general'
 })
