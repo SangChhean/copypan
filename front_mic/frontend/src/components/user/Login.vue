@@ -151,4 +151,36 @@ const disabled = computed(() => {
 #form:hover {
   transform: translateY(-10px);
 }
+
+/* 移动端：768px */
+@media (max-width: 768px) {
+  #login {
+    padding: 16px;
+  }
+  .login-form {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 260px;
+  }
+  #form {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+/* 移动端：480px */
+@media (max-width: 480px) {
+  #login {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+  #form {
+    max-width: 100%;
+  }
+  .login-form-button {
+    min-height: 44px;
+  }
+}
 </style>

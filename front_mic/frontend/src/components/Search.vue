@@ -1277,4 +1277,149 @@ const onAISearch = async () => {
   max-height: 400px;
   overflow-y: auto;
 }
+
+/* ========== 移动端：768px ========== */
+@media (max-width: 768px) {
+  .search-box {
+    margin-top: 56px;
+    padding: 0 12px;
+  }
+  .search-bar {
+    width: 100%;
+    max-width: 100%;
+  }
+  .search-bar .search {
+    width: 100%;
+    max-width: 100%;
+  }
+  .search-bar :deep(.ant-input-search),
+  .search-bar :deep(.ant-input-group) {
+    max-width: 100%;
+  }
+  .search-result,
+  .ai-result,
+  .ai-loading-container {
+    margin: 0 1em;
+  }
+  .model {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .model .ant-radio-group {
+    flex-wrap: wrap;
+  }
+  .model .ant-btn {
+    min-height: 40px;
+  }
+  .cat,
+  .paoma {
+    width: 95%;
+    padding: 14px;
+    font-size: 13px;
+  }
+  .ai-meta-panel {
+    padding: 12px;
+  }
+  .ai-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-panel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-panel-cta {
+    margin-left: 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-panel-cta :deep(.ant-btn) {
+    width: 100%;
+    min-height: 44px;
+  }
+  .ai-loading-card {
+    padding: 40px 24px;
+  }
+  .loading-text {
+    font-size: 18px;
+  }
+  .ai-answer-card {
+    padding: 20px 14px;
+  }
+  .ai-answer-content {
+    font-size: 15px;
+  }
+  .source-item {
+    padding: 8px 12px;
+  }
+  .res {
+    padding: 8px;
+  }
+}
+
+/* ========== 移动端：480px ========== */
+@media (max-width: 480px) {
+  .search-box {
+    margin-top: 52px;
+    padding: 0 8px;
+  }
+  .search-bar :deep(.ant-input-group-addon) {
+    min-width: 0;
+  }
+  .search-bar :deep(.ant-select) {
+    max-width: 56px;
+  }
+  .search-result,
+  .ai-result,
+  .ai-loading-container {
+    margin: 0 0.5em;
+  }
+  .cat,
+  .paoma {
+    width: 100%;
+    padding: 12px;
+    font-size: 12px;
+  }
+  .ai-meta-panel {
+    padding: 10px;
+  }
+  .ai-nature-btn {
+    padding: 10px 14px;
+    min-height: 44px;
+  }
+  .ai-loading-card {
+    padding: 32px 16px;
+  }
+  .loading-text {
+    font-size: 16px;
+  }
+  .loading-tips {
+    font-size: 13px;
+  }
+  .ai-answer-header {
+    font-size: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ai-answer-content {
+    font-size: 14px;
+  }
+  .ai-sources-header,
+  .source-title {
+    font-size: 15px;
+  }
+  .source-content {
+    font-size: 13px;
+  }
+  .tag,
+  .text_tag,
+  .tag_footer {
+    font-size: 14px;
+  }
+  .res-title {
+    font-size: 15px;
+  }
+}
 </style>

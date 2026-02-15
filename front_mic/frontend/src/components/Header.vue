@@ -141,4 +141,36 @@ watch(selectedIndex, () => {
 .ant-menu-horizontal {
   border-bottom: none;
 }
+
+/* 移动端：768px */
+@media (max-width: 768px) {
+  #header_mobile {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  #header_mobile .menu {
+    flex-wrap: nowrap;
+    min-width: min-content;
+    padding: 0 8px;
+  }
+  #header_mobile .ant-menu-item {
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  #logo {
+    font-size: 1.5em;
+  }
+}
+
+/* 移动端：480px */
+@media (max-width: 480px) {
+  #header_mobile .ant-menu-item {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  #logo {
+    font-size: 1.25em;
+  }
+}
 </style>
