@@ -1,6 +1,6 @@
 <script setup>
 import axios from "axios";
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { ReloadOutlined, DeleteOutlined, ClearOutlined } from "@ant-design/icons-vue";
 import { tip } from "../utils";
 
@@ -8,6 +8,35 @@ const showSpin = ref(false);
 const days = ref(30);
 const stats = ref(null);
 const errMsg = ref("");
+
+const NATURE_ORDER = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
+
+const natureWeightColumns = computed(() => {
+  const w = stats.value?.index_weights;
+  if (!w || !w._labels) return [];
+  const cols = [{ title: "纲目性质", dataIndex: "nature", key: "nature", width: 100 }];
+  for (const [key, label] of Object.entries(w._labels)) {
+    cols.push({ title: label, dataIndex: key, key, width: 88, align: "center" });
+  }
+  cols.push({ title: "说明", dataIndex: "note", key: "note", width: 200 });
+  return cols;
+});
+
+const natureWeightRows = computed(() => {
+  const w = stats.value?.index_weights;
+  if (!w || !w._labels) return [];
+  return NATURE_ORDER.map((nature) => {
+    const config = w[nature];
+    const row = { nature, key: nature };
+    if (config) {
+      for (const key of Object.keys(w._labels)) {
+        row[key] = config[key] ?? "-";
+      }
+    }
+    row.note = (w._notes && w._notes[nature]) || "-";
+    return row;
+  });
+});
 
 const fetchStats = () => {
   showSpin.value = true;
@@ -109,7 +138,7 @@ onMounted(() => fetchStats());
         @confirm="onReset"
       >
         <template #description>
-          <span style="color: #ff4d4f;">此操作将清空总查询数、缓存命中、响应时间、费用及每日统计，且不可恢复。</span>
+          <span style="color: #ff4d4f;">此操作将清空总查询数、缓存命中、响应时间、费用、纲目性质统计及每日统计，且不可恢复。</span>
         </template>
         <a-button danger :loading="showSpin">
           <template #icon><DeleteOutlined /></template>
@@ -136,6 +165,35 @@ onMounted(() => fetchStats());
         <a-card size="small" class="stat-card">
           <a-statistic title="总费用" :value="stats.total_cost" prefix="$" :precision="4" />
         </a-card>
+      </div>
+      <div class="nature-section">
+        <h3>纲目性质</h3>
+        <a-card size="small" class="nature-card">
+          <div class="nature-list">
+            <div
+              v-for="name in ['一般性', '高真理浓度', '高生命浓度', '重实行应用']"
+              :key="name"
+              class="nature-row"
+            >
+              <span class="nature-name">{{ name }}</span>
+              <span class="nature-count">{{ (stats.nature_counts && stats.nature_counts[name]) || 0 }} 次</span>
+              <span class="nature-pct">
+                {{ stats.total_queries ? (((stats.nature_counts && stats.nature_counts[name]) || 0) / stats.total_queries * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+          </div>
+        </a-card>
+        <h3 class="weights-title">AI 检索权重</h3>
+        <a-table
+          v-if="stats.index_weights && stats.index_weights._labels"
+          :columns="natureWeightColumns"
+          :data-source="natureWeightRows"
+          :pagination="false"
+          bordered
+          size="small"
+          row-key="nature"
+          class="weights-table"
+        />
       </div>
       <div class="daily-section">
         <h3>每日统计</h3>
@@ -176,6 +234,49 @@ onMounted(() => fetchStats());
 }
 .stat-card {
   min-width: 160px;
+}
+.nature-section {
+  margin-bottom: 24px;
+}
+.nature-section h3 {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.nature-card {
+  max-width: 360px;
+}
+.nature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nature-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nature-name {
+  flex: 0 0 100px;
+  font-weight: 500;
+}
+.nature-count {
+  flex: 0 0 70px;
+  text-align: right;
+  color: #666;
+}
+.nature-pct {
+  flex: 0 0 56px;
+  text-align: right;
+  color: #1677ff;
+  font-weight: 500;
+}
+.weights-title {
+  margin-top: 16px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.weights-table {
+  max-width: 100%;
 }
 .daily-section h3 {
   margin-bottom: 12px;

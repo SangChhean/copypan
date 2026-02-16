@@ -3,10 +3,13 @@
 
 用法：
   cd back_mic/backend
-  python import_map_data.py
+  python import_map_data.py              # 仅新增，不覆盖
+  python import_map_data.py --reimport   # 先清空 map_pano 索引内容，再重新导入
 """
+import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 # 添加项目路径
@@ -30,6 +33,15 @@ MAP_MAPPING = {
         }
     }
 }
+
+
+def clear_index(index_name: str) -> None:
+    """删除索引（清空该索引内所有内容）"""
+    if es.indices.exists(index=index_name):
+        es.indices.delete(index=index_name)
+        print(f"  已清空索引: {index_name}")
+    else:
+        print(f"  索引不存在，无需清空: {index_name}")
 
 
 def ensure_index(index_name: str):
@@ -81,12 +93,24 @@ def import_json_dir(dir_path: str, index_name: str) -> int:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="将 map_pano 数据导入本地 ES")
+    parser.add_argument(
+        "--reimport",
+        action="store_true",
+        help="先清空 map_pano 索引内容，再重新导入（默认仅新增不覆盖）",
+    )
+    args = parser.parse_args()
+
     print("=" * 60)
-    print("  map_pano 导入本地 ES")
+    print("  map_pano 导入本地 ES" + (" [重新导入模式]" if args.reimport else ""))
     print("=" * 60)
 
     for dir_path, index_name in SOURCE_DIRS:
         print(f"\n[{index_name}]")
+        if args.reimport:
+            clear_index(index_name)
+            # 删除索引后稍等，避免 ES 未处理完就建索引导致超时
+            time.sleep(3)
         ensure_index(index_name)
         n = import_json_dir(dir_path, index_name)
         print(f"  ✓ 共导入 {n} 条文档")

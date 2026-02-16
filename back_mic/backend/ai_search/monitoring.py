@@ -88,6 +88,15 @@ class AIMonitoring:
             + (output_tokens / 1_000_000) * PRICE_OUTPUT_PER_MILLION
         )
 
+    NATURE_KEYS = ("一般性", "高真理浓度", "高生命浓度", "重实行应用")
+
+    def _normalize_nature(self, special_needs: Optional[str]) -> str:
+        """纲目性质归一化为四种之一，用于统计。"""
+        if not special_needs or not isinstance(special_needs, str):
+            return "一般性"
+        s = special_needs.strip()
+        return s if s in self.NATURE_KEYS else "一般性"
+
     def record_query(
         self,
         question: str,
@@ -96,6 +105,7 @@ class AIMonitoring:
         input_tokens: int = 0,
         output_tokens: int = 0,
         cost: Optional[float] = None,
+        special_needs: Optional[str] = None,
     ) -> None:
         """
         记录一次 AI 查询。
@@ -105,16 +115,19 @@ class AIMonitoring:
         :param input_tokens: 输入 token 数
         :param output_tokens: 输出 token 数
         :param cost: 费用（美元）；为 None 时根据 input/output tokens 计算
+        :param special_needs: 纲目性质（一般性/高真理浓度/高生命浓度/重实行应用），用于统计占比
         """
         if not self.redis:
             return
         if cost is None:
             cost = self._cost_from_tokens(input_tokens, output_tokens)
+        nature = self._normalize_nature(special_needs)
         try:
             # 全局统计：使用 hash 累加
             # 响应时间只记录非缓存命中（真实 AI 回答）的查询，否则平均响应时间不准确
             pipe = self.redis.pipeline()
             pipe.hincrby(KEY_STATS, "total_queries", 1)
+            pipe.hincrby(KEY_STATS, f"nature_{nature}", 1)
             if cache_hit:
                 pipe.hincrby(KEY_STATS, "cache_hits", 1)
             else:
@@ -218,6 +231,7 @@ class AIMonitoring:
                 "cache_hit_rate": 0.0,
                 "avg_response_time_ms": 0.0,
                 "total_cost": 0.0,
+                "nature_counts": {k: 0 for k in AIMonitoring.NATURE_KEYS},
                 "daily": [],
                 "retrieval_log": [],
                 "message": "Redis 未启用，无统计数据",
@@ -256,11 +270,14 @@ class AIMonitoring:
                     "cost": round(c, 4),
                 })
             retrieval_log = self.get_recent_retrieval_log(limit=50)
+            # 纲目性质统计：四种性质的查询次数
+            nature_counts = {k: int(raw.get(f"nature_{k}", 0) or 0) for k in self.NATURE_KEYS}
             return {
                 "total_queries": total_queries,
                 "cache_hit_rate": round(cache_hit_rate, 2),
                 "avg_response_time_ms": round(avg_response_time_ms, 2),
                 "total_cost": round(total_cost, 4),
+                "nature_counts": nature_counts,
                 "daily": daily,
                 "retrieval_log": retrieval_log,
             }
@@ -272,6 +289,7 @@ class AIMonitoring:
                 "avg_response_time_ms": 0.0,
                 "total_cost": 0.0,
                 "daily": [],
+                "nature_counts": {"一般性": 0, "高真理浓度": 0, "高生命浓度": 0, "重实行应用": 0},
                 "retrieval_log": [],
                 "error": str(e),
             }

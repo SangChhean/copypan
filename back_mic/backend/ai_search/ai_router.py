@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 import logging
 
-from .ai_service import ai_service
+from .ai_service import ai_service, get_index_weights_for_display
 from .monitoring import get_monitoring
 
 logger = logging.getLogger(__name__)
@@ -267,6 +267,7 @@ async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含�
     try:
         monitoring = get_monitoring()
         data = monitoring.get_stats(days=days)
+        data["index_weights"] = get_index_weights_for_display()
         return {"status": "success", "data": data}
     except Exception as e:
         logger.error(f"获取统计失败: {e}", exc_info=True)

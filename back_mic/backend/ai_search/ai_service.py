@@ -102,6 +102,33 @@ INDEXES_CONFIG_BY_NATURE = {
 # 默认使用一般性
 INDEXES_CONFIG = INDEXES_CONFIG_BY_NATURE["一般性"]
 
+# 索引中文名，供后台统计页展示权重
+INDEX_LABELS = {
+    "map_note": "注解",
+    "map_dictionary": "词典",
+    "map_7feasts": "节期",
+    "map_pano": "上河图",
+    "cwwl": "李常受文集",
+    "cwwn": "倪柝声文集",
+    "life": "生命读经",
+    "bib": "圣经",
+    "others": "其他",
+}
+
+
+def get_index_weights_for_display():
+    """供后台统计页展示：各纲目性质对应的 AI 检索索引权重。"""
+    out = {}
+    for nature, config in INDEXES_CONFIG_BY_NATURE.items():
+        out[nature] = {idx: config[idx]["weight"] for idx in config}
+    out["_notes"] = {
+        "高真理浓度": "cwwl 1994-1997 文集 ×1.5",
+        "重实行应用": "cwwl 1985-1993 文集 ×1.5",
+    }
+    out["_labels"] = INDEX_LABELS
+    return out
+
+
 # cwwl 额外 ×1.5 的年份/范围
 _CWWL_EXTRA_WEIGHT_PATTERNS_实行 = (  # 重实行应用：85–93，不含 94–97
     "cwwl_1985", "cwwl_1986", "cwwl_1987", "cwwl_1988", "cwwl_1989",
@@ -179,6 +206,7 @@ class AISearchService:
                         input_tokens=int(tokens.get("input", 0) or 0),
                         output_tokens=int(tokens.get("output", 0) or 0),
                         cost=tokens.get("cost"),
+                        special_needs=normalized_metadata.get("special_needs"),
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -258,6 +286,7 @@ class AISearchService:
                     input_tokens=input_tok,
                     output_tokens=output_tok,
                     cost=tokens.get("cost"),
+                    special_needs=normalized_metadata.get("special_needs"),
                 )
             except Exception as _e:
                 logger.debug(f"监控记录失败: {_e}")
@@ -322,6 +351,7 @@ class AISearchService:
                         input_tokens=int(cached.get("tokens", {}).get("input", 0) or 0),
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
+                        special_needs=normalized_metadata.get("special_needs"),
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -429,6 +459,7 @@ class AISearchService:
                         input_tokens=int(cached.get("tokens", {}).get("input", 0) or 0),
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
+                        special_needs=normalized_metadata.get("special_needs"),
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -486,6 +517,7 @@ class AISearchService:
                     input_tokens=int(tokens.get("input", 0) or 0),
                     output_tokens=int(tokens.get("output", 0) or 0),
                     cost=tokens.get("cost"),
+                    special_needs=normalized_metadata.get("special_needs"),
                 )
             except Exception as _e:
                 logger.debug(f"监控记录失败: {_e}")
