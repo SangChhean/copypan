@@ -84,6 +84,11 @@ class SearchResponse(BaseModel):
     claude_payload: Optional[dict] = None
 
 
+class TranslateOutlineRequest(BaseModel):
+    """英文纲目翻译请求：传入中文纲目全文"""
+    chinese_outline: str = Field(..., min_length=1, max_length=100_000, description="中文纲目全文")
+
+
 # ========== 方案A：分步搜索接口 ==========
 
 @router.post("/ai_search/search", summary="第一步：仅检索（返回引用来源）")
@@ -131,6 +136,20 @@ async def ai_search_step2(request: GenerateOnlyRequest):
         raise
     except Exception as e:
         logger.error(f"ai_search/generate 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/translate_outline", summary="将中文纲目翻译为英文纲目")
+async def translate_outline(request: TranslateOutlineRequest):
+    """
+    用户勾选「同时生成英文纲目」后，前端用已展示的中文纲目调用此接口。
+    后端用 Gemini 翻译，失败时自动重试 1 次；同一中文纲目会缓存 24 小时。
+    """
+    try:
+        result = ai_service.translate_outline(request.chinese_outline)
+        return result
+    except Exception as e:
+        logger.error(f"翻译纲目失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -174,6 +174,10 @@
             <div v-if="!aiFormValid" class="ai-panel-hint">
               请先填写「问题」「纲目主题」并选择「纲目性质」后再发送。
             </div>
+            <label class="ai-checkbox-inline">
+              <input type="checkbox" v-model="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" />
+              <span>同时生成英文纲目</span>
+            </label>
               <button
                 class="search-btn"
                 :disabled="loadingAI || !aiFormValid"
@@ -193,9 +197,17 @@
           </div>
           <template v-else>
             <div class="ai-answer-card">
-              <div class="ai-answer-label">回答</div>
+              <div class="ai-answer-label">中文纲目</div>
               <div class="ai-answer-content" v-html="formatAnswer(aiResult.answer)"></div>
               <div v-if="aiResult.cached" class="ai-cached-tag">缓存</div>
+              <button type="button" class="ai-copy-btn" @click="copyChinese">复制</button>
+            </div>
+            <div v-if="includeEnglishOutline" class="ai-answer-card ai-answer-card-en">
+              <div class="ai-answer-label">英文纲目</div>
+              <div v-if="loadingEnglish" class="ai-answer-content ai-answer-loading-en">正在生成英文纲目…</div>
+              <div v-else-if="errorEnglish" class="ai-answer-content ai-answer-error-en">{{ errorEnglish }}</div>
+              <div v-else-if="answerEn" class="ai-answer-content" v-html="formatAnswer(answerEn)"></div>
+              <button v-if="answerEn" type="button" class="ai-copy-btn" @click="copyEnglish">复制</button>
             </div>
             <div v-if="aiResult.sources && aiResult.sources.length" class="ai-sources">
               <div class="ai-sources-label">参考来源</div>
@@ -240,6 +252,12 @@ const loadingTraditional = ref(false)
 const loadingAI = ref(false)
 const traditionalResult = ref(null) // { total, msg[] }
 const aiResult = ref(null) // { answer, sources[], cached?, ... }
+// 暂封英文纲目功能，测试通过后改为 true
+const ENGLISH_OUTLINE_FEATURE_ENABLED = false
+const includeEnglishOutline = ref(false)
+const answerEn = ref(null)
+const loadingEnglish = ref(false)
+const errorEnglish = ref(null)
 
 const aiFormValid = computed(() => {
   const q = aiForm.question.trim().length > 0
@@ -307,6 +325,43 @@ function formatAnswer(text) {
     .replace(/\n/g, '<br>')
 }
 
+async function fetchTranslate(chineseOutline) {
+  if (!chineseOutline || !chineseOutline.trim()) return
+  loadingEnglish.value = true
+  errorEnglish.value = null
+  answerEn.value = null
+  try {
+    const res = await fetch(`${apiBase}/api/ai_search/translate_outline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ chinese_outline: chineseOutline })
+    })
+    const data = await res.json().catch(() => ({}))
+    if (data.answer_en) {
+      answerEn.value = data.answer_en
+    } else {
+      errorEnglish.value = data.error || '英文纲目生成失败'
+    }
+  } catch (e) {
+    errorEnglish.value = e.message || '翻译请求失败，请稍后重试'
+  } finally {
+    loadingEnglish.value = false
+  }
+}
+
+function copyChinese() {
+  const text = aiResult.value?.answer
+  if (!text) return
+  navigator.clipboard.writeText(text).then(() => {}).catch(() => {})
+}
+
+function copyEnglish() {
+  const text = answerEn.value
+  if (!text) return
+  navigator.clipboard.writeText(text).then(() => {}).catch(() => {})
+}
+
 async function doAISearch() {
   const question = aiForm.question?.trim()
   if (!question || loadingAI.value || !aiFormValid.value) {
@@ -315,6 +370,8 @@ async function doAISearch() {
   }
   loadingAI.value = true
   aiResult.value = null
+  answerEn.value = null
+  errorEnglish.value = null
   const payload = {
     question,
     max_results: 10,
@@ -336,6 +393,9 @@ async function doAISearch() {
       answer: data.answer || '暂无回答。',
       sources: data.sources || [],
       cached: !!data.cached
+    }
+    if (includeEnglishOutline.value) {
+      fetchTranslate(aiResult.value.answer)
     }
     aiForm.question = ''
   } catch (e) {
@@ -848,6 +908,39 @@ async function doAISearch() {
   background: rgba(255, 255, 255, 0.9);
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.ai-copy-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: #1677ff;
+  background: #fff;
+  border: 1px solid #1677ff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ai-copy-btn:hover {
+  background: #e6f4ff;
+}
+
+.ai-checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.ai-checkbox-inline input { margin: 0; }
+
+.ai-answer-loading-en,
+.ai-answer-error-en {
+  color: #666;
+  padding: 12px 0;
+}
+.ai-answer-error-en {
+  color: #c41e3a;
 }
 
 /* AI 来源列表 */

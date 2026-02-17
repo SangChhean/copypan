@@ -101,6 +101,13 @@ const aiDepth = ref("general"); // 搜索深度：general(一般-50条) 或 deep
 const showAISources = ref(false); // 是否显示引用来源
 const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
+// 暂封英文纲目功能，测试通过后改为 true
+const ENGLISH_OUTLINE_FEATURE_ENABLED = false;
+const includeEnglishOutline = ref(false); // 是否同时生成英文纲目
+const answerEn = ref(null); // 英文纲目
+const loadingEnglish = ref(false); // 正在生成英文纲目
+const errorEnglish = ref(null); // 英文纲目生成失败信息
+const aiAnswerEnCopied = ref(false); // 英文复制状态
 
 const aiPanelVisible = ref(false);
 const AI_NATURE_OPTIONS = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
@@ -133,6 +140,47 @@ const copyAiAnswer = async () => {
   }
 };
 
+// 英文纲目复制
+const copyAiAnswerEn = async () => {
+  const text = answerEn.value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    aiAnswerEnCopied.value = true;
+    tip("英文纲目已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerEnCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
+// 请求翻译中文纲目为英文（用户勾选「同时生成英文纲目」后调用）
+const fetchTranslate = async (chineseOutline) => {
+  if (!chineseOutline || !chineseOutline.trim()) return;
+  loadingEnglish.value = true;
+  errorEnglish.value = null;
+  answerEn.value = null;
+  try {
+    const res = await axios.post(
+      "/api/ai_search/translate_outline",
+      { chinese_outline: chineseOutline },
+      { timeout: 120000 }
+    );
+    const data = res.data;
+    if (data.answer_en) {
+      answerEn.value = data.answer_en;
+    } else {
+      errorEnglish.value = data.error || "英文纲目生成失败";
+    }
+  } catch (err) {
+    errorEnglish.value = err.response?.data?.detail || err.message || "翻译请求失败，请稍后重试";
+  } finally {
+    loadingEnglish.value = false;
+  }
+};
+
 // 仅将 AI 回答中的大点（壹、贰、叁/参…拾）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
   const raw = aiResult.value?.answer;
@@ -147,6 +195,14 @@ const aiAnswerFormatted = computed(() => {
   const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t]|贰[、，\u3000\t]|(?:叁|参)[、，\u3000\t]|肆[、，\u3000\t]|伍[、，\u3000\t]|陆[、，\u3000\t]|柒[、，\u3000\t]|捌[、，\u3000\t]|玖[、，\u3000\t]|拾[、，\u3000\t])[^<]*?)(?=<br>|$)/g;
   const s = toBold.replace(big, "$1$2<strong>$3</strong>");
   return s + afterRef;
+});
+
+// 英文纲目格式化（换行转 br）
+const aiAnswerEnFormatted = computed(() => {
+  const raw = answerEn.value;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
 });
 
 const toggleAiPanel = () => {
@@ -309,16 +365,18 @@ const onAISearch = async () => {
   loadingAI.value = true;
   showInfo.value = 6;
   aiResult.value = null;
+  answerEn.value = null;
+  errorEnglish.value = null;
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "🔍 正在检索相关内容...";
   
   try {
-    // 第一步：仅检索，快速返回引用来源（超时 60 秒）
+    // 第一步：仅检索，快速返回引用来源（超时 2 分钟）
     const searchRes = await axios.post(
       "/api/ai_search/search",
       { question, depth: aiDepth.value, ...metadataPayload },
-      { timeout: 60000 }
+      { timeout: 120000 }
     );
     
     const data = searchRes.data;
@@ -329,6 +387,9 @@ const onAISearch = async () => {
       showInfo.value = 5;
       showAISources.value = true;
       showAIAnswer.value = true;
+      if (includeEnglishOutline.value) {
+        fetchTranslate(data.answer);
+      }
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
@@ -348,17 +409,19 @@ const onAISearch = async () => {
     showAISources.value = true;
     aiLoadingText.value = "💡 AI 正在生成答案...";
     
-    // 第二步：生成答案（耗时 20-30 秒，在线环境需更长超时）
+    // 第二步：生成答案（耗时可能较长，超时 3 分钟）
     const generateRes = await axios.post(
       "/api/ai_search/generate",
       { question, search_id, max_results: 50, ...metadataPayload },
-      { timeout: 120000 }
+      { timeout: 180000 }
     );
     
     aiResult.value = generateRes.data;
     showInfo.value = 5;
     showAIAnswer.value = true;
-    
+    if (includeEnglishOutline.value) {
+      fetchTranslate(generateRes.data.answer);
+    }
     // 平滑滚动到页面最顶端
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -462,7 +525,7 @@ const onAISearch = async () => {
               </div>
             </div>
           </div>
-          <div class="ai-panel-actions">
+            <div class="ai-panel-actions">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
@@ -472,6 +535,7 @@ const onAISearch = async () => {
                   <a-radio-button value="deep">深度</a-radio-button>
                 </a-radio-group>
               </div>
+              <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-button
                 type="primary"
                 :loading="loadingAI"
@@ -643,11 +707,11 @@ const onAISearch = async () => {
     </a-alert>
     <a-divider style="margin: 10px 0"></a-divider>
     
-    <!-- AI 答案卡片（从上方滑入） -->
+    <!-- 中文纲目 -->
     <transition name="slide-down">
       <div v-if="showAIAnswer" class="ai-answer-card">
         <div class="ai-answer-header">
-          <span style="font-weight: bold; color: #667eea;">📝 AI 回答</span>
+          <span style="font-weight: bold; color: #667eea;">📝 中文纲目</span>
           <a-button type="text" size="small" @click="copyAiAnswer" class="ai-copy-btn">
             <CheckOutlined v-if="aiAnswerCopied" style="color: #52c41a;" />
             <CopyOutlined v-else />
@@ -657,6 +721,25 @@ const onAISearch = async () => {
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
       </div>
     </transition>
+
+    <!-- 英文纲目（仅当用户勾选「同时生成英文纲目」时显示此区块） -->
+    <div v-if="showAIAnswer && includeEnglishOutline" class="ai-answer-card ai-answer-card-en">
+      <div class="ai-answer-header">
+        <span style="font-weight: bold; color: #667eea;">📝 英文纲目</span>
+        <a-button v-if="answerEn" type="text" size="small" @click="copyAiAnswerEn" class="ai-copy-btn">
+          <CheckOutlined v-if="aiAnswerEnCopied" style="color: #52c41a;" />
+          <CopyOutlined v-else />
+          {{ aiAnswerEnCopied ? "已复制" : "复制" }}
+        </a-button>
+      </div>
+      <div v-if="loadingEnglish" class="ai-answer-content ai-answer-loading-en">
+        <a-spin size="small" /> 正在生成英文纲目…
+      </div>
+      <div v-else-if="errorEnglish" class="ai-answer-content ai-answer-error-en">
+        {{ errorEnglish }}
+      </div>
+      <div v-else-if="answerEn" class="ai-answer-content" v-html="aiAnswerEnFormatted"></div>
+    </div>
 
     <!-- 查看全部数据（可折叠） -->
     <div v-if="aiResult.claude_payload" class="claude-payload-section">
@@ -1201,6 +1284,14 @@ const onAISearch = async () => {
 .ai-answer-content strong {
   font-weight: 700;
   color: #1a1a2e;
+}
+.ai-answer-loading-en,
+.ai-answer-error-en {
+  color: #666;
+  padding: 12px 0;
+}
+.ai-answer-error-en {
+  color: #c41e3a;
 }
 
 .ai-sources {

@@ -15,7 +15,14 @@
         :class="['ai-chat-bubble-wrap', msg.role]"
       >
         <div class="ai-chat-bubble">
+          <div class="ai-chat-bubble-label" v-if="msg.content">中文纲目</div>
           <div class="ai-chat-bubble-content" v-html="formatContent(msg.content)"></div>
+          <div v-if="msg.loadingEnglish" class="ai-chat-bubble-en ai-chat-loading-en">正在生成英文纲目…</div>
+          <div v-else-if="msg.errorEnglish" class="ai-chat-bubble-en ai-chat-error-en">{{ msg.errorEnglish }}</div>
+          <div v-else-if="msg.contentEn" class="ai-chat-bubble-en">
+            <div class="ai-chat-bubble-label">英文纲目</div>
+            <div class="ai-chat-bubble-content" v-html="formatContent(msg.contentEn)"></div>
+          </div>
           <div v-if="msg.sources && msg.sources.length" class="ai-chat-sources">
             <div class="ai-chat-sources-title">参考来源</div>
             <div
@@ -125,6 +132,10 @@
           <div v-if="!formValid" class="ai-chat-hint">
             请填写【问题】、【纲目主题】、【负担说明】、【纲目性质】、【面对对象】后再发送。
           </div>
+          <label class="ai-chat-checkbox">
+            <input type="checkbox" v-model="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loading" />
+            <span>同时生成英文纲目</span>
+          </label>
           <button
             class="ai-chat-send"
             :disabled="loading || !formValid"
@@ -145,6 +156,9 @@ const messagesRef = ref(null)
 const loading = ref(false)
 const messages = ref([])
 const showFormDetails = ref(false)
+// 暂封英文纲目功能，测试通过后改为 true
+const ENGLISH_OUTLINE_FEATURE_ENABLED = false
+const includeEnglishOutline = ref(false)
 const AI_NATURE_OPTIONS = ['一般性', '高真理浓度', '高生命浓度', '重实行应用']
 const form = reactive({
   question: '',
@@ -177,6 +191,34 @@ function formatContent(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
+}
+
+async function fetchTranslateForLastMessage(chineseOutline) {
+  const list = messages.value
+  const last = list[list.length - 1]
+  if (!last || last.role !== 'assistant' || !chineseOutline.trim()) return
+  try {
+    const res = await fetch(`${apiBase}/api/ai_search/translate_outline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ chinese_outline: chineseOutline })
+    })
+    const data = await res.json().catch(() => ({}))
+    last.loadingEnglish = false
+    if (data.answer_en) {
+      last.contentEn = data.answer_en
+    } else {
+      last.errorEnglish = data.error || '英文纲目生成失败'
+    }
+  } catch (e) {
+    last.loadingEnglish = false
+    last.errorEnglish = e.message || '翻译请求失败，请稍后重试'
+  }
+  await nextTick()
+  if (messagesRef.value) {
+    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  }
 }
 
 function buildUserPreview() {
@@ -226,10 +268,16 @@ async function send() {
     messages.value.push({
       role: 'assistant',
       content: answer,
+      contentEn: null,
+      loadingEnglish: includeEnglishOutline.value,
+      errorEnglish: null,
       sources,
       cached
     })
     form.question = ''
+    if (includeEnglishOutline.value && answer) {
+      fetchTranslateForLastMessage(answer)
+    }
   } catch (e) {
     messages.value.push({
       role: 'assistant',
@@ -324,11 +372,58 @@ async function send() {
   border-bottom-left-radius: 4px;
 }
 
+.ai-chat-bubble-wrap.assistant .ai-chat-bubble-label {
+  color: #1677ff;
+}
+.ai-chat-bubble-wrap.assistant .ai-chat-bubble-en {
+  border-top-color: #eee;
+}
+.ai-chat-bubble-wrap.assistant .ai-chat-loading-en,
+.ai-chat-bubble-wrap.assistant .ai-chat-error-en {
+  color: #666;
+}
+.ai-chat-bubble-wrap.assistant .ai-chat-error-en {
+  color: #c41e3a;
+}
+
 .ai-chat-bubble-content {
   font-size: 0.95rem;
   line-height: 1.6;
   word-break: break-word;
 }
+
+.ai-chat-bubble-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.ai-chat-bubble-en {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-chat-loading-en,
+.ai-chat-error-en {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+.ai-chat-error-en {
+  color: #ffccc7;
+}
+
+.ai-chat-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.ai-chat-checkbox input { margin: 0; }
 
 .ai-chat-sources {
   margin-top: 12px;

@@ -94,22 +94,38 @@ curl http://localhost:9200
 
 **方式 A：直接拷贝本机 es_data（推荐，数据完整）**
 
-```bash
-# 在本地执行，将 es_data 压缩并上传
-# 本地 Windows PowerShell:
-# Compress-Archive -Path E:\copypan\es_data -DestinationPath es_data.zip
-# scp es_data.zip user@服务器IP:/opt/copypan/
+**本地 Windows 打包并上传：**
 
-# 在服务器上解压并替换
+```powershell
+# 在项目根目录 E:\copypan 执行
+# 仅打包（ES 可继续运行）：
+.\package_esdata.ps1
+
+# 先停止 ES 再打包（数据更一致，打包后会自动启动 ES）：
+.\package_esdata.ps1 -StopES
+
+# 上传到服务器（替换 用户名 和 服务器IP）：
+scp E:\copypan\es_data.zip 用户名@服务器IP:/opt/copypan/
+```
+
+**服务器上解压并挂载：**
+
+```bash
 cd /opt/copypan
-# 先停止 ES 容器
+# 先停止并删除现有 ES 容器
 docker stop elasticsearch
 docker rm elasticsearch
 
-# 解压 es_data（若从本机上传了 zip）
-# unzip es_data.zip
+# 解压（会得到 es_data 目录）
+unzip -o es_data.zip
 
-# 重新启动 ES（使用上面 docker run 命令，确保 -v 指向 /opt/copypan/es_data）
+# 重新启动 ES（-v 指向 /opt/copypan/es_data）
+docker run -d --name elasticsearch \
+  -p 9200:9200 -p 9300:9300 \
+  -e "discovery.type=single-node" \
+  -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
+  -v /opt/copypan/es_data:/usr/share/elasticsearch/data \
+  elasticsearch:7.17.9
 ```
 
 **方式 B：重新创建索引并导入**

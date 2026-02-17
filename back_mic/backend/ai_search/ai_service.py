@@ -14,11 +14,13 @@ from datetime import datetime
 from es_config import es
 import anthropic
 from dotenv import load_dotenv
+from pathlib import Path
 
 from .monitoring import get_monitoring
 
-# 加载环境变量
-load_dotenv()
+# 加载环境变量（确保从 backend 目录加载 .env）
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # 配置日志
 logging.basicConfig(
@@ -50,6 +52,27 @@ try:
 except Exception as e:
     logger.error(f"Claude 客户端初始化失败: {e}")
     claude_client = None
+
+# Gemini 客户端（用于中文纲目→英文纲目翻译，需配置 GEMINI_API_KEY；使用新 SDK google.genai）
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+gemini_client = None
+if GEMINI_API_KEY:
+    try:
+        from google import genai
+        from google.genai import types
+        from .gemini_translation_instruction import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        # 保存 system_instruction 供 translate_outline 调用时传入
+        _gemini_system_instruction = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
+        logger.info("Gemini 翻译模型初始化成功")
+    except Exception as e:
+        logger.error(f"Gemini 翻译模型初始化失败: {e}")
+        gemini_client = None
+        _gemini_system_instruction = None
+else:
+    _gemini_system_instruction = None
+    logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
 
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 # 按纲目性质（special_needs）选择不同权重
@@ -1168,7 +1191,7 @@ class AISearchService:
 
 19. 纲目中涉及主观经历的条目数量占比约15%的篇幅；涉及实行应用的条目数量占比约15%的篇幅。
 
-20. 总体篇幅以A4纸3~4页为准。
+20. 纲目篇幅严格限制为A4纸一页半(必须在38~40行之间)
 
 【完整格式示例】
 
@@ -1514,6 +1537,66 @@ class AISearchService:
             logger.warning(f"保存缓存失败: {e}")
             return False
 
+    def translate_outline(self, chinese_outline: str) -> Dict:
+        """
+        将中文纲目翻译为英文纲目（调用 Gemini）。
+        若未配置 GEMINI_API_KEY 返回 error；失败时重试 1 次；缓存按中文内容 hash。
+        """
+        MAX_OUTLINE_LENGTH = 100_000
+        TRANSLATE_CACHE_TTL = 86400  # 24 小时
+
+        outline = (chinese_outline or "").strip()
+        if not outline:
+            return {"answer_en": None, "error": "中文纲目为空"}
+        if len(outline) > MAX_OUTLINE_LENGTH:
+            return {"answer_en": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
+
+        cache_key = f"ai_search:translate:{hashlib.sha256(outline.encode()).hexdigest()[:32]}"
+        if self.redis:
+            try:
+                cached = self.redis.get(cache_key)
+                if cached:
+                    data = json.loads(cached)
+                    return {"answer_en": data.get("answer_en")}
+            except Exception as e:
+                logger.debug(f"翻译缓存读取失败: {e}")
+
+        if not gemini_client:
+            return {"answer_en": None, "error": "英文翻译服务未配置（请设置 GEMINI_API_KEY）"}
+
+        def _call_gemini() -> Optional[str]:
+            try:
+                response = gemini_client.models.generate_content(
+                    model=GEMINI_MODEL,
+                    contents=outline,
+                    config=types.GenerateContentConfig(
+                        system_instruction=_gemini_system_instruction,
+                    ),
+                )
+                if response and getattr(response, "text", None):
+                    return response.text.strip()
+            except Exception as e:
+                logger.warning(f"Gemini 翻译调用失败: {e}")
+            return None
+
+        answer_en = _call_gemini()
+        if answer_en is None:
+            answer_en = _call_gemini()  # 重试 1 次
+        if answer_en is None:
+            return {"answer_en": None, "error": "翻译失败，请稍后重试"}
+
+        if self.redis:
+            try:
+                self.redis.setex(
+                    cache_key,
+                    TRANSLATE_CACHE_TTL,
+                    json.dumps({"answer_en": answer_en}, ensure_ascii=False),
+                )
+            except Exception as e:
+                logger.debug(f"翻译缓存写入失败: {e}")
+
+        return {"answer_en": answer_en}
+
     def clear_cache(self) -> Dict:
         """清空 AI 搜索 Redis 缓存（所有 ai_search:* 键）。返回删除的键数量。"""
         if not self.redis:
@@ -1535,6 +1618,7 @@ class AISearchService:
             "elasticsearch": False,
             "redis": False,
             "claude": False,
+            "gemini": False,
             "overall": False
         }
 
@@ -1557,7 +1641,13 @@ class AISearchService:
         except Exception:
             pass
 
-        # 核心依赖为 ES + Claude；Redis 为可选（未启用时仍可为 healthy）
+        try:
+            # 检查Gemini（英文翻译，可选）
+            status["gemini"] = bool(GEMINI_API_KEY and gemini_client)
+        except Exception:
+            pass
+
+        # 核心依赖为 ES + Claude；Redis、Gemini 为可选
         status["overall"] = status["elasticsearch"] and status["claude"]
 
         return status
