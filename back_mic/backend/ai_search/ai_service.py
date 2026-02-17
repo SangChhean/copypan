@@ -1560,19 +1560,20 @@ class AISearchService:
             logger.warning(f"保存缓存失败: {e}")
             return False
 
-    def translate_outline(self, chinese_outline: str) -> Dict:
+    def translate_outline(self, chinese_outline: str, outline_topic: Optional[str] = None) -> Dict:
         """
         将中文纲目翻译为英文纲目（调用 Gemini）。
         若未配置 GEMINI_API_KEY 返回 error；失败时重试 1 次；缓存按中文内容 hash。
+        同时翻译纲目主题作为英文标题。
         """
         MAX_OUTLINE_LENGTH = 100_000
         TRANSLATE_CACHE_TTL = 86400  # 24 小时
 
         outline = (chinese_outline or "").strip()
         if not outline:
-            return {"answer_en": None, "error": "中文纲目为空"}
+            return {"answer_en": None, "title_en": None, "error": "中文纲目为空"}
         if len(outline) > MAX_OUTLINE_LENGTH:
-            return {"answer_en": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
+            return {"answer_en": None, "title_en": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
 
         cache_key = f"ai_search:translate:{hashlib.sha256(outline.encode()).hexdigest()[:32]}"
         if self.redis:
@@ -1580,14 +1581,72 @@ class AISearchService:
                 cached = self.redis.get(cache_key)
                 if cached:
                     data = json.loads(cached)
-                    return {"answer_en": data.get("answer_en")}
+                    cached_answer = data.get("answer_en")
+                    cached_title = data.get("title_en")
+                    # 如果缓存中没有标题但需要翻译标题，则只返回内容，标题单独翻译
+                    if cached_answer:
+                        if outline_topic and outline_topic.strip() and not cached_title:
+                            # 缓存中有内容但没有标题，需要单独翻译标题
+                            topic = outline_topic.strip()
+                            
+                            def _translate_title_for_cache(retry_count: int = 0) -> Optional[str]:
+                                """翻译标题（缓存场景），带重试逻辑"""
+                                try:
+                                    title_response = gemini_client.models.generate_content(
+                                        model=GEMINI_MODEL,
+                                        contents=topic,
+                                        config=types.GenerateContentConfig(
+                                            system_instruction="You are a professional translator. Translate the given Chinese title to English. Only return the English translation, no additional text, no explanations, no prefixes like 'Translation:' or 'English:'.",
+                                        ),
+                                    )
+                                    if title_response and getattr(title_response, "text", None):
+                                        raw_title = title_response.text.strip()
+                                        title_en_clean = raw_title
+                                        prefixes_to_remove = [
+                                            "Translation:", "English:", "翻译：", "英文：",
+                                            "The translation is:", "Here is the translation:",
+                                            "Title:", "标题："
+                                        ]
+                                        for prefix in prefixes_to_remove:
+                                            if title_en_clean.lower().startswith(prefix.lower()):
+                                                title_en_clean = title_en_clean[len(prefix):].strip()
+                                        title_en_clean = title_en_clean.strip('"\'')
+                                        return title_en_clean
+                                    else:
+                                        logger.warning(f"缓存标题翻译返回空响应（重试次数: {retry_count}）")
+                                except Exception as e:
+                                    error_msg = str(e)
+                                    is_retryable = (
+                                        "503" in error_msg or 
+                                        "UNAVAILABLE" in error_msg or 
+                                        "429" in error_msg or
+                                        "timeout" in error_msg.lower() or
+                                        "temporary" in error_msg.lower()
+                                    )
+                                    if is_retryable and retry_count == 0:
+                                        logger.warning(f"缓存标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                                        time.sleep(2)
+                                    else:
+                                        logger.warning(f"缓存标题翻译调用失败（重试次数: {retry_count}）: {e}")
+                                return None
+                            
+                            # 尝试翻译标题，失败时重试1次（带延迟）
+                            cached_title = _translate_title_for_cache(retry_count=0)
+                            if cached_title is None:
+                                cached_title = _translate_title_for_cache(retry_count=1)  # 重试1次
+                            
+                            if cached_title:
+                                logger.info(f"缓存标题翻译成功: '{topic}' -> '{cached_title}'")
+                            else:
+                                logger.warning(f"缓存标题翻译失败（已重试1次）: '{topic}'")
+                        return {"answer_en": cached_answer, "title_en": cached_title}
             except Exception as e:
                 logger.debug(f"翻译缓存读取失败: {e}")
 
         if not gemini_client:
             return {"answer_en": None, "error": "英文翻译服务未配置（请设置 GEMINI_API_KEY）"}
 
-        def _call_gemini() -> Optional[str]:
+        def _call_gemini(retry_count: int = 0) -> Optional[str]:
             try:
                 response = gemini_client.models.generate_content(
                     model=GEMINI_MODEL,
@@ -1598,27 +1657,106 @@ class AISearchService:
                 )
                 if response and getattr(response, "text", None):
                     return response.text.strip()
+                else:
+                    logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
             except Exception as e:
-                logger.warning(f"Gemini 翻译调用失败: {e}")
+                error_msg = str(e)
+                # 检查是否是503或其他可重试的错误
+                is_retryable = (
+                    "503" in error_msg or 
+                    "UNAVAILABLE" in error_msg or 
+                    "429" in error_msg or  # Rate limit
+                    "timeout" in error_msg.lower() or
+                    "temporary" in error_msg.lower()
+                )
+                if is_retryable and retry_count == 0:
+                    logger.warning(f"Gemini 翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                    time.sleep(2)  # 等待2秒后重试
+                else:
+                    logger.warning(f"Gemini 翻译调用失败（重试次数: {retry_count}）: {e}")
             return None
 
-        answer_en = _call_gemini()
+        answer_en = _call_gemini(retry_count=0)
         if answer_en is None:
-            answer_en = _call_gemini()  # 重试 1 次
+            answer_en = _call_gemini(retry_count=1)  # 重试 1 次
+        
+        # 翻译标题（如果提供）- 独立执行，即使纲目内容翻译失败也尝试翻译标题
+        title_en = None
+        if outline_topic and outline_topic.strip():
+            topic = outline_topic.strip()
+            
+            def _translate_title(retry_count: int = 0) -> Optional[str]:
+                """翻译标题，带重试逻辑"""
+                try:
+                    title_response = gemini_client.models.generate_content(
+                        model=GEMINI_MODEL,
+                        contents=topic,
+                        config=types.GenerateContentConfig(
+                            system_instruction="You are a professional translator. Translate the given Chinese title to English. Only return the English translation, no additional text, no explanations, no prefixes like 'Translation:' or 'English:'.",
+                        ),
+                    )
+                    if title_response and getattr(title_response, "text", None):
+                        raw_title = title_response.text.strip()
+                        # 清理可能的提示词前缀
+                        title_en_clean = raw_title
+                        # 移除常见的提示词前缀
+                        prefixes_to_remove = [
+                            "Translation:", "English:", "翻译：", "英文：",
+                            "The translation is:", "Here is the translation:",
+                            "Title:", "标题："
+                        ]
+                        for prefix in prefixes_to_remove:
+                            if title_en_clean.lower().startswith(prefix.lower()):
+                                title_en_clean = title_en_clean[len(prefix):].strip()
+                        # 移除引号（如果 Gemini 加了引号）
+                        title_en_clean = title_en_clean.strip('"\'')
+                        return title_en_clean
+                    else:
+                        logger.warning(f"标题翻译返回空响应（重试次数: {retry_count}）")
+                except Exception as e:
+                    error_msg = str(e)
+                    is_retryable = (
+                        "503" in error_msg or 
+                        "UNAVAILABLE" in error_msg or 
+                        "429" in error_msg or
+                        "timeout" in error_msg.lower() or
+                        "temporary" in error_msg.lower()
+                    )
+                    if is_retryable and retry_count == 0:
+                        logger.warning(f"标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                        time.sleep(2)  # 等待2秒后重试
+                    else:
+                        logger.warning(f"标题翻译调用失败（重试次数: {retry_count}）: {e}")
+                return None
+            
+            # 尝试翻译标题，失败时重试1次（带延迟）
+            title_en = _translate_title(retry_count=0)
+            if title_en is None:
+                title_en = _translate_title(retry_count=1)  # 重试1次
+            
+            if title_en:
+                logger.info(f"标题翻译成功: '{topic}' -> '{title_en}'")
+            else:
+                logger.warning(f"标题翻译失败（已重试1次）: '{topic}'")
+        
+        # 如果纲目内容翻译失败，返回错误（但标题翻译结果仍会返回）
         if answer_en is None:
-            return {"answer_en": None, "error": "翻译失败，请稍后重试"}
+            return {"answer_en": None, "title_en": title_en, "error": "纲目内容翻译失败，请稍后重试"}
 
         if self.redis:
             try:
+                cache_data = {"answer_en": answer_en}
+                if title_en:
+                    cache_data["title_en"] = title_en
                 self.redis.setex(
                     cache_key,
                     TRANSLATE_CACHE_TTL,
-                    json.dumps({"answer_en": answer_en}, ensure_ascii=False),
+                    json.dumps(cache_data, ensure_ascii=False),
                 )
             except Exception as e:
                 logger.debug(f"翻译缓存写入失败: {e}")
 
-        return {"answer_en": answer_en}
+        return {"answer_en": answer_en, "title_en": title_en}
 
     def info_retrieval_export(
         self,

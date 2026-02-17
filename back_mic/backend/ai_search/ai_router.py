@@ -89,8 +89,9 @@ class SearchResponse(BaseModel):
 
 
 class TranslateOutlineRequest(BaseModel):
-    """英文纲目翻译请求：传入中文纲目全文"""
+    """英文纲目翻译请求：传入中文纲目全文和标题"""
     chinese_outline: str = Field(..., min_length=1, max_length=100_000, description="中文纲目全文")
+    outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（用于翻译标题）")
 
 
 class InfoRetrievalRequest(BaseModel):
@@ -155,9 +156,10 @@ async def translate_outline(request: TranslateOutlineRequest):
     """
     用户勾选「同时生成英文纲目」后，前端用已展示的中文纲目调用此接口。
     后端用 Gemini 翻译，失败时自动重试 1 次；同一中文纲目会缓存 24 小时。
+    同时翻译纲目主题作为英文标题。
     """
     try:
-        result = ai_service.translate_outline(request.chinese_outline)
+        result = ai_service.translate_outline(request.chinese_outline, request.outline_topic)
         return result
     except Exception as e:
         logger.error(f"翻译纲目失败: {e}", exc_info=True)

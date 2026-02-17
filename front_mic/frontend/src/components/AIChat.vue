@@ -16,12 +16,12 @@
       >
         <div class="ai-chat-bubble">
           <div class="ai-chat-bubble-label" v-if="msg.content">中文纲目</div>
-          <div class="ai-chat-bubble-content" v-html="formatContent(msg.content)"></div>
+          <div class="ai-chat-bubble-content" v-html="formatContent(msg.content, msg.outlineTopic || form.outlineTopic.trim())"></div>
           <div v-if="msg.loadingEnglish" class="ai-chat-bubble-en ai-chat-loading-en">正在生成英文纲目…</div>
           <div v-else-if="msg.errorEnglish" class="ai-chat-bubble-en ai-chat-error-en">{{ msg.errorEnglish }}</div>
           <div v-else-if="msg.contentEn" class="ai-chat-bubble-en">
             <div class="ai-chat-bubble-label">英文纲目</div>
-            <div class="ai-chat-bubble-content" v-html="formatContent(msg.contentEn)"></div>
+            <div class="ai-chat-bubble-content" v-html="formatContent(msg.contentEn, msg.titleEn || msg.outlineTopic || form.outlineTopic.trim())"></div>
           </div>
           <div v-if="msg.sources && msg.sources.length" class="ai-chat-sources">
             <div class="ai-chat-sources-title">参考来源</div>
@@ -184,7 +184,7 @@ function expandForm() {
   showFormDetails.value = true
 }
 
-function formatContent(text) {
+function formatContent(text, title = null) {
   if (!text) return ''
   let result = text
     .replace(/&/g, '&amp;')
@@ -208,6 +208,12 @@ function formatContent(text) {
   const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g
   result = result.replace(bigEn, '$1$2<strong>$3</strong>')
   
+  // 添加标题（如果有）
+  if (title && title.trim()) {
+    const titleEscaped = String(title).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${result}`
+  }
+  
   return result
 }
 
@@ -220,12 +226,16 @@ async function fetchTranslateForLastMessage(chineseOutline) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ chinese_outline: chineseOutline })
+      body: JSON.stringify({ 
+        chinese_outline: chineseOutline,
+        outline_topic: form.outlineTopic.trim() || null
+      })
     })
     const data = await res.json().catch(() => ({}))
     last.loadingEnglish = false
     if (data.answer_en) {
       last.contentEn = data.answer_en
+      last.titleEn = data.title_en || null
     } else {
       last.errorEnglish = data.error || '英文纲目生成失败'
     }
@@ -287,6 +297,8 @@ async function send() {
       role: 'assistant',
       content: answer,
       contentEn: null,
+      titleEn: null,
+      outlineTopic: form.outlineTopic.trim(), // 保存生成时的标题
       loadingEnglish: includeEnglishOutline.value,
       errorEnglish: null,
       sources,

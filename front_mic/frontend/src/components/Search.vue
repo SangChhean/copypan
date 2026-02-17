@@ -105,6 +105,7 @@ const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 const ENGLISH_OUTLINE_FEATURE_ENABLED = true;
 const includeEnglishOutline = ref(false); // 是否同时生成英文纲目
 const answerEn = ref(null); // 英文纲目
+const titleEn = ref(null); // 英文标题
 const loadingEnglish = ref(false); // 正在生成英文纲目
 const errorEnglish = ref(null); // 英文纲目生成失败信息
 const aiAnswerEnCopied = ref(false); // 英文复制状态
@@ -123,13 +124,16 @@ const aiFormValid = computed(() => {
   return outline && nature;
 });
 
-// AI 回答复制
+// AI 回答复制（包含标题）
 const aiAnswerCopied = ref(false);
 const copyAiAnswer = async () => {
   const text = aiResult.value?.answer;
   if (!text) return;
+  // 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(fullText);
     aiAnswerCopied.value = true;
     tip("已复制到剪贴板");
     setTimeout(() => {
@@ -140,12 +144,15 @@ const copyAiAnswer = async () => {
   }
 };
 
-// 英文纲目复制
+// 英文纲目复制（包含标题）
 const copyAiAnswerEn = async () => {
   const text = answerEn.value;
   if (!text) return;
+  // 优先使用英文标题，否则使用生成时保存的中文标题
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(fullText);
     aiAnswerEnCopied.value = true;
     tip("英文纲目已复制到剪贴板");
     setTimeout(() => {
@@ -162,15 +169,24 @@ const fetchTranslate = async (chineseOutline) => {
   loadingEnglish.value = true;
   errorEnglish.value = null;
   answerEn.value = null;
+  titleEn.value = null;
   try {
     const res = await axios.post(
       "/api/ai_search/translate_outline",
-      { chinese_outline: chineseOutline },
+      { 
+        chinese_outline: chineseOutline,
+        outline_topic: aiForm.outlineTopic.trim() || null
+      },
       { timeout: 120000 }
     );
     const data = res.data;
     if (data.answer_en) {
       answerEn.value = data.answer_en;
+      // 确保 title_en 存在且非空才使用，否则保持 null（前端会 fallback 到中文标题）
+      titleEn.value = (data.title_en && data.title_en.trim()) ? data.title_en.trim() : null;
+      if (!titleEn.value) {
+        console.warn("英文标题翻译未返回，将使用中文标题");
+      }
     } else {
       errorEnglish.value = data.error || "英文纲目生成失败";
     }
@@ -194,7 +210,14 @@ const aiAnswerFormatted = computed(() => {
   // 只匹配大点：壹、贰、叁/参、肆…拾、拾壹、拾贰…贰拾、贰壹、贰贰… 整行（纲目后可为顿号、逗号、全角空格、半角空格、制表符等）
   const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|贰[、，\u3000\t ]|(?:叁|参)[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陆[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹贰叁参肆伍陆柒捌玖][、，\u3000\t ]|贰[拾壹贰叁参肆伍陆柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g;
   const s = toBold.replace(big, "$1$2<strong>$3</strong>");
-  return s + afterRef;
+  const content = s + afterRef;
+  // 添加标题（如果有）- 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
 });
 
 // 英文纲目格式化（换行转 br，只有英文大点加粗，其他星号去掉）
@@ -211,7 +234,14 @@ const aiAnswerEnFormatted = computed(() => {
   const withoutItalic = withoutBold.replace(/\*([^*]+?)\*/g, "$1");
   // 直接匹配英文大点（I, II, III, IV, V, VI, VII, VIII, IX, X）加粗（不依赖星号）
   const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g;
-  return withoutItalic.replace(bigEn, "$1$2<strong>$3</strong>");
+  const content = withoutItalic.replace(bigEn, "$1$2<strong>$3</strong>");
+  // 添加标题（如果有）- 优先使用英文标题，否则使用生成时保存的中文标题
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
 });
 
 const toggleAiPanel = () => {
@@ -392,7 +422,7 @@ const onAISearch = async () => {
     
     // 缓存命中：search 直接返回完整结果（含 answer），无需再调 generate
     if (data.answer) {
-      aiResult.value = data;
+      aiResult.value = { ...data, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
       showInfo.value = 5;
       showAISources.value = true;
       showAIAnswer.value = true;
@@ -414,7 +444,7 @@ const onAISearch = async () => {
     }
     
     // 立即显示引用来源，用户可浏览
-    aiResult.value = { sources, answer: null };
+    aiResult.value = { sources, answer: null, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
     showAISources.value = true;
     aiLoadingText.value = "💡 AI 正在生成答案...";
     
@@ -425,7 +455,7 @@ const onAISearch = async () => {
       { timeout: 180000 }
     );
     
-    aiResult.value = generateRes.data;
+    aiResult.value = { ...generateRes.data, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
     showInfo.value = 5;
     showAIAnswer.value = true;
     if (includeEnglishOutline.value) {

@@ -198,7 +198,7 @@
           <template v-else>
             <div class="ai-answer-card">
               <div class="ai-answer-label">中文纲目</div>
-              <div class="ai-answer-content" v-html="formatAnswer(aiResult.answer)"></div>
+              <div class="ai-answer-content" v-html="formatAnswer(aiResult.answer, aiResult.outlineTopic || aiForm.outlineTopic.trim())"></div>
               <div v-if="aiResult.cached" class="ai-cached-tag">缓存</div>
               <button type="button" class="ai-copy-btn" @click="copyChinese">复制</button>
             </div>
@@ -206,7 +206,7 @@
               <div class="ai-answer-label">英文纲目</div>
               <div v-if="loadingEnglish" class="ai-answer-content ai-answer-loading-en">正在生成英文纲目…</div>
               <div v-else-if="errorEnglish" class="ai-answer-content ai-answer-error-en">{{ errorEnglish }}</div>
-              <div v-else-if="answerEn" class="ai-answer-content" v-html="formatAnswer(answerEn)"></div>
+              <div v-else-if="answerEn" class="ai-answer-content" v-html="formatAnswer(answerEn, titleEn || aiResult.outlineTopic || aiForm.outlineTopic.trim())"></div>
               <button v-if="answerEn" type="button" class="ai-copy-btn" @click="copyEnglish">复制</button>
             </div>
             <div v-if="aiResult.sources && aiResult.sources.length" class="ai-sources">
@@ -256,6 +256,7 @@ const aiResult = ref(null) // { answer, sources[], cached?, ... }
 const ENGLISH_OUTLINE_FEATURE_ENABLED = true
 const includeEnglishOutline = ref(false)
 const answerEn = ref(null)
+const titleEn = ref(null)
 const loadingEnglish = ref(false)
 const errorEnglish = ref(null)
 
@@ -316,7 +317,7 @@ async function doTraditionalSearch() {
   }
 }
 
-function formatAnswer(text) {
+function formatAnswer(text, title = null) {
   if (!text) return ''
   let result = String(text)
     .replace(/&/g, '&amp;')
@@ -340,6 +341,12 @@ function formatAnswer(text) {
   const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g
   result = result.replace(bigEn, '$1$2<strong>$3</strong>')
   
+  // 添加标题（如果有）
+  if (title && title.trim()) {
+    const titleEscaped = String(title).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${result}`
+  }
+  
   return result
 }
 
@@ -348,16 +355,21 @@ async function fetchTranslate(chineseOutline) {
   loadingEnglish.value = true
   errorEnglish.value = null
   answerEn.value = null
+  titleEn.value = null
   try {
     const res = await fetch(`${apiBase}/api/ai_search/translate_outline`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ chinese_outline: chineseOutline })
+      body: JSON.stringify({ 
+        chinese_outline: chineseOutline,
+        outline_topic: aiForm.outlineTopic.trim() || null
+      })
     })
     const data = await res.json().catch(() => ({}))
     if (data.answer_en) {
       answerEn.value = data.answer_en
+      titleEn.value = data.title_en || null
     } else {
       errorEnglish.value = data.error || '英文纲目生成失败'
     }
@@ -371,13 +383,19 @@ async function fetchTranslate(chineseOutline) {
 function copyChinese() {
   const text = aiResult.value?.answer
   if (!text) return
-  navigator.clipboard.writeText(text).then(() => {}).catch(() => {})
+  // 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim()
+  const fullText = title ? `${title}\n\n${text}` : text
+  navigator.clipboard.writeText(fullText).then(() => {}).catch(() => {})
 }
 
 function copyEnglish() {
   const text = answerEn.value
   if (!text) return
-  navigator.clipboard.writeText(text).then(() => {}).catch(() => {})
+  // 优先使用英文标题，否则使用生成时保存的中文标题
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim()
+  const fullText = title ? `${title}\n\n${text}` : text
+  navigator.clipboard.writeText(fullText).then(() => {}).catch(() => {})
 }
 
 async function doAISearch() {
@@ -410,7 +428,8 @@ async function doAISearch() {
     aiResult.value = {
       answer: data.answer || '暂无回答。',
       sources: data.sources || [],
-      cached: !!data.cached
+      cached: !!data.cached,
+      outlineTopic: aiForm.outlineTopic.trim() // 保存生成时的标题
     }
     if (includeEnglishOutline.value) {
       fetchTranslate(aiResult.value.answer)
