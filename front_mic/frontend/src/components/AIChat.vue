@@ -157,7 +157,7 @@ const loading = ref(false)
 const messages = ref([])
 const showFormDetails = ref(false)
 // 暂封英文纲目功能，测试通过后改为 true
-const ENGLISH_OUTLINE_FEATURE_ENABLED = false
+const ENGLISH_OUTLINE_FEATURE_ENABLED = true
 const includeEnglishOutline = ref(false)
 const AI_NATURE_OPTIONS = ['一般性', '高真理浓度', '高生命浓度', '重实行应用']
 const form = reactive({
@@ -186,11 +186,29 @@ function expandForm() {
 
 function formatContent(text) {
   if (!text) return ''
-  return text
+  let result = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
+  
+  // 处理中文纲目：大点（壹到拾、拾壹到拾玖、贰拾到贰玖等）加粗
+  const refIdx = result.search(/参考与参读资料[：:]/i)
+  const toBold = refIdx >= 0 ? result.slice(0, refIdx) : result
+  const afterRef = refIdx >= 0 ? result.slice(refIdx) : ''
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|贰[、，\u3000\t ]|(?:叁|参)[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陆[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹贰叁参肆伍陆柒捌玖][、，\u3000\t ]|贰[拾壹贰叁参肆伍陆柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g
+  const withBold = toBold.replace(big, '$1$2<strong>$3</strong>')
+  result = withBold + afterRef
+  
+  // 处理英文纲目：先处理带星号的英文大点（**I.**）加粗
+  result = result.replace(/\*\*((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)\*\*/g, '<strong>$1</strong>')
+  result = result.replace(/\*\*([^*]+?)\*\*/g, '$1') // 将剩余的 **文本** 去掉星号，只保留文本（不加粗）
+  result = result.replace(/\*([^*]+?)\*/g, '$1') // 将 Markdown 的 *文本*（斜体）去掉星号，只保留文本
+  // 直接匹配英文大点（I, II, III, IV, V, VI, VII, VIII, IX, X）加粗（不依赖星号）
+  const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g
+  result = result.replace(bigEn, '$1$2<strong>$3</strong>')
+  
+  return result
 }
 
 async function fetchTranslateForLastMessage(chineseOutline) {

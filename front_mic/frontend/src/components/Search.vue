@@ -102,7 +102,7 @@ const showAISources = ref(false); // 是否显示引用来源
 const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
 // 暂封英文纲目功能，测试通过后改为 true
-const ENGLISH_OUTLINE_FEATURE_ENABLED = false;
+const ENGLISH_OUTLINE_FEATURE_ENABLED = true;
 const includeEnglishOutline = ref(false); // 是否同时生成英文纲目
 const answerEn = ref(null); // 英文纲目
 const loadingEnglish = ref(false); // 正在生成英文纲目
@@ -181,7 +181,7 @@ const fetchTranslate = async (chineseOutline) => {
   }
 };
 
-// 仅将 AI 回答中的大点（壹、贰、叁/参…拾）整行加粗；「参考与参读资料：」及之后不加粗
+// 仅将 AI 回答中的大点（壹、贰、叁/参…拾、拾壹、拾贰…贰拾、贰壹、贰贰…）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
   const raw = aiResult.value?.answer;
   if (!raw) return "";
@@ -191,18 +191,27 @@ const aiAnswerFormatted = computed(() => {
   const refIdx = withBr.search(/参考与参读资料[：:]/i);
   const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
   const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
-  // 只匹配大点：壹、贰、叁/参、肆…拾 整行（纲目后可为 Tab、顿号、全角空格等）
-  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t]|贰[、，\u3000\t]|(?:叁|参)[、，\u3000\t]|肆[、，\u3000\t]|伍[、，\u3000\t]|陆[、，\u3000\t]|柒[、，\u3000\t]|捌[、，\u3000\t]|玖[、，\u3000\t]|拾[、，\u3000\t])[^<]*?)(?=<br>|$)/g;
+  // 只匹配大点：壹、贰、叁/参、肆…拾、拾壹、拾贰…贰拾、贰壹、贰贰… 整行（纲目后可为顿号、逗号、全角空格、半角空格、制表符等）
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|贰[、，\u3000\t ]|(?:叁|参)[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陆[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹贰叁参肆伍陆柒捌玖][、，\u3000\t ]|贰[拾壹贰叁参肆伍陆柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g;
   const s = toBold.replace(big, "$1$2<strong>$3</strong>");
   return s + afterRef;
 });
 
-// 英文纲目格式化（换行转 br）
+// 英文纲目格式化（换行转 br，只有英文大点加粗，其他星号去掉）
 const aiAnswerEnFormatted = computed(() => {
   const raw = answerEn.value;
   if (!raw) return "";
   const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  // 先处理带星号的英文大点（**I.**）加粗
+  const withBoldStars = withBr.replace(/\*\*((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)\*\*/g, "<strong>$1</strong>");
+  // 将剩余的 **文本** 去掉星号，只保留文本（不加粗）
+  const withoutBold = withBoldStars.replace(/\*\*([^*]+?)\*\*/g, "$1");
+  // 将 Markdown 的 *文本*（斜体）去掉星号，只保留文本
+  const withoutItalic = withoutBold.replace(/\*([^*]+?)\*/g, "$1");
+  // 直接匹配英文大点（I, II, III, IV, V, VI, VII, VIII, IX, X）加粗（不依赖星号）
+  const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g;
+  return withoutItalic.replace(bigEn, "$1$2<strong>$3</strong>");
 });
 
 const toggleAiPanel = () => {

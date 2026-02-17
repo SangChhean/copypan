@@ -63,6 +63,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Retrieval-Log"],
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

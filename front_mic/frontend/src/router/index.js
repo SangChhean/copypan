@@ -45,6 +45,10 @@ const routes = [
     path: "/cws",
     component: () => import("../components/toolbox/Cwws.vue"),
   },
+  {
+    path: "/info-retrieval",
+    component: () => import("../components/toolbox/InfoRetrieval.vue"),
+  },
 ];
 
 const router = createRouter({

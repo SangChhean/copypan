@@ -3,9 +3,13 @@ AI搜索API路由
 提供/api/ai_search接口（问答、健康检查、监控统计）
 """
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional
+import base64
+import json
 import logging
+from urllib.parse import quote
 
 from .ai_service import ai_service, get_index_weights_for_display
 from .monitoring import get_monitoring
@@ -89,6 +93,13 @@ class TranslateOutlineRequest(BaseModel):
     chinese_outline: str = Field(..., min_length=1, max_length=100_000, description="中文纲目全文")
 
 
+class InfoRetrievalRequest(BaseModel):
+    """信息检索请求：多关键词 AND、排除关键词 OR、DOCX 大小上限"""
+    keyword: str = Field(..., min_length=1, max_length=500, description="搜索关键词，空格隔开，多词 AND")
+    exclude_keywords: Optional[str] = Field(None, max_length=500, description="排除关键词，空格隔开，多词 OR")
+    max_size_mb: Optional[int] = Field(100, description="单 DOCX 合并大小上限（MB），40 或 100")
+
+
 # ========== 方案A：分步搜索接口 ==========
 
 @router.post("/ai_search/search", summary="第一步：仅检索（返回引用来源）")
@@ -151,6 +162,69 @@ async def translate_outline(request: TranslateOutlineRequest):
     except Exception as e:
         logger.error(f"翻译纲目失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/info_retrieval", summary="信息检索：多关键词/排除词导出 DOCX（单文件 40MB，超出则多个 DOCX 分别下载）")
+async def info_retrieval_export(request: InfoRetrievalRequest):
+    """
+    多关键词 AND、排除关键词 OR。单文件上限 40MB，超出则拆成多个 DOCX（-1、-2…）分别下载。
+    """
+    try:
+        logger.info("info_retrieval 请求: keyword=%r, exclude_keywords=%r",
+                    request.keyword, request.exclude_keywords)
+        docx_bytes, filename, log_message = ai_service.info_retrieval_export(
+            keyword=request.keyword,
+            exclude_keywords=request.exclude_keywords or "",
+        )
+        if docx_bytes is None:
+            # 中文说明放在 body，避免 HTTP 头 latin-1 编码错误
+            body = json.dumps({"no_results": True, "message": log_message}, ensure_ascii=False).encode("utf-8")
+            return Response(
+                content=body,
+                status_code=200,
+                media_type="application/json; charset=utf-8",
+                headers={"X-No-Results": "true"},
+            )
+        if isinstance(docx_bytes, list):
+            # 多文件：返回 JSON，前端逐个下载 DOCX
+            payload = {
+                "files": [
+                    {"filename": fname, "content": base64.b64encode(content).decode("ascii")}
+                    for content, fname in docx_bytes
+                ],
+                "log_message": log_message,
+            }
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            log_b64 = base64.b64encode(log_message.encode("utf-8")).decode("ascii")
+            return Response(
+                content=body,
+                status_code=200,
+                media_type="application/json; charset=utf-8",
+                headers={"X-Multiple-Files": "true", "X-Retrieval-Log": log_b64},
+            )
+        encoded_filename = quote(filename)
+        log_b64 = base64.b64encode(log_message.encode("utf-8")).decode("ascii")
+        headers = {
+            "Content-Disposition": f'attachment; filename*=UTF-8\'\'{encoded_filename}',
+            "Content-Length": str(len(docx_bytes)),
+            "X-Retrieval-Log": log_b64,
+        }
+        return StreamingResponse(
+            iter([docx_bytes]),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers=headers,
+        )
+    except Exception as e:
+        logger.error("信息检索导出失败: %s", e, exc_info=True)
+        # 中文说明放在 body，避免 HTTP 头 latin-1 编码错误
+        msg = f"导出失败：{str(e)}"
+        body = json.dumps({"no_results": True, "message": msg}, ensure_ascii=False).encode("utf-8")
+        return Response(
+            content=body,
+            status_code=200,
+            media_type="application/json; charset=utf-8",
+            headers={"X-No-Results": "true"},
+        )
 
 
 @router.post("/ai_search", response_model=SearchResponse, summary="AI智能搜索（一步完成）")

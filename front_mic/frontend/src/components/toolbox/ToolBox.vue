@@ -29,6 +29,7 @@ const go = (val = "/") => {
           <div class="card_title"><ToolOutlined /> 工具</div>
         </template>
         <a-card-grid class="card c2" @click="go('/bibco')"><span class="card_text">经文汇集</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/info-retrieval')"><span class="card_text">信息检索</span></a-card-grid>
       </a-card>
     </div>
   </div>

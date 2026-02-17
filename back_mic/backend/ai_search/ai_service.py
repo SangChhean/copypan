@@ -8,8 +8,19 @@ import hashlib
 import logging
 import time
 import uuid
-from typing import Dict, List, Optional
+import warnings
+from typing import Callable, Dict, List, Optional, Tuple
 from datetime import datetime
+from io import BytesIO
+import re
+
+# 抑制「Elasticsearch built-in security features are not enabled」的警告（本地开发常见）
+try:
+    from elasticsearch.exceptions import ElasticsearchWarning
+    warnings.filterwarnings("ignore", category=ElasticsearchWarning)
+except Exception:
+    pass
+warnings.filterwarnings("ignore", message=".*security features are not enabled.*")
 
 from es_config import es
 import anthropic
@@ -137,6 +148,18 @@ INDEX_LABELS = {
     "bib": "圣经",
     "others": "其他",
 }
+
+# 信息检索使用的索引（仅此 8 个，不含 bib）
+INFO_RETRIEVAL_INDEXES = (
+    "map_note",
+    "map_dictionary",
+    "map_7feasts",
+    "map_pano",
+    "cwwl",
+    "cwwn",
+    "life",
+    "others",
+)
 
 
 def get_index_weights_for_display():
@@ -1191,7 +1214,7 @@ class AISearchService:
 
 19. 纲目中涉及主观经历的条目数量占比约15%的篇幅；涉及实行应用的条目数量占比约15%的篇幅。
 
-20. 纲目篇幅严格限制为A4纸一页半(必须在38~40行之间)
+20. 纲目篇幅严格限制为A4纸一页半(必须在35~38行之间)
 
 【完整格式示例】
 
@@ -1329,8 +1352,8 @@ class AISearchService:
         - map_7feasts：用文档外层 source
         - map_dictionary：用文档外层 text
         """
-        def _strip_parens(t: str) -> str:
-            t = (t or "").strip()
+        def _strip_parens(t) -> str:
+            t = str(t or "").strip()
             for left, right in [("（", "）"), ("(", ")")]:
                 if t.startswith(left) and t.endswith(right):
                     t = t[len(left):-len(right)].strip()
@@ -1339,11 +1362,11 @@ class AISearchService:
         # map_dictionary：引用 = 第一个bookname + ", " + title + ", " + 第二个bookname（从 msg 中取）
         if index_name == "map_dictionary":
             msg_list = source.get("msg") or []
-            booknames = [m.get("text") or "" for m in msg_list if (m.get("type") or "") == "bookname"]
-            titles = [m.get("text") or "" for m in msg_list if (m.get("type") or "") == "title"]
-            b1 = booknames[0].strip() if len(booknames) >= 1 else ""
-            t = titles[0].strip() if titles else ""
-            b2 = booknames[1].strip() if len(booknames) >= 2 else ""
+            booknames = [str(m.get("text") or "").strip() for m in msg_list if (m.get("type") or "") == "bookname"]
+            titles = [str(m.get("text") or "").strip() for m in msg_list if (m.get("type") or "") == "title"]
+            b1 = booknames[0] if len(booknames) >= 1 else ""
+            t = titles[0] if titles else ""
+            b2 = booknames[1] if len(booknames) >= 2 else ""
             parts = [p for p in [b1, t, b2] if p]
             if parts:
                 return "，".join(parts)
@@ -1354,7 +1377,7 @@ class AISearchService:
 
         # map_pano：清明上河图，+ 外层 text
         if index_name == "map_pano":
-            t = (source.get("text") or "").strip()
+            t = str(source.get("text") or "").strip()
             if t:
                 return f"清明上河图，{t}"
             s = _strip_parens(source.get("source") or "")
@@ -1371,7 +1394,7 @@ class AISearchService:
 
         # map_note：圣经真理题库，+ 外层 text
         if index_name == "map_note":
-            t = (source.get("text") or "").strip()
+            t = str(source.get("text") or "").strip()
             if t:
                 return f"圣经真理题库，{t}"
             return "圣经真理题库"
@@ -1596,6 +1619,209 @@ class AISearchService:
                 logger.debug(f"翻译缓存写入失败: {e}")
 
         return {"answer_en": answer_en}
+
+    def info_retrieval_export(
+        self,
+        keyword: str,
+        exclude_keywords: str = "",
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> Tuple[Optional[bytes], Optional[str], str]:
+        """
+        信息检索：多关键词 AND、排除关键词 OR。单文件上限 40MB，超出则拆成多个 DOCX（-1、-2…）并打包为 ZIP。
+        有结果时：单文件返回 (docx_bytes, filename, log_message)，多文件返回 ([(bytes, filename), ...], None, log_message)；无结果时返回 (None, None, log_message)。
+        若提供 progress_callback，会在检索过程中实时回调进度文案。
+        """
+        def _progress(msg: str) -> None:
+            if progress_callback:
+                progress_callback(msg)
+
+        raw_keyword = (keyword or "").strip()
+        keywords = [k.strip() for k in raw_keyword.split() if k.strip()]
+        if not keywords:
+            log_message = "请输入至少一个搜索关键词（当前为空或仅空格）。"
+            return (None, None, log_message)
+
+        exclude_list = [e.strip() for e in (exclude_keywords or "").split() if e.strip()]
+        max_bytes = 40 * 1024 * 1024  # 固定 40MB，超出则拆成多个 DOCX
+        _progress(f"开始检索，共 {len(INFO_RETRIEVAL_INDEXES)} 个索引")
+
+        # 用于 wildcard 的转义：* \ ? 需转义
+        def _escape_wildcard(s: str) -> str:
+            for c, rep in [("\\", "\\\\"), ("*", "\\*"), ("?", "\\?")]:
+                s = s.replace(c, rep)
+            return s
+
+        # 文件名：仅保留安全字符
+        def _safe_filename(s: str) -> str:
+            s = re.sub(r'[/\\:*?"<>|]', "_", s)
+            return (s.strip() or "export")[:100]
+
+        def _item_bytes(label: str, title: str, content: str) -> int:
+            return len((label + title + content).encode("utf-8"))
+
+        def _flush_batch():
+            if current_batch:
+                batches.append(list(current_batch))
+                current_batch.clear()
+            return 0
+
+        batches = []  # List[List[(label, title, content)]], 每批 ≤40MB
+        current_batch = []
+        current_size = 0
+        seen_prefix = set()  # (index_name, prefix) 或 (index_name, doc_id) 去重
+        seen_map_id = set()  # (index_name, doc_id) map 类去重
+
+        for index_name in INFO_RETRIEVAL_INDEXES:
+            index_label = INDEX_LABELS.get(index_name, index_name)
+            _progress(f"正在检索 {index_label}…")
+            try:
+                if index_name in self._MAP_LIKE_INDICES:
+                    # map 类：单关键词用 match_phrase（短语相邻），多关键词用 match AND（避免「珍赏职事」拆成「珍赏」「职事」分散命中）
+                    if len(keywords) == 1:
+                        must_clauses = [{"match_phrase": {"text": keywords[0]}}]
+                    else:
+                        must_clauses = [{"match": {"text": kw}} for kw in keywords]
+                    q = {"bool": {"must": must_clauses}}
+                    if exclude_list:
+                        q["bool"]["must_not"] = [{"match_phrase": {"text": ex}} for ex in exclude_list]
+                    body = {
+                        "query": q,
+                        "size": 10000,
+                        "_source": ["id", "text", "msg", "source", "sn", "bookname", "title", "bookname2"],
+                    }
+                else:
+                    # 非 map：title wildcard 多关键词 AND，排除词 OR
+                    must_clauses = [{"wildcard": {"title": "*%s*" % _escape_wildcard(kw)}} for kw in keywords]
+                    q = {"bool": {"must": must_clauses}}
+                    if exclude_list:
+                        q["bool"]["must_not"] = [{"wildcard": {"title": "*%s*" % _escape_wildcard(ex)}} for ex in exclude_list]
+                    body = {
+                        "query": q,
+                        "size": 10000,
+                        "_source": ["id", "type", "text", "title", "book", "chapter", "verse"],
+                    }
+                resp = self.es.search(
+                    index=index_name,
+                    body=body,
+                    request_timeout=60,
+                    ignore_unavailable=True,
+                )
+            except Exception as e:
+                logger.warning(f"信息检索索引 {index_name} 查询失败: {e}")
+                _progress(f"索引 {index_label} 查询失败")
+                continue
+
+            hits = resp.get("hits", {}).get("hits", [])
+
+            if index_name in self._MAP_LIKE_INDICES:
+                for h in hits:
+                    source = h.get("_source", {})
+                    doc_id = str(source.get("id") or h.get("_id") or "")
+                    if (index_name, doc_id) in seen_map_id:
+                        continue
+                    seen_map_id.add((index_name, doc_id))
+                    # 返回同 id 文档的 msg 中所有 text 的拼接
+                    msg_list = source.get("msg") or []
+                    parts = [t for m in msg_list for t in [str(m.get("text") or "").strip()] if t]
+                    content = "\n".join(parts)
+                    if not content.strip():
+                        continue
+                    # 标题与 AI 搜索引用来源一致
+                    title = self._get_map_note_reference_from_hit(source, h, index_name)
+                    # 多关键词时只保留篇题同时包含所有关键词的结果（真 AND）
+                    if len(keywords) > 1 and not all(kw in title for kw in keywords):
+                        continue
+                    label = INDEX_LABELS.get(index_name, index_name)
+                    item_size = _item_bytes(label, title, content)
+                    if current_size + item_size > max_bytes and current_batch:
+                        _flush_batch()
+                        current_size = 0
+                    current_batch.append((label, title, content))
+                    current_size += item_size
+            else:
+                for h in hits:
+                    source = h.get("_source", {})
+                    doc_id = str(source.get("id") or h.get("_id", ""))
+                    prefix, _ = self._parse_doc_id(doc_id)
+                    if prefix:
+                        if (index_name, prefix) in seen_prefix:
+                            continue
+                        seen_prefix.add((index_name, prefix))
+                        docs = self._fetch_message_docs(index_name, prefix)
+                        if not docs:
+                            continue
+                        parts = []
+                        for d in docs:
+                            t = str(d.get("text") or "").strip()
+                            if t:
+                                parts.append(t)
+                        content = "\n".join(parts)
+                        doc_title = self._format_reference(docs[0])
+                    else:
+                        # id 无 "-" 时视为单条文档，不按 prefix 拉整篇
+                        if (index_name, doc_id) in seen_prefix:
+                            continue
+                        seen_prefix.add((index_name, doc_id))
+                        content = str(source.get("text") or "").strip()
+                        doc_title = self._format_reference(source)
+                    if not content.strip():
+                        continue
+                    # 多关键词时只保留篇题同时包含所有关键词的结果（真 AND）
+                    if len(keywords) > 1 and not all(kw in doc_title for kw in keywords):
+                        continue
+                    label = INDEX_LABELS.get(index_name, index_name)
+                    item_size = _item_bytes(label, doc_title, content)
+                    if current_size + item_size > max_bytes and current_batch:
+                        _flush_batch()
+                        current_size = 0
+                    current_batch.append((label, doc_title, content))
+                    current_size += item_size
+            total_items = sum(len(b) for b in batches) + len(current_batch)
+            _progress(f"完成 {index_label}，命中 {len(hits)} 条，当前累计 {total_items} 条")
+
+        if current_batch:
+            batches.append(current_batch)
+
+        if not batches:
+            log_message = "未找到匹配的文档。请检查关键词或排除词，或稍后重试（部分索引可能暂时不可用）。"
+            return (None, None, log_message)
+
+        _progress("正在生成 DOCX…")
+        try:
+            from docx import Document
+        except ImportError:
+            raise RuntimeError("请安装 python-docx: pip install python-docx")
+
+        name_base = "_".join(keywords) if keywords else raw_keyword
+        if exclude_list:
+            name_base += "（过滤" + "、".join(exclude_list) + "）"
+        base_name = _safe_filename(name_base)
+
+        def _make_docx(items_batch: List[Tuple[str, str, str]]) -> bytes:
+            doc = Document()
+            for i, (label, title, content) in enumerate(items_batch):
+                doc.add_heading(f"[{label}] {title}", level=1)
+                doc.add_paragraph(content)
+                if i < len(items_batch) - 1:
+                    doc.add_paragraph()
+            buf = BytesIO()
+            doc.save(buf)
+            buf.seek(0)
+            return buf.getvalue()
+
+        total_items = sum(len(b) for b in batches)
+        if len(batches) == 1:
+            filename = base_name + ".docx"
+            log_message = f"共导出 {total_items} 条，已生成 {filename}"
+            return (_make_docx(batches[0]), filename, log_message)
+
+        # 多文件：返回 [(bytes, filename), ...]，由路由以 JSON 返回，前端逐个下载
+        files_list = [
+            (_make_docx(batch), f"{base_name}-{i}.docx")
+            for i, batch in enumerate(batches, start=1)
+        ]
+        log_message = f"共导出 {total_items} 条，已生成 {len(batches)} 个文件：{base_name}-1.docx ～ {base_name}-{len(batches)}.docx"
+        return (files_list, None, log_message)
 
     def clear_cache(self) -> Dict:
         """清空 AI 搜索 Redis 缓存（所有 ai_search:* 键）。返回删除的键数量。"""
