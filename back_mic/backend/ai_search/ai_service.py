@@ -45,14 +45,20 @@ load_dotenv(dotenv_path=env_path)
 try:
     import sys
     backend_dir = Path(__file__).resolve().parent.parent
+    logger.debug(f"尝试导入格式刷模块，backend_dir: {backend_dir}")
     if str(backend_dir) not in sys.path:
         sys.path.insert(0, str(backend_dir))
     from format_chinese_outline import format_chinese_outline_docx
     from format_english_outline import format_english_outline_docx
+    logger.info("格式刷模块导入成功")
 except ImportError as e:
     format_chinese_outline_docx = None
     format_english_outline_docx = None
-    logger.warning(f"格式刷模块未找到，格式化功能将不可用: {e}")
+    logger.warning(f"格式刷模块未找到，格式化功能将不可用: {e}", exc_info=True)
+except Exception as e:
+    format_chinese_outline_docx = None
+    format_english_outline_docx = None
+    logger.error(f"格式刷模块导入时发生错误: {e}", exc_info=True)
 
 # 环境变量配置
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
