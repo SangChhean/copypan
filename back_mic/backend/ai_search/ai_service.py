@@ -30,6 +30,17 @@ from pathlib import Path
 
 from .monitoring import get_monitoring
 
+# 配置日志（必须在导入格式刷之前，因为导入失败时会使用 logger）
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("ai_search")
+
+# 加载环境变量（确保从 backend 目录加载 .env）
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 # 导入格式刷函数（从 backend 目录导入）
 try:
     import sys
@@ -42,17 +53,6 @@ except ImportError as e:
     format_chinese_outline_docx = None
     format_english_outline_docx = None
     logger.warning(f"格式刷模块未找到，格式化功能将不可用: {e}")
-
-# 加载环境变量（确保从 backend 目录加载 .env）
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
-
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("ai_search")
 
 # 环境变量配置
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
