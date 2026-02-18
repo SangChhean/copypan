@@ -227,6 +227,9 @@ async def outline_translate_and_format(request: OutlineTranslateRequest):
             import base64
             response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
             response_data["filename"] = result.get("filename", "outline.docx")
+            logger.info(f"返回DOCX: filename={response_data['filename']}, base64长度={len(response_data['docx_base64'])}")
+        else:
+            logger.warning(f"未返回DOCX: result.error={result.get('error')}, docx_bytes存在={result.get('docx_bytes') is not None}")
         
         return response_data
     except HTTPException:

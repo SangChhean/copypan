@@ -49,7 +49,16 @@ async function downloadFormattedDocx() {
       },
       body: JSON.stringify({ direction: direction.value, content: text }),
     });
-    const data = await res.json().catch(() => ({}));
+    let data = {};
+    try {
+      const text = await res.text();
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      console.error("JSON解析失败:", parseErr, "响应文本:", text);
+      error.value = "服务器响应格式错误，请稍后重试";
+      return;
+    }
+    
     if (!res.ok) {
       error.value = data.detail || data.error || data.message || "翻译并格式化失败，请稍后重试";
       return;
@@ -71,19 +80,24 @@ async function downloadFormattedDocx() {
     }
     // 下载 DOCX（如果有）
     if (data.docx_base64) {
-      const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bin], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
-      a.click();
-      URL.revokeObjectURL(url);
       try {
-        if (window.$message) window.$message.success("已下载格式化 DOCX");
-      } catch (_) {}
+        const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bin], {
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+        a.click();
+        URL.revokeObjectURL(url);
+        try {
+          if (window.$message) window.$message.success("已下载格式化 DOCX");
+        } catch (_) {}
+      } catch (downloadErr) {
+        console.error("下载DOCX失败:", downloadErr);
+        error.value = "下载文件失败，请稍后重试";
+      }
     } else if (data.error) {
       // 格式化失败但翻译成功
       try {
