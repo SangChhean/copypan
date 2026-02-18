@@ -226,14 +226,16 @@ const aiAnswerEnFormatted = computed(() => {
   if (!raw) return "";
   const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
-  // 先处理带星号的英文大点（**I.**）加粗
-  const withBoldStars = withBr.replace(/\*\*((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)\*\*/g, "<strong>$1</strong>");
+  // 英文大点罗马数字：I–X(1–10)、XI–XX(11–20)，支持加粗
+  const romanMajor = "(?:XX|X(?:I{0,3}|IV|VI{0,3}|IX)?|I{1,3}|IV|VI{0,3}|IX|X)";
+  // 先处理带星号的英文大点（**I.**、**XI.** 等）加粗
+  const withBoldStars = withBr.replace(new RegExp(`\\*\\*(${romanMajor}[\\.:]\\s*[^<]*?)\\*\\*`, "g"), "<strong>$1</strong>");
   // 将剩余的 **文本** 去掉星号，只保留文本（不加粗）
   const withoutBold = withBoldStars.replace(/\*\*([^*]+?)\*\*/g, "$1");
   // 将 Markdown 的 *文本*（斜体）去掉星号，只保留文本
   const withoutItalic = withoutBold.replace(/\*([^*]+?)\*/g, "$1");
-  // 直接匹配英文大点（I, II, III, IV, V, VI, VII, VIII, IX, X）加粗（不依赖星号）
-  const bigEn = /(^|<br>)([\s#*]*)((?:I{1,3}|IV|VI{0,3}|IX|X)[\.:]\s*[^<]*?)(?=<br>|$)/g;
+  // 直接匹配英文大点（I–X、XI–XX）加粗（不依赖星号）
+  const bigEn = new RegExp(`(^|<br>)([\\s#*]*)(${romanMajor}[\\.:]\\s*[^<]*?)(?=<br>|$)`, "g");
   const content = withoutItalic.replace(bigEn, "$1$2<strong>$3</strong>");
   // 添加标题（如果有）- 优先使用英文标题，否则使用生成时保存的中文标题
   const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();

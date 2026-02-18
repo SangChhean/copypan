@@ -13,6 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from datetime import datetime
 from io import BytesIO
 import re
+import threading
 
 # 抑制「Elasticsearch built-in security features are not enabled」的警告（本地开发常见）
 try:
@@ -84,6 +85,20 @@ if GEMINI_API_KEY:
 else:
     _gemini_system_instruction = None
     logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
+
+# 并发限制：同时进行中的 Claude / Gemini 请求数，避免人多时触发 API 限流（429）
+def _parse_concurrent_limit(env_key: str, default: int) -> int:
+    try:
+        v = int(os.getenv(env_key, str(default)))
+        return max(1, v)  # 至少为 1，避免 Semaphore(0) 导致永久阻塞
+    except (ValueError, TypeError):
+        return default
+
+CLAUDE_CONCURRENT_LIMIT = _parse_concurrent_limit("CLAUDE_CONCURRENT_LIMIT", 8)
+GEMINI_CONCURRENT_LIMIT = _parse_concurrent_limit("GEMINI_CONCURRENT_LIMIT", 5)
+CLAUDE_SEMAPHORE = threading.Semaphore(CLAUDE_CONCURRENT_LIMIT)
+GEMINI_SEMAPHORE = threading.Semaphore(GEMINI_CONCURRENT_LIMIT)
+logger.info("API 并发限制: Claude=%s, Gemini=%s", CLAUDE_CONCURRENT_LIMIT, GEMINI_CONCURRENT_LIMIT)
 
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 # 按纲目性质（special_needs）选择不同权重
@@ -1274,76 +1289,82 @@ class AISearchService:
             "user_prompt": user_prompt,
         }
 
-        # 调用Claude API
-        try:
-            # 添加 token 估算日志（改进估算算法，中文约 1字≈1.5 tokens）
-            estimated_input_tokens = int((len(system_prompt) + len(user_prompt)) * 0.7)
-            context_count = len(context_items[:context_size])
-            logger.info(f"准备调用 Claude - 上下文数: {context_count}条, 预估输入tokens: {estimated_input_tokens}")
-            
-            # 硬性上限 1M tokens（超过会失败），保守提示 900K
-            if estimated_input_tokens > 900000:
-                logger.warning(f"⚠️ 输入可能超过1M上限！预估: {estimated_input_tokens} tokens")
-            elif estimated_input_tokens > 200000:
-                logger.info(f"ℹ️ 输入超过200K，将使用高价区定价: ${estimated_input_tokens / 1000000 * 6:.3f}")
-            
-            message = self.claude.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=4000,
-                temperature=0.3,  # 降低温度提高准确性
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": user_prompt}
-                ]
-            )
+        # 调用Claude API（并发限制：超出时排队等待，减少 429）
+        estimated_input_tokens = int((len(system_prompt) + len(user_prompt)) * 0.7)
+        context_count = len(context_items[:context_size])
+        logger.info(f"准备调用 Claude - 上下文数: {context_count}条, 预估输入tokens: {estimated_input_tokens}")
 
-            answer = message.content[0].text
-            tokens = {
-                "input": message.usage.input_tokens,
-                "output": message.usage.output_tokens,
-                "total": message.usage.input_tokens + message.usage.output_tokens
-            }
+        with CLAUDE_SEMAPHORE:
+            try:
+                # 硬性上限 1M tokens（超过会失败），保守提示 900K
+                if estimated_input_tokens > 900000:
+                    logger.warning(f"⚠️ 输入可能超过1M上限！预估: {estimated_input_tokens} tokens")
+                elif estimated_input_tokens > 200000:
+                    logger.info(f"ℹ️ 输入超过200K，将使用高价区定价: ${estimated_input_tokens / 1000000 * 6:.3f}")
 
-            # 计算费用
-            cost = (tokens["input"] / 1_000_000) * 3 + \
-                   (tokens["output"] / 1_000_000) * 15
-            tokens["cost"] = round(cost, 6)
+                message = self.claude.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=4000,
+                    temperature=0.3,  # 降低温度提高准确性
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
 
-            logger.info(f"Claude调用成功: 实际输入={tokens['input']} tokens, 总计={tokens['total']}, 费用=${tokens['cost']}")
-
-            return {
-                "answer": answer,
-                "tokens": tokens,
-                "claude_payload": claude_payload
-            }
-
-        except anthropic.RateLimitError as e:
-            logger.error(f"API限流: {e}")
-            return {
-                "answer": "请求过于频繁，请稍后再试。",
-                "tokens": {"error": str(e)}
-            }
-        except anthropic.APIError as e:
-            # 详细记录错误信息
-            error_msg = str(e)
-            estimated_tokens = len(system_prompt) // 3 + len(user_prompt) // 3
-            logger.error(f"❌ Claude API错误: {error_msg}")
-            logger.error(f"详细 - 预估tokens: {estimated_tokens}, 上下文数: {context_count}条, system长度: {len(system_prompt)}, user长度: {len(user_prompt)}")
-            
-            # 判断是否为 token 超限错误
-            if any(keyword in error_msg.lower() for keyword in ["too long", "token", "context", "limit", "exceed"]):
-                return {
-                    "answer": f"输入内容过长，超过 Claude API 限制。\n\n详细信息：\n- 预估输入: {estimated_tokens:,} tokens\n- 上下文条数: {context_count}条\n- Claude API 上限: 1,000,000 tokens\n\n建议：切换为「一般模式」（50条上下文）后重试。",
-                    "tokens": {"error": str(e), "estimated_tokens": estimated_tokens, "context_count": context_count}
+                if not message.content or not getattr(message.content[0], "text", None):
+                    logger.warning("Claude 返回空 content，视为异常")
+                    return {
+                        "answer": "AI 返回内容为空，请稍后重试。",
+                        "tokens": {"error": "empty_content"}
+                    }
+                answer = message.content[0].text
+                tokens = {
+                    "input": message.usage.input_tokens,
+                    "output": message.usage.output_tokens,
+                    "total": message.usage.input_tokens + message.usage.output_tokens
                 }
-            
-            return {
-                "answer": f"AI服务暂时不可用，请稍后重试。\n\n错误信息: {error_msg}",
-                "tokens": {"error": str(e)}
-            }
-        except Exception as e:
-            logger.error(f"生成答案失败: {e}", exc_info=True)
-            raise
+
+                # 计算费用
+                cost = (tokens["input"] / 1_000_000) * 3 + \
+                       (tokens["output"] / 1_000_000) * 15
+                tokens["cost"] = round(cost, 6)
+
+                logger.info(f"Claude调用成功: 实际输入={tokens['input']} tokens, 总计={tokens['total']}, 费用=${tokens['cost']}")
+
+                return {
+                    "answer": answer,
+                    "tokens": tokens,
+                    "claude_payload": claude_payload
+                }
+
+            except anthropic.RateLimitError as e:
+                logger.error(f"API限流: {e}")
+                return {
+                    "answer": "请求过于频繁，请稍后再试。",
+                    "tokens": {"error": str(e)}
+                }
+            except anthropic.APIError as e:
+                # 详细记录错误信息
+                error_msg = str(e)
+                estimated_tokens = len(system_prompt) // 3 + len(user_prompt) // 3
+                logger.error(f"❌ Claude API错误: {error_msg}")
+                logger.error(f"详细 - 预估tokens: {estimated_tokens}, 上下文数: {context_count}条, system长度: {len(system_prompt)}, user长度: {len(user_prompt)}")
+
+                # 判断是否为 token 超限错误
+                if any(keyword in error_msg.lower() for keyword in ["too long", "token", "context", "limit", "exceed"]):
+                    return {
+                        "answer": f"输入内容过长，超过 Claude API 限制。\n\n详细信息：\n- 预估输入: {estimated_tokens:,} tokens\n- 上下文条数: {context_count}条\n- Claude API 上限: 1,000,000 tokens\n\n建议：切换为「一般模式」（50条上下文）后重试。",
+                        "tokens": {"error": str(e), "estimated_tokens": estimated_tokens, "context_count": context_count}
+                    }
+
+                return {
+                    "answer": f"AI服务暂时不可用，请稍后重试。\n\n错误信息: {error_msg}",
+                    "tokens": {"error": str(e)}
+                }
+            except Exception as e:
+                logger.error(f"生成答案失败: {e}", exc_info=True)
+                raise
 
     def _get_map_note_reference_from_hit(self, source: Dict, hit: Dict, index_name: str = "") -> str:
         """
@@ -1591,43 +1612,44 @@ class AISearchService:
                             
                             def _translate_title_for_cache(retry_count: int = 0) -> Optional[str]:
                                 """翻译标题（缓存场景），带重试逻辑"""
-                                try:
-                                    title_response = gemini_client.models.generate_content(
-                                        model=GEMINI_MODEL,
-                                        contents=topic,
-                                        config=types.GenerateContentConfig(
-                                            system_instruction="You are a professional translator. Translate the given Chinese title to English. Only return the English translation, no additional text, no explanations, no prefixes like 'Translation:' or 'English:'.",
-                                        ),
-                                    )
-                                    if title_response and getattr(title_response, "text", None):
-                                        raw_title = title_response.text.strip()
-                                        title_en_clean = raw_title
-                                        prefixes_to_remove = [
-                                            "Translation:", "English:", "翻译：", "英文：",
-                                            "The translation is:", "Here is the translation:",
-                                            "Title:", "标题："
-                                        ]
-                                        for prefix in prefixes_to_remove:
-                                            if title_en_clean.lower().startswith(prefix.lower()):
-                                                title_en_clean = title_en_clean[len(prefix):].strip()
-                                        title_en_clean = title_en_clean.strip('"\'')
-                                        return title_en_clean
-                                    else:
-                                        logger.warning(f"缓存标题翻译返回空响应（重试次数: {retry_count}）")
-                                except Exception as e:
-                                    error_msg = str(e)
-                                    is_retryable = (
-                                        "503" in error_msg or 
-                                        "UNAVAILABLE" in error_msg or 
-                                        "429" in error_msg or
-                                        "timeout" in error_msg.lower() or
-                                        "temporary" in error_msg.lower()
-                                    )
-                                    if is_retryable and retry_count == 0:
-                                        logger.warning(f"缓存标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
-                                        time.sleep(2)
-                                    else:
-                                        logger.warning(f"缓存标题翻译调用失败（重试次数: {retry_count}）: {e}")
+                                with GEMINI_SEMAPHORE:
+                                    try:
+                                        title_response = gemini_client.models.generate_content(
+                                            model=GEMINI_MODEL,
+                                            contents=topic,
+                                            config=types.GenerateContentConfig(
+                                                system_instruction=_gemini_system_instruction,
+                                            ),
+                                        )
+                                        if title_response and getattr(title_response, "text", None):
+                                            raw_title = title_response.text.strip()
+                                            title_en_clean = raw_title
+                                            prefixes_to_remove = [
+                                                "Translation:", "English:", "翻译：", "英文：",
+                                                "The translation is:", "Here is the translation:",
+                                                "Title:", "标题："
+                                            ]
+                                            for prefix in prefixes_to_remove:
+                                                if title_en_clean.lower().startswith(prefix.lower()):
+                                                    title_en_clean = title_en_clean[len(prefix):].strip()
+                                            title_en_clean = title_en_clean.strip('"\'')
+                                            return title_en_clean
+                                        else:
+                                            logger.warning(f"缓存标题翻译返回空响应（重试次数: {retry_count}）")
+                                    except Exception as e:
+                                        error_msg = str(e)
+                                        is_retryable = (
+                                            "503" in error_msg or 
+                                            "UNAVAILABLE" in error_msg or 
+                                            "429" in error_msg or
+                                            "timeout" in error_msg.lower() or
+                                            "temporary" in error_msg.lower()
+                                        )
+                                        if is_retryable and retry_count == 0:
+                                            logger.warning(f"缓存标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                                            time.sleep(2)
+                                        else:
+                                            logger.warning(f"缓存标题翻译调用失败（重试次数: {retry_count}）: {e}")
                                 return None
                             
                             # 尝试翻译标题，失败时重试1次（带延迟）
@@ -1647,33 +1669,34 @@ class AISearchService:
             return {"answer_en": None, "error": "英文翻译服务未配置（请设置 GEMINI_API_KEY）"}
 
         def _call_gemini(retry_count: int = 0) -> Optional[str]:
-            try:
-                response = gemini_client.models.generate_content(
-                    model=GEMINI_MODEL,
-                    contents=outline,
-                    config=types.GenerateContentConfig(
-                        system_instruction=_gemini_system_instruction,
-                    ),
-                )
-                if response and getattr(response, "text", None):
-                    return response.text.strip()
-                else:
-                    logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
-            except Exception as e:
-                error_msg = str(e)
-                # 检查是否是503或其他可重试的错误
-                is_retryable = (
-                    "503" in error_msg or 
-                    "UNAVAILABLE" in error_msg or 
-                    "429" in error_msg or  # Rate limit
-                    "timeout" in error_msg.lower() or
-                    "temporary" in error_msg.lower()
-                )
-                if is_retryable and retry_count == 0:
-                    logger.warning(f"Gemini 翻译调用失败（可重试）: {e}，等待2秒后重试...")
-                    time.sleep(2)  # 等待2秒后重试
-                else:
-                    logger.warning(f"Gemini 翻译调用失败（重试次数: {retry_count}）: {e}")
+            with GEMINI_SEMAPHORE:
+                try:
+                    response = gemini_client.models.generate_content(
+                        model=GEMINI_MODEL,
+                        contents=outline,
+                        config=types.GenerateContentConfig(
+                            system_instruction=_gemini_system_instruction,
+                        ),
+                    )
+                    if response and getattr(response, "text", None):
+                        return response.text.strip()
+                    else:
+                        logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
+                except Exception as e:
+                    error_msg = str(e)
+                    # 检查是否是503或其他可重试的错误
+                    is_retryable = (
+                        "503" in error_msg or 
+                        "UNAVAILABLE" in error_msg or 
+                        "429" in error_msg or  # Rate limit
+                        "timeout" in error_msg.lower() or
+                        "temporary" in error_msg.lower()
+                    )
+                    if is_retryable and retry_count == 0:
+                        logger.warning(f"Gemini 翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                        time.sleep(2)  # 等待2秒后重试
+                    else:
+                        logger.warning(f"Gemini 翻译调用失败（重试次数: {retry_count}）: {e}")
             return None
 
         answer_en = _call_gemini(retry_count=0)
@@ -1687,46 +1710,47 @@ class AISearchService:
             
             def _translate_title(retry_count: int = 0) -> Optional[str]:
                 """翻译标题，带重试逻辑"""
-                try:
-                    title_response = gemini_client.models.generate_content(
-                        model=GEMINI_MODEL,
-                        contents=topic,
-                        config=types.GenerateContentConfig(
-                            system_instruction="You are a professional translator. Translate the given Chinese title to English. Only return the English translation, no additional text, no explanations, no prefixes like 'Translation:' or 'English:'.",
-                        ),
-                    )
-                    if title_response and getattr(title_response, "text", None):
-                        raw_title = title_response.text.strip()
-                        # 清理可能的提示词前缀
-                        title_en_clean = raw_title
-                        # 移除常见的提示词前缀
-                        prefixes_to_remove = [
-                            "Translation:", "English:", "翻译：", "英文：",
-                            "The translation is:", "Here is the translation:",
-                            "Title:", "标题："
-                        ]
-                        for prefix in prefixes_to_remove:
-                            if title_en_clean.lower().startswith(prefix.lower()):
-                                title_en_clean = title_en_clean[len(prefix):].strip()
-                        # 移除引号（如果 Gemini 加了引号）
-                        title_en_clean = title_en_clean.strip('"\'')
-                        return title_en_clean
-                    else:
-                        logger.warning(f"标题翻译返回空响应（重试次数: {retry_count}）")
-                except Exception as e:
-                    error_msg = str(e)
-                    is_retryable = (
-                        "503" in error_msg or 
-                        "UNAVAILABLE" in error_msg or 
-                        "429" in error_msg or
-                        "timeout" in error_msg.lower() or
-                        "temporary" in error_msg.lower()
-                    )
-                    if is_retryable and retry_count == 0:
-                        logger.warning(f"标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
-                        time.sleep(2)  # 等待2秒后重试
-                    else:
-                        logger.warning(f"标题翻译调用失败（重试次数: {retry_count}）: {e}")
+                with GEMINI_SEMAPHORE:
+                    try:
+                        title_response = gemini_client.models.generate_content(
+                            model=GEMINI_MODEL,
+                            contents=topic,
+                            config=types.GenerateContentConfig(
+                                system_instruction=_gemini_system_instruction,
+                            ),
+                        )
+                        if title_response and getattr(title_response, "text", None):
+                            raw_title = title_response.text.strip()
+                            # 清理可能的提示词前缀
+                            title_en_clean = raw_title
+                            # 移除常见的提示词前缀
+                            prefixes_to_remove = [
+                                "Translation:", "English:", "翻译：", "英文：",
+                                "The translation is:", "Here is the translation:",
+                                "Title:", "标题："
+                            ]
+                            for prefix in prefixes_to_remove:
+                                if title_en_clean.lower().startswith(prefix.lower()):
+                                    title_en_clean = title_en_clean[len(prefix):].strip()
+                            # 移除引号（如果 Gemini 加了引号）
+                            title_en_clean = title_en_clean.strip('"\'')
+                            return title_en_clean
+                        else:
+                            logger.warning(f"标题翻译返回空响应（重试次数: {retry_count}）")
+                    except Exception as e:
+                        error_msg = str(e)
+                        is_retryable = (
+                            "503" in error_msg or 
+                            "UNAVAILABLE" in error_msg or 
+                            "429" in error_msg or
+                            "timeout" in error_msg.lower() or
+                            "temporary" in error_msg.lower()
+                        )
+                        if is_retryable and retry_count == 0:
+                            logger.warning(f"标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                            time.sleep(2)  # 等待2秒后重试
+                        else:
+                            logger.warning(f"标题翻译调用失败（重试次数: {retry_count}）: {e}")
                 return None
             
             # 尝试翻译标题，失败时重试1次（带延迟）
@@ -1927,6 +1951,7 @@ class AISearchService:
         _progress("正在生成 DOCX…")
         try:
             from docx import Document
+            from docx.oxml.ns import qn
         except ImportError:
             raise RuntimeError("请安装 python-docx: pip install python-docx")
 
@@ -1935,8 +1960,23 @@ class AISearchService:
             name_base += "（过滤" + "、".join(exclude_list) + "）"
         base_name = _safe_filename(name_base)
 
+        # 中文字体名，用于 DOCX 正文与标题，避免手机等设备打开时缺字出现方框乱码
+        _DOCX_CJK_FONT = "Microsoft YaHei"
+
+        def _set_docx_cjk_font(doc: "Document") -> None:
+            """为文档的 Normal 与 Heading 1 设置支持中文的字体（含东亚 w:eastAsia），减少手机打开时方框乱码。"""
+            for style_name in ("Normal", "Heading 1"):
+                style = doc.styles[style_name]
+                style.font.name = _DOCX_CJK_FONT
+                try:
+                    if style._element.rPr is not None and style._element.rPr.rFonts is not None:
+                        style._element.rPr.rFonts.set(qn("w:eastAsia"), _DOCX_CJK_FONT)
+                except (AttributeError, Exception):
+                    pass
+
         def _make_docx(items_batch: List[Tuple[str, str, str]]) -> bytes:
             doc = Document()
+            _set_docx_cjk_font(doc)
             for i, (label, title, content) in enumerate(items_batch):
                 doc.add_heading(f"[{label}] {title}", level=1)
                 doc.add_paragraph(content)
