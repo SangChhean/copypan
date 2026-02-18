@@ -49,6 +49,10 @@ const routes = [
     path: "/info-retrieval",
     component: () => import("../components/toolbox/InfoRetrieval.vue"),
   },
+  {
+    path: "/outline-translate",
+    component: () => import("../components/toolbox/OutlineTranslate.vue"),
+  },
 ];
 
 const router = createRouter({

@@ -5,7 +5,7 @@ AI搜索API路由
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 import base64
 import json
 import logging
@@ -94,6 +94,13 @@ class TranslateOutlineRequest(BaseModel):
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（用于翻译标题）")
 
 
+class OutlineTranslateRequest(BaseModel):
+    """工具箱 - 纲目翻译：中翻英或英翻中"""
+    direction: Literal["zh2en", "en2zh"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文")
+    content: str = Field(..., min_length=1, max_length=100_000, description="待翻译的纲目全文")
+    outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（仅中翻英时用于翻译标题）")
+
+
 class InfoRetrievalRequest(BaseModel):
     """信息检索请求：多关键词 AND、排除关键词 OR、DOCX 大小上限"""
     keyword: str = Field(..., min_length=1, max_length=500, description="搜索关键词，空格隔开，多词 AND")
@@ -163,6 +170,69 @@ async def translate_outline(request: TranslateOutlineRequest):
         return result
     except Exception as e:
         logger.error(f"翻译纲目失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/outline_translate", summary="工具箱 - 纲目翻译（中翻英 / 英翻中）")
+async def outline_translate(request: OutlineTranslateRequest):
+    """
+    工具箱「纲目翻译」：按 direction 选择中翻英或英翻中，使用 Gemini 与对应 instruction。
+    中翻英与 AI 纲目流程一致（术语表 instruction + 可选标题）；英翻中使用英翻中 instruction。
+    """
+    try:
+        if request.direction == "zh2en":
+            # 工具箱 - 纲目翻译：不使用缓存，每次调用 API
+            out = ai_service.translate_outline(request.content, request.outline_topic, use_cache=False)
+            return {
+                "result": out.get("answer_en"),
+                "title_en": out.get("title_en"),
+                "error": out.get("error"),
+            }
+        else:
+            out = ai_service.translate_outline_en2zh(request.content)
+            return {
+                "result": out.get("answer_zh"),
+                "error": out.get("error"),
+            }
+    except Exception as e:
+        logger.error(f"outline_translate 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/outline_translate_and_format", summary="工具箱 - 纲目翻译并格式化下载 DOCX")
+async def outline_translate_and_format(request: OutlineTranslateRequest):
+    """
+    工具箱「纲目翻译」：翻译 + 格式化 + 返回 DOCX。
+    流程：翻译 → 复制模板 → 写入内容 → 刷格式 → 返回 DOCX bytes。
+    若格式化失败，仍返回翻译文本，docx_bytes 为 None。
+    """
+    try:
+        result = ai_service.translate_and_format_outline(
+            direction=request.direction,
+            content=request.content,
+            outline_topic=request.outline_topic,
+        )
+        
+        if result.get("error") and not result.get("result"):
+            # 翻译失败
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        
+        response_data = {
+            "result": result.get("result"),
+            "error": result.get("error"),  # 可能是格式化失败但翻译成功
+        }
+        
+        # 如果有 DOCX bytes，返回 base64 编码
+        if result.get("docx_bytes"):
+            import base64
+            response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+            response_data["filename"] = result.get("filename", "outline.docx")
+        
+        return response_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"outline_translate_and_format 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

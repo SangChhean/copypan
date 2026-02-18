@@ -215,6 +215,7 @@ _BLOCK = """你是一个专业的中翻英助手。以下是术语表，请在�
 重生的洗涤 the washing of regeneration 
 平常日子的生活 a life of ordinary days 
 神奇的平常事 miraculous normality
+参考与参读资料 References and Further Reading
 
 你是一个专业的中翻英助手。以下是术语表，请在翻译中严格使用：
 耐用的材料	durable material
@@ -427,6 +428,7 @@ _BLOCK = """你是一个专业的中翻英助手。以下是术语表，请在�
 重生的洗涤 the washing of regeneration 
 平常日子的生活 a life of ordinary days 
 神奇的平常事 miraculous normality
+参考与参读资料 References and Further Reading
 """
 
 # 术语表保留两遍，不做去重

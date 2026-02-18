@@ -30,6 +30,19 @@ from pathlib import Path
 
 from .monitoring import get_monitoring
 
+# 导入格式刷函数（从 backend 目录导入）
+try:
+    import sys
+    backend_dir = Path(__file__).resolve().parent.parent
+    if str(backend_dir) not in sys.path:
+        sys.path.insert(0, str(backend_dir))
+    from format_chinese_outline import format_chinese_outline_docx
+    from format_english_outline import format_english_outline_docx
+except ImportError as e:
+    format_chinese_outline_docx = None
+    format_english_outline_docx = None
+    logger.warning(f"格式刷模块未找到，格式化功能将不可用: {e}")
+
 # 加载环境变量（确保从 backend 目录加载 .env）
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -69,19 +82,25 @@ except Exception as e:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 gemini_client = None
+_gemini_system_instruction_en2zh = None
 if GEMINI_API_KEY:
     try:
         from google import genai
         from google.genai import types
         from .gemini_translation_instruction import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        # 保存 system_instruction 供 translate_outline 调用时传入
         _gemini_system_instruction = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
+        try:
+            from .gemini_translation_instruction_en2zh import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
+            _gemini_system_instruction_en2zh = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
+        except Exception:
+            _gemini_system_instruction_en2zh = None
         logger.info("Gemini 翻译模型初始化成功")
     except Exception as e:
         logger.error(f"Gemini 翻译模型初始化失败: {e}")
         gemini_client = None
         _gemini_system_instruction = None
+        _gemini_system_instruction_en2zh = None
 else:
     _gemini_system_instruction = None
     logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
@@ -99,6 +118,16 @@ GEMINI_CONCURRENT_LIMIT = _parse_concurrent_limit("GEMINI_CONCURRENT_LIMIT", 5)
 CLAUDE_SEMAPHORE = threading.Semaphore(CLAUDE_CONCURRENT_LIMIT)
 GEMINI_SEMAPHORE = threading.Semaphore(GEMINI_CONCURRENT_LIMIT)
 logger.info("API 并发限制: Claude=%s, Gemini=%s", CLAUDE_CONCURRENT_LIMIT, GEMINI_CONCURRENT_LIMIT)
+
+# 纲目翻译时与原文一起发送的 prompt（【需要翻译的文章】+ 以下说明）
+OUTLINE_TRANSLATE_PROMPT_ZH2EN = (
+    "请将文章翻译为英文，严格使用System instructions中的专用术语表进行翻译。"
+    "格式要求：①中文序号为壹，翻译为英文I.，一翻译为A.，二翻译为B.，1翻译为1.，a翻译为a.，(一)翻译为1)，以此类推；②不要缩进，直接输出。"
+)
+OUTLINE_TRANSLATE_PROMPT_EN2ZH = (
+    "请将文章翻译为中文，严格使用System instructions中的专用术语表进行翻译。"
+    "格式要求：①读经格式为缩写，例如：罗一1；②英文序号为I.，翻译为中文壹，A.翻译为一，B.翻译为二，1.翻译为1，a.翻译为a，1)翻译为(一)，以此类推；注意，纲目层级之后只加空格，不加其他符号，如：壹 神爱世人，为世人舍了自己的独生子—约三16：；③不要缩进，直接输出。"
+)
 
 # 索引配置：索引名 -> 权重（用于每索引取数及排序加权）
 # 按纲目性质（special_needs）选择不同权重
@@ -1581,11 +1610,17 @@ class AISearchService:
             logger.warning(f"保存缓存失败: {e}")
             return False
 
-    def translate_outline(self, chinese_outline: str, outline_topic: Optional[str] = None) -> Dict:
+    def translate_outline(
+        self,
+        chinese_outline: str,
+        outline_topic: Optional[str] = None,
+        use_cache: bool = True,
+    ) -> Dict:
         """
         将中文纲目翻译为英文纲目（调用 Gemini）。
-        若未配置 GEMINI_API_KEY 返回 error；失败时重试 1 次；缓存按中文内容 hash。
-        同时翻译纲目主题作为英文标题。
+        若未配置 GEMINI_API_KEY 返回 error；失败时重试 1 次。
+        use_cache=True（如 AI 纲目流程）时按中文内容 hash 缓存 24 小时；use_cache=False（如工具箱 - 纲目翻译）时不缓存。
+        同时翻译纲目主题作为英文标题（若提供 outline_topic）。
         """
         MAX_OUTLINE_LENGTH = 100_000
         TRANSLATE_CACHE_TTL = 86400  # 24 小时
@@ -1597,21 +1632,18 @@ class AISearchService:
             return {"answer_en": None, "title_en": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
 
         cache_key = f"ai_search:translate:{hashlib.sha256(outline.encode()).hexdigest()[:32]}"
-        if self.redis:
+        if use_cache and self.redis:
             try:
                 cached = self.redis.get(cache_key)
                 if cached:
                     data = json.loads(cached)
                     cached_answer = data.get("answer_en")
                     cached_title = data.get("title_en")
-                    # 如果缓存中没有标题但需要翻译标题，则只返回内容，标题单独翻译
                     if cached_answer:
                         if outline_topic and outline_topic.strip() and not cached_title:
-                            # 缓存中有内容但没有标题，需要单独翻译标题
                             topic = outline_topic.strip()
-                            
+
                             def _translate_title_for_cache(retry_count: int = 0) -> Optional[str]:
-                                """翻译标题（缓存场景），带重试逻辑"""
                                 with GEMINI_SEMAPHORE:
                                     try:
                                         title_response = gemini_client.models.generate_content(
@@ -1635,45 +1667,43 @@ class AISearchService:
                                             title_en_clean = title_en_clean.strip('"\'')
                                             return title_en_clean
                                         else:
-                                            logger.warning(f"缓存标题翻译返回空响应（重试次数: {retry_count}）")
+                                            logger.warning("缓存标题翻译返回空响应（重试次数: %s）", retry_count)
                                     except Exception as e:
                                         error_msg = str(e)
                                         is_retryable = (
-                                            "503" in error_msg or 
-                                            "UNAVAILABLE" in error_msg or 
-                                            "429" in error_msg or
-                                            "timeout" in error_msg.lower() or
-                                            "temporary" in error_msg.lower()
+                                            "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
+                                            or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
                                         )
                                         if is_retryable and retry_count == 0:
-                                            logger.warning(f"缓存标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
+                                            logger.warning("缓存标题翻译调用失败（可重试）: %s，等待2秒后重试...", e)
                                             time.sleep(2)
                                         else:
-                                            logger.warning(f"缓存标题翻译调用失败（重试次数: {retry_count}）: {e}")
+                                            logger.warning("缓存标题翻译调用失败（重试次数: %s）: %s", retry_count, e)
                                 return None
-                            
-                            # 尝试翻译标题，失败时重试1次（带延迟）
+
                             cached_title = _translate_title_for_cache(retry_count=0)
                             if cached_title is None:
-                                cached_title = _translate_title_for_cache(retry_count=1)  # 重试1次
-                            
+                                cached_title = _translate_title_for_cache(retry_count=1)
                             if cached_title:
-                                logger.info(f"缓存标题翻译成功: '{topic}' -> '{cached_title}'")
+                                logger.info("缓存标题翻译成功: '%s' -> '%s'", topic, cached_title)
                             else:
-                                logger.warning(f"缓存标题翻译失败（已重试1次）: '{topic}'")
+                                logger.warning("缓存标题翻译失败（已重试1次）: '%s'", topic)
                         return {"answer_en": cached_answer, "title_en": cached_title}
             except Exception as e:
-                logger.debug(f"翻译缓存读取失败: {e}")
+                logger.debug("翻译缓存读取失败: %s", e)
 
         if not gemini_client:
             return {"answer_en": None, "error": "英文翻译服务未配置（请设置 GEMINI_API_KEY）"}
+
+        # 发送内容 = 需要翻译的文章 + 格式与术语说明（中翻英）
+        contents_zh2en = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2EN
 
         def _call_gemini(retry_count: int = 0) -> Optional[str]:
             with GEMINI_SEMAPHORE:
                 try:
                     response = gemini_client.models.generate_content(
                         model=GEMINI_MODEL,
-                        contents=outline,
+                        contents=contents_zh2en,
                         config=types.GenerateContentConfig(
                             system_instruction=_gemini_system_instruction,
                         ),
@@ -1767,7 +1797,7 @@ class AISearchService:
         if answer_en is None:
             return {"answer_en": None, "title_en": title_en, "error": "纲目内容翻译失败，请稍后重试"}
 
-        if self.redis:
+        if use_cache and self.redis:
             try:
                 cache_data = {"answer_en": answer_en}
                 if title_en:
@@ -1778,9 +1808,263 @@ class AISearchService:
                     json.dumps(cache_data, ensure_ascii=False),
                 )
             except Exception as e:
-                logger.debug(f"翻译缓存写入失败: {e}")
+                logger.debug("翻译缓存写入失败: %s", e)
 
         return {"answer_en": answer_en, "title_en": title_en}
+
+    def translate_outline_en2zh(self, english_outline: str) -> Dict:
+        """
+        将英文纲目翻译为中文纲目（调用 Gemini，使用英翻中 instruction）。
+        用于工具箱「纲目翻译」- 英翻中。失败时重试 1 次。
+        """
+        MAX_OUTLINE_LENGTH = 100_000
+        outline = (english_outline or "").strip()
+        if not outline:
+            return {"answer_zh": None, "error": "英文纲目为空"}
+        if len(outline) > MAX_OUTLINE_LENGTH:
+            return {"answer_zh": None, "error": f"英文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
+
+        if not gemini_client:
+            return {"answer_zh": None, "error": "英文翻译服务未配置（请设置 GEMINI_API_KEY）"}
+        if not _gemini_system_instruction_en2zh:
+            return {"answer_zh": None, "error": "英翻中 instruction 未配置"}
+
+        # 发送内容 = 需要翻译的文章 + 格式与术语说明（英翻中）
+        contents_en2zh = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ZH
+
+        def _call_gemini(retry_count: int = 0) -> Optional[str]:
+            with GEMINI_SEMAPHORE:
+                try:
+                    response = gemini_client.models.generate_content(
+                        model=GEMINI_MODEL,
+                        contents=contents_en2zh,
+                        config=types.GenerateContentConfig(
+                            system_instruction=_gemini_system_instruction_en2zh,
+                        ),
+                    )
+                    if response and getattr(response, "text", None):
+                        return response.text.strip()
+                    logger.warning("Gemini 英翻中返回空响应（重试次数: %s）", retry_count)
+                except Exception as e:
+                    error_msg = str(e)
+                    is_retryable = (
+                        "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
+                        or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
+                    )
+                    if is_retryable and retry_count == 0:
+                        logger.warning("Gemini 英翻中调用失败（可重试）: %s，等待2秒后重试...", e)
+                        time.sleep(2)
+                    else:
+                        logger.warning("Gemini 英翻中调用失败（重试次数: %s）: %s", retry_count, e)
+            return None
+
+        answer_zh = _call_gemini(retry_count=0)
+        if answer_zh is None:
+            answer_zh = _call_gemini(retry_count=1)
+        if answer_zh is None:
+            return {"answer_zh": None, "error": "纲目翻译失败，请稍后重试"}
+        return {"answer_zh": answer_zh}
+
+    def translate_and_format_outline(
+        self,
+        direction: str,
+        content: str,
+        outline_topic: Optional[str] = None,
+    ) -> Dict:
+        """
+        翻译纲目并格式化下载 DOCX。
+        
+        Args:
+            direction: "zh2en" 或 "en2zh"
+            content: 待翻译的纲目全文
+            outline_topic: 纲目主题（仅中翻英时可选，用于翻译标题）
+        
+        Returns:
+            {
+                "result": str,  # 翻译后的文本
+                "docx_bytes": bytes | None,  # 格式化后的 DOCX bytes（失败时为 None）
+                "filename": str | None,  # 建议的文件名
+                "error": str | None,  # 错误信息
+            }
+        """
+        import shutil
+        import tempfile
+        from docx import Document
+
+        # 1. 先翻译
+        if direction == "zh2en":
+            trans_result = self.translate_outline(content, outline_topic, use_cache=False)
+            translated_text = trans_result.get("answer_en")
+            error = trans_result.get("error")
+            template_name = "英文纲目模板.docx"
+            format_func = format_english_outline_docx
+            default_filename = "outline_en.docx"
+        elif direction == "en2zh":
+            trans_result = self.translate_outline_en2zh(content)
+            translated_text = trans_result.get("answer_zh")
+            error = trans_result.get("error")
+            template_name = "中文纲目模板.docx"
+            format_func = format_chinese_outline_docx
+            default_filename = "outline_zh.docx"
+        else:
+            return {
+                "result": None,
+                "docx_bytes": None,
+                "filename": None,
+                "error": f"无效的翻译方向: {direction}",
+            }
+
+        if error or not translated_text:
+            return {
+                "result": translated_text,
+                "docx_bytes": None,
+                "filename": None,
+                "error": error or "翻译失败",
+            }
+
+        # 2. 检查格式刷函数是否可用
+        if format_func is None:
+            logger.warning("格式刷函数未导入，返回未格式化的翻译结果")
+            return {
+                "result": translated_text,
+                "docx_bytes": None,
+                "filename": default_filename,
+                "error": None,
+            }
+
+        # 3. 复制模板并写入翻译结果
+        backend_dir = Path(__file__).resolve().parent.parent
+        template_path = backend_dir / template_name
+        if not template_path.exists():
+            logger.error(f"模板文件不存在: {template_path}")
+            return {
+                "result": translated_text,
+                "docx_bytes": None,
+                "filename": default_filename,
+                "error": f"模板文件不存在: {template_name}",
+            }
+
+        try:
+            # 创建临时文件
+            with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+                temp_docx_path = tmp_file.name
+
+            # 复制模板
+            shutil.copy2(template_path, temp_docx_path)
+
+            # 打开文档并写入翻译结果
+            doc = Document(temp_docx_path)
+            
+            # 策略：清空所有段落，将翻译结果按行添加为新段落
+            # 这样格式刷函数可以正确识别并应用样式
+            for para in list(doc.paragraphs):
+                p_element = para._element
+                p_element.getparent().remove(p_element)
+            
+            # 将翻译结果按行分割并添加为段落
+            lines = translated_text.split("\n")
+            for line in lines:
+                if line.strip() or len(doc.paragraphs) == 0:  # 保留空行或至少有一个段落
+                    doc.add_paragraph(line)
+
+            # 保存
+            doc.save(temp_docx_path)
+
+            # 4. 调用格式刷
+            try:
+                format_func(temp_docx_path)
+            except Exception as e:
+                logger.error(f"格式刷失败: {e}", exc_info=True)
+                # 格式刷失败时仍返回未格式化的文档
+                pass
+
+            # 5. 读取为 bytes
+            with open(temp_docx_path, "rb") as f:
+                docx_bytes = f.read()
+
+            # 6. 生成文件名（基于题目：中文纲目取读经前最后一段，英文纲目取 Scripture reading 前最后一段）
+            # 回退逻辑：如果没有读经/Scripture reading，则以第一个大点位置判断题目
+            filename = default_filename
+            if lines:
+                title_line = None
+                if direction == "en2zh":
+                    # 中文纲目：优先找"读经："所在行，取它前面一行作为题目
+                    scripture_idx = None
+                    for idx, line in enumerate(lines):
+                        if '读经：' in line or '讀經：' in line:
+                            scripture_idx = idx
+                            break
+                    
+                    if scripture_idx is not None:
+                        # 找到读经，取读经前一行
+                        if scripture_idx > 0:
+                            title_line = lines[scripture_idx - 1].strip()
+                    else:
+                        # 没找到读经，找第一个以"壹"开头的行（第一个大点），取它前面一行
+                        for idx, line in enumerate(lines):
+                            if line.strip().startswith('壹'):
+                                if idx > 0:
+                                    title_line = lines[idx - 1].strip()
+                                break
+                
+                elif direction == "zh2en":
+                    # 英文纲目：优先找"Scripture reading:"所在行，取它前面一行作为题目
+                    scripture_idx = None
+                    for idx, line in enumerate(lines):
+                        if line.strip().lower().startswith("scripture reading:"):
+                            scripture_idx = idx
+                            break
+                    
+                    if scripture_idx is not None:
+                        # 找到 Scripture reading，取它前面一行
+                        if scripture_idx > 0:
+                            title_line = lines[scripture_idx - 1].strip()
+                    else:
+                        # 没找到 Scripture reading，找第一个罗马数字开头的行（第一个大点，如 "I. "），取它前面一行
+                        re_roman = re.compile(r'^([IVXL]+)\.\s')
+                        for idx, line in enumerate(lines):
+                            if re_roman.match(line.strip()):
+                                if idx > 0:
+                                    title_line = lines[idx - 1].strip()
+                                break
+                
+                # 如果找到题目行，使用题目；否则回退到第一行
+                if title_line:
+                    title_text = title_line[:50]
+                else:
+                    title_text = lines[0].strip()[:50]
+                
+                if title_text:
+                    safe_name = re.sub(r'[\/:*?"<>|]', '_', title_text)
+                    filename = f"{safe_name}.docx"
+
+            # 清理临时文件
+            try:
+                os.unlink(temp_docx_path)
+            except Exception:
+                pass
+
+            return {
+                "result": translated_text,
+                "docx_bytes": docx_bytes,
+                "filename": filename,
+                "error": None,
+            }
+
+        except Exception as e:
+            logger.error(f"翻译并格式化失败: {e}", exc_info=True)
+            # 清理临时文件
+            try:
+                if "temp_docx_path" in locals():
+                    os.unlink(temp_docx_path)
+            except Exception:
+                pass
+            return {
+                "result": translated_text,
+                "docx_bytes": None,
+                "filename": default_filename,
+                "error": f"格式化失败: {str(e)}",
+            }
 
     def info_retrieval_export(
         self,
