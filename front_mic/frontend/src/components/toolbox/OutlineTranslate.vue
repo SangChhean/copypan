@@ -49,12 +49,32 @@ async function downloadFormattedDocx() {
       },
       body: JSON.stringify({ direction: direction.value, content: text }),
     });
+    // 先克隆响应以便调试（如果需要）
+    const responseClone = res.clone();
+    
+    // 检查响应状态
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      error.value = errorData.detail || errorData.error || errorData.message || "翻译并格式化失败，请稍后重试";
+      return;
+    }
+    
+    // 解析JSON响应
     let data = {};
     try {
-      const text = await res.text();
-      data = JSON.parse(text);
+      data = await res.json();
     } catch (parseErr) {
-      console.error("JSON解析失败:", parseErr, "响应文本:", text);
+      // JSON解析失败，使用克隆的响应读取原始文本用于调试
+      console.error("JSON解析失败:", parseErr);
+      try {
+        const text = await responseClone.text();
+        console.error("响应状态:", res.status, res.statusText);
+        console.error("响应Content-Type:", res.headers.get("content-type"));
+        console.error("响应文本长度:", text.length);
+        console.error("响应文本前1000字符:", text.substring(0, 1000));
+      } catch (readErr) {
+        console.error("无法读取响应文本:", readErr);
+      }
       error.value = "服务器响应格式错误，请稍后重试";
       return;
     }
