@@ -2061,18 +2061,6 @@ class AISearchService:
             pass
         
         return None
-        except ImportError:
-            logger.warning("docx2pdf 未安装，无法生成 PDF。请安装: pip install docx2pdf")
-            return None
-        except Exception as e:
-            logger.error(f"DOCX 转 PDF 失败: {e}", exc_info=True)
-            # 尝试清理临时文件
-            try:
-                if "pdf_path" in locals() and os.path.exists(pdf_path):
-                    os.unlink(pdf_path)
-            except Exception:
-                pass
-            return None
 
     def translate_and_format_outline(
         self,
