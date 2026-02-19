@@ -1985,17 +1985,19 @@ class AISearchService:
                 temp_output_dir = output_dir
                 temp_output_name = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
                 
+                # 使用 PDF/A-2b 导出，会嵌入全部字体，避免移动端打开乱码
+                pdf_export_opts = 'pdf:writer_pdf_Export:{"SelectPdfVersion":{"type":"long","value":"2"}}'
                 convert_result = subprocess.run(
                     [
                         "libreoffice",
                         "--headless",
-                        "--convert-to", "pdf",
+                        "--convert-to", pdf_export_opts,
                         "--outdir", temp_output_dir,
                         docx_path
                     ],
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=60
                 )
                 
                 if convert_result.returncode == 0:
