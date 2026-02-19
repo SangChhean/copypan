@@ -1943,6 +1943,7 @@ class AISearchService:
     def _convert_docx_to_pdf(self, docx_path: str) -> Optional[bytes]:
         """
         将 DOCX 文件转换为 PDF bytes。
+        优先使用 LibreOffice（Linux），回退到 docx2pdf（Windows/Mac）。
         
         Args:
             docx_path: DOCX 文件路径
@@ -1950,47 +1951,116 @@ class AISearchService:
         Returns:
             PDF bytes，失败时返回 None
         """
+        import tempfile
+        import os
+        import subprocess
+        import platform
+        
+        # 检查 DOCX 文件是否存在
+        if not os.path.exists(docx_path):
+            logger.error(f"DOCX 文件不存在: {docx_path}")
+            return None
+        
+        # 创建临时 PDF 文件
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+            pdf_path = tmp_pdf.name
+        
+        logger.info(f"开始转换 DOCX 到 PDF: {docx_path} -> {pdf_path}")
+        
+        # 方法1: 尝试使用 LibreOffice（Linux）
+        try:
+            # 检查 LibreOffice 是否可用
+            result = subprocess.run(
+                ["which", "libreoffice"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                # 使用 LibreOffice 转换
+                # 获取输出目录（PDF 文件所在目录）
+                output_dir = os.path.dirname(pdf_path)
+                # LibreOffice 会生成文件名，我们需要指定完整路径
+                # 先转换，然后重命名
+                temp_output_dir = output_dir
+                temp_output_name = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
+                
+                convert_result = subprocess.run(
+                    [
+                        "libreoffice",
+                        "--headless",
+                        "--convert-to", "pdf",
+                        "--outdir", temp_output_dir,
+                        docx_path
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if convert_result.returncode == 0:
+                    # LibreOffice 会在输出目录生成 PDF，文件名基于输入文件名
+                    generated_pdf = os.path.join(temp_output_dir, temp_output_name)
+                    if os.path.exists(generated_pdf):
+                        # 移动到目标位置
+                        if generated_pdf != pdf_path:
+                            os.rename(generated_pdf, pdf_path)
+                        
+                        # 检查 PDF 文件是否生成成功
+                        if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                            # 读取 PDF bytes
+                            with open(pdf_path, "rb") as f:
+                                pdf_bytes = f.read()
+                            
+                            logger.info(f"PDF 转换成功（LibreOffice）: 大小 {len(pdf_bytes)} bytes")
+                            
+                            # 清理临时文件
+                            try:
+                                os.unlink(pdf_path)
+                            except Exception:
+                                pass
+                            
+                            return pdf_bytes
+        except FileNotFoundError:
+            logger.debug("LibreOffice 未找到，尝试其他方法")
+        except subprocess.TimeoutExpired:
+            logger.warning("LibreOffice 转换超时")
+        except Exception as e:
+            logger.warning(f"LibreOffice 转换失败: {e}")
+        
+        # 方法2: 回退到 docx2pdf（Windows/Mac，或 Linux 上如果安装了 MS Word）
         try:
             from docx2pdf import convert
-            import tempfile
-            import os
-            
-            # 检查 DOCX 文件是否存在
-            if not os.path.exists(docx_path):
-                logger.error(f"DOCX 文件不存在: {docx_path}")
-                return None
-            
-            # 创建临时 PDF 文件
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
-                pdf_path = tmp_pdf.name
-            
-            logger.info(f"开始转换 DOCX 到 PDF: {docx_path} -> {pdf_path}")
-            
-            # 转换 DOCX 到 PDF
             convert(docx_path, pdf_path)
             
             # 检查 PDF 文件是否生成成功
-            if not os.path.exists(pdf_path) or os.path.getsize(pdf_path) == 0:
-                logger.error(f"PDF 文件生成失败或为空: {pdf_path}")
+            if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                # 读取 PDF bytes
+                with open(pdf_path, "rb") as f:
+                    pdf_bytes = f.read()
+                
+                logger.info(f"PDF 转换成功（docx2pdf）: 大小 {len(pdf_bytes)} bytes")
+                
+                # 清理临时文件
                 try:
                     os.unlink(pdf_path)
                 except Exception:
                     pass
-                return None
-            
-            # 读取 PDF bytes
-            with open(pdf_path, "rb") as f:
-                pdf_bytes = f.read()
-            
-            logger.info(f"PDF 转换成功: 大小 {len(pdf_bytes)} bytes")
-            
-            # 清理临时文件
-            try:
+                
+                return pdf_bytes
+        except NotImplementedError as e:
+            logger.error(f"DOCX 转 PDF 失败: {e}")
+        except Exception as e:
+            logger.error(f"DOCX 转 PDF 失败: {e}", exc_info=True)
+        
+        # 清理临时文件
+        try:
+            if os.path.exists(pdf_path):
                 os.unlink(pdf_path)
-            except Exception:
-                pass
-            
-            return pdf_bytes
+        except Exception:
+            pass
+        
+        return None
         except ImportError:
             logger.warning("docx2pdf 未安装，无法生成 PDF。请安装: pip install docx2pdf")
             return None

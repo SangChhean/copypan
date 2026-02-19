@@ -134,11 +134,17 @@ async function downloadFormatted() {
             type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           });
           const url = URL.createObjectURL(blob);
+          
+          // 检测移动端
+          const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+          
           const a = document.createElement("a");
           a.href = url;
           a.download = data.filename || "outline.docx";
+          document.body.appendChild(a);
           a.click();
-          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch (downloadErr) {
           console.error(`下载${format.toUpperCase()}失败:`, downloadErr);
           try {
@@ -154,11 +160,25 @@ async function downloadFormatted() {
               type: "application/pdf",
             });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = data.filename || "outline.pdf";
-            a.click();
-            URL.revokeObjectURL(url);
+            
+            // 检测移动端
+            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+            
+            if (isMobile) {
+              // 移动端：直接打开 PDF（某些移动浏览器不支持下载）
+              window.open(url, '_blank');
+              // 延迟清理 URL，确保文件已打开
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } else {
+              // 桌面端：下载文件
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = data.filename || "outline.pdf";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }
           } catch (downloadErr) {
             console.error(`下载${format.toUpperCase()}失败:`, downloadErr);
             try {
@@ -173,11 +193,17 @@ async function downloadFormatted() {
               type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             });
             const url = URL.createObjectURL(blob);
+            
+            // 检测移动端
+            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+            
             const a = document.createElement("a");
             a.href = url;
             a.download = data.filename || "outline.docx";
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             // 提示用户 PDF 转换失败
             try {
               if (window.$message) {
