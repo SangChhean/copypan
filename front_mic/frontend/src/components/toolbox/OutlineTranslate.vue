@@ -112,7 +112,7 @@ async function downloadFormattedDocx() {
         a.click();
         URL.revokeObjectURL(url);
         try {
-          if (window.$message) window.$message.success("已下载格式化 DOCX");
+          if (window.$message) window.$message.success("翻译已完成，已为您下载 DOCX 文件，下方可查看或复制译文。");
         } catch (_) {}
       } catch (downloadErr) {
         console.error("下载DOCX失败:", downloadErr);
@@ -122,6 +122,11 @@ async function downloadFormattedDocx() {
       // 格式化失败但翻译成功
       try {
         if (window.$message) window.$message.warning(`翻译成功，但格式化失败: ${data.error}`);
+      } catch (_) {}
+    } else if (data.result) {
+      // 有译文但未下载（异常情况）：仍提示完成
+      try {
+        if (window.$message) window.$message.success("翻译已完成！下方可查看或复制译文。");
       } catch (_) {}
     }
   } catch (err) {
@@ -172,6 +177,7 @@ async function downloadFormattedDocx() {
           <span v-else>翻译、刷格式并下载</span>
         </button>
       </div>
+      <p v-if="loading" class="loading-hint">请耐心等待 2～3 分钟</p>
     </a-card>
 
     <div v-if="error" class="error">{{ error }}</div>
@@ -262,6 +268,13 @@ async function downloadFormattedDocx() {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.loading-hint {
+  margin: 8px 0 0;
+  color: #8c8c8c;
+  font-size: 0.9em;
+  text-align: center;
 }
 
 .action-btn {
