@@ -19,7 +19,9 @@ def get_header_count(doc):
         if '读经：' in para.text or '讀經：' in para.text:
             return idx
     for idx, para in enumerate(doc.paragraphs):
-        if para.text.strip().startswith('壹'):
+        # 检测简体或繁体大点开头（壹、貳、參、叄等）
+        text_stripped = para.text.strip()
+        if text_stripped.startswith(('壹', '貳', '參', '叄', '肆', '伍', '陸', '柒', '捌', '玖', '拾')):
             return idx
     return 3
 
@@ -147,8 +149,12 @@ def format_chinese_outline_docx(docx_path: str) -> None:
         text = text.replace('课\t', '课　')
         text = text.replace('貮\t', '贰\t')
         text = text.replace('参\t', '叁\t')
+        text = text.replace('參\t', '叁\t')  # 繁体参→简体叁
+        text = text.replace('叄\t', '叁\t')  # 繁体叄→简体叁
         text = text.replace('貳\t', '贰\t')
         text = text.replace('参　', '叁　')
+        text = text.replace('參　', '叁　')  # 繁体参→简体叁
+        text = text.replace('叄　', '叁　')  # 繁体叄→简体叁
         text = text.replace('貳　', '贰　')
         text = text.replace('貮　', '贰　')
         text = text.replace('陸\t', '陆\t')
@@ -290,13 +296,14 @@ def format_chinese_outline_docx(docx_path: str) -> None:
 
     # 步骤16：根据标识应用相应的段落样式（仅对「读经」后、「职事信息摘录」前的纲目正文应用，不覆盖读经前标题和职事信息摘录段）
     pattern_styles = [
-        (r'^([壹贰貳叁参肆伍陆陸柒捌玖拾佰仟萬亿億]+)　', '81级标题'),
+        # 大点：包含简体（壹贰叁参肆伍陆柒捌玖拾）和繁体（貳參叄陸等）
+        (r'^([壹貳贰參叄叁参肆伍陸陆柒捌玖拾佰仟萬亿億]+)　', '81级标题'),
         (r'^([一二三四五六七八九十百千万萬亿億]+)　', '82级标题'),
         (r'^(\d+)　', '83级标题'),
         (r'^([a-z])　', '84级标题'),
         (r'^（([一二三四五六七八九十百千万萬亿億]+)）　', '84级标题'),
         (r'^（(\d+)）　', '84级标题'),
-        (r'^([壹贰貳叁参肆伍陆陸柒捌玖拾佰仟萬亿億]+)\t', '2大点'),
+        (r'^([壹貳贰參叄叁参肆伍陸陆柒捌玖拾佰仟萬亿億]+)\t', '2大点'),
         (r'^([一二三四五六七八九十百千万萬亿億]+)\t', '3中点'),
         (r'^(\d+)\t', '4小点'),
         (r'^([a-z])\t', '5a点'),

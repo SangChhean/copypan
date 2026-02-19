@@ -2,20 +2,20 @@
 import ToolsHeader from "./ToolsHeader.vue";
 import { ref, computed } from "vue";
 import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
-const direction = ref("zh2en"); // zh2en | en2zh
+const direction = ref("zh_cn2tw"); // zh_cn2tw | zh_tw2cn
 const downloadFormats = ref([]); // ["docx", "pdf"] - 用户选择的下载格式
 const content = ref("");
 const loading = ref(false);
 const downloading = ref(false); // 正在下载
 const error = ref(null);
 const result = ref(null);
-const titleEn = ref(null); // 英文标题（仅中翻英时）
 
-const isZh2En = computed(() => direction.value === "zh2en");
+const isCn2Tw = computed(() => direction.value === "zh_cn2tw");
 const inputPlaceholder = computed(() =>
-  isZh2En.value ? "请粘贴中文纲目全文…" : "请粘贴英文纲目全文…"
+  isCn2Tw.value ? "请粘贴简体纲目全文…" : "请粘贴台湾繁体纲目全文…"
 );
 
 function copyResult() {
@@ -27,18 +27,17 @@ function copyResult() {
   });
 }
 
-// 翻译（不格式化）
-async function translate() {
+// 转换（不格式化）
+async function convert() {
   const text = (content.value || "").trim();
   if (!text) {
-    error.value = isZh2En.value ? "请先粘贴中文纲目" : "请先粘贴英文纲目";
+    error.value = isCn2Tw.value ? "请先粘贴简体纲目" : "请先粘贴繁体纲目";
     result.value = null;
     return;
   }
   loading.value = true;
   error.value = null;
   result.value = null;
-  titleEn.value = null;
   downloadFormats.value = [];
   const authToken = localStorage.getItem("token") || null;
   if (!authToken) {
@@ -47,40 +46,28 @@ async function translate() {
     return;
   }
   try {
-    const res = await fetch(`${apiBase}/api/ai_search/outline_translate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ 
-        direction: direction.value, 
-        content: text,
-        outline_topic: null, // 工具箱翻译不需要标题
-      }),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      error.value = errorData.detail || errorData.error || errorData.message || "翻译失败，请稍后重试";
-      return;
-    }
-    
-    const data = await res.json();
-    if (data.error && !data.result) {
-      error.value = data.error;
-      return;
-    }
-    
-    if (data.result) {
-      result.value = data.result;
-      if (data.title_en) {
-        titleEn.value = data.title_en;
+    const endpoint = isCn2Tw.value
+      ? "/api/ai_search/outline_to_traditional"
+      : "/api/ai_search/traditional_to_simplified";
+    const fieldName = isCn2Tw.value ? "answer_zh_tw" : "answer_zh_cn";
+    const res = await axios.post(
+      `${apiBase}${endpoint}`,
+      { content: text },
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 60000,
       }
+    );
+    const data = res.data;
+    if (data[fieldName]) {
+      result.value = data[fieldName];
       try {
-        if (window.$message) window.$message.success("翻译完成！请选择下载格式并点击下载按钮。");
+        if (window.$message) window.$message.success("转换完成！请选择下载格式并点击下载按钮。");
       } catch (_) {}
     } else {
-      error.value = "翻译失败，请稍后重试";
+      error.value = data.error || data.detail || "转换失败，请稍后重试";
     }
   } catch (err) {
     error.value = err.response?.data?.detail || err.response?.data?.error || err.message || "网络错误，请稍后重试";
@@ -93,7 +80,7 @@ async function translate() {
 async function downloadFormatted() {
   if (!result.value) {
     try {
-      if (window.$message) window.$message.warning("请先完成翻译");
+      if (window.$message) window.$message.warning("请先完成转换");
     } catch (_) {}
     return;
   }
@@ -114,7 +101,7 @@ async function downloadFormatted() {
   
   try {
     // 依次下载每个选中的格式
-    // 使用 format_outline_only 接口，传入已翻译的文本，避免重复调用翻译 API
+    // 使用 format_outline_only 接口，传入已转换的文本，避免重复调用转换 API
     for (const format of downloadFormats.value) {
       const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
         method: "POST",
@@ -149,7 +136,7 @@ async function downloadFormatted() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+          a.download = data.filename || "outline.docx";
           a.click();
           URL.revokeObjectURL(url);
         } catch (downloadErr) {
@@ -169,7 +156,7 @@ async function downloadFormatted() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = data.filename || (isZh2En.value ? "outline_en.pdf" : "outline_zh.pdf");
+            a.download = data.filename || "outline.pdf";
             a.click();
             URL.revokeObjectURL(url);
           } catch (downloadErr) {
@@ -188,7 +175,7 @@ async function downloadFormatted() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+            a.download = data.filename || "outline.docx";
             a.click();
             URL.revokeObjectURL(url);
             // 提示用户 PDF 转换失败
@@ -231,21 +218,21 @@ async function downloadFormatted() {
 </script>
 
 <template>
-  <ToolsHeader title="纲目翻译" />
+  <ToolsHeader title="简繁互转" />
   <div class="box">
     <a-card>
       <p class="hint">
-        选择翻译方向后，粘贴纲目全文（含标题则一起粘贴），点击「翻译」按钮完成翻译，然后选择下载格式并点击「下载」按钮。
+        选择转换方向后，粘贴纲目全文（含标题则一起粘贴），点击「转换」按钮完成转换，然后选择下载格式并点击「下载」按钮。
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="direction-row">
-        <span class="label">翻译方向：</span>
+        <span class="label">转换方向：</span>
         <a-segmented
           v-model:value="direction"
           class="direction-segmented"
           :options="[
-            { label: '中文 → 英文', value: 'zh2en' },
-            { label: '英文 → 中文', value: 'en2zh' },
+            { label: '简体 → 繁体', value: 'zh_cn2tw' },
+            { label: '繁体 → 简体', value: 'zh_tw2cn' },
           ]"
         />
       </div>
@@ -273,16 +260,16 @@ async function downloadFormatted() {
           type="button"
           class="action-btn"
           :disabled="loading || !content.trim()"
-          @click="translate"
+          @click="convert"
         >
           <LoadingOutlined v-if="loading" class="btn-icon btn-spin" />
-          <span v-if="loading">翻译中…</span>
-          <span v-else>翻译</span>
+          <span v-if="loading">转换中…</span>
+          <span v-else>转换</span>
         </button>
       </div>
       <p v-if="loading" class="loading-hint">请耐心等待 1～2 分钟</p>
       
-      <!-- 翻译结果后的下载选项 -->
+      <!-- 转换结果后的下载选项 -->
       <div v-if="result" class="download-section">
         <a-divider :style="{ margin: '16px 0' }" />
         <div class="direction-row">
@@ -313,7 +300,7 @@ async function downloadFormatted() {
 
     <a-card v-if="result" class="result-card">
       <template #title>
-        <span>{{ isZh2En ? "英文纲目" : "中文纲目" }}</span>
+        <span>{{ isCn2Tw ? "繁体纲目" : "简体纲目" }}</span>
         <button type="button" class="copy-btn" @click="copyResult">
           <CopyOutlined /> 复制
         </button>
@@ -354,7 +341,7 @@ async function downloadFormatted() {
   font-size: 1em;
 }
 
-/* 翻译方向分段控件：更醒目，选中项绿色 */
+/* 转换方向分段控件：更醒目，选中项绿色 */
 .direction-segmented :deep(.ant-segmented-group) {
   gap: 4px;
 }
@@ -427,13 +414,6 @@ async function downloadFormatted() {
   flex-wrap: wrap;
 }
 
-.loading-hint {
-  margin: 8px 0 0;
-  color: #8c8c8c;
-  font-size: 0.9em;
-  text-align: center;
-}
-
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -469,6 +449,12 @@ async function downloadFormatted() {
   cursor: not-allowed;
 }
 
+.loading-hint {
+  margin: 8px 0 0;
+  color: #8c8c8c;
+  font-size: 0.9em;
+  text-align: center;
+}
 
 .error {
   margin-top: 12px;

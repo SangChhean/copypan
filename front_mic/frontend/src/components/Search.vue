@@ -110,6 +110,12 @@ const loadingEnglish = ref(false); // 正在生成英文纲目
 const errorEnglish = ref(null); // 英文纲目生成失败信息
 const aiAnswerEnCopied = ref(false); // 英文复制状态
 
+const includeTraditionalOutline = ref(false); // 是否同时生成繁体纲目
+const answerZhTw = ref(null); // 台湾繁体纲目
+const loadingTraditional = ref(false); // 正在生成繁体纲目
+const errorTraditional = ref(null); // 繁体纲目生成失败信息
+const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
+
 const aiPanelVisible = ref(false);
 const AI_NATURE_OPTIONS = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
 const aiForm = reactive({
@@ -197,6 +203,49 @@ const fetchTranslate = async (chineseOutline) => {
   }
 };
 
+// 请求简体纲目转台湾繁体（用户勾选「同时生成繁体纲目」后调用）
+const fetchTraditionalOutline = async (simplifiedOutline) => {
+  if (!simplifiedOutline || !simplifiedOutline.trim()) return;
+  loadingTraditional.value = true;
+  errorTraditional.value = null;
+  answerZhTw.value = null;
+  try {
+    const res = await axios.post(
+      "/api/ai_search/outline_to_traditional",
+      { content: simplifiedOutline },
+      { timeout: 60000 }
+    );
+    const data = res.data;
+    if (data.answer_zh_tw) {
+      answerZhTw.value = data.answer_zh_tw;
+    } else {
+      errorTraditional.value = data.error || "繁体纲目生成失败";
+    }
+  } catch (err) {
+    errorTraditional.value = err.response?.data?.detail || err.message || "简转繁请求失败，请稍后重试";
+  } finally {
+    loadingTraditional.value = false;
+  }
+};
+
+// 繁体纲目复制（包含标题）
+const copyAiAnswerZhTw = async () => {
+  const text = answerZhTw.value;
+  if (!text) return;
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  try {
+    await navigator.clipboard.writeText(fullText);
+    aiAnswerZhTwCopied.value = true;
+    tip("繁体纲目已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerZhTwCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
 // 仅将 AI 回答中的大点（壹、贰、叁/参…拾、拾壹、拾贰…贰拾、贰壹、贰贰…）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
   const raw = aiResult.value?.answer;
@@ -212,6 +261,27 @@ const aiAnswerFormatted = computed(() => {
   const s = toBold.replace(big, "$1$2<strong>$3</strong>");
   const content = s + afterRef;
   // 添加标题（如果有）- 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
+});
+
+// 繁体纲目格式化（换行转 br，大点壹貳參…加粗，「參考與參讀資料：」及之后不加粗）
+const aiAnswerZhTwFormatted = computed(() => {
+  const raw = answerZhTw.value;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  const refIdx = withBr.search(/參考與參讀資料[：:]/i);
+  const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
+  const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
+  // 繁体大点：壹、貳、參、肆、伍、陸、柒、捌、玖、拾、拾壹…貳拾、貳壹…
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|貳[、，\u3000\t ]|參[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陸[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹貳參肆伍陸柒捌玖][、，\u3000\t ]|貳[拾壹貳參肆伍陸柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g;
+  const s = toBold.replace(big, "$1$2<strong>$3</strong>");
+  const content = s + afterRef;
   const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
   if (title) {
     const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -408,6 +478,8 @@ const onAISearch = async () => {
   aiResult.value = null;
   answerEn.value = null;
   errorEnglish.value = null;
+  answerZhTw.value = null;
+  errorTraditional.value = null;
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "🔍 正在检索相关内容...";
@@ -430,6 +502,9 @@ const onAISearch = async () => {
       showAIAnswer.value = true;
       if (includeEnglishOutline.value) {
         fetchTranslate(data.answer);
+      }
+      if (includeTraditionalOutline.value) {
+        fetchTraditionalOutline(data.answer);
       }
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -462,6 +537,9 @@ const onAISearch = async () => {
     showAIAnswer.value = true;
     if (includeEnglishOutline.value) {
       fetchTranslate(generateRes.data.answer);
+    }
+    if (includeTraditionalOutline.value) {
+      fetchTraditionalOutline(generateRes.data.answer);
     }
     // 平滑滚动到页面最顶端
     setTimeout(() => {
@@ -577,6 +655,7 @@ const onAISearch = async () => {
                 </a-radio-group>
               </div>
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
+              <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
                 type="primary"
                 :loading="loadingAI"
@@ -780,6 +859,25 @@ const onAISearch = async () => {
         {{ errorEnglish }}
       </div>
       <div v-else-if="answerEn" class="ai-answer-content" v-html="aiAnswerEnFormatted"></div>
+    </div>
+
+    <!-- 繁体纲目（仅当用户勾选「同时生成繁体纲目」时显示此区块） -->
+    <div v-if="showAIAnswer && includeTraditionalOutline" class="ai-answer-card ai-answer-card-zh-tw">
+      <div class="ai-answer-header">
+        <span style="font-weight: bold; color: #2d5016;">📝 繁体纲目</span>
+        <a-button v-if="answerZhTw" type="text" size="small" @click="copyAiAnswerZhTw" class="ai-copy-btn">
+          <CheckOutlined v-if="aiAnswerZhTwCopied" style="color: #52c41a;" />
+          <CopyOutlined v-else />
+          {{ aiAnswerZhTwCopied ? "已复制" : "复制" }}
+        </a-button>
+      </div>
+      <div v-if="loadingTraditional" class="ai-answer-content ai-answer-loading-zh-tw">
+        <a-spin size="small" /> 正在生成繁体纲目…
+      </div>
+      <div v-else-if="errorTraditional" class="ai-answer-content ai-answer-error-zh-tw">
+        {{ errorTraditional }}
+      </div>
+      <div v-else-if="answerZhTw" class="ai-answer-content" v-html="aiAnswerZhTwFormatted"></div>
     </div>
 
     <!-- 查看全部数据（可折叠） -->
@@ -1327,11 +1425,14 @@ const onAISearch = async () => {
   color: #1a1a2e;
 }
 .ai-answer-loading-en,
-.ai-answer-error-en {
+.ai-answer-error-en,
+.ai-answer-loading-zh-tw,
+.ai-answer-error-zh-tw {
   color: #666;
   padding: 12px 0;
 }
-.ai-answer-error-en {
+.ai-answer-error-en,
+.ai-answer-error-zh-tw {
   color: #c41e3a;
 }
 

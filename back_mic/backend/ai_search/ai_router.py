@@ -94,11 +94,36 @@ class TranslateOutlineRequest(BaseModel):
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（用于翻译标题）")
 
 
+class OutlineToTraditionalRequest(BaseModel):
+    """简体纲目转台湾繁体：传入简体纲目全文"""
+    content: str = Field(..., min_length=1, max_length=100_000, description="简体纲目全文")
+
+
+class TraditionalToSimplifiedRequest(BaseModel):
+    """台湾繁体纲目转简体：传入繁体纲目全文"""
+    content: str = Field(..., min_length=1, max_length=100_000, description="台湾繁体纲目全文")
+
+
+class ConvertAndFormatRequest(BaseModel):
+    """简繁转换并格式化：传入纲目全文"""
+    direction: Literal["zh_cn2tw", "zh_tw2cn"] = Field(..., description="zh_cn2tw=简体→繁体, zh_tw2cn=繁体→简体")
+    content: str = Field(..., min_length=1, max_length=100_000, description="待转换的纲目全文")
+    output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
+
+
 class OutlineTranslateRequest(BaseModel):
     """工具箱 - 纲目翻译：中翻英或英翻中"""
     direction: Literal["zh2en", "en2zh"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文")
     content: str = Field(..., min_length=1, max_length=100_000, description="待翻译的纲目全文")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（仅中翻英时用于翻译标题）")
+    output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
+
+
+class FormatOutlineRequest(BaseModel):
+    """工具箱 - 仅格式化已翻译/转换的纲目（不调用翻译/转换 API）"""
+    direction: Literal["zh2en", "en2zh", "zh_cn2tw", "zh_tw2cn"] = Field(..., description="zh2en=英文纲目, en2zh/zh_cn2tw/zh_tw2cn=中文纲目")
+    translated_text: str = Field(..., min_length=1, max_length=100_000, description="已翻译/转换的纲目全文")
+    output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
 
 
 class InfoRetrievalRequest(BaseModel):
@@ -173,6 +198,97 @@ async def translate_outline(request: TranslateOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/ai_search/outline_to_traditional", summary="简体纲目转台湾繁体")
+async def outline_to_traditional(request: OutlineToTraditionalRequest):
+    """
+    用户勾选「同时生成繁体纲目」后，前端用已展示的简体纲目调用此接口。
+    后端先按术语表替换，再通用简→繁（zhconv zh-tw）。
+    """
+    try:
+        result = ai_service.outline_to_traditional(request.content)
+        if result.get("error") and result.get("answer_zh_tw") is None:
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"简转繁失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/traditional_to_simplified", summary="台湾繁体纲目转简体")
+async def traditional_to_simplified(request: TraditionalToSimplifiedRequest):
+    """
+    工具箱「简繁互转」：将台湾繁体纲目转为简体。
+    直接使用 zhconv 转换（不经过术语表）。
+    """
+    try:
+        result = ai_service.traditional_to_simplified(request.content)
+        if result.get("error") and result.get("answer_zh_cn") is None:
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"繁转简失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/convert_and_format", summary="简繁转换并格式化（返回 DOCX 或 PDF）")
+async def convert_and_format(request: ConvertAndFormatRequest):
+    """
+    工具箱「简繁互转」：转换 + 格式化 + 返回 DOCX 或 PDF。
+    流程：转换 → 复制中文模板 → 写入内容 → 刷格式 → 返回 DOCX/PDF bytes。
+    若格式化失败，仍返回转换文本，docx_bytes/pdf_bytes 为 None。
+    """
+    try:
+        result = ai_service.convert_and_format_outline(
+            direction=request.direction,
+            content=request.content,
+            output_format=request.output_format,
+        )
+        
+        if result.get("error") and not result.get("result"):
+            # 转换失败
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        
+        response_data = {
+            "result": result.get("result"),
+            "error": result.get("error"),  # 可能是格式化失败但转换成功
+        }
+        
+        import base64
+        
+        # 根据输出格式返回对应的文件
+        if request.output_format == "pdf":
+            if result.get("pdf_bytes"):
+                response_data["pdf_base64"] = base64.b64encode(result["pdf_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.pdf")
+                logger.info(f"返回PDF: filename={response_data['filename']}, base64长度={len(response_data['pdf_base64'])}")
+            elif result.get("docx_bytes"):
+                # PDF 转换失败，返回 DOCX
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx").replace(".pdf", ".docx")
+                logger.warning(f"PDF转换失败，返回DOCX: filename={response_data['filename']}")
+            else:
+                logger.warning(f"未返回PDF: result.error={result.get('error')}")
+        else:
+            # DOCX 格式
+            if result.get("docx_bytes"):
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx")
+                logger.info(f"返回DOCX: filename={response_data['filename']}, base64长度={len(response_data['docx_base64'])}")
+            else:
+                logger.warning(f"未返回DOCX: result.error={result.get('error')}, docx_bytes存在={result.get('docx_bytes') is not None}")
+        
+        return response_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"转换并格式化失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/ai_search/outline_translate", summary="工具箱 - 纲目翻译（中翻英 / 英翻中）")
 async def outline_translate(request: OutlineTranslateRequest):
     """
@@ -199,18 +315,19 @@ async def outline_translate(request: OutlineTranslateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/outline_translate_and_format", summary="工具箱 - 纲目翻译并格式化下载 DOCX")
+@router.post("/ai_search/outline_translate_and_format", summary="工具箱 - 纲目翻译并格式化下载 DOCX 或 PDF")
 async def outline_translate_and_format(request: OutlineTranslateRequest):
     """
-    工具箱「纲目翻译」：翻译 + 格式化 + 返回 DOCX。
-    流程：翻译 → 复制模板 → 写入内容 → 刷格式 → 返回 DOCX bytes。
-    若格式化失败，仍返回翻译文本，docx_bytes 为 None。
+    工具箱「纲目翻译」：翻译 + 格式化 + 返回 DOCX 或 PDF。
+    流程：翻译 → 复制模板 → 写入内容 → 刷格式 → 返回 DOCX/PDF bytes。
+    若格式化失败，仍返回翻译文本，docx_bytes/pdf_bytes 为 None。
     """
     try:
         result = ai_service.translate_and_format_outline(
             direction=request.direction,
             content=request.content,
             outline_topic=request.outline_topic,
+            output_format=request.output_format,
         )
         
         if result.get("error") and not result.get("result"):
@@ -222,20 +339,89 @@ async def outline_translate_and_format(request: OutlineTranslateRequest):
             "error": result.get("error"),  # 可能是格式化失败但翻译成功
         }
         
-        # 如果有 DOCX bytes，返回 base64 编码
-        if result.get("docx_bytes"):
-            import base64
-            response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
-            response_data["filename"] = result.get("filename", "outline.docx")
-            logger.info(f"返回DOCX: filename={response_data['filename']}, base64长度={len(response_data['docx_base64'])}")
+        import base64
+        
+        # 根据输出格式返回对应的文件
+        if request.output_format == "pdf":
+            if result.get("pdf_bytes"):
+                response_data["pdf_base64"] = base64.b64encode(result["pdf_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.pdf")
+                logger.info(f"返回PDF: filename={response_data['filename']}, base64长度={len(response_data['pdf_base64'])}")
+            elif result.get("docx_bytes"):
+                # PDF 转换失败，返回 DOCX
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx").replace(".pdf", ".docx")
+                logger.warning(f"PDF转换失败，返回DOCX: filename={response_data['filename']}")
+            else:
+                logger.warning(f"未返回PDF: result.error={result.get('error')}")
         else:
-            logger.warning(f"未返回DOCX: result.error={result.get('error')}, docx_bytes存在={result.get('docx_bytes') is not None}")
+            # DOCX 格式
+            if result.get("docx_bytes"):
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx")
+                logger.info(f"返回DOCX: filename={response_data['filename']}, base64长度={len(response_data['docx_base64'])}")
+            else:
+                logger.warning(f"未返回DOCX: result.error={result.get('error')}, docx_bytes存在={result.get('docx_bytes') is not None}")
         
         return response_data
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"outline_translate_and_format 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/format_outline_only", summary="工具箱 - 仅格式化已翻译的纲目（不调用翻译 API）")
+async def format_outline_only(request: FormatOutlineRequest):
+    """
+    工具箱「纲目翻译」：仅格式化已翻译的文本，不调用翻译 API。
+    用于优化：用户已翻译完成，只需格式化并下载时使用。
+    流程：复制模板 → 写入已翻译内容 → 刷格式 → 返回 DOCX/PDF bytes。
+    """
+    try:
+        result = ai_service.format_outline_only(
+            direction=request.direction,
+            translated_text=request.translated_text,
+            output_format=request.output_format,
+        )
+        
+        if result.get("error") and not (result.get("docx_bytes") or result.get("pdf_bytes")):
+            # 格式化失败且没有返回文件
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        
+        response_data = {
+            "error": result.get("error"),  # 可能是 PDF 转换失败但 DOCX 成功
+        }
+        
+        import base64
+        
+        # 根据输出格式返回对应的文件
+        if request.output_format == "pdf":
+            if result.get("pdf_bytes"):
+                response_data["pdf_base64"] = base64.b64encode(result["pdf_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.pdf")
+                logger.info(f"返回PDF: filename={response_data['filename']}, base64长度={len(response_data['pdf_base64'])}")
+            elif result.get("docx_bytes"):
+                # PDF 转换失败，返回 DOCX
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx").replace(".pdf", ".docx")
+                logger.warning(f"PDF转换失败，返回DOCX: filename={response_data['filename']}")
+            else:
+                logger.warning(f"未返回PDF: result.error={result.get('error')}")
+        else:
+            # DOCX 格式
+            if result.get("docx_bytes"):
+                response_data["docx_base64"] = base64.b64encode(result["docx_bytes"]).decode("utf-8")
+                response_data["filename"] = result.get("filename", "outline.docx")
+                logger.info(f"返回DOCX: filename={response_data['filename']}, base64长度={len(response_data['docx_base64'])}")
+            else:
+                logger.warning(f"未返回DOCX: result.error={result.get('error')}, docx_bytes存在={result.get('docx_bytes') is not None}")
+        
+        return response_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"format_outline_only 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -1857,24 +1857,174 @@ class AISearchService:
             return {"answer_zh": None, "error": "纲目翻译失败，请稍后重试"}
         return {"answer_zh": answer_zh}
 
+    def outline_to_traditional(self, content: str) -> Dict[str, Optional[str]]:
+        """
+        将简体纲目转为台湾繁体：先按术语表替换，再通用简→繁（zhconv zh-tw）。
+        用于 AI 纲目制作「同时生成繁体纲目」。
+        
+        Args:
+            content: 简体中文纲目全文
+        
+        Returns:
+            {"answer_zh_tw": str} 成功时；{"answer_zh_tw": None, "error": str} 失败时
+        """
+        if not (content or "").strip():
+            return {"answer_zh_tw": None, "error": "内容为空"}
+        text = (content or "").strip()
+        try:
+            # 1. 加载台湾繁简术语表（简体 -> 繁体）
+            terms_path = Path(__file__).resolve().parent / "zh_tw_terms.json"
+            placeholders: List[tuple] = []  # (placeholder_str, target_value)
+            if terms_path.exists():
+                terms = json.loads(terms_path.read_text(encoding="utf-8"))
+                # 按键长降序，先替换长词避免短词截断
+                sorted_keys = sorted(terms.keys(), key=len, reverse=True)
+                for idx, simp in enumerate(sorted_keys):
+                    trad = terms[simp]
+                    if simp and trad is not None:
+                        # 用占位符替换，避免 zhconv 把术语表结果再改掉（如「了解」→「瞭解」）
+                        ph = f"__TW_{idx}__"
+                        placeholders.append((ph, trad))
+                        text = text.replace(simp, ph)
+            else:
+                logger.warning("繁简术语表不存在: %s，仅做通用简繁转换", terms_path)
+            # 2. 通用简→台湾繁体（优先 OpenCC s2tw，占位符为 ASCII 不会被改动）
+            try:
+                from opencc import OpenCC
+                cc = OpenCC("s2tw")
+                text = cc.convert(text)
+            except Exception:
+                try:
+                    import zhconv
+                    text = zhconv.convert(text, "zh-tw")
+                except ImportError:
+                    logger.warning("OpenCC/zhconv 未安装，无法做通用简繁转换")
+                    return {"answer_zh_tw": None, "error": "繁简转换依赖未安装（opencc 或 zhconv）"}
+            # 3. 把占位符还原为术语表里的目标用字
+            for ph, trad in placeholders:
+                text = text.replace(ph, trad)
+            return {"answer_zh_tw": text}
+        except Exception as e:
+            logger.error("简转繁失败: %s", e, exc_info=True)
+            return {"answer_zh_tw": None, "error": str(e)}
+
+    def traditional_to_simplified(self, content: str) -> Dict[str, Optional[str]]:
+        """
+        将台湾繁体纲目转为简体：直接使用 zhconv 转换（不经过术语表）。
+        用于工具箱「简繁互转」功能。
+        
+        Args:
+            content: 台湾繁体中文纲目全文
+        
+        Returns:
+            {"answer_zh_cn": str} 成功时；{"answer_zh_cn": None, "error": str} 失败时
+        """
+        if not (content or "").strip():
+            return {"answer_zh_cn": None, "error": "内容为空"}
+        text = (content or "").strip()
+        try:
+            # 繁→简：优先 OpenCC tw2s（台湾繁体→简体），否则 zhconv
+            try:
+                from opencc import OpenCC
+                cc = OpenCC("tw2s")
+                text = cc.convert(text)
+            except Exception:
+                try:
+                    import zhconv
+                    text = zhconv.convert(text, "zh-cn")
+                except ImportError:
+                    logger.warning("OpenCC/zhconv 未安装，无法做繁简转换")
+                    return {"answer_zh_cn": None, "error": "繁简转换依赖未安装（opencc 或 zhconv）"}
+            return {"answer_zh_cn": text}
+        except Exception as e:
+            logger.error("繁转简失败: %s", e, exc_info=True)
+            return {"answer_zh_cn": None, "error": str(e)}
+
+    def _convert_docx_to_pdf(self, docx_path: str) -> Optional[bytes]:
+        """
+        将 DOCX 文件转换为 PDF bytes。
+        
+        Args:
+            docx_path: DOCX 文件路径
+        
+        Returns:
+            PDF bytes，失败时返回 None
+        """
+        try:
+            from docx2pdf import convert
+            import tempfile
+            import os
+            
+            # 检查 DOCX 文件是否存在
+            if not os.path.exists(docx_path):
+                logger.error(f"DOCX 文件不存在: {docx_path}")
+                return None
+            
+            # 创建临时 PDF 文件
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+                pdf_path = tmp_pdf.name
+            
+            logger.info(f"开始转换 DOCX 到 PDF: {docx_path} -> {pdf_path}")
+            
+            # 转换 DOCX 到 PDF
+            convert(docx_path, pdf_path)
+            
+            # 检查 PDF 文件是否生成成功
+            if not os.path.exists(pdf_path) or os.path.getsize(pdf_path) == 0:
+                logger.error(f"PDF 文件生成失败或为空: {pdf_path}")
+                try:
+                    os.unlink(pdf_path)
+                except Exception:
+                    pass
+                return None
+            
+            # 读取 PDF bytes
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+            
+            logger.info(f"PDF 转换成功: 大小 {len(pdf_bytes)} bytes")
+            
+            # 清理临时文件
+            try:
+                os.unlink(pdf_path)
+            except Exception:
+                pass
+            
+            return pdf_bytes
+        except ImportError:
+            logger.warning("docx2pdf 未安装，无法生成 PDF。请安装: pip install docx2pdf")
+            return None
+        except Exception as e:
+            logger.error(f"DOCX 转 PDF 失败: {e}", exc_info=True)
+            # 尝试清理临时文件
+            try:
+                if "pdf_path" in locals() and os.path.exists(pdf_path):
+                    os.unlink(pdf_path)
+            except Exception:
+                pass
+            return None
+
     def translate_and_format_outline(
         self,
         direction: str,
         content: str,
         outline_topic: Optional[str] = None,
+        output_format: str = "docx",
     ) -> Dict:
         """
-        翻译纲目并格式化下载 DOCX。
+        翻译纲目并格式化下载 DOCX 或 PDF。
         
         Args:
             direction: "zh2en" 或 "en2zh"
             content: 待翻译的纲目全文
             outline_topic: 纲目主题（仅中翻英时可选，用于翻译标题）
+            output_format: "docx" 或 "pdf"，默认 "docx"
         
         Returns:
             {
                 "result": str,  # 翻译后的文本
-                "docx_bytes": bytes | None,  # 格式化后的 DOCX bytes（失败时为 None）
+                "docx_bytes": bytes | None,  # DOCX bytes（output_format="docx" 时）
+                "pdf_bytes": bytes | None,  # PDF bytes（output_format="pdf" 时）
                 "filename": str | None,  # 建议的文件名
                 "error": str | None,  # 错误信息
             }
@@ -2028,20 +2178,51 @@ class AISearchService:
                 
                 if title_text:
                     safe_name = re.sub(r'[\/:*?"<>|]', '_', title_text)
-                    filename = f"{safe_name}.docx"
+                    if output_format == "pdf":
+                        filename = f"{safe_name}.pdf"
+                    else:
+                        filename = f"{safe_name}.docx"
 
-            # 清理临时文件
-            try:
-                os.unlink(temp_docx_path)
-            except Exception:
-                pass
-
-            return {
-                "result": translated_text,
-                "docx_bytes": docx_bytes,
-                "filename": filename,
-                "error": None,
-            }
+            # 根据输出格式处理
+            if output_format == "pdf":
+                # 转换为 PDF
+                pdf_bytes = self._convert_docx_to_pdf(temp_docx_path)
+                # 清理临时 DOCX 文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                if pdf_bytes:
+                    return {
+                        "result": translated_text,
+                        "docx_bytes": None,
+                        "pdf_bytes": pdf_bytes,
+                        "filename": filename,
+                        "error": None,
+                    }
+                else:
+                    # PDF 转换失败，返回 DOCX
+                    return {
+                        "result": translated_text,
+                        "docx_bytes": docx_bytes,
+                        "pdf_bytes": None,
+                        "filename": filename.replace(".pdf", ".docx"),
+                        "error": "PDF 转换失败，已返回 DOCX 文件",
+                    }
+            else:
+                # 返回 DOCX
+                # 清理临时文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                return {
+                    "result": translated_text,
+                    "docx_bytes": docx_bytes,
+                    "pdf_bytes": None,
+                    "filename": filename,
+                    "error": None,
+                }
 
         except Exception as e:
             logger.error(f"翻译并格式化失败: {e}", exc_info=True)
@@ -2054,7 +2235,438 @@ class AISearchService:
             return {
                 "result": translated_text,
                 "docx_bytes": None,
+                "pdf_bytes": None,
                 "filename": default_filename,
+                "error": f"格式化失败: {str(e)}",
+            }
+
+    def format_outline_only(
+        self,
+        direction: str,
+        translated_text: str,
+        output_format: str = "docx",
+    ) -> Dict:
+        """
+        仅格式化已翻译的纲目文本（不调用翻译 API）。
+        
+        Args:
+            direction: "zh2en" 或 "en2zh"（用于确定使用哪个模板和格式刷函数）
+            translated_text: 已翻译的纲目文本
+            output_format: "docx" 或 "pdf"，默认 "docx"
+        
+        Returns:
+            {
+                "docx_bytes": bytes | None,  # DOCX bytes（output_format="docx" 时）
+                "pdf_bytes": bytes | None,  # PDF bytes（output_format="pdf" 时）
+                "filename": str | None,  # 建议的文件名
+                "error": str | None,  # 错误信息
+            }
+        """
+        import shutil
+        import tempfile
+        from docx import Document
+
+        # 根据方向确定模板和格式刷函数
+        if direction == "zh2en":
+            template_name = "英文纲目模板.docx"
+            format_func = format_english_outline_docx
+            default_filename = "outline_en.docx"
+        elif direction == "en2zh":
+            template_name = "中文纲目模板.docx"
+            format_func = format_chinese_outline_docx
+            default_filename = "outline_zh.docx"
+        elif direction in ("zh_cn2tw", "zh_tw2cn"):
+            # 简繁转换：都使用中文模板和中文格式刷
+            template_name = "中文纲目模板.docx"
+            format_func = format_chinese_outline_docx
+            default_filename = "outline_zh.docx"
+        else:
+            return {
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": None,
+                "error": f"无效的方向: {direction}",
+            }
+
+        # 检查格式刷函数是否可用
+        if format_func is None:
+            logger.warning("格式刷函数未导入，无法格式化")
+            return {
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": default_filename,
+                "error": "格式刷函数未导入",
+            }
+
+        # 复制模板并写入翻译结果
+        backend_dir = Path(__file__).resolve().parent.parent
+        template_path = backend_dir / template_name
+        if not template_path.exists():
+            logger.error(f"模板文件不存在: {template_path}")
+            return {
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": default_filename,
+                "error": f"模板文件不存在: {template_name}",
+            }
+
+        try:
+            # 创建临时文件
+            with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+                temp_docx_path = tmp_file.name
+
+            # 复制模板
+            shutil.copy2(template_path, temp_docx_path)
+
+            # 打开文档并写入翻译结果
+            doc = Document(temp_docx_path)
+            
+            # 策略：清空所有段落，将翻译结果按行添加为新段落
+            # 这样格式刷函数可以正确识别并应用样式
+            for para in list(doc.paragraphs):
+                p_element = para._element
+                p_element.getparent().remove(p_element)
+            
+            # 将翻译结果按行分割并添加为段落
+            lines = translated_text.split("\n")
+            for line in lines:
+                if line.strip() or len(doc.paragraphs) == 0:  # 保留空行或至少有一个段落
+                    doc.add_paragraph(line)
+
+            # 保存
+            doc.save(temp_docx_path)
+
+            # 调用格式刷
+            try:
+                format_func(temp_docx_path)
+            except Exception as e:
+                logger.error(f"格式刷失败: {e}", exc_info=True)
+                # 格式刷失败时仍返回未格式化的文档
+                pass
+
+            # 读取为 bytes
+            with open(temp_docx_path, "rb") as f:
+                docx_bytes = f.read()
+
+            # 生成文件名（基于题目：中文纲目取读经前最后一段，英文纲目取 Scripture reading 前最后一段）
+            # 回退逻辑：如果没有读经/Scripture reading，则以第一个大点位置判断题目
+            filename = default_filename
+            if lines:
+                title_line = None
+                if direction in ("en2zh", "zh_cn2tw", "zh_tw2cn"):
+                    # 中文纲目：优先找"读经："所在行，取它前面一行作为题目
+                    scripture_idx = None
+                    for idx, line in enumerate(lines):
+                        if '读经：' in line or '讀經：' in line:
+                            scripture_idx = idx
+                            break
+                    
+                    if scripture_idx is not None:
+                        # 找到读经，取读经前一行
+                        if scripture_idx > 0:
+                            title_line = lines[scripture_idx - 1].strip()
+                    else:
+                        # 没找到读经，找第一个以"壹"开头的行（第一个大点），取它前面一行
+                        for idx, line in enumerate(lines):
+                            if line.strip().startswith('壹'):
+                                if idx > 0:
+                                    title_line = lines[idx - 1].strip()
+                                break
+                
+                elif direction == "zh2en":
+                    # 英文纲目：优先找"Scripture reading:"所在行，取它前面一行作为题目
+                    scripture_idx = None
+                    for idx, line in enumerate(lines):
+                        if line.strip().lower().startswith("scripture reading:"):
+                            scripture_idx = idx
+                            break
+                    
+                    if scripture_idx is not None:
+                        # 找到 Scripture reading，取它前面一行
+                        if scripture_idx > 0:
+                            title_line = lines[scripture_idx - 1].strip()
+                    else:
+                        # 没找到 Scripture reading，找第一个罗马数字开头的行（第一个大点，如 "I. "），取它前面一行
+                        re_roman = re.compile(r'^([IVXL]+)\.\s')
+                        for idx, line in enumerate(lines):
+                            if re_roman.match(line.strip()):
+                                if idx > 0:
+                                    title_line = lines[idx - 1].strip()
+                                break
+                
+                # 如果找到题目行，使用题目；否则回退到第一行
+                if title_line:
+                    title_text = title_line[:50]
+                else:
+                    title_text = lines[0].strip()[:50]
+                
+                if title_text:
+                    safe_name = re.sub(r'[\/:*?"<>|]', '_', title_text)
+                    if output_format == "pdf":
+                        filename = f"{safe_name}.pdf"
+                    else:
+                        filename = f"{safe_name}.docx"
+
+            # 根据输出格式处理
+            if output_format == "pdf":
+                # 转换为 PDF
+                pdf_bytes = self._convert_docx_to_pdf(temp_docx_path)
+                # 清理临时 DOCX 文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                if pdf_bytes:
+                    return {
+                        "docx_bytes": None,
+                        "pdf_bytes": pdf_bytes,
+                        "filename": filename,
+                        "error": None,
+                    }
+                else:
+                    # PDF 转换失败，返回 DOCX
+                    return {
+                        "docx_bytes": docx_bytes,
+                        "pdf_bytes": None,
+                        "filename": filename.replace(".pdf", ".docx"),
+                        "error": "PDF 转换失败，已返回 DOCX 文件",
+                    }
+            else:
+                # 返回 DOCX
+                # 清理临时文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                return {
+                    "docx_bytes": docx_bytes,
+                    "pdf_bytes": None,
+                    "filename": filename,
+                    "error": None,
+                }
+
+        except Exception as e:
+            logger.error(f"格式化失败: {e}", exc_info=True)
+            # 清理临时文件
+            try:
+                if "temp_docx_path" in locals():
+                    os.unlink(temp_docx_path)
+            except Exception:
+                pass
+            return {
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": default_filename,
+                "error": f"格式化失败: {str(e)}",
+            }
+
+    def convert_and_format_outline(
+        self,
+        direction: str,
+        content: str,
+        output_format: str = "docx",
+    ) -> Dict:
+        """
+        简繁转换纲目并格式化下载 DOCX 或 PDF（使用中文模板和中文刷格式）。
+        
+        Args:
+            direction: "zh_cn2tw"（简体→繁体）或 "zh_tw2cn"（繁体→简体）
+            content: 待转换的纲目全文
+            output_format: "docx" 或 "pdf"，默认 "docx"
+        
+        Returns:
+            {
+                "result": str,  # 转换后的文本
+                "docx_bytes": bytes | None,  # DOCX bytes（output_format="docx" 时）
+                "pdf_bytes": bytes | None,  # PDF bytes（output_format="pdf" 时）
+                "filename": str | None,  # 建议的文件名
+                "error": str | None,  # 错误信息
+            }
+        """
+        import shutil
+        import tempfile
+        import os
+        import re
+        from docx import Document
+
+        # 1. 先转换
+        if direction == "zh_cn2tw":
+            convert_result = self.outline_to_traditional(content)
+            converted_text = convert_result.get("answer_zh_tw")
+            error = convert_result.get("error")
+        elif direction == "zh_tw2cn":
+            convert_result = self.traditional_to_simplified(content)
+            converted_text = convert_result.get("answer_zh_cn")
+            error = convert_result.get("error")
+        else:
+            return {
+                "result": None,
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": None,
+                "error": f"无效的转换方向: {direction}",
+            }
+
+        if error or not converted_text:
+            return {
+                "result": converted_text,
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": None,
+                "error": error or "转换失败",
+            }
+
+        # 2. 检查格式刷函数是否可用
+        if format_chinese_outline_docx is None:
+            logger.warning("中文格式刷函数未导入，返回未格式化的转换结果")
+            return {
+                "result": converted_text,
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": "outline.docx",
+                "error": None,
+            }
+
+        # 3. 复制模板并写入转换结果（使用中文模板）
+        backend_dir = Path(__file__).resolve().parent.parent
+        template_name = "中文纲目模板.docx"
+        template_path = backend_dir / template_name
+        if not template_path.exists():
+            logger.error(f"模板文件不存在: {template_path}")
+            return {
+                "result": converted_text,
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": "outline.docx",
+                "error": f"模板文件不存在: {template_name}",
+            }
+
+        try:
+            # 创建临时文件
+            with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+                temp_docx_path = tmp_file.name
+
+            # 复制模板
+            shutil.copy2(template_path, temp_docx_path)
+
+            # 打开文档并写入转换结果
+            doc = Document(temp_docx_path)
+            
+            # 清空所有段落，将转换结果按行添加为新段落
+            for para in list(doc.paragraphs):
+                p_element = para._element
+                p_element.getparent().remove(p_element)
+            
+            # 将转换结果按行分割并添加为段落
+            lines = converted_text.split("\n")
+            for line in lines:
+                if line.strip() or len(doc.paragraphs) == 0:
+                    doc.add_paragraph(line)
+
+            # 保存
+            doc.save(temp_docx_path)
+
+            # 4. 调用格式刷（中文格式刷）
+            try:
+                format_chinese_outline_docx(temp_docx_path)
+            except Exception as e:
+                logger.error(f"格式刷失败: {e}", exc_info=True)
+                # 格式刷失败时仍返回未格式化的文档
+                pass
+
+            # 5. 读取为 bytes
+            with open(temp_docx_path, "rb") as f:
+                docx_bytes = f.read()
+
+            # 6. 生成文件名（基于题目：取读经前最后一段，或第一个大点前一行）
+            filename = "outline.docx"
+            if lines:
+                title_line = None
+                # 优先找"读经："或"讀經："所在行，取它前面一行作为题目
+                scripture_idx = None
+                for idx, line in enumerate(lines):
+                    if '读经：' in line or '讀經：' in line:
+                        scripture_idx = idx
+                        break
+                
+                if scripture_idx is not None:
+                    if scripture_idx > 0:
+                        title_line = lines[scripture_idx - 1].strip()
+                else:
+                    # 没找到读经，找第一个以"壹"或"一"开头的行（第一个大点），取它前面一行
+                    for idx, line in enumerate(lines):
+                        if line.strip().startswith('壹') or line.strip().startswith('一'):
+                            if idx > 0:
+                                title_line = lines[idx - 1].strip()
+                            break
+                
+                # 如果找到题目行，使用题目；否则回退到第一行
+                if title_line:
+                    title_text = title_line[:50]
+                else:
+                    title_text = lines[0].strip()[:50]
+                
+                if title_text:
+                    safe_name = re.sub(r'[\/:*?"<>|]', '_', title_text)
+                    if output_format == "pdf":
+                        filename = f"{safe_name}.pdf"
+                    else:
+                        filename = f"{safe_name}.docx"
+
+            # 根据输出格式处理
+            if output_format == "pdf":
+                # 转换为 PDF
+                pdf_bytes = self._convert_docx_to_pdf(temp_docx_path)
+                # 清理临时 DOCX 文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                if pdf_bytes:
+                    return {
+                        "result": converted_text,
+                        "docx_bytes": None,
+                        "pdf_bytes": pdf_bytes,
+                        "filename": filename,
+                        "error": None,
+                    }
+                else:
+                    # PDF 转换失败，返回 DOCX
+                    return {
+                        "result": converted_text,
+                        "docx_bytes": docx_bytes,
+                        "pdf_bytes": None,
+                        "filename": filename.replace(".pdf", ".docx"),
+                        "error": "PDF 转换失败，已返回 DOCX 文件",
+                    }
+            else:
+                # 返回 DOCX
+                # 清理临时文件
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+                return {
+                    "result": converted_text,
+                    "docx_bytes": docx_bytes,
+                    "pdf_bytes": None,
+                    "filename": filename,
+                    "error": None,
+                }
+
+        except Exception as e:
+            logger.error(f"转换并格式化失败: {e}", exc_info=True)
+            # 清理临时文件
+            try:
+                if "temp_docx_path" in locals():
+                    os.unlink(temp_docx_path)
+            except Exception:
+                pass
+            return {
+                "result": converted_text,
+                "docx_bytes": None,
+                "pdf_bytes": None,
+                "filename": "outline.docx",
                 "error": f"格式化失败: {str(e)}",
             }
 
