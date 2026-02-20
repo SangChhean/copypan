@@ -85,6 +85,65 @@ def replace_chinese_single_quotes(text):
     return text.replace('\u2018', '"').replace('\u2019', '"')
 
 
+def convert_quotes_to_traditional(text: str) -> str:
+    """
+    将西式/简体引号统一为繁体引号：双引号 → 『』，单引号 → 「」。
+    按出现顺序交替替换（严格左右配对）。
+    """
+    result = []
+    double_state = 0  # 0 = 下一个为左引号『，1 = 下一个为右引号』
+    single_state = 0  # 0 = 下一个为左引号「，1 = 下一个为右引号」
+    for char in text:
+        if char in '\u201c\u201d"':  # 弯双引号 " " 或 直双引号 "
+            result.append('『' if double_state == 0 else '』')
+            double_state = 1 - double_state
+        elif char in "\u2018\u2019'":  # 弯单引号 ' ' 或 直单引号 '
+            result.append('「' if single_state == 0 else '」')
+            single_state = 1 - single_state
+        else:
+            result.append(char)
+    return "".join(result)
+
+
+def check_quote_balance_traditional(text: str):
+    """
+    检查繁体引号闭合是否正确（仅检查 『』「」）。
+    严格栈配对。
+    返回：(是否正确, 错误信息列表)
+    """
+    errors = []
+
+    # 检查『』的配对（双引号）
+    left_count = text.count('『')
+    right_count = text.count('』')
+    if left_count != right_count:
+        errors.append(f"『』不配对：左引号 {left_count} 个，右引号 {right_count} 个")
+
+    # 检查「」的配对（单引号）
+    left_count = text.count('「')
+    right_count = text.count('」')
+    if left_count != right_count:
+        errors.append(f"「」不配对：左引号 {left_count} 个，右引号 {right_count} 个")
+
+    # 检查嵌套顺序是否正确（严格栈配对）
+    stack = []
+    for i, char in enumerate(text):
+        if char in ['『', '「']:
+            stack.append((char, i))
+        elif char in ['』', '」']:
+            if not stack:
+                errors.append(f"位置 {i}: 发现多余的右引号 '{char}'")
+            else:
+                left_quote, left_pos = stack.pop()
+                if (left_quote == '『' and char != '』') or (left_quote == '「' and char != '」'):
+                    errors.append(f"位置 {left_pos}-{i}: 引号配对错误 '{left_quote}' 与 '{char}'")
+
+    for left_quote, left_pos in stack:
+        errors.append(f"位置 {left_pos}: 左引号 '{left_quote}' 未闭合")
+
+    return len(errors) == 0, errors
+
+
 def _apply_style_if_exists(doc, para, style_name: str) -> None:
     """仅当模板中存在该样式时应用，避免 KeyError 导致整次格式刷失败。"""
     try:
@@ -93,12 +152,13 @@ def _apply_style_if_exists(doc, para, style_name: str) -> None:
         logger.debug("样式不存在，跳过: %s", style_name)
 
 
-def format_chinese_outline_docx(docx_path: str) -> None:
+def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False) -> None:
     """
     格式化中文纲目 DOCX 文件（原地修改）。
-    
+
     Args:
         docx_path: DOCX 文件路径
+        traditional_quotes: 若为 True，引号使用繁体样式 『』「」；否则使用简体样式 ""。
     """
     logger.info(f"开始格式化中文纲目: {docx_path}")
     doc = Document(docx_path)
@@ -114,13 +174,16 @@ def format_chinese_outline_docx(docx_path: str) -> None:
         text = para.text
         text = fullwidth_to_halfwidth(text)
         text = replace_english_punctuation(text)
+        if traditional_quotes:
+            text = convert_quotes_to_traditional(text)
         para.text = text
 
-    # 步骤4：将中文单引号改为中文双引号
-    for para in doc.paragraphs:
-        text = para.text
-        text = replace_chinese_single_quotes(text)
-        para.text = text
+    # 步骤4：将中文单引号改为中文双引号（仅简体；繁体已在上一步得到 『』「」）
+    if not traditional_quotes:
+        for para in doc.paragraphs:
+            text = para.text
+            text = replace_chinese_single_quotes(text)
+            para.text = text
 
     # 步骤5：将段落结尾的分号改为句号
     for para in doc.paragraphs:

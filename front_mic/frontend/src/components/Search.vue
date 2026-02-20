@@ -2,7 +2,7 @@
 import { ref, computed, watch, reactive } from "vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
-import { PushpinOutlined, CopyOutlined, CheckOutlined } from "@ant-design/icons-vue";
+import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { tip } from "./utils/Dialog";
 import ShowRes from "./tools/ShowRes.vue";
@@ -115,6 +115,15 @@ const answerZhTw = ref(null); // 台湾繁体纲目
 const loadingTraditional = ref(false); // 正在生成繁体纲目
 const errorTraditional = ref(null); // 繁体纲目生成失败信息
 const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
+
+// 刷格式并下载（DOCX/PDF）
+const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
+const downloadFormatsZh = ref([]);
+const downloadFormatsEn = ref([]);
+const downloadFormatsZhTw = ref([]);
+const downloadingZh = ref(false);
+const downloadingEn = ref(false);
+const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
 const AI_NATURE_OPTIONS = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
@@ -245,6 +254,165 @@ const copyAiAnswerZhTw = async () => {
     tip("复制失败");
   }
 };
+
+// 刷格式并下载（中文纲目）
+const downloadFormattedZh = async () => {
+  const text = aiResult.value?.answer;
+  if (!text || downloadFormatsZh.value.length === 0) {
+    if (!text) tip("请先完成纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingZh.value = true;
+  try {
+    const orderedZh = ["docx", "pdf"].filter((f) => downloadFormatsZh.value.includes(f));
+    for (const format of orderedZh) {
+      const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "en2zh", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, false);
+    }
+    if (downloadFormatsZh.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingZh.value = false;
+  }
+};
+
+// 刷格式并下载（英文纲目）
+const downloadFormattedEn = async () => {
+  const text = answerEn.value;
+  if (!text || downloadFormatsEn.value.length === 0) {
+    if (!text) tip("请先完成英文纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingEn.value = true;
+  try {
+    const orderedEn = ["docx", "pdf"].filter((f) => downloadFormatsEn.value.includes(f));
+    for (const format of orderedEn) {
+      const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "zh2en", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, true);
+    }
+    if (downloadFormatsEn.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingEn.value = false;
+  }
+};
+
+// 刷格式并下载（繁体纲目）
+const downloadFormattedZhTw = async () => {
+  const text = answerZhTw.value;
+  if (!text || downloadFormatsZhTw.value.length === 0) {
+    if (!text) tip("请先完成繁体纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingZhTw.value = true;
+  try {
+    const orderedZhTw = ["docx", "pdf"].filter((f) => downloadFormatsZhTw.value.includes(f));
+    for (const format of orderedZhTw) {
+      const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "zh_cn2tw", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, false);
+    }
+    if (downloadFormatsZhTw.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingZhTw.value = false;
+  }
+};
+
+// 通用：根据接口返回触发 DOCX/PDF 下载（移动端与桌面端均使用下载）
+function doDownload(data, format, isEn) {
+  const defaultName = isEn ? "outline_en" : "outline_zh";
+  if (format === "docx" && data.docx_base64) {
+    const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bin], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = data.filename || `${defaultName}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } else if (format === "pdf") {
+    if (data.pdf_base64) {
+      const bin = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bin], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename || `${defaultName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (data.docx_base64) {
+      const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bin], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = (data.filename || defaultName).replace(".pdf", ".docx");
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      tip("PDF 转换失败，已下载 DOCX");
+    }
+  }
+}
 
 // 仅将 AI 回答中的大点（壹、贰、叁/参…拾、拾壹、拾贰…贰拾、贰壹、贰贰…）整行加粗；「参考与参读资料：」及之后不加粗
 const aiAnswerFormatted = computed(() => {
@@ -839,6 +1007,18 @@ const onAISearch = async () => {
           </a-button>
         </div>
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
+        <div v-if="aiResult?.answer" class="ai-download-row">
+          <span class="ai-download-label">下载格式：</span>
+          <a-checkbox-group v-model:value="downloadFormatsZh">
+            <a-checkbox value="docx">DOCX</a-checkbox>
+            <a-checkbox value="pdf">PDF</a-checkbox>
+          </a-checkbox-group>
+          <a-button type="primary" size="small" :loading="downloadingZh" :disabled="downloadingZh || downloadFormatsZh.length === 0" @click="downloadFormattedZh">
+            <LoadingOutlined v-if="downloadingZh" spin />
+            <DownloadOutlined v-else />
+            {{ downloadingZh ? "格式化并下载中…" : "刷格式并下载" }}
+          </a-button>
+        </div>
       </div>
     </transition>
 
@@ -859,6 +1039,18 @@ const onAISearch = async () => {
         {{ errorEnglish }}
       </div>
       <div v-else-if="answerEn" class="ai-answer-content" v-html="aiAnswerEnFormatted"></div>
+      <div v-if="answerEn" class="ai-download-row">
+        <span class="ai-download-label">下载格式：</span>
+        <a-checkbox-group v-model:value="downloadFormatsEn">
+          <a-checkbox value="docx">DOCX</a-checkbox>
+          <a-checkbox value="pdf">PDF</a-checkbox>
+        </a-checkbox-group>
+        <a-button type="primary" size="small" :loading="downloadingEn" :disabled="downloadingEn || downloadFormatsEn.length === 0" @click="downloadFormattedEn">
+          <LoadingOutlined v-if="downloadingEn" spin />
+          <DownloadOutlined v-else />
+          {{ downloadingEn ? "格式化并下载中…" : "刷格式并下载" }}
+        </a-button>
+      </div>
     </div>
 
     <!-- 繁体纲目（仅当用户勾选「同时生成繁体纲目」时显示此区块） -->
@@ -878,6 +1070,18 @@ const onAISearch = async () => {
         {{ errorTraditional }}
       </div>
       <div v-else-if="answerZhTw" class="ai-answer-content" v-html="aiAnswerZhTwFormatted"></div>
+      <div v-if="answerZhTw" class="ai-download-row">
+        <span class="ai-download-label">下载格式：</span>
+        <a-checkbox-group v-model:value="downloadFormatsZhTw">
+          <a-checkbox value="docx">DOCX</a-checkbox>
+          <a-checkbox value="pdf">PDF</a-checkbox>
+        </a-checkbox-group>
+        <a-button type="primary" size="small" :loading="downloadingZhTw" :disabled="downloadingZhTw || downloadFormatsZhTw.length === 0" @click="downloadFormattedZhTw">
+          <LoadingOutlined v-if="downloadingZhTw" spin />
+          <DownloadOutlined v-else />
+          {{ downloadingZhTw ? "格式化并下载中…" : "刷格式并下载" }}
+        </a-button>
+      </div>
     </div>
 
     <!-- 查看全部数据（可折叠） -->
@@ -1434,6 +1638,25 @@ const onAISearch = async () => {
 .ai-answer-error-en,
 .ai-answer-error-zh-tw {
   color: #c41e3a;
+}
+
+.ai-download-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(102, 126, 234, 0.3);
+}
+.ai-download-row .ai-download-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+.ai-download-row .ant-checkbox-group {
+  display: inline-flex;
+  gap: 8px;
 }
 
 .ai-sources {

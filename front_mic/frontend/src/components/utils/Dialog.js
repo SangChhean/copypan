@@ -21,12 +21,39 @@ const showMsg = (msg) => {
   message.info(msg, 2);
 };
 
+const NOTIFICATION_PLACEMENT = "bottomLeft";
+const NOTIFICATION_DURATION = 2;
+
 const tip = (msg) => {
   notification.open({
     message: msg,
-    duration: 2,
-    top: "120px",
+    duration: NOTIFICATION_DURATION,
+    placement: NOTIFICATION_PLACEMENT,
   });
 };
 
-export { showErr, showSuccess, showMsg, tip };
+const toastSuccess = (msg) => {
+  notification.success({
+    message: msg,
+    duration: NOTIFICATION_DURATION,
+    placement: NOTIFICATION_PLACEMENT,
+  });
+};
+
+const toastWarning = (msg) => {
+  notification.warning({
+    message: msg,
+    duration: NOTIFICATION_DURATION,
+    placement: NOTIFICATION_PLACEMENT,
+  });
+};
+
+const toastError = (msg) => {
+  notification.error({
+    message: msg,
+    duration: NOTIFICATION_DURATION,
+    placement: NOTIFICATION_PLACEMENT,
+  });
+};
+
+export { showErr, showSuccess, showMsg, tip, toastSuccess, toastWarning, toastError };

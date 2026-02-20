@@ -1280,7 +1280,7 @@ class AISearchService:
     ✓ 序号格式正确（壹贰叁、一二三、123、abc）
     ✓ 缩进正确（第一级顶格，第二级1个Tab，第三级2个Tab，第四级3个Tab）
     ✓ 标点符号正确（有下级用冒号，无下级用句号）
-    ✓ 纲目之间无空行，紧密排列 
+    ✓ 纲目之间无空行，紧密排列
 """
 
         metadata_lines = []
@@ -2031,6 +2031,14 @@ class AISearchService:
             logger.warning(f"LibreOffice 转换失败: {e}")
         
         # 方法2: 回退到 docx2pdf（Windows/Mac，或 Linux 上如果安装了 MS Word）
+        # Windows 下 win32com 要求当前线程已调用 CoInitialize，否则报「尚未调用 CoInitialize」
+        import sys
+        if sys.platform == "win32":
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()
+            except Exception:
+                pass
         try:
             from docx2pdf import convert
             convert(docx_path, pdf_path)
@@ -2396,9 +2404,12 @@ class AISearchService:
             # 保存
             doc.save(temp_docx_path)
 
-            # 调用格式刷
+            # 调用格式刷（中文纲目且 zh_cn2tw 时使用繁体引号 『』「」）
             try:
-                format_func(temp_docx_path)
+                if format_func is format_chinese_outline_docx:
+                    format_func(temp_docx_path, traditional_quotes=(direction == "zh_cn2tw"))
+                else:
+                    format_func(temp_docx_path)
             except Exception as e:
                 logger.error(f"格式刷失败: {e}", exc_info=True)
                 # 格式刷失败时仍返回未格式化的文档
@@ -2626,9 +2637,9 @@ class AISearchService:
             # 保存
             doc.save(temp_docx_path)
 
-            # 4. 调用格式刷（中文格式刷）
+            # 4. 调用格式刷（中文格式刷；简繁转换 zh_cn2tw 时使用繁体引号 『』「」）
             try:
-                format_chinese_outline_docx(temp_docx_path)
+                format_chinese_outline_docx(temp_docx_path, traditional_quotes=(direction == "zh_cn2tw"))
             except Exception as e:
                 logger.error(f"格式刷失败: {e}", exc_info=True)
                 # 格式刷失败时仍返回未格式化的文档

@@ -2,6 +2,7 @@
 import ToolsHeader from "./ToolsHeader.vue";
 import { ref, computed } from "vue";
 import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
+import { toastSuccess, toastWarning, toastError } from "../utils/Dialog";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const direction = ref("zh2en"); // zh2en | en2zh
@@ -22,7 +23,7 @@ function copyResult() {
   if (!result.value) return;
   navigator.clipboard.writeText(result.value).then(() => {
     try {
-      if (window.$message) window.$message.success("已复制到剪贴板");
+      toastSuccess("已复制到剪贴板");
     } catch (_) {}
   });
 }
@@ -77,7 +78,7 @@ async function translate() {
         titleEn.value = data.title_en;
       }
       try {
-        if (window.$message) window.$message.success("翻译完成！请选择下载格式并点击下载按钮。");
+        toastSuccess("翻译完成！请选择下载格式并点击下载按钮。");
       } catch (_) {}
     } else {
       error.value = "翻译失败，请稍后重试";
@@ -93,13 +94,13 @@ async function translate() {
 async function downloadFormatted() {
   if (!result.value) {
     try {
-      if (window.$message) window.$message.warning("请先完成翻译");
+      toastWarning("请先完成翻译");
     } catch (_) {}
     return;
   }
   if (downloadFormats.value.length === 0) {
     try {
-      if (window.$message) window.$message.warning("请至少选择一个下载格式");
+      toastWarning("请至少选择一个下载格式");
     } catch (_) {}
     return;
   }
@@ -113,9 +114,9 @@ async function downloadFormatted() {
   }
   
   try {
-    // 依次下载每个选中的格式
-    // 使用 format_outline_only 接口，传入已翻译的文本，避免重复调用翻译 API
-    for (const format of downloadFormats.value) {
+    // 依次下载每个选中的格式，固定顺序：先 DOCX 再 PDF，避免后端 PDF 转换线程 COM 初始化顺序问题
+    const orderedFormats = ["docx", "pdf"].filter((f) => downloadFormats.value.includes(f));
+    for (const format of orderedFormats) {
       const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
         method: "POST",
         headers: {
@@ -132,7 +133,7 @@ async function downloadFormatted() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         try {
-          if (window.$message) window.$message.error(`${format.toUpperCase()} 格式化失败: ${errorData.detail || errorData.error || "未知错误"}`);
+          toastError(`${format.toUpperCase()} 格式化失败: ${errorData.detail || errorData.error || "未知错误"}`);
         } catch (_) {}
         continue;
       }
@@ -148,9 +149,6 @@ async function downloadFormatted() {
           });
           const url = URL.createObjectURL(blob);
           
-          // 检测移动端
-          const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
-          
           const a = document.createElement("a");
           a.href = url;
           a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
@@ -161,41 +159,29 @@ async function downloadFormatted() {
         } catch (downloadErr) {
           console.error(`下载${format.toUpperCase()}失败:`, downloadErr);
           try {
-            if (window.$message) window.$message.error(`下载 ${format.toUpperCase()} 失败`);
+            toastError(`下载 ${format.toUpperCase()} 失败`);
           } catch (_) {}
         }
       } else if (format === "pdf") {
         if (data.pdf_base64) {
-          // PDF 转换成功
+          // PDF 转换成功（移动端与桌面端均使用下载）
           try {
             const bin = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
             const blob = new Blob([bin], {
               type: "application/pdf",
             });
             const url = URL.createObjectURL(blob);
-            
-            // 检测移动端
-            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
-            
-            if (isMobile) {
-              // 移动端：直接打开 PDF（某些移动浏览器不支持下载）
-              window.open(url, '_blank');
-              // 延迟清理 URL，确保文件已打开
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
-            } else {
-              // 桌面端：下载文件
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = data.filename || (isZh2En.value ? "outline_en.pdf" : "outline_zh.pdf");
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = data.filename || (isZh2En.value ? "outline_en.pdf" : "outline_zh.pdf");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
           } catch (downloadErr) {
             console.error(`下载${format.toUpperCase()}失败:`, downloadErr);
             try {
-              if (window.$message) window.$message.error(`下载 ${format.toUpperCase()} 失败`);
+              toastError(`下载 ${format.toUpperCase()} 失败`);
             } catch (_) {}
           }
         } else if (data.docx_base64) {
@@ -206,59 +192,41 @@ async function downloadFormatted() {
               type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             });
             const url = URL.createObjectURL(blob);
-            
-            // 检测移动端
-            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
-            
-            if (isMobile) {
-              // 移动端：尝试下载，如果失败则提示
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
-            } else {
-              // 桌面端：下载文件
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             // 提示用户 PDF 转换失败
             try {
-              if (window.$message) {
-                window.$message.warning("PDF 转换失败（可能未安装 Microsoft Word 或 LibreOffice），已下载 DOCX 文件");
-              }
+              toastWarning("PDF 转换失败（可能未安装 Microsoft Word 或 LibreOffice），已下载 DOCX 文件");
             } catch (_) {}
           } catch (downloadErr) {
             console.error(`下载DOCX失败:`, downloadErr);
             try {
-              if (window.$message) window.$message.error("下载文件失败");
+              toastError("下载文件失败");
             } catch (_) {}
           }
         } else if (data.error) {
           try {
-            if (window.$message) window.$message.warning(`PDF 格式化失败: ${data.error}`);
+            toastWarning(`PDF 格式化失败: ${data.error}`);
           } catch (_) {}
         } else {
           try {
-            if (window.$message) window.$message.warning("PDF 转换失败，请检查是否安装了 Microsoft Word 或 LibreOffice");
+            toastWarning("PDF 转换失败，请检查是否安装了 Microsoft Word 或 LibreOffice");
           } catch (_) {}
         }
       } else if (data.error) {
         try {
-          if (window.$message) window.$message.warning(`${format.toUpperCase()} 格式化失败: ${data.error}`);
+          toastWarning(`${format.toUpperCase()} 格式化失败: ${data.error}`);
         } catch (_) {}
       }
     }
     
     try {
-      if (window.$message) window.$message.success("下载完成！");
+      toastSuccess("下载完成！");
     } catch (_) {}
   } catch (err) {
     error.value = err.message || "下载失败，请稍后重试";

@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
+import asyncio
 import base64
 import json
 import logging
@@ -144,10 +145,11 @@ async def ai_search_step1(request: SearchOnlyRequest):
     """
     try:
         metadata = _extract_metadata(request)
-        result = ai_service.search_only(
-            question=request.question,
-            depth=request.depth or "general",
-            metadata=metadata
+        result = await asyncio.to_thread(
+            ai_service.search_only,
+            request.question,
+            request.depth or "general",
+            metadata,
         )
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result.get("message", "搜索失败"))
@@ -167,11 +169,12 @@ async def ai_search_step2(request: GenerateOnlyRequest):
     """
     try:
         metadata = _extract_metadata(request)
-        result = ai_service.generate_only(
-            question=request.question,
-            search_id=request.search_id,
-            max_results=request.max_results or 30,
-            metadata=metadata
+        result = await asyncio.to_thread(
+            ai_service.generate_only,
+            request.question,
+            request.search_id,
+            request.max_results or 30,
+            metadata,
         )
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result.get("answer", "生成失败"))
@@ -189,9 +192,14 @@ async def translate_outline(request: TranslateOutlineRequest):
     用户勾选「同时生成英文纲目」后，前端用已展示的中文纲目调用此接口。
     后端用 Gemini 翻译，失败时自动重试 1 次；同一中文纲目会缓存 24 小时。
     同时翻译纲目主题作为英文标题。
+    使用 asyncio.to_thread 避免阻塞事件循环，以便与「繁体纲目」请求并发处理。
     """
     try:
-        result = ai_service.translate_outline(request.chinese_outline, request.outline_topic)
+        result = await asyncio.to_thread(
+            ai_service.translate_outline,
+            request.chinese_outline,
+            request.outline_topic,
+        )
         return result
     except Exception as e:
         logger.error(f"翻译纲目失败: {e}", exc_info=True)
@@ -203,9 +211,10 @@ async def outline_to_traditional(request: OutlineToTraditionalRequest):
     """
     用户勾选「同时生成繁体纲目」后，前端用已展示的简体纲目调用此接口。
     后端先按术语表替换，再通用简→繁（zhconv zh-tw）。
+    使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:
-        result = ai_service.outline_to_traditional(request.content)
+        result = await asyncio.to_thread(ai_service.outline_to_traditional, request.content)
         if result.get("error") and result.get("answer_zh_tw") is None:
             raise HTTPException(status_code=400, detail=result.get("error"))
         return result
@@ -221,9 +230,10 @@ async def traditional_to_simplified(request: TraditionalToSimplifiedRequest):
     """
     工具箱「简繁互转」：将台湾繁体纲目转为简体。
     直接使用 zhconv 转换（不经过术语表）。
+    使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:
-        result = ai_service.traditional_to_simplified(request.content)
+        result = await asyncio.to_thread(ai_service.traditional_to_simplified, request.content)
         if result.get("error") and result.get("answer_zh_cn") is None:
             raise HTTPException(status_code=400, detail=result.get("error"))
         return result
@@ -240,12 +250,14 @@ async def convert_and_format(request: ConvertAndFormatRequest):
     工具箱「简繁互转」：转换 + 格式化 + 返回 DOCX 或 PDF。
     流程：转换 → 复制中文模板 → 写入内容 → 刷格式 → 返回 DOCX/PDF bytes。
     若格式化失败，仍返回转换文本，docx_bytes/pdf_bytes 为 None。
+    使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:
-        result = ai_service.convert_and_format_outline(
-            direction=request.direction,
-            content=request.content,
-            output_format=request.output_format,
+        result = await asyncio.to_thread(
+            ai_service.convert_and_format_outline,
+            request.direction,
+            request.content,
+            request.output_format,
         )
         
         if result.get("error") and not result.get("result"):
@@ -294,18 +306,23 @@ async def outline_translate(request: OutlineTranslateRequest):
     """
     工具箱「纲目翻译」：按 direction 选择中翻英或英翻中，使用 Gemini 与对应 instruction。
     中翻英与 AI 纲目流程一致（术语表 instruction + 可选标题）；英翻中使用英翻中 instruction。
+    使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:
         if request.direction == "zh2en":
-            # 工具箱 - 纲目翻译：不使用缓存，每次调用 API
-            out = ai_service.translate_outline(request.content, request.outline_topic, use_cache=False)
+            out = await asyncio.to_thread(
+                ai_service.translate_outline,
+                request.content,
+                request.outline_topic,
+                False,
+            )
             return {
                 "result": out.get("answer_en"),
                 "title_en": out.get("title_en"),
                 "error": out.get("error"),
             }
         else:
-            out = ai_service.translate_outline_en2zh(request.content)
+            out = await asyncio.to_thread(ai_service.translate_outline_en2zh, request.content)
             return {
                 "result": out.get("answer_zh"),
                 "error": out.get("error"),
@@ -321,13 +338,15 @@ async def outline_translate_and_format(request: OutlineTranslateRequest):
     工具箱「纲目翻译」：翻译 + 格式化 + 返回 DOCX 或 PDF。
     流程：翻译 → 复制模板 → 写入内容 → 刷格式 → 返回 DOCX/PDF bytes。
     若格式化失败，仍返回翻译文本，docx_bytes/pdf_bytes 为 None。
+    使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:
-        result = ai_service.translate_and_format_outline(
-            direction=request.direction,
-            content=request.content,
-            outline_topic=request.outline_topic,
-            output_format=request.output_format,
+        result = await asyncio.to_thread(
+            ai_service.translate_and_format_outline,
+            request.direction,
+            request.content,
+            request.outline_topic,
+            request.output_format,
         )
         
         if result.get("error") and not result.get("result"):
@@ -377,12 +396,14 @@ async def format_outline_only(request: FormatOutlineRequest):
     工具箱「纲目翻译」：仅格式化已翻译的文本，不调用翻译 API。
     用于优化：用户已翻译完成，只需格式化并下载时使用。
     流程：复制模板 → 写入已翻译内容 → 刷格式 → 返回 DOCX/PDF bytes。
+    使用 asyncio.to_thread 避免阻塞事件循环（含 LibreOffice 转 PDF）。
     """
     try:
-        result = ai_service.format_outline_only(
-            direction=request.direction,
-            translated_text=request.translated_text,
-            output_format=request.output_format,
+        result = await asyncio.to_thread(
+            ai_service.format_outline_only,
+            request.direction,
+            request.translated_text,
+            request.output_format,
         )
         
         if result.get("error") and not (result.get("docx_bytes") or result.get("pdf_bytes")):
@@ -433,9 +454,10 @@ async def info_retrieval_export(request: InfoRetrievalRequest):
     try:
         logger.info("info_retrieval 请求: keyword=%r, exclude_keywords=%r",
                     request.keyword, request.exclude_keywords)
-        docx_bytes, filename, log_message = ai_service.info_retrieval_export(
-            keyword=request.keyword,
-            exclude_keywords=request.exclude_keywords or "",
+        docx_bytes, filename, log_message = await asyncio.to_thread(
+            ai_service.info_retrieval_export,
+            request.keyword,
+            request.exclude_keywords or "",
         )
         if docx_bytes is None:
             # 中文说明放在 body，避免 HTTP 头 latin-1 编码错误
@@ -547,13 +569,14 @@ async def ai_search(request: SearchRequest):
     try:
         logger.info(f"收到AI搜索请求: {request.question[:50]}...")
 
-        # 调用服务层
+        # 调用服务层（to_thread 避免阻塞事件循环，支持多用户并发）
         metadata = _extract_metadata(request)
-        result = ai_service.search(
-            question=request.question,
-            max_results=request.max_results,
-            depth=request.depth,
-            metadata=metadata
+        result = await asyncio.to_thread(
+            ai_service.search,
+            request.question,
+            request.max_results,
+            request.depth,
+            metadata,
         )
 
         # 检查是否有错误
