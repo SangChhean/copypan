@@ -127,6 +127,13 @@ class FormatOutlineRequest(BaseModel):
     output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
 
 
+class RoughOutlineRequest(BaseModel):
+    """工具箱 - 毛坯纲目生成（每次只生成一篇，由 ai_index 指定用哪个 AI）"""
+    outline_type: Literal["polish", "beginner", "youth", "truth", "sharing"] = Field(..., description="纲目类型")
+    content: str = Field(..., min_length=1, max_length=100_000, description="原始纲目内容")
+    ai_index: Optional[int] = Field(0, ge=0, description="该类型下第几个 AI（0 起），每次请求只调用一个 AI 生成一篇")
+
+
 class InfoRetrievalRequest(BaseModel):
     """信息检索请求：多关键词 AND、排除关键词 OR、DOCX 大小上限"""
     keyword: str = Field(..., min_length=1, max_length=500, description="搜索关键词，空格隔开，多词 AND")
@@ -681,6 +688,43 @@ async def reset_stats():
     except Exception as e:
         logger.error(f"重置统计失败: {e}", exc_info=True)
         return {"status": "error", "data": None, "message": str(e)}
+
+
+@router.get("/ai_search/rough_outline_config", summary="毛胚纲目 - 各类型对应的 AI 数量")
+async def rough_outline_config():
+    """返回每种纲目类型下会调用几次 AI（即需请求几次 API）。"""
+    try:
+        config = ai_service.get_rough_outline_ai_counts()
+        return config
+    except Exception as e:
+        logger.error(f"rough_outline_config 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/rough_outline", summary="工具箱 - 毛胚纲目生成（单次一篇）")
+async def rough_outline(request: RoughOutlineRequest):
+    """
+    工具箱「毛胚纲目」：每次只调用一个 AI 生成一篇纲目。
+    传入 outline_type、content、ai_index（该类型下第几个 AI，从 0 起）。
+    前端按类型 × ai_index 循环调用本接口，实现「每个纲目单独调用一次 API」。
+    """
+    try:
+        result = await asyncio.to_thread(
+            ai_service.generate_rough_outline,
+            request.outline_type,
+            request.content,
+            request.ai_index,
+        )
+        # 即使该路 AI 未实现或失败（results 为空、带 error），也返回 200，由前端展示 error 文案，避免整次请求被当作 HTTP 失败
+        return {
+            "results": result.get("results", []),
+            "error": result.get("error"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"rough_outline 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/ai_search/cache/clear", summary="清理 AI 搜索缓存")

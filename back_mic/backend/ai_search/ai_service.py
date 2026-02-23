@@ -76,6 +76,7 @@ except Exception as e:
     logger.warning(f"Redis 未启用，将跳过缓存: {e}")
 
 # Claude 客户端（需配置 CLAUDE_API_KEY）
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 try:
     claude_client = anthropic.Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
     if claude_client:
@@ -86,7 +87,7 @@ except Exception as e:
 
 # Gemini 客户端（用于中文纲目→英文纲目翻译，需配置 GEMINI_API_KEY；使用新 SDK google.genai）
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
 gemini_client = None
 _gemini_system_instruction_en2zh = None
 if GEMINI_API_KEY:
@@ -110,6 +111,16 @@ if GEMINI_API_KEY:
 else:
     _gemini_system_instruction = None
     logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
+
+# 毛胚纲目 - 其他 API（.env 中填写对应 API Key 后启用）
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v3.2")
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+PERPLEXITY_MODEL = os.getenv("PERPLEXITY_MODEL", "sonar")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")
+XAI_API_KEY = os.getenv("XAI_API_KEY")  # Grok
+XAI_MODEL = os.getenv("XAI_MODEL", "grok-4-1-fast")
 
 # 并发限制：同时进行中的 Claude / Gemini 请求数，避免人多时触发 API 限流（429）
 def _parse_concurrent_limit(env_key: str, default: int) -> int:
@@ -230,6 +241,25 @@ _CWWL_EXTRA_WEIGHT_PATTERNS_实行 = (  # 重实行应用：85–93，不含 94�
     "cwwl_1985", "cwwl_1986", "cwwl_1987", "cwwl_1988", "cwwl_1989",
     "cwwl_1990", "cwwl_1991-92", "cwwl_1993",
 )
+
+
+def _strip_code_fence_for_outline(text: Optional[str]) -> Optional[str]:
+    """
+    若毛胚纲目 AI 返回的内容被 markdown 代码块包裹（如 ```text 或 ``` 开头、``` 结尾），
+    剥掉首尾围栏，只保留正文，便于展示。若未包裹则原样返回。
+    """
+    if not text or not isinstance(text, str):
+        return text
+    s = text.strip()
+    if not s.startswith("```"):
+        return text
+    lines = s.split("\n")
+    if len(lines) < 2:
+        return text
+    lines = lines[1:]
+    if lines and lines[-1].strip() == "```":
+        lines = lines[:-1]
+    return "\n".join(lines).strip() if lines else text
 
 
 class AISearchService:
@@ -3017,6 +3047,255 @@ class AISearchService:
         status["overall"] = status["elasticsearch"] and status["claude"]
 
         return status
+
+    def get_rough_outline_ai_counts(self) -> Dict[str, int]:
+        """返回每种纲目类型对应的 AI 数量（即该类型需调用几次 API）。"""
+        try:
+            from .rough_outline_prompts import get_ai_configs
+            types = ("polish", "beginner", "youth", "truth", "sharing")
+            return {t: len(get_ai_configs(t)) for t in types}
+        except Exception as e:
+            logger.error(f"get_rough_outline_ai_counts 失败: {e}", exc_info=True)
+            return {}
+
+    def generate_rough_outline(
+        self,
+        outline_type: str,
+        content: str,
+        ai_index: int = 0,
+    ) -> Dict:
+        """
+        生成毛胚纲目。每次只调用一个 AI，生成一篇。
+        
+        Args:
+            outline_type: 纲目类型 ("polish", "beginner", "youth", "truth", "sharing")
+            content: 原始纲目内容
+            ai_index: 该类型下第几个 AI（0 起），只调用这一个
+        
+        Returns:
+            {
+                "results": [{"type": str, "content": str, "ai_model": str}],  # 长度 0 或 1
+                "error": str | None,
+            }
+        """
+        try:
+            from .rough_outline_prompts import get_prompt_template, get_ai_configs
+            
+            ai_configs = get_ai_configs(outline_type)
+            if not ai_configs:
+                return {
+                    "results": [],
+                    "error": f"不支持的纲目类型: {outline_type}",
+                }
+            
+            if ai_index < 0 or ai_index >= len(ai_configs):
+                return {
+                    "results": [],
+                    "error": f"ai_index {ai_index} 超出范围 (0~{len(ai_configs) - 1})",
+                }
+            
+            ai_config = ai_configs[ai_index]
+            # 润色版等类型可能按 AI 使用不同 prompt（prompt_key：如 polish_gemini、polish_claude）
+            prompt_key = ai_config.get("prompt_key")
+            prompt_template = get_prompt_template(outline_type, prompt_key=prompt_key)
+            if not prompt_template:
+                return {
+                    "results": [],
+                    "error": f"未找到 prompt 模板 (类型: {outline_type}, prompt_key: {prompt_key})",
+                }
+            
+            prompt = prompt_template.replace("{content}", content)
+            ai_name = ai_config.get("name", "Unknown")
+            
+            logger.info(f"使用 {ai_name} 生成毛胚纲目 (类型: {outline_type}, ai_index: {ai_index})")
+            
+            generated_content = self._call_ai_for_rough_outline(ai_config, prompt)
+            if generated_content:
+                generated_content = _strip_code_fence_for_outline(generated_content) or generated_content
+            if generated_content:
+                return {
+                    "results": [{
+                        "type": outline_type,
+                        "content": generated_content,
+                        "ai_model": ai_name,
+                    }],
+                    "error": None,
+                }
+            return {
+                "results": [],
+                "error": f"{ai_name} 生成失败",
+            }
+        except Exception as e:
+            logger.error(f"generate_rough_outline 失败: {e}", exc_info=True)
+            return {
+                "results": [],
+                "error": f"生成失败: {str(e)}",
+            }
+
+
+    def _call_ai_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用指定的 AI API 生成内容"""
+        ai_type = ai_config.get("type")
+        ai_name = ai_config.get("name", "Unknown")
+        
+        try:
+            if ai_type == "claude":
+                return self._call_claude_for_rough_outline(ai_config, prompt)
+            elif ai_type == "gemini":
+                return self._call_gemini_for_rough_outline(ai_config, prompt)
+            elif ai_type == "deepseek":
+                return self._call_deepseek_for_rough_outline(ai_config, prompt)
+            elif ai_type == "perplexity":
+                return self._call_perplexity_for_rough_outline(ai_config, prompt)
+            elif ai_type == "chatgpt":
+                return self._call_chatgpt_for_rough_outline(ai_config, prompt)
+            elif ai_type == "grok":
+                return self._call_grok_for_rough_outline(ai_config, prompt)
+            else:
+                logger.error(f"不支持的 AI 类型: {ai_type}")
+                return None
+        except Exception as e:
+            logger.error(f"调用 {ai_name} 失败: {e}", exc_info=True)
+            return None
+
+    def _call_claude_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 Claude API"""
+        if not claude_client:
+            logger.error("Claude 客户端未初始化")
+            return None
+        
+        model = ai_config.get("model", CLAUDE_MODEL)
+        max_tokens = ai_config.get("max_tokens", 4096)
+        
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return message.content[0].text
+        except Exception as e:
+            logger.error(f"Claude API 调用失败: {e}", exc_info=True)
+            return None
+
+    def _call_gemini_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 Gemini API"""
+        if not gemini_client:
+            logger.error("Gemini 客户端未初始化")
+            return None
+        
+        model = ai_config.get("model", GEMINI_MODEL)
+        
+        try:
+            from google.genai import types
+            with GEMINI_SEMAPHORE:
+                response = gemini_client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                )
+                # Gemini 返回的 text 属性
+                if hasattr(response, 'text'):
+                    return response.text
+                elif hasattr(response, 'candidates') and response.candidates:
+                    return response.candidates[0].content.parts[0].text
+                else:
+                    logger.error(f"Gemini 响应格式异常: {response}")
+                    return None
+        except Exception as e:
+            logger.error(f"Gemini API 调用失败: {e}", exc_info=True)
+            return None
+
+    def _call_openai_compatible_rough_outline(
+        self,
+        api_key: str,
+        prompt: str,
+        model: str,
+        max_tokens: int = 4096,
+        base_url: Optional[str] = None,
+    ) -> Optional[str]:
+        """通用：OpenAI 兼容接口（Deep Seek / OpenAI / Perplexity / xAI Grok 均兼容）。"""
+        try:
+            from openai import OpenAI
+            kwargs = {"api_key": api_key, "timeout": 120.0}
+            if base_url:
+                kwargs["base_url"] = base_url
+            client = OpenAI(**kwargs)
+            r = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+            )
+            if r.choices and len(r.choices) > 0 and getattr(r.choices[0].message, "content", None):
+                return r.choices[0].message.content
+            return None
+        except Exception as e:
+            logger.error(f"OpenAI 兼容 API 调用失败 (model={model}): {e}", exc_info=True)
+            return None
+
+    def _call_deepseek_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 Deep Seek API（OpenAI 兼容，需在 .env 中配置 DEEPSEEK_API_KEY）"""
+        if not DEEPSEEK_API_KEY:
+            logger.warning("Deep Seek 未配置: 请在 .env 中填写 DEEPSEEK_API_KEY")
+            return None
+        model = ai_config.get("model", DEEPSEEK_MODEL)
+        if model == "deepseek-v3.2":
+            model = "deepseek-chat"
+        max_tokens = ai_config.get("max_tokens", 4096)
+        return self._call_openai_compatible_rough_outline(
+            api_key=DEEPSEEK_API_KEY,
+            prompt=prompt,
+            model=model,
+            max_tokens=max_tokens,
+            base_url="https://api.deepseek.com",
+        )
+
+    def _call_perplexity_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 Perplexity API（OpenAI 兼容，需在 .env 中配置 PERPLEXITY_API_KEY）"""
+        if not PERPLEXITY_API_KEY:
+            logger.warning("Perplexity 未配置: 请在 .env 中填写 PERPLEXITY_API_KEY")
+            return None
+        model = ai_config.get("model", PERPLEXITY_MODEL)
+        if model and "pplx-" in model:
+            model = "sonar"
+        max_tokens = ai_config.get("max_tokens", 4096)
+        return self._call_openai_compatible_rough_outline(
+            api_key=PERPLEXITY_API_KEY,
+            prompt=prompt,
+            model=model or "sonar",
+            max_tokens=max_tokens,
+            base_url="https://api.perplexity.ai",
+        )
+
+    def _call_chatgpt_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 OpenAI / ChatGPT API（需在 .env 中配置 OPENAI_API_KEY）"""
+        if not OPENAI_API_KEY:
+            logger.warning("OpenAI 未配置: 请在 .env 中填写 OPENAI_API_KEY")
+            return None
+        model = ai_config.get("model", OPENAI_MODEL)
+        max_tokens = ai_config.get("max_tokens", 4096)
+        return self._call_openai_compatible_rough_outline(
+            api_key=OPENAI_API_KEY,
+            prompt=prompt,
+            model=model,
+            max_tokens=max_tokens,
+            base_url=None,
+        )
+
+    def _call_grok_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """调用 xAI Grok API（OpenAI 兼容，需在 .env 中配置 XAI_API_KEY）"""
+        if not XAI_API_KEY:
+            logger.warning("xAI Grok 未配置: 请在 .env 中填写 XAI_API_KEY")
+            return None
+        model = ai_config.get("model", XAI_MODEL)
+        max_tokens = ai_config.get("max_tokens", 4096)
+        return self._call_openai_compatible_rough_outline(
+            api_key=XAI_API_KEY,
+            prompt=prompt,
+            model=model,
+            max_tokens=max_tokens,
+            base_url="https://api.x.ai/v1",
+        )
 
 
 # 创建全局服务实例

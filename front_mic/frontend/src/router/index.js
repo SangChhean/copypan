@@ -57,6 +57,10 @@ const routes = [
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
+  {
+    path: "/rough-outline",
+    component: () => import("../components/toolbox/RoughOutline.vue"),
+  },
 ];
 
 const router = createRouter({
