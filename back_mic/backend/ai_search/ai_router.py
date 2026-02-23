@@ -5,7 +5,7 @@ AI搜索API路由
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 import asyncio
 import base64
 import json
@@ -132,6 +132,12 @@ class RoughOutlineRequest(BaseModel):
     outline_type: Literal["polish", "beginner", "youth", "truth", "sharing"] = Field(..., description="纲目类型")
     content: str = Field(..., min_length=1, max_length=100_000, description="原始纲目内容")
     ai_index: Optional[int] = Field(0, ge=0, description="该类型下第几个 AI（0 起），每次请求只调用一个 AI 生成一篇")
+
+
+class RoughOutlineFormatRequest(BaseModel):
+    """工具箱 - 毛胚纲目刷格式并下载（五类均可：润色版/初信版/青少年版/真理加强版/三分钟分享）"""
+    outline_type: Literal["polish", "sharing", "beginner", "youth", "truth"] = Field(..., description="纲目类型")
+    contents: List[str] = Field(..., min_length=1, max_length=10, description="多篇纲目正文，按顺序合并后刷格式")
 
 
 class InfoRetrievalRequest(BaseModel):
@@ -724,6 +730,35 @@ async def rough_outline(request: RoughOutlineRequest):
         raise
     except Exception as e:
         logger.error(f"rough_outline 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/rough_outline_format_and_download", summary="工具箱 - 毛胚纲目刷格式并下载（五类均可）")
+async def rough_outline_format_and_download(request: RoughOutlineFormatRequest):
+    """
+    毛胚纲目：将选定类型的一篇或多篇合并为一个 DOCX，使用中文模板与中文刷格式，返回 DOCX 供下载。
+    """
+    try:
+        result = await asyncio.to_thread(
+            ai_service.format_rough_outline_docx,
+            request.outline_type,
+            request.contents,
+        )
+        if result.get("error") and not result.get("docx_bytes"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+
+        if not result.get("docx_bytes"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "生成 DOCX 失败")
+
+        return {
+            "docx_base64": base64.b64encode(result["docx_bytes"]).decode("utf-8"),
+            "filename": result.get("filename", "毛胚纲目.docx"),
+            "error": result.get("error"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"rough_outline_format_and_download 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -88,6 +88,10 @@ except Exception as e:
 # Gemini 客户端（用于中文纲目→英文纲目翻译，需配置 GEMINI_API_KEY；使用新 SDK google.genai）
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
+# 毛胚纲目：主模型 3.1，备用模型 3.0。若 503 持续可设 ROUGH_OUTLINE_GEMINI_MODEL 优先用其他模型
+ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "")
+# 主模型重试全失败后尝试的备用模型，默认 gemini-3-pro-preview（3.0）
+GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3-pro-preview")
 gemini_client = None
 _gemini_system_instruction_en2zh = None
 if GEMINI_API_KEY:
@@ -2774,6 +2778,89 @@ class AISearchService:
                 "error": f"格式化失败: {str(e)}",
             }
 
+    def format_rough_outline_docx(
+        self,
+        outline_type: str,
+        contents: List[str],
+    ) -> Dict:
+        """
+        毛胚纲目刷格式并下载：将润色版 4 篇或三分钟分享 6 篇合并为一个 DOCX，使用中文模板与中文刷格式。
+        
+        Args:
+            outline_type: "polish"（润色版）或 "sharing"（三分钟分享）
+            contents: 多篇纲目正文，按顺序合并（润色版 4 篇，三分钟分享 6 篇）
+        
+        Returns:
+            {"docx_bytes": bytes | None, "filename": str, "error": str | None}
+        """
+        import shutil
+        import tempfile
+        import os
+        from docx import Document
+
+        _allowed = ("polish", "sharing", "beginner", "youth", "truth")
+        if outline_type not in _allowed:
+            return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": f"不支持的纲目类型: {outline_type}"}
+        if not contents:
+            return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": "内容不能为空"}
+
+        if format_chinese_outline_docx is None:
+            return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": "中文格式刷未导入"}
+
+        backend_dir = Path(__file__).resolve().parent.parent
+        template_name = "中文纲目模板.docx"
+        template_path = backend_dir / template_name
+        if not template_path.exists():
+            return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": f"模板文件不存在: {template_name}"}
+
+        # 合并多篇：篇与篇之间用空行分隔
+        combined_text = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+
+        _filename_map = {
+            "polish": "毛胚纲目_润色版.docx",
+            "sharing": "毛胚纲目_三分钟分享.docx",
+            "beginner": "毛胚纲目_初信版.docx",
+            "youth": "毛胚纲目_青少年版.docx",
+            "truth": "毛胚纲目_真理加强版.docx",
+        }
+        filename = _filename_map.get(outline_type, "毛胚纲目.docx")
+        temp_docx_path = None
+
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+                temp_docx_path = tmp_file.name
+            shutil.copy2(template_path, temp_docx_path)
+
+            doc = Document(temp_docx_path)
+            for para in list(doc.paragraphs):
+                p_element = para._element
+                p_element.getparent().remove(p_element)
+
+            for line in combined_text.split("\n"):
+                if line.strip() or len(doc.paragraphs) == 0:
+                    doc.add_paragraph(line)
+
+            doc.save(temp_docx_path)
+
+            try:
+                format_chinese_outline_docx(temp_docx_path, traditional_quotes=False)
+            except Exception as e:
+                logger.error(f"毛胚纲目格式刷失败: {e}", exc_info=True)
+
+            with open(temp_docx_path, "rb") as f:
+                docx_bytes = f.read()
+
+            return {"docx_bytes": docx_bytes, "filename": filename, "error": None}
+        except Exception as e:
+            logger.error(f"毛胚纲目刷格式失败: {e}", exc_info=True)
+            return {"docx_bytes": None, "filename": filename, "error": str(e)}
+        finally:
+            if temp_docx_path and os.path.exists(temp_docx_path):
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+
     def info_retrieval_export(
         self,
         keyword: str,
@@ -3180,18 +3267,23 @@ class AISearchService:
             return None
 
     def _call_gemini_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
-        """调用 Gemini API。遇 503/429 时自动重试最多 2 次（间隔 5 秒）。"""
+        """
+        调用 Gemini API。主模型遇 503/429 时重试 2 次（共 3 次），仍失败则第 3 次使用备用模型。
+        若配置了 ROUGH_OUTLINE_GEMINI_MODEL，毛胚纲目优先使用该模型；
+        若配置了 GEMINI_FALLBACK_MODEL（默认 gemini-3-pro-preview），主模型 3 次均失败后尝试备用模型。
+        """
         if not gemini_client:
             logger.error("Gemini 客户端未初始化")
             return None
-        
-        model = ai_config.get("model", GEMINI_MODEL)
-        max_retries = 2  # 共尝试 3 次
+
+        # 毛胚纲目可优先使用专用模型
+        model = (ROUGH_OUTLINE_GEMINI_MODEL or "").strip() or ai_config.get("model", GEMINI_MODEL)
+        max_retries = 2  # 主模型共尝试 3 次（首次 + 重试 2 次），第 3 次失败后改用备用模型
+        backoff_seconds = (8, 15)  # 第 1、2 次重试前等待秒数
         last_exc = None
-        
+
         for attempt in range(max_retries + 1):
             try:
-                from google.genai import types
                 with GEMINI_SEMAPHORE:
                     response = gemini_client.models.generate_content(
                         model=model,
@@ -3205,18 +3297,35 @@ class AISearchService:
                 return None
             except Exception as e:
                 last_exc = e
-                retryable = False
-                if hasattr(e, "status_code"):
-                    retryable = getattr(e, "status_code") in (503, 429)
-                if "503" in str(e) or "429" in str(e):
-                    retryable = True
+                status = getattr(e, "status_code", None) or (e.args[0] if e.args else None)
+                retryable = status in (503, 429) or "503" in str(e) or "429" in str(e)
                 if retryable and attempt < max_retries:
-                    wait = 5
-                    logger.warning(f"Gemini 暂时不可用 (503/429)，{wait} 秒后重试 ({attempt + 1}/{max_retries})")
+                    wait = backoff_seconds[attempt] if attempt < len(backoff_seconds) else 40
+                    logger.warning(
+                        "Gemini 暂时不可用 (503/429)，%s 秒后重试 (%s/%s)，model=%s",
+                        wait, attempt + 1, max_retries, model,
+                    )
                     time.sleep(wait)
                 else:
-                    logger.error(f"Gemini API 调用失败: {e}", exc_info=True)
-                    return None
+                    logger.error(f"Gemini API 调用失败 (model={model}): {e}", exc_info=True)
+                    break
+
+        # 主模型重试全部失败后，若配置了备用模型则再试一次
+        fallback = (GEMINI_FALLBACK_MODEL or "").strip()
+        if fallback and fallback != model:
+            try:
+                logger.warning("Gemini 主模型不可用，尝试备用模型: %s", fallback)
+                with GEMINI_SEMAPHORE:
+                    response = gemini_client.models.generate_content(
+                        model=fallback,
+                        contents=prompt,
+                    )
+                if hasattr(response, 'text'):
+                    return response.text
+                if hasattr(response, 'candidates') and response.candidates:
+                    return response.candidates[0].content.parts[0].text
+            except Exception as e2:
+                logger.error(f"Gemini 备用模型 %s 调用失败: {e2}", fallback, exc_info=True)
         return None
 
     def _call_openai_compatible_rough_outline(
