@@ -3180,31 +3180,44 @@ class AISearchService:
             return None
 
     def _call_gemini_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
-        """调用 Gemini API"""
+        """调用 Gemini API。遇 503/429 时自动重试最多 2 次（间隔 5 秒）。"""
         if not gemini_client:
             logger.error("Gemini 客户端未初始化")
             return None
         
         model = ai_config.get("model", GEMINI_MODEL)
+        max_retries = 2  # 共尝试 3 次
+        last_exc = None
         
-        try:
-            from google.genai import types
-            with GEMINI_SEMAPHORE:
-                response = gemini_client.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                )
-                # Gemini 返回的 text 属性
+        for attempt in range(max_retries + 1):
+            try:
+                from google.genai import types
+                with GEMINI_SEMAPHORE:
+                    response = gemini_client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                    )
                 if hasattr(response, 'text'):
                     return response.text
-                elif hasattr(response, 'candidates') and response.candidates:
+                if hasattr(response, 'candidates') and response.candidates:
                     return response.candidates[0].content.parts[0].text
+                logger.error(f"Gemini 响应格式异常: {response}")
+                return None
+            except Exception as e:
+                last_exc = e
+                retryable = False
+                if hasattr(e, "status_code"):
+                    retryable = getattr(e, "status_code") in (503, 429)
+                if "503" in str(e) or "429" in str(e):
+                    retryable = True
+                if retryable and attempt < max_retries:
+                    wait = 5
+                    logger.warning(f"Gemini 暂时不可用 (503/429)，{wait} 秒后重试 ({attempt + 1}/{max_retries})")
+                    time.sleep(wait)
                 else:
-                    logger.error(f"Gemini 响应格式异常: {response}")
+                    logger.error(f"Gemini API 调用失败: {e}", exc_info=True)
                     return None
-        except Exception as e:
-            logger.error(f"Gemini API 调用失败: {e}", exc_info=True)
-            return None
+        return None
 
     def _call_openai_compatible_rough_outline(
         self,
@@ -3213,19 +3226,21 @@ class AISearchService:
         model: str,
         max_tokens: int = 4096,
         base_url: Optional[str] = None,
+        use_max_completion_tokens: bool = False,
     ) -> Optional[str]:
-        """通用：OpenAI 兼容接口（Deep Seek / OpenAI / Perplexity / xAI Grok 均兼容）。"""
+        """通用：OpenAI 兼容接口（Deep Seek / OpenAI / Perplexity / xAI Grok 均兼容）。OpenAI 新模型需传 max_completion_tokens。"""
         try:
             from openai import OpenAI
             kwargs = {"api_key": api_key, "timeout": 120.0}
             if base_url:
                 kwargs["base_url"] = base_url
             client = OpenAI(**kwargs)
-            r = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-            )
+            create_kw = {"model": model, "messages": [{"role": "user", "content": prompt}]}
+            if use_max_completion_tokens:
+                create_kw["max_completion_tokens"] = max_tokens
+            else:
+                create_kw["max_tokens"] = max_tokens
+            r = client.chat.completions.create(**create_kw)
             if r.choices and len(r.choices) > 0 and getattr(r.choices[0].message, "content", None):
                 return r.choices[0].message.content
             return None
@@ -3268,7 +3283,7 @@ class AISearchService:
         )
 
     def _call_chatgpt_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
-        """调用 OpenAI / ChatGPT API（需在 .env 中配置 OPENAI_API_KEY）"""
+        """调用 OpenAI / ChatGPT API（需在 .env 中配置 OPENAI_API_KEY）。新模型使用 max_completion_tokens。"""
         if not OPENAI_API_KEY:
             logger.warning("OpenAI 未配置: 请在 .env 中填写 OPENAI_API_KEY")
             return None
@@ -3280,6 +3295,7 @@ class AISearchService:
             model=model,
             max_tokens=max_tokens,
             base_url=None,
+            use_max_completion_tokens=True,
         )
 
     def _call_grok_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
