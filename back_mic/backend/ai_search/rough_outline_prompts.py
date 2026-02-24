@@ -182,11 +182,11 @@ PROMPT_TEMPLATES = {
 
 # AI 配置：每种类型对应的 AI 模型列表
 # 润色版：2 次 Gemini 3.0 Pro（用 polish_gemini prompt）+ 2 次 Claude Sonnet 4.5（用 polish_claude prompt）
-# 说明：Google API 中 Gemini 3 Pro 的模型 id 为 gemini-3-pro-preview 或 gemini-3.1-pro-preview（无单独 gemini-3-pro）
+# 说明：毛胚纲目优先使用 gemini-3-pro-preview（3.0），如需 3.1 可改为 gemini-3.1-pro-preview
 AI_CONFIGS = {
     "polish": [
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192, "prompt_key": "polish_gemini"},
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192, "prompt_key": "polish_gemini"},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3-pro-preview", "max_tokens": 16384, "prompt_key": "polish_gemini"},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3-pro-preview", "max_tokens": 16384, "prompt_key": "polish_gemini"},
         {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192, "prompt_key": "polish_claude"},
         {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192, "prompt_key": "polish_claude"},
     ],
@@ -201,7 +201,7 @@ AI_CONFIGS = {
     ],
     "sharing": [
         {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192},
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3-pro-preview", "max_tokens": 16384},
         {"type": "deepseek", "name": "Deep Seek-V3.2", "model": "deepseek-v3.2", "max_tokens": 8192},
         {"type": "perplexity", "name": "Perplexity–search", "model": "pplx-70b-online", "max_tokens": 8192},
         {"type": "chatgpt", "name": "Chat GPT5.2", "model": "gpt-5.2", "max_tokens": 8192},

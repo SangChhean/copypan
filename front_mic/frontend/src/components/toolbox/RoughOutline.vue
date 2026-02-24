@@ -182,10 +182,15 @@ async function downloadFormatRoughOutline(outlineType) {
   }
   let contents;
   if (outlineType === "polish") {
-    // 润色版：两篇 Claude 在前，两篇 Gemini 在后
+    // 润色版：两篇 Claude 在前，两篇 Gemini 在后（按 ai_model 区分）
     const sorted = [...list].sort((a, b) => {
-      const order = { claude: 0, gemini: 1 };
-      return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+      const key = (name) => {
+        const n = (name || "").toLowerCase();
+        if (n.includes("claude")) return 0;
+        if (n.includes("gemini")) return 1;
+        return 2;
+      };
+      return key(a.ai_model) - key(b.ai_model);
     });
     contents = sorted.map(r => (r.content || "").trim()).filter(Boolean);
   } else if (outlineType === "sharing") {
