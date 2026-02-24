@@ -15,13 +15,25 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt, RGBColor
 from docx.enum.style import WD_STYLE_TYPE
-import winsound
-import cn2an
 from docx.enum.text import WD_BREAK
-import tkinter as tk
-from tkinter import messagebox
 import sys
 import shutil
+
+# 可选依赖：无 GUI 环境（如 Web 后端）下可跳过
+try:
+    import winsound
+except ImportError:
+    winsound = None
+try:
+    import cn2an
+except ImportError:
+    cn2an = None
+try:
+    import tkinter as tk
+    from tkinter import messagebox
+except ImportError:
+    tk = None
+    messagebox = None
 
 # ===== 5.5版本配置和常量管理 =====
 class Config:
@@ -490,24 +502,17 @@ def check_speaker_for_dictation(text, filename=""):
     return has_speaker, text
 
 def show_speaker_reminder(third_para_text=""):
-    """显示讲者提醒窗口，包含第三行内容"""
-    # 创建隐藏的主窗口
+    """显示讲者提醒窗口，包含第三行内容（无 GUI 时仅 print）"""
+    if tk is None or messagebox is None:
+        print("提醒：听抄稿请在 (听抄稿的纲目) 后面添加讲者缩写，例如：(M. C.)")
+        return
     root = tk.Tk()
-    root.withdraw()  # 隐藏主窗口
-    
-    # 构建提醒消息
+    root.withdraw()
     if third_para_text:
         message = f"您忘记加讲者了！\n\n当前第三行内容：\n{third_para_text}\n\n请在 (听抄稿的纲目) 后面添加讲者缩写，\n例如：(听抄稿的纲目)(M. C.)"
     else:
         message = "您忘记加讲者了！\n\n请在 (听抄稿的纲目) 后面添加讲者缩写，\n例如：(听抄稿的纲目)(M. C.)"
-    
-    # 显示警告对话框
-    messagebox.showwarning(
-        "提醒", 
-        message,
-        icon="warning"
-    )
-    
+    messagebox.showwarning("提醒", message, icon="warning")
     root.destroy()
 
 # ===== 背景色处理函数 =====
@@ -1108,43 +1113,25 @@ class FileSkipException(Exception):
     pass
 
 def show_final_error_summary(skipped_files, error_files):
-    """在所有文件处理完成后显示错误总结"""
+    """在所有文件处理完成后显示错误总结（无 GUI 时仅 print）"""
     if not skipped_files and not error_files:
-        return  # 没有错误，不显示窗口
-    
-    # 创建隐藏的主窗口
+        return
+    message_parts = ["文件处理完成！"]
+    if skipped_files:
+        message_parts.append(f"以下 {len(skipped_files)} 个文件被跳过：")
+        for filename, reason in skipped_files:
+            message_parts.append(f"  • {filename} - {reason}")
+    if error_files:
+        message_parts.append(f"以下 {len(error_files)} 个文件处理出错：")
+        for filename, error in error_files:
+            message_parts.append(f"  • {filename} - {error}")
+    final_message = "\n".join(message_parts)
+    if tk is None or messagebox is None:
+        print(final_message)
+        return
     root = tk.Tk()
     root.withdraw()
-    
-    # 构建错误总结消息
-    message_parts = ["文件处理完成！\n"]
-    
-    if skipped_files:
-        message_parts.append(f"以下 {len(skipped_files)} 个文件被跳过：\n")
-        for filename, reason in skipped_files:
-            if "缺少讲者信息" in reason:
-                message_parts.append(f"• {filename} - 听抄稿缺少讲者信息")
-            else:
-                message_parts.append(f"• {filename} - {reason}")
-        message_parts.append("\n")
-    
-    if error_files:
-        message_parts.append(f"以下 {len(error_files)} 个文件处理出错：\n")
-        for filename, error in error_files:
-            message_parts.append(f"• {filename} - {error}")
-        message_parts.append("\n")
-    
-    message_parts.append("请检查相关文件并手动处理。")
-    
-    final_message = "\n".join(message_parts)
-    
-    # 显示信息对话框
-    messagebox.showinfo(
-        "处理结果总结",
-        final_message,
-        icon="info"
-    )
-    
+    messagebox.showinfo("处理结果总结", final_message, icon="info")
     root.destroy()
 
 # ===== 新增：红色字体检测和应用函数 =====
@@ -1409,7 +1396,354 @@ def process_compound_outline_additions(doc):
     
     return processed_count
 
-# ===== 修改后的主处理逻辑 =====
+# ===== Web 入口：按类型刷格式（无双出处） =====
+FEAST_OUTLINE_TYPES = ('original', 'with_scripture', 'morning_revival', 'transcript', 'composite')
+
+
+def format_feast_outline_docx(docx_path, outline_type):
+    """
+    Web 用：对已生成的节期纲目 DOCX 按类型刷格式（不重命名文件）。
+    outline_type: 'original' | 'with_scripture' | 'morning_revival' | 'transcript' | 'composite'
+    """
+    if outline_type not in FEAST_OUTLINE_TYPES:
+        raise ValueError(f"不支持的节期纲目类型: {outline_type}")
+    doc = Document(docx_path)
+    delete_empty_paragraphs(doc)
+    is_scripture_outline = (outline_type == 'with_scripture')
+    is_compound_outline = (outline_type == 'composite')
+    in_dictation_mode = (outline_type == 'transcript')
+    if is_scripture_outline:
+        create_scripture_styles_fixed(doc)
+    process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation_mode, is_dual_source_outline=False)
+    doc.save(docx_path)
+
+
+def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation_mode, is_dual_source_outline=False):
+    """
+    对单个文档执行全部刷格式步骤（不包含加载/保存/重命名）。
+    双出处时 preserve_asterisk=True；Web 调用时传 is_dual_source_outline=False。
+    """
+    # 在开始处理前，先记录所有段落的背景状态
+    paragraph_formatting = []
+    for para in doc.paragraphs:
+        formatting_info = store_paragraph_formatting(para)
+        paragraph_formatting.append(formatting_info)
+
+    # 处理1：正则表达式替换
+    for para in doc.paragraphs:
+        original_text = para.text
+        new_text = re.sub(r'^([A-Za-z0-9]+)\.(　|\t)', r'\1\2', original_text)
+        if new_text != original_text:
+            para.text = new_text
+
+    convert_outline_spaces_to_tabs(doc)
+
+    # 处理2：标点符号处理
+    for para in doc.paragraphs:
+        original_text = para.text
+        text = fullwidth_to_halfwidth(original_text)
+        text = replace_english_punctuation(text, preserve_asterisk=is_dual_source_outline)
+        if text != original_text:
+            para.text = text
+
+    # 处理2.5：句中句号改分号
+    for i, para in enumerate(doc.paragraphs):
+        if is_in_protected_content_area(doc, i):
+            continue
+        if is_outline_paragraph(para):
+            original_text = para.text
+            new_text = convert_mid_sentence_periods_to_semicolons(original_text)
+            if new_text != original_text:
+                para.text = new_text
+
+    # 处理3：分号处理
+    for para in doc.paragraphs:
+        original_text = para.text
+        if original_text.rstrip().endswith('；'):
+            new_text = original_text.rstrip()[:-1] + '。'
+            para.text = new_text
+
+    # 处理4：空格和制表符处理
+    after_marker = False
+    for para in doc.paragraphs:
+        text = para.text
+        if any(marker in text for marker in after_marker_list):
+            after_marker = True
+        original_text = text
+        text = text.lstrip('　\t')
+        if not after_marker:
+            text = text.replace('　', '\t')
+        if text != original_text:
+            para.text = text
+
+    # 处理5：字符替换处理
+    for para in doc.paragraphs:
+        original_text = para.text
+        text = original_text.replace('篇\t', '篇　').replace('章\t', '章　').replace('课\t', '课　')
+        text = text.replace('貮\t', '贰\t').replace('参\t', '叁\t').replace('貳\t', '贰\t')
+        text = text.replace('彀', '够').replace('\t\t', '\t').replace('～', '~')
+        if text != original_text:
+            para.text = text
+
+    # 处理6：句号添加处理
+    if not is_scripture_outline:
+        after_marker = False
+        for idx, para in enumerate(doc.paragraphs):
+            text = para.text.rstrip()
+            if any(marker in text for marker in after_marker_list):
+                after_marker = True
+            has_red_font = False
+            if idx < len(paragraph_formatting):
+                has_red_font = has_red_font_in_stored_formatting(paragraph_formatting[idx])
+            if '【添加开始】' in text or '【添加结束】' in text:
+                continue
+            if not after_marker and idx >= 4 and not has_red_font:
+                if not text.endswith(('。', '！', '？', '…', '”', ''', '：', '』')):
+                    para.text = text + '。'
+                elif text.endswith('：'):
+                    para.text = text[:-1] + '。'
+
+        # 处理7：冒号处理
+        n = len(doc.paragraphs)
+        for i, para in enumerate(doc.paragraphs):
+            this_text = (para.text or '').strip()
+            if '【添加开始】' in this_text or '【添加结束】' in this_text:
+                continue
+            this_level = detect_outline_level(this_text)
+            if this_level is None:
+                continue
+            j = i + 1
+            child_found = False
+            while j < n:
+                next_text = (doc.paragraphs[j].text or '').strip()
+                if not next_text:
+                    j += 1
+                    continue
+                next_level = detect_outline_level(next_text)
+                if next_level is None:
+                    j += 1
+                    continue
+                if next_level > this_level:
+                    child_found = True
+                break
+            if child_found:
+                has_red = False
+                if 0 <= i < len(paragraph_formatting):
+                    has_red = has_red_font_in_stored_formatting(paragraph_formatting[i])
+                if not has_red:
+                    new_text = (para.text or '').rstrip()
+                    if not new_text.endswith('：'):
+                        if PUNCT_AT_END_RE.search(new_text):
+                            new_text = PUNCT_AT_END_RE.sub('：', new_text)
+                        else:
+                            new_text += '：'
+                        new_text = re.sub(r'：{2,}$', '：', new_text)
+                        para.text = new_text
+
+    # 处理8：李常受文集斜体处理
+    if len(doc.paragraphs) > 0:
+        last_para = doc.paragraphs[-1]
+        text = last_para.text
+        matches = re.findall(r'（(.*?)）', text)
+        if matches:
+            inner_text = matches[-1]
+            sub_match = re.search(r'(李常受文集.*?册)', inner_text)
+            if sub_match:
+                target_text = sub_match.group(1)
+                total_text = ''.join(run.text for run in last_para.runs)
+                start_index = total_text.find(target_text)
+                end_index = start_index + len(target_text)
+                if start_index != -1:
+                    current_index = 0
+                    new_runs = []
+                    for run in last_para.runs:
+                        run_text = run.text
+                        run_length = len(run_text)
+                        run_start = current_index
+                        for idx in range(run_length):
+                            char_pos = run_start + idx
+                            char = run_text[idx]
+                            if start_index <= char_pos < end_index:
+                                new_runs.append((char, True))
+                            else:
+                                new_runs.append((char, run.font.italic))
+                        current_index += run_length
+                    last_para.clear()
+                    for text_char, is_italic in new_runs:
+                        run = last_para.add_run(text_char)
+                        run.font.italic = is_italic
+
+    # 处理9：样式应用
+    after_marker = False
+    for para in doc.paragraphs:
+        text = para.text.rstrip()
+        if any(marker in text for marker in after_marker_list):
+            after_marker = True
+        elif after_marker:
+            if not in_dictation_mode:
+                if not text.endswith(('。', '！', '？', '…', '"', ''', '）', '：', '』')):
+                    para.style = "81级标题"
+
+    # 处理10：职事信息摘录
+    for para in doc.paragraphs:
+        if any(marker in para.text for marker in after_marker_list):
+            para.style = "9职事信息摘录"
+            break
+
+    # 处理11：读经样式
+    for para in doc.paragraphs:
+        if '读经：' in para.text:
+            para.style = "11读经"
+            original_text = para.text
+            new_text = re.sub(r'[；;]', '，', original_text)
+            if new_text != original_text:
+                para.text = new_text
+
+    # 处理12：标题样式应用
+    if is_scripture_outline:
+        pattern_styles = [
+            (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)　', '81级标题'),
+            (r'^([一二三四五六七八九十百千万亿]+)　', '82级标题'),
+            (r'^(\d+)　', '83级标题'),
+            (r'^([a-z])　', '84级标题'),
+            (r'^（([一二三四五六七八九十百千万亿]+)）　', '84级标题'),
+            (r'^（(\d+)）　', '84级标题'),
+            (r'^序言[ \t　]+', '2大点'),
+            (r'^添言[ \t　]+', '2大点'),
+            (r'^前言[ \t　]+', '3中点'),
+            (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
+            (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
+            (r'^(\d+)\t', '4小点'),
+            (r'^([a-z])\t', '5a点'),
+            (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
+            (r'^\((\d+)\)\t', '7（1）'),
+            (r'^\(([a-z])\)\t', '8（a）'),
+        ]
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            for pattern, style in pattern_styles:
+                if re.match(pattern, text):
+                    para.style = style
+                    break
+        apply_scripture_outline_styles_fixed(doc)
+    elif in_dictation_mode:
+        pattern_styles = [
+            (r'^序言[ \t　]+', '2大点'),
+            (r'^添言[ \t　]+', '2大点'),
+            (r'^前言[ \t　]+', '3中点'),
+            (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
+            (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
+            (r'^(\d+)\t', '4小点'),
+            (r'^([a-z])\t', '5a点'),
+            (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
+            (r'^\((\d+)\)\t', '7（1）'),
+            (r'^[⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]\t', '7（1）'),
+            (r'^\(([a-z])\)\t', '8（a）'),
+        ]
+        after_dictation_marker = False
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if '听抄信息：' in text:
+                after_dictation_marker = True
+                continue
+            if after_dictation_marker and in_dictation_mode:
+                if '。' not in text:
+                    apply_custom_92_style(para)
+                    continue
+            for pattern, style in pattern_styles:
+                if re.match(pattern, text):
+                    para.style = style
+                    break
+    else:
+        pattern_styles = [
+            (r'^序言[ \t　]+', '2大点'),
+            (r'^添言[ \t　]+', '2大点'),
+            (r'^前言[ \t　]+', '3中点'),
+            (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
+            (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
+            (r'^(\d+)\t', '4小点'),
+            (r'^([a-z])\t', '5a点'),
+            (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
+            (r'^\((\d+)\)\t', '7（1）'),
+            (r'^[⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]\t', '7（1）'),
+            (r'^\(([a-z])\)\t', '8（a）'),
+        ]
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            for pattern, style in pattern_styles:
+                if re.match(pattern, text):
+                    para.style = style
+                    break
+
+    # 设置前三段的固定样式
+    style_names = ["0系列", "11111西列", "00篇题"]
+    for i in range(min(3, len(doc.paragraphs))):
+        doc.paragraphs[i].style = style_names[i]
+
+    # 处理13：修正数字间的逗号为顿号
+    for para in doc.paragraphs:
+        full_text = ''.join(run.text for run in para.runs)
+        modified_text = re.sub(r'(?<=\d)，(?=\d)', '、', full_text)
+        if modified_text != full_text:
+            para.clear()
+            para.add_run(modified_text)
+
+    # 格式恢复
+    for i, para in enumerate(doc.paragraphs):
+        if i < len(paragraph_formatting):
+            formatting_info = paragraph_formatting[i]
+            if formatting_info and formatting_info.get('char_formatting'):
+                restore_paragraph_formatting(para, formatting_info)
+
+    if is_compound_outline:
+        process_compound_outline_additions(doc)
+
+    for para in doc.paragraphs:
+        if any(marker in para.text for marker in after_marker_list):
+            page_break_para = para.insert_paragraph_before()
+            run = page_break_para.add_run()
+            run.add_break(WD_BREAK.PAGE)
+            break
+
+    if in_dictation_mode:
+        pattern_styles_custom92 = [
+            (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)　', 'custom_92'),
+            (r'^([一二三四五六七八九十百千万亿]+)　', 'custom_92'),
+            (r'^(\d+)　', 'custom_92'),
+            (r'^([a-z])　', 'custom_92'),
+            (r'^（([一二三四五六七八九十百千万亿]+)）　', 'custom_92'),
+            (r'^（(\d+)）　', 'custom_92'),
+        ]
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            for pattern, style in pattern_styles_custom92:
+                if re.match(pattern, text):
+                    apply_custom_92_style(para)
+                    break
+        after_dictation_marker = False
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if '听抄信息：' in text:
+                after_dictation_marker = True
+                continue
+            if after_dictation_marker and '。' not in text:
+                apply_custom_92_style(para)
+
+    after_marker = False
+    for para in doc.paragraphs:
+        text = para.text.rstrip()
+        if any(marker in text for marker in after_marker_list):
+            after_marker = True
+        elif after_marker:
+            if not in_dictation_mode:
+                if not text.endswith(('。', '！', '？', '…', '"', ''', '）', '：', '』')):
+                    para.style = "81级标题"
+
+    if is_scripture_outline:
+        force_scripture_font_final(doc)
+
+
+# ===== 修改后的主处理逻辑（桌面版：含双出处与文件重命名） =====
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     excluded_files = {'template.docx'}
@@ -1459,12 +1793,6 @@ def main():
             if is_dual_source_outline:
                 add_dual_source_marker_to_title(doc)
 
-            # 在开始处理前，先记录所有段落的背景状态
-            paragraph_formatting = []
-            for para in doc.paragraphs:
-                formatting_info = store_paragraph_formatting(para)
-                paragraph_formatting.append(formatting_info)
-
             # 提前检查是否在听抄信息模式
             in_dictation_mode = False
             for para in doc.paragraphs:
@@ -1472,395 +1800,8 @@ def main():
                     in_dictation_mode = True
                     break
 
-            # 处理1：正则表达式替换
-            for para in doc.paragraphs:
-                original_text = para.text
-                new_text = re.sub(r'^([A-Za-z0-9]+)\.(　|\t)', r'\1\2', original_text)
-                if new_text != original_text:
-                    para.text = new_text
+            process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation_mode, is_dual_source_outline)
 
-            # 新增处理：纲目结构空格转制表符（在这里添加）
-            converted_count = convert_outline_spaces_to_tabs(doc)
-            print(f"转换了 {converted_count} 个纲目结构的空格为制表符")
-
-            # 处理2：标点符号处理（包含引号转换和改进的嵌套处理）
-            for para in doc.paragraphs:
-                original_text = para.text
-                text = fullwidth_to_halfwidth(original_text)
-                text = replace_english_punctuation(text, preserve_asterisk=is_dual_source_outline)  # 双出处纲目保留星号
-                if text != original_text:
-                    para.text = text
-
-            # 处理2.5：句中句号改分号（只对纲目段落处理）
-            mid_sentence_count = 0
-            for i, para in enumerate(doc.paragraphs):
-                # 跳过保护区域
-                if is_in_protected_content_area(doc, i):
-                    continue
-                # 只处理纲目段落
-                if is_outline_paragraph(para):
-                    original_text = para.text
-                    new_text = convert_mid_sentence_periods_to_semicolons(original_text)
-                    if new_text != original_text:
-                        para.text = new_text
-                        mid_sentence_count += 1
-            
-            if mid_sentence_count > 0:
-                print(f"处理了 {mid_sentence_count} 个纲目段落的句中句号")
-
-            # 处理3：分号处理
-            for para in doc.paragraphs:
-                original_text = para.text
-                if original_text.rstrip().endswith('；'):
-                    new_text = original_text.rstrip()[:-1] + '。'
-                    para.text = new_text
-
-            # 处理4：空格和制表符处理
-            after_marker = False
-            for para in doc.paragraphs:
-                text = para.text
-                if any(marker in text for marker in after_marker_list):
-                    after_marker = True
-                original_text = text
-                text = text.lstrip('　\t')
-                if not after_marker:
-                    text = text.replace('　', '\t')
-                if text != original_text:
-                    para.text = text
-
-            # 处理5：字符替换处理
-            for para in doc.paragraphs:
-                original_text = para.text
-                text = original_text.replace('篇\t', '篇　').replace('章\t', '章　').replace('课\t', '课　')
-                text = text.replace('貮\t', '贰\t').replace('参\t', '叁\t').replace('貳\t', '贰\t')
-                text = text.replace('彀', '够').replace('\t\t', '\t').replace('～', '~')
-                if text != original_text:
-                    para.text = text
-
-            # 处理6：句号添加处理 - 添加条件跳过
-            # 修改后的处理6：句号添加处理 - 添加红色字体跳过条件
-            # 修改后的处理6：句号添加处理 - 使用存储的格式信息检测红色字体
-            if not is_scripture_outline:
-                after_marker = False
-                for idx, para in enumerate(doc.paragraphs):
-                    text = para.text.rstrip()
-                    if any(marker in text for marker in after_marker_list):
-                        after_marker = True
-                    
-                    # 使用存储的格式信息检测红色字体
-                    has_red_font = False
-                    if idx < len(paragraph_formatting):
-                        has_red_font = has_red_font_in_stored_formatting(paragraph_formatting[idx])
-
-                    # 添加新条件：跳过包含【添加开始】或【添加结束】的段落
-                    if '【添加开始】' in text or '【添加结束】' in text:
-                        continue  # 跳过这些段落，不添加句号
-                    
-                    if not after_marker and idx >= 4 and not has_red_font:
-                        if not text.endswith(('。', '！', '？', '…', '”', '’', '：', '』')):
-                            para.text = text + '。'
-                        elif text.endswith('：'):
-                            para.text = text[:-1] + '。'
-
-           # 处理7：冒号处理（仅当本纲目“确实有下一级纲目”时，才将结尾标点改为冒号）
-                if not is_scripture_outline:
-                    n = len(doc.paragraphs)
-                    for i, para in enumerate(doc.paragraphs):
-                        this_text = (para.text or '').strip()
-
-                        # 跳过包含标记的段落
-                        if '【添加开始】' in this_text or '【添加结束】' in this_text:
-                            continue    
-                        
-                        this_level = detect_outline_level(this_text)
-                        if this_level is None:
-                            continue  # 本段不是纲目，跳过
-
-                        # 向后查找“下一个出现的纲目行”，可跨过空行与内容行
-                        j = i + 1
-                        child_found = False
-                        while j < n:
-                            next_text = (doc.paragraphs[j].text or '').strip()
-                            if not next_text:
-                                j += 1
-                                continue  # 空行，跳过
-
-                            next_level = detect_outline_level(next_text)
-                            if next_level is None:
-                                # 内容行（不是纲目），继续往后找，直到遇见下一个纲目或文末
-                                j += 1
-                                continue
-
-                            # 找到下一个纲目行：若层级更深，则说明“本纲目有下一级”
-                            if next_level > this_level:
-                                child_found = True
-                            break  # 碰到下一个纲目（不论深浅）就停止
-
-                        # 只有当确有下一级纲目时，才改冒号；且本段不含红字时才改
-                        if child_found:
-                            has_red = False
-                            if 0 <= i < len(paragraph_formatting):
-                                has_red = has_red_font_in_stored_formatting(paragraph_formatting[i])
-
-                            if not has_red:
-                                new_text = (para.text or '').rstrip()
-                                if not new_text.endswith('：'):
-                                    if PUNCT_AT_END_RE.search(new_text):
-                                        new_text = PUNCT_AT_END_RE.sub('：', new_text)
-                                    else:
-                                        new_text += '：'
-                                    # 清理多余的“：：”
-                                    new_text = re.sub(r'：{2,}$', '：', new_text)
-                                    para.text = new_text
-
-            # 处理8：李常受文集斜体处理
-            if len(doc.paragraphs) > 0:
-                last_para = doc.paragraphs[-1]
-                text = last_para.text
-                matches = re.findall(r'（(.*?)）', text)
-                if matches:
-                    inner_text = matches[-1]
-                    sub_match = re.search(r'(李常受文集.*?册)', inner_text)
-                    if sub_match:
-                        target_text = sub_match.group(1)
-                        total_text = ''.join(run.text for run in last_para.runs)
-                        start_index = total_text.find(target_text)
-                        end_index = start_index + len(target_text)
-                        if start_index != -1:
-                            current_index = 0
-                            new_runs = []
-                            for run in last_para.runs:
-                                run_text = run.text
-                                run_length = len(run_text)
-                                run_start = current_index
-                                run_end = run_start + run_length
-                                for i in range(run_length):
-                                    char_pos = run_start + i
-                                    char = run_text[i]
-                                    if start_index <= char_pos < end_index:
-                                        new_runs.append((char, True))
-                                    else:
-                                        new_runs.append((char, run.font.italic))
-                                current_index += run_length
-                            
-                            last_para.clear()
-                            for text_char, is_italic in new_runs:
-                                run = last_para.add_run(text_char)
-                                run.font.italic = is_italic
-
-            # 处理9：样式应用（听抄信息特殊处理）
-            after_marker = False
-            for para in doc.paragraphs:
-                text = para.text.rstrip()
-                if any(marker in text for marker in after_marker_list):
-                    after_marker = True
-                elif after_marker:
-                    # 如果是听抄信息模式，跳过这里的处理，让后面的逻辑处理
-                    if not in_dictation_mode:
-                        if not text.endswith(('。', '！', '？', '…', '”', '’', '）', '：','』')):
-                            para.style = "81级标题"
-
-            # 处理10：职事信息摘录样式
-            for para in doc.paragraphs:
-                if any(marker in para.text for marker in after_marker_list):
-                    para.style = "9职事信息摘录"
-                    break
-
-            # 处理11：读经样式
-            for para in doc.paragraphs:
-                if '读经：' in para.text:
-                    para.style = "11读经"
-                    original_text = para.text
-                    new_text = re.sub(r'[；;]', '，', original_text)
-                    if new_text != original_text:
-                        para.text = new_text
-
-            # 处理12：标题样式应用 - 添加经节类型的特殊处理
-            if is_scripture_outline:
-                # 带经文的纲目类型的处理
-                # 先应用纲目本身的样式（使用普通模式的样式映射）
-
-                pattern_styles = [
-                    (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)　', '81级标题'),
-                    (r'^([一二三四五六七八九十百千万亿]+)　', '82级标题'),
-                    (r'^(\d+)　', '83级标题'),
-                    (r'^([a-z])　', '84级标题'),
-                    (r'^（([一二三四五六七八九十百千万亿]+)）　', '84级标题'),
-                    (r'^（(\d+)）　', '84级标题'),
-                    (r'^序言[ \t　]+', '2大点'),
-                    (r'^添言[ \t　]+', '2大点'),
-                    (r'^前言[ \t　]+', '3中点'),
-                    (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
-                    (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
-                    (r'^(\d+)\t', '4小点'),
-                    (r'^([a-z])\t', '5a点'),
-                    (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
-                    (r'^\((\d+)\)\t', '7（1）'),
-                    (r'^\(([a-z])\)\t', '8（a）'),
-                ]
-                
-                # 应用纲目样式
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    for pattern, style in pattern_styles:
-                        if re.match(pattern, text):
-                            para.style = style
-                            break
-                
-                # 然后应用栈概念的经节样式
-                apply_scripture_outline_styles_fixed(doc)
-                
-            elif in_dictation_mode:
-                # 听抄模式处理逻辑保持不变
-                pattern_styles = [
-                    (r'^序言[ \t　]+', '2大点'),
-                    (r'^添言[ \t　]+', '2大点'),
-                    (r'^前言[ \t　]+', '3中点'),
-                    (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
-                    (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
-                    (r'^(\d+)\t', '4小点'),
-                    (r'^([a-z])\t', '5a点'),
-                    (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
-                    (r'^\((\d+)\)\t', '7（1）'),
-                    (r'^[⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]\t', '7（1）'),  # 新增直接支持带圈数字
-                    (r'^\(([a-z])\)\t', '8（a）'),
-                ]
-
-
-                after_dictation_marker = False
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    
-                    if '听抄信息：' in text:
-                        after_dictation_marker = True
-                        continue
-                    
-                    if after_dictation_marker and in_dictation_mode:
-                        if '。' not in text:
-                            apply_custom_92_style(para)
-                            continue
-                    
-                    for pattern, style in pattern_styles:
-                        if re.match(pattern, text):
-                            if style == 'custom_92':
-                                apply_custom_92_style(para)
-                            else:
-                                para.style = style
-                            break
-
-            else:
-                # 普通模式处理逻辑保持不变
-                pattern_styles = [
-                    (r'^序言[ \t　]+', '2大点'),
-                    (r'^添言[ \t　]+', '2大点'),
-                    (r'^前言[ \t　]+', '3中点'),
-                    (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)\t', '2大点'),
-                    (r'^([一二三四五六七八九十百千万亿]+)\t', '3中点'),
-                    (r'^(\d+)\t', '4小点'),
-                    (r'^([a-z])\t', '5a点'),
-                    (r'^\(([一二三四五六七八九十百千万亿]+)\)\t', '6（一）'),
-                    (r'^\((\d+)\)\t', '7（1）'),
-                    (r'^[⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]\t', '7（1）'),  # 新增直接支持带圈数字
-                    (r'^\(([a-z])\)\t', '8（a）'),
-                ]
-
-
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    for pattern, style in pattern_styles:
-                        if re.match(pattern, text):
-                            para.style = style
-                            break
-
-            # 设置前三段的固定样式（确保在最后执行，不被覆盖）
-            style_names = ["0系列", "11111西列", "00篇题"]
-            for i in range(min(3, len(doc.paragraphs))):
-                doc.paragraphs[i].style = style_names[i]
-
-            # 处理13：修正数字间的逗号为顿号
-            for para in doc.paragraphs:
-                full_text = ''.join(run.text for run in para.runs)
-                modified_text = re.sub(r'(?<=\d)，(?=\d)', '、', full_text)
-                if modified_text != full_text:
-                    para.clear()
-                    new_run = para.add_run(modified_text)
-
-            # 格式恢复
-            restored_count = 0
-            # 在标记前插入分页符
-            # *** 之前的修改：先插入分页符 ***
-
-
-            # 格式恢复
-
-            for i, para in enumerate(doc.paragraphs):
-                if i < len(paragraph_formatting):
-                    formatting_info = paragraph_formatting[i]
-                    if formatting_info and formatting_info.get('char_formatting'):
-                        restore_paragraph_formatting(para, formatting_info)
-                        restored_count += 1
-            # 添加这段代码：处理复合纲目的特殊标记
-            if is_compound_outline:
-                additions_processed = process_compound_outline_additions(doc)
-                if additions_processed > 0:
-                    print(f"处理了 {additions_processed} 个复合纲目添加标记")
-                    
-            for para in doc.paragraphs:
-                if any(marker in para.text for marker in after_marker_list):
-                    page_break_para = para.insert_paragraph_before()
-                    run = page_break_para.add_run()
-                    run.add_break(WD_BREAK.PAGE)
-                    break
-                
-            # *** 修改2：重新应用听抄模式的所有custom_92样式 ***
-            if in_dictation_mode:
-                # 2.1 重新应用纲目标题的custom_92样式（新增）
-                pattern_styles_custom92 = [
-                    (r'^([壹贰貳叁參肆伍陆陸柒捌玖拾佰仟萬万億亿]+)　', 'custom_92'),
-                    (r'^([一二三四五六七八九十百千万亿]+)　', 'custom_92'),
-                    (r'^(\d+)　', 'custom_92'),
-                    (r'^([a-z])　', 'custom_92'),
-                    (r'^（([一二三四五六七八九十百千万亿]+)）　', 'custom_92'),
-                    (r'^（(\d+)）　', 'custom_92'),
-                ]
-                
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    for pattern, style in pattern_styles_custom92:
-                        if re.match(pattern, text):
-                            if style == 'custom_92':
-                                apply_custom_92_style(para)
-                            break
-                
-                # 2.2 重新应用听抄信息后的custom_92样式（原有）
-                after_dictation_marker = False
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    
-                    if '听抄信息：' in text:
-                        after_dictation_marker = True
-                        continue
-                    
-                    if after_dictation_marker:
-                        if '。' not in text:
-                            apply_custom_92_style(para)
-
-
-
-
-            # *** 修改2：重新应用after_marker样式（因为格式恢复清除了样式）***
-            after_marker = False
-            for para in doc.paragraphs:
-                text = para.text.rstrip()
-                if any(marker in text for marker in after_marker_list):
-                    after_marker = True
-                elif after_marker:
-                    if not in_dictation_mode:
-                        if not text.endswith(('。', '！', '？', '…', '”', '’', '）', '：','』')):
-                            para.style = "81级标题"
-
-            if is_scripture_outline:
-                force_scripture_font_final(doc)
 
             # 文件重命名逻辑 - 修复版本（包含讲者检查）
             new_filename = filename  # 默认保持原文件名
@@ -1899,9 +1840,12 @@ def main():
                         if match:
                             cn_num = match.group(1)
                             try:
-                                arabic_num = cn2an.cn2an(cn_num, 'smart')
-                                serial_str = f"msg. {arabic_num}"
-                            except ValueError:
+                                if cn2an:
+                                    arabic_num = cn2an.cn2an(cn_num, 'smart')
+                                    serial_str = f"msg. {arabic_num}"
+                                else:
+                                    serial_str = serial_part
+                            except (ValueError, TypeError):
                                 serial_str = serial_part
                         else:
                             serial_str = serial_part

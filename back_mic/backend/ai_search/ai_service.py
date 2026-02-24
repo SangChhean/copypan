@@ -87,7 +87,9 @@ except Exception as e:
 
 # Gemini 客户端（用于中文纲目→英文纲目翻译，需配置 GEMINI_API_KEY；使用新 SDK google.genai）
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
+# 纲目翻译：默认 gemini-2.5-pro 保证可用；若 3.1 不可用(404) 会自动用 GEMINI_TRANSLATION_FALLBACK_MODEL
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-pro")
 # 毛胚纲目：主模型 3.1，备用模型 3.0。若 503 持续可设 ROUGH_OUTLINE_GEMINI_MODEL 优先用其他模型
 ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "")
 # 主模型重试全失败后尝试的备用模型，默认 gemini-3-pro-preview（3.0）
@@ -1671,12 +1673,16 @@ class AISearchService:
                     if cached_answer:
                         if outline_topic and outline_topic.strip() and not cached_title:
                             topic = outline_topic.strip()
+                            _cache_title_404 = [False]
 
-                            def _translate_title_for_cache(retry_count: int = 0) -> Optional[str]:
+                            def _translate_title_for_cache(
+                                retry_count: int = 0, model: Optional[str] = None
+                            ) -> Optional[str]:
+                                use_model = model or GEMINI_MODEL
                                 with GEMINI_SEMAPHORE:
                                     try:
                                         title_response = gemini_client.models.generate_content(
-                                            model=GEMINI_MODEL,
+                                            model=use_model,
                                             contents=topic,
                                             config=types.GenerateContentConfig(
                                                 system_instruction=_gemini_system_instruction,
@@ -1699,6 +1705,8 @@ class AISearchService:
                                             logger.warning("缓存标题翻译返回空响应（重试次数: %s）", retry_count)
                                     except Exception as e:
                                         error_msg = str(e)
+                                        if "404" in error_msg or "NOT_FOUND" in error_msg or "is not found" in error_msg.lower():
+                                            _cache_title_404[0] = True
                                         is_retryable = (
                                             "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
                                             or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
@@ -1713,6 +1721,14 @@ class AISearchService:
                             cached_title = _translate_title_for_cache(retry_count=0)
                             if cached_title is None:
                                 cached_title = _translate_title_for_cache(retry_count=1)
+                            if cached_title is None and _cache_title_404[0]:
+                                cached_title = _translate_title_for_cache(
+                                    retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL
+                                )
+                                if cached_title is None:
+                                    cached_title = _translate_title_for_cache(
+                                        retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL
+                                    )
                             if cached_title:
                                 logger.info("缓存标题翻译成功: '%s' -> '%s'", topic, cached_title)
                             else:
@@ -1726,12 +1742,17 @@ class AISearchService:
 
         # 发送内容 = 需要翻译的文章 + 格式与术语说明（中翻英）
         contents_zh2en = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2EN
+        _last_error_model_not_found = [False]  # 404 / model not found 时改用备用模型
 
-        def _call_gemini(retry_count: int = 0) -> Optional[str]:
+        def _is_model_not_found(err: str) -> bool:
+            return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
+            use_model = model or GEMINI_MODEL
             with GEMINI_SEMAPHORE:
                 try:
                     response = gemini_client.models.generate_content(
-                        model=GEMINI_MODEL,
+                        model=use_model,
                         contents=contents_zh2en,
                         config=types.GenerateContentConfig(
                             system_instruction=_gemini_system_instruction,
@@ -1743,36 +1764,46 @@ class AISearchService:
                         logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
                 except Exception as e:
                     error_msg = str(e)
+                    if _is_model_not_found(error_msg):
+                        _last_error_model_not_found[0] = True
+                        logger.warning(f"Gemini 模型不可用(404): {e}，将尝试备用模型 {GEMINI_TRANSLATION_FALLBACK_MODEL}")
                     # 检查是否是503或其他可重试的错误
                     is_retryable = (
-                        "503" in error_msg or 
-                        "UNAVAILABLE" in error_msg or 
-                        "429" in error_msg or  # Rate limit
+                        "503" in error_msg or
+                        "UNAVAILABLE" in error_msg or
+                        "429" in error_msg or
                         "timeout" in error_msg.lower() or
                         "temporary" in error_msg.lower()
                     )
                     if is_retryable and retry_count == 0:
                         logger.warning(f"Gemini 翻译调用失败（可重试）: {e}，等待2秒后重试...")
-                        time.sleep(2)  # 等待2秒后重试
+                        time.sleep(2)
                     else:
                         logger.warning(f"Gemini 翻译调用失败（重试次数: {retry_count}）: {e}")
             return None
 
         answer_en = _call_gemini(retry_count=0)
         if answer_en is None:
-            answer_en = _call_gemini(retry_count=1)  # 重试 1 次
+            answer_en = _call_gemini(retry_count=1)
+        if answer_en is None and _last_error_model_not_found[0]:
+            logger.info("使用备用模型进行中翻英: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
+            answer_en = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if answer_en is None:
+                answer_en = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
         
         # 翻译标题（如果提供）- 独立执行，即使纲目内容翻译失败也尝试翻译标题
         title_en = None
         if outline_topic and outline_topic.strip():
             topic = outline_topic.strip()
-            
-            def _translate_title(retry_count: int = 0) -> Optional[str]:
-                """翻译标题，带重试逻辑"""
+            _title_model_not_found = [False]
+
+            def _translate_title(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
+                """翻译标题，带重试逻辑；model 为空则用 GEMINI_MODEL"""
+                use_model = model or GEMINI_MODEL
                 with GEMINI_SEMAPHORE:
                     try:
                         title_response = gemini_client.models.generate_content(
-                            model=GEMINI_MODEL,
+                            model=use_model,
                             contents=topic,
                             config=types.GenerateContentConfig(
                                 system_instruction=_gemini_system_instruction,
@@ -1780,9 +1811,7 @@ class AISearchService:
                         )
                         if title_response and getattr(title_response, "text", None):
                             raw_title = title_response.text.strip()
-                            # 清理可能的提示词前缀
                             title_en_clean = raw_title
-                            # 移除常见的提示词前缀
                             prefixes_to_remove = [
                                 "Translation:", "English:", "翻译：", "英文：",
                                 "The translation is:", "Here is the translation:",
@@ -1791,32 +1820,33 @@ class AISearchService:
                             for prefix in prefixes_to_remove:
                                 if title_en_clean.lower().startswith(prefix.lower()):
                                     title_en_clean = title_en_clean[len(prefix):].strip()
-                            # 移除引号（如果 Gemini 加了引号）
                             title_en_clean = title_en_clean.strip('"\'')
                             return title_en_clean
                         else:
                             logger.warning(f"标题翻译返回空响应（重试次数: {retry_count}）")
                     except Exception as e:
                         error_msg = str(e)
+                        if _is_model_not_found(error_msg):
+                            _title_model_not_found[0] = True
                         is_retryable = (
-                            "503" in error_msg or 
-                            "UNAVAILABLE" in error_msg or 
-                            "429" in error_msg or
-                            "timeout" in error_msg.lower() or
-                            "temporary" in error_msg.lower()
+                            "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
+                            or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
                         )
                         if is_retryable and retry_count == 0:
                             logger.warning(f"标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
-                            time.sleep(2)  # 等待2秒后重试
+                            time.sleep(2)
                         else:
                             logger.warning(f"标题翻译调用失败（重试次数: {retry_count}）: {e}")
                 return None
-            
-            # 尝试翻译标题，失败时重试1次（带延迟）
+
             title_en = _translate_title(retry_count=0)
             if title_en is None:
-                title_en = _translate_title(retry_count=1)  # 重试1次
-            
+                title_en = _translate_title(retry_count=1)
+            if title_en is None and _title_model_not_found[0]:
+                title_en = _translate_title(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                if title_en is None:
+                    title_en = _translate_title(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+
             if title_en:
                 logger.info(f"标题翻译成功: '{topic}' -> '{title_en}'")
             else:
@@ -1860,12 +1890,17 @@ class AISearchService:
 
         # 发送内容 = 需要翻译的文章 + 格式与术语说明（英翻中）
         contents_en2zh = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ZH
+        _last_error_model_not_found = [False]
 
-        def _call_gemini(retry_count: int = 0) -> Optional[str]:
+        def _is_model_not_found(err: str) -> bool:
+            return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
+            use_model = model or GEMINI_MODEL
             with GEMINI_SEMAPHORE:
                 try:
                     response = gemini_client.models.generate_content(
-                        model=GEMINI_MODEL,
+                        model=use_model,
                         contents=contents_en2zh,
                         config=types.GenerateContentConfig(
                             system_instruction=_gemini_system_instruction_en2zh,
@@ -1876,6 +1911,13 @@ class AISearchService:
                     logger.warning("Gemini 英翻中返回空响应（重试次数: %s）", retry_count)
                 except Exception as e:
                     error_msg = str(e)
+                    if _is_model_not_found(error_msg):
+                        _last_error_model_not_found[0] = True
+                        logger.warning(
+                            "Gemini 模型不可用(404): %s，将尝试备用模型 %s",
+                            e,
+                            GEMINI_TRANSLATION_FALLBACK_MODEL,
+                        )
                     is_retryable = (
                         "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
                         or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
@@ -1890,6 +1932,11 @@ class AISearchService:
         answer_zh = _call_gemini(retry_count=0)
         if answer_zh is None:
             answer_zh = _call_gemini(retry_count=1)
+        if answer_zh is None and _last_error_model_not_found[0]:
+            logger.info("使用备用模型进行英翻中: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
+            answer_zh = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if answer_zh is None:
+                answer_zh = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
         if answer_zh is None:
             return {"answer_zh": None, "error": "纲目翻译失败，请稍后重试"}
         return {"answer_zh": answer_zh}
@@ -2869,9 +2916,14 @@ class AISearchService:
                 except Exception:
                     pass
 
-    def format_feast_outline_docx(self, contents: List[str]) -> Dict:
+    def format_feast_outline_docx(
+        self,
+        contents: List[str],
+        outline_type: str = "original",
+    ) -> Dict:
         """
-        节期纲目刷格式并下载：将一篇或多篇纲目合并为一个 DOCX，使用中文模板与中文刷格式。
+        节期纲目刷格式并下载：将一篇或多篇纲目合并为一个 DOCX，使用节期纲目模板与节期纲目刷格式（按类型）。
+        outline_type: original | with_scripture | morning_revival | transcript | composite
         Returns:
             {"docx_bytes": bytes | None, "filename": str, "error": str | None}
         """
@@ -2882,14 +2934,18 @@ class AISearchService:
 
         if not contents:
             return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "内容不能为空"}
-        if format_chinese_outline_docx is None:
-            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "中文格式刷未导入"}
 
         backend_dir = Path(__file__).resolve().parent.parent
-        template_name = "中文纲目模板.docx"
-        template_path = backend_dir / template_name
-        if not template_path.exists():
-            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": f"模板文件不存在: {template_name}"}
+        for template_name in ("节期纲目模板.docx", "template.docx"):
+            template_path = backend_dir / template_name
+            if template_path.exists():
+                break
+        else:
+            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "节期纲目模板.docx 或 template.docx 不存在"}
+
+        allowed = ("original", "with_scripture", "morning_revival", "transcript", "composite")
+        if outline_type not in allowed:
+            outline_type = "original"
 
         combined_text = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
         temp_docx_path = None
@@ -2908,12 +2964,13 @@ class AISearchService:
                     doc.add_paragraph("")
             doc.save(temp_docx_path)
             try:
-                format_chinese_outline_docx(
-                    temp_docx_path,
-                    traditional_quotes=False,
-                    truth_underline_between_markers=False,
-                    sharing_all_0000=False,
-                )
+                import sys
+                if str(backend_dir) not in sys.path:
+                    sys.path.insert(0, str(backend_dir))
+                from 节期纲目刷格式 import format_feast_outline_docx as apply_feast_format
+                apply_feast_format(temp_docx_path, outline_type)
+            except ImportError as e:
+                logger.warning(f"节期纲目刷格式模块未导入: {e}，跳过格式刷")
             except Exception as e:
                 logger.error(f"节期纲目格式刷失败: {e}", exc_info=True)
             with open(temp_docx_path, "rb") as f:
