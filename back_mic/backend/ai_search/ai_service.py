@@ -2920,6 +2920,13 @@ class AISearchService:
         self,
         contents: List[str],
         outline_type: str = "original",
+        line1: Optional[str] = None,
+        line2: Optional[str] = None,
+        line3: Optional[str] = None,
+        morning_revival_raw: Optional[str] = None,
+        transcript_raw: Optional[str] = None,
+        transcript_preface: Optional[str] = None,
+        transcript_addendum: Optional[str] = None,
     ) -> Dict:
         """
         节期纲目刷格式并下载：将一篇或多篇纲目合并为一个 DOCX，使用节期纲目模板与节期纲目刷格式（按类型）。
@@ -2947,7 +2954,57 @@ class AISearchService:
         if outline_type not in allowed:
             outline_type = "original"
 
-        combined_text = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+        main_contents = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+        l1, l2, l3 = (line1 or "").strip(), (line2 or "").strip(), (line3 or "").strip()
+        header = "\n".join([l1, l2, l3]) if (l1 or l2 or l3) else ""
+
+        # 听抄稿类型：序言、添言用 Claude 制作成纲目；序言放在前三段之后（第四段起），添言放在纲目末尾
+        preface_outline = ""
+        addendum_outline = ""
+        if outline_type == "transcript":
+            preface_raw = (transcript_preface or "").strip()
+            addendum_raw = (transcript_addendum or "").strip()
+            if preface_raw:
+                res = self.feast_outline_preface(preface_raw)
+                if res.get("error"):
+                    logger.warning("听抄稿序言 Claude 生成失败: %s", res.get("error"))
+                else:
+                    preface_outline = (res.get("outline") or "").strip()
+            if addendum_raw:
+                res = self.feast_outline_addendum(addendum_raw)
+                if res.get("error"):
+                    logger.warning("听抄稿添言 Claude 生成失败: %s", res.get("error"))
+                else:
+                    addendum_outline = (res.get("outline") or "").strip()
+
+        if header:
+            combined_text = header + "\n\n" + main_contents
+            if outline_type == "transcript" and (preface_outline or addendum_outline):
+                combined_text = header + "\n\n"
+                if preface_outline:
+                    combined_text += preface_outline + "\n\n"
+                combined_text += main_contents
+                if addendum_outline:
+                    combined_text += "\n\n" + addendum_outline
+        else:
+            combined_text = main_contents
+            if outline_type == "transcript" and (preface_outline or addendum_outline):
+                parts = []
+                if preface_outline:
+                    parts.append(preface_outline)
+                parts.append(main_contents)
+                if addendum_outline:
+                    parts.append(addendum_outline)
+                combined_text = "\n\n".join(parts)
+        # 听抄稿序言/添言高亮范围：按 combined_text 各段行数计算（仅听抄稿且有序言或添言时有效）
+        preface_highlight_end = addendum_highlight_start = addendum_highlight_end = 0
+        if outline_type == "transcript" and (preface_outline or addendum_outline):
+            n_preface = len(preface_outline.split("\n")) if preface_outline else 0
+            n_main = len(main_contents.split("\n"))
+            n_addendum = len(addendum_outline.split("\n")) if addendum_outline else 0
+            preface_highlight_end = 3 + n_preface
+            addendum_highlight_start = 3 + n_preface + n_main
+            addendum_highlight_end = addendum_highlight_start + n_addendum
         temp_docx_path = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
@@ -2962,6 +3019,25 @@ class AISearchService:
                     doc.add_paragraph(line)
                 elif len(doc.paragraphs) > 0:
                     doc.add_paragraph("")
+            # 刷格式并下载时在第三段末尾追加类型标注（纲目的原文/带经文的纲目/晨兴信息选读的纲目/听抄稿的纲目/复合的纲目）
+            FEAST_OUTLINE_TYPE_LABELS = {
+                "original": "（纲目的原文）",
+                "with_scripture": "（带经文的纲目）",
+                "morning_revival": "（晨兴信息选读的纲目）",
+                "transcript": "（听抄稿的纲目）",
+                "composite": "（复合的纲目）",
+            }
+            suffix = FEAST_OUTLINE_TYPE_LABELS.get(outline_type)
+            if suffix and len(doc.paragraphs) >= 3:
+                para = doc.paragraphs[2]
+                existing = (para.text or "").rstrip()
+                if not existing.endswith(suffix):
+                    para.text = existing + suffix
+            from docx.enum.text import WD_BREAK
+            # 听抄稿：⑥ 纲目末尾先加分页 +「听抄信息：」+ 听抄稿原文，⑦ 套听抄信息页样式，再⑧整篇刷格式、⑨高亮
+            if outline_type == "transcript" and (transcript_raw or "").strip():
+                _append_transcript_info_section(doc, (transcript_raw or "").strip())
+            # 晨兴信息选读：纲目刷格式后再追加「晨兴圣言信息：」页（刷格式只跑纲目部分）
             doc.save(temp_docx_path)
             try:
                 import sys
@@ -2973,6 +3049,26 @@ class AISearchService:
                 logger.warning(f"节期纲目刷格式模块未导入: {e}，跳过格式刷")
             except Exception as e:
                 logger.error(f"节期纲目格式刷失败: {e}", exc_info=True)
+            if outline_type == "morning_revival" and (morning_revival_raw or "").strip():
+                doc2 = Document(temp_docx_path)
+                _append_morning_revival_section(doc2, (morning_revival_raw or "").strip())
+                doc2.save(temp_docx_path)
+            # 听抄稿：⑨【添加开始】～【添加结束】高亮并删标记；序言、添言部分整段黄色高亮
+            if outline_type == "transcript":
+                try:
+                    from docx.enum.text import WD_COLOR_INDEX
+                    doc2 = Document(temp_docx_path)
+                    _apply_transcript_add_highlight(doc2)
+                    n_paras = len(doc2.paragraphs)
+                    for idx in range(3, min(preface_highlight_end, n_paras)):
+                        for run in doc2.paragraphs[idx].runs:
+                            run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+                    for idx in range(addendum_highlight_start, min(addendum_highlight_end, n_paras)):
+                        for run in doc2.paragraphs[idx].runs:
+                            run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+                    doc2.save(temp_docx_path)
+                except Exception as e:
+                    logger.warning(f"听抄稿添加高亮处理失败: {e}", exc_info=True)
             with open(temp_docx_path, "rb") as f:
                 docx_bytes = f.read()
             return {"docx_bytes": docx_bytes, "filename": "节期纲目.docx", "error": None}
@@ -3074,6 +3170,52 @@ class AISearchService:
             return {"outline": text or "", "error": None}
         except Exception as e:
             logger.error(f"节期纲目复合生成失败: {e}", exc_info=True)
+            return {"outline": "", "error": str(e)}
+
+    def feast_outline_preface(self, content: str) -> Dict[str, Any]:
+        """节期纲目 - 序言：用 Claude 将序言内容整理成纲目格式。返回 { outline: str, error: str | None }"""
+        try:
+            from .feast_outline_prompts import get_preface_outline_prompt
+        except ImportError:
+            return {"outline": "", "error": "节期纲目 prompt 未找到"}
+        prompt = get_preface_outline_prompt(content)
+        if not claude_client:
+            return {"outline": "", "error": "Claude 客户端未初始化"}
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=4096,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                text = message.content[0].text
+            text = _strip_code_fence_for_outline(text) or text
+            return {"outline": (text or "").strip(), "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目序言生成失败: {e}", exc_info=True)
+            return {"outline": "", "error": str(e)}
+
+    def feast_outline_addendum(self, content: str) -> Dict[str, Any]:
+        """节期纲目 - 添言：用 Claude 将添言内容整理成纲目格式。返回 { outline: str, error: str | None }"""
+        try:
+            from .feast_outline_prompts import get_addendum_outline_prompt
+        except ImportError:
+            return {"outline": "", "error": "节期纲目 prompt 未找到"}
+        prompt = get_addendum_outline_prompt(content)
+        if not claude_client:
+            return {"outline": "", "error": "Claude 客户端未初始化"}
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=4096,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                text = message.content[0].text
+            text = _strip_code_fence_for_outline(text) or text
+            return {"outline": (text or "").strip(), "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目添言生成失败: {e}", exc_info=True)
             return {"outline": "", "error": str(e)}
 
     def info_retrieval_export(
@@ -3637,10 +3779,120 @@ class AISearchService:
         return self._call_openai_compatible_rough_outline(
             api_key=XAI_API_KEY,
             prompt=prompt,
-            model=model,
-            max_tokens=max_tokens,
-            base_url="https://api.x.ai/v1",
-        )
+        model=model,
+        max_tokens=max_tokens,
+        base_url="https://api.x.ai/v1",
+    )
+
+
+def _apply_transcript_add_highlight(doc: "Document") -> None:
+    """
+    听抄稿纲目：与工具箱-毛胚纲目-真理加强版同一逻辑，仅改为黄色高亮（真理加强版为下划线）。
+    定位所有【添加开始】与【添加结束】配对（按出现顺序：第 1 个开始配第 1 个结束），
+    对每对之间的段落整段黄色高亮，并删除所有标记段落。支持简繁体标记。
+    """
+    from docx.enum.text import WD_COLOR_INDEX
+
+    start_indices = []
+    pairs = []  # [(start_idx, end_idx), ...]
+    for idx, para in enumerate(doc.paragraphs):
+        text = para.text.strip()
+        if "【添加开始】" in text or "【添加開始】" in text:
+            start_indices.append(idx)
+        if "【添加结束】" in text or "【添加結束】" in text:
+            if start_indices:
+                pairs.append((start_indices.pop(), idx))
+    if not pairs:
+        return
+    # 从最后一对往第一对处理，删除段落时不会影响前面配对的下标
+    for (start_idx, end_idx) in reversed(pairs):
+        if start_idx >= end_idx:
+            continue
+        # 对两标记之间的段落整段黄色高亮（与真理加强版这下划线一致，只改效果）
+        for idx in range(start_idx + 1, end_idx):
+            for run in doc.paragraphs[idx].runs:
+                run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+        # 删除标记段落（先删结束，再删开始）
+        end_el = doc.paragraphs[end_idx]._element
+        start_el = doc.paragraphs[start_idx]._element
+        end_el.getparent().remove(end_el)
+        start_el.getparent().remove(start_el)
+
+
+def _get_feast_body_style(doc: "Document"):
+    """节期纲目模板正文段落样式：优先 0000模板，其次 9职事信息摘录，最后 Normal。"""
+    for name in ("0000模板", "9职事信息摘录", "Normal"):
+        try:
+            return doc.styles[name]
+        except KeyError:
+            continue
+    return None
+
+
+def _append_morning_revival_section(doc: "Document", morning_revival_raw: str) -> None:
+    """晨兴信息选读：按节期纲目刷格式逻辑，分页 +「晨兴圣言信息：」(9职事信息摘录) + 小标题(81级标题)/正文(0000模板)。"""
+    from docx.enum.text import WD_BREAK
+
+    body_style = _get_feast_body_style(doc)
+    title_ends = ('。', '！', '？', '…', '"', '\'', '）', '：', '』')
+    p_break = doc.add_paragraph()
+    p_break.add_run().add_break(WD_BREAK.PAGE)
+    title_para = doc.add_paragraph("晨兴圣言信息：")
+    try:
+        title_para.style = doc.styles["9职事信息摘录"]
+    except KeyError:
+        try:
+            title_para.style = doc.styles["81级标题"]
+        except KeyError:
+            pass
+    for line in morning_revival_raw.split("\n"):
+        if line.strip():
+            p = doc.add_paragraph(line)
+            if not (line.rstrip().endswith(title_ends)):
+                try:
+                    p.style = doc.styles["81级标题"]
+                except KeyError:
+                    if body_style is not None:
+                        p.style = body_style
+            elif body_style is not None:
+                p.style = body_style
+        else:
+            doc.add_paragraph("")
+
+
+def _append_transcript_info_section(doc: "Document", transcript_raw: str) -> None:
+    """听抄稿：按节期纲目刷格式逻辑，分页 +「听抄信息：」(9职事信息摘录) + 小标题(apply_custom_92_style)/正文(0000模板)。"""
+    from docx.enum.text import WD_BREAK
+
+    body_style = _get_feast_body_style(doc)
+    p_break = doc.add_paragraph()
+    p_break.add_run().add_break(WD_BREAK.PAGE)
+    title_para = doc.add_paragraph("听抄信息：")
+    try:
+        title_para.style = doc.styles["9职事信息摘录"]
+    except KeyError:
+        try:
+            title_para.style = doc.styles["81级标题"]
+        except KeyError:
+            pass
+    try:
+        import sys
+        from pathlib import Path
+        _backend = Path(__file__).resolve().parent.parent
+        if str(_backend) not in sys.path:
+            sys.path.insert(0, str(_backend))
+        from 节期纲目刷格式 import apply_custom_92_style
+    except ImportError:
+        apply_custom_92_style = None
+    for line in transcript_raw.split("\n"):
+        if line.strip():
+            p = doc.add_paragraph(line)
+            if '。' not in line and apply_custom_92_style is not None:
+                apply_custom_92_style(p)
+            elif body_style is not None:
+                p.style = body_style
+        else:
+            doc.add_paragraph("")
 
 
 # 创建全局服务实例

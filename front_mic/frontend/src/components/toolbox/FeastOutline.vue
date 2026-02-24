@@ -20,6 +20,13 @@ const selectedTypes = ref([]);
 const inputOutline = ref("");       // ① 纲目原文
 const inputMorningRevival = ref(""); // ② 晨兴信息选读
 const inputTranscript = ref("");     // ③ 听抄稿
+// 刷格式时写入文档最前面的前三行
+const inputLine1 = ref("");
+const inputLine2 = ref("");
+const inputLine3 = ref("");
+// 听抄稿可选：序言、添言（刷格式时写入听抄信息页）
+const inputTranscriptPreface = ref("");
+const inputTranscriptAddendum = ref("");
 
 const loading = ref(false);
 const results = ref([]); // { type, type_label, content }
@@ -235,10 +242,28 @@ async function downloadFormat(typeKey) {
   if (!headers) return;
   formatDownloading.value = true;
   try {
+    const body = {
+      contents,
+      outline_type: typeKey,
+      filename: filenameMap[typeKey],
+      line1: (inputLine1.value || "").trim() || undefined,
+      line2: (inputLine2.value || "").trim() || undefined,
+      line3: (inputLine3.value || "").trim() || undefined,
+    };
+    if (typeKey === "morning_revival" && (inputMorningRevival.value || "").trim()) {
+      body.morning_revival_content = (inputMorningRevival.value || "").trim();
+    }
+    if (typeKey === "transcript" && (inputTranscript.value || "").trim()) {
+      body.transcript_content = (inputTranscript.value || "").trim();
+    }
+    const tp = (inputTranscriptPreface.value || "").trim();
+    const ta = (inputTranscriptAddendum.value || "").trim();
+    if (tp) body.transcript_preface = tp;
+    if (ta) body.transcript_addendum = ta;
     const res = await fetch(`${apiBase}/api/ai_search/feast_outline/format_download`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ contents, outline_type: typeKey, filename: filenameMap[typeKey] }),
+      body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -300,7 +325,28 @@ function copyResult(content) {
         </div>
       </div>
 
-      <!-- 三个输入框 -->
+      <!-- 第一行～第三行（刷格式时写入每个版本 DOCX 最前面） -->
+      <a-divider :style="{ margin: '12px 0' }" />
+      <p class="hint" style="margin-bottom: 8px;">刷格式并下载时，以下三行会写入每个版本 DOCX 的最前面（第一段、第二段、第三段）。</p>
+      <div class="label">第一行</div>
+      <a-input
+        v-model:value="inputLine1"
+        placeholder="如：二〇二五年夏季训练"
+        :style="{ marginBottom: '8px' }"
+      />
+      <div class="label">第二行</div>
+      <a-input
+        v-model:value="inputLine2"
+        placeholder="如：经历、享受并彰显基督（三）"
+        :style="{ marginBottom: '8px' }"
+      />
+      <div class="label">第三行</div>
+      <a-input
+        v-model:value="inputLine3"
+        placeholder="如：第一篇　基督为我们的美德、神的平安、我们的秘诀和那加我们能力者（注意使用全角空格）"
+        :style="{ marginBottom: '12px' }"
+      />
+
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="label">① 纲目原文</div>
       <a-textarea
@@ -321,6 +367,21 @@ function copyResult(content) {
         v-model:value="inputTranscript"
         placeholder="请粘贴听抄稿内容；用于「听抄稿的纲目」及「复合的纲目」"
         :rows="6"
+        :style="{ marginBottom: '12px' }"
+      />
+
+      <div class="label">④ 听抄稿序言 <span class="optional-tag">可选</span></div>
+      <a-textarea
+        v-model:value="inputTranscriptPreface"
+        placeholder="刷格式下载听抄稿纲目时，会写入「听抄信息」页标题后"
+        :rows="3"
+        :style="{ marginBottom: '12px' }"
+      />
+      <div class="label">⑤ 听抄稿添言 <span class="optional-tag">可选</span></div>
+      <a-textarea
+        v-model:value="inputTranscriptAddendum"
+        placeholder="刷格式下载听抄稿纲目时，会写入「听抄信息」页末尾"
+        :rows="3"
         :style="{ marginBottom: '16px' }"
       />
 
@@ -414,6 +475,12 @@ function copyResult(content) {
 .label {
   font-weight: 600;
   margin-bottom: 4px;
+}
+
+.optional-tag {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
 }
 
 .type-buttons {

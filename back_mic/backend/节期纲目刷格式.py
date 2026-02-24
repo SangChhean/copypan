@@ -809,7 +809,7 @@ def replace_english_punctuation(text, preserve_asterisk=False):
     # 基础标点符号映射（移除括号，单独处理）
     punctuation_mapping = {
         '\u2018': '\u201c', '\u2019': '\u201d',  # 使用Unicode编码：' -> ", ' -> "
-        ''': '"', ''': '"',
+        '\'': '"', '\'': '"',
         '∶': '：', ';': '；',',': '，', ';': '；', ':': '：', '?': '？', '!': '！',
         '[': '【', ']': '】', '{': '｛', '}': '｝', '#': '',
         '经节出处：': '读经：', '经文出处：': '读经：', '今日晨兴/今日纲目/页首': '', 
@@ -1498,7 +1498,7 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
             if '【添加开始】' in text or '【添加结束】' in text:
                 continue
             if not after_marker and idx >= 4 and not has_red_font:
-                if not text.endswith(('。', '！', '？', '…', '”', ''', '：', '』')):
+                if not text.endswith(('。', '！', '？', '…', '”', '\'', '：', '』')):
                     para.text = text + '。'
                 elif text.endswith('：'):
                     para.text = text[:-1] + '。'
@@ -1581,7 +1581,7 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
             after_marker = True
         elif after_marker:
             if not in_dictation_mode:
-                if not text.endswith(('。', '！', '？', '…', '"', ''', '）', '：', '』')):
+                if not text.endswith(('。', '！', '？', '…', '"', '\'', '）', '：', '』')):
                     para.style = "81级标题"
 
     # 处理10：职事信息摘录
@@ -1736,7 +1736,7 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
             after_marker = True
         elif after_marker:
             if not in_dictation_mode:
-                if not text.endswith(('。', '！', '？', '…', '"', ''', '）', '：', '』')):
+                if not text.endswith(('。', '！', '？', '…', '"', '\'', '）', '：', '』')):
                     para.style = "81级标题"
 
     if is_scripture_outline:

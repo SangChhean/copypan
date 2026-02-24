@@ -169,13 +169,20 @@ class FeastOutlineCompositeRequest(BaseModel):
 
 
 class FeastOutlineFormatDownloadRequest(BaseModel):
-    """节期纲目 - 刷格式并下载：传入正文列表、类型与可选文件名"""
+    """节期纲目 - 刷格式并下载：传入正文列表、类型、可选前三行与文件名"""
     contents: List[str] = Field(..., min_length=1, max_length=20, description="纲目正文列表，合并后刷格式")
     outline_type: Optional[str] = Field(
         "original",
         description="纲目类型：original | with_scripture | morning_revival | transcript | composite，决定刷格式规则",
     )
+    line1: Optional[str] = Field(None, max_length=500, description="刷格式时写入文档第一行")
+    line2: Optional[str] = Field(None, max_length=500, description="刷格式时写入文档第二行")
+    line3: Optional[str] = Field(None, max_length=500, description="刷格式时写入文档第三行")
     filename: Optional[str] = Field(None, max_length=200, description="下载文件名，默认 节期纲目.docx")
+    morning_revival_content: Optional[str] = Field(None, max_length=100_000, description="晨兴信息选读原文，刷格式时在晨兴纲目末行后分页并追加「晨兴圣言信息：」+ 该内容")
+    transcript_content: Optional[str] = Field(None, max_length=100_000, description="听抄稿原文，刷格式时在听抄稿纲目末行后分页并追加「听抄信息：」+ 该内容")
+    transcript_preface: Optional[str] = Field(None, max_length=50_000, description="听抄稿序言，可选，写入听抄信息页标题后")
+    transcript_addendum: Optional[str] = Field(None, max_length=50_000, description="听抄稿添言，可选，写入听抄信息页末尾")
 
 
 class InfoRetrievalRequest(BaseModel):
@@ -996,6 +1003,13 @@ async def feast_outline_format_download(request: FeastOutlineFormatDownloadReque
             ai_service.format_feast_outline_docx,
             [c.strip() for c in request.contents if (c or "").strip()],
             request.outline_type or "original",
+            request.line1,
+            request.line2,
+            request.line3,
+            request.morning_revival_content,
+            request.transcript_content,
+            request.transcript_preface,
+            request.transcript_addendum,
         )
         if result.get("error") and not result.get("docx_bytes"):
             raise HTTPException(status_code=400, detail=result.get("error"))
