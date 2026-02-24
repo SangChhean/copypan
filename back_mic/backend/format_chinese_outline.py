@@ -152,13 +152,47 @@ def _apply_style_if_exists(doc, para, style_name: str) -> None:
         logger.debug("样式不存在，跳过: %s", style_name)
 
 
-def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False) -> None:
+def _truth_underline_between_markers(doc) -> None:
+    """
+    真理加强版专用：定位所有【添加开始】与【添加结束】配对，对每对之间的段落加下划线，并删除所有标记段落。
+    支持多对标记（按出现顺序配对：第 1 个开始配第 1 个结束，依次类推）。
+    """
+    start_indices = []
+    pairs = []  # [(start_idx, end_idx), ...]
+    for idx, para in enumerate(doc.paragraphs):
+        text = para.text.strip()
+        if "【添加开始】" in text or "【添加開始】" in text:
+            start_indices.append(idx)
+        if "【添加结束】" in text or "【添加結束】" in text:
+            if start_indices:
+                pairs.append((start_indices.pop(), idx))
+    if not pairs:
+        return
+    # 从最后一对往第一对处理，删除段落时不会影响前面配对的下标
+    for (start_idx, end_idx) in reversed(pairs):
+        if start_idx >= end_idx:
+            continue
+        # 对两标记之间的段落加下划线
+        for idx in range(start_idx + 1, end_idx):
+            for run in doc.paragraphs[idx].runs:
+                run.font.underline = True
+        # 删除标记段落（先删结束，再删开始）
+        end_el = doc.paragraphs[end_idx]._element
+        start_el = doc.paragraphs[start_idx]._element
+        end_el.getparent().remove(end_el)
+        start_el.getparent().remove(start_el)
+    logger.info("真理加强版：已对 %d 对【添加开始】与【添加结束】之间的内容加下划线并删除标记", len(pairs))
+
+
+def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False, truth_underline_between_markers: bool = False, sharing_all_0000: bool = False) -> None:
     """
     格式化中文纲目 DOCX 文件（原地修改）。
 
     Args:
         docx_path: DOCX 文件路径
         traditional_quotes: 若为 True，引号使用繁体样式 『』「」；否则使用简体样式 ""。
+        truth_underline_between_markers: 若为 True（真理加强版），在【添加开始】与【添加结束】之间的段落加下划线并删除两标记。
+        sharing_all_0000: 若为 True（三分钟分享），所有段落最终统一应用 0000模板。
     """
     logger.info(f"开始格式化中文纲目: {docx_path}")
     doc = Document(docx_path)
@@ -407,6 +441,16 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
         if para.text.strip().startswith(target_prefixes):
             for run in para.runs:
                 run.text = run.text.replace(' ', '\t')
+
+    # 真理加强版：【添加开始】与【添加结束】之间加下划线并删除标记
+    if truth_underline_between_markers:
+        _truth_underline_between_markers(doc)
+
+    # 三分钟分享：所有段落统一应用 0000模板
+    if sharing_all_0000:
+        for para in doc.paragraphs:
+            _apply_style_if_exists(doc, para, "0000模板")
+        logger.info("三分钟分享：已将所有段落应用 0000模板")
 
     # 保存修改后的文档
     logger.info(f"保存格式化后的文档: {docx_path}")

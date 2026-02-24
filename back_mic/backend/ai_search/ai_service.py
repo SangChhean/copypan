@@ -9,7 +9,7 @@ import logging
 import time
 import uuid
 import warnings
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from datetime import datetime
 from io import BytesIO
 import re
@@ -2813,8 +2813,9 @@ class AISearchService:
         if not template_path.exists():
             return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": f"模板文件不存在: {template_name}"}
 
-        # 合并多篇：篇与篇之间用空行分隔
-        combined_text = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+        # 合并多篇：三分钟分享各 AI 版本之间多加一行空行以作区分，其余用双换行
+        sep = "\n\n\n" if outline_type == "sharing" else "\n\n"
+        combined_text = sep.join((c or "").strip() for c in contents if (c or "").strip())
 
         _filename_map = {
             "polish": "毛胚纲目_润色版.docx",
@@ -2837,13 +2838,20 @@ class AISearchService:
                 p_element.getparent().remove(p_element)
 
             for line in combined_text.split("\n"):
-                if line.strip() or len(doc.paragraphs) == 0:
+                if line.strip():
                     doc.add_paragraph(line)
+                elif len(doc.paragraphs) > 0:
+                    doc.add_paragraph("")  # 空行保留，三分钟分享各 AI 版本之间可见空白
 
             doc.save(temp_docx_path)
 
             try:
-                format_chinese_outline_docx(temp_docx_path, traditional_quotes=False)
+                format_chinese_outline_docx(
+                    temp_docx_path,
+                    traditional_quotes=False,
+                    truth_underline_between_markers=(outline_type == "truth"),
+                    sharing_all_0000=(outline_type == "sharing"),
+                )
             except Exception as e:
                 logger.error(f"毛胚纲目格式刷失败: {e}", exc_info=True)
 
@@ -2860,6 +2868,156 @@ class AISearchService:
                     os.unlink(temp_docx_path)
                 except Exception:
                     pass
+
+    def format_feast_outline_docx(self, contents: List[str]) -> Dict:
+        """
+        节期纲目刷格式并下载：将一篇或多篇纲目合并为一个 DOCX，使用中文模板与中文刷格式。
+        Returns:
+            {"docx_bytes": bytes | None, "filename": str, "error": str | None}
+        """
+        import shutil
+        import tempfile
+        import os
+        from docx import Document
+
+        if not contents:
+            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "内容不能为空"}
+        if format_chinese_outline_docx is None:
+            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "中文格式刷未导入"}
+
+        backend_dir = Path(__file__).resolve().parent.parent
+        template_name = "中文纲目模板.docx"
+        template_path = backend_dir / template_name
+        if not template_path.exists():
+            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": f"模板文件不存在: {template_name}"}
+
+        combined_text = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+        temp_docx_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+                temp_docx_path = tmp_file.name
+            shutil.copy2(template_path, temp_docx_path)
+            doc = Document(temp_docx_path)
+            for para in list(doc.paragraphs):
+                p_element = para._element
+                p_element.getparent().remove(p_element)
+            for line in combined_text.split("\n"):
+                if line.strip():
+                    doc.add_paragraph(line)
+                elif len(doc.paragraphs) > 0:
+                    doc.add_paragraph("")
+            doc.save(temp_docx_path)
+            try:
+                format_chinese_outline_docx(
+                    temp_docx_path,
+                    traditional_quotes=False,
+                    truth_underline_between_markers=False,
+                    sharing_all_0000=False,
+                )
+            except Exception as e:
+                logger.error(f"节期纲目格式刷失败: {e}", exc_info=True)
+            with open(temp_docx_path, "rb") as f:
+                docx_bytes = f.read()
+            return {"docx_bytes": docx_bytes, "filename": "节期纲目.docx", "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目刷格式失败: {e}", exc_info=True)
+            return {"docx_bytes": None, "filename": "节期纲目.docx", "error": str(e)}
+        finally:
+            if temp_docx_path and os.path.exists(temp_docx_path):
+                try:
+                    os.unlink(temp_docx_path)
+                except Exception:
+                    pass
+
+    def feast_outline_collect_scripture(self, outline_text: str) -> str:
+        """节期纲目 - 带经文：用经文汇集处理纲目，返回带经文内容的纯文本（用于后续刷格式）。"""
+        try:
+            from tools.biblecollection import biblecollection
+        except ImportError:
+            logger.warning("biblecollection 未导入，节期纲目带经文功能不可用")
+            return outline_text
+        data = biblecollection(outline_text)
+        lines = []
+        for item in data:
+            line = (item.get("text") or "").strip()
+            if line:
+                lines.append(line)
+            vers = item.get("vers") or []
+            for v in vers:
+                src = (v.get("source") or "").strip()
+                txt = (v.get("text") or "").strip()
+                if src or txt:
+                    lines.append(f"　{src}　{txt}")
+        return "\n".join(lines) if lines else outline_text
+
+    def feast_outline_morning_revival(self, content: str) -> Dict[str, Any]:
+        """节期纲目 - 晨兴信息选读：用 Claude 根据晨兴内容生成纲目。返回 { outline: str, error: str | None }"""
+        try:
+            from .feast_outline_prompts import get_morning_revival_prompt
+        except ImportError:
+            return {"outline": "", "error": "节期纲目 prompt 未找到"}
+        prompt = get_morning_revival_prompt(content)
+        if not claude_client:
+            return {"outline": "", "error": "Claude 客户端未初始化"}
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=8192,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                text = message.content[0].text
+            text = _strip_code_fence_for_outline(text) or text
+            return {"outline": text or "", "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目晨兴生成失败: {e}", exc_info=True)
+            return {"outline": "", "error": str(e)}
+
+    def feast_outline_transcript(self, original_outline: str, transcript: str) -> Dict[str, Any]:
+        """节期纲目 - 听抄稿：用 Claude 在原纲目基础上加入听抄稿重点。返回 { outline: str, error: str | None }"""
+        try:
+            from .feast_outline_prompts import get_transcript_prompt
+        except ImportError:
+            return {"outline": "", "error": "节期纲目 prompt 未找到"}
+        prompt = get_transcript_prompt(original_outline, transcript)
+        if not claude_client:
+            return {"outline": "", "error": "Claude 客户端未初始化"}
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=8192,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                text = message.content[0].text
+            text = _strip_code_fence_for_outline(text) or text
+            return {"outline": text or "", "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目听抄稿生成失败: {e}", exc_info=True)
+            return {"outline": "", "error": str(e)}
+
+    def feast_outline_composite(self, transcript_outline: str, morning_revival_outline: str) -> Dict[str, Any]:
+        """节期纲目 - 复合：用 Claude 将晨兴纲目融入听抄稿纲目。返回 { outline: str, error: str | None }"""
+        try:
+            from .feast_outline_prompts import get_composite_prompt
+        except ImportError:
+            return {"outline": "", "error": "节期纲目 prompt 未找到"}
+        prompt = get_composite_prompt(transcript_outline, morning_revival_outline)
+        if not claude_client:
+            return {"outline": "", "error": "Claude 客户端未初始化"}
+        try:
+            with CLAUDE_SEMAPHORE:
+                message = claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=8192,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                text = message.content[0].text
+            text = _strip_code_fence_for_outline(text) or text
+            return {"outline": text or "", "error": None}
+        except Exception as e:
+            logger.error(f"节期纲目复合生成失败: {e}", exc_info=True)
+            return {"outline": "", "error": str(e)}
 
     def info_retrieval_export(
         self,
@@ -3252,7 +3410,7 @@ class AISearchService:
             return None
         
         model = ai_config.get("model", CLAUDE_MODEL)
-        max_tokens = ai_config.get("max_tokens", 4096)
+        max_tokens = ai_config.get("max_tokens", 8192)
         
         try:
             with CLAUDE_SEMAPHORE:
@@ -3282,12 +3440,15 @@ class AISearchService:
         backoff_seconds = (8, 15)  # 第 1、2 次重试前等待秒数
         last_exc = None
 
+        max_tokens = ai_config.get("max_tokens", 8192)
         for attempt in range(max_retries + 1):
             try:
+                from google.genai import types
                 with GEMINI_SEMAPHORE:
                     response = gemini_client.models.generate_content(
                         model=model,
                         contents=prompt,
+                        config=types.GenerateContentConfig(max_output_tokens=max_tokens),
                     )
                 if hasattr(response, 'text'):
                     return response.text
@@ -3315,10 +3476,12 @@ class AISearchService:
         if fallback and fallback != model:
             try:
                 logger.warning("Gemini 主模型不可用，尝试备用模型: %s", fallback)
+                from google.genai import types
                 with GEMINI_SEMAPHORE:
                     response = gemini_client.models.generate_content(
                         model=fallback,
                         contents=prompt,
+                        config=types.GenerateContentConfig(max_output_tokens=max_tokens),
                     )
                 if hasattr(response, 'text'):
                     return response.text
@@ -3333,7 +3496,7 @@ class AISearchService:
         api_key: str,
         prompt: str,
         model: str,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         base_url: Optional[str] = None,
         use_max_completion_tokens: bool = False,
     ) -> Optional[str]:
@@ -3365,7 +3528,7 @@ class AISearchService:
         model = ai_config.get("model", DEEPSEEK_MODEL)
         if model == "deepseek-v3.2":
             model = "deepseek-chat"
-        max_tokens = ai_config.get("max_tokens", 4096)
+        max_tokens = ai_config.get("max_tokens", 8192)
         return self._call_openai_compatible_rough_outline(
             api_key=DEEPSEEK_API_KEY,
             prompt=prompt,
@@ -3382,7 +3545,7 @@ class AISearchService:
         model = ai_config.get("model", PERPLEXITY_MODEL)
         if model and "pplx-" in model:
             model = "sonar"
-        max_tokens = ai_config.get("max_tokens", 4096)
+        max_tokens = ai_config.get("max_tokens", 8192)
         return self._call_openai_compatible_rough_outline(
             api_key=PERPLEXITY_API_KEY,
             prompt=prompt,
@@ -3397,7 +3560,7 @@ class AISearchService:
             logger.warning("OpenAI 未配置: 请在 .env 中填写 OPENAI_API_KEY")
             return None
         model = ai_config.get("model", OPENAI_MODEL)
-        max_tokens = ai_config.get("max_tokens", 4096)
+        max_tokens = ai_config.get("max_tokens", 8192)
         return self._call_openai_compatible_rough_outline(
             api_key=OPENAI_API_KEY,
             prompt=prompt,
@@ -3413,7 +3576,7 @@ class AISearchService:
             logger.warning("xAI Grok 未配置: 请在 .env 中填写 XAI_API_KEY")
             return None
         model = ai_config.get("model", XAI_MODEL)
-        max_tokens = ai_config.get("max_tokens", 4096)
+        max_tokens = ai_config.get("max_tokens", 8192)
         return self._call_openai_compatible_rough_outline(
             api_key=XAI_API_KEY,
             prompt=prompt,

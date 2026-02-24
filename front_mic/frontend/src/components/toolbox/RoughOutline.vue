@@ -180,7 +180,20 @@ async function downloadFormatRoughOutline(outlineType) {
     window.location.hash = "/login";
     return;
   }
-  const contents = list.map(r => (r.content || "").trim()).filter(Boolean);
+  let contents;
+  if (outlineType === "polish") {
+    // 润色版：两篇 Claude 在前，两篇 Gemini 在后
+    const sorted = [...list].sort((a, b) => {
+      const order = { claude: 0, gemini: 1 };
+      return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+    });
+    contents = sorted.map(r => (r.content || "").trim()).filter(Boolean);
+  } else if (outlineType === "sharing") {
+    // 三分钟分享：每篇上一行加「三分钟分享（AI名字）」
+    contents = list.map(r => "三分钟分享（" + (r.ai_model || "AI") + "）\n\n" + (r.content || "").trim());
+  } else {
+    contents = list.map(r => (r.content || "").trim()).filter(Boolean);
+  }
   if (!contents.length) {
     toastWarning("所选结果内容为空");
     return;

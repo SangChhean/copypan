@@ -140,6 +140,34 @@ class RoughOutlineFormatRequest(BaseModel):
     contents: List[str] = Field(..., min_length=1, max_length=10, description="多篇纲目正文，按顺序合并后刷格式")
 
 
+# ---------- 节期纲目 ----------
+class FeastOutlineOriginalRequest(BaseModel):
+    """节期纲目 - 纲目的原文：刷格式并下载"""
+    content: str = Field(..., min_length=1, max_length=100_000, description="无格式的纲目原文")
+
+
+class FeastOutlineWithScriptureRequest(BaseModel):
+    """节期纲目 - 带经文的纲目：经文汇集后刷格式并下载"""
+    content: str = Field(..., min_length=1, max_length=100_000, description="纲目原文（将用经文汇集处理）")
+
+
+class FeastOutlineMorningRevivalRequest(BaseModel):
+    """节期纲目 - 晨兴信息选读的纲目：Claude 生成纲目后刷格式并下载"""
+    content: str = Field(..., min_length=1, max_length=100_000, description="晨兴信息选读内容")
+
+
+class FeastOutlineTranscriptRequest(BaseModel):
+    """节期纲目 - 听抄稿的纲目：在原纲目基础上加听抄稿重点后刷格式并下载"""
+    original_outline: str = Field(..., min_length=1, max_length=100_000, description="原纲目")
+    transcript: str = Field(..., min_length=1, max_length=100_000, description="听抄稿内容")
+
+
+class FeastOutlineCompositeRequest(BaseModel):
+    """节期纲目 - 复合的纲目：将晨兴纲目融入听抄稿纲目后刷格式并下载"""
+    transcript_outline: str = Field(..., min_length=1, max_length=100_000, description="听抄稿的纲目")
+    morning_revival_outline: str = Field(..., min_length=1, max_length=100_000, description="晨兴信息选读的纲目")
+
+
 class InfoRetrievalRequest(BaseModel):
     """信息检索请求：多关键词 AND、排除关键词 OR、DOCX 大小上限"""
     keyword: str = Field(..., min_length=1, max_length=500, description="搜索关键词，空格隔开，多词 AND")
@@ -759,6 +787,124 @@ async def rough_outline_format_and_download(request: RoughOutlineFormatRequest):
         raise
     except Exception as e:
         logger.error(f"rough_outline_format_and_download 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------- 节期纲目 ----------
+def _feast_outline_docx_response(result: dict, default_filename: str = "节期纲目.docx"):
+    """节期纲目 DOCX 下载统一响应"""
+    if result.get("error") and not result.get("docx_bytes"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    if not result.get("docx_bytes"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "生成 DOCX 失败")
+    return {
+        "docx_base64": base64.b64encode(result["docx_bytes"]).decode("utf-8"),
+        "filename": result.get("filename", default_filename),
+        "error": result.get("error"),
+    }
+
+
+@router.post("/ai_search/feast_outline/original", summary="节期纲目 - 纲目的原文：刷格式并下载")
+async def feast_outline_original(request: FeastOutlineOriginalRequest):
+    """用户粘贴无格式纲目，刷格式并下载 DOCX。"""
+    try:
+        result = await asyncio.to_thread(
+            ai_service.format_feast_outline_docx,
+            [request.content.strip()],
+        )
+        return _feast_outline_docx_response(result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"feast_outline_original 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/feast_outline/with_scripture", summary="节期纲目 - 带经文的纲目：经文汇集后刷格式并下载")
+async def feast_outline_with_scripture(request: FeastOutlineWithScriptureRequest):
+    """用经文汇集处理纲目，再刷格式并下载 DOCX。"""
+    try:
+        with_scripture_text = await asyncio.to_thread(
+            ai_service.feast_outline_collect_scripture,
+            request.content.strip(),
+        )
+        result = await asyncio.to_thread(
+            ai_service.format_feast_outline_docx,
+            [with_scripture_text],
+        )
+        return _feast_outline_docx_response(result, "节期纲目_带经文.docx")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"feast_outline_with_scripture 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/feast_outline/morning_revival", summary="节期纲目 - 晨兴信息选读的纲目：生成后刷格式并下载")
+async def feast_outline_morning_revival(request: FeastOutlineMorningRevivalRequest):
+    """用 Claude 根据晨兴内容生成纲目，再刷格式并下载 DOCX。"""
+    try:
+        gen = await asyncio.to_thread(
+            ai_service.feast_outline_morning_revival,
+            request.content.strip(),
+        )
+        if gen.get("error"):
+            raise HTTPException(status_code=400, detail=gen.get("error"))
+        outline = (gen.get("outline") or "").strip()
+        if not outline:
+            raise HTTPException(status_code=400, detail="AI 未生成纲目内容")
+        result = await asyncio.to_thread(ai_service.format_feast_outline_docx, [outline])
+        return _feast_outline_docx_response(result, "节期纲目_晨兴信息选读.docx")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"feast_outline_morning_revival 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/feast_outline/transcript", summary="节期纲目 - 听抄稿的纲目：原纲目+听抄稿重点后刷格式并下载")
+async def feast_outline_transcript(request: FeastOutlineTranscriptRequest):
+    """用 Claude 在原纲目基础上加入听抄稿重点，再刷格式并下载 DOCX。"""
+    try:
+        gen = await asyncio.to_thread(
+            ai_service.feast_outline_transcript,
+            request.original_outline.strip(),
+            request.transcript.strip(),
+        )
+        if gen.get("error"):
+            raise HTTPException(status_code=400, detail=gen.get("error"))
+        outline = (gen.get("outline") or "").strip()
+        if not outline:
+            raise HTTPException(status_code=400, detail="AI 未生成纲目内容")
+        result = await asyncio.to_thread(ai_service.format_feast_outline_docx, [outline])
+        return _feast_outline_docx_response(result, "节期纲目_听抄稿.docx")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"feast_outline_transcript 失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ai_search/feast_outline/composite", summary="节期纲目 - 复合的纲目：晨兴融入听抄稿纲目后刷格式并下载")
+async def feast_outline_composite(request: FeastOutlineCompositeRequest):
+    """用 Claude 将晨兴纲目融入听抄稿纲目，再刷格式并下载 DOCX。"""
+    try:
+        gen = await asyncio.to_thread(
+            ai_service.feast_outline_composite,
+            request.transcript_outline.strip(),
+            request.morning_revival_outline.strip(),
+        )
+        if gen.get("error"):
+            raise HTTPException(status_code=400, detail=gen.get("error"))
+        outline = (gen.get("outline") or "").strip()
+        if not outline:
+            raise HTTPException(status_code=400, detail="AI 未生成纲目内容")
+        result = await asyncio.to_thread(ai_service.format_feast_outline_docx, [outline])
+        return _feast_outline_docx_response(result, "节期纲目_复合.docx")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"feast_outline_composite 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

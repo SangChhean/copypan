@@ -185,27 +185,27 @@ PROMPT_TEMPLATES = {
 # 说明：Google API 中 Gemini 3 Pro 的模型 id 为 gemini-3-pro-preview 或 gemini-3.1-pro-preview（无单独 gemini-3-pro）
 AI_CONFIGS = {
     "polish": [
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 4096, "prompt_key": "polish_gemini"},
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 4096, "prompt_key": "polish_gemini"},
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096, "prompt_key": "polish_claude"},
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096, "prompt_key": "polish_claude"},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192, "prompt_key": "polish_gemini"},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192, "prompt_key": "polish_gemini"},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192, "prompt_key": "polish_claude"},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192, "prompt_key": "polish_claude"},
     ],
     "beginner": [
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192},
     ],
     "youth": [
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192},
     ],
     "truth": [
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192},
     ],
     "sharing": [
-        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 4096},
-        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 4096},
-        {"type": "deepseek", "name": "Deep Seek-V3.2", "model": "deepseek-v3.2", "max_tokens": 4096},
-        {"type": "perplexity", "name": "Perplexity–search", "model": "pplx-70b-online", "max_tokens": 4096},
-        {"type": "chatgpt", "name": "Chat GPT5.2", "model": "gpt-5.2", "max_tokens": 4096},
-        {"type": "grok", "name": "Grok 4.1", "model": "grok-4-1-fast", "max_tokens": 4096},
+        {"type": "claude", "name": "Claude Sonnet 4.5", "model": "claude-sonnet-4-20250514", "max_tokens": 8192},
+        {"type": "gemini", "name": "Gemini 3.0 Pro", "model": "gemini-3.1-pro-preview", "max_tokens": 8192},
+        {"type": "deepseek", "name": "Deep Seek-V3.2", "model": "deepseek-v3.2", "max_tokens": 8192},
+        {"type": "perplexity", "name": "Perplexity–search", "model": "pplx-70b-online", "max_tokens": 8192},
+        {"type": "chatgpt", "name": "Chat GPT5.2", "model": "gpt-5.2", "max_tokens": 8192},
+        {"type": "grok", "name": "Grok 4.1", "model": "grok-4-1-fast", "max_tokens": 8192},
     ],
 }
 

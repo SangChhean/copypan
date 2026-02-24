@@ -61,6 +61,10 @@ const routes = [
     path: "/rough-outline",
     component: () => import("../components/toolbox/RoughOutline.vue"),
   },
+  {
+    path: "/feast-outline",
+    component: () => import("../components/toolbox/FeastOutline.vue"),
+  },
 ];
 
 const router = createRouter({
