@@ -946,6 +946,7 @@ async def feast_outline_scripture_text(request: FeastOutlineWithScriptureRequest
 @router.post("/ai_search/feast_outline/generate/morning_revival", summary="节期纲目 - 仅生成晨兴纲目文本（供多选生成用）")
 async def feast_outline_generate_morning_revival(request: FeastOutlineMorningRevivalRequest):
     """Claude 根据晨兴内容生成纲目，仅返回纲目文本。"""
+    logger.info("feast_outline/generate/morning_revival 收到请求")
     try:
         gen = await asyncio.to_thread(
             ai_service.feast_outline_morning_revival,
@@ -964,6 +965,7 @@ async def feast_outline_generate_morning_revival(request: FeastOutlineMorningRev
 @router.post("/ai_search/feast_outline/generate/transcript", summary="节期纲目 - 仅生成听抄稿纲目文本（供多选生成用）")
 async def feast_outline_generate_transcript(request: FeastOutlineTranscriptRequest):
     """Claude 在原纲目基础上加听抄稿重点，仅返回纲目文本；若提供序言/添言原文则一并生成并返回 preface_outline/addendum_outline。"""
+    logger.info("feast_outline/generate/transcript 收到请求")
     try:
         gen = await asyncio.to_thread(
             ai_service.feast_outline_transcript,

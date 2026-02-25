@@ -166,8 +166,14 @@ async function generateAll() {
     };
 
     const runTranscript = async () => {
-      if (!selectedTypes.value.includes("transcript") && !selectedTypes.value.includes("composite")) return "";
-      if (!o || !t) return "";
+      if (!selectedTypes.value.includes("transcript") && !selectedTypes.value.includes("composite")) {
+        console.warn("[节期纲目] 未发送听抄稿请求: 未勾选「听抄稿的纲目」或「复合的纲目」");
+        return "";
+      }
+      if (!o || !t) {
+        console.warn("[节期纲目] 未发送听抄稿请求: ①纲目原文或③听抄稿为空", { 纲目长度: o?.length, 听抄稿长度: t?.length });
+        return "";
+      }
       const body = { original_outline: o, transcript: t };
       const tp = (inputTranscriptPreface.value || "").trim();
       const ta = (inputTranscriptAddendum.value || "").trim();
