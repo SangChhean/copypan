@@ -141,6 +141,15 @@ async function generateAll() {
     let morningRevivalOutline = "";
     let transcriptOutline = "";
 
+    // 兼容多种响应格式（直连返回 outline / 网关包装在 data 里 / 个别历史用 content）
+    const getOutlineFromResponse = (data) => {
+      if (!data || typeof data !== "object") return "";
+      const raw = data.outline ?? data.data?.outline ?? data.content;
+      return (typeof raw === "string" ? raw : "")?.trim() ?? "";
+    };
+    const getErrorFromResponse = (data) =>
+      (data && typeof data === "object" && (data.detail ?? data.error ?? data.message)) || "";
+
     const runMorningRevival = async () => {
       if (!selectedTypes.value.includes("morning_revival") && !selectedTypes.value.includes("composite")) return "";
       if (!m) return "";
@@ -150,8 +159,9 @@ async function generateAll() {
         body: JSON.stringify({ content: m }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.outline != null) return data.outline;
-      errors.push(`晨兴信息选读的纲目: ${data.detail || data.error || "失败"}`);
+      const outline = getOutlineFromResponse(data);
+      if (res.ok && outline) return outline;
+      errors.push(`晨兴信息选读的纲目: ${getErrorFromResponse(data) || (res.ok ? "返回内容为空" : "失败")}`);
       return "";
     };
 
@@ -169,12 +179,14 @@ async function generateAll() {
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.outline != null) {
-        if (data.preface_outline != null) generatedPrefaceOutline.value = data.preface_outline || "";
-        if (data.addendum_outline != null) generatedAddendumOutline.value = data.addendum_outline || "";
-        return data.outline;
+      const outline = getOutlineFromResponse(data);
+      if (res.ok && outline) {
+        const d = data.data ?? data;
+        if (d.preface_outline != null) generatedPrefaceOutline.value = (d.preface_outline || "").trim();
+        if (d.addendum_outline != null) generatedAddendumOutline.value = (d.addendum_outline || "").trim();
+        return outline;
       }
-      errors.push(`听抄稿的纲目: ${data.detail || data.error || "失败"}`);
+      errors.push(`听抄稿的纲目: ${getErrorFromResponse(data) || (res.ok ? "返回内容为空" : "失败")}`);
       return "";
     };
 
@@ -209,20 +221,27 @@ async function generateAll() {
           }),
         });
         const data = await res.json().catch(() => ({}));
-        if (res.ok && data.outline) {
+        const outline = getOutlineFromResponse(data);
+        if (res.ok && outline) {
           newResults.push({
             type: "composite",
             type_label: getTypeLabel("composite"),
-            content: data.outline,
+            content: outline,
           });
         } else {
-          errors.push(`复合的纲目: ${data.detail || data.error || "失败"}`);
+          errors.push(`复合的纲目: ${getErrorFromResponse(data) || (res.ok ? "返回内容为空" : "失败")}`);
         }
       } catch (err) {
         errors.push(`复合的纲目: ${err.message || "网络错误"}`);
       }
     } else if (selectedTypes.value.includes("composite") && (!transcriptOutline || !morningRevivalOutline)) {
-      errors.push("复合的纲目: 需先生成听抄稿纲目与晨兴纲目（请确保 ①②③ 已填并勾选对应类型）");
+      const hasTranscriptErr = errors.some((e) => e.startsWith("听抄稿的纲目:"));
+      const hasMorningErr = errors.some((e) => e.startsWith("晨兴信息选读的纲目:"));
+      if (hasTranscriptErr || hasMorningErr) {
+        errors.push("复合的纲目: 因听抄稿纲目或晨兴纲目未生成成功而跳过，请先解决上方错误后重试");
+      } else {
+        errors.push("复合的纲目: 需先生成听抄稿纲目与晨兴纲目（请确保 ①②③ 已填并勾选对应类型）");
+      }
     }
 
     results.value = newResults;
