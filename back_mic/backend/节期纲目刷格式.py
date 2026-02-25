@@ -1345,10 +1345,57 @@ except NameError:
 # 句尾可替换为冒号的标点（中英标点）
 PUNCT_AT_END_RE = re.compile(r'[。！？；.,!?;,，]$')
 
+def process_transcript_additions_underline(doc):
+    """
+    处理复合纲目中的【听抄稿添加开始】和【听抄稿添加结束】标记
+    将标记之间的内容设置下划线，并删除标记本身。支持简繁体。
+    """
+    start_markers = ("【听抄稿添加开始】", "【聽抄稿添加開始】")
+    end_markers = ("【听抄稿添加结束】", "【聽抄稿添加結束】")
+    in_section = False
+    processed_count = 0
+    paragraphs_to_delete = []
+    for i, para in enumerate(doc.paragraphs):
+        text = para.text
+        start_found = any(m in text for m in start_markers)
+        end_found = any(m in text for m in end_markers)
+        if start_found:
+            in_section = True
+            new_text = text
+            for m in start_markers:
+                new_text = new_text.replace(m, "")
+            new_text = new_text.replace("。", "").strip()
+            if not new_text:
+                paragraphs_to_delete.append(i)
+            else:
+                para.text = new_text
+            processed_count += 1
+        elif end_found:
+            new_text = text
+            for m in end_markers:
+                new_text = new_text.replace(m, "")
+            new_text = new_text.replace("。", "").strip()
+            if not new_text:
+                paragraphs_to_delete.append(i)
+            else:
+                para.text = new_text
+            in_section = False
+            processed_count += 1
+        elif in_section and text.strip():
+            for run in para.runs:
+                run.font.underline = True
+            processed_count += 1
+    for i in reversed(paragraphs_to_delete):
+        p = doc.paragraphs[i]._element
+        p.getparent().remove(p)
+    return processed_count
+
+
 def process_compound_outline_additions(doc):
     """
-    处理复合纲目中的【添加开始】和【添加结束】标记
-    将标记之间的内容设置为斜体，并删除标记本身
+    处理复合纲目中的【添加开始】和【添加结束】标记（晨兴添加）
+    将标记之间的内容设置为斜体，并删除标记本身。
+    【听抄稿添加开始】～【听抄稿添加结束】由 process_transcript_additions_underline 处理（下划线）。
     """
     in_addition_section = False
     start_marker = "【添加开始】"
@@ -1495,7 +1542,9 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
             has_red_font = False
             if idx < len(paragraph_formatting):
                 has_red_font = has_red_font_in_stored_formatting(paragraph_formatting[idx])
-            if '【添加开始】' in text or '【添加结束】' in text:
+            if ('【添加开始】' in text or '【添加结束】' in text or
+                '【听抄稿添加开始】' in text or '【听抄稿添加结束】' in text or
+                '【聽抄稿添加開始】' in text or '【聽抄稿添加結束】' in text):
                 continue
             if not after_marker and idx >= 4 and not has_red_font:
                 if not text.endswith(('。', '！', '？', '…', '”', '\'', '：', '』')):
@@ -1507,7 +1556,9 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
         n = len(doc.paragraphs)
         for i, para in enumerate(doc.paragraphs):
             this_text = (para.text or '').strip()
-            if '【添加开始】' in this_text or '【添加结束】' in this_text:
+            if ('【添加开始】' in this_text or '【添加结束】' in this_text or
+                '【听抄稿添加开始】' in this_text or '【听抄稿添加结束】' in this_text or
+                '【聽抄稿添加開始】' in this_text or '【聽抄稿添加結束】' in this_text):
                 continue
             this_level = detect_outline_level(this_text)
             if this_level is None:
@@ -1696,7 +1747,8 @@ def process_one_doc(doc, is_scripture_outline, is_compound_outline, in_dictation
                 restore_paragraph_formatting(para, formatting_info)
 
     if is_compound_outline:
-        process_compound_outline_additions(doc)
+        process_transcript_additions_underline(doc)  # 听抄稿添加：下划线
+        process_compound_outline_additions(doc)       # 晨兴添加：斜体
 
     for para in doc.paragraphs:
         if any(marker in para.text for marker in after_marker_list):

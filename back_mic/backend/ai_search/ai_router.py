@@ -160,6 +160,8 @@ class FeastOutlineTranscriptRequest(BaseModel):
     """节期纲目 - 听抄稿的纲目：在原纲目基础上加听抄稿重点后刷格式并下载"""
     original_outline: str = Field(..., min_length=1, max_length=100_000, description="原纲目")
     transcript: str = Field(..., min_length=1, max_length=100_000, description="听抄稿内容")
+    transcript_preface: Optional[str] = Field(None, max_length=50_000, description="听抄稿序言原文，生成时一并交给 Claude 做成序言纲目")
+    transcript_addendum: Optional[str] = Field(None, max_length=50_000, description="听抄稿添言原文，生成时一并交给 Claude 做成添言纲目")
 
 
 class FeastOutlineCompositeRequest(BaseModel):
@@ -181,8 +183,10 @@ class FeastOutlineFormatDownloadRequest(BaseModel):
     filename: Optional[str] = Field(None, max_length=200, description="下载文件名，默认 节期纲目.docx")
     morning_revival_content: Optional[str] = Field(None, max_length=100_000, description="晨兴信息选读原文，刷格式时在晨兴纲目末行后分页并追加「晨兴圣言信息：」+ 该内容")
     transcript_content: Optional[str] = Field(None, max_length=100_000, description="听抄稿原文，刷格式时在听抄稿纲目末行后分页并追加「听抄信息：」+ 该内容")
-    transcript_preface: Optional[str] = Field(None, max_length=50_000, description="听抄稿序言，可选，写入听抄信息页标题后")
-    transcript_addendum: Optional[str] = Field(None, max_length=50_000, description="听抄稿添言，可选，写入听抄信息页末尾")
+    transcript_preface: Optional[str] = Field(None, max_length=50_000, description="听抄稿序言原文，当未传 preface_outline 时由服务端生成序言纲目")
+    transcript_addendum: Optional[str] = Field(None, max_length=50_000, description="听抄稿添言原文，当未传 addendum_outline 时由服务端生成添言纲目")
+    preface_outline: Optional[str] = Field(None, max_length=50_000, description="已生成的序言纲目，优先使用（生成节期纲目时一并生成）")
+    addendum_outline: Optional[str] = Field(None, max_length=50_000, description="已生成的添言纲目，优先使用（生成节期纲目时一并生成）")
 
 
 class InfoRetrievalRequest(BaseModel):
@@ -959,16 +963,23 @@ async def feast_outline_generate_morning_revival(request: FeastOutlineMorningRev
 
 @router.post("/ai_search/feast_outline/generate/transcript", summary="节期纲目 - 仅生成听抄稿纲目文本（供多选生成用）")
 async def feast_outline_generate_transcript(request: FeastOutlineTranscriptRequest):
-    """Claude 在原纲目基础上加听抄稿重点，仅返回纲目文本。"""
+    """Claude 在原纲目基础上加听抄稿重点，仅返回纲目文本；若提供序言/添言原文则一并生成并返回 preface_outline/addendum_outline。"""
     try:
         gen = await asyncio.to_thread(
             ai_service.feast_outline_transcript,
             request.original_outline.strip(),
             request.transcript.strip(),
+            request.transcript_preface.strip() if request.transcript_preface else None,
+            request.transcript_addendum.strip() if request.transcript_addendum else None,
         )
         if gen.get("error"):
             raise HTTPException(status_code=400, detail=gen.get("error"))
-        return {"outline": (gen.get("outline") or "").strip()}
+        out = {"outline": (gen.get("outline") or "").strip()}
+        if gen.get("preface_outline") is not None:
+            out["preface_outline"] = gen.get("preface_outline") or ""
+        if gen.get("addendum_outline") is not None:
+            out["addendum_outline"] = gen.get("addendum_outline") or ""
+        return out
     except HTTPException:
         raise
     except Exception as e:
@@ -1010,6 +1021,8 @@ async def feast_outline_format_download(request: FeastOutlineFormatDownloadReque
             request.transcript_content,
             request.transcript_preface,
             request.transcript_addendum,
+            request.preface_outline,
+            request.addendum_outline,
         )
         if result.get("error") and not result.get("docx_bytes"):
             raise HTTPException(status_code=400, detail=result.get("error"))

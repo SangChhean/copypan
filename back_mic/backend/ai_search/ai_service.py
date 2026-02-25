@@ -2927,6 +2927,8 @@ class AISearchService:
         transcript_raw: Optional[str] = None,
         transcript_preface: Optional[str] = None,
         transcript_addendum: Optional[str] = None,
+        preface_outline: Optional[str] = None,
+        addendum_outline: Optional[str] = None,
     ) -> Dict:
         """
         节期纲目刷格式并下载：将一篇或多篇纲目合并为一个 DOCX，使用节期纲目模板与节期纲目刷格式（按类型）。
@@ -2954,36 +2956,52 @@ class AISearchService:
         if outline_type not in allowed:
             outline_type = "original"
 
+        # 所有类型（含 with_scripture）均直接使用传入的 contents，不再调用经文汇集或 Claude
         main_contents = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
         l1, l2, l3 = (line1 or "").strip(), (line2 or "").strip(), (line3 or "").strip()
         header = "\n".join([l1, l2, l3]) if (l1 or l2 or l3) else ""
 
-        # 听抄稿类型：序言、添言用 Claude 制作成纲目；序言放在前三段之后（第四段起），添言放在纲目末尾
-        preface_outline = ""
-        addendum_outline = ""
-        if outline_type == "transcript":
+        # 听抄稿、复合稿：序言、添言。优先使用已生成的 preface_outline/addendum_outline；否则用原文请求 Claude 生成
+        preface_outline = (preface_outline or "").strip()
+        addendum_outline = (addendum_outline or "").strip()
+        if outline_type in ("transcript", "composite") and (not preface_outline or not addendum_outline):
             preface_raw = (transcript_preface or "").strip()
             addendum_raw = (transcript_addendum or "").strip()
-            if preface_raw:
+            if not preface_outline and preface_raw:
                 res = self.feast_outline_preface(preface_raw)
-                if res.get("error"):
-                    logger.warning("听抄稿序言 Claude 生成失败: %s", res.get("error"))
-                else:
+                if not res.get("error"):
                     preface_outline = (res.get("outline") or "").strip()
-            if addendum_raw:
-                res = self.feast_outline_addendum(addendum_raw)
-                if res.get("error"):
-                    logger.warning("听抄稿添言 Claude 生成失败: %s", res.get("error"))
                 else:
+                    logger.warning("序言 Claude 生成失败: %s", res.get("error"))
+            if not addendum_outline and addendum_raw:
+                res = self.feast_outline_addendum(addendum_raw)
+                if not res.get("error"):
                     addendum_outline = (res.get("outline") or "").strip()
+                else:
+                    logger.warning("添言 Claude 生成失败: %s", res.get("error"))
 
         if header:
             combined_text = header + "\n\n" + main_contents
             if outline_type == "transcript" and (preface_outline or addendum_outline):
-                combined_text = header + "\n\n"
+                # 听抄稿：第4段为读经（contents 第一行），第5段起为序言，再正文、添言
+                lines = main_contents.split("\n")
+                reading_line = (lines[0].strip() if lines else "") or ""
+                rest_main = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+                combined_text = header + "\n\n" + reading_line + "\n\n"
                 if preface_outline:
                     combined_text += preface_outline + "\n\n"
-                combined_text += main_contents
+                combined_text += rest_main
+                if addendum_outline:
+                    combined_text += "\n\n" + addendum_outline
+            elif outline_type == "composite" and (preface_outline or addendum_outline):
+                # 复合稿：第4段=读经，第5段起=序言，再正文、添言
+                lines = main_contents.split("\n")
+                reading_line = (lines[0].strip() if lines else "") or ""
+                rest_main = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+                combined_text = header + "\n\n" + reading_line + "\n\n"
+                if preface_outline:
+                    combined_text += preface_outline + "\n\n"
+                combined_text += rest_main
                 if addendum_outline:
                     combined_text += "\n\n" + addendum_outline
         else:
@@ -2996,14 +3014,38 @@ class AISearchService:
                 if addendum_outline:
                     parts.append(addendum_outline)
                 combined_text = "\n\n".join(parts)
-        # 听抄稿序言/添言高亮范围：按 combined_text 各段行数计算（仅听抄稿且有序言或添言时有效）
+            elif outline_type == "composite" and (preface_outline or addendum_outline):
+                lines = main_contents.split("\n")
+                reading_line = (lines[0].strip() if lines else "") or ""
+                rest_main = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+                parts = [reading_line]
+                if preface_outline:
+                    parts.append(preface_outline)
+                parts.append(rest_main)
+                if addendum_outline:
+                    parts.append(addendum_outline)
+                combined_text = "\n\n".join(parts)
+        # 听抄稿/复合稿序言、添言段落范围：第4段=读经，第5段起=序言，再正文、添言
         preface_highlight_end = addendum_highlight_start = addendum_highlight_end = 0
         if outline_type == "transcript" and (preface_outline or addendum_outline):
+            lines = main_contents.split("\n")
+            rest_main = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
             n_preface = len(preface_outline.split("\n")) if preface_outline else 0
-            n_main = len(main_contents.split("\n"))
+            n_main = len(rest_main.split("\n")) if rest_main else 0
             n_addendum = len(addendum_outline.split("\n")) if addendum_outline else 0
-            preface_highlight_end = 3 + n_preface
-            addendum_highlight_start = 3 + n_preface + n_main
+            n_header = 4  # line1, line2, line3, 读经（第一行）
+            preface_highlight_end = n_header + n_preface
+            addendum_highlight_start = n_header + n_preface + n_main
+            addendum_highlight_end = addendum_highlight_start + n_addendum
+        elif outline_type == "composite" and (preface_outline or addendum_outline):
+            lines = main_contents.split("\n")
+            rest_main = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+            n_preface = len(preface_outline.split("\n")) if preface_outline else 0
+            n_main = len(rest_main.split("\n")) if rest_main else 0
+            n_addendum = len(addendum_outline.split("\n")) if addendum_outline else 0
+            n_header = 4  # line1, line2, line3, 读经（第一行）
+            preface_highlight_end = n_header + n_preface
+            addendum_highlight_start = n_header + n_preface + n_main
             addendum_highlight_end = addendum_highlight_start + n_addendum
         temp_docx_path = None
         try:
@@ -3053,14 +3095,14 @@ class AISearchService:
                 doc2 = Document(temp_docx_path)
                 _append_morning_revival_section(doc2, (morning_revival_raw or "").strip())
                 doc2.save(temp_docx_path)
-            # 听抄稿：⑨【添加开始】～【添加结束】高亮并删标记；序言、添言部分整段黄色高亮
+            # 听抄稿：⑨【听抄稿添加开始】～【听抄稿添加结束】高亮并删标记；序言、添言部分整段黄色高亮（序言与添言同样处理）
             if outline_type == "transcript":
                 try:
                     from docx.enum.text import WD_COLOR_INDEX
                     doc2 = Document(temp_docx_path)
                     _apply_transcript_add_highlight(doc2)
                     n_paras = len(doc2.paragraphs)
-                    for idx in range(3, min(preface_highlight_end, n_paras)):
+                    for idx in range(4, min(preface_highlight_end, n_paras)):
                         for run in doc2.paragraphs[idx].runs:
                             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
                     for idx in range(addendum_highlight_start, min(addendum_highlight_end, n_paras)):
@@ -3069,6 +3111,20 @@ class AISearchService:
                     doc2.save(temp_docx_path)
                 except Exception as e:
                     logger.warning(f"听抄稿添加高亮处理失败: {e}", exc_info=True)
+            # 复合稿：序言、添言段落整段下划线（序言与添言同样处理）
+            elif outline_type == "composite" and (preface_highlight_end or addendum_highlight_end):
+                try:
+                    doc2 = Document(temp_docx_path)
+                    n_paras = len(doc2.paragraphs)
+                    for idx in range(4, min(preface_highlight_end, n_paras)):
+                        for run in doc2.paragraphs[idx].runs:
+                            run.font.underline = True
+                    for idx in range(addendum_highlight_start, min(addendum_highlight_end, n_paras)):
+                        for run in doc2.paragraphs[idx].runs:
+                            run.font.underline = True
+                    doc2.save(temp_docx_path)
+                except Exception as e:
+                    logger.warning(f"复合稿序言/添言下划线处理失败: {e}", exc_info=True)
             with open(temp_docx_path, "rb") as f:
                 docx_bytes = f.read()
             return {"docx_bytes": docx_bytes, "filename": "节期纲目.docx", "error": None}
@@ -3126,8 +3182,15 @@ class AISearchService:
             logger.error(f"节期纲目晨兴生成失败: {e}", exc_info=True)
             return {"outline": "", "error": str(e)}
 
-    def feast_outline_transcript(self, original_outline: str, transcript: str) -> Dict[str, Any]:
-        """节期纲目 - 听抄稿：用 Claude 在原纲目基础上加入听抄稿重点。返回 { outline: str, error: str | None }"""
+    def feast_outline_transcript(
+        self,
+        original_outline: str,
+        transcript: str,
+        transcript_preface: Optional[str] = None,
+        transcript_addendum: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """节期纲目 - 听抄稿：用 Claude 在原纲目基础上加入听抄稿重点。
+        若提供 transcript_preface/transcript_addendum，会一并生成序言/添言纲目并返回。"""
         try:
             from .feast_outline_prompts import get_transcript_prompt
         except ImportError:
@@ -3144,7 +3207,16 @@ class AISearchService:
                 )
                 text = message.content[0].text
             text = _strip_code_fence_for_outline(text) or text
-            return {"outline": text or "", "error": None}
+            result = {"outline": text or "", "error": None}
+            preface_raw = (transcript_preface or "").strip()
+            addendum_raw = (transcript_addendum or "").strip()
+            if preface_raw:
+                res = self.feast_outline_preface(preface_raw)
+                result["preface_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
+            if addendum_raw:
+                res = self.feast_outline_addendum(addendum_raw)
+                result["addendum_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
+            return result
         except Exception as e:
             logger.error(f"节期纲目听抄稿生成失败: {e}", exc_info=True)
             return {"outline": "", "error": str(e)}
@@ -3788,18 +3860,20 @@ class AISearchService:
 def _apply_transcript_add_highlight(doc: "Document") -> None:
     """
     听抄稿纲目：与工具箱-毛胚纲目-真理加强版同一逻辑，仅改为黄色高亮（真理加强版为下划线）。
-    定位所有【添加开始】与【添加结束】配对（按出现顺序：第 1 个开始配第 1 个结束），
+    定位所有【听抄稿添加开始】与【听抄稿添加结束】配对（按出现顺序），
     对每对之间的段落整段黄色高亮，并删除所有标记段落。支持简繁体标记。
     """
     from docx.enum.text import WD_COLOR_INDEX
 
+    start_marker_variants = ("【听抄稿添加开始】", "【聽抄稿添加開始】")
+    end_marker_variants = ("【听抄稿添加结束】", "【聽抄稿添加結束】")
     start_indices = []
     pairs = []  # [(start_idx, end_idx), ...]
     for idx, para in enumerate(doc.paragraphs):
         text = para.text.strip()
-        if "【添加开始】" in text or "【添加開始】" in text:
+        if any(m in text for m in start_marker_variants):
             start_indices.append(idx)
-        if "【添加结束】" in text or "【添加結束】" in text:
+        if any(m in text for m in end_marker_variants):
             if start_indices:
                 pairs.append((start_indices.pop(), idx))
     if not pairs:
@@ -3808,7 +3882,7 @@ def _apply_transcript_add_highlight(doc: "Document") -> None:
     for (start_idx, end_idx) in reversed(pairs):
         if start_idx >= end_idx:
             continue
-        # 对两标记之间的段落整段黄色高亮（与真理加强版这下划线一致，只改效果）
+        # 对两标记之间的段落整段黄色高亮
         for idx in range(start_idx + 1, end_idx):
             for run in doc.paragraphs[idx].runs:
                 run.font.highlight_color = WD_COLOR_INDEX.YELLOW

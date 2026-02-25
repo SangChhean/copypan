@@ -1,6 +1,6 @@
 <script setup>
 import ToolsHeader from "./ToolsHeader.vue";
-import { ref, computed } from "vue";
+import { ref, computed, reactive } from "vue";
 import { DownloadOutlined, CopyOutlined } from "@ant-design/icons-vue";
 import { toastSuccess, toastWarning } from "../utils/Dialog";
 
@@ -24,13 +24,23 @@ const inputTranscript = ref("");     // ③ 听抄稿
 const inputLine1 = ref("");
 const inputLine2 = ref("");
 const inputLine3 = ref("");
-// 听抄稿可选：序言、添言（刷格式时写入听抄信息页）
+// 听抄稿可选：序言、添言（生成时一并交给 Claude 做成纲目，刷格式时使用）
 const inputTranscriptPreface = ref("");
 const inputTranscriptAddendum = ref("");
+// 生成节期纲目时得到的序言纲目、添言纲目（听抄稿/复合稿下载时使用）
+const generatedPrefaceOutline = ref("");
+const generatedAddendumOutline = ref("");
 
 const loading = ref(false);
 const results = ref([]); // { type, type_label, content }
-const formatDownloading = ref(false);
+// 按类型 loading，支持多版本并发下载
+const formatDownloadingByType = reactive({
+  original: false,
+  with_scripture: false,
+  morning_revival: false,
+  transcript: false,
+  composite: false,
+});
 
 // 按类型分组结果（用于刷格式并下载）
 const originalResults = computed(() => results.value.filter((r) => r.type === "original"));
@@ -93,6 +103,8 @@ async function generateAll() {
 
   loading.value = true;
   results.value = [];
+  generatedPrefaceOutline.value = "";
+  generatedAddendumOutline.value = "";
   const newResults = [];
   const errors = [];
 
@@ -146,13 +158,22 @@ async function generateAll() {
     const runTranscript = async () => {
       if (!selectedTypes.value.includes("transcript") && !selectedTypes.value.includes("composite")) return "";
       if (!o || !t) return "";
+      const body = { original_outline: o, transcript: t };
+      const tp = (inputTranscriptPreface.value || "").trim();
+      const ta = (inputTranscriptAddendum.value || "").trim();
+      if (tp) body.transcript_preface = tp;
+      if (ta) body.transcript_addendum = ta;
       const res = await fetch(`${apiBase}/api/ai_search/feast_outline/generate/transcript`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ original_outline: o, transcript: t }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.outline != null) return data.outline;
+      if (res.ok && data.outline != null) {
+        if (data.preface_outline != null) generatedPrefaceOutline.value = data.preface_outline || "";
+        if (data.addendum_outline != null) generatedAddendumOutline.value = data.addendum_outline || "";
+        return data.outline;
+      }
       errors.push(`听抄稿的纲目: ${data.detail || data.error || "失败"}`);
       return "";
     };
@@ -240,7 +261,7 @@ async function downloadFormat(typeKey) {
   }
   const headers = getAuthHeaders();
   if (!headers) return;
-  formatDownloading.value = true;
+  formatDownloadingByType[typeKey] = true;
   try {
     const body = {
       contents,
@@ -260,6 +281,8 @@ async function downloadFormat(typeKey) {
     const ta = (inputTranscriptAddendum.value || "").trim();
     if (tp) body.transcript_preface = tp;
     if (ta) body.transcript_addendum = ta;
+    if (generatedPrefaceOutline.value) body.preface_outline = generatedPrefaceOutline.value;
+    if (generatedAddendumOutline.value) body.addendum_outline = generatedAddendumOutline.value;
     const res = await fetch(`${apiBase}/api/ai_search/feast_outline/format_download`, {
       method: "POST",
       headers,
@@ -290,7 +313,7 @@ async function downloadFormat(typeKey) {
   } catch (err) {
     toastWarning(err.message || "下载失败");
   } finally {
-    formatDownloading.value = false;
+    formatDownloadingByType[typeKey] = false;
   }
 }
 
@@ -305,7 +328,13 @@ function copyResult(content) {
   <div class="box">
     <a-card>
       <p class="hint">
-        节期纲目支持多选类型一起生成。请先选择需要的类型，再在下方填写 ① 纲目原文、② 晨兴信息选读、③ 听抄稿（按类型需要填写），点击「生成节期纲目」后即可在结果中查看并刷格式下载。
+        使用说明：
+        支持多选类型一起生成；请先选择需要的类型，再在下方填写：<br>
+        第一行：特会系列<br>
+        第二行：总题<br>
+        第三行：篇题<br>
+        ① 纲目原文、② 晨兴信息选读、③ 听抄稿（序言、添言需分开输入）<br>
+        点击「生成节期纲目」后即可在结果中查看并刷格式下载。
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
 
@@ -373,14 +402,14 @@ function copyResult(content) {
       <div class="label">④ 听抄稿序言 <span class="optional-tag">可选</span></div>
       <a-textarea
         v-model:value="inputTranscriptPreface"
-        placeholder="刷格式下载听抄稿纲目时，会写入「听抄信息」页标题后"
+        placeholder="生成节期纲目时一并交给 Claude 做成序言纲目，并用于听抄稿/复合稿"
         :rows="3"
         :style="{ marginBottom: '12px' }"
       />
       <div class="label">⑤ 听抄稿添言 <span class="optional-tag">可选</span></div>
       <a-textarea
         v-model:value="inputTranscriptAddendum"
-        placeholder="刷格式下载听抄稿纲目时，会写入「听抄信息」页末尾"
+        placeholder="生成节期纲目时一并交给 Claude 做成添言纲目，并用于听抄稿/复合稿"
         :rows="3"
         :style="{ marginBottom: '16px' }"
       />
@@ -402,40 +431,40 @@ function copyResult(content) {
           <span class="format-download-label">刷格式并下载：</span>
           <a-button
             type="primary"
-            :loading="formatDownloading"
-            :disabled="originalResults.length === 0"
+            :loading="formatDownloadingByType.original"
+            :disabled="originalResults.length === 0 || formatDownloadingByType.original"
             @click="downloadFormat('original')"
           >
             <DownloadOutlined /> 纲目的原文（{{ originalResults.length }}）
           </a-button>
           <a-button
             type="primary"
-            :loading="formatDownloading"
-            :disabled="withScriptureResults.length === 0"
+            :loading="formatDownloadingByType.with_scripture"
+            :disabled="withScriptureResults.length === 0 || formatDownloadingByType.with_scripture"
             @click="downloadFormat('with_scripture')"
           >
             <DownloadOutlined /> 带经文（{{ withScriptureResults.length }}）
           </a-button>
           <a-button
             type="primary"
-            :loading="formatDownloading"
-            :disabled="morningRevivalResults.length === 0"
+            :loading="formatDownloadingByType.morning_revival"
+            :disabled="morningRevivalResults.length === 0 || formatDownloadingByType.morning_revival"
             @click="downloadFormat('morning_revival')"
           >
             <DownloadOutlined /> 晨兴信息选读（{{ morningRevivalResults.length }}）
           </a-button>
           <a-button
             type="primary"
-            :loading="formatDownloading"
-            :disabled="transcriptResults.length === 0"
+            :loading="formatDownloadingByType.transcript"
+            :disabled="transcriptResults.length === 0 || formatDownloadingByType.transcript"
             @click="downloadFormat('transcript')"
           >
             <DownloadOutlined /> 听抄稿（{{ transcriptResults.length }}）
           </a-button>
           <a-button
             type="primary"
-            :loading="formatDownloading"
-            :disabled="compositeResults.length === 0"
+            :loading="formatDownloadingByType.composite"
+            :disabled="compositeResults.length === 0 || formatDownloadingByType.composite"
             @click="downloadFormat('composite')"
           >
             <DownloadOutlined /> 复合（{{ compositeResults.length }}）
@@ -450,6 +479,30 @@ function copyResult(content) {
             </template>
             <pre class="result-content">{{ r.content }}</pre>
           </a-card>
+        </div>
+        <!-- 序言纲目、添言纲目（生成时一并生成，听抄稿/复合稿下载时使用） -->
+        <div v-if="generatedPrefaceOutline || generatedAddendumOutline" class="preface-addendum-section">
+          <a-divider>序言纲目 / 添言纲目（本次生成，用于听抄稿与复合稿）</a-divider>
+          <div v-if="generatedPrefaceOutline" class="result-card">
+            <a-card title="序言纲目" size="small">
+              <template #extra>
+                <a-button type="link" size="small" @click="copyResult(generatedPrefaceOutline)">
+                  <CopyOutlined /> 复制
+                </a-button>
+              </template>
+              <pre class="result-content">{{ generatedPrefaceOutline }}</pre>
+            </a-card>
+          </div>
+          <div v-if="generatedAddendumOutline" class="result-card">
+            <a-card title="添言纲目" size="small">
+              <template #extra>
+                <a-button type="link" size="small" @click="copyResult(generatedAddendumOutline)">
+                  <CopyOutlined /> 复制
+                </a-button>
+              </template>
+              <pre class="result-content">{{ generatedAddendumOutline }}</pre>
+            </a-card>
+          </div>
         </div>
       </div>
     </a-card>
@@ -515,6 +568,10 @@ function copyResult(content) {
 
 .result-card {
   margin-bottom: 16px;
+}
+
+.preface-addendum-section {
+  margin-top: 8px;
 }
 
 .result-content {
