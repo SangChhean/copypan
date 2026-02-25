@@ -3076,9 +3076,18 @@ class AISearchService:
                 if not existing.endswith(suffix):
                     para.text = existing + suffix
             from docx.enum.text import WD_BREAK
-            # 听抄稿：⑥ 纲目末尾先加分页 +「听抄信息：」+ 听抄稿原文，⑦ 套听抄信息页样式，再⑧整篇刷格式、⑨高亮
-            if outline_type == "transcript" and (transcript_raw or "").strip():
-                _append_transcript_info_section(doc, (transcript_raw or "").strip())
+            # 听抄稿：⑥ 纲目末尾先加分页 +「听抄信息：」+ 序言、听抄稿、添言三段合并，⑦ 套听抄信息页样式，再⑧整篇刷格式、⑨高亮
+            if outline_type == "transcript" and (
+                (transcript_raw or "").strip()
+                or (transcript_preface or "").strip()
+                or (transcript_addendum or "").strip()
+            ):
+                _append_transcript_info_section(
+                    doc,
+                    (transcript_raw or "").strip(),
+                    transcript_preface=(transcript_preface or "").strip() or None,
+                    transcript_addendum=(transcript_addendum or "").strip() or None,
+                )
             # 晨兴信息选读：纲目刷格式后再追加「晨兴圣言信息：」页（刷格式只跑纲目部分）
             doc.save(temp_docx_path)
             try:
@@ -3095,7 +3104,7 @@ class AISearchService:
                 doc2 = Document(temp_docx_path)
                 _append_morning_revival_section(doc2, (morning_revival_raw or "").strip())
                 doc2.save(temp_docx_path)
-            # 听抄稿：⑨【听抄稿添加开始】～【听抄稿添加结束】高亮并删标记；序言、添言部分整段黄色高亮（序言与添言同样处理）
+            # 听抄稿：⑨【听抄稿添加开始】～【听抄稿添加结束】高亮并删标记；序言整段黄色高亮；添言＝从「添言」到分页符整段黄色高亮
             if outline_type == "transcript":
                 try:
                     from docx.enum.text import WD_COLOR_INDEX
@@ -3105,29 +3114,48 @@ class AISearchService:
                     for idx in range(4, min(preface_highlight_end, n_paras)):
                         for run in doc2.paragraphs[idx].runs:
                             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
-                    for idx in range(addendum_highlight_start, min(addendum_highlight_end, n_paras)):
-                        for run in doc2.paragraphs[idx].runs:
-                            run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+                    addendum_range = _get_addendum_paragraph_range(doc2, to_page_break=True)
+                    if addendum_range:
+                        start_a, end_a = addendum_range
+                        for idx in range(start_a, min(end_a + 1, n_paras)):
+                            for run in doc2.paragraphs[idx].runs:
+                                run.font.highlight_color = WD_COLOR_INDEX.YELLOW
                     doc2.save(temp_docx_path)
                 except Exception as e:
                     logger.warning(f"听抄稿添加高亮处理失败: {e}", exc_info=True)
-            # 复合稿：序言、添言段落整段下划线（序言与添言同样处理）
-            elif outline_type == "composite" and (preface_highlight_end or addendum_highlight_end):
+            # 复合稿：序言整段下划线；添言＝从「添言」到文档末尾整段下划线
+            elif outline_type == "composite":
                 try:
                     doc2 = Document(temp_docx_path)
                     n_paras = len(doc2.paragraphs)
-                    for idx in range(4, min(preface_highlight_end, n_paras)):
-                        for run in doc2.paragraphs[idx].runs:
-                            run.font.underline = True
-                    for idx in range(addendum_highlight_start, min(addendum_highlight_end, n_paras)):
-                        for run in doc2.paragraphs[idx].runs:
-                            run.font.underline = True
+                    if preface_highlight_end:
+                        for idx in range(4, min(preface_highlight_end, n_paras)):
+                            for run in doc2.paragraphs[idx].runs:
+                                run.font.underline = True
+                    addendum_range = _get_addendum_paragraph_range(doc2, to_page_break=False)
+                    if addendum_range:
+                        start_a, end_a = addendum_range
+                        for idx in range(start_a, min(end_a + 1, n_paras)):
+                            for run in doc2.paragraphs[idx].runs:
+                                run.font.underline = True
                     doc2.save(temp_docx_path)
                 except Exception as e:
                     logger.warning(f"复合稿序言/添言下划线处理失败: {e}", exc_info=True)
+            # 根据第三段与类型生成下载文件名「【类型】序号 内容.docx」，失败则用默认名
+            download_filename = "节期纲目.docx"
+            try:
+                from 节期纲目刷格式 import suggest_feast_outline_filename
+                doc_for_name = Document(temp_docx_path)
+                if len(doc_for_name.paragraphs) >= 3:
+                    third_text = doc_for_name.paragraphs[2].text or ""
+                    suggested = suggest_feast_outline_filename(third_text, outline_type)
+                    if suggested:
+                        download_filename = suggested
+            except Exception:
+                pass
             with open(temp_docx_path, "rb") as f:
                 docx_bytes = f.read()
-            return {"docx_bytes": docx_bytes, "filename": "节期纲目.docx", "error": None}
+            return {"docx_bytes": docx_bytes, "filename": download_filename, "error": None}
         except Exception as e:
             logger.error(f"节期纲目刷格式失败: {e}", exc_info=True)
             return {"docx_bytes": None, "filename": "节期纲目.docx", "error": str(e)}
@@ -3857,6 +3885,46 @@ class AISearchService:
     )
 
 
+def _paragraph_has_page_break(para) -> bool:
+    """判断段落内是否包含分页符（任一 run 内有 w:br type=page）。"""
+    try:
+        from docx.oxml.ns import qn
+        for run in para.runs:
+            for child in run._element:
+                if child.tag == qn("w:br") and child.get(qn("w:type")) == "page":
+                    return True
+    except Exception:
+        pass
+    return False
+
+
+def _get_addendum_paragraph_range(doc: "Document", to_page_break: bool):
+    """
+    按内容定位「添言」：找到第一个包含「添言」的段落下标 start。
+    to_page_break=True（听抄稿）时 end 为 start 之后第一个含分页符的段落的前一段（不含分页符段）；
+    to_page_break=False（复合稿）时 end 为文档末尾。
+    返回 (start, end) 或 None（未找到「添言」）。
+    """
+    start_idx = None
+    for idx, para in enumerate(doc.paragraphs):
+        if "添言" in (para.text or ""):
+            start_idx = idx
+            break
+    if start_idx is None:
+        return None
+    n = len(doc.paragraphs)
+    if to_page_break:
+        # 听抄稿：到分页符前一段为止，分页符段落不高亮
+        end_idx = n - 1
+        for idx in range(start_idx + 1, n):
+            if _paragraph_has_page_break(doc.paragraphs[idx]):
+                end_idx = idx - 1
+                break
+    else:
+        end_idx = n - 1
+    return (start_idx, end_idx)
+
+
 def _apply_transcript_add_highlight(doc: "Document") -> None:
     """
     听抄稿纲目：与工具箱-毛胚纲目-真理加强版同一逻辑，仅改为黄色高亮（真理加强版为下划线）。
@@ -3934,9 +4002,23 @@ def _append_morning_revival_section(doc: "Document", morning_revival_raw: str) -
             doc.add_paragraph("")
 
 
-def _append_transcript_info_section(doc: "Document", transcript_raw: str) -> None:
-    """听抄稿：按节期纲目刷格式逻辑，分页 +「听抄信息：」(9职事信息摘录) + 小标题(apply_custom_92_style)/正文(0000模板)。"""
+def _append_transcript_info_section(
+    doc: "Document",
+    transcript_raw: str,
+    transcript_preface: Optional[str] = None,
+    transcript_addendum: Optional[str] = None,
+) -> None:
+    """听抄稿：分页 +「听抄信息：」+ 序言、听抄稿、添言三段合并内容（按节期纲目刷格式逻辑套样式）。"""
     from docx.enum.text import WD_BREAK
+
+    parts = []
+    if (transcript_preface or "").strip():
+        parts.append((transcript_preface or "").strip())
+    if (transcript_raw or "").strip():
+        parts.append((transcript_raw or "").strip())
+    if (transcript_addendum or "").strip():
+        parts.append((transcript_addendum or "").strip())
+    combined = "\n\n".join(parts) if parts else ""
 
     body_style = _get_feast_body_style(doc)
     p_break = doc.add_paragraph()
@@ -3958,7 +4040,7 @@ def _append_transcript_info_section(doc: "Document", transcript_raw: str) -> Non
         from 节期纲目刷格式 import apply_custom_92_style
     except ImportError:
         apply_custom_92_style = None
-    for line in transcript_raw.split("\n"):
+    for line in combined.split("\n"):
         if line.strip():
             p = doc.add_paragraph(line)
             if '。' not in line and apply_custom_92_style is not None:

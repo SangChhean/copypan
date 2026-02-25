@@ -1443,6 +1443,80 @@ def process_compound_outline_additions(doc):
     
     return processed_count
 
+
+# Web 下载建议文件名：格式「【类型】序号 内容.docx」，不含讲者
+OUTLINE_TYPE_TO_PREFIX = {
+    'original': '【纲目的原文】',
+    'with_scripture': '【带经文的纲目】',
+    'morning_revival': '【晨兴信息选读的纲目】',
+    'transcript': '【听抄稿的纲目】',
+    'composite': '【复合的纲目】',
+}
+# 第三段末尾可能带的类型后缀，用于从正文中剥掉
+_TYPE_SUFFIX_PATTERNS = ['（纲目的原文）', '（带经文的纲目）', '（晨兴信息选读的纲目）', '（听抄稿的纲目）', '（复合的纲目）']
+
+
+def suggest_feast_outline_filename(third_para_text, outline_type):
+    """
+    Web 用：根据第三段文本和纲目类型生成建议下载文件名，格式「【类型】序号 内容.docx」。
+    不含讲者。若解析失败返回 None，调用方用默认名。
+    """
+    if not third_para_text or not isinstance(third_para_text, str):
+        return None
+    prefix = OUTLINE_TYPE_TO_PREFIX.get(outline_type)
+    if not prefix:
+        return None
+    try:
+        third_para = clean_text_for_filename(third_para_text)
+        for suf in _TYPE_SUFFIX_PATTERNS:
+            if third_para.endswith(suf):
+                third_para = third_para[:-len(suf)].strip()
+                break
+        if not third_para:
+            return None
+        # 智能分割：全角空格或空格分出序号与内容
+        if '　' in third_para:
+            parts = third_para.split('　', 1)
+        elif ' ' in third_para:
+            match = re.match(r'^(第\s*[^篇章课]*[篇章课])\s+(.+)$', third_para)
+            if match:
+                parts = [match.group(1).strip(), match.group(2).strip()]
+            else:
+                parts = third_para.split(' ', 1)
+        else:
+            parts = [third_para]
+        if len(parts) >= 2:
+            serial_part = fullwidth_to_halfwidth(parts[0].strip())
+            content_part = parts[1].strip()
+            pattern = r'^第\s*([0-9]+|[一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟萬億]+)\s*([章篇课])$'
+            match = re.match(pattern, serial_part)
+            if match:
+                cn_num = match.group(1)
+                try:
+                    if cn2an:
+                        arabic_num = cn2an.cn2an(cn_num, 'smart')
+                        serial_str = f"msg. {arabic_num}"
+                    else:
+                        serial_str = serial_part
+                except (ValueError, TypeError):
+                    serial_str = serial_part
+            else:
+                serial_str = serial_part
+            invalid_chars = r'[\/:*?"<>|]'
+            content_part = re.sub(invalid_chars, '', content_part)
+            if not content_part:
+                return None
+            return f"{prefix}{serial_str} {content_part}.docx"
+        else:
+            invalid_chars = r'[\/:*?"<>|]'
+            content_part = re.sub(invalid_chars, '', third_para)
+            if not content_part:
+                return None
+            return f"{prefix}{content_part}.docx"
+    except Exception:
+        return None
+
+
 # ===== Web 入口：按类型刷格式（无双出处） =====
 FEAST_OUTLINE_TYPES = ('original', 'with_scripture', 'morning_revival', 'transcript', 'composite')
 

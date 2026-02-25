@@ -1028,7 +1028,7 @@ async def feast_outline_format_download(request: FeastOutlineFormatDownloadReque
             raise HTTPException(status_code=400, detail=result.get("error"))
         if not result.get("docx_bytes"):
             raise HTTPException(status_code=400, detail=result.get("error") or "生成 DOCX 失败")
-        filename = (request.filename or "").strip() or "节期纲目.docx"
+        filename = (result.get("filename") or "").strip() or (request.filename or "").strip() or "节期纲目.docx"
         if not filename.endswith(".docx"):
             filename = filename + ".docx"
         return {
