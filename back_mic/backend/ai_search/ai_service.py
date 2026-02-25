@@ -14,6 +14,7 @@ from datetime import datetime
 from io import BytesIO
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 
 # 抑制「Elasticsearch built-in security features are not enabled」的警告（本地开发常见）
 try:
@@ -3227,23 +3228,48 @@ class AISearchService:
         if not claude_client:
             return {"outline": "", "error": "Claude 客户端未初始化"}
         try:
-            with CLAUDE_SEMAPHORE:
-                message = claude_client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=8192,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = message.content[0].text
-            text = _strip_code_fence_for_outline(text) or text
-            result = {"outline": text or "", "error": None}
             preface_raw = (transcript_preface or "").strip()
             addendum_raw = (transcript_addendum or "").strip()
-            if preface_raw:
-                res = self.feast_outline_preface(preface_raw)
-                result["preface_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
-            if addendum_raw:
-                res = self.feast_outline_addendum(addendum_raw)
-                result["addendum_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
+
+            def _main_outline():
+                with CLAUDE_SEMAPHORE:
+                    message = claude_client.messages.create(
+                        model=CLAUDE_MODEL,
+                        max_tokens=8192,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    text = message.content[0].text
+                return _strip_code_fence_for_outline(text) or text or ""
+
+            def _preface():
+                return self.feast_outline_preface(preface_raw) if preface_raw else {"outline": "", "error": None}
+
+            def _addendum():
+                return self.feast_outline_addendum(addendum_raw) if addendum_raw else {"outline": "", "error": None}
+
+            if preface_raw or addendum_raw:
+                # 主纲目、序言、添言三者并行
+                with ThreadPoolExecutor(max_workers=3) as ex:
+                    f_main = ex.submit(_main_outline)
+                    f_preface = ex.submit(_preface) if preface_raw else None
+                    f_addendum = ex.submit(_addendum) if addendum_raw else None
+                    main_text = f_main.result()
+                    result = {"outline": main_text or "", "error": None}
+                    if f_preface:
+                        res = f_preface.result()
+                        result["preface_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
+                    if f_addendum:
+                        res = f_addendum.result()
+                        result["addendum_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
+            else:
+                with CLAUDE_SEMAPHORE:
+                    message = claude_client.messages.create(
+                        model=CLAUDE_MODEL,
+                        max_tokens=8192,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    text = message.content[0].text
+                result = {"outline": (_strip_code_fence_for_outline(text) or text or ""), "error": None}
             return result
         except Exception as e:
             logger.error(f"节期纲目听抄稿生成失败: {e}", exc_info=True)

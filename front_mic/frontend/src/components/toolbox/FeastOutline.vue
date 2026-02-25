@@ -114,33 +114,6 @@ async function generateAll() {
       newResults.push({ type: "original", type_label: getTypeLabel("original"), content: o });
     }
 
-    // 2. 带经文的纲目：经文汇集 ①
-    if (selectedTypes.value.includes("with_scripture") && o) {
-      try {
-        const res = await fetch(`${apiBase}/api/ai_search/feast_outline/scripture_text`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ content: o }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && data.content != null) {
-          newResults.push({
-            type: "with_scripture",
-            type_label: getTypeLabel("with_scripture"),
-            content: data.content,
-          });
-        } else {
-          errors.push(`带经文的纲目: ${data.detail || data.error || "失败"}`);
-        }
-      } catch (err) {
-        errors.push(`带经文的纲目: ${err.message || "网络错误"}`);
-      }
-    }
-
-    // 3. 晨兴信息选读的纲目、4. 听抄稿的纲目：可并行
-    let morningRevivalOutline = "";
-    let transcriptOutline = "";
-
     // 兼容多种响应格式（直连返回 outline / 网关包装在 data 里 / 个别历史用 content）
     const getOutlineFromResponse = (data) => {
       if (!data || typeof data !== "object") return "";
@@ -150,6 +123,24 @@ async function generateAll() {
     const getErrorFromResponse = (data) =>
       (data && typeof data === "object" && (data.detail ?? data.error ?? data.message)) || "";
 
+    // 2. 带经文的纲目：经文汇集（与 3、4 一起并行请求）
+    const runScriptureText = async () => {
+      if (!selectedTypes.value.includes("with_scripture") || !o) return { content: null, error: null };
+      try {
+        const res = await fetch(`${apiBase}/api/ai_search/feast_outline/scripture_text`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ content: o }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.content != null) return { content: data.content, error: null };
+        return { content: null, error: data.detail || data.error || "失败" };
+      } catch (err) {
+        return { content: null, error: err.message || "网络错误" };
+      }
+    };
+
+    // 3. 晨兴信息选读的纲目
     const runMorningRevival = async () => {
       if (!selectedTypes.value.includes("morning_revival") && !selectedTypes.value.includes("composite")) return "";
       if (!m) return "";
@@ -165,6 +156,7 @@ async function generateAll() {
       return "";
     };
 
+    // 4. 听抄稿的纲目
     const runTranscript = async () => {
       if (!selectedTypes.value.includes("transcript") && !selectedTypes.value.includes("composite")) {
         console.warn("[节期纲目] 未发送听抄稿请求: 未勾选「听抄稿的纲目」或「复合的纲目」");
@@ -196,9 +188,22 @@ async function generateAll() {
       return "";
     };
 
-    const [out1, out2] = await Promise.all([runMorningRevival(), runTranscript()]);
-    morningRevivalOutline = out1;
-    transcriptOutline = out2;
+    // 2、3、4 同时发出，等全部完成后再处理结果
+    const [scriptureResult, morningRevivalOutline, transcriptOutline] = await Promise.all([
+      runScriptureText(),
+      runMorningRevival(),
+      runTranscript(),
+    ]);
+
+    if (scriptureResult.content != null) {
+      newResults.push({
+        type: "with_scripture",
+        type_label: getTypeLabel("with_scripture"),
+        content: scriptureResult.content,
+      });
+    } else if (scriptureResult.error != null && selectedTypes.value.includes("with_scripture") && o) {
+      errors.push(`带经文的纲目: ${scriptureResult.error}`);
+    }
 
     if (selectedTypes.value.includes("morning_revival") && morningRevivalOutline) {
       newResults.push({
