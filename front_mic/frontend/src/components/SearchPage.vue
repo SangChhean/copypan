@@ -125,6 +125,7 @@
               <label class="ai-meta-field full">
                 <span>负担说明</span>
                 <textarea
+                  class="ai-burden-textarea"
                   v-model="aiForm.burdenDescription"
                   rows="2"
                   placeholder="用简短段落说明本次聚会或分享的负担"
@@ -627,6 +628,11 @@ async function doAISearch() {
   font-family: inherit;
   resize: none;
   transition: border-color 0.2s;
+}
+
+.ai-meta-field .ai-burden-textarea {
+  resize: vertical;
+  min-height: 72px;
 }
 
 .ai-meta-field input:focus,

@@ -790,6 +790,7 @@ const onAISearch = async () => {
             <label class="ai-meta-field full">
               <span>负担说明</span>
               <textarea
+                class="ai-burden-textarea"
                 rows="2"
                 v-model="aiForm.burdenDescription"
                 :disabled="loadingAI"
@@ -1260,6 +1261,11 @@ const onAISearch = async () => {
   font-family: inherit;
   resize: none;
   transition: border-color 0.2s;
+}
+
+.ai-meta-field .ai-burden-textarea {
+  resize: vertical;
+  min-height: 72px;
 }
 
 .ai-meta-field input:focus,
