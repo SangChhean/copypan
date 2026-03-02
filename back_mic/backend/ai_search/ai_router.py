@@ -42,7 +42,7 @@ class SearchRequest(BaseModel):
     max_results: Optional[int] = Field(30, ge=1, le=50, description="最多返回结果数")
     depth: Optional[str] = Field("general", description="搜索深度：general(一般)或deep(深度)")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题")
-    burden_description: Optional[str] = Field(None, max_length=300, description="负担说明")
+    burden_description: Optional[str] = Field(None, max_length=1000, description="负担说明")
     special_needs: Optional[str] = Field(None, max_length=300, description="纲目性质")
     audience: Optional[str] = Field(None, max_length=200, description="面对对象")
 
@@ -61,7 +61,7 @@ class SearchOnlyRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500)
     depth: Optional[str] = Field("general", description="general 或 deep")
     outline_topic: Optional[str] = Field(None, max_length=200)
-    burden_description: Optional[str] = Field(None, max_length=300)
+    burden_description: Optional[str] = Field(None, max_length=1000)
     special_needs: Optional[str] = Field(None, max_length=300)
     audience: Optional[str] = Field(None, max_length=200)
 
@@ -72,7 +72,7 @@ class GenerateOnlyRequest(BaseModel):
     search_id: str = Field(..., description="第一步返回的 search_id")
     max_results: Optional[int] = Field(30, ge=1, le=50)
     outline_topic: Optional[str] = Field(None, max_length=200)
-    burden_description: Optional[str] = Field(None, max_length=300)
+    burden_description: Optional[str] = Field(None, max_length=1000)
     special_needs: Optional[str] = Field(None, max_length=300)
     audience: Optional[str] = Field(None, max_length=200)
 
