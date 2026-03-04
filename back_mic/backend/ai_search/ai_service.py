@@ -2,6 +2,7 @@
 AI搜索服务 - 核心业务逻辑
 负责Elasticsearch检索、Claude API调用、结果处理
 """
+import asyncio
 import os
 import json
 import hashlib
@@ -31,6 +32,96 @@ from pathlib import Path
 
 from .monitoring import get_monitoring
 
+# 双路检索 + Reranker（USE_VECTOR_SEARCH=true 时使用）
+try:
+    from .embedding_service import get_embeddings as _get_embeddings_async
+    from .vector_search import knn_search_multi
+    from .rrf import rrf_merge, apply_index_weight
+    from .reranker_service import rerank as _rerank_docs
+except ImportError as e:
+    logger.warning("混合检索依赖未就绪: %s", e)
+    _get_embeddings_async = None
+    knn_search_multi = None
+    rrf_merge = None
+    apply_index_weight = None
+    _rerank_docs = None
+
+
+def _is_burden_valid(burden: str) -> bool:
+    """负担说明有效性校验：去除空白、标点、特殊字符后实质内容必须大于5个字"""
+    if not burden:
+        return False
+    meaningful = re.sub(r"[\s\W]", "", burden, flags=re.UNICODE)
+    return len(meaningful) > 5
+
+
+def _call_claude_messages_sync(client, system_prompt: str, user_prompt: str, max_tokens: int = 1024) -> Tuple[str, Any]:
+    """同步调用 Claude messages API，返回 (首条 content 的 text, usage 或 None)。"""
+    if not client:
+        return ("", None)
+    msg = client.messages.create(
+        model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+        max_tokens=max_tokens,
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_prompt}],
+    )
+    text = ""
+    if msg.content and getattr(msg.content[0], "text", None):
+        text = msg.content[0].text
+    return (text, getattr(msg, "usage", None))
+
+
+def _parse_json_array_from_text(text: str) -> List[str]:
+    """从 Claude 返回文本中解析 JSON 数组，返回字符串列表。"""
+    if not text or not isinstance(text, str):
+        return []
+    s = text.strip()
+    if s.startswith("```"):
+        lines = s.split("\n")
+        if len(lines) >= 2:
+            s = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+    try:
+        arr = json.loads(s)
+        if isinstance(arr, list):
+            return [str(x).strip() for x in arr if str(x).strip()]
+    except json.JSONDecodeError:
+        pass
+    return []
+
+
+def _parse_skeleton_points(text: str) -> List[Dict]:
+    """从 Claude 返回文本中解析摘要 points JSON：{"points": [{"title", "search_query", "sub_directions"}, ...]}。"""
+    if not text or not isinstance(text, str):
+        return []
+    s = text.strip()
+    if s.startswith("```"):
+        lines = s.split("\n")
+        if len(lines) >= 2:
+            s = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+    try:
+        data = json.loads(s)
+        if isinstance(data, dict) and "points" in data:
+            pts = data["points"]
+            if isinstance(pts, list):
+                out = []
+                for p in pts:
+                    if not isinstance(p, dict):
+                        continue
+                    title = str(p.get("title") or "").strip()
+                    sq = str(p.get("search_query") or "").strip()
+                    subs = p.get("sub_directions")
+                    if isinstance(subs, list):
+                        sub_directions = [str(x).strip() for x in subs if str(x).strip()]
+                    else:
+                        sub_directions = []
+                    if title or sq or sub_directions:
+                        out.append({"title": title, "search_query": sq, "sub_directions": sub_directions})
+                return out
+    except json.JSONDecodeError:
+        pass
+    return []
+
+
 # 配置日志（必须在导入格式刷之前，因为导入失败时会使用 logger）
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +132,10 @@ logger = logging.getLogger("ai_search")
 # 加载环境变量（确保从 backend 目录加载 .env）
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
+
+# 双路检索 + Reranker 开关（DESIGN_SPEC_V2）
+USE_VECTOR_SEARCH = os.environ.get("USE_VECTOR_SEARCH", "false").lower() == "true"
+USE_RERANK = os.environ.get("USE_RERANK", "true").lower() == "true"
 
 # 导入格式刷函数（从 backend 目录导入）
 try:
@@ -137,8 +232,9 @@ def _parse_concurrent_limit(env_key: str, default: int) -> int:
     except (ValueError, TypeError):
         return default
 
-CLAUDE_CONCURRENT_LIMIT = _parse_concurrent_limit("CLAUDE_CONCURRENT_LIMIT", 8)
-GEMINI_CONCURRENT_LIMIT = _parse_concurrent_limit("GEMINI_CONCURRENT_LIMIT", 5)
+# Claude Tier 1 约 50 RPM，Gemini 免费/低阶约 5–15 RPM；20/10 在 Tier 2 与付费 Tier 1 下安全，可通过 .env 覆盖
+CLAUDE_CONCURRENT_LIMIT = _parse_concurrent_limit("CLAUDE_CONCURRENT_LIMIT", 20)
+GEMINI_CONCURRENT_LIMIT = _parse_concurrent_limit("GEMINI_CONCURRENT_LIMIT", 10)
 CLAUDE_SEMAPHORE = threading.Semaphore(CLAUDE_CONCURRENT_LIMIT)
 GEMINI_SEMAPHORE = threading.Semaphore(GEMINI_CONCURRENT_LIMIT)
 logger.info("API 并发限制: Claude=%s, Gemini=%s", CLAUDE_CONCURRENT_LIMIT, GEMINI_CONCURRENT_LIMIT)
@@ -236,6 +332,7 @@ def get_index_weights_for_display():
     for nature, config in INDEXES_CONFIG_BY_NATURE.items():
         out[nature] = {idx: config[idx]["weight"] for idx in config}
     out["_notes"] = {
+        "一般性": "cwwl 1994-1997 文集 ×1.1",
         "高真理浓度": "cwwl 1994-1997 文集 ×1.5",
         "重实行应用": "cwwl 1985-1993 文集 ×1.5",
     }
@@ -340,6 +437,8 @@ class AISearchService:
                         output_tokens=int(tokens.get("output", 0) or 0),
                         cost=tokens.get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
+                        mode=cached_result.get("mode", "旧版"),
+                        depth=depth,
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -351,32 +450,102 @@ class AISearchService:
             context_size = 50 if depth == "general" else 200
             fetch_size = context_size  # 直接使用设定的上下文数量
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
-            search_results = self._multi_index_search(question, fetch_size, outline_nature)
-            search_time = (time.time() - search_start) * 1000
-
-            if not search_results:
-                return {
-                    "answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述",
-                    "sources": [],
-                    "cached": False,
-                    "search_time": search_time
-                }
-
-            logger.info(f"ES检索完成: {len(search_results)}条结果, 耗时{search_time:.0f}ms")
+            if USE_VECTOR_SEARCH:
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
+                if skeleton:
+                    # 方式二：摘要框架，按大点检索后存 Redis，返回 search_id 供 generate 使用
+                    try:
+                        mode2_results = asyncio.run(
+                            self._hybrid_search_mode2(question.strip(), skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                        )
+                    except Exception as e:
+                        logger.error("方式二混合检索失败: %s", e, exc_info=True)
+                        mode2_results = []
+                    search_time = (time.time() - search_start) * 1000
+                    if not mode2_results:
+                        return {
+                            "answer": "抱歉，摘要解析或检索未得到结果，请检查摘要格式或稍后重试。",
+                            "sources": [],
+                            "cached": False,
+                            "search_time": search_time
+                        }
+                    if self.redis:
+                        search_id = str(uuid.uuid4())
+                        skeleton_key = f"ai_search:{search_id}:skeleton_context"
+                        skeleton_value = json.dumps(
+                            {"mode": "skeleton", "points": mode2_results},
+                            ensure_ascii=False,
+                        )
+                        self.redis.setex(skeleton_key, 300, skeleton_value)
+                        sources_preview = self._extract_sources_from_mode2_points(mode2_results)
+                        logger.info(f"方式二检索完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
+                        return {
+                            "sources": sources_preview,
+                            "search_id": search_id,
+                            "search_time": round(search_time, 0),
+                        }
+                    else:
+                        # 无 Redis：方式二在同一请求内完成生成并返回
+                        ai_start = time.time()
+                        answer_text, mode2_payload = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton))
+                        ai_time = (time.time() - ai_start) * 1000
+                        sources_preview = self._extract_sources_from_mode2_points(mode2_results)
+                        return {
+                            "answer": answer_text,
+                            "sources": sources_preview,
+                            "cached": False,
+                            "tokens": {},
+                            "search_time": round(search_time, 0),
+                            "ai_time": round(ai_time, 0),
+                            "total_time": round((time.time() - start_time) * 1000, 0),
+                            "timestamp": datetime.now().isoformat(),
+                            "claude_payload": mode2_payload,
+                        }
+                # 方式一
+                try:
+                    hybrid_docs = asyncio.run(
+                        self._hybrid_search_mode1(question.strip(), outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    )
+                except Exception as e:
+                    logger.error("方式一混合检索失败: %s", e, exc_info=True)
+                    hybrid_docs = []
+                search_time = (time.time() - search_start) * 1000
+                if not hybrid_docs:
+                    return {
+                        "answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述",
+                        "sources": [],
+                        "cached": False,
+                        "search_time": search_time
+                    }
+                logger.info(f"混合检索完成: {len(hybrid_docs)}条结果, 耗时{search_time:.0f}ms")
+                context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
+                search_results = hybrid_docs  # 供后续 _extract_sources 使用需为 list[dict]；hybrid 无 _source，用 _extract_sources_from_context
+            else:
+                search_results = self._multi_index_search(question, fetch_size, outline_nature)
+                search_time = (time.time() - search_start) * 1000
+                if not search_results:
+                    return {
+                        "answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述",
+                        "sources": [],
+                        "cached": False,
+                        "search_time": search_time
+                    }
+                logger.info(f"ES检索完成: {len(search_results)}条结果, 耗时{search_time:.0f}ms")
+                context_items = self._build_context_from_hits(search_results, context_size, depth)
+                if not context_items:
+                    context_items = self._fallback_context_from_hits(search_results, context_size, depth)
 
             # 4. 调用Claude生成答案
             if not self.claude:
                 return {
                     "answer": "AI 服务未配置（请设置 CLAUDE_API_KEY）。",
-                    "sources": self._extract_sources(search_results[:50]),
+                    "sources": self._extract_sources_from_context(context_items[:50]) if context_items else [],
                     "cached": False,
                     "search_time": round(search_time, 0),
                     "error": True
                 }
             ai_start = time.time()
-            context_items = self._build_context_from_hits(search_results, context_size)
-            if not context_items:
-                context_items = self._fallback_context_from_hits(search_results, context_size)
             ai_response = self._generate_answer(
                 question,
                 context_items,
@@ -388,6 +557,7 @@ class AISearchService:
             logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
 
             # 5. 构造返回结果（引用来源最多 50 条）
+            mode = "新版方式一" if USE_VECTOR_SEARCH else "旧版"
             result = {
                 "answer": ai_response["answer"],
                 "sources": self._extract_sources_from_context(context_items[:50]),
@@ -397,7 +567,8 @@ class AISearchService:
                 "search_time": round(search_time, 0),
                 "ai_time": round(ai_time, 0),
                 "total_time": round((time.time() - start_time) * 1000, 0),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "mode": mode,
             }
 
             # 6. 写入缓存
@@ -420,6 +591,8 @@ class AISearchService:
                     output_tokens=output_tok,
                     cost=tokens.get("cost"),
                     special_needs=normalized_metadata.get("special_needs"),
+                    mode=mode,
+                    depth=depth,
                 )
             except Exception as _e:
                 logger.debug(f"监控记录失败: {_e}")
@@ -443,6 +616,123 @@ class AISearchService:
                 "cached": False,
                 "error": True
             }
+
+    async def search_async(
+        self,
+        question: str,
+        max_results: int = 30,
+        depth: str = "general",
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Dict:
+        """
+        一步接口的异步版本，供路由在 USE_VECTOR_SEARCH 时调用，避免 asyncio.run() 导致 Event loop is closed。
+        与 search() 行为一致，方式一/方式二用 await，BM25 用 asyncio.to_thread。
+        """
+        start_time = time.time()
+        try:
+            validation_result = self._validate_input(question, max_results)
+            if not validation_result["valid"]:
+                return {"answer": validation_result["message"], "sources": [], "cached": False, "error": True}
+            question = question.strip()
+            logger.info(f"收到问题: {question}")
+            normalized_metadata = self._normalize_metadata(metadata)
+            cache_key = self._get_cache_key(question, depth, normalized_metadata)
+            cached_result = self._get_from_cache(cache_key)
+            if cached_result:
+                logger.info("缓存命中")
+                cached_result["cached"] = True
+                try:
+                    get_monitoring(self.redis).record_query(
+                        question=question[:500], response_time_ms=(time.time() - start_time) * 1000,
+                        cache_hit=True,
+                        input_tokens=int((cached_result.get("tokens") or {}).get("input", 0) or 0),
+                        output_tokens=int((cached_result.get("tokens") or {}).get("output", 0) or 0),
+                        cost=(cached_result.get("tokens") or {}).get("cost"),
+                        special_needs=normalized_metadata.get("special_needs"),
+                        mode=cached_result.get("mode", "旧版"),
+                        depth=depth,
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
+                return cached_result
+
+            search_start = time.time()
+            context_size = 50 if depth == "general" else 200
+            fetch_size = context_size
+            outline_nature = (normalized_metadata or {}).get("special_needs", "")
+            if USE_VECTOR_SEARCH:
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
+                if skeleton:
+                    try:
+                        mode2_results = await self._hybrid_search_mode2(question, skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    except Exception as e:
+                        logger.error("方式二混合检索失败: %s", e, exc_info=True)
+                        mode2_results = []
+                    search_time = (time.time() - search_start) * 1000
+                    search_time = (time.time() - search_start) * 1000
+                    if not mode2_results:
+                        return {"answer": "抱歉，摘要解析或检索未得到结果，请检查摘要格式或稍后重试。", "sources": [], "cached": False, "search_time": search_time}
+                    if self.redis:
+                        search_id = str(uuid.uuid4())
+                        self.redis.setex(f"ai_search:{search_id}:skeleton_context", 300, json.dumps({"mode": "skeleton", "points": mode2_results}, ensure_ascii=False))
+                        sources_preview = self._extract_sources_from_mode2_points(mode2_results)
+                        logger.info(f"方式二检索完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
+                        return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
+                    ai_start = time.time()
+                    answer_text, mode2_payload = await self._generate_mode2(question, mode2_results, skeleton=skeleton)
+                    ai_time = (time.time() - ai_start) * 1000
+                    return {"answer": answer_text, "sources": self._extract_sources_from_mode2_points(mode2_results), "cached": False, "tokens": {}, "search_time": round(search_time, 0), "ai_time": round(ai_time, 0), "total_time": round((time.time() - start_time) * 1000, 0), "timestamp": datetime.now().isoformat(), "claude_payload": mode2_payload}
+                try:
+                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                except Exception as e:
+                    logger.error("方式一混合检索失败: %s", e, exc_info=True)
+                    hybrid_docs = []
+                search_time = (time.time() - search_start) * 1000
+                if not hybrid_docs:
+                    return {"answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述", "sources": [], "cached": False, "search_time": search_time}
+                logger.info(f"混合检索完成: {len(hybrid_docs)}条结果, 耗时{search_time:.0f}ms")
+                context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
+                search_results = hybrid_docs
+            else:
+                search_results = await asyncio.to_thread(self._multi_index_search, question, fetch_size, outline_nature)
+                search_time = (time.time() - search_start) * 1000
+                if not search_results:
+                    return {"answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述", "sources": [], "cached": False, "search_time": search_time}
+                logger.info(f"ES检索完成: {len(search_results)}条结果, 耗时{search_time:.0f}ms")
+                context_items = self._build_context_from_hits(search_results, context_size, depth)
+                if not context_items:
+                    context_items = self._fallback_context_from_hits(search_results, context_size, depth)
+
+            if not self.claude:
+                return {"answer": "AI 服务未配置（请设置 CLAUDE_API_KEY）。", "sources": self._extract_sources_from_context(context_items[:50]) if context_items else [], "cached": False, "search_time": round(search_time, 0), "error": True}
+            ai_start = time.time()
+            ai_response = self._generate_answer(question, context_items, context_size, normalized_metadata)
+            ai_time = (time.time() - ai_start) * 1000
+            logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
+            mode = "新版方式一" if USE_VECTOR_SEARCH else "旧版"
+            result = {"answer": ai_response["answer"], "sources": self._extract_sources_from_context(context_items[:50]), "cached": False, "tokens": ai_response.get("tokens"), "claude_payload": ai_response.get("claude_payload"), "search_time": round(search_time, 0), "ai_time": round(ai_time, 0), "total_time": round((time.time() - start_time) * 1000, 0), "timestamp": datetime.now().isoformat(), "mode": mode}
+            self._save_to_cache(cache_key, result)
+            try:
+                tokens = result.get("tokens") or {}
+                input_tok = int(tokens.get("input", 0) or 0)
+                output_tok = int(tokens.get("output", 0) or 0)
+                if not input_tok and not output_tok:
+                    answer_text = (result.get("answer") or "") or ""
+                    input_tok = int((len(question) + len(answer_text)) * 1.3)
+                    output_tok = int(len(answer_text) * 1.3)
+                get_monitoring(self.redis).record_query(question=question[:500], response_time_ms=result["total_time"], cache_hit=False, input_tokens=input_tok, output_tokens=output_tok, cost=tokens.get("cost"), special_needs=normalized_metadata.get("special_needs"), mode=mode, depth=depth)
+            except Exception as _e:
+                logger.debug(f"监控记录失败: {_e}")
+            logger.info(f"搜索完成: 总耗时{result['total_time']}ms")
+            return result
+        except Exception as e:
+            logger.error(f"搜索失败: {e}", exc_info=True)
+            try:
+                get_monitoring(self.redis).record_error(str(e), extra={"question": (question[:200] if question else "")})
+            except Exception as _e:
+                logger.debug(f"监控记录失败: {_e}")
+            return {"answer": f"搜索出错: {str(e)}\n请稍后重试或联系管理员。", "sources": [], "cached": False, "error": True}
 
     def search_only(
         self,
@@ -471,6 +761,10 @@ class AISearchService:
 
             # 检查缓存（与一步接口共用）
             normalized_metadata = self._normalize_metadata(metadata)
+            skeleton_visible = "有" if (normalized_metadata or {}).get("skeleton") else "无"
+            logger.info("search_only 开始: question=%s | USE_VECTOR_SEARCH=%s | skeleton=%s",
+                        question[:40] + "..." if len(question) > 40 else question,
+                        USE_VECTOR_SEARCH, skeleton_visible)
             cache_key = self._get_cache_key(question, depth, normalized_metadata)
             cached = self._get_from_cache(cache_key)
             if cached:
@@ -485,6 +779,8 @@ class AISearchService:
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
+                        mode=cached.get("mode", "旧版"),
+                        depth=depth,
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -493,6 +789,76 @@ class AISearchService:
             context_size = 50 if depth == "general" else 200
             search_start = time.time()
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
+
+            if USE_VECTOR_SEARCH:
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
+                if skeleton:
+                    logger.info("检索模式: 方式二(摘要)，开始按大点检索...")
+                    try:
+                        mode2_results = asyncio.run(
+                            self._hybrid_search_mode2(question, skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                        )
+                    except Exception as e:
+                        logger.error("方式二混合检索失败: %s", e, exc_info=True)
+                        mode2_results = []
+                    search_time = (time.time() - search_start) * 1000
+                    if not mode2_results:
+                        return {
+                            "sources": [],
+                            "search_id": None,
+                            "search_time": round(search_time, 0),
+                            "error": True,
+                            "message": "摘要解析或检索未得到结果，请检查摘要格式或稍后重试。",
+                        }
+                    search_id = str(uuid.uuid4())
+                    skeleton_key = f"ai_search:{search_id}:skeleton_context"
+                    self.redis.setex(
+                        skeleton_key,
+                        300,
+                        json.dumps({"mode": "skeleton", "points": mode2_results}, ensure_ascii=False),
+                    )
+                    sources_preview = self._extract_sources_from_mode2_points(mode2_results)
+                    logger.info(f"方式二 search_only 完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
+                    return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
+                logger.info("检索模式: 方式一(双路混合)，开始 BM25+向量 RRF...")
+                try:
+                    hybrid_docs = asyncio.run(
+                        self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    )
+                except Exception as e:
+                    logger.error("方式一混合检索失败: %s", e, exc_info=True)
+                    hybrid_docs = []
+                search_time = (time.time() - search_start) * 1000
+                if not hybrid_docs:
+                    return {
+                        "sources": [],
+                        "search_id": None,
+                        "search_time": round(search_time, 0),
+                        "error": True,
+                        "message": "没有找到相关的经文内容",
+                    }
+                search_id = str(uuid.uuid4())
+                context_key = f"ai_search:context:{search_id}"
+                context_data = {
+                    "mode": "hybrid",
+                    "question": question,
+                    "depth": depth,
+                    "hybrid_docs": hybrid_docs,
+                    "context_size": context_size,
+                    "metadata": normalized_metadata,
+                }
+                self.redis.setex(
+                    context_key,
+                    300,
+                    json.dumps(context_data, ensure_ascii=False, default=str),
+                )
+                context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
+                sources = self._extract_sources_from_context(context_items[:50])
+                logger.info(f"方式一 search_only 完成: search_id={search_id}, {len(sources)}条来源, 深度模式: {depth}, 耗时{search_time:.0f}ms")
+                return {"sources": sources, "search_id": search_id, "search_time": round(search_time, 0)}
+
+            logger.info("检索模式: 原版(BM25)，开始多索引检索...")
             search_results = self._multi_index_search(question, context_size, outline_nature)
             search_time = (time.time() - search_start) * 1000
 
@@ -531,6 +897,162 @@ class AISearchService:
             logger.error(f"search_only 失败: {e}", exc_info=True)
             return {"error": True, "message": str(e)}
 
+    async def search_only_async(
+        self,
+        question: str,
+        depth: str = "general",
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Dict:
+        """
+        方案A 第一步的异步版本，供路由在 USE_VECTOR_SEARCH 时调用，避免 asyncio.run() 导致子事件循环关闭、AsyncES 报 Event loop is closed。
+        与 search_only 行为一致，但方式一/方式二使用 await，BM25 使用 asyncio.to_thread。
+        """
+        try:
+            if not self.redis:
+                return {"error": True, "message": "Redis 未启用，无法使用分步搜索"}
+            if not question or len(question.strip()) < 2:
+                return {"error": True, "message": "问题太短，请输入至少2个字符"}
+            if len(question) > 500:
+                return {"error": True, "message": "问题过长（最多500字符）"}
+
+            question = question.strip()
+            depth = depth or "general"
+
+            normalized_metadata = self._normalize_metadata(metadata)
+            skeleton_visible = "有" if (normalized_metadata or {}).get("skeleton") else "无"
+            logger.info("search_only_async 开始: question=%s | USE_VECTOR_SEARCH=%s | skeleton=%s",
+                        question[:40] + "..." if len(question) > 40 else question,
+                        USE_VECTOR_SEARCH, skeleton_visible)
+            cache_key = self._get_cache_key(question, depth, normalized_metadata)
+            cached = self._get_from_cache(cache_key)
+            if cached:
+                logger.info("search_only 缓存命中")
+                cached["cached"] = True
+                try:
+                    get_monitoring(self.redis).record_query(
+                        question=question[:500],
+                        response_time_ms=50,
+                        cache_hit=True,
+                        input_tokens=int(cached.get("tokens", {}).get("input", 0) or 0),
+                        output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
+                        cost=cached.get("tokens", {}).get("cost"),
+                        special_needs=normalized_metadata.get("special_needs"),
+                        mode=cached.get("mode", "旧版"),
+                        depth=depth,
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
+                return cached
+
+            context_size = 50 if depth == "general" else 200
+            search_start = time.time()
+            outline_nature = (normalized_metadata or {}).get("special_needs", "")
+
+            if USE_VECTOR_SEARCH:
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
+                if skeleton:
+                    logger.info("检索模式: 方式二(摘要)，开始按大点检索...")
+                    try:
+                        mode2_results = await self._hybrid_search_mode2(question, skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    except Exception as e:
+                        logger.error("方式二混合检索失败: %s", e, exc_info=True)
+                        mode2_results = []
+                    search_time = (time.time() - search_start) * 1000
+                    if not mode2_results:
+                        return {
+                            "sources": [],
+                            "search_id": None,
+                            "search_time": round(search_time, 0),
+                            "error": True,
+                            "message": "摘要解析或检索未得到结果，请检查摘要格式或稍后重试。",
+                        }
+                    search_id = str(uuid.uuid4())
+                    skeleton_key = f"ai_search:{search_id}:skeleton_context"
+                    self.redis.setex(
+                        skeleton_key,
+                        300,
+                        json.dumps({"mode": "skeleton", "points": mode2_results}, ensure_ascii=False),
+                    )
+                    sources_preview = self._extract_sources_from_mode2_points(mode2_results)
+                    logger.info(f"方式二 search_only 完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
+                    return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
+                logger.info("检索模式: 方式一(双路混合)，开始 BM25+向量 RRF...")
+                try:
+                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                except Exception as e:
+                    logger.error("方式一混合检索失败: %s", e, exc_info=True)
+                    hybrid_docs = []
+                search_time = (time.time() - search_start) * 1000
+                if not hybrid_docs:
+                    return {
+                        "sources": [],
+                        "search_id": None,
+                        "search_time": round(search_time, 0),
+                        "error": True,
+                        "message": "没有找到相关的经文内容",
+                    }
+                search_id = str(uuid.uuid4())
+                context_key = f"ai_search:context:{search_id}"
+                context_data = {
+                    "mode": "hybrid",
+                    "question": question,
+                    "depth": depth,
+                    "hybrid_docs": hybrid_docs,
+                    "context_size": context_size,
+                    "metadata": normalized_metadata,
+                }
+                self.redis.setex(
+                    context_key,
+                    300,
+                    json.dumps(context_data, ensure_ascii=False, default=str),
+                )
+                context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
+                sources = self._extract_sources_from_context(context_items[:50])
+                logger.info(f"方式一 search_only 完成: search_id={search_id}, {len(sources)}条来源, 深度模式: {depth}, 耗时{search_time:.0f}ms")
+                return {"sources": sources, "search_id": search_id, "search_time": round(search_time, 0)}
+
+            logger.info("检索模式: 原版(BM25)，开始多索引检索...")
+            search_results = await asyncio.to_thread(
+                self._multi_index_search, question, context_size, outline_nature
+            )
+            search_time = (time.time() - search_start) * 1000
+
+            if not search_results:
+                return {
+                    "sources": [],
+                    "search_id": None,
+                    "search_time": round(search_time, 0),
+                    "error": True,
+                    "message": "没有找到相关的经文内容"
+                }
+
+            search_id = str(uuid.uuid4())
+            context_key = f"ai_search:context:{search_id}"
+            context_data = {
+                "question": question,
+                "depth": depth,
+                "search_results": search_results,
+                "context_size": context_size,
+                "metadata": normalized_metadata,
+            }
+            self.redis.setex(
+                context_key,
+                300,
+                json.dumps(context_data, ensure_ascii=False, default=str)
+            )
+
+            sources = self._extract_sources(search_results[:50])
+            logger.info(f"search_only 完成: search_id={search_id}, {len(sources)}条来源, 耗时{search_time:.0f}ms")
+            return {
+                "sources": sources,
+                "search_id": search_id,
+                "search_time": round(search_time, 0),
+            }
+        except Exception as e:
+            logger.error(f"search_only_async 失败: {e}", exc_info=True)
+            return {"error": True, "message": str(e)}
+
     def generate_only(
         self,
         question: str,
@@ -554,6 +1076,45 @@ class AISearchService:
 
             context_key = f"ai_search:context:{search_id}"
             raw = self.redis.get(context_key)
+            skeleton_key = f"ai_search:{search_id}:skeleton_context"
+            skeleton_data = self.redis.get(skeleton_key)
+            if skeleton_data:
+                try:
+                    data = json.loads(skeleton_data)
+                    points = data.get("points") or []
+                except Exception as e:
+                    logger.warning("方式二 skeleton 数据解析失败: %s", e)
+                    points = []
+                try:
+                    self.redis.delete(skeleton_key)
+                except Exception:
+                    pass
+                if not points:
+                    return {
+                        "answer": "方式二上下文已过期或无效，请重新检索。",
+                        "sources": [],
+                        "cached": False,
+                        "error": True
+                    }
+                logger.info("generate_only 模式: 方式二(摘要填充), 大点数=%s", len(points))
+                q = (question or "").strip() or "纲目"
+                ai_start = time.time()
+                answer_text, mode2_payload = asyncio.run(self._generate_mode2(q, points, skeleton=""))
+                ai_time = (time.time() - ai_start) * 1000
+                logger.info(f"[generate_only 完成] 方式二 | 大点数: {len(points)} | 总耗时: {int((time.time() - start_time) * 1000)}ms")
+                sources_preview = self._extract_sources_from_mode2_points(points)
+                total_time = (time.time() - start_time) * 1000
+                return {
+                    "answer": answer_text,
+                    "sources": sources_preview,
+                    "cached": False,
+                    "tokens": {},
+                    "search_time": 0,
+                    "ai_time": round(ai_time, 0),
+                    "total_time": round(total_time, 0),
+                    "timestamp": datetime.now().isoformat(),
+                    "claude_payload": mode2_payload,
+                }
             if not raw:
                 return {
                     "answer": "搜索会话已过期，请重新提问",
@@ -563,10 +1124,11 @@ class AISearchService:
                 }
 
             ctx = json.loads(raw)
-            search_results = ctx.get("search_results", [])
             stored_question = ctx.get("question", "")
             stored_depth = ctx.get("depth", "general")
             context_size = ctx.get("context_size", 200)
+            gen_mode = "方式一(双路混合)" if ctx.get("mode") == "hybrid" else "原版(context)"
+            logger.info("generate_only 模式: %s", gen_mode)
 
             # 检查缓存
             ctx_metadata = ctx.get("metadata") or {}
@@ -593,23 +1155,27 @@ class AISearchService:
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
+                        mode=cached.get("mode", "旧版"),
+                        depth=stored_depth,
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
                 return cached
 
-            if not search_results:
-                return {
-                    "answer": "未找到相关上下文",
-                    "sources": [],
-                    "cached": False,
-                    "error": True
-                }
+            if ctx.get("mode") == "hybrid":
+                hybrid_docs = ctx.get("hybrid_docs") or []
+                if not hybrid_docs:
+                    return {"answer": "未找到相关上下文", "sources": [], "cached": False, "error": True}
+                context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, stored_depth)
+            else:
+                search_results = ctx.get("search_results", [])
+                if not search_results:
+                    return {"answer": "未找到相关上下文", "sources": [], "cached": False, "error": True}
+                context_items = self._build_context_from_hits(search_results, context_size, stored_depth)
+                if not context_items:
+                    context_items = self._fallback_context_from_hits(search_results, context_size, stored_depth)
 
             ai_start = time.time()
-            context_items = self._build_context_from_hits(search_results, context_size)
-            if not context_items:
-                context_items = self._fallback_context_from_hits(search_results, context_size)
             ai_response = self._generate_answer(
                 question or stored_question,
                 context_items,
@@ -618,9 +1184,11 @@ class AISearchService:
             )
             ai_time = (time.time() - ai_start) * 1000
 
+            logger.info(f"[generate_only 完成] {gen_mode} | 上下文条数: {len(context_items)} | 总耗时: {int((time.time() - start_time) * 1000)}ms")
+
             sources = self._extract_sources_from_context(context_items[:max_results])
             total_time = (time.time() - start_time) * 1000
-
+            mode = "新版方式二" if "方式二" in gen_mode else ("新版方式一" if "方式一" in gen_mode else "旧版")
             result = {
                 "answer": ai_response["answer"],
                 "sources": sources,
@@ -630,7 +1198,8 @@ class AISearchService:
                 "search_time": 0,
                 "ai_time": round(ai_time, 0),
                 "total_time": round(total_time, 0),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "mode": mode,
             }
 
             # 写入缓存（与一步接口共用 key）
@@ -651,6 +1220,8 @@ class AISearchService:
                     output_tokens=int(tokens.get("output", 0) or 0),
                     cost=tokens.get("cost"),
                     special_needs=normalized_metadata.get("special_needs"),
+                    mode=mode,
+                    depth=stored_depth,
                 )
             except Exception as _e:
                 logger.debug(f"监控记录失败: {_e}")
@@ -794,6 +1365,10 @@ class AISearchService:
                             # 高真理浓度：仅 1994-1997
                             if "cwwl_1994-1997" in doc_id:
                                 score *= 1.5
+                        elif outline_nature == "一般性":
+                            # 一般性：cwwl 1994-1997 文集 ×1.1
+                            if "cwwl_1994-1997" in doc_id:
+                                score *= 1.1
                     hit['_weighted_score'] = score
                     hit['_index_name'] = index_name
                     all_results.append(hit)
@@ -814,11 +1389,307 @@ class AISearchService:
         question_preview = (query[:30] + "…") if len(query) > 30 else query
         logger.info(f"检索统计 - 问题:{question_preview} | 总检索:{total}条 | 使用:{used}条 | 浪费率:{waste_rate}%")
         try:
-            get_monitoring(self.redis).record_retrieval_stats(question_preview, total, used, waste_rate)
+            get_monitoring(self.redis).record_retrieval_stats(question_preview, total, used, waste_rate, mode="旧版", depth="general", burden="否")
         except Exception as _e:
             logger.debug(f"记录检索统计失败: {_e}")
 
         return all_results[:size]
+
+    def _bm25_hit_to_flat_doc(self, hit: Dict) -> Dict:
+        """将 BM25 命中转为 RRF 所需的扁平格式：_id, _index, text, source_label。"""
+        source = hit.get("_source") or {}
+        index_name = hit.get("_index_name") or hit.get("_index") or ""
+        doc_id = source.get("id") or hit.get("_id") or ""
+        if index_name in self._MAP_LIKE_INDICES:
+            text = self._extract_map_note_sections_from_inner_hits(source, hit)
+            source_label = self._get_map_note_reference_from_hit(source, hit, index_name)
+        else:
+            text = (source.get("zh") or source.get("text") or "").strip()
+            source_label = self._format_reference(source)
+        return {
+            "_id": doc_id,
+            "_index": index_name,
+            "text": text or "",
+            "source_label": source_label or "",
+        }
+
+    async def _hybrid_search_mode1(
+        self, question: str, special_needs: str, depth: str, burden_description: str = ""
+    ) -> List[Dict]:
+        """
+        方式一：主题生成纲目 — 双路混合检索 + RRF + Reranker（可选）+ 索引加权。
+        返回扁平文档列表，每条含 _id, _index, text, source_label, rrf_score, weighted_score。
+        """
+        if not question or not question.strip():
+            return []
+        if _get_embeddings_async is None or rrf_merge is None or apply_index_weight is None:
+            logger.warning("混合检索依赖未就绪，请配置 OPENAI_API_KEY 并安装 ai_search 子模块")
+            return []
+
+        # 1. Claude 展开为 5 个短句主题
+        system_expand = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
+        burden_line = f"负担说明：{burden_description}\n" if _is_burden_valid(burden_description) else ""
+        user_expand = (
+            f"你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者。"
+            f"请将以下主题，从【启示】【真理】【经历】【应用】四个角度各展开一个短句（每句15-25字），"
+            f"模仿职事书报的语气（如：神圣的生命就是神自己分赐到我们里面作我们的享受）。"
+            f"纲目性质为「{special_needs}」，展开时须偏重此性质。\n"
+            f"{burden_line}"
+            f"以JSON数组返回，例如[\"启示句\",\"真理句\",\"经历句\",\"应用句\"]，不输出其他内容。\n"
+            f"主题：{question}"
+        )
+        try:
+            expand_result, usage = await asyncio.to_thread(
+                _call_claude_messages_sync,
+                self.claude,
+                system_expand,
+                user_expand,
+            )
+            if usage is not None:
+                logger.info(
+                    f"[子主题展开] Claude调用成功: 输入={usage.input_tokens} tokens, "
+                    f"输出={usage.output_tokens} tokens, "
+                    f"总计={usage.input_tokens + usage.output_tokens} tokens, "
+                    f"费用=${(usage.input_tokens * 3 + usage.output_tokens * 15) / 1_000_000:.5f}"
+                )
+        except Exception as e:
+            logger.error("Claude 主题展开失败: %s", e)
+            return []
+        sub_topics = _parse_json_array_from_text(expand_result or "")
+        if len(sub_topics) < 5:
+            sub_topics = sub_topics + [question] * (5 - len(sub_topics))  # 不足 5 条用主题补齐
+        else:
+            sub_topics = sub_topics[:5]
+        if _is_burden_valid(burden_description):
+            sub_topics.append(burden_description)
+        sub_topics = sub_topics[:6]
+
+        logger.info(f"[子主题展开] 展开结果: {sub_topics}（共{len(sub_topics)}句）, 负担说明参与: {'是' if _is_burden_valid(burden_description) else '否'}")
+
+        # 2. 批量 Embedding：question + 子主题（最多 6 条）
+        all_texts = [question.strip()] + sub_topics
+        try:
+            vectors = await _get_embeddings_async(all_texts)
+        except Exception as e:
+            logger.error("Embedding 失败: %s", e)
+            return []
+        if not vectors or len(vectors) != len(all_texts):
+            return []
+        # vectors[0] 为主题，vectors[1:] 为子主题（含可选的负担说明一路）
+        sub_vectors = vectors[1:]
+
+        # 3. 并发：路1 BM25 / 路2 kNN，条数由 depth 控制
+        all_indices = [
+            "cwwl", "cwwn", "life", "others", "bib",
+            "map_note_chunks", "map_7feasts_chunks", "map_pano_chunks", "map_dictionary_chunks",
+        ]
+        bm25_size = 400 if depth == "deep" else 200
+        bm25_results = await asyncio.to_thread(
+            self._multi_index_search, question.strip(), bm25_size, special_needs
+        )
+        bm25_flat = [self._bm25_hit_to_flat_doc(h) for h in bm25_results]
+        # 过滤无正文的（避免 RRF/rerank 无效）
+        bm25_flat = [d for d in bm25_flat if (d.get("text") or "").strip()]
+        try:
+            knn_k = 80 if depth == "deep" else 40
+            knn_results = await knn_search_multi(sub_vectors, all_indices, k=knn_k)
+        except Exception as e:
+            logger.error("kNN 检索失败: %s", e)
+            knn_results = []
+
+        # 4. RRF 融合
+        rrf_top_n = 400 if depth == "deep" else 200
+        rrf_results = rrf_merge([bm25_flat, knn_results], k=60, top_n=rrf_top_n)
+        if not rrf_results:
+            return []
+
+        # BM25 / kNN 占比统计
+        bm25_ids = set(d.get("_id") or d.get("id") or "" for d in bm25_flat)
+        knn_ids = set(d.get("_id") or d.get("id") or "" for d in knn_results)
+        rrf_top_ids = [d.get("_id") or d.get("id") or "" for d in rrf_results]
+        rrf_from_bm25 = sum(1 for did in rrf_top_ids if did in bm25_ids)
+        rrf_from_knn = sum(1 for did in rrf_top_ids if did in knn_ids)
+        rrf_from_both = sum(1 for did in rrf_top_ids if did in bm25_ids and did in knn_ids)
+        rrf_total = len(rrf_top_ids)
+        logger.info(
+            f"RRF占比 - 总条数:{rrf_total} | "
+            f"纯BM25:{rrf_from_bm25 - rrf_from_both} | "
+            f"纯kNN:{rrf_from_knn - rrf_from_both} | "
+            f"BM25+kNN都命中:{rrf_from_both} | "
+            f"BM25占比:{round((rrf_from_bm25/rrf_total)*100, 1)}% | "
+            f"kNN占比:{round((rrf_from_knn/rrf_total)*100, 1)}%"
+        )
+
+        # 5. Jina Reranker（若 USE_RERANK）
+        reranker_top_n = 200 if depth == "deep" else 100
+        if USE_RERANK and _rerank_docs is not None:
+            texts = [d.get("text") or "" for d in rrf_results]
+            try:
+                indices = await _rerank_docs(question.strip(), texts, top_n=reranker_top_n)
+            except Exception as e:
+                logger.warning("Reranker 失败，使用 RRF 顺序: %s", e)
+                indices = list(range(min(reranker_top_n, len(rrf_results))))
+            reranked = [rrf_results[i] for i in indices if i < len(rrf_results)]
+        else:
+            reranked = rrf_results[:reranker_top_n]
+
+        # 6. 索引加权
+        weighted_top_n = 60 if depth == "deep" else 30
+        weighted = apply_index_weight(reranked, special_needs, top_n=weighted_top_n)
+        logger.info(f"[方式一检索] 深度模式: {depth} | Reranker后: {len(reranked)}条 | 最终送Claude: {len(weighted)}条")
+        return weighted
+
+    async def _search_one_point(
+        self, point: Dict, special_needs: str, total_points: int = 3, depth: str = "general"
+    ) -> Dict:
+        """方式二单大点检索：BM25 + kNN → RRF → Reranker → 加权 per_point，条数由 depth 控制，返回 {title, context: [str]}。"""
+        all_indices = [
+            "cwwl", "cwwn", "life", "others", "bib",
+            "map_note_chunks", "map_7feasts_chunks", "map_pano_chunks", "map_dictionary_chunks",
+        ]
+        search_query = (point.get("search_query") or "").strip() or (point.get("title") or "")
+        sub_directions = point.get("sub_directions") or []
+        if not isinstance(sub_directions, list):
+            sub_directions = []
+        title = str(point.get("title") or "").strip()
+
+        bm25_size = 120 if depth == "deep" else 60
+        bm25_results = await asyncio.to_thread(
+            self._multi_index_search, search_query, bm25_size, special_needs
+        )
+        bm25_flat = [self._bm25_hit_to_flat_doc(h) for h in bm25_results]
+        bm25_flat = [d for d in bm25_flat if (d.get("text") or "").strip()]
+
+        if not sub_directions or _get_embeddings_async is None:
+            sub_vectors = []
+        else:
+            try:
+                sub_vectors = await _get_embeddings_async(sub_directions)
+            except Exception:
+                sub_vectors = []
+        if sub_vectors:
+            try:
+                knn_k = 40 if depth == "deep" else 20
+                knn_results = await knn_search_multi(sub_vectors, all_indices, k=knn_k)
+            except Exception:
+                knn_results = []
+        else:
+            knn_results = []
+
+        rrf_top_n = 120 if depth == "deep" else 60
+        rrf_results = rrf_merge([bm25_flat, knn_results], k=60, top_n=rrf_top_n)
+        if not rrf_results:
+            return {"title": title, "context": [], "context_details": []}
+
+        # BM25 / kNN 占比统计
+        bm25_ids = set(d.get("_id") or d.get("id") or "" for d in bm25_flat)
+        knn_ids = set(d.get("_id") or d.get("id") or "" for d in knn_results)
+        rrf_top_ids = [d.get("_id") or d.get("id") or "" for d in rrf_results]
+        rrf_from_bm25 = sum(1 for did in rrf_top_ids if did in bm25_ids)
+        rrf_from_knn = sum(1 for did in rrf_top_ids if did in knn_ids)
+        rrf_from_both = sum(1 for did in rrf_top_ids if did in bm25_ids and did in knn_ids)
+        rrf_total = len(rrf_top_ids)
+        logger.info(
+            f"[方式二] RRF占比 [{title}] - 总条数:{rrf_total} | "
+            f"纯BM25:{rrf_from_bm25 - rrf_from_both} | "
+            f"纯kNN:{rrf_from_knn - rrf_from_both} | "
+            f"BM25+kNN都命中:{rrf_from_both} | "
+            f"BM25占比:{round((rrf_from_bm25/rrf_total)*100, 1)}% | "
+            f"kNN占比:{round((rrf_from_knn/rrf_total)*100, 1)}%"
+        )
+
+        reranker_top_n = 60 if depth == "deep" else 30
+        if USE_RERANK and _rerank_docs is not None:
+            texts = [d.get("text") or "" for d in rrf_results]
+            try:
+                indices = await _rerank_docs(search_query, texts, top_n=reranker_top_n)
+            except Exception:
+                indices = list(range(min(reranker_top_n, len(rrf_results))))
+            reranked = [rrf_results[i] for i in indices if i < len(rrf_results)]
+        else:
+            reranked = rrf_results[:reranker_top_n]
+
+        per_point = max(10, 90 // total_points) if depth == "deep" else max(6, 45 // total_points)
+        weighted = apply_index_weight(reranked, special_needs, top_n=per_point)
+        logger.info(f"[方式二检索] 大点「{title}」深度模式: {depth} | Reranker后: {len(reranked)}条 | 最终送Claude: {len(weighted)}条")
+        context_details = []
+        for d in weighted:
+            text = str(d.get("text") or "").strip()
+            if not text:
+                continue
+            source_label = (d.get("source_label") or "").strip()
+            if not source_label:
+                source_label = self._format_reference(d)
+            context_details.append({
+                "text": text,
+                "reference": source_label,
+                "type": self._get_source_type(d.get("_index") or ""),
+            })
+        context = [detail["text"] for detail in context_details]
+        return {"title": title, "context": context, "context_details": context_details}
+
+    async def _hybrid_search_mode2(
+        self, question: str, skeleton: str, special_needs: str, depth: str = "general", burden_description: str = ""
+    ) -> List[Dict]:
+        """
+        方式二：主题+摘要 — 解析摘要后每大点独立双路检索，返回 [{"title": str, "context": list[str]}, ...]。
+        """
+        if not skeleton or not skeleton.strip():
+            return []
+        if _get_embeddings_async is None or rrf_merge is None or apply_index_weight is None or knn_search_multi is None:
+            logger.warning("混合检索依赖未就绪")
+            return []
+
+        system_parse = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
+        burden_line = f"负担说明：{burden_description}\n" if _is_burden_valid(burden_description) else ""
+        user_parse = (
+                f"你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者。\n"
+                f"以下是一个主题和相关摘要，请根据主题和摘要的内容，提炼出2~5个检索方向（point），每个方向包含：\n"
+                f"1. title：该检索方向的简短标题（10字以内）\n"
+                f"2. search_query：一句职事书报语气的自然语言句子（15-25字），用于语义检索，"
+                f"模仿如：「神圣的生命就是神自己分赐到我们里面作我们的享受」\n"
+                f"3. sub_directions：从【启示】【真理】【经历】【应用】四个角度各一句（每句15-25字），"
+                f"模仿职事书报语气，只输出句子内容，不加「启示：」「真理：」等前缀标签\n"
+                f"以 JSON 格式返回，结构如下：\n"
+                f'{{"points": [{{"title": "...", "search_query": "...", "sub_directions": ["...", "...", "...", "..."]}}]}}\n'
+                f"{burden_line}"
+                f"主题：{question}\n"
+                f"摘要：{skeleton.strip()}"
+        )
+        try:
+            parse_result, usage = await asyncio.to_thread(
+                _call_claude_messages_sync,
+                self.claude,
+                system_parse,
+                user_parse,
+            )
+            if usage is not None:
+                logger.info(
+                    f"[摘要解析] Claude调用成功: 输入={usage.input_tokens} tokens, "
+                    f"输出={usage.output_tokens} tokens, "
+                    f"总计={usage.input_tokens + usage.output_tokens} tokens, "
+                    f"费用=${(usage.input_tokens * 3 + usage.output_tokens * 15) / 1_000_000:.5f}"
+                )
+        except Exception as e:
+            logger.error("Claude 摘要解析失败: %s", e)
+            return []
+        points = _parse_skeleton_points(parse_result or "")
+        if not points:
+            return []
+
+        logger.info(f"[摘要解析] 提炼大点: {[p.get('title', '') for p in points]}（共{len(points)}个）, 负担说明参与: {'是' if _is_burden_valid(burden_description) else '否'}")
+
+        total_points = len(points)
+        tasks = [self._search_one_point(p, special_needs, total_points=total_points, depth=depth) for p in points]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        out = []
+        for i, r in enumerate(results):
+            if isinstance(r, BaseException):
+                logger.warning("方式二单大点检索失败: %s", r)
+                out.append({"title": points[i].get("title", ""), "context": []})
+            else:
+                out.append(r)
+        return out
 
     # 按 type 分类：取整节 / 只取该段 / 不取
     _HEADING_TYPES = frozenset({"heading", "heading_1", "heading_2", "heading_3", "heading_4"})
@@ -990,7 +1861,7 @@ class AISearchService:
         return ("\n".join(parts), section_ids)
 
     def _build_context_from_hits(
-        self, search_results: List[Dict], context_size: int
+        self, search_results: List[Dict], context_size: int, depth: str = "general"
     ) -> List[Dict]:
         """
         根据 type 规则构建上下文：heading 取整节，text/ot1-4 只取该段，其他不取。
@@ -1000,11 +1871,8 @@ class AISearchService:
         included_ids = set()
         context_items = []
         seen_sections = set()
-        # 深度模式：限制单条内容长度，防止总 tokens 超限（Claude API 1M 限制）
-        # 实测发现中文 token 转换率约 1:1.5（1字≈1.5 tokens）
-        # 深度模式(200条)：每条1000字 ≈ 1500 tokens，总计约300K tokens（高价区，可接受）
-        # 一般模式(50条)：每条2500字 ≈ 3750 tokens，总计约187K tokens（标准区）
-        max_content_length = 1000 if context_size >= 150 else 2500
+        # 单条截断长度：depth=="deep" 时 2000 字，否则 1000 字
+        max_content_length = 2000 if depth == "deep" else 1000
 
         for hit in search_results:
             if len(context_items) >= context_size:
@@ -1091,12 +1959,12 @@ class AISearchService:
         return context_items
 
     def _fallback_context_from_hits(
-        self, search_results: List[Dict], context_size: int
+        self, search_results: List[Dict], context_size: int, depth: str = "general"
     ) -> List[Dict]:
         """当 _build_context_from_hits 无结果时回退：按原逻辑取 text 构建上下文（如 bib/hymn 等）"""
         items = []
-        # 深度模式限制单条长度，防止总 tokens 超限（实测中文约 1字≈1.5 tokens）
-        max_content_length = 1000 if context_size >= 150 else 2500
+        # 单条截断长度：depth=="deep" 时 2000 字，否则 1000 字
+        max_content_length = 2000 if depth == "deep" else 1000
         
         for hit in search_results[:context_size]:
             source = hit.get("_source", {})
@@ -1122,6 +1990,91 @@ class AISearchService:
             })
         return items
 
+    def _build_context_from_hybrid_docs(
+        self, hybrid_docs: List[Dict], context_size: int, depth: str = "general"
+    ) -> List[Dict]:
+        """从方式一混合检索得到的扁平文档列表构建 context_items（reference=source_label, content=text）。"""
+        items = []
+        # 单条截断长度：depth=="deep" 时 2000 字，否则 1000 字
+        max_content_length = 2000 if depth == "deep" else 1000
+        for d in hybrid_docs[:context_size]:
+            text = (d.get("text") or "").strip()
+            if not text:
+                continue
+            if len(text) > max_content_length:
+                text = text[:max_content_length] + "..."
+            source_label = (d.get("source_label") or "").strip()
+            if not source_label:
+                source_label = self._format_reference(d)
+            items.append({
+                "reference": source_label,
+                "content": text,
+                "source_type": self._get_source_type(d.get("_index") or ""),
+                "score": float(d.get("weighted_score") or d.get("rrf_score") or 0),
+            })
+        return items
+
+    def _extract_sources_from_mode2_points(self, points: List[Dict]) -> List[Dict]:
+        """把方式二的 points 列表展开成平铺 sources，与方式一结构一致。"""
+        sources = []
+        for pt in points:
+            for detail in pt.get("context_details") or []:
+                text = (detail.get("text") or "").strip()
+                if not text:
+                    continue
+                content = text[:150] + "..." if len(text) > 150 else text
+                sources.append({
+                    "reference": detail.get("reference") or "",
+                    "content": content,
+                    "score": 0,
+                    "type": detail.get("type") or "",
+                })
+        return sources
+
+    async def _generate_mode2(self, question: str, points: List[Dict], skeleton: str = "") -> Tuple[str, Dict]:
+        """方式二：按摘要框架填充生成纲目，返回 (完整纲目文本, claude_payload)。"""
+        if not points or not self.claude:
+            return ("", {})
+        system = self._build_generate_system_prompt()
+        blocks = []
+        for pt in points:
+            title = pt.get("title") or ""
+            ctx_list = pt.get("context") or []
+            if not ctx_list:
+                blocks.append(f"=== {title} ===\n参考段落：\n（无）")
+            else:
+                ref_lines = "\n".join(f"{i+1}. {c}" for i, c in enumerate(ctx_list))
+                blocks.append(f"=== {title} ===\n参考段落：\n{ref_lines}")
+        framework_block = "\n\n".join(blocks)
+        skeleton_block = f"\n摘要：{skeleton.strip()}\n" if skeleton and skeleton.strip() else ""
+        user = (
+            f"主题：{question}\n"
+            f"{skeleton_block}\n"
+            f"参考内容（按检索方向分组）：\n"
+            f"{framework_block}\n\n"
+            f"请基于以上参考内容，生成一篇纲目："
+        )
+        payload = {"system_prompt": system, "user_prompt": user}
+        try:
+            out, usage = await asyncio.to_thread(
+                _call_claude_messages_sync,
+                self.claude,
+                system,
+                user,
+                4000,
+            )
+            if usage is not None:
+                logger.info(
+                    f"[方式二生成] Claude调用成功: 输入={usage.input_tokens} tokens, "
+                    f"输出={usage.output_tokens} tokens, "
+                    f"总计={usage.input_tokens + usage.output_tokens} tokens, "
+                    f"费用=${(usage.input_tokens * 3 + usage.output_tokens * 15) / 1_000_000:.5f}"
+                )
+            return ((out or "").strip(), payload)
+        except Exception as e:
+            logger.error("方式二生成失败: %s", e)
+            return ("", payload)
+
     def _extract_sources_from_context(
         self, context_items: List[Dict]
     ) -> List[Dict]:
@@ -1138,37 +2091,9 @@ class AISearchService:
             })
         return sources
 
-    def _generate_answer(
-        self,
-        question: str,
-        context_items: List[Dict],
-        context_size: int = 200,
-        metadata: Optional[Dict[str, str]] = None,
-    ) -> Dict:
-        """
-        调用Claude生成答案
-
-        Args:
-            question: 用户问题
-            context_items: 上下文项列表 [{"reference", "content", "source_type"}, ...]
-            context_size: 最多使用的条数
-
-        Returns:
-            {"answer": str, "tokens": dict}
-        """
-        context_parts = []
-        for i, item in enumerate(context_items[:context_size], 1):
-            ref = item.get("reference", "")
-            content = item.get("content", "")
-            stype = item.get("source_type", "")
-            if not content:
-                continue
-            context_parts.append(f"{i}. {stype} {ref}\n{content}\n")
-
-        context = "\n".join(context_parts)
-
-        # 构建prompt
-        system_prompt = """你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者，请基于提供的内容，生成一篇纲目。
+    def _build_generate_system_prompt(self) -> str:
+        """返回纲目生成的 system prompt，供方式一和方式二共用。"""
+        return """你是一个资深的圣经研究学者，更是一位专业的倪柝声、李常受神学的研究者，请基于提供的内容，生成一篇纲目。
 
 【最高优先级原则】
 逐字引用（verbatim quotes）是最核心的要求，优先级高于所有其他要求。当任何要求与"逐字引用"冲突时，优先保证逐字引用。
@@ -1323,6 +2248,38 @@ class AISearchService:
     ✓ 纲目之间无空行，紧密排列
 """
 
+    def _generate_answer(
+        self,
+        question: str,
+        context_items: List[Dict],
+        context_size: int = 200,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict:
+        """
+        调用Claude生成答案
+
+        Args:
+            question: 用户问题
+            context_items: 上下文项列表 [{"reference", "content", "source_type"}, ...]
+            context_size: 最多使用的条数
+
+        Returns:
+            {"answer": str, "tokens": dict}
+        """
+        context_parts = []
+        for i, item in enumerate(context_items[:context_size], 1):
+            ref = item.get("reference", "")
+            content = item.get("content", "")
+            stype = item.get("source_type", "")
+            if not content:
+                continue
+            context_parts.append(f"{i}. {stype} {ref}\n{content}\n")
+
+        context = "\n".join(context_parts)
+
+        # 构建prompt
+        system_prompt = self._build_generate_system_prompt()
+
         metadata_lines = []
         if metadata:
             label_map = {
@@ -1391,7 +2348,12 @@ class AISearchService:
                        (tokens["output"] / 1_000_000) * 15
                 tokens["cost"] = round(cost, 6)
 
-                logger.info(f"Claude调用成功: 实际输入={tokens['input']} tokens, 总计={tokens['total']}, 费用=${tokens['cost']}")
+                logger.info(
+                    f"[方式一生成] Claude调用成功: 输入={message.usage.input_tokens} tokens, "
+                    f"输出={message.usage.output_tokens} tokens, "
+                    f"总计={message.usage.input_tokens + message.usage.output_tokens} tokens, "
+                    f"费用=${(message.usage.input_tokens * 3 + message.usage.output_tokens * 15) / 1_000_000:.5f}"
+                )
 
                 return {
                     "answer": answer,
@@ -1748,7 +2710,7 @@ class AISearchService:
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
 
-        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
             use_model = model or GEMINI_MODEL
             with GEMINI_SEMAPHORE:
                 try:
@@ -1760,7 +2722,20 @@ class AISearchService:
                         ),
                     )
                     if response and getattr(response, "text", None):
-                        return response.text.strip()
+                        text = response.text.strip()
+                        tokens_zh2en = None
+                        try:
+                            usage_meta = response.usage_metadata
+                            in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                            out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                            cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                            logger.info(f"[Gemini翻译] model={use_model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                            if self.redis:
+                                get_monitoring(self.redis).record_tool_usage("translation_zh2en", use_model, in_tok, out_tok, cost)
+                            tokens_zh2en = {"input": in_tok, "output": out_tok, "cost": cost}
+                        except Exception:
+                            pass
+                        return (text, tokens_zh2en)
                     else:
                         logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
                 except Exception as e:
@@ -1783,14 +2758,24 @@ class AISearchService:
                         logger.warning(f"Gemini 翻译调用失败（重试次数: {retry_count}）: {e}")
             return None
 
-        answer_en = _call_gemini(retry_count=0)
+        result = _call_gemini(retry_count=0)
+        if result is not None:
+            answer_en, tokens_zh2en = result[0], result[1]
+        else:
+            answer_en, tokens_zh2en = None, None
         if answer_en is None:
-            answer_en = _call_gemini(retry_count=1)
+            result = _call_gemini(retry_count=1)
+            if result is not None:
+                answer_en, tokens_zh2en = result[0], result[1]
         if answer_en is None and _last_error_model_not_found[0]:
             logger.info("使用备用模型进行中翻英: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
-            answer_en = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if result is not None:
+                answer_en, tokens_zh2en = result[0], result[1]
             if answer_en is None:
-                answer_en = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                result = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                if result is not None:
+                    answer_en, tokens_zh2en = result[0], result[1]
         
         # 翻译标题（如果提供）- 独立执行，即使纲目内容翻译失败也尝试翻译标题
         title_en = None
@@ -1870,7 +2855,7 @@ class AISearchService:
             except Exception as e:
                 logger.debug("翻译缓存写入失败: %s", e)
 
-        return {"answer_en": answer_en, "title_en": title_en}
+        return {"answer_en": answer_en, "title_en": title_en, "tokens": tokens_zh2en or {"input": 0, "output": 0, "cost": 0}}
 
     def translate_outline_en2zh(self, english_outline: str) -> Dict:
         """
@@ -1896,7 +2881,7 @@ class AISearchService:
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
 
-        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
             use_model = model or GEMINI_MODEL
             with GEMINI_SEMAPHORE:
                 try:
@@ -1908,7 +2893,20 @@ class AISearchService:
                         ),
                     )
                     if response and getattr(response, "text", None):
-                        return response.text.strip()
+                        text = response.text.strip()
+                        tokens_en2zh = None
+                        try:
+                            usage_meta = response.usage_metadata
+                            in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                            out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                            cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                            logger.info(f"[Gemini英翻中] model={use_model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                            if self.redis:
+                                get_monitoring(self.redis).record_tool_usage("translation_en2zh", use_model, in_tok, out_tok, cost)
+                            tokens_en2zh = {"input": in_tok, "output": out_tok, "cost": cost}
+                        except Exception:
+                            pass
+                        return (text, tokens_en2zh)
                     logger.warning("Gemini 英翻中返回空响应（重试次数: %s）", retry_count)
                 except Exception as e:
                     error_msg = str(e)
@@ -1930,17 +2928,27 @@ class AISearchService:
                         logger.warning("Gemini 英翻中调用失败（重试次数: %s）: %s", retry_count, e)
             return None
 
-        answer_zh = _call_gemini(retry_count=0)
+        result = _call_gemini(retry_count=0)
+        if result is not None:
+            answer_zh, tokens_en2zh = result[0], result[1]
+        else:
+            answer_zh, tokens_en2zh = None, None
         if answer_zh is None:
-            answer_zh = _call_gemini(retry_count=1)
+            result = _call_gemini(retry_count=1)
+            if result is not None:
+                answer_zh, tokens_en2zh = result[0], result[1]
         if answer_zh is None and _last_error_model_not_found[0]:
             logger.info("使用备用模型进行英翻中: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
-            answer_zh = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if result is not None:
+                answer_zh, tokens_en2zh = result[0], result[1]
             if answer_zh is None:
-                answer_zh = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                result = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                if result is not None:
+                    answer_zh, tokens_en2zh = result[0], result[1]
         if answer_zh is None:
             return {"answer_zh": None, "error": "纲目翻译失败，请稍后重试"}
-        return {"answer_zh": answer_zh}
+        return {"answer_zh": answer_zh, "tokens": tokens_en2zh or {"input": 0, "output": 0, "cost": 0}}
 
     def outline_to_traditional(self, content: str) -> Dict[str, Optional[str]]:
         """
@@ -3205,6 +4213,15 @@ class AISearchService:
                     messages=[{"role": "user", "content": prompt}],
                 )
                 text = message.content[0].text
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-晨兴] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": text or "", "error": None}
         except Exception as e:
@@ -3239,6 +4256,15 @@ class AISearchService:
                         messages=[{"role": "user", "content": prompt}],
                     )
                     text = message.content[0].text
+                    try:
+                        in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                        out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                        cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                        logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                        if self.redis:
+                            get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                    except Exception:
+                        pass
                 return _strip_code_fence_for_outline(text) or text or ""
 
             def _preface():
@@ -3269,6 +4295,15 @@ class AISearchService:
                         messages=[{"role": "user", "content": prompt}],
                     )
                     text = message.content[0].text
+                    try:
+                        in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                        out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                        cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                        logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                        if self.redis:
+                            get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                    except Exception:
+                        pass
                 result = {"outline": (_strip_code_fence_for_outline(text) or text or ""), "error": None}
             return result
         except Exception as e:
@@ -3292,6 +4327,15 @@ class AISearchService:
                     messages=[{"role": "user", "content": prompt}],
                 )
                 text = message.content[0].text
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-复合] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": text or "", "error": None}
         except Exception as e:
@@ -3315,6 +4359,15 @@ class AISearchService:
                     messages=[{"role": "user", "content": prompt}],
                 )
                 text = message.content[0].text
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-序言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": (text or "").strip(), "error": None}
         except Exception as e:
@@ -3338,6 +4391,15 @@ class AISearchService:
                     messages=[{"role": "user", "content": prompt}],
                 )
                 text = message.content[0].text
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-添言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": (text or "").strip(), "error": None}
         except Exception as e:
@@ -3680,14 +4742,23 @@ class AISearchService:
             logger.info(f"使用 {ai_name} 生成毛胚纲目 (类型: {outline_type}, ai_index: {ai_index})")
             
             generated_content = self._call_ai_for_rough_outline(ai_config, prompt)
-            if generated_content:
-                generated_content = _strip_code_fence_for_outline(generated_content) or generated_content
-            if generated_content:
+            content = None
+            tokens = None
+            if generated_content is not None:
+                if isinstance(generated_content, tuple):
+                    content = generated_content[0]
+                    tokens = generated_content[1] if len(generated_content) > 1 else None
+                else:
+                    content = generated_content
+            if content:
+                content = _strip_code_fence_for_outline(content) or content
+            if content:
                 return {
                     "results": [{
                         "type": outline_type,
-                        "content": generated_content,
+                        "content": content,
                         "ai_model": ai_name,
+                        "tokens": tokens or {"input": 0, "output": 0, "cost": 0},
                     }],
                     "error": None,
                 }
@@ -3703,8 +4774,8 @@ class AISearchService:
             }
 
 
-    def _call_ai_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
-        """调用指定的 AI API 生成内容"""
+    def _call_ai_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[tuple]:
+        """调用指定的 AI API 生成内容，返回 (content, tokens_dict) 或 None"""
         ai_type = ai_config.get("type")
         ai_name = ai_config.get("name", "Unknown")
         
@@ -3744,7 +4815,18 @@ class AISearchService:
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
                 )
-                return message.content[0].text
+                text = message.content[0].text
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude毛胚] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("rough_outline_claude", model, in_tok, out_tok, cost)
+                    tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
+                except Exception:
+                    tokens_out = {"input": 0, "output": 0, "cost": 0}
+                return (text, tokens_out)
         except Exception as e:
             logger.error(f"Claude API 调用失败: {e}", exc_info=True)
             return None
@@ -3775,10 +4857,25 @@ class AISearchService:
                         contents=prompt,
                         config=types.GenerateContentConfig(max_output_tokens=max_tokens),
                     )
+                text = None
+                tokens_out = None
                 if hasattr(response, 'text'):
-                    return response.text
-                if hasattr(response, 'candidates') and response.candidates:
-                    return response.candidates[0].content.parts[0].text
+                    text = response.text
+                elif hasattr(response, 'candidates') and response.candidates:
+                    text = response.candidates[0].content.parts[0].text
+                if text is not None:
+                    try:
+                        usage_meta = response.usage_metadata
+                        in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                        out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                        cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                        logger.info(f"[Gemini毛胚] model={model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                        if self.redis:
+                            get_monitoring(self.redis).record_tool_usage("rough_outline_gemini", model, in_tok, out_tok, cost)
+                        tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
+                    except Exception:
+                        pass
+                    return (text, tokens_out)
                 logger.error(f"Gemini 响应格式异常: {response}")
                 return None
             except Exception as e:
@@ -3808,10 +4905,25 @@ class AISearchService:
                         contents=prompt,
                         config=types.GenerateContentConfig(max_output_tokens=max_tokens),
                     )
+                text = None
+                tokens_out = None
                 if hasattr(response, 'text'):
-                    return response.text
-                if hasattr(response, 'candidates') and response.candidates:
-                    return response.candidates[0].content.parts[0].text
+                    text = response.text
+                elif hasattr(response, 'candidates') and response.candidates:
+                    text = response.candidates[0].content.parts[0].text
+                if text is not None:
+                    try:
+                        usage_meta = response.usage_metadata
+                        in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                        out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                        cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                        logger.info(f"[Gemini毛胚] model={fallback} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                        if self.redis:
+                            get_monitoring(self.redis).record_tool_usage("rough_outline_gemini", fallback, in_tok, out_tok, cost)
+                        tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
+                    except Exception:
+                        pass
+                    return (text, tokens_out)
             except Exception as e2:
                 logger.error(f"Gemini 备用模型 %s 调用失败: {e2}", fallback, exc_info=True)
         return None
@@ -3838,9 +4950,32 @@ class AISearchService:
             else:
                 create_kw["max_tokens"] = max_tokens
             r = client.chat.completions.create(**create_kw)
+            content = None
             if r.choices and len(r.choices) > 0 and getattr(r.choices[0].message, "content", None):
-                return r.choices[0].message.content
-            return None
+                content = r.choices[0].message.content
+            tokens_out = None
+            if content is not None:
+                try:
+                    in_tok = int(getattr(r.usage, "prompt_tokens", 0) or 0)
+                    out_tok = int(getattr(r.usage, "completion_tokens", 0) or 0)
+                    cost = (in_tok * 1.0 + out_tok * 3.0) / 1_000_000
+                    logger.info(f"[OpenAI兼容毛胚] model={model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        if "deepseek" in model.lower():
+                            tool = "rough_outline_deepseek"
+                        elif "grok" in model.lower() or "grok" in (base_url or "").lower():
+                            tool = "rough_outline_grok"
+                        elif "perplexity" in (base_url or "").lower() or "sonar" in (model or "").lower():
+                            tool = "rough_outline_perplexity"
+                        else:
+                            tool = "rough_outline_openai"
+                        get_monitoring(self.redis).record_tool_usage(tool, model, in_tok, out_tok, cost)
+                    tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
+                except Exception:
+                    pass
+            if content is not None:
+                return (content, tokens_out)
+            return (None, None)
         except Exception as e:
             logger.error(f"OpenAI 兼容 API 调用失败 (model={model}): {e}", exc_info=True)
             return None

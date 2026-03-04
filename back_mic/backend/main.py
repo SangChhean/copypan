@@ -30,12 +30,18 @@ from tools.biblecollection import biblecollection
 from ai_search import ai_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
+from ai_search.vector_search import close_async_es
 import asyncio
 from pathlib import Path as pt
 from es_config import es
 
 
 app = FastAPI()
+
+# 应用关闭时关闭 AsyncElasticsearch（vector_search 中的异步 ES 客户端）
+@app.on_event("shutdown")
+async def on_shutdown():
+    await close_async_es()
 
 # 应用启动时初始化监控模块（复用 ai_search 的 Redis 客户端）
 get_monitoring(redis_client)

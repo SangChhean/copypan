@@ -106,6 +106,9 @@ class AIMonitoring:
         output_tokens: int = 0,
         cost: Optional[float] = None,
         special_needs: Optional[str] = None,
+        mode: str = "旧版",
+        depth: str = "general",
+        api_type: str = "claude",
     ) -> None:
         """
         记录一次 AI 查询。
@@ -128,6 +131,9 @@ class AIMonitoring:
             pipe = self.redis.pipeline()
             pipe.hincrby(KEY_STATS, "total_queries", 1)
             pipe.hincrby(KEY_STATS, f"nature_{nature}", 1)
+            pipe.hincrby(KEY_STATS, f"mode_{mode}", 1)
+            pipe.hincrby(KEY_STATS, f"depth_{depth}", 1)
+            pipe.hincrby(KEY_STATS, f"api_{api_type}", 1)
             if cache_hit:
                 pipe.hincrby(KEY_STATS, "cache_hits", 1)
             else:
@@ -138,6 +144,7 @@ class AIMonitoring:
             # 每日统计
             day_key = KEY_DAILY_PREFIX + self._today_str()
             pipe.hincrby(day_key, "total_queries", 1)
+            pipe.hincrby(day_key, f"api_{api_type}", 1)
             if cache_hit:
                 pipe.hincrby(day_key, "cache_hits", 1)
             else:
@@ -149,6 +156,26 @@ class AIMonitoring:
             pipe.execute()
         except Exception as e:
             logger.warning(f"记录查询统计失败: {e}")
+
+    def record_tool_usage(self, tool: str, model: str, input_tokens: int, output_tokens: int, cost: float):
+        """记录工具箱 AI 调用（翻译、毛胚纲目等）"""
+        if not self.redis:
+            return
+        try:
+            pipe = self.redis.pipeline()
+            today = datetime.now().strftime("%Y-%m-%d")
+            daily_key = f"{KEY_DAILY_PREFIX}{today}"
+            pipe.expire(daily_key, 86400 * 30)
+            pipe.hincrbyfloat(KEY_STATS, "tool_total_cost", cost)
+            pipe.hincrbyfloat(KEY_STATS, f"tool_{tool}_cost", cost)
+            pipe.hincrby(KEY_STATS, f"tool_{tool}_count", 1)
+            pipe.hincrby(KEY_STATS, "tool_total_input_tokens", input_tokens)
+            pipe.hincrby(KEY_STATS, "tool_total_output_tokens", output_tokens)
+            pipe.hincrbyfloat(daily_key, "tool_total_cost", cost)
+            pipe.hincrby(daily_key, f"tool_{tool}_count", 1)
+            pipe.execute()
+        except Exception as e:
+            logger.warning("record_tool_usage failed: %s", e)
 
     def record_error(self, error_message: str, extra: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -175,6 +202,9 @@ class AIMonitoring:
         total: int,
         used: int,
         waste_rate: float,
+        mode: str = "旧版",
+        depth: str = "general",
+        burden: str = "否",
     ) -> None:
         """
         记录一次检索统计（总检索条数、使用条数、浪费率），用于后台展示。
@@ -192,6 +222,9 @@ class AIMonitoring:
                 "total": total,
                 "used": used,
                 "waste_rate": waste_rate,
+                "mode": mode,
+                "depth": depth,
+                "burden": burden,
             }
             self.redis.lpush(KEY_RETRIEVAL_LOG, json.dumps(item, ensure_ascii=False))
             self.redis.ltrim(KEY_RETRIEVAL_LOG, 0, MAX_RETRIEVAL_LOG - 1)
@@ -232,9 +265,27 @@ class AIMonitoring:
                 "avg_response_time_ms": 0.0,
                 "total_cost": 0.0,
                 "nature_counts": {k: 0 for k in AIMonitoring.NATURE_KEYS},
+                "mode_counts": {"新版方式一": 0, "新版方式二": 0, "旧版": 0},
+                "depth_counts": {"general": 0, "deep": 0},
                 "daily": [],
                 "retrieval_log": [],
                 "message": "Redis 未启用，无统计数据",
+                "tool_stats": {
+                    "total_cost": 0.0,
+                    "total_input_tokens": 0,
+                    "total_output_tokens": 0,
+                    "by_tool": {
+                        "translation_zh2en": {"count": 0, "cost": 0.0},
+                        "translation_en2zh": {"count": 0, "cost": 0.0},
+                        "rough_outline_gemini": {"count": 0, "cost": 0.0},
+                        "rough_outline_deepseek": {"count": 0, "cost": 0.0},
+                        "rough_outline_openai": {"count": 0, "cost": 0.0},
+                        "rough_outline_perplexity": {"count": 0, "cost": 0.0},
+                        "rough_outline_grok": {"count": 0, "cost": 0.0},
+                        "rough_outline_claude": {"count": 0, "cost": 0.0},
+                        "feast_outline_claude": {"count": 0, "cost": 0.0},
+                    },
+                },
             }
         try:
             # 从 Redis Hash 读取全局统计
@@ -272,12 +323,40 @@ class AIMonitoring:
             retrieval_log = self.get_recent_retrieval_log(limit=50)
             # 纲目性质统计：四种性质的查询次数
             nature_counts = {k: int(raw.get(f"nature_{k}", 0) or 0) for k in self.NATURE_KEYS}
+            mode_counts = {
+                "新版方式一": int(raw.get("mode_新版方式一", 0) or 0),
+                "新版方式二": int(raw.get("mode_新版方式二", 0) or 0),
+                "旧版": int(raw.get("mode_旧版", 0) or 0),
+            }
+            depth_counts = {
+                "general": int(raw.get("depth_general", 0) or 0),
+                "deep": int(raw.get("depth_deep", 0) or 0),
+            }
+            tool_stats = {
+                "total_cost": float(raw.get("tool_total_cost") or 0),
+                "total_input_tokens": int(raw.get("tool_total_input_tokens") or 0),
+                "total_output_tokens": int(raw.get("tool_total_output_tokens") or 0),
+                "by_tool": {
+                    "translation_zh2en": {"count": int(raw.get("tool_translation_zh2en_count") or 0), "cost": float(raw.get("tool_translation_zh2en_cost") or 0)},
+                    "translation_en2zh": {"count": int(raw.get("tool_translation_en2zh_count") or 0), "cost": float(raw.get("tool_translation_en2zh_cost") or 0)},
+                    "rough_outline_gemini": {"count": int(raw.get("tool_rough_outline_gemini_count") or 0), "cost": float(raw.get("tool_rough_outline_gemini_cost") or 0)},
+                    "rough_outline_deepseek": {"count": int(raw.get("tool_rough_outline_deepseek_count") or 0), "cost": float(raw.get("tool_rough_outline_deepseek_cost") or 0)},
+                    "rough_outline_openai": {"count": int(raw.get("tool_rough_outline_openai_count") or 0), "cost": float(raw.get("tool_rough_outline_openai_cost") or 0)},
+                    "rough_outline_perplexity": {"count": int(raw.get("tool_rough_outline_perplexity_count") or 0), "cost": float(raw.get("tool_rough_outline_perplexity_cost") or 0)},
+                    "rough_outline_grok": {"count": int(raw.get("tool_rough_outline_grok_count") or 0), "cost": float(raw.get("tool_rough_outline_grok_cost") or 0)},
+                    "rough_outline_claude": {"count": int(raw.get("tool_rough_outline_claude_count") or 0), "cost": float(raw.get("tool_rough_outline_claude_cost") or 0)},
+                    "feast_outline_claude": {"count": int(raw.get("tool_feast_outline_claude_count") or 0), "cost": float(raw.get("tool_feast_outline_claude_cost") or 0)},
+                },
+            }
             return {
                 "total_queries": total_queries,
                 "cache_hit_rate": round(cache_hit_rate, 2),
                 "avg_response_time_ms": round(avg_response_time_ms, 2),
                 "total_cost": round(total_cost, 4),
                 "nature_counts": nature_counts,
+                "mode_counts": mode_counts,
+                "depth_counts": depth_counts,
+                "tool_stats": tool_stats,
                 "daily": daily,
                 "retrieval_log": retrieval_log,
             }
@@ -290,6 +369,24 @@ class AIMonitoring:
                 "total_cost": 0.0,
                 "daily": [],
                 "nature_counts": {"一般性": 0, "高真理浓度": 0, "高生命浓度": 0, "重实行应用": 0},
+                "mode_counts": {"新版方式一": 0, "新版方式二": 0, "旧版": 0},
+                "depth_counts": {"general": 0, "deep": 0},
+                "tool_stats": {
+                    "total_cost": 0.0,
+                    "total_input_tokens": 0,
+                    "total_output_tokens": 0,
+                    "by_tool": {
+                        "translation_zh2en": {"count": 0, "cost": 0.0},
+                        "translation_en2zh": {"count": 0, "cost": 0.0},
+                        "rough_outline_gemini": {"count": 0, "cost": 0.0},
+                        "rough_outline_deepseek": {"count": 0, "cost": 0.0},
+                        "rough_outline_openai": {"count": 0, "cost": 0.0},
+                        "rough_outline_perplexity": {"count": 0, "cost": 0.0},
+                        "rough_outline_grok": {"count": 0, "cost": 0.0},
+                        "rough_outline_claude": {"count": 0, "cost": 0.0},
+                        "feast_outline_claude": {"count": 0, "cost": 0.0},
+                    },
+                },
                 "retrieval_log": [],
                 "error": str(e),
             }

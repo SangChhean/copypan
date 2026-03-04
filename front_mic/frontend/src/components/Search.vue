@@ -116,6 +116,16 @@ const loadingTraditional = ref(false); // 正在生成繁体纲目
 const errorTraditional = ref(null); // 繁体纲目生成失败信息
 const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
 
+// 摘要框架（方式二）
+const skeletonText = ref("");
+
+const isSkeletonValid = () => {
+  const text = skeletonText.value.trim();
+  // 去除所有空白、标点、特殊字符后，剩余实质内容必须大于10个字
+  const meaningful = text.replace(/[\s\p{P}\p{S}]/gu, "");
+  return meaningful.length > 10;
+};
+
 // 刷格式并下载（DOCX/PDF）
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const downloadFormatsZh = ref([]);
@@ -652,11 +662,15 @@ const onAISearch = async () => {
   showAIAnswer.value = false;
   aiLoadingText.value = "🔍 正在检索相关内容...";
   
+  const searchPayload = { question, depth: aiDepth.value, ...metadataPayload };
+  if (isSkeletonValid()) {
+    searchPayload.skeleton = skeletonText.value.trim();
+  }
   try {
     // 第一步：仅检索，快速返回引用来源（超时 2 分钟）
     const searchRes = await axios.post(
       "/api/ai_search/search",
-      { question, depth: aiDepth.value, ...metadataPayload },
+      searchPayload,
       { timeout: 120000 }
     );
     
@@ -693,10 +707,14 @@ const onAISearch = async () => {
     showAISources.value = true;
     aiLoadingText.value = "💡 AI 正在生成答案...";
     
+    const generatePayload = { question, search_id, max_results: 50, ...metadataPayload };
+    if (isSkeletonValid()) {
+      generatePayload.skeleton = skeletonText.value.trim();
+    }
     // 第二步：生成答案（耗时可能较长，超时 3 分钟）
     const generateRes = await axios.post(
       "/api/ai_search/generate",
-      { question, search_id, max_results: 50, ...metadataPayload },
+      generatePayload,
       { timeout: 180000 }
     );
     
@@ -770,7 +788,7 @@ const onAISearch = async () => {
         <div v-if="aiPanelVisible" class="ai-meta-panel">
           <div class="ai-meta-grid">
             <label class="ai-meta-field">
-              <span>纲目主题*（必填项目）</span>
+              <span>纲目主题*（必填）</span>
               <input
                 type="text"
                 v-model="aiForm.outlineTopic"
@@ -794,11 +812,21 @@ const onAISearch = async () => {
                 rows="2"
                 v-model="aiForm.burdenDescription"
                 :disabled="loadingAI"
-                placeholder="简要说明纲目的主要负担"
+                placeholder="用一两句话，简要说明纲目的主要负担"
+              ></textarea>
+            </label>
+            <label class="ai-meta-field full">
+              <span>简单摘要（30字）</span>
+              <textarea
+                class="ai-burden-textarea"
+                rows="2"
+                v-model="skeletonText"
+                :disabled="loadingAI"
+                placeholder="简要说明纲目的摘要"
               ></textarea>
             </label>
             <div class="ai-meta-field full">
-              <span>纲目性质*（必选项目）</span>
+              <span>纲目性质*（必选）</span>
               <div class="ai-nature-btns">
                 <button
                   type="button"
@@ -976,7 +1004,6 @@ const onAISearch = async () => {
               <span style="color: #1677ff; font-weight: bold;">{{ idx + 1 }}. </span>
               <a-tag v-if="source.type" color="purple" :bordered="false" style="margin-right: 8px;">{{ source.type }}</a-tag>
               <span v-text="source.reference"></span>
-              <a-tag v-if="source.score" color="blue" :bordered="false" style="margin-left: 8px; font-size: 11px;">相关度: {{ source.score }}</a-tag>
             </div>
             <div class="source-content" v-if="source.content">
               <span v-html="source.content"></span>
@@ -1107,7 +1134,6 @@ const onAISearch = async () => {
           <span style="color: #1677ff; font-weight: bold;">{{ idx + 1 }}. </span>
           <a-tag v-if="source.type" color="purple" :bordered="false" style="margin-right: 8px;">{{ source.type }}</a-tag>
           <span v-text="source.reference"></span>
-          <a-tag v-if="source.score" color="blue" :bordered="false" style="margin-left: 8px; font-size: 11px;">相关度: {{ source.score }}</a-tag>
         </div>
         <div class="source-content" v-if="source.content">
           <span v-html="source.content"></span>
@@ -1266,6 +1292,10 @@ const onAISearch = async () => {
 .ai-meta-field .ai-burden-textarea {
   resize: vertical;
   min-height: 72px;
+}
+
+.ai-meta-field .ai-skeleton-textarea {
+  resize: vertical;
 }
 
 .ai-meta-field input:focus,

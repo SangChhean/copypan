@@ -12,7 +12,7 @@ import json
 import logging
 from urllib.parse import quote
 
-from .ai_service import ai_service, get_index_weights_for_display
+from .ai_service import ai_service, get_index_weights_for_display, USE_VECTOR_SEARCH
 from .monitoring import get_monitoring
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ def _extract_metadata(payload) -> dict:
         "burden_description": getattr(payload, "burden_description", None),
         "special_needs": getattr(payload, "special_needs", None),
         "audience": getattr(payload, "audience", None),
+        "skeleton": getattr(payload, "skeleton", None),
     }
     return {
         key: value.strip()
@@ -45,6 +46,7 @@ class SearchRequest(BaseModel):
     burden_description: Optional[str] = Field(None, max_length=1000, description="负担说明")
     special_needs: Optional[str] = Field(None, max_length=300, description="纲目性质")
     audience: Optional[str] = Field(None, max_length=200, description="面对对象")
+    skeleton: Optional[str] = Field(None, max_length=10000, description="摘要原文（方式二）")
 
     class Config:
         json_schema_extra = {
@@ -57,13 +59,14 @@ class SearchRequest(BaseModel):
 
 
 class SearchOnlyRequest(BaseModel):
-    """方案A - 第一步：仅搜索"""
+    """方案A - 第一步：仅搜索（支持方式一/方式二）"""
     question: str = Field(..., min_length=1, max_length=500)
     depth: Optional[str] = Field("general", description="general 或 deep")
     outline_topic: Optional[str] = Field(None, max_length=200)
     burden_description: Optional[str] = Field(None, max_length=1000)
     special_needs: Optional[str] = Field(None, max_length=300)
     audience: Optional[str] = Field(None, max_length=200)
+    skeleton: Optional[str] = Field(None, max_length=10000, description="摘要原文（方式二）")
 
 
 class GenerateOnlyRequest(BaseModel):
@@ -207,12 +210,22 @@ async def ai_search_step1(request: SearchOnlyRequest):
     """
     try:
         metadata = _extract_metadata(request)
-        result = await asyncio.to_thread(
-            ai_service.search_only,
-            request.question,
-            request.depth or "general",
-            metadata,
-        )
+        has_skeleton = "有" if (metadata and metadata.get("skeleton")) else "无"
+        logger.info("收到 search 请求: question=%s..., depth=%s, skeleton=%s",
+                    (request.question or "")[:50], request.depth or "general", has_skeleton)
+        if USE_VECTOR_SEARCH:
+            result = await ai_service.search_only_async(
+                request.question,
+                request.depth or "general",
+                metadata,
+            )
+        else:
+            result = await asyncio.to_thread(
+                ai_service.search_only,
+                request.question,
+                request.depth or "general",
+                metadata,
+            )
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result.get("message", "搜索失败"))
         return result
@@ -231,6 +244,7 @@ async def ai_search_step2(request: GenerateOnlyRequest):
     """
     try:
         metadata = _extract_metadata(request)
+        logger.info("收到 generate 请求: search_id=%s", request.search_id)
         result = await asyncio.to_thread(
             ai_service.generate_only,
             request.question,
@@ -631,15 +645,22 @@ async def ai_search(request: SearchRequest):
     try:
         logger.info(f"收到AI搜索请求: {request.question[:50]}...")
 
-        # 调用服务层（to_thread 避免阻塞事件循环，支持多用户并发）
         metadata = _extract_metadata(request)
-        result = await asyncio.to_thread(
-            ai_service.search,
-            request.question,
-            request.max_results,
-            request.depth,
-            metadata,
-        )
+        if USE_VECTOR_SEARCH:
+            result = await ai_service.search_async(
+                request.question,
+                request.max_results,
+                request.depth,
+                metadata,
+            )
+        else:
+            result = await asyncio.to_thread(
+                ai_service.search,
+                request.question,
+                request.max_results,
+                request.depth,
+                metadata,
+            )
 
         # 检查是否有错误
         if result.get("error"):

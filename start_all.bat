@@ -133,6 +133,8 @@ echo   [Kibana] 首次启动需1-2分钟，进入后选 Explore on my own
 echo.
 echo   [若白屏] 确认 Nginx 的 root 为 %NGINX_HTML%，参考 nginx.conf.example
 echo.
+echo   [双路检索/龙骨] 由 back_mic\backend\.env 中 USE_VECTOR_SEARCH、USE_RERANK 控制
+echo.
 echo ============================================================
 echo   关闭此窗口不会停止服务；停止请运行 %STOPBAT%
 echo ============================================================

@@ -38,6 +38,38 @@ const natureWeightRows = computed(() => {
   });
 });
 
+const toolStatsColumns = [
+  { title: "工具名称", dataIndex: "name", key: "name", width: 180 },
+  { title: "调用次数", dataIndex: "count", key: "count", width: 100, align: "right" },
+  { title: "费用($)", dataIndex: "cost", key: "cost", width: 120, align: "right", customRender: ({ text }) => text != null ? "$" + Number(text).toFixed(4) : "$0.0000" },
+];
+
+const toolStatsRows = computed(() => {
+  const ts = stats.value?.tool_stats;
+  const by = ts?.by_tool || {};
+  const row = (name, key) => ({
+    key,
+    name,
+    count: (by[key] && by[key].count) != null ? by[key].count : 0,
+    cost: (by[key] && by[key].cost) != null ? by[key].cost : 0,
+  });
+  const rows = [
+    row("纲目翻译（中→英）", "translation_zh2en"),
+    row("纲目翻译（英→中）", "translation_en2zh"),
+    row("毛胚纲目 Gemini", "rough_outline_gemini"),
+    row("毛胚纲目 Claude", "rough_outline_claude"),
+    row("毛胚纲目 DeepSeek", "rough_outline_deepseek"),
+    row("毛胚纲目 OpenAI", "rough_outline_openai"),
+    row("毛胚纲目 Perplexity", "rough_outline_perplexity"),
+    row("毛胚纲目 Grok", "rough_outline_grok"),
+    row("节期纲目 Claude", "feast_outline_claude"),
+  ];
+  const totalCount = rows.reduce((s, r) => s + (r.count || 0), 0);
+  const totalCost = (ts && ts.total_cost != null) ? ts.total_cost : 0;
+  rows.push({ key: "total", name: "总计", count: totalCount, cost: totalCost });
+  return rows;
+});
+
 const fetchStats = () => {
   showSpin.value = true;
   errMsg.value = "";
@@ -183,6 +215,47 @@ onMounted(() => fetchStats());
             </div>
           </div>
         </a-card>
+        <h3 class="weights-title">使用模式</h3>
+        <a-card size="small" class="nature-card">
+          <div class="nature-list">
+            <div v-for="name in ['新版方式一', '新版方式二', '旧版']" :key="name" class="nature-row">
+              <span class="nature-name">{{ name }}</span>
+              <span class="nature-count">{{ (stats.mode_counts && stats.mode_counts[name]) || 0 }} 次</span>
+              <span class="nature-pct">
+                {{ stats.total_queries ? (((stats.mode_counts && stats.mode_counts[name]) || 0) / stats.total_queries * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+          </div>
+        </a-card>
+        <h3 class="weights-title">深度模式</h3>
+        <a-card size="small" class="nature-card">
+          <div class="nature-list">
+            <div class="nature-row">
+              <span class="nature-name">普通</span>
+              <span class="nature-count">{{ (stats.depth_counts && stats.depth_counts['general']) || 0 }} 次</span>
+              <span class="nature-pct">
+                {{ stats.total_queries ? (((stats.depth_counts && stats.depth_counts['general']) || 0) / stats.total_queries * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+            <div class="nature-row">
+              <span class="nature-name">深度</span>
+              <span class="nature-count">{{ (stats.depth_counts && stats.depth_counts['deep']) || 0 }} 次</span>
+              <span class="nature-pct">
+                {{ stats.total_queries ? (((stats.depth_counts && stats.depth_counts['deep']) || 0) / stats.total_queries * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+          </div>
+        </a-card>
+        <h3 class="weights-title">工具箱 AI 费用</h3>
+        <a-table
+          :columns="toolStatsColumns"
+          :data-source="toolStatsRows"
+          :pagination="false"
+          bordered
+          size="small"
+          row-key="key"
+          class="weights-table"
+        />
         <h3 class="weights-title">AI 检索权重</h3>
         <a-table
           v-if="stats.index_weights && stats.index_weights._labels"

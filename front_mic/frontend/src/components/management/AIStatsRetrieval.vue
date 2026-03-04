@@ -51,6 +51,9 @@ onMounted(() => fetchLog());
         { title: '总检索', dataIndex: 'total', width: 90, align: 'right' },
         { title: '使用', dataIndex: 'used', width: 80, align: 'right' },
         { title: '浪费率', dataIndex: 'waste_rate', width: 90, align: 'right', customRender: ({ text }) => text != null ? text + '%' : '-' },
+        { title: '模式', dataIndex: 'mode', width: 100, ellipsis: true },
+        { title: '深度', dataIndex: 'depth', width: 80, align: 'center', customRender: ({ text }) => text === 'deep' ? '深度' : (text === 'general' ? '普通' : (text || '-')) },
+        { title: '负担说明', dataIndex: 'burden', width: 90, align: 'center', customRender: ({ text }) => text === '是' ? '是' : (text === '否' ? '否' : (text || '-')) },
       ]"
       :data-source="retrievalLog"
       :pagination="{ pageSize: 20 }"
