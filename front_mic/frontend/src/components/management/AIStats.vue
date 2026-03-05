@@ -2,6 +2,7 @@
 import axios from "axios";
 import { ref, computed, onMounted, watch } from "vue";
 import { ReloadOutlined, DeleteOutlined, ClearOutlined } from "@ant-design/icons-vue";
+import { Modal } from "ant-design-vue";
 import { tip } from "../utils";
 
 const showSpin = ref(false);
@@ -110,6 +111,28 @@ const onReset = () => {
     });
 };
 
+const onResetClick = () => {
+  Modal.confirm({
+    title: "确认重置",
+    content: "确定要重置所有统计数据吗？此操作不可恢复。",
+    okText: "确定",
+    cancelText: "取消",
+    okType: "danger",
+    onOk() {
+      Modal.confirm({
+        title: "再次确认",
+        content: "再次确认：所有历史统计、费用记录将被永久清空，无法还原，确定继续吗？",
+        okText: "确定继续",
+        cancelText: "取消",
+        okType: "danger",
+        onOk() {
+          onReset();
+        },
+      });
+    },
+  });
+};
+
 const clearingCache = ref(false);
 const onClearCache = () => {
   clearingCache.value = true;
@@ -162,21 +185,10 @@ onMounted(() => fetchStats());
           清理缓存
         </a-button>
       </a-popconfirm>
-      <a-popconfirm
-        title="确定要重置所有 AI 统计吗？"
-        ok-text="确定重置"
-        cancel-text="取消"
-        ok-type="danger"
-        @confirm="onReset"
-      >
-        <template #description>
-          <span style="color: #ff4d4f;">此操作将清空总查询数、缓存命中、响应时间、费用、纲目性质统计及每日统计，且不可恢复。</span>
-        </template>
-        <a-button danger :loading="showSpin">
-          <template #icon><DeleteOutlined /></template>
-          重置统计
-        </a-button>
-      </a-popconfirm>
+      <a-button danger :loading="showSpin" @click="onResetClick">
+        <template #icon><DeleteOutlined /></template>
+        重置统计
+      </a-button>
     </a-space>
   </div>
   <div v-if="errMsg" class="err-msg">

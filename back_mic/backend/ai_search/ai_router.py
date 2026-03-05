@@ -757,6 +757,7 @@ async def reset_stats():
 
     谨慎调用，不可恢复。
     """
+    logger.info("reset_stats 被调用")
     try:
         monitoring = get_monitoring()
         monitoring.reset_stats()

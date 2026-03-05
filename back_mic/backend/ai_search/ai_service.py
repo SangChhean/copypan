@@ -437,7 +437,7 @@ class AISearchService:
                         output_tokens=int(tokens.get("output", 0) or 0),
                         cost=tokens.get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
-                        mode=cached_result.get("mode", "旧版"),
+                        mode=cached_result.get("mode") or ("新版方式一" if USE_VECTOR_SEARCH else "旧版"),
                         depth=depth,
                     )
                 except Exception as _e:
@@ -488,10 +488,13 @@ class AISearchService:
                     else:
                         # 无 Redis：方式二在同一请求内完成生成并返回
                         ai_start = time.time()
-                        answer_text, mode2_payload = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton))
+                        answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton))
                         ai_time = (time.time() - ai_start) * 1000
                         sources_preview = self._extract_sources_from_mode2_points(mode2_results)
                         total_time = round((time.time() - start_time) * 1000, 0)
+                        in_tok = int(getattr(mode2_usage, "input_tokens", 0) or 0) if mode2_usage else 0
+                        out_tok = int(getattr(mode2_usage, "output_tokens", 0) or 0) if mode2_usage else 0
+                        cost = (in_tok * 3 + out_tok * 15) / 1_000_000 if (in_tok or out_tok) else None
                         result = {
                             "answer": answer_text,
                             "sources": sources_preview,
@@ -509,9 +512,9 @@ class AISearchService:
                                 question=question[:500],
                                 response_time_ms=total_time,
                                 cache_hit=False,
-                                input_tokens=0,
-                                output_tokens=0,
-                                cost=None,
+                                input_tokens=in_tok,
+                                output_tokens=out_tok,
+                                cost=cost,
                                 special_needs=normalized_metadata.get("special_needs"),
                                 mode="新版方式二",
                                 depth=depth,
@@ -538,7 +541,8 @@ class AISearchService:
                 context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
                 search_results = hybrid_docs  # 供后续 _extract_sources 使用需为 list[dict]；hybrid 无 _source，用 _extract_sources_from_context
             else:
-                search_results = self._multi_index_search(question, fetch_size, outline_nature)
+                burden_desc = (normalized_metadata or {}).get("burden_description") or ""
+                search_results = self._multi_index_search(question, fetch_size, outline_nature, mode="旧版", depth=depth, burden="是" if _is_burden_valid(burden_desc) else "否")
                 search_time = (time.time() - search_start) * 1000
                 if not search_results:
                     return {
@@ -665,7 +669,7 @@ class AISearchService:
                         output_tokens=int((cached_result.get("tokens") or {}).get("output", 0) or 0),
                         cost=(cached_result.get("tokens") or {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
-                        mode=cached_result.get("mode", "旧版"),
+                        mode=cached_result.get("mode") or ("新版方式一" if USE_VECTOR_SEARCH else "旧版"),
                         depth=depth,
                     )
                 except Exception as _e:
@@ -696,12 +700,15 @@ class AISearchService:
                         logger.info(f"方式二检索完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
                         return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
                     ai_start = time.time()
-                    answer_text, mode2_payload = await self._generate_mode2(question, mode2_results, skeleton=skeleton)
+                    answer_text, mode2_payload, mode2_usage = await self._generate_mode2(question, mode2_results, skeleton=skeleton)
                     ai_time = (time.time() - ai_start) * 1000
                     total_time = round((time.time() - start_time) * 1000, 0)
+                    in_tok = int(getattr(mode2_usage, "input_tokens", 0) or 0) if mode2_usage else 0
+                    out_tok = int(getattr(mode2_usage, "output_tokens", 0) or 0) if mode2_usage else 0
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000 if (in_tok or out_tok) else None
                     result = {"answer": answer_text, "sources": self._extract_sources_from_mode2_points(mode2_results), "cached": False, "tokens": {}, "search_time": round(search_time, 0), "ai_time": round(ai_time, 0), "total_time": total_time, "timestamp": datetime.now().isoformat(), "claude_payload": mode2_payload, "mode": "新版方式二"}
                     try:
-                        get_monitoring(self.redis).record_query(question=question[:500], response_time_ms=total_time, cache_hit=False, input_tokens=0, output_tokens=0, cost=None, special_needs=normalized_metadata.get("special_needs"), mode="新版方式二", depth=depth)
+                        get_monitoring(self.redis).record_query(question=question[:500], response_time_ms=total_time, cache_hit=False, input_tokens=in_tok, output_tokens=out_tok, cost=cost, special_needs=normalized_metadata.get("special_needs"), mode="新版方式二", depth=depth)
                     except Exception as _e:
                         logger.debug(f"监控记录失败: {_e}")
                     return result
@@ -801,7 +808,7 @@ class AISearchService:
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
-                        mode=cached.get("mode", "旧版"),
+                        mode=cached.get("mode") or ("新版方式一" if USE_VECTOR_SEARCH else "旧版"),
                         depth=depth,
                     )
                 except Exception as _e:
@@ -881,7 +888,8 @@ class AISearchService:
                 return {"sources": sources, "search_id": search_id, "search_time": round(search_time, 0)}
 
             logger.info("检索模式: 原版(BM25)，开始多索引检索...")
-            search_results = self._multi_index_search(question, context_size, outline_nature)
+            burden_desc = (normalized_metadata or {}).get("burden_description") or ""
+            search_results = self._multi_index_search(question, context_size, outline_nature, mode="旧版", depth=depth, burden="是" if _is_burden_valid(burden_desc) else "否")
             search_time = (time.time() - search_start) * 1000
 
             if not search_results:
@@ -959,7 +967,7 @@ class AISearchService:
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
-                        mode=cached.get("mode", "旧版"),
+                        mode=cached.get("mode") or ("新版方式一" if USE_VECTOR_SEARCH else "旧版"),
                         depth=depth,
                     )
                 except Exception as _e:
@@ -1035,8 +1043,9 @@ class AISearchService:
                 return {"sources": sources, "search_id": search_id, "search_time": round(search_time, 0)}
 
             logger.info("检索模式: 原版(BM25)，开始多索引检索...")
+            burden_desc = (normalized_metadata or {}).get("burden_description") or ""
             search_results = await asyncio.to_thread(
-                self._multi_index_search, question, context_size, outline_nature
+                self._multi_index_search, question, context_size, outline_nature, "旧版", depth, "是" if _is_burden_valid(burden_desc) else "否"
             )
             search_time = (time.time() - search_start) * 1000
 
@@ -1121,23 +1130,27 @@ class AISearchService:
                 logger.info("generate_only 模式: 方式二(摘要填充), 大点数=%s", len(points))
                 q = (question or "").strip() or "纲目"
                 ai_start = time.time()
-                answer_text, mode2_payload = asyncio.run(self._generate_mode2(q, points, skeleton=""))
+                answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(q, points, skeleton=""))
                 ai_time = (time.time() - ai_start) * 1000
                 logger.info(f"[generate_only 完成] 方式二 | 大点数: {len(points)} | 总耗时: {int((time.time() - start_time) * 1000)}ms")
                 sources_preview = self._extract_sources_from_mode2_points(points)
                 total_time = (time.time() - start_time) * 1000
                 normalized_meta = self._normalize_metadata(metadata or {})
+                in_tok = int(getattr(mode2_usage, "input_tokens", 0) or 0) if mode2_usage else 0
+                out_tok = int(getattr(mode2_usage, "output_tokens", 0) or 0) if mode2_usage else 0
+                cost = (in_tok * 3 + out_tok * 15) / 1_000_000 if mode2_usage else None
+                depth = (metadata or {}).get("depth") or "general"
                 try:
                     get_monitoring(self.redis).record_query(
                         question=q[:500],
                         response_time_ms=round(total_time, 0),
                         cache_hit=False,
-                        input_tokens=0,
-                        output_tokens=0,
-                        cost=None,
+                        input_tokens=in_tok,
+                        output_tokens=out_tok,
+                        cost=cost,
                         special_needs=normalized_meta.get("special_needs"),
                         mode="新版方式二",
-                        depth="general",
+                        depth=depth,
                     )
                 except Exception as _e:
                     logger.debug(f"监控记录失败: {_e}")
@@ -1145,7 +1158,7 @@ class AISearchService:
                     "answer": answer_text,
                     "sources": sources_preview,
                     "cached": False,
-                    "tokens": {},
+                    "tokens": {"input": in_tok, "output": out_tok, "cost": cost},
                     "search_time": 0,
                     "ai_time": round(ai_time, 0),
                     "total_time": round(total_time, 0),
@@ -1192,7 +1205,7 @@ class AISearchService:
                         output_tokens=int(cached.get("tokens", {}).get("output", 0) or 0),
                         cost=cached.get("tokens", {}).get("cost"),
                         special_needs=normalized_metadata.get("special_needs"),
-                        mode=cached.get("mode", "旧版"),
+                        mode=cached.get("mode") or ("新版方式一" if USE_VECTOR_SEARCH else "旧版"),
                         depth=stored_depth,
                     )
                 except Exception as _e:
@@ -1296,7 +1309,8 @@ class AISearchService:
         return {"valid": True, "message": ""}
 
     def _multi_index_search(
-        self, query: str, size: int, outline_nature: str = ""
+        self, query: str, size: int, outline_nature: str = "",
+        mode: str = "旧版", depth: str = "general", burden: str = "否"
     ) -> List[Dict]:
         """
         多索引搜索并按权重排序
@@ -1426,7 +1440,7 @@ class AISearchService:
         question_preview = (query[:30] + "…") if len(query) > 30 else query
         logger.info(f"检索统计 - 问题:{question_preview} | 总检索:{total}条 | 使用:{used}条 | 浪费率:{waste_rate}%")
         try:
-            get_monitoring(self.redis).record_retrieval_stats(question_preview, total, used, waste_rate, mode="旧版", depth="general", burden="否")
+            get_monitoring(self.redis).record_retrieval_stats(question_preview, total, used, waste_rate, mode=mode, depth=depth, burden=burden)
         except Exception as _e:
             logger.debug(f"记录检索统计失败: {_e}")
 
@@ -2068,10 +2082,10 @@ class AISearchService:
                 })
         return sources
 
-    async def _generate_mode2(self, question: str, points: List[Dict], skeleton: str = "") -> Tuple[str, Dict]:
-        """方式二：按摘要框架填充生成纲目，返回 (完整纲目文本, claude_payload)。"""
+    async def _generate_mode2(self, question: str, points: List[Dict], skeleton: str = "") -> Tuple[str, Dict, Any]:
+        """方式二：按摘要框架填充生成纲目，返回 (完整纲目文本, claude_payload, usage 或 None)。"""
         if not points or not self.claude:
-            return ("", {})
+            return ("", {}, None)
         system = self._build_generate_system_prompt()
         blocks = []
         for pt in points:
@@ -2107,10 +2121,10 @@ class AISearchService:
                     f"总计={usage.input_tokens + usage.output_tokens} tokens, "
                     f"费用=${(usage.input_tokens * 3 + usage.output_tokens * 15) / 1_000_000:.5f}"
                 )
-            return ((out or "").strip(), payload)
+            return ((out or "").strip(), payload, usage)
         except Exception as e:
             logger.error("方式二生成失败: %s", e)
-            return ("", payload)
+            return ("", payload, None)
 
     def _extract_sources_from_context(
         self, context_items: List[Dict]
