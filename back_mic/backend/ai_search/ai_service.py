@@ -451,7 +451,7 @@ class AISearchService:
             fetch_size = context_size  # 直接使用设定的上下文数量
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
             if USE_VECTOR_SEARCH:
-                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or (normalized_metadata or {}).get("burden_description") or ""
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
                     # 方式二：摘要框架，按大点检索后存 Redis，返回 search_id 供 generate 使用
@@ -491,21 +491,37 @@ class AISearchService:
                         answer_text, mode2_payload = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton))
                         ai_time = (time.time() - ai_start) * 1000
                         sources_preview = self._extract_sources_from_mode2_points(mode2_results)
-                        return {
+                        total_time = round((time.time() - start_time) * 1000, 0)
+                        result = {
                             "answer": answer_text,
                             "sources": sources_preview,
                             "cached": False,
                             "tokens": {},
                             "search_time": round(search_time, 0),
                             "ai_time": round(ai_time, 0),
-                            "total_time": round((time.time() - start_time) * 1000, 0),
+                            "total_time": total_time,
                             "timestamp": datetime.now().isoformat(),
                             "claude_payload": mode2_payload,
+                            "mode": "新版方式二",
                         }
-                # 方式一
+                        try:
+                            get_monitoring(self.redis).record_query(
+                                question=question[:500],
+                                response_time_ms=total_time,
+                                cache_hit=False,
+                                input_tokens=0,
+                                output_tokens=0,
+                                cost=None,
+                                special_needs=normalized_metadata.get("special_needs"),
+                                mode="新版方式二",
+                                depth=depth,
+                            )
+                        except Exception as _e:
+                            logger.debug(f"监控记录失败: {_e}")
+                        return result
                 try:
                     hybrid_docs = asyncio.run(
-                        self._hybrid_search_mode1(question.strip(), outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                        self._hybrid_search_mode1(question.strip(), outline_nature, depth, burden_description="")
                     )
                 except Exception as e:
                     logger.error("方式一混合检索失败: %s", e, exc_info=True)
@@ -661,7 +677,7 @@ class AISearchService:
             fetch_size = context_size
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
             if USE_VECTOR_SEARCH:
-                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or (normalized_metadata or {}).get("burden_description") or ""
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
                     try:
@@ -682,9 +698,15 @@ class AISearchService:
                     ai_start = time.time()
                     answer_text, mode2_payload = await self._generate_mode2(question, mode2_results, skeleton=skeleton)
                     ai_time = (time.time() - ai_start) * 1000
-                    return {"answer": answer_text, "sources": self._extract_sources_from_mode2_points(mode2_results), "cached": False, "tokens": {}, "search_time": round(search_time, 0), "ai_time": round(ai_time, 0), "total_time": round((time.time() - start_time) * 1000, 0), "timestamp": datetime.now().isoformat(), "claude_payload": mode2_payload}
+                    total_time = round((time.time() - start_time) * 1000, 0)
+                    result = {"answer": answer_text, "sources": self._extract_sources_from_mode2_points(mode2_results), "cached": False, "tokens": {}, "search_time": round(search_time, 0), "ai_time": round(ai_time, 0), "total_time": total_time, "timestamp": datetime.now().isoformat(), "claude_payload": mode2_payload, "mode": "新版方式二"}
+                    try:
+                        get_monitoring(self.redis).record_query(question=question[:500], response_time_ms=total_time, cache_hit=False, input_tokens=0, output_tokens=0, cost=None, special_needs=normalized_metadata.get("special_needs"), mode="新版方式二", depth=depth)
+                    except Exception as _e:
+                        logger.debug(f"监控记录失败: {_e}")
+                    return result
                 try:
-                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description="")
                 except Exception as e:
                     logger.error("方式一混合检索失败: %s", e, exc_info=True)
                     hybrid_docs = []
@@ -791,7 +813,7 @@ class AISearchService:
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
 
             if USE_VECTOR_SEARCH:
-                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or (normalized_metadata or {}).get("burden_description") or ""
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
                     logger.info("检索模式: 方式二(摘要)，开始按大点检索...")
@@ -824,7 +846,7 @@ class AISearchService:
                 logger.info("检索模式: 方式一(双路混合)，开始 BM25+向量 RRF...")
                 try:
                     hybrid_docs = asyncio.run(
-                        self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                        self._hybrid_search_mode1(question, outline_nature, depth, burden_description="")
                     )
                 except Exception as e:
                     logger.error("方式一混合检索失败: %s", e, exc_info=True)
@@ -949,7 +971,7 @@ class AISearchService:
             outline_nature = (normalized_metadata or {}).get("special_needs", "")
 
             if USE_VECTOR_SEARCH:
-                skeleton_raw = (normalized_metadata or {}).get("skeleton") or ""
+                skeleton_raw = (normalized_metadata or {}).get("skeleton") or (normalized_metadata or {}).get("burden_description") or ""
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
                     logger.info("检索模式: 方式二(摘要)，开始按大点检索...")
@@ -979,7 +1001,7 @@ class AISearchService:
                     return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
                 logger.info("检索模式: 方式一(双路混合)，开始 BM25+向量 RRF...")
                 try:
-                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
+                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description="")
                 except Exception as e:
                     logger.error("方式一混合检索失败: %s", e, exc_info=True)
                     hybrid_docs = []
@@ -1104,6 +1126,21 @@ class AISearchService:
                 logger.info(f"[generate_only 完成] 方式二 | 大点数: {len(points)} | 总耗时: {int((time.time() - start_time) * 1000)}ms")
                 sources_preview = self._extract_sources_from_mode2_points(points)
                 total_time = (time.time() - start_time) * 1000
+                normalized_meta = self._normalize_metadata(metadata or {})
+                try:
+                    get_monitoring(self.redis).record_query(
+                        question=q[:500],
+                        response_time_ms=round(total_time, 0),
+                        cache_hit=False,
+                        input_tokens=0,
+                        output_tokens=0,
+                        cost=None,
+                        special_needs=normalized_meta.get("special_needs"),
+                        mode="新版方式二",
+                        depth="general",
+                    )
+                except Exception as _e:
+                    logger.debug(f"监控记录失败: {_e}")
                 return {
                     "answer": answer_text,
                     "sources": sources_preview,

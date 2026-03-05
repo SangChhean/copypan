@@ -116,14 +116,11 @@ const loadingTraditional = ref(false); // 正在生成繁体纲目
 const errorTraditional = ref(null); // 繁体纲目生成失败信息
 const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
 
-// 摘要框架（方式二）
-const skeletonText = ref("");
-
-const isSkeletonValid = () => {
-  const text = skeletonText.value.trim();
-  // 去除所有空白、标点、特殊字符后，剩余实质内容必须大于10个字
+// 负担说明/简单摘要（50字）：有内容则作为摘要给 Claude 解析（方式二），无则方式一
+const isBurdenValidForMode2 = () => {
+  const text = aiForm.burdenDescription.trim();
   const meaningful = text.replace(/[\s\p{P}\p{S}]/gu, "");
-  return meaningful.length > 10;
+  return meaningful.length >= 10;
 };
 
 // 刷格式并下载（DOCX/PDF）
@@ -663,8 +660,8 @@ const onAISearch = async () => {
   aiLoadingText.value = "🔍 正在检索相关内容...";
   
   const searchPayload = { question, depth: aiDepth.value, ...metadataPayload };
-  if (isSkeletonValid()) {
-    searchPayload.skeleton = skeletonText.value.trim();
+  if (isBurdenValidForMode2()) {
+    searchPayload.skeleton = aiForm.burdenDescription.trim();
   }
   try {
     // 第一步：仅检索，快速返回引用来源（超时 2 分钟）
@@ -708,8 +705,8 @@ const onAISearch = async () => {
     aiLoadingText.value = "💡 AI 正在生成答案...";
     
     const generatePayload = { question, search_id, max_results: 50, ...metadataPayload };
-    if (isSkeletonValid()) {
-      generatePayload.skeleton = skeletonText.value.trim();
+    if (isBurdenValidForMode2()) {
+      generatePayload.skeleton = aiForm.burdenDescription.trim();
     }
     // 第二步：生成答案（耗时可能较长，超时 3 分钟）
     const generateRes = await axios.post(
@@ -806,23 +803,13 @@ const onAISearch = async () => {
               />
             </label>
             <label class="ai-meta-field full">
-              <span>负担说明</span>
+              <span>负担说明/简单摘要（50字）</span>
               <textarea
                 class="ai-burden-textarea"
-                rows="2"
+                rows="5"
                 v-model="aiForm.burdenDescription"
                 :disabled="loadingAI"
-                placeholder="用一两句话，简要说明纲目的主要负担"
-              ></textarea>
-            </label>
-            <label class="ai-meta-field full">
-              <span>简单摘要（30字）</span>
-              <textarea
-                class="ai-burden-textarea"
-                rows="2"
-                v-model="skeletonText"
-                :disabled="loadingAI"
-                placeholder="简要说明纲目的摘要"
+                placeholder="约50字概括纲目摘要，说明纲目负担"
               ></textarea>
             </label>
             <div class="ai-meta-field full">
@@ -964,8 +951,8 @@ const onAISearch = async () => {
           </a-spin>
           <div class="loading-text">{{ aiLoadingText }}</div>
           <div class="loading-tips">
-            <span v-if="aiDepth === 'general'">正在使用一般模式（50条上下文）</span>
-            <span v-else>正在使用深度模式（200条上下文）</span>
+            <span v-if="aiDepth === 'general'">正在使用一般模式</span>
+            <span v-else>正在使用深度模式</span>
           </div>
         </div>
       </div>
