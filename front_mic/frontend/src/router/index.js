@@ -65,6 +65,8 @@ const routes = [
     path: "/feast-outline",
     component: () => import("../components/toolbox/FeastOutline.vue"),
   },
+  { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
+  { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
 ];
 
 const router = createRouter({

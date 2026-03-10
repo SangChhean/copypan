@@ -32,6 +32,18 @@ def get_token_from_header_or_cookie(
     return token
 
 
+def get_token_from_header_or_query(
+    request: Request, header_token: Optional[str] = Depends(oauth2_scheme)
+):
+    """优先从 Authorization Bearer 取 token，没有则从 query string 的 token 参数取，两者都没有则 401。"""
+    token = header_token
+    if not token:
+        token = request.query_params.get("token")
+    if not token:
+        raise ERR_401
+    return token
+
+
 def set_token(username: str, password: str, remember: str):
     USER_DIR = Path(__file__).parent / "users.json"
     try:
@@ -75,6 +87,29 @@ def set_token(username: str, password: str, remember: str):
 
 
 def test_token(token: str = Depends(get_token_from_header_or_cookie)):
+    USER_DIR = Path(__file__).parent / "users.json"
+    USERS = json.loads(USER_DIR.read_text("utf-8"))
+    try:
+        data = jwt_decode(token)
+        username = data.get("username")
+        role = data.get("role")
+        exp = data.get("exp")
+        if exp is None:
+            raise ERR_401
+        exp_dt = datetime.fromtimestamp(exp, tz=timezone.utc)
+        now = datetime.now(timezone.utc)
+        if username in USERS and role == USERS[username]["role"] and now < exp_dt:
+            return {"username": username, "role": role}
+        else:
+            raise ERR_403
+    except ERR_403:
+        raise
+    except Exception:
+        raise ERR_401
+
+
+def test_token_optional(token: str = Depends(get_token_from_header_or_query)):
+    """与 test_token 相同校验逻辑，但 token 可从 header 或 query string 的 token 参数获取（供 EventSource 等无法带 header 的场景）。"""
     USER_DIR = Path(__file__).parent / "users.json"
     USERS = json.loads(USER_DIR.read_text("utf-8"))
     try:

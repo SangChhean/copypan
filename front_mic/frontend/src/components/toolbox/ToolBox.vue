@@ -34,6 +34,9 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/zh-convert')"><span class="card_text">简繁互转</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/rough-outline')"><span class="card_text">毛胚纲目</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/feast-outline')"><span class="card_text">节期纲目</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/roundtable')">
+          <span class="card_text">AI圆桌</span>
+        </a-card-grid>
       </a-card>
     </div>
   </div>

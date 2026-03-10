@@ -28,6 +28,7 @@ from user.users import user_opt
 from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
 from ai_search import ai_router
+from roundtable import roundtable_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
 from ai_search.vector_search import close_async_es
@@ -310,6 +311,8 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 
 # AI 搜索路由（Claude 问答 / RAG）
 app.include_router(ai_router)
+# AI 圆桌路由
+app.include_router(roundtable_router)
 
 # 注册API路由器
 app.include_router(api_router)
