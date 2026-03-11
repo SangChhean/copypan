@@ -60,7 +60,7 @@ def _call_claude_messages_sync(client, system_prompt: str, user_prompt: str, max
     if not client:
         return ("", None)
     msg = client.messages.create(
-        model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+        model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
         max_tokens=max_tokens,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
@@ -172,7 +172,7 @@ except Exception as e:
     logger.warning(f"Redis 未启用，将跳过缓存: {e}")
 
 # Claude 客户端（需配置 CLAUDE_API_KEY）
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 try:
     claude_client = anthropic.Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
     if claude_client:
@@ -188,8 +188,8 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-pro")
 # 毛胚纲目：主模型 3.1，备用模型 3.0。若 503 持续可设 ROUGH_OUTLINE_GEMINI_MODEL 优先用其他模型
 ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "")
-# 主模型重试全失败后尝试的备用模型，默认 gemini-3-pro-preview（3.0）
-GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3-pro-preview")
+# 主模型重试全失败后尝试的备用模型，默认 gemini-2.5-pro
+GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
 gemini_client = None
 _gemini_system_instruction_en2zh = None
 if GEMINI_API_KEY:
@@ -218,11 +218,19 @@ else:
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v3.2")
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
-PERPLEXITY_MODEL = os.getenv("PERPLEXITY_MODEL", "sonar")
+PERPLEXITY_MODEL = os.getenv("PERPLEXITY_MODEL", "sonar-pro")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4")
 XAI_API_KEY = os.getenv("XAI_API_KEY")  # Grok
-XAI_MODEL = os.getenv("XAI_MODEL", "grok-4-1-fast")
+XAI_MODEL = os.getenv("XAI_MODEL", "grok-4-1-fast-reasoning")
+
+# 毛胚纲目 OpenAI 兼容接口费用（美元/百万 token），按 provider 分别计算
+ROUGH_OUTLINE_PRICES = {
+    "chatgpt": {"in": 2.50, "out": 15.00},
+    "grok": {"in": 0.20, "out": 0.50},
+    "deepseek": {"in": 0.27, "out": 1.10},
+    "perplexity": {"in": 3.00, "out": 15.00},  # sonar-pro
+}
 
 # 并发限制：同时进行中的 Claude / Gemini 请求数，避免人多时触发 API 限流（429）
 def _parse_concurrent_limit(env_key: str, default: int) -> int:
@@ -2372,7 +2380,7 @@ class AISearchService:
                     logger.info(f"ℹ️ 输入超过200K，将使用高价区定价: ${estimated_input_tokens / 1000000 * 6:.3f}")
 
                 message = self.claude.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model=CLAUDE_MODEL,
                     max_tokens=4000,
                     temperature=0.3,  # 降低温度提高准确性
                     system=system_prompt,
@@ -2714,6 +2722,21 @@ class AISearchService:
                                                 if title_en_clean.lower().startswith(prefix.lower()):
                                                     title_en_clean = title_en_clean[len(prefix):].strip()
                                             title_en_clean = title_en_clean.strip('"\'')
+                                            try:
+                                                usage_meta = getattr(title_response, "usage_metadata", None)
+                                                in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                                                out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                                                cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                                                logger.info(
+                                                    "[Gemini翻译-缓存标题] model=%s | 输入=%d tokens | 输出=%d tokens | 费用=$%.6f",
+                                                    use_model, in_tok, out_tok, cost,
+                                                )
+                                                if self.redis:
+                                                    get_monitoring(self.redis).record_tool_usage(
+                                                        "translation_cache_title", use_model, in_tok, out_tok, cost
+                                                    )
+                                            except Exception:
+                                                pass
                                             return title_en_clean
                                         else:
                                             logger.warning("缓存标题翻译返回空响应（重试次数: %s）", retry_count)
@@ -4886,7 +4909,7 @@ class AISearchService:
         """
         调用 Gemini API。主模型遇 503/429 时重试 2 次（共 3 次），仍失败则第 3 次使用备用模型。
         若配置了 ROUGH_OUTLINE_GEMINI_MODEL，毛胚纲目优先使用该模型；
-        若配置了 GEMINI_FALLBACK_MODEL（默认 gemini-3-pro-preview），主模型 3 次均失败后尝试备用模型。
+        若配置了 GEMINI_FALLBACK_MODEL（默认 gemini-2.5-pro），主模型 3 次均失败后尝试备用模型。
         """
         if not gemini_client:
             logger.error("Gemini 客户端未初始化")
@@ -5009,14 +5032,23 @@ class AISearchService:
                 try:
                     in_tok = int(getattr(r.usage, "prompt_tokens", 0) or 0)
                     out_tok = int(getattr(r.usage, "completion_tokens", 0) or 0)
-                    cost = (in_tok * 1.0 + out_tok * 3.0) / 1_000_000
+                    if "deepseek" in model.lower():
+                        provider = "deepseek"
+                    elif "grok" in model.lower() or "grok" in (base_url or "").lower():
+                        provider = "grok"
+                    elif "perplexity" in (base_url or "").lower() or "sonar" in (model or "").lower():
+                        provider = "perplexity"
+                    else:
+                        provider = "chatgpt"
+                    price = ROUGH_OUTLINE_PRICES.get(provider, {"in": 2.50, "out": 15.00})
+                    cost = (in_tok * price["in"] + out_tok * price["out"]) / 1_000_000
                     logger.info(f"[OpenAI兼容毛胚] model={model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
                     if self.redis:
-                        if "deepseek" in model.lower():
+                        if provider == "deepseek":
                             tool = "rough_outline_deepseek"
-                        elif "grok" in model.lower() or "grok" in (base_url or "").lower():
+                        elif provider == "grok":
                             tool = "rough_outline_grok"
-                        elif "perplexity" in (base_url or "").lower() or "sonar" in (model or "").lower():
+                        elif provider == "perplexity":
                             tool = "rough_outline_perplexity"
                         else:
                             tool = "rough_outline_openai"
@@ -5055,12 +5087,12 @@ class AISearchService:
             return None
         model = ai_config.get("model", PERPLEXITY_MODEL)
         if model and "pplx-" in model:
-            model = "sonar"
+            model = "sonar-pro"
         max_tokens = ai_config.get("max_tokens", 8192)
         return self._call_openai_compatible_rough_outline(
             api_key=PERPLEXITY_API_KEY,
             prompt=prompt,
-            model=model or "sonar",
+            model=model or "sonar-pro",
             max_tokens=max_tokens,
             base_url="https://api.perplexity.ai",
         )
@@ -5091,10 +5123,10 @@ class AISearchService:
         return self._call_openai_compatible_rough_outline(
             api_key=XAI_API_KEY,
             prompt=prompt,
-        model=model,
-        max_tokens=max_tokens,
-        base_url="https://api.x.ai/v1",
-    )
+            model=model,
+            max_tokens=max_tokens,
+            base_url="https://api.x.ai/v1",
+        )
 
 
 def _paragraph_has_page_break(para) -> bool:

@@ -19,7 +19,7 @@ if _env_path.exists():
 
 # 圆桌专用模型环境变量与默认值（Claude 复用现有可用型号）
 ROUNDTABLE_CLAUDE_MODEL = os.getenv("ROUNDTABLE_CLAUDE_MODEL", "claude-sonnet-4-6")
-ROUNDTABLE_GPT_MODEL = os.getenv("ROUNDTABLE_GPT_MODEL", "gpt-5.2-chat-latest")
+ROUNDTABLE_GPT_MODEL = os.getenv("ROUNDTABLE_GPT_MODEL", "gpt-5.4")
 ROUNDTABLE_GEMINI_MODEL = os.getenv("ROUNDTABLE_GEMINI_MODEL", "gemini-2.5-pro")
 ROUNDTABLE_GROK_MODEL = os.getenv("ROUNDTABLE_GROK_MODEL", "grok-4-1-fast-reasoning")
 ROUNDTABLE_DEEPSEEK_MODEL = os.getenv("ROUNDTABLE_DEEPSEEK_MODEL", "deepseek-chat")
@@ -34,7 +34,7 @@ CLIENT_ERROR_CODES = (400, 401, 403, 404, 422)
 # 圆桌各AI单价（美元/百万token，2026年3月）
 ROUNDTABLE_PRICES = {
     "claude": {"input": 3.00, "output": 15.00},
-    "gpt": {"input": 1.75, "output": 14.00},
+    "gpt": {"input": 2.50, "output": 15.00},
     "gemini": {"input": 1.25, "output": 10.00},
     "grok": {"input": 0.20, "output": 0.50},
     "deepseek": {"input": 0.28, "output": 0.42},

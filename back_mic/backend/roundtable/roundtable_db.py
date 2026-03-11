@@ -4,9 +4,9 @@
 import os
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 _db_path = os.getenv("ROUNDTABLE_DB_PATH", "roundtable.db")
 # 默认使用 backend 目录下 roundtable.db（与 main.py 同级）
@@ -137,3 +137,70 @@ def delete_record(record_id: str) -> bool:
     )
     _conn.commit()
     return cursor.rowcount > 0
+
+
+def get_roundtable_cost_stats(days: int) -> Dict[str, Any]:
+    """
+    返回最近 days 天的圆桌费用统计：
+    {
+        "total_cost": float,          # days 天内总费用
+        "daily": {                    # key: "YYYY-MM-DD"（UTC），value: float
+            "2026-03-10": 1.2345,
+            ...
+        },
+        "total_count": int,           # days 天内圆桌总次数
+        "scene_counts": {             # 按场景分组的统计
+            "scene_one": {"count": int, "cost": float},
+            "scene_two": {"count": int, "cost": float}
+        }
+    }
+    日期范围：UTC 今天往前 days 天（含今天）。
+    """
+    start = (datetime.utcnow() - timedelta(days=days - 1)).strftime("%Y-%m-%d") + "T00:00:00"
+    cursor = _conn.execute(
+        """
+        SELECT substr(created_at, 1, 10) AS date,
+               SUM(total_cost) AS day_cost,
+               COUNT(*) AS day_count
+        FROM roundtable_records
+        WHERE created_at >= ?
+        GROUP BY date
+        ORDER BY date DESC
+        """,
+        (start,),
+    )
+    rows = cursor.fetchall()
+    daily = {}
+    total_cost = 0.0
+    total_count = 0
+    for row in rows:
+        date_str = row[0]
+        day_cost = float(row[1] or 0)
+        day_count = int(row[2] or 0)
+        daily[date_str] = day_cost
+        total_cost += day_cost
+        total_count += day_count
+
+    # 按场景类型分组统计
+    scene_cursor = _conn.execute(
+        """
+        SELECT scene_type, COUNT(*) AS cnt, SUM(total_cost) AS cost
+        FROM roundtable_records
+        WHERE created_at >= ?
+        GROUP BY scene_type
+        """,
+        (start,),
+    )
+    scene_rows = scene_cursor.fetchall()
+    scene_counts = {
+        "scene_one": {"count": 0, "cost": 0.0},
+        "scene_two": {"count": 0, "cost": 0.0},
+    }
+    for row in scene_rows:
+        scene_type = row[0] or ""
+        cnt = int(row[1] or 0)
+        cost = float(row[2] or 0)
+        if scene_type in scene_counts:
+            scene_counts[scene_type] = {"count": cnt, "cost": cost}
+
+    return {"total_cost": total_cost, "daily": daily, "total_count": total_count, "scene_counts": scene_counts}

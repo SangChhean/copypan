@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { h, ref } from "vue";
-import { DatabaseOutlined, TeamOutlined, ArrowLeftOutlined, FileAddOutlined, UserOutlined, CodeOutlined, InboxOutlined, CloudUploadOutlined, BarChartOutlined, DashboardOutlined, WarningOutlined } from "@ant-design/icons-vue";
+import { DatabaseOutlined, TeamOutlined, ArrowLeftOutlined, FileAddOutlined, UserOutlined, CodeOutlined, InboxOutlined, CloudUploadOutlined, BarChartOutlined } from "@ant-design/icons-vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../../store/index";
 import ShowMsg from "../tools/ShowMsg.vue";
@@ -9,9 +9,12 @@ import type { UploadChangeParam } from "ant-design-vue";
 import { checkSession } from "../utils";
 import DataList from "./DataList.vue";
 import UserOpts from "./UserOpts.vue";
-import AIStats from "./AIStats.vue";
-import AIStatsRetrieval from "./AIStatsRetrieval.vue";
-import AIStatsErrors from "./AIStatsErrors.vue";
+import AIStatsRAG from "./AIStatsRAG.vue";
+import AIStatsFeast from "./AIStatsFeast.vue";
+import AIStatsRoughOutline from "./AIStatsRoughOutline.vue";
+import AIStatsTranslation from "./AIStatsTranslation.vue";
+import AIStatsRoundtable from "./AIStatsRoundtable.vue";
+import AIStatsSummary from "./AIStatsSummary.vue";
 checkSession("t0");
 
 const fileList = ref([]);
@@ -94,22 +97,40 @@ const items = ref([
     title: "ai-stats",
     children: [
       {
-        icon: () => h(DashboardOutlined),
-        key: "6",
-        label: "统计概览",
-        title: "stats",
+        icon: () => h(BarChartOutlined),
+        key: "9",
+        label: "AI纲目制作",
+        title: "rag",
       },
       {
         icon: () => h(BarChartOutlined),
-        key: "8",
-        label: "检索统计日志",
-        title: "retrieval",
+        key: "10",
+        label: "节期纲目",
+        title: "feast",
       },
       {
-        icon: () => h(WarningOutlined),
-        key: "7",
-        label: "错误记录",
-        title: "errors",
+        icon: () => h(BarChartOutlined),
+        key: "11",
+        label: "毛胚纲目",
+        title: "rough",
+      },
+      {
+        icon: () => h(BarChartOutlined),
+        key: "12",
+        label: "纲目翻译",
+        title: "translation",
+      },
+      {
+        icon: () => h(BarChartOutlined),
+        key: "13",
+        label: "AI圆桌",
+        title: "roundtable",
+      },
+      {
+        icon: () => h(BarChartOutlined),
+        key: "14",
+        label: "费用总览",
+        title: "summary",
       },
     ],
   },
@@ -158,15 +179,12 @@ const navClick = (item: any) => {
           <div v-if="key === '5'">
             <IvOpts />
           </div>
-          <div v-if="key === '6'">
-            <AIStats />
-          </div>
-          <div v-if="key === '8'">
-            <AIStatsRetrieval />
-          </div>
-          <div v-if="key === '7'">
-            <AIStatsErrors />
-          </div>
+          <AIStatsRAG v-if="key === '9'" />
+          <AIStatsFeast v-if="key === '10'" />
+          <AIStatsRoughOutline v-if="key === '11'" />
+          <AIStatsTranslation v-if="key === '12'" />
+          <AIStatsRoundtable v-if="key === '13'" />
+          <AIStatsSummary v-if="key === '14'" />
         </div>
       </a-col>
     </a-row>

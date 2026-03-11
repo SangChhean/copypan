@@ -29,7 +29,7 @@ def test_basic_connection():
         
         start_time = time.time()
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=100,
             messages=[
                 {"role": "user", "content": "你好，请用一句话介绍你自己。"}
@@ -86,7 +86,7 @@ def test_chinese_qa():
         
         start_time = time.time()
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=200,
             temperature=0.7,
             messages=[
@@ -146,7 +146,7 @@ def test_with_context():
         
         start_time = time.time()
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=500,
             temperature=0.3,  # 降低温度提高准确性
             system="你是圣经知识助手。基于提供的经文回答问题，要准确、简洁。引用经文时标注出处（书卷 章:节）。",
@@ -200,7 +200,7 @@ def test_performance():
         for i, question in enumerate(questions, 1):
             start_time = time.time()
             message = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=200,
                 temperature=0.3,
                 messages=[{"role": "user", "content": question}]

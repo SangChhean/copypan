@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 from .ai_service import ai_service, get_index_weights_for_display, USE_VECTOR_SEARCH
 from .monitoring import get_monitoring
+from roundtable.roundtable_db import get_roundtable_cost_stats
 
 logger = logging.getLogger(__name__)
 
@@ -716,6 +717,108 @@ async def health_check():
 
 # ========== 监控统计 API ==========
 
+@router.get("/ai_search/stats/detail", summary="获取详细统计数据（供子页面使用）")
+async def get_stats_detail(days: int = Query(7, ge=1, le=30, description="统计包含的最近天数")):
+    """
+    获取详细 AI 使用统计数据，供六个子页面使用。
+    返回 rag、toolbox、roundtable、summary 四个顶层字段。
+    """
+    try:
+        monitoring = get_monitoring()
+        stats = monitoring.get_stats(days=days)
+        roundtable_stats = {"total_cost": 0.0, "total_count": 0, "daily": {}, "scene_counts": {"scene_one": {"count": 0, "cost": 0.0}, "scene_two": {"count": 0, "cost": 0.0}}}
+        try:
+            roundtable_stats = get_roundtable_cost_stats(days)
+        except Exception as rt_e:
+            logger.warning("获取圆桌统计失败: %s", rt_e)
+
+        # RAG 数据
+        rag = {
+            "total_queries": stats.get("total_queries", 0),
+            "total_cost": stats.get("total_cost", 0.0),
+            "cache_hit_rate": stats.get("cache_hit_rate", 0.0),
+            "avg_response_time_ms": stats.get("avg_response_time_ms", 0.0),
+            "nature_counts": stats.get("nature_counts", {}),
+            "mode_counts": stats.get("mode_counts", {}),
+            "depth_counts": stats.get("depth_counts", {}),
+            "daily": stats.get("daily", []),
+        }
+
+        # 工具箱数据
+        by_tool = stats.get("tool_stats", {}).get("by_tool", {})
+        toolbox = {
+            "translation": {
+                "zh2en": by_tool.get("translation_zh2en", {"count": 0, "cost": 0.0}),
+                "en2zh": by_tool.get("translation_en2zh", {"count": 0, "cost": 0.0}),
+            },
+            "rough_outline": {
+                "claude": by_tool.get("rough_outline_claude", {"count": 0, "cost": 0.0}),
+                "gemini": by_tool.get("rough_outline_gemini", {"count": 0, "cost": 0.0}),
+                "deepseek": by_tool.get("rough_outline_deepseek", {"count": 0, "cost": 0.0}),
+                "openai": by_tool.get("rough_outline_openai", {"count": 0, "cost": 0.0}),
+                "perplexity": by_tool.get("rough_outline_perplexity", {"count": 0, "cost": 0.0}),
+                "grok": by_tool.get("rough_outline_grok", {"count": 0, "cost": 0.0}),
+            },
+            "feast_outline": {
+                "claude": by_tool.get("feast_outline_claude", {"count": 0, "cost": 0.0}),
+            },
+        }
+
+        # 圆桌数据：将 daily dict 转为数组格式
+        roundtable_daily = []
+        for date_str, cost in roundtable_stats.get("daily", {}).items():
+            roundtable_daily.append({"date": date_str, "count": 0, "cost": cost})
+        # 补充 count：重新遍历或使用已有数据
+        roundtable = {
+            "total_count": roundtable_stats.get("total_count", 0),
+            "total_cost": roundtable_stats.get("total_cost", 0.0),
+            "scene_counts": roundtable_stats.get("scene_counts", {
+                "scene_one": {"count": 0, "cost": 0.0},
+                "scene_two": {"count": 0, "cost": 0.0},
+            }),
+            "daily": sorted(roundtable_daily, key=lambda x: x["date"], reverse=True),
+        }
+
+        # 费用总览
+        rag_cost = stats.get("total_cost", 0.0)
+        toolbox_cost = stats.get("tool_stats", {}).get("total_cost", 0.0)
+        roundtable_cost = roundtable_stats.get("total_cost", 0.0)
+        total_cost = rag_cost + toolbox_cost + roundtable_cost
+
+        # 合并每日费用
+        daily_map = {}
+        for item in stats.get("daily", []):
+            d = item.get("date", "")
+            if d:
+                daily_map[d] = daily_map.get(d, 0.0) + item.get("cost", 0.0)
+        for date_str, cost in roundtable_stats.get("daily", {}).items():
+            daily_map[date_str] = daily_map.get(date_str, 0.0) + cost
+
+        summary_daily = [{"date": d, "cost": round(c, 4)} for d, c in sorted(daily_map.items(), reverse=True)]
+
+        summary = {
+            "total_cost": round(total_cost, 4),
+            "rag_cost": round(rag_cost, 4),
+            "toolbox_cost": round(toolbox_cost, 4),
+            "roundtable_cost": round(roundtable_cost, 4),
+            "daily": summary_daily,
+        }
+
+        return {
+            "status": "success",
+            "data": {
+                "days": days,
+                "rag": rag,
+                "toolbox": toolbox,
+                "roundtable": roundtable,
+                "summary": summary,
+            },
+        }
+    except Exception as e:
+        logger.error(f"获取详细统计失败: {e}", exc_info=True)
+        return {"status": "error", "data": None, "message": str(e)}
+
+
 @router.get("/ai_search/stats", summary="获取统计数据")
 async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含的最近天数")):
     """
@@ -727,6 +830,19 @@ async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含�
     try:
         monitoring = get_monitoring()
         data = monitoring.get_stats(days=days)
+        try:
+            roundtable_stats = get_roundtable_cost_stats(days)
+            data["total_cost"] += roundtable_stats["total_cost"]
+            data["tool_stats"]["total_cost"] += roundtable_stats["total_cost"]
+            data["tool_stats"]["by_tool"]["roundtable"] = {
+                "count": roundtable_stats["total_count"],
+                "cost": roundtable_stats["total_cost"],
+            }
+            for item in data["daily"]:
+                item["cost"] += roundtable_stats["daily"].get(item["date"], 0)
+        except Exception as rt_e:
+            logger.warning("圆桌费用统计合并失败（已忽略）: %s", rt_e)
+            data["tool_stats"]["by_tool"]["roundtable"] = {"count": 0, "cost": 0.0}
         data["index_weights"] = get_index_weights_for_display()
         return {"status": "success", "data": data}
     except Exception as e:
