@@ -195,12 +195,15 @@ def get_roundtable_cost_stats(days: int) -> Dict[str, Any]:
     scene_counts = {
         "scene_one": {"count": 0, "cost": 0.0},
         "scene_two": {"count": 0, "cost": 0.0},
+        "scene_three": {"count": 0, "cost": 0.0},
+        "scene_four": {"count": 0, "cost": 0.0},
     }
     for row in scene_rows:
         scene_type = row[0] or ""
         cnt = int(row[1] or 0)
         cost = float(row[2] or 0)
-        if scene_type in scene_counts:
-            scene_counts[scene_type] = {"count": cnt, "cost": cost}
+        if scene_type not in scene_counts:
+            scene_counts[scene_type] = {"count": 0, "cost": 0.0}
+        scene_counts[scene_type] = {"count": cnt, "cost": cost}
 
     return {"total_cost": total_cost, "daily": daily, "total_count": total_count, "scene_counts": scene_counts}

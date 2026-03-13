@@ -25,7 +25,15 @@ ROUNDTABLE_GROK_MODEL = os.getenv("ROUNDTABLE_GROK_MODEL", "grok-4-1-fast-reason
 ROUNDTABLE_DEEPSEEK_MODEL = os.getenv("ROUNDTABLE_DEEPSEEK_MODEL", "deepseek-chat")
 ROUNDTABLE_PERPLEXITY_MODEL = os.getenv("ROUNDTABLE_PERPLEXITY_MODEL", "sonar-deep-research")
 
+# 场景④ 顶级模型思考：三选一
+ROUNDTABLE_SCENE4_CLAUDE_MODEL = os.getenv("ROUNDTABLE_SCENE4_CLAUDE_MODEL", "claude-opus-4-6")
+# 官方 API：gpt-5.4 标准版，gpt-5.4-pro 为高阶推理版，见 https://developers.openai.com/api/docs/models/gpt-5.4-pro
+ROUNDTABLE_SCENE4_GPT_MODEL = os.getenv("ROUNDTABLE_SCENE4_GPT_MODEL", "gpt-5.4-pro")
+# 官方 API 名称为 gemini-3.1-pro-preview，见 https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview
+ROUNDTABLE_SCENE4_GEMINI_MODEL = os.getenv("ROUNDTABLE_SCENE4_GEMINI_MODEL", "gemini-3.1-pro-preview")
+
 SUPPORTED_AIS = ["claude", "gpt", "gemini", "grok", "deepseek", "perplexity"]
+SUPPORTED_AIS_SCENE4 = ["claude_opus", "gpt_pro", "gemini_pro"]
 
 MAX_RETRIES = 2
 RETRY_DELAYS = [2, 6]  # 秒
@@ -110,29 +118,43 @@ def _call_claude_sync(prompt_or_bytes, system_prompt_or_bytes, scene_type: str =
     except Exception as e:
         raise RoundTableAIError("claude", str(e), is_client_error=True)
     old_model = os.environ.get("CLAUDE_MODEL")
-    os.environ["CLAUDE_MODEL"] = ROUNDTABLE_CLAUDE_MODEL
-    # 场景①研究/结论内容长，需要更高上限
-    max_tokens = 16000 if scene_type == "scene_one" else 8192
+    # 场景④ 使用 Opus 4.6 + 官方「扩展思考」：同一模型 claude-opus-4-6，通过 thinking 参数开启
+    claude_model = ROUNDTABLE_SCENE4_CLAUDE_MODEL if scene_type == "scene_four" else ROUNDTABLE_CLAUDE_MODEL
+    os.environ["CLAUDE_MODEL"] = claude_model
+    # 场景①研究/结论内容长；场景④顶级思考给足上限
+    max_tokens = 16000 if scene_type == "scene_one" else (16000 if scene_type == "scene_four" else 8192)
+    kwargs = {
+        "model": claude_model,
+        "max_tokens": max_tokens,
+        "system": system_prompt or "",
+        "messages": [{"role": "user", "content": prompt}],
+        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+    }
+    if scene_type == "scene_four":
+        kwargs["thinking"] = {"type": "adaptive"}  # Opus 4.6 推荐：自适应扩展思考，无单独 thinking 模型 ID
     try:
         try:
-            msg = client_120.messages.create(
-                model=ROUNDTABLE_CLAUDE_MODEL,
-                max_tokens=max_tokens,
-                system=system_prompt or "",
-                messages=[{"role": "user", "content": prompt}],
-                tools=[{"type": "web_search_20250305", "name": "web_search"}],
-            )
+            msg = client_120.messages.create(**kwargs)
         except Exception as api_err:
             status = getattr(api_err, "status_code", None) or getattr(api_err, "http_status", None)
             is_client = status in CLIENT_ERROR_CODES if status is not None else False
             raise RoundTableAIError("claude", str(api_err), is_client_error=is_client)
         parts = []
+        thinking_parts = []
         for block in (msg.content or []):
-            if getattr(block, "type", None) == "text":
+            btype = getattr(block, "type", None)
+            if btype == "text":
                 t = getattr(block, "text", None)
                 if t and str(t).strip():
                     parts.append(str(t).strip())
-        text = "\n\n".join(parts) if parts else ""
+            elif scene_type == "scene_four" and btype == "thinking":
+                t = getattr(block, "thinking", None)
+                if t and str(t).strip():
+                    thinking_parts.append(str(t).strip())
+        if scene_type == "scene_four" and thinking_parts:
+            text = "【思考过程】\n\n" + "\n\n".join(thinking_parts) + "\n\n【回答】\n\n" + "\n\n".join(parts) if parts else "\n\n".join(thinking_parts)
+        else:
+            text = "\n\n".join(parts) if parts else ""
         usage = getattr(msg, "usage", None)
         in_tok = int(getattr(usage, "input_tokens", 0) or 0)
         out_tok = int(getattr(usage, "output_tokens", 0) or 0)
@@ -180,17 +202,20 @@ def _call_openai_compat_sync(
     return (text.strip(), in_tok, out_tok)
 
 
-def _call_gpt_with_responses_sync(prompt: str, system_prompt: str) -> tuple:
-    """返回 (content, input_tokens, output_tokens)。"""
+def _call_gpt_with_responses_sync(
+    prompt: str, system_prompt: str, model: Optional[str] = None, timeout: float = 120.0
+) -> tuple:
+    """返回 (content, input_tokens, output_tokens)。model 为空时使用 ROUNDTABLE_GPT_MODEL。场景④ gpt-5.4-pro 推理较慢，需更长 timeout。"""
     svc = _get_ai_service()
     api_key = svc.get("OPENAI_API_KEY")
     if not api_key:
         raise RoundTableAIError("gpt", "OPENAI_API_KEY 未配置", is_client_error=True)
     from openai import OpenAI
-    client = OpenAI(api_key=api_key, timeout=120)
+    client = OpenAI(api_key=api_key, timeout=timeout)
+    gpt_model = model or ROUNDTABLE_GPT_MODEL
     try:
         response = client.responses.create(
-            model=ROUNDTABLE_GPT_MODEL,
+            model=gpt_model,
             instructions=system_prompt.strip() if (system_prompt and system_prompt.strip()) else None,
             input=prompt,
             tools=[{"type": "web_search_preview"}],
@@ -210,18 +235,19 @@ def _call_gpt_with_responses_sync(prompt: str, system_prompt: str) -> tuple:
     return (text, in_tok, out_tok)
 
 
-def _call_gemini_sync(prompt: str, system_prompt: str) -> tuple:
-    """返回 (content, input_tokens, output_tokens)。"""
+def _call_gemini_sync(prompt: str, system_prompt: str, model: Optional[str] = None) -> tuple:
+    """返回 (content, input_tokens, output_tokens)。model 为空时使用 ROUNDTABLE_GEMINI_MODEL。"""
     svc = _get_ai_service()
     client = svc["gemini_client"]
     if not client:
         raise RoundTableAIError("gemini", "GEMINI_API_KEY 未配置或客户端初始化失败", is_client_error=True)
     from google.genai import types
     from google.genai.types import Tool, GoogleSearch
+    gemini_model = model or ROUNDTABLE_GEMINI_MODEL
     with svc["GEMINI_SEMAPHORE"]:
         try:
             response = client.models.generate_content(
-                model=ROUNDTABLE_GEMINI_MODEL,
+                model=gemini_model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     max_output_tokens=8192,
@@ -339,18 +365,29 @@ def _call_perplexity_sonar_pro(prompt: str, system_prompt: str) -> str:
 
 async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type: str = "scene_two") -> tuple[str, float]:
     """
-    统一调用接口。ai_name 取值：claude / gpt / gemini / grok / deepseek / perplexity
+    统一调用接口。ai_name 取值：claude / gpt / gemini / grok / deepseek / perplexity；
+    场景④ 时可为 claude_opus / gpt_pro / gemini_pro。
     返回 (content, cost)，cost 为美元。
     出错时抛出 RoundTableAIError(ai_name, reason)。
     """
-    if ai_name not in SUPPORTED_AIS:
+    actual_ai = ai_name
+    if scene_type == "scene_four":
+        if ai_name not in SUPPORTED_AIS_SCENE4:
+            raise RoundTableAIError(ai_name, f"场景④ 仅支持: {SUPPORTED_AIS_SCENE4}", is_client_error=True)
+        if ai_name == "claude_opus":
+            actual_ai = "claude"
+        elif ai_name == "gpt_pro":
+            actual_ai = "gpt"
+        elif ai_name == "gemini_pro":
+            actual_ai = "gemini"
+    elif ai_name not in SUPPORTED_AIS:
         raise RoundTableAIError(ai_name, f"不支持的 AI，可选: {SUPPORTED_AIS}", is_client_error=True)
     loop = asyncio.get_event_loop()
     svc = _get_ai_service()
 
     async def _do_call() -> tuple:
         """返回 (content, input_tokens, output_tokens)。"""
-        if ai_name == "claude":
+        if actual_ai == "claude":
             p_b = prompt.encode("utf-8")
             s_b = (system_prompt or "").encode("utf-8")
             out = await asyncio.wait_for(
@@ -361,19 +398,26 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
                 timeout=600.0,
             )
             return out
-        if ai_name == "gemini":
+        if actual_ai == "gemini":
+            gemini_model = ROUNDTABLE_SCENE4_GEMINI_MODEL if scene_type == "scene_four" else None
             out = await asyncio.wait_for(
-                loop.run_in_executor(None, lambda: _call_gemini_sync(prompt, system_prompt)),
+                loop.run_in_executor(
+                    None,
+                    lambda: _call_gemini_sync(prompt, system_prompt, gemini_model),
+                ),
                 timeout=120.0,
             )
             return out
-        if ai_name == "gpt":
+        if actual_ai == "gpt":
+            gpt_model = ROUNDTABLE_SCENE4_GPT_MODEL if scene_type == "scene_four" else None
+            # 场景④ 使用 gpt-5.4-pro，官方文档称可能需数分钟，延长至 10 分钟
+            gpt_timeout = 600.0 if scene_type == "scene_four" else 120.0
             out = await asyncio.wait_for(
-                asyncio.to_thread(_call_gpt_with_responses_sync, prompt, system_prompt),
-                timeout=120.0,
+                asyncio.to_thread(_call_gpt_with_responses_sync, prompt, system_prompt, gpt_model, gpt_timeout),
+                timeout=gpt_timeout,
             )
             return out
-        if ai_name == "deepseek":
+        if actual_ai == "deepseek":
             out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
@@ -386,7 +430,7 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
                 timeout=120.0,
             )
             return out
-        if ai_name == "perplexity":
+        if actual_ai == "perplexity":
             if scene_type == "scene_one":
                 out = await asyncio.wait_for(
                     _call_perplexity_deep_research(prompt, system_prompt),
@@ -401,7 +445,7 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
                 timeout=120.0,
             )
             return out
-        if ai_name == "grok":
+        if actual_ai == "grok":
             grok_system = (system_prompt or "").strip()
             grok_system += "\n\n你可以使用实时搜索能力获取最新资料，请积极搜索相关神学资料以支撑你的论点。"
             out = await asyncio.wait_for(
@@ -421,7 +465,7 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
     for attempt in range(MAX_RETRIES + 1):
         try:
             content, in_tok, out_tok = await _do_call()
-            cost = _calc_roundtable_cost(ai_name, in_tok, out_tok, scene_type)
+            cost = _calc_roundtable_cost(actual_ai, in_tok, out_tok, scene_type)
             logger.info(
                 "[RoundTable] %s | 输入=%d tokens | 输出=%d tokens | 费用=$%.6f",
                 ai_name, in_tok, out_tok, cost

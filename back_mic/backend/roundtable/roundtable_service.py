@@ -17,6 +17,11 @@ from .roundtable_prompts import (
     build_conclusion_prompt,
     build_scene_one_prompt,
     build_scene_one_conclusion_prompt,
+    build_scene_three_round1_prompt,
+    build_scene_three_round2_prompt,
+    build_scene_three_round3_prompt,
+    build_scene_three_conclusion_prompt,
+    build_scene_four_prompt,
 )
 
 SESSION_KEY_PREFIX = "roundtable:session:"
@@ -268,6 +273,218 @@ class RoundTableService:
             "ai_roles": sess.get("ai_roles", {}),
             "rounds": sess.get("rounds", []),
             "conclusion": conclusion,
+            "created_at": sess.get("created_at"),
+            "is_pinned": False,
+            "total_cost": total_cost,
+        })
+
+    async def run_scene_three(self, session_id: str):
+        """
+        场景③：重大讨论。第一轮各 AI 作答，第二轮互相指出（至少点评 2～3 人），第三轮对题目本身做最终评价，Claude 总结。
+        """
+        await self.update_session(session_id, {"status": "running"})
+        session = await self.get_session(session_id)
+        participants: List[str] = session.get("participants") or []
+        topic = session.get("topic") or ""
+        all_speeches: Dict[str, List[str]] = {ai: [] for ai in participants}
+        total_cost = 0.0
+
+        async def run_one(ai_name: str, prompt: str, system_prompt: str = ""):
+            try:
+                content, cost = await call_ai(
+                    ai_name, prompt, system_prompt=system_prompt, scene_type="scene_three"
+                )
+                return (ai_name, content, cost, None)
+            except RoundTableAIError as e:
+                return (ai_name, None, 0.0, e)
+
+        # 第一轮：各 AI 独立作答
+        round1_prompt = build_scene_three_round1_prompt(topic)
+        tasks_r1 = [(ai_name, round1_prompt) for ai_name in participants]
+        for ai_name, _ in tasks_r1:
+            yield {"type": "speech_start", "round": 1, "ai": ai_name}
+
+        async def run_one_wrapper(ai_name: str, pr: str):
+            try:
+                return (ai_name, await run_one(ai_name, pr, ""))
+            except Exception as e:
+                return (ai_name, e)
+
+        futs = [asyncio.ensure_future(run_one_wrapper(ai_name, pr)) for ai_name, pr in tasks_r1]
+        for fut in asyncio.as_completed(futs):
+            ai_name, result = await fut
+            if isinstance(result, Exception):
+                all_speeches[ai_name].append("")
+                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+            else:
+                _, content, cost, err = result
+                total_cost += cost
+                if err is not None:
+                    all_speeches[ai_name].append("")
+                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                else:
+                    all_speeches[ai_name].append(content)
+                    yield {"type": "speech_chunk", "round": 1, "ai": ai_name, "content": content}
+                    yield {"type": "speech_end", "round": 1, "ai": ai_name, "full_content": content}
+
+        yield {"type": "round_complete", "round": 1}
+        round1_data = {ai: (all_speeches[ai][-1] if all_speeches[ai] else "") for ai in participants}
+        sess = await self.get_session(session_id)
+        await self.update_session(session_id, {"rounds": sess["rounds"] + [round1_data]})
+
+        # 第二轮：互相指出（至少点评 2～3 人）
+        for ai_name in participants:
+            yield {"type": "speech_start", "round": 2, "ai": ai_name}
+        tasks_r2 = [
+            (
+                ai_name,
+                build_scene_three_round2_prompt(ai_name, topic, round1_data, participants),
+            )
+            for ai_name in participants
+        ]
+        futs_r2 = [asyncio.ensure_future(run_one_wrapper(ai_name, pr)) for ai_name, pr in tasks_r2]
+        for fut in asyncio.as_completed(futs_r2):
+            ai_name, result = await fut
+            if isinstance(result, Exception):
+                all_speeches[ai_name].append("")
+                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+            else:
+                _, content, cost, err = result
+                total_cost += cost
+                if err is not None:
+                    all_speeches[ai_name].append("")
+                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                else:
+                    all_speeches[ai_name].append(content)
+                    yield {"type": "speech_chunk", "round": 2, "ai": ai_name, "content": content}
+                    yield {"type": "speech_end", "round": 2, "ai": ai_name, "full_content": content}
+
+        yield {"type": "round_complete", "round": 2}
+        round2_data = {ai: (all_speeches[ai][-1] if all_speeches[ai] else "") for ai in participants}
+        sess = await self.get_session(session_id)
+        await self.update_session(session_id, {"rounds": sess["rounds"] + [round2_data]})
+
+        # 第三轮：对题目本身做最终评价
+        for ai_name in participants:
+            yield {"type": "speech_start", "round": 3, "ai": ai_name}
+        tasks_r3 = [
+            (
+                ai_name,
+                build_scene_three_round3_prompt(
+                    ai_name, topic, round1_data, round2_data, participants
+                ),
+            )
+            for ai_name in participants
+        ]
+        futs_r3 = [asyncio.ensure_future(run_one_wrapper(ai_name, pr)) for ai_name, pr in tasks_r3]
+        for fut in asyncio.as_completed(futs_r3):
+            ai_name, result = await fut
+            if isinstance(result, Exception):
+                all_speeches[ai_name].append("")
+                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+            else:
+                _, content, cost, err = result
+                total_cost += cost
+                if err is not None:
+                    all_speeches[ai_name].append("")
+                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                else:
+                    all_speeches[ai_name].append(content)
+                    yield {"type": "speech_chunk", "round": 3, "ai": ai_name, "content": content}
+                    yield {"type": "speech_end", "round": 3, "ai": ai_name, "full_content": content}
+
+        yield {"type": "round_complete", "round": 3}
+        round3_data = {ai: (all_speeches[ai][-1] if all_speeches[ai] else "") for ai in participants}
+        sess = await self.get_session(session_id)
+        await self.update_session(session_id, {"rounds": sess["rounds"] + [round3_data]})
+
+        # 结论：Claude 总结
+        rounds_data = [round1_data, round2_data, round3_data]
+        round_titles = ["第1轮·作答", "第2轮·互相指出", "第3轮·最终评价"]
+        all_speeches_str = ""
+        for idx, r_data in enumerate(rounds_data):
+            all_speeches_str += f"{round_titles[idx]}\n"
+            all_speeches_str += "".join(
+                f"[{ai}]：{(r_data.get(ai) or '')}\n\n" for ai in participants
+            )
+        conclusion_prompt = build_scene_three_conclusion_prompt(topic, all_speeches_str)
+
+        yield {"type": "conclusion_start"}
+        try:
+            conclusion, cost = await call_ai(
+                "claude",
+                conclusion_prompt,
+                system_prompt="你是讨论主持人，负责客观总结",
+                scene_type="scene_three",
+            )
+            total_cost += cost
+        except RoundTableAIError as e:
+            yield {"type": "error", "ai": "claude", "reason": str(e)}
+            conclusion = ""
+        yield {"type": "conclusion_chunk", "content": conclusion}
+        yield {"type": "conclusion_end", "conclusion": conclusion, "total_cost": round(total_cost, 6)}
+
+        await self.update_session(session_id, {"status": "done", "conclusion": conclusion})
+        sess = await self.get_session(session_id)
+        save_record({
+            "record_id": session_id,
+            "scene_type": sess.get("scene_type", "scene_three"),
+            "topic": sess.get("topic", ""),
+            "participants": sess.get("participants", []),
+            "ai_roles": sess.get("ai_roles", {}),
+            "rounds": sess.get("rounds", []),
+            "conclusion": conclusion,
+            "created_at": sess.get("created_at"),
+            "is_pinned": False,
+            "total_cost": total_cost,
+        })
+
+    async def run_scene_four(self, session_id: str):
+        """
+        场景④：顶级模型思考。仅一轮回答，无总结；participants 仅 1 个（claude_opus / gpt_pro / gemini_pro）。
+        """
+        await self.update_session(session_id, {"status": "running"})
+        session = await self.get_session(session_id)
+        participants: List[str] = session.get("participants") or []
+        topic = session.get("topic") or ""
+        if len(participants) != 1:
+            yield {"type": "error", "ai": participants[0] if participants else "?", "reason": "场景④ 仅支持选择 1 个 AI"}
+            return
+        ai_name = participants[0]
+        total_cost = 0.0
+
+        prompt = build_scene_four_prompt(topic)
+        yield {"type": "speech_start", "round": 1, "ai": ai_name}
+        try:
+            content, cost = await call_ai(
+                ai_name,
+                prompt,
+                system_prompt="你是一位善于深度思考与分析的助手。",
+                scene_type="scene_four",
+            )
+            total_cost += cost
+            yield {"type": "speech_chunk", "round": 1, "ai": ai_name, "content": content}
+            yield {"type": "speech_end", "round": 1, "ai": ai_name, "full_content": content}
+        except RoundTableAIError as e:
+            yield {"type": "error", "ai": ai_name, "reason": str(e)}
+            content = ""
+        except Exception as e:
+            yield {"type": "error", "ai": ai_name, "reason": str(e)}
+            content = ""
+
+        yield {"type": "round_complete", "round": 1}
+        round_data = {ai_name: content}
+        sess = await self.get_session(session_id)
+        await self.update_session(session_id, {"rounds": sess["rounds"] + [round_data], "status": "done"})
+        yield {"type": "conclusion_end", "conclusion": "", "total_cost": round(total_cost, 6)}
+        save_record({
+            "record_id": session_id,
+            "scene_type": "scene_four",
+            "topic": sess.get("topic", ""),
+            "participants": sess.get("participants", []),
+            "ai_roles": {},
+            "rounds": sess.get("rounds", []) + [round_data],
+            "conclusion": "",
             "created_at": sess.get("created_at"),
             "is_pinned": False,
             "total_cost": total_cost,

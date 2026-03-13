@@ -31,6 +31,8 @@ const fetchStats = () => {
 const SCENE_NAMES = {
   scene_one: "十二支派",
   scene_two: "神学辩论",
+  scene_three: "重大讨论",
+  scene_four: "顶级模型思考",
 };
 
 const sceneColumns = [
@@ -43,11 +45,15 @@ const sceneRows = computed(() => {
   const sc = stats.value?.scene_counts || {};
   const s1 = sc.scene_one || { count: 0, cost: 0 };
   const s2 = sc.scene_two || { count: 0, cost: 0 };
-  const totalCount = s1.count + s2.count;
-  const totalCost = s1.cost + s2.cost;
+  const s3 = sc.scene_three || { count: 0, cost: 0 };
+  const s4 = sc.scene_four || { count: 0, cost: 0 };
+  const totalCount = s1.count + s2.count + s3.count + s4.count;
+  const totalCost = s1.cost + s2.cost + s3.cost + s4.cost;
   return [
     { key: "scene_one", name: SCENE_NAMES.scene_one, count: s1.count, cost: s1.cost },
     { key: "scene_two", name: SCENE_NAMES.scene_two, count: s2.count, cost: s2.cost },
+    { key: "scene_three", name: SCENE_NAMES.scene_three, count: s3.count, cost: s3.cost },
+    { key: "scene_four", name: SCENE_NAMES.scene_four, count: s4.count, cost: s4.cost },
     { key: "total", name: "总计", count: totalCount, cost: totalCost },
   ];
 });

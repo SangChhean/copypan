@@ -21,7 +21,23 @@ const AI_LIST = [
 /** 轮次内发言固定顺序（与 AI_LIST 一致） */
 const AI_ORDER = ["claude", "gpt", "gemini", "grok", "deepseek", "perplexity"];
 
-const getAvatar = (aiKey) => AI_LIST.find((a) => a.key === aiKey)?.avatar || "";
+/** 场景④ 顶级模型思考：三选一 */
+const SCENE4_AI_LIST = [
+  { key: "claude_opus", label: "Claude Opus 4.6", desc: "thinking" },
+  { key: "gpt_pro", label: "GPT-5.4", desc: "pro" },
+  { key: "gemini_pro", label: "Gemini 3.1 Pro", desc: "" },
+];
+const SCENE4_ORDER = ["claude_opus", "gpt_pro", "gemini_pro"];
+
+const getAvatar = (aiKey) => {
+  const scene4 = SCENE4_AI_LIST.find((a) => a.key === aiKey);
+  if (scene4) {
+    if (aiKey === "claude_opus") return claudeAvatar;
+    if (aiKey === "gpt_pro") return gptAvatar;
+    if (aiKey === "gemini_pro") return geminiAvatar;
+  }
+  return AI_LIST.find((a) => a.key === aiKey)?.avatar || "";
+};
 
 const getDisplayName = (aiKey) => {
   if (runSceneType.value === "scene_two" && stances.value[aiKey]) {
@@ -32,6 +48,8 @@ const getDisplayName = (aiKey) => {
 
 const getSpeakerName = (ai) => {
   if (runSceneType.value === "scene_two" && stances.value[ai]) return stances.value[ai];
+  const s4 = SCENE4_AI_LIST.find((a) => a.key === ai);
+  if (s4) return s4.desc ? `${s4.label}（${s4.desc}）` : s4.label;
   return ai;
 };
 
@@ -47,6 +65,7 @@ const cleanMarkdown = (text) => {
 
 const topic = ref("");
 const selectedAIs = ref([]);
+const selectedScene4Ai = ref(""); // 场景④ 单选：claude_opus | gpt_pro | gemini_pro
 const sceneType = ref("scene_two");
 const stances = ref({
   claude: "",
@@ -80,6 +99,9 @@ const showConclusion = computed(
     typingQueue.value.length === 0 &&
     !isTyping.value
 );
+const showConclusionOrScene4Done = computed(
+  () => showConclusion.value || (roundDone.value && runSceneType.value === "scene_four")
+);
 
 const historyList = ref([]);
 const historyLoading = ref(false);
@@ -89,26 +111,35 @@ const totalCost = ref(0);
 const sceneOptions = [
   { value: "scene_two", label: "神学辩论", desc: "3轮交锋 · 结论" },
   { value: "scene_one", label: "十二支派", desc: "历史神学研究 · 汇总" },
+  { value: "scene_three", label: "重大讨论", desc: "作答 → 互相指出 → 最终评价 · 总结" },
+  { value: "scene_four", label: "顶级模型思考", desc: "单轮深度思考 · 无总结" },
 ];
 
-const sceneDesc = computed(
-  () =>
-    (sceneType.value === "scene_one"
-      ? "十二支派：多AI并行历史神学研究，综合汇总"
-      : "神学辩论：3轮交锋 + 中立结论")
-);
+const sceneDesc = computed(() => {
+  if (sceneType.value === "scene_one") return "十二支派：多AI并行历史神学研究，综合汇总";
+  if (sceneType.value === "scene_three") return "重大讨论：第一轮各AI作答，第二轮互相点评（至少2～3人），第三轮对题目做最终评价，Claude 总结";
+  if (sceneType.value === "scene_four") return "顶级模型思考：从 Claude Opus 4.6（thinking）、GPT-5.4（pro）、Gemini 3.1 Pro 中选一个，单轮深度思考，无总结";
+  return "神学辩论：3轮交锋 + 中立结论";
+});
 
-const topicPlaceholder = computed(() =>
-  sceneType.value === "scene_one"
-    ? '请输入研究题目，例如：已过两千年来，基督教界对"因信称义"的看法如何？'
-    : "请输入辩论题目，例如：因信称义"
-);
+const topicPlaceholder = computed(() => {
+  if (sceneType.value === "scene_one")
+    return '请输入研究题目，例如：已过两千年来，基督教界对"因信称义"的看法如何？';
+  if (sceneType.value === "scene_three")
+    return "请输入讨论题目或材料（可粘贴整篇文章），例如：请讨论初信者如何建立晨兴习惯";
+  if (sceneType.value === "scene_four")
+    return "请输入希望 AI 深度思考的题目或材料";
+  return "请输入辩论题目，例如：因信称义";
+});
 
 const canStart = computed(() => {
   const topicOk = (topic.value || "").trim().length > 0;
+  if (sceneType.value === "scene_four") {
+    return topicOk && !!selectedScene4Ai.value;
+  }
   const n = selectedAIs.value.length;
   const countOk = n >= 2 && n <= 6;
-  if (sceneType.value === "scene_one") {
+  if (sceneType.value === "scene_one" || sceneType.value === "scene_three") {
     return topicOk && countOk;
   }
   const allStancesOk = selectedAIs.value.every(
@@ -137,7 +168,8 @@ const typewriterEffect = (s) => {
 };
 
 const startTypingQueue = async (round) => {
-  const roundSpeeches = AI_ORDER.map((ai) =>
+  const order = runSceneType.value === "scene_four" ? SCENE4_ORDER : AI_ORDER;
+  const roundSpeeches = order.map((ai) =>
     speeches.value.find((s) => s.round === round && s.ai === ai)
   ).filter(Boolean);
   for (const s of roundSpeeches) {
@@ -180,10 +212,11 @@ const processNextRound = async () => {
   isTyping.value = true;
   const round = typingQueue.value.shift();
   // 当轮发言按 AI_ORDER 排序后再进入打字机，保证显示顺序一致
+  const order = runSceneType.value === "scene_four" ? SCENE4_ORDER : AI_ORDER;
   speeches.value.sort(
     (a, b) =>
       a.round - b.round ||
-      AI_ORDER.indexOf(a.ai) - AI_ORDER.indexOf(b.ai)
+      order.indexOf(a.ai) - order.indexOf(b.ai)
   );
   await startTypingQueue(round);
   await processNextRound();
@@ -223,7 +256,7 @@ const handleSSEEvent = (event, sse) => {
     if (runSceneType.value === "scene_one") {
       sceneOneEndedAis.value.push(event.ai);
       tryAdvanceSceneOne();
-    } else {
+    } else if (runSceneType.value === "scene_two" || runSceneType.value === "scene_three" || runSceneType.value === "scene_four") {
       if (allEnded) {
         enqueueRound(event.round);
       }
@@ -273,8 +306,8 @@ const handleStart = async () => {
       body: JSON.stringify({
         scene_type: sceneType.value,
         topic: topic.value,
-        participants: selectedAIs.value,
-        ai_roles: sceneType.value === "scene_one" ? {} : stances.value,
+        participants: sceneType.value === "scene_four" ? [selectedScene4Ai.value] : selectedAIs.value,
+        ai_roles: sceneType.value === "scene_two" ? stances.value : {},
       }),
     });
     if (!res.ok) throw new Error(`创建失败：${res.status}`);
@@ -406,14 +439,25 @@ onMounted(loadHistory);
           <a-textarea
             v-model:value="topic"
             :placeholder="topicPlaceholder"
-            :rows="2"
-            :maxlength="100"
-            show-count
+            :rows="(sceneType === 'scene_three' || sceneType === 'scene_four') ? 6 : 2"
+            :maxlength="(sceneType === 'scene_three' || sceneType === 'scene_four') ? undefined : 100"
+            :show-count="sceneType !== 'scene_three' && sceneType !== 'scene_four'"
             :style="{ maxWidth: '600px' }"
           />
         </div>
 
-        <div class="field ai-section">
+        <div v-if="sceneType === 'scene_four'" class="field ai-section">
+          <span class="label">选择模型：</span>
+          <a-radio-group v-model:value="selectedScene4Ai" class="ai-rows">
+            <div v-for="ai in SCENE4_AI_LIST" :key="ai.key" class="ai-row">
+              <a-radio :value="ai.key">
+                <span class="ai-label">{{ ai.label }}</span>
+                <span v-if="ai.desc" class="ai-desc">（{{ ai.desc }}）</span>
+              </a-radio>
+            </div>
+          </a-radio-group>
+        </div>
+        <div v-else class="field ai-section">
           <span class="label">参与 AI：</span>
           <a-checkbox-group v-model:value="selectedAIs" class="ai-rows">
             <div
@@ -436,7 +480,7 @@ onMounted(loadHistory);
           </a-checkbox-group>
         </div>
 
-        <p class="count-hint" :class="{ invalid: selectedAIs.length < 2 }">
+        <p v-if="sceneType !== 'scene_four'" class="count-hint" :class="{ invalid: selectedAIs.length < 2 }">
           已选 {{ selectedAIs.length }} 个 AI（最少2个，最多6个）
         </p>
 
@@ -465,18 +509,22 @@ onMounted(loadHistory);
         style="margin-bottom: 16px"
       />
 
-      <template v-for="round in runSceneType === 'scene_one' ? [1] : [1, 2, 3]" :key="round">
+      <template v-for="round in (runSceneType === 'scene_one' || runSceneType === 'scene_four') ? [1] : [1, 2, 3]" :key="round">
         <div class="round-divider">
           <span class="line"></span>
           <span class="round-label">{{
             runSceneType === "scene_one"
               ? "第 1 步 · 各AI独立研究"
-              : `第 ${round} 轮`
+              : runSceneType === "scene_three"
+                ? (round === 1 ? "第 1 轮 · 作答" : round === 2 ? "第 2 轮 · 互相指出" : "第 3 轮 · 最终评价")
+                : runSceneType === "scene_four"
+                  ? "顶级模型思考"
+                  : `第 ${round} 轮`
           }}</span>
           <span class="line"></span>
         </div>
         <div
-          v-for="s in speeches.filter((sp) => sp.round === round).sort((a, b) => AI_ORDER.indexOf(a.ai) - AI_ORDER.indexOf(b.ai))"
+          v-for="s in speeches.filter((sp) => sp.round === round).sort((a, b) => (runSceneType === 'scene_four' ? SCENE4_ORDER : AI_ORDER).indexOf(a.ai) - (runSceneType === 'scene_four' ? SCENE4_ORDER : AI_ORDER).indexOf(b.ai))"
           :key="`${s.round}-${s.ai}`"
           style="
             display: flex;
@@ -517,10 +565,10 @@ onMounted(loadHistory);
 
     </a-card>
 
-    <!-- 结论区：默认隐藏，结束后显示 -->
+    <!-- 结论区：默认隐藏，结束后显示；场景④ 无结论文案，仅显示完成与费用 -->
     <a-card
-      v-if="showConclusion"
-      title="圆桌结论"
+      v-if="showConclusionOrScene4Done"
+      :title="runSceneType === 'scene_four' ? '完成' : '圆桌结论'"
       :style="{ marginBottom: '16px' }"
     >
       <template #extra>
@@ -533,7 +581,7 @@ onMounted(loadHistory);
           >
         </a-space>
       </template>
-      <div style="white-space: pre-wrap">{{ conclusion }}</div>
+      <div v-if="runSceneType !== 'scene_four'" style="white-space: pre-wrap">{{ conclusion }}</div>
       <div
         v-if="roundDone"
         style="margin-top:12px; padding:10px 16px; background:#f6ffed; border:1px solid #b7eb8f; border-radius:8px; text-align:right; font-size:13px"
@@ -566,7 +614,7 @@ onMounted(loadHistory);
             <span
               style="color: #999; font-size: 12px; margin-left: 8px"
             >
-              {{ item.scene_type === "scene_two" ? "神学辩论" : "十二支派" }}
+              {{ item.scene_type === "scene_two" ? "神学辩论" : item.scene_type === "scene_three" ? "重大讨论" : item.scene_type === "scene_four" ? "顶级模型思考" : "十二支派" }}
             </span>
             <span
               v-if="item.is_pinned"

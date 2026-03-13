@@ -14,17 +14,31 @@ const errorMsg = ref("");
 const pinLoading = ref(false);
 
 const isSceneTwo = computed(() => record.value?.scene_type === "scene_two");
+const isSceneThree = computed(() => record.value?.scene_type === "scene_three");
+const isSceneFour = computed(() => record.value?.scene_type === "scene_four");
 const aiRoles = computed(() => record.value?.ai_roles || {});
 
+const roundTitles = computed(() => {
+  if (isSceneThree.value && record.value?.rounds?.length === 3)
+    return ["第1轮 · 作答", "第2轮 · 互相指出", "第3轮 · 最终评价"];
+  if (isSceneFour.value && record.value?.rounds?.length >= 1)
+    return ["顶级模型思考"];
+  return null;
+});
+
+const SCENE4_LABELS = { claude_opus: "Claude Opus 4.6（thinking）", gpt_pro: "GPT-5.4（pro）", gemini_pro: "Gemini 3.1 Pro" };
 const getSpeakerName = (ai) => {
   if (isSceneTwo.value && aiRoles.value[ai]) return aiRoles.value[ai];
+  if (isSceneFour.value && SCENE4_LABELS[ai]) return SCENE4_LABELS[ai];
   return ai;
 };
 
+const SCENE4_ORDER = ["claude_opus", "gpt_pro", "gemini_pro"];
 /** 按 AI_ORDER 返回当轮发言列表 [ [ai, speech], ... ] */
 const sortedRoundEntries = (roundData) => {
   if (!roundData || typeof roundData !== "object") return [];
-  return AI_ORDER.filter((ai) => roundData[ai] != null).map((ai) => [ai, roundData[ai]]);
+  const order = isSceneFour.value ? SCENE4_ORDER : AI_ORDER;
+  return order.filter((ai) => roundData[ai] != null).map((ai) => [ai, roundData[ai]]);
 };
 
 const cleanMarkdown = (text) => {
@@ -125,17 +139,17 @@ onMounted(loadRecord);
             </a-space>
           </template>
           <p style="color: #999">
-            {{ record.scene_type === "scene_two" ? "神学辩论" : "十二支派" }}
+            {{ record.scene_type === "scene_two" ? "神学辩论" : record.scene_type === "scene_three" ? "重大讨论" : record.scene_type === "scene_four" ? "顶级模型思考" : "十二支派" }}
             · {{ record.created_at?.slice(0, 16)?.replace('T', ' ') }}
           </p>
           <p style="color: #999; font-size: 0.85rem">
             本次圆桌费用：{{ record.total_cost != null ? '$' + Number(record.total_cost).toFixed(4) : '—' }}
           </p>
-          <!-- 场景① -->
+          <!-- 场景①、③、④：无立场 -->
           <p v-if="!isSceneTwo">
             参与AI：{{ record.participants?.join("、") }}
           </p>
-          <!-- 场景② -->
+          <!-- 场景②：立场 -->
           <template v-else>
             <p>参与立场：</p>
             <p v-for="ai in record.participants" :key="ai">
@@ -149,7 +163,7 @@ onMounted(loadRecord);
           <div v-for="(roundData, idx) in record.rounds" :key="idx">
             <div class="round-divider">
               <span class="line"></span>
-              <span class="round-label">第 {{ idx + 1 }} 轮</span>
+              <span class="round-label">{{ roundTitles && roundTitles[idx] ? roundTitles[idx] : `第 ${idx + 1} 轮` }}</span>
               <span class="line"></span>
             </div>
             <div
@@ -167,18 +181,14 @@ onMounted(loadRecord);
           </div>
         </template>
 
-        <!-- 结论 -->
+        <!-- 结论（场景④ 无结论不显示结论文案，仅显示下载） -->
         <a-card
-          v-if="record.conclusion"
-          title="圆桌结论"
+          v-if="record.conclusion || isSceneFour"
+          :title="record.conclusion ? '圆桌结论' : '下载'"
           style="margin-top: 16px"
         >
-          <div style="white-space: pre-wrap">{{ cleanMarkdown(record.conclusion) }}</div>
-          <div
-            v-if="record.conclusion"
-            class="download-btns"
-            style="margin-top: 16px; display: flex; gap: 12px"
-          >
+          <div v-if="record.conclusion" style="white-space: pre-wrap">{{ cleanMarkdown(record.conclusion) }}</div>
+          <div class="download-btns" style="margin-top: 16px; display: flex; gap: 12px">
             <button @click="downloadFile('docx')">下载 DOCX</button>
             <button @click="downloadFile('pdf')">下载 PDF</button>
           </div>

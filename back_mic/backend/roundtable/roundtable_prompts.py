@@ -102,6 +102,105 @@ def build_scene_two_prompt(
     return base
 
 
+# ---------- 场景③ 重大讨论 ----------
+
+
+def _format_round_for_prompt(round_data: Dict[str, str], participants: List[str]) -> str:
+    """将一轮发言格式化为 [AI名]：内容\\n\\n"""
+    return "".join(f"[{ai}]：{(round_data.get(ai) or '')}\n\n" for ai in participants)
+
+
+def build_scene_three_round1_prompt(topic: str) -> str:
+    """场景③第一轮：各 AI 对题目/文章独立作答。"""
+    return f"""请针对以下讨论题目或材料，给出你的独立回答或评价。用中文输出。
+
+题目/材料：
+{topic}
+
+请直接陈述你的观点、分析或结论，不必引用其他参与者。行文使用自然段落，不使用 Markdown 标题符号（#）或列表符号（-、*）。不要提问，直接开始回答。
+""" + FORMAT_NO_MARKDOWN
+
+
+def build_scene_three_round2_prompt(
+    ai_name: str,
+    topic: str,
+    round1_all: Dict[str, str],
+    participants: List[str],
+) -> str:
+    """场景③第二轮：必须至少点评 2～3 个其他 AI 的观点（互相指出）。"""
+    others_r1 = _format_round_for_prompt(
+        {k: v for k, v in round1_all.items() if k != ai_name},
+        [p for p in participants if p != ai_name],
+    )
+    return f"""以下是一场「重大讨论」的第一轮发言。请你在阅读后，对**至少 2～3 位其他参与者**的观点进行点评（指出亮点、补充、质疑或不同看法均可）。用中文输出。
+
+讨论题目/材料：
+{topic}
+
+【第一轮各参与者发言】
+{others_r1}
+
+【你的任务】
+请点名回应至少 2～3 位其他参与者（例如：对 Claude 的观点我认为…；GPT 提到的…值得补充…）。要针对他们具体说了什么来回应，不要泛泛而谈。行文使用自然段落，不使用 Markdown 标题符号（#）或列表符号（-、*）。不要提问，直接开始回答。
+""" + FORMAT_NO_MARKDOWN
+
+
+def build_scene_three_round3_prompt(
+    ai_name: str,
+    topic: str,
+    round1_all: Dict[str, str],
+    round2_all: Dict[str, str],
+    participants: List[str],
+) -> str:
+    """场景③第三轮：根据前两轮（含第二轮互相评价），对题目本身做最终评价。"""
+    r1_str = _format_round_for_prompt(round1_all, participants)
+    r2_str = _format_round_for_prompt(round2_all, participants)
+    return f"""以下是一场「重大讨论」的前两轮完整记录。请你在阅读后，**回到题目本身**，给出你对这道题目/材料的**最终评价**（总结你的立场、结论或建议）。不必再逐一点评他人，重点是对题目本身的收尾陈述。用中文输出。
+
+讨论题目/材料：
+{topic}
+
+【第一轮：各参与者作答】
+{r1_str}
+
+【第二轮：互相点评】
+{r2_str}
+
+【你的任务】
+请基于以上讨论，对题目/材料本身给出你的最终评价或结论。行文使用自然段落，不使用 Markdown 标题符号（#）或列表符号（-、*）。不要提问，直接开始回答。
+""" + FORMAT_NO_MARKDOWN
+
+
+def build_scene_four_prompt(topic: str) -> str:
+    """场景④顶级模型思考：单轮深度思考与回答，无总结。"""
+    return f"""请对以下题目进行深度思考，并给出你的分析与回答。用中文输出。
+
+题目/材料：
+{topic}
+
+请充分展开思考，结构清晰，论述有据。行文使用自然段落，可使用「一、二、三、」分段；不使用 Markdown 标题符号（#）或列表符号（-、*）。不要提问，直接开始回答。
+""" + FORMAT_NO_MARKDOWN
+
+
+def build_scene_three_conclusion_prompt(topic: str, all_speeches_str: str) -> str:
+    """场景③结论：Claude 对三轮讨论做总结。"""
+    return f"""以下是一场「重大讨论」的完整三轮记录，请作为主持人，对整场讨论进行总结，用中文输出。
+
+讨论题目/材料：
+{topic}
+
+全部发言记录：
+{all_speeches_str}
+
+请完成以下任务：
+一、简要概括各轮讨论的主要观点与分歧点。
+二、归纳大家对题目/材料形成的共识或仍存在的不同看法。
+三、给出对读者有参考价值的结论或建议。
+
+要求：结构清晰，保持中立；行文使用自然段落，可使用「一、二、三、」分段；不使用 Markdown 符号。不要提问，直接开始回答。
+""" + FORMAT_NO_MARKDOWN
+
+
 def build_conclusion_prompt(topic: str, all_stances: str, all_speeches: str) -> str:
     """结论轮：中立裁判对辩论做深度总结。"""
     return f"""以下是一场神学辩论的完整记录，请作为中立的神学评论者，对这场辩论进行深度总结，用中文输出。

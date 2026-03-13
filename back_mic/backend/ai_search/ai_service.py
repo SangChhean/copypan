@@ -1385,19 +1385,21 @@ class AISearchService:
                         "_source": ["id", "text", "msg", "source", "sn", "bookname", "title", "bookname2"]
                     }
                 else:
-                    # 其他索引：查顶层 text
+                    # 其他索引（bib/cwwl/cwwn/life/others）：查 text + zh 字段
                     search_body = {
                         "query": {
                             "bool": {
                                 "should": [
                                     {"match_phrase": {"text": {"query": query, "boost": 2.5}}},
-                                    {"match": {"text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}}
+                                    {"match": {"text": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}},
+                                    {"match_phrase": {"zh": {"query": query, "boost": 2.5}}},
+                                    {"match": {"zh": {"query": query, "fuzziness": "AUTO", "boost": 2.0}}}
                                 ],
                                 "minimum_should_match": 1
                             }
                         },
                         "size": int(size * weight),
-                        "_source": ["id", "type", "book", "chapter", "verse", "text", "title"]
+                        "_source": ["id", "type", "book", "chapter", "verse", "text", "zh", "title"]
                     }
 
                 # 执行搜索（使用项目统一 es，忽略不可用索引）
@@ -1732,8 +1734,18 @@ class AISearchService:
         except Exception as e:
             logger.error("Claude 摘要解析失败: %s", e)
             return []
+        raw_debug = (parse_result or "").strip()
+        if len(raw_debug) > 8000:
+            logger.debug("[摘要解析] 原始返回(前8000字): %s ... [已截断]", raw_debug[:8000])
+        else:
+            logger.debug("[摘要解析] 原始返回: %s", raw_debug)
         points = _parse_skeleton_points(parse_result or "")
         if not points:
+            raw = (parse_result or "").strip()
+            if len(raw) > 4000:
+                logger.warning("[摘要解析] 解析结果为空，原始返回(前4000字): %s ... [已截断]", raw[:4000])
+            else:
+                logger.warning("[摘要解析] 解析结果为空，原始返回: %s", raw)
             return []
 
         logger.info(f"[摘要解析] 提炼大点: {[p.get('title', '') for p in points]}（共{len(points)}个）, 负担说明参与: {'是' if _is_burden_valid(burden_description) else '否'}")

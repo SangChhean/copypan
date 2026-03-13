@@ -25,18 +25,21 @@ roundtable_router = APIRouter(prefix="/api")
 
 
 class RoundtableStartBody(BaseModel):
-    scene_type: str = Field(..., description="scene_one | scene_two")
+    scene_type: str = Field(..., description="scene_one | scene_two | scene_three | scene_four")
     topic: str = Field(..., min_length=1)
-    participants: List[str] = Field(..., min_length=2, max_length=6)
+    participants: List[str] = Field(..., min_length=1, max_length=6)
     ai_roles: Dict[str, str] = Field(default_factory=dict)
 
 
 @roundtable_router.post("/roundtable/start", dependencies=[Depends(test_token)])
 async def start_roundtable(body: RoundtableStartBody):
-    """创建 Session，支持 scene_one（十二支派）与 scene_two（神学辩论）。"""
-    if body.scene_type not in ("scene_one", "scene_two"):
-        raise HTTPException(status_code=400, detail="scene_type 须为 scene_one 或 scene_two")
-    if len(body.participants) < 2 or len(body.participants) > 6:
+    """创建 Session，支持 scene_one（十二支派）、scene_two（神学辩论）、scene_three（重大讨论）、scene_four（顶级模型思考）。"""
+    if body.scene_type not in ("scene_one", "scene_two", "scene_three", "scene_four"):
+        raise HTTPException(status_code=400, detail="scene_type 须为 scene_one、scene_two、scene_three 或 scene_four")
+    if body.scene_type == "scene_four":
+        if len(body.participants) != 1:
+            raise HTTPException(status_code=400, detail="场景④ 仅支持选择 1 个 AI")
+    elif len(body.participants) < 2 or len(body.participants) > 6:
         raise HTTPException(status_code=400, detail="participants 数量须在 2～6 之间")
     svc = RoundTableService()
     session_id = await svc.create_session(
@@ -49,12 +52,17 @@ async def start_roundtable(body: RoundtableStartBody):
 
 
 async def _sse_stream(session_id: str):
-    """根据 session 的 scene_type 选择 run_scene_one 或 run_scene_two，产出 SSE。结论轮期间每 20 秒发心跳保活。"""
+    """根据 session 的 scene_type 选择对应场景生成器，产出 SSE。结论轮期间每 20 秒发心跳保活。"""
     svc = RoundTableService()
     try:
         session = await svc.get_session(session_id)
-        if session.get("scene_type") == "scene_one":
+        st = session.get("scene_type")
+        if st == "scene_one":
             generator = svc.run_scene_one(session_id)
+        elif st == "scene_three":
+            generator = svc.run_scene_three(session_id)
+        elif st == "scene_four":
+            generator = svc.run_scene_four(session_id)
         else:
             generator = svc.run_scene_two(session_id)
     except ValueError as e:
@@ -130,14 +138,25 @@ def _roundtable_export_text(record: dict) -> str:
     participants_str = "、".join(participants)
     rounds = record.get("rounds") or []
     conclusion = record.get("conclusion") or ""
-    scene_label = "神学辩论" if (record.get("scene_type") or "") == "scene_two" else "十二支派"
+    scene_type = record.get("scene_type") or ""
+    if scene_type == "scene_two":
+        scene_label = "神学辩论"
+        round_titles = ["第1轮 · 亮明立场", "第2轮 · 正面交锋", "第3轮 · 总结陈词"]
+    elif scene_type == "scene_three":
+        scene_label = "重大讨论"
+        round_titles = ["第1轮 · 作答", "第2轮 · 互相指出", "第3轮 · 最终评价"]
+    elif scene_type == "scene_four":
+        scene_label = "顶级模型思考"
+        round_titles = ["深度思考"]
+    else:
+        scene_label = "十二支派"
+        round_titles = ["第1步 · 各AI独立研究"]
     lines = [
         f"题目：{topic}",
         f"场景：{scene_label}",
         f"参与AI：{participants_str}",
         "",
     ]
-    round_titles = ["第1轮 · 亮明立场", "第2轮 · 正面交锋", "第3轮 · 总结陈词"]
     for idx, round_data in enumerate(rounds):
         title = round_titles[idx] if idx < len(round_titles) else f"第{idx + 1}轮"
         lines.append(f"===== {title} =====")
@@ -179,7 +198,7 @@ def _build_roundtable_docx(docx_path: str, record: dict) -> None:
     p_title = doc.add_paragraph(style='0系列')
     p_title.add_run(topic)
 
-    # 第1段：参与角色（仅场景②），应用「0000模板」样式
+    # 第1段：参与角色（仅场景②），应用「0000模板」样式；场景③、④无角色
     if scene_type == 'scene_two' and ai_roles:
         stances = '、'.join(
             ai_roles[ai] for ai in participants
@@ -188,6 +207,15 @@ def _build_roundtable_docx(docx_path: str, record: dict) -> None:
         if stances:
             p_roles = doc.add_paragraph(style='0000模板')
             p_roles.add_run(f'参与角色：{stances}')
+
+    # 场景④：单轮思考内容
+    if scene_type == 'scene_four':
+        rounds_data = record.get('rounds') or []
+        if rounds_data and isinstance(rounds_data[0], dict):
+            for _ai_name, content in rounds_data[0].items():
+                for line in (content or '').split('\n'):
+                    p = doc.add_paragraph(style='0000模板')
+                    p.add_run(line if line.strip() else ' ')
 
     # 结论正文：每行一段，均应用「0000模板」样式
     for line in conclusion.split('\n'):
