@@ -8,6 +8,7 @@
 数据源：见 SOURCE_FILE 变量
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,9 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from es_config import es
 
-SOURCE_FILE = (
-    r"E:\Pansearch备份\note、7feasts、dictionary、pano、firewall\filewall\filewall.json"
-)
+SOURCE_FILE = os.path.join(os.path.dirname(__file__), "filewall.json")
 INDEX_NAME = "filewall"
 
 FILEWALL_MAPPING = {
