@@ -52,12 +52,14 @@ MAP_CHUNK_INDICES = [
     "map_7feasts_chunks",
     "map_pano_chunks",
     "map_dictionary_chunks",
+    "filewall_chunks",
 ]
 MAP_CHUNK_TO_PARENT: dict[str, str] = {
     "map_note_chunks": "map_note",
     "map_7feasts_chunks": "map_7feasts",
     "map_pano_chunks": "map_pano",
     "map_dictionary_chunks": "map_dictionary",
+    "filewall_chunks": "filewall",
 }
 
 NUM_CANDIDATES = 100

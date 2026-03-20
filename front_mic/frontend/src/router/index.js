@@ -67,6 +67,12 @@ const routes = [
   },
   { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
   { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
+  {
+    path: "/kg-rag-test",
+    name: "KgRagTest",
+    component: () => import("../components/toolbox/KgRagTest.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

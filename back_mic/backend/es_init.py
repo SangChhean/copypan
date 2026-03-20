@@ -45,6 +45,30 @@ def get_mappings(tp):
                 }
             }
         },
+        "filewall": {
+            "mappings": {
+                "properties": {
+                    "id": {"type": "keyword"},
+                    "text": {
+                        "type": "text",
+                        "analyzer": "ik_max_word",
+                        "search_analyzer": "ik_smart",
+                    },
+                    "msg": {
+                        "type": "nested",
+                        "properties": {
+                            "text": {
+                                "type": "text",
+                                "analyzer": "ik_max_word",
+                                "search_analyzer": "ik_smart",
+                            }
+                        },
+                    },
+                    "sn": {"type": "keyword"},
+                    "source": {"type": "keyword"},
+                }
+            }
+        },
     }
     return mappings[tp]
 
@@ -66,6 +90,7 @@ all_index = [
     ["feasts_booknames", "index"],
     ["feasts_ot1", "index"],
     ["feasts_titles", "index"],
+    ["filewall", "filewall"],
     ["foo", "index"],
     ["hymn", "index"],
     ["life", "index"],

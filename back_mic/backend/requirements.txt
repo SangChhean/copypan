@@ -17,3 +17,4 @@ cn2an>=0.5.17
 zhconv>=1.4.0
 opencc-python-reimplemented>=0.1.7
 docx2pdf>=0.1.8
+neo4j>=5.0.0

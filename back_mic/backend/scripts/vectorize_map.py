@@ -25,7 +25,7 @@ TEST_MODE = False
 SCROLL_SIZE = 1000
 SCROLL_TTL = "5m"
 
-INDICES = ["map_7feasts", "map_note", "map_pano", "map_dictionary"]
+INDICES = ["map_7feasts", "map_note", "map_pano", "map_dictionary", "filewall"]
 SKIP_TYPES = {"bookname", "title", "b_read"}
 OT1_TYPE = "ot1"
 SUB_OT_PATTERN = re.compile(r"^ot[2-6n]$")

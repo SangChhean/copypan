@@ -108,6 +108,13 @@ def test_token(token: str = Depends(get_token_from_header_or_cookie)):
         raise ERR_401
 
 
+def require_admin(userinfo: dict = Depends(test_token)):
+    """依赖：要求当前用户为管理员（role 为 t0），否则 403。用于测试工作台、数据管理等仅管理员可访问的路由。"""
+    if userinfo.get("role") != "t0":
+        raise ERR_403
+    return userinfo
+
+
 def test_token_optional(token: str = Depends(get_token_from_header_or_query)):
     """与 test_token 相同校验逻辑，但 token 可从 header 或 query string 的 token 参数获取（供 EventSource 等无法带 header 的场景）。"""
     USER_DIR = Path(__file__).parent / "users.json"

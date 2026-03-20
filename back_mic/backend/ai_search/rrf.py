@@ -23,6 +23,7 @@ MAP_CHUNK_TO_PARENT = {
     "map_7feasts_chunks": "map_7feasts",
     "map_pano_chunks": "map_pano",
     "map_dictionary_chunks": "map_dictionary",
+    "filewall_chunks": "filewall",
 }
 
 
@@ -78,6 +79,9 @@ def _effective_index(doc: dict) -> str:
 
 def _weight_multiplier(special_needs: str, effective_index: str, doc_id: str) -> float:
     """根据 special_needs 与索引、doc_id 返回权重系数。"""
+    # 与 ai_service.INDEXES_CONFIG_BY_NATURE 中 filewall 一致（各纲目性质均为 1.2）
+    if effective_index == "filewall":
+        return 1.2
     if special_needs == "一般性":
         if effective_index == "cwwl" and CWWL_94_97 in doc_id:
             return 1.1

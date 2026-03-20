@@ -47,7 +47,8 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
         raise
     # 按 input 顺序返回（API 返回的 data 可能按 index 排序）
     order = {d.index: d.embedding for d in r.data}
-    return [order[i] for i in range(len(texts))]
+    vectors = [order[i] for i in range(len(texts))]
+    return vectors
 
 
 async def get_embedding(text: str) -> list[float]:

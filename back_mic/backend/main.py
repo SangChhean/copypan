@@ -29,6 +29,7 @@ from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
 from ai_search import ai_router
 from roundtable import roundtable_router
+from kg_rag.kg_rag_router import router as kg_rag_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
 from ai_search.vector_search import close_async_es
@@ -313,6 +314,8 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 app.include_router(ai_router)
 # AI 圆桌路由
 app.include_router(roundtable_router)
+# KG-RAG 测试工作台（仅管理员）
+app.include_router(kg_rag_router)
 
 # 注册API路由器
 app.include_router(api_router)

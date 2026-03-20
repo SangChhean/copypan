@@ -129,6 +129,42 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ai_search")
 
+# 防火墙规则：启动时一次性加载 filewall_rules.json，建标题→note 映射
+_FILEWALL_TITLE_NOTE: Dict[str, str] = {}
+try:
+    _fw_path = Path(__file__).resolve().parent.parent / "filewall_rules.json"
+    with open(_fw_path, encoding="utf-8") as _fw_f:
+        for _fw_item in json.load(_fw_f):
+            _fw_title = (_fw_item.get("title") or "").strip()
+            if _fw_title:
+                _FILEWALL_TITLE_NOTE[_fw_title] = (_fw_item.get("note") or "").strip()
+    logger.info("防火墙规则已加载：共 %d 条标题", len(_FILEWALL_TITLE_NOTE))
+except Exception as _fw_e:
+    logger.warning("防火墙规则加载失败: %s", _fw_e)
+
+# 防火墙文档预加载：启动时拉取全部 filewall 文档，建标题→_source 映射，消除查询时的分词歧义
+_FILEWALL_DOCS: Dict[str, Dict] = {}
+try:
+    if _FILEWALL_TITLE_NOTE:
+        _fw_resp = es.search(
+            index="filewall",
+            body={"query": {"match_all": {}}, "size": 100, "_source": True},
+            request_timeout=15,
+        )
+        _fw_hits = (_fw_resp.get("hits") or {}).get("hits") or []
+        for _fw_hit in _fw_hits:
+            _fw_src = _fw_hit.get("_source") or {}
+            _fw_doc_text = (_fw_src.get("text") or "").strip()
+            for _fw_title in _FILEWALL_TITLE_NOTE:
+                if _fw_title in _fw_doc_text:
+                    _FILEWALL_DOCS[_fw_title] = _fw_src
+        logger.info(
+            "防火墙文档预加载完成：%d/%d 条标题已匹配文档",
+            len(_FILEWALL_DOCS), len(_FILEWALL_TITLE_NOTE),
+        )
+except Exception as _fw_doc_e:
+    logger.warning("防火墙文档预加载失败（将在查询时 fallback 到 ES 实时查询）: %s", _fw_doc_e)
+
 # 加载环境变量（确保从 backend 目录加载 .env）
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -265,6 +301,7 @@ INDEXES_CONFIG_BY_NATURE = {
         "map_dictionary": {"weight": 1.0},
         "map_7feasts": {"weight": 1.0},
         "map_pano": {"weight": 1.0},
+        "filewall": {"weight": 1.2},
         "cwwl": {"weight": 1.0},
         "cwwn": {"weight": 1.0},
         "life": {"weight": 1.0},
@@ -276,6 +313,7 @@ INDEXES_CONFIG_BY_NATURE = {
         "map_dictionary": {"weight": 1.0},
         "map_7feasts": {"weight": 1.0},
         "map_pano": {"weight": 1.0},
+        "filewall": {"weight": 1.2},
         "cwwl": {"weight": 1.0},  # 94-97 额外 1.5
         "cwwn": {"weight": 1.0},
         "life": {"weight": 1.0},
@@ -287,6 +325,7 @@ INDEXES_CONFIG_BY_NATURE = {
         "map_dictionary": {"weight": 1.0},
         "map_7feasts": {"weight": 1.0},
         "map_pano": {"weight": 1.0},
+        "filewall": {"weight": 1.2},
         "cwwl": {"weight": 1.0},
         "cwwn": {"weight": 1.5},
         "life": {"weight": 1.5},
@@ -298,6 +337,7 @@ INDEXES_CONFIG_BY_NATURE = {
         "map_dictionary": {"weight": 1.0},
         "map_7feasts": {"weight": 1.0},
         "map_pano": {"weight": 1.0},
+        "filewall": {"weight": 1.2},
         "cwwl": {"weight": 1.0},  # 85-93 额外 1.5
         "cwwn": {"weight": 1.0},
         "life": {"weight": 1.0},
@@ -314,6 +354,7 @@ INDEX_LABELS = {
     "map_dictionary": "词典",
     "map_7feasts": "节期",
     "map_pano": "上河图",
+    "filewall": "防火墙",
     "cwwl": "李常受文集",
     "cwwn": "倪柝声文集",
     "life": "生命读经",
@@ -463,10 +504,22 @@ class AISearchService:
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
                     # 方式二：摘要框架，按大点检索后存 Redis，返回 search_id 供 generate 使用
+                    # 防火墙检查与 mode2 检索并发执行，不增加总耗时
+                    _fw_match_m2: Optional[tuple] = None
                     try:
-                        mode2_results = asyncio.run(
-                            self._hybrid_search_mode2(question.strip(), skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
-                        )
+                        async def _coro_mode2_fw() -> list:
+                            _burden = (normalized_metadata or {}).get("burden_description") or ""
+                            _rs = await asyncio.gather(
+                                self._hybrid_search_mode2(question.strip(), skeleton, outline_nature, depth, burden_description=_burden),
+                                self._check_firewall_match(question.strip()),
+                                return_exceptions=True,
+                            )
+                            return list(_rs)
+                        _m2_rs = asyncio.run(_coro_mode2_fw())
+                        mode2_results = _m2_rs[0] if not isinstance(_m2_rs[0], BaseException) else []
+                        _fw_match_m2 = _m2_rs[1] if not isinstance(_m2_rs[1], BaseException) else None
+                        if isinstance(_m2_rs[0], BaseException):
+                            logger.error("方式二混合检索失败: %s", _m2_rs[0], exc_info=True)
                     except Exception as e:
                         logger.error("方式二混合检索失败: %s", e, exc_info=True)
                         mode2_results = []
@@ -494,9 +547,9 @@ class AISearchService:
                             "search_time": round(search_time, 0),
                         }
                     else:
-                        # 无 Redis：方式二在同一请求内完成生成并返回
+                        # 无 Redis：方式二在同一请求内完成生成并返回（防火墙 match 已在并发阶段获得）
                         ai_start = time.time()
-                        answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton))
+                        answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(question.strip(), mode2_results, skeleton=skeleton, firewall_hint=_fw_match_m2))
                         ai_time = (time.time() - ai_start) * 1000
                         sources_preview = self._extract_sources_from_mode2_points(mode2_results)
                         total_time = round((time.time() - start_time) * 1000, 0)
@@ -530,10 +583,21 @@ class AISearchService:
                         except Exception as _e:
                             logger.debug(f"监控记录失败: {_e}")
                         return result
+                # 方式一：混合检索与防火墙检查并发执行
+                _fw_match: Optional[tuple] = None
                 try:
-                    hybrid_docs = asyncio.run(
-                        self._hybrid_search_mode1(question.strip(), outline_nature, depth, burden_description="")
-                    )
+                    async def _coro_mode1_fw() -> list:
+                        _rs = await asyncio.gather(
+                            self._hybrid_search_mode1(question.strip(), outline_nature, depth, burden_description=""),
+                            self._check_firewall_match(question.strip()),
+                            return_exceptions=True,
+                        )
+                        return list(_rs)
+                    _m1_rs = asyncio.run(_coro_mode1_fw())
+                    hybrid_docs = _m1_rs[0] if not isinstance(_m1_rs[0], BaseException) else []
+                    _fw_match = _m1_rs[1] if not isinstance(_m1_rs[1], BaseException) else None
+                    if isinstance(_m1_rs[0], BaseException):
+                        logger.error("方式一混合检索失败: %s", _m1_rs[0], exc_info=True)
                 except Exception as e:
                     logger.error("方式一混合检索失败: %s", e, exc_info=True)
                     hybrid_docs = []
@@ -549,8 +613,16 @@ class AISearchService:
                 context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
                 search_results = hybrid_docs  # 供后续 _extract_sources 使用需为 list[dict]；hybrid 无 _source，用 _extract_sources_from_context
             else:
+                # 旧版：同步检索与防火墙检查并发执行（ThreadPoolExecutor）
                 burden_desc = (normalized_metadata or {}).get("burden_description") or ""
-                search_results = self._multi_index_search(question, fetch_size, outline_nature, mode="旧版", depth=depth, burden="是" if _is_burden_valid(burden_desc) else "否")
+                _fw_match = None
+                with ThreadPoolExecutor(max_workers=1) as _fw_pool:
+                    _fw_future = _fw_pool.submit(self._check_firewall_match_sync, question)
+                    search_results = self._multi_index_search(question, fetch_size, outline_nature, mode="旧版", depth=depth, burden="是" if _is_burden_valid(burden_desc) else "否")
+                    try:
+                        _fw_match = _fw_future.result(timeout=10)
+                    except Exception as _fw_e:
+                        logger.debug("防火墙检查超时或失败: %s", _fw_e)
                 search_time = (time.time() - search_start) * 1000
                 if not search_results:
                     return {
@@ -564,7 +636,11 @@ class AISearchService:
                 if not context_items:
                     context_items = self._fallback_context_from_hits(search_results, context_size, depth)
 
-            # 4. 调用Claude生成答案
+            # 4. 防火墙预处理：命中时插入首位上下文并生成 hint（fw_match 已在检索阶段并发获得）
+            context_items, _fw_title, _fw_note = self._apply_firewall_with_match(_fw_match, context_items)
+            _fw_hint = (_fw_title, _fw_note) if _fw_title else None
+
+            # 5. 调用Claude生成答案
             if not self.claude:
                 return {
                     "answer": "AI 服务未配置（请设置 CLAUDE_API_KEY）。",
@@ -578,7 +654,8 @@ class AISearchService:
                 question,
                 context_items,
                 context_size,
-                normalized_metadata
+                normalized_metadata,
+                firewall_hint=_fw_hint,
             )
             ai_time = (time.time() - ai_start) * 1000
 
@@ -692,12 +769,16 @@ class AISearchService:
                 skeleton_raw = (normalized_metadata or {}).get("skeleton") or (normalized_metadata or {}).get("burden_description") or ""
                 skeleton = skeleton_raw.strip() if isinstance(skeleton_raw, str) else ""
                 if skeleton:
-                    try:
-                        mode2_results = await self._hybrid_search_mode2(question, skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or "")
-                    except Exception as e:
-                        logger.error("方式二混合检索失败: %s", e, exc_info=True)
-                        mode2_results = []
-                    search_time = (time.time() - search_start) * 1000
+                    # 方式二：检索与防火墙检查并发执行
+                    _m2a_rs = await asyncio.gather(
+                        self._hybrid_search_mode2(question, skeleton, outline_nature, depth, burden_description=(normalized_metadata or {}).get("burden_description") or ""),
+                        self._check_firewall_match(question),
+                        return_exceptions=True,
+                    )
+                    mode2_results = _m2a_rs[0] if not isinstance(_m2a_rs[0], BaseException) else []
+                    _fw_match_m2a: Optional[tuple] = _m2a_rs[1] if not isinstance(_m2a_rs[1], BaseException) else None
+                    if isinstance(_m2a_rs[0], BaseException):
+                        logger.error("方式二混合检索失败: %s", _m2a_rs[0], exc_info=True)
                     search_time = (time.time() - search_start) * 1000
                     if not mode2_results:
                         return {"answer": "抱歉，摘要解析或检索未得到结果，请检查摘要格式或稍后重试。", "sources": [], "cached": False, "search_time": search_time}
@@ -708,7 +789,7 @@ class AISearchService:
                         logger.info(f"方式二检索完成: {len(mode2_results)}个大点, search_id={search_id}, 耗时{search_time:.0f}ms")
                         return {"sources": sources_preview, "search_id": search_id, "search_time": round(search_time, 0)}
                     ai_start = time.time()
-                    answer_text, mode2_payload, mode2_usage = await self._generate_mode2(question, mode2_results, skeleton=skeleton)
+                    answer_text, mode2_payload, mode2_usage = await self._generate_mode2(question, mode2_results, skeleton=skeleton, firewall_hint=_fw_match_m2a)
                     ai_time = (time.time() - ai_start) * 1000
                     total_time = round((time.time() - start_time) * 1000, 0)
                     in_tok = int(getattr(mode2_usage, "input_tokens", 0) or 0) if mode2_usage else 0
@@ -720,11 +801,16 @@ class AISearchService:
                     except Exception as _e:
                         logger.debug(f"监控记录失败: {_e}")
                     return result
-                try:
-                    hybrid_docs = await self._hybrid_search_mode1(question, outline_nature, depth, burden_description="")
-                except Exception as e:
-                    logger.error("方式一混合检索失败: %s", e, exc_info=True)
-                    hybrid_docs = []
+                # 方式一：混合检索与防火墙检查并发执行
+                _m1a_rs = await asyncio.gather(
+                    self._hybrid_search_mode1(question, outline_nature, depth, burden_description=""),
+                    self._check_firewall_match(question),
+                    return_exceptions=True,
+                )
+                hybrid_docs = _m1a_rs[0] if not isinstance(_m1a_rs[0], BaseException) else []
+                _fw_match_a: Optional[tuple] = _m1a_rs[1] if not isinstance(_m1a_rs[1], BaseException) else None
+                if isinstance(_m1a_rs[0], BaseException):
+                    logger.error("方式一混合检索失败: %s", _m1a_rs[0], exc_info=True)
                 search_time = (time.time() - search_start) * 1000
                 if not hybrid_docs:
                     return {"answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述", "sources": [], "cached": False, "search_time": search_time}
@@ -732,7 +818,16 @@ class AISearchService:
                 context_items = self._build_context_from_hybrid_docs(hybrid_docs, context_size, depth)
                 search_results = hybrid_docs
             else:
-                search_results = await asyncio.to_thread(self._multi_index_search, question, fetch_size, outline_nature)
+                # 旧版：同步检索与防火墙检查并发执行（asyncio.to_thread）
+                _bm25a_rs = await asyncio.gather(
+                    asyncio.to_thread(self._multi_index_search, question, fetch_size, outline_nature),
+                    self._check_firewall_match(question),
+                    return_exceptions=True,
+                )
+                search_results = _bm25a_rs[0] if not isinstance(_bm25a_rs[0], BaseException) else []
+                _fw_match_a = _bm25a_rs[1] if not isinstance(_bm25a_rs[1], BaseException) else None
+                if isinstance(_bm25a_rs[0], BaseException):
+                    logger.error("旧版检索失败: %s", _bm25a_rs[0], exc_info=True)
                 search_time = (time.time() - search_start) * 1000
                 if not search_results:
                     return {"answer": "抱歉，没有找到相关的经文内容。建议：\n1. 尝试使用不同的关键词\n2. 检查是否有拼写错误\n3. 使用更具体的描述", "sources": [], "cached": False, "search_time": search_time}
@@ -741,10 +836,14 @@ class AISearchService:
                 if not context_items:
                     context_items = self._fallback_context_from_hits(search_results, context_size, depth)
 
+            # 防火墙预处理：fw_match 已在检索阶段并发获得
+            context_items, _fw_title_a, _fw_note_a = self._apply_firewall_with_match(_fw_match_a, context_items)
+            _fw_hint_a = (_fw_title_a, _fw_note_a) if _fw_title_a else None
+
             if not self.claude:
                 return {"answer": "AI 服务未配置（请设置 CLAUDE_API_KEY）。", "sources": self._extract_sources_from_context(context_items[:50]) if context_items else [], "cached": False, "search_time": round(search_time, 0), "error": True}
             ai_start = time.time()
-            ai_response = self._generate_answer(question, context_items, context_size, normalized_metadata)
+            ai_response = self._generate_answer(question, context_items, context_size, normalized_metadata, firewall_hint=_fw_hint_a)
             ai_time = (time.time() - ai_start) * 1000
             logger.info(f"AI生成完成: 耗时{ai_time:.0f}ms")
             mode = "新版方式一" if USE_VECTOR_SEARCH else "旧版"
@@ -1138,7 +1237,8 @@ class AISearchService:
                 logger.info("generate_only 模式: 方式二(摘要填充), 大点数=%s", len(points))
                 q = (question or "").strip() or "纲目"
                 ai_start = time.time()
-                answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(q, points, skeleton=""))
+                _fw_hint_go = self._check_firewall_match_sync(q)
+                answer_text, mode2_payload, mode2_usage = asyncio.run(self._generate_mode2(q, points, skeleton="", firewall_hint=_fw_hint_go))
                 ai_time = (time.time() - ai_start) * 1000
                 logger.info(f"[generate_only 完成] 方式二 | 大点数: {len(points)} | 总耗时: {int((time.time() - start_time) * 1000)}ms")
                 sources_preview = self._extract_sources_from_mode2_points(points)
@@ -1233,12 +1333,18 @@ class AISearchService:
                 if not context_items:
                     context_items = self._fallback_context_from_hits(search_results, context_size, stored_depth)
 
+            # 防火墙预处理
+            _q_go2 = (question or stored_question or "").strip()
+            context_items, _fw_title_go2, _fw_note_go2 = self._apply_firewall(_q_go2, context_items)
+            _fw_hint_go2 = (_fw_title_go2, _fw_note_go2) if _fw_title_go2 else None
+
             ai_start = time.time()
             ai_response = self._generate_answer(
-                question or stored_question,
+                _q_go2,
                 context_items,
                 context_size,
-                normalized_metadata
+                normalized_metadata,
+                firewall_hint=_fw_hint_go2,
             )
             ai_time = (time.time() - ai_start) * 1000
 
@@ -1543,6 +1649,7 @@ class AISearchService:
         all_indices = [
             "cwwl", "cwwn", "life", "others", "bib",
             "map_note_chunks", "map_7feasts_chunks", "map_pano_chunks", "map_dictionary_chunks",
+            "filewall_chunks",
         ]
         bm25_size = 400 if depth == "deep" else 200
         bm25_results = await asyncio.to_thread(
@@ -1607,6 +1714,7 @@ class AISearchService:
         all_indices = [
             "cwwl", "cwwn", "life", "others", "bib",
             "map_note_chunks", "map_7feasts_chunks", "map_pano_chunks", "map_dictionary_chunks",
+            "filewall_chunks",
         ]
         search_query = (point.get("search_query") or "").strip() or (point.get("title") or "")
         sub_directions = point.get("sub_directions") or []
@@ -1766,8 +1874,9 @@ class AISearchService:
     _HEADING_TYPES = frozenset({"heading", "heading_1", "heading_2", "heading_3", "heading_4"})
     _SINGLE_PARAGRAPH_TYPES = frozenset({"text", "ot1", "ot2", "ot3", "ot4"})
     # map_note / map_7feasts / map_dictionary：nested msg 结构，参与检索的纲目层级
-    _MAP_NOTE_MSG_TYPES = frozenset({"ot1", "ot2", "ot3", "ot4"})
-    _MAP_LIKE_INDICES = frozenset({"map_note", "map_7feasts", "map_dictionary", "map_pano"})
+    # title 加入后：命中 title 的文档会进入 BM25 top-k，并触发整篇返回逻辑
+    _MAP_NOTE_MSG_TYPES = frozenset({"ot1", "ot2", "ot3", "ot4", "title"})
+    _MAP_LIKE_INDICES = frozenset({"map_note", "map_7feasts", "map_dictionary", "map_pano", "filewall"})
 
     def _get_map_note_section_range(
         self, msg: List[Dict], start_idx: int
@@ -1799,17 +1908,17 @@ class AISearchService:
 
     def _get_map_note_full_content(self, source: Dict) -> str:
         """
-        获取 map 类文档的全篇内容：优先用外层 text，否则拼接所有 ot1~ot4。
-        当命中来自外层 text 相关度高时，用于发送全篇给 Claude。
+        获取 map 类文档的全篇内容：拼接全部 msg 条目（含 title/bookname/b_read/ot* 等）。
+        用于：① 命中来自外层 text；② inner_hits 中含 title 命中，视为高相关。
         """
-        outer_text = (source.get("text") or "").strip()
-        if outer_text:
-            return outer_text
         msg_list = source.get("msg") or []
+        if not msg_list:
+            return (source.get("text") or "").strip()
         parts = []
         for m in msg_list:
-            if m.get("type") in self._MAP_NOTE_MSG_TYPES and m.get("text"):
-                parts.append(m["text"])
+            text = (m.get("text") or "").strip()
+            if text:
+                parts.append(text)
         return "\n".join(parts)
 
     def _extract_map_note_sections_from_inner_hits(
@@ -1831,11 +1940,18 @@ class AISearchService:
             return self._get_map_note_full_content(source)
 
         matched_indices = set()
+        has_title_hit = False
         for ih in inner_hits_list:
             nested = ih.get("_nested", {})
             offset = nested.get("offset")
             if isinstance(offset, int) and 0 <= offset < len(msg_list):
                 matched_indices.add(offset)
+                if msg_list[offset].get("type") == "title":
+                    has_title_hit = True
+
+        # inner_hits 中含 title 命中：视为高相关，返回全篇 msg
+        if has_title_hit:
+            return self._get_map_note_full_content(source)
 
         if not matched_indices:
             parts = []
@@ -2102,11 +2218,20 @@ class AISearchService:
                 })
         return sources
 
-    async def _generate_mode2(self, question: str, points: List[Dict], skeleton: str = "") -> Tuple[str, Dict, Any]:
+    async def _generate_mode2(self, question: str, points: List[Dict], skeleton: str = "", firewall_hint: Optional[tuple] = None) -> Tuple[str, Dict, Any]:
         """方式二：按摘要框架填充生成纲目，返回 (完整纲目文本, claude_payload, usage 或 None)。"""
         if not points or not self.claude:
             return ("", {}, None)
         system = self._build_generate_system_prompt()
+        if firewall_hint:
+            fw_title, fw_note = firewall_hint
+            _fw_injection = (
+                f"\n\n【防火墙参考指示】\n"
+                f"上下文第一篇是关于「{fw_title}」的职事文档，生成纲目时需在适当位置涵盖以下思路：{fw_note}\n"
+                f"请从该文档中提取相关内容来支撑这一思路，整体纲目仍需按主题正常展开。"
+            )
+            system += _fw_injection
+            logger.info("[防火墙] 参考指示已注入 system prompt (_generate_mode2): %s", _fw_injection.strip())
         blocks = []
         for pt in points:
             title = pt.get("title") or ""
@@ -2161,6 +2286,153 @@ class AISearchService:
                 "type": item.get("source_type", ""),
             })
         return sources
+
+    # ------------------------------------------------------------------ #
+    #  防火墙匹配逻辑                                                       #
+    # ------------------------------------------------------------------ #
+
+    async def _check_firewall_match(self, question: str) -> Optional[tuple]:
+        """
+        调用 Claude 判断用户主题是否与 filewall_rules.json 中的 63 个标题之一语义相关。
+        命中时返回 (title, note)；未命中或任何异常一律返回 None（不影响主流程）。
+        并发调用时使用 asyncio.gather；同步上下文通过 _check_firewall_match_sync 封装。
+        """
+        if not self.claude or not _FILEWALL_TITLE_NOTE:
+            return None
+        titles_block = "\n".join(f"- {t}" for t in _FILEWALL_TITLE_NOTE)
+        system = "你是一个判断工具，只输出 JSON，不输出其他任何内容。"
+        user = (
+            f"以下是 {len(_FILEWALL_TITLE_NOTE)} 个标题：\n{titles_block}\n\n"
+            f"用户主题：{(question or '').strip()}\n\n"
+            f"请判断用户主题是否明确对应上面某个标题。\n"
+            f"判断标准：\n"
+            f"- 用户主题必须清楚地指向该标题所讨论的具体内容\n"
+            f"- 仅包含部分关键词、泛泛相关、或只是提到相关概念，不算命中\n"
+            f"- 没有明确对应的标题时返回 null\n\n"
+            f"命中时只返回 JSON：{{\"matched\": \"标题原文\"}}\n"
+            f"未命中时只返回 JSON：{{\"matched\": null}}\n"
+            f"不得有任何其他文字、解释或 markdown。"
+        )
+        try:
+            raw, _ = await asyncio.to_thread(
+                _call_claude_messages_sync,
+                self.claude,
+                system,
+                user,
+                50,
+            )
+            raw = (raw or "").strip()
+            # 兼容 Claude 偶尔套 markdown code fence
+            if raw.startswith("```"):
+                lines = raw.split("\n")
+                raw = "\n".join(
+                    lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
+                ).strip()
+            data = json.loads(raw)
+            matched_title = data.get("matched")
+            if matched_title and matched_title in _FILEWALL_TITLE_NOTE:
+                logger.info("防火墙 Claude 判断命中: title=%s", matched_title)
+                return (matched_title, _FILEWALL_TITLE_NOTE[matched_title])
+        except Exception as e:
+            logger.debug("防火墙 Claude 判断失败（fallback 不命中）: %s", e)
+        return None
+
+    def _check_firewall_match_sync(self, question: str) -> Optional[tuple]:
+        """
+        _check_firewall_match 的同步包装，用于 generate_only 等无事件循环的调用点。
+        新建独立 event loop 运行，与主业务线程互不干扰。
+        """
+        try:
+            _loop = asyncio.new_event_loop()
+            try:
+                return _loop.run_until_complete(self._check_firewall_match(question))
+            finally:
+                _loop.close()
+        except Exception as e:
+            logger.debug("防火墙同步检查失败（fallback 不命中）: %s", e)
+            return None
+
+    def _fetch_firewall_doc(self, title: str) -> Optional[Dict]:
+        """
+        取回 title 对应的 filewall 文档 _source。
+        优先从启动时预加载的 _FILEWALL_DOCS 字典直接返回（O(1)，无 ES 请求）。
+        预加载缺失时 fallback 到 match_phrase slop:1 实时查询。
+        """
+        # 优先走预加载字典
+        cached = _FILEWALL_DOCS.get(title)
+        if cached is not None:
+            logger.info("[防火墙] _fetch_firewall_doc 命中预加载缓存: title=%r", title)
+            return cached
+
+        # Fallback：预加载未覆盖时，实时发 ES 查询（match_phrase slop:1）
+        logger.warning("[防火墙] _fetch_firewall_doc 未命中预加载，fallback ES 查询: title=%r", title)
+        query_body = {
+            "query": {"match_phrase": {"text": {"query": title, "slop": 1}}},
+            "size": 1,
+            "_source": True,
+        }
+        logger.info("[防火墙] _fetch_firewall_doc 查询(match_phrase slop:1): title=%r, body=%s", title, query_body)
+        try:
+            resp = self.es.search(
+                index="filewall",
+                body=query_body,
+                request_timeout=10,
+                ignore_unavailable=True,
+            )
+            total = (resp.get("hits") or {}).get("total", {}).get("value", 0)
+            hits = (resp.get("hits") or {}).get("hits") or []
+            logger.info("[防火墙] _fetch_firewall_doc 结果: total=%d, returned=%d", total, len(hits))
+            if hits:
+                return hits[0].get("_source") or {}
+        except Exception as e:
+            logger.warning("防火墙文档查询失败 title=%s: %s", title, e)
+        return None
+
+    def _apply_firewall_with_match(
+        self, fw_match: Optional[tuple], context_items: List[Dict]
+    ) -> tuple:
+        """
+        接受预计算的 fw_match（(title, note) 或 None），取回文档并插入上下文首位。
+        异步路径先用 asyncio.gather 并发计算 fw_match，再调此方法，避免串行等待。
+        返回 (更新后的 context_items, title, note)；未命中返回 (context_items, None, None)。
+        """
+        if not fw_match:
+            return (context_items, None, None)
+
+        title, note = fw_match
+        source = self._fetch_firewall_doc(title)
+        if not source:
+            logger.warning("防火墙规则命中 title=%s 但未找到对应文档", title)
+            return (context_items, title, note)
+
+        msg_list = source.get("msg") or []
+        parts = []
+        for m in msg_list:
+            text = (m.get("text") or "").strip()
+            if text:
+                parts.append(text)
+        full_text = "\n".join(parts) or (source.get("text") or "").strip()
+
+        firewall_item = {
+            "reference": f"防火墙文档·{title}",
+            "content": full_text,
+            "source_type": "[防火墙]",
+            "score": 9999.0,
+        }
+        updated = [firewall_item] + list(context_items)
+        logger.info("防火墙命中 title=%s，已插入上下文首位", title)
+        return (updated, title, note)
+
+    def _apply_firewall(
+        self, question: str, context_items: List[Dict]
+    ) -> tuple:
+        """
+        同步版防火墙处理，内部调用 _check_firewall_match_sync + _apply_firewall_with_match。
+        用于 generate_only 等已无并发机会的调用点；异步检索路径应改用
+        asyncio.gather(_check_firewall_match, ...) 配合 _apply_firewall_with_match。
+        """
+        fw_match = self._check_firewall_match_sync(question)
+        return self._apply_firewall_with_match(fw_match, context_items)
 
     def _build_generate_system_prompt(self) -> str:
         """返回纲目生成的 system prompt，供方式一和方式二共用。"""
@@ -2325,6 +2597,7 @@ class AISearchService:
         context_items: List[Dict],
         context_size: int = 200,
         metadata: Optional[Dict[str, str]] = None,
+        firewall_hint: Optional[tuple] = None,
     ) -> Dict:
         """
         调用Claude生成答案
@@ -2333,6 +2606,7 @@ class AISearchService:
             question: 用户问题
             context_items: 上下文项列表 [{"reference", "content", "source_type"}, ...]
             context_size: 最多使用的条数
+            firewall_hint: (title, note) 元组，命中防火墙规则时非 None
 
         Returns:
             {"answer": str, "tokens": dict}
@@ -2350,6 +2624,15 @@ class AISearchService:
 
         # 构建prompt
         system_prompt = self._build_generate_system_prompt()
+        if firewall_hint:
+            fw_title, fw_note = firewall_hint
+            _fw_injection = (
+                f"\n\n【防火墙参考指示】\n"
+                f"上下文第一篇是关于「{fw_title}」的职事文档，生成纲目时需在适当位置涵盖以下思路：{fw_note}\n"
+                f"请从该文档中提取相关内容来支撑这一思路，整体纲目仍需按主题正常展开。"
+            )
+            system_prompt += _fw_injection
+            logger.info("[防火墙] 参考指示已注入 system prompt (_generate_answer): %s", _fw_injection.strip())
 
         metadata_lines = []
         if metadata:
@@ -2580,6 +2863,8 @@ class AISearchService:
             "map_7feasts": "[复合节期]",
             "map_dictionary": "[词典]",
             "map_pano": "[上河图]",
+            "filewall": "[防火墙]",
+            "filewall_chunks": "[防火墙]",
         }
         return type_map.get(index_name, "[未分类]")
 
