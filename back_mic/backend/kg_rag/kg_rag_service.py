@@ -54,28 +54,33 @@ PATH_COUNT_THRESHOLD = 20  # 多概念路径数少于此则取全路径，否则
 
 
 def _format_skeleton(skeleton: dict | None) -> str:
-    """将骨架格式化为可读文本，如：基督 ──延伸──► 恩典 (0.950)。"""
+    """将骨架格式化为可读文本，优先使用带方向的 relation_str。"""
     if not skeleton:
         return ""
+    lines = []
     if "root" in skeleton and "branches" in skeleton:
-        lines = []
-        root = skeleton.get("root", "")
         for b in skeleton.get("branches", []):
-            name = b.get("name", "")
-            rel = b.get("relation_type", b.get("relation", "相关"))
             score = b.get("score", 0)
-            lines.append(f"{root} ──{rel}──► {name} ({score})")
-        return "\n".join(lines)
-    if "roots" in skeleton and "branches" in skeleton:
-        lines = []
+            relation_str = b.get("relation_str", "")
+            if relation_str:
+                lines.append(f"{relation_str} ({score})")
+            else:
+                root = skeleton.get("root", "")
+                name = b.get("name", "")
+                rel = b.get("relation_type", "相关")
+                lines.append(f"{root} ──{rel}──► {name} ({score})")
+    elif "roots" in skeleton and "branches" in skeleton:
         for b in skeleton.get("branches", []):
-            root = b.get("root", "")
-            name = b.get("name", "")
-            rel = b.get("relation_type", b.get("relation", "相关"))
             score = b.get("score", 0)
-            lines.append(f"{root} ──{rel}──► {name} ({score})")
-        return "\n".join(lines)
-    return str(skeleton)
+            relation_str = b.get("relation_str", "")
+            if relation_str:
+                lines.append(f"{relation_str} ({score})")
+            else:
+                root = b.get("root", "")
+                name = b.get("name", "")
+                rel = b.get("relation_type", "相关")
+                lines.append(f"{root} ──{rel}──► {name} ({score})")
+    return "\n".join(lines)
 
 
 def _format_chunks(chunks: list[dict]) -> str:
@@ -240,10 +245,18 @@ class KgRagService:
                     skeleton = {"root": root, "branches": []}
                 else:
                     try:
+                        neighbors_for_llm = [
+                            {
+                                "neighbor": n["neighbor"],
+                                "relation": " ／ ".join(n["relations"]),
+                            }
+                            for n in neighbors
+                        ]
+                        print(f"[KG-RAG DEBUG] Step2 neighbors_for_llm (root={root}): {json.dumps(neighbors_for_llm, ensure_ascii=False)}")
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
-                            neighbors_json=json.dumps(neighbors, ensure_ascii=False),
+                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
                         raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
                         scored = _parse_skeleton_scores(raw2)
@@ -251,7 +264,14 @@ class KgRagService:
                         filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
                         filtered.sort(key=lambda x: x["score"], reverse=True)
                         branches = [
-                            {"name": x["name"], "relation_type": by_name.get(x["name"], "相关"), "score": x["score"]}
+                            {
+                                "name": x["name"],
+                                "relation_type": by_name.get(x["name"], "相关"),
+                                "relation_str": " ／ ".join(
+                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
+                                ),
+                                "score": x["score"],
+                            }
                             for x in filtered[: p["skeleton_top_n"]]
                         ]
                         skeleton = {"root": root, "branches": branches}
@@ -266,10 +286,18 @@ class KgRagService:
                     if not neighbors:
                         continue
                     try:
+                        neighbors_for_llm = [
+                            {
+                                "neighbor": n["neighbor"],
+                                "relation": " ／ ".join(n["relations"]),
+                            }
+                            for n in neighbors
+                        ]
+                        print(f"[KG-RAG DEBUG] Step2 neighbors_for_llm (root={root}): {json.dumps(neighbors_for_llm, ensure_ascii=False)}")
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
-                            neighbors_json=json.dumps(neighbors, ensure_ascii=False),
+                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
                         raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
                         scored = _parse_skeleton_scores(raw2)
@@ -281,6 +309,9 @@ class KgRagService:
                                 "root": root,
                                 "name": x["name"],
                                 "relation_type": by_name.get(x["name"], "相关"),
+                                "relation_str": " ／ ".join(
+                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
+                                ),
                                 "score": x["score"],
                             })
                     except Exception:
@@ -291,17 +322,36 @@ class KgRagService:
 
         # Step 3: 三路检索
         if p.get("skip_query_rewrite"):
-            rewritten_query = query
+            rewritten_queries = [query]
         else:
             try:
                 rewrite_prompt = QUERY_REWRITE.format(query=query)
-                rewritten_query = (await _call_claude(rewrite_prompt, p["llm_model"], temperature=0, max_tokens=300)).strip() or query
+                raw_rewrite = (await _call_claude(rewrite_prompt, p["llm_model"], temperature=0, max_tokens=300)).strip()
+                parsed = _parse_json_array(raw_rewrite)
+                rewritten_queries = [str(q).strip() for q in parsed if str(q).strip()] if parsed else [query]
+                if not rewritten_queries:
+                    rewritten_queries = [query]
             except Exception:
-                rewritten_query = query
+                rewritten_queries = [query]
 
         bm25_task = bm25_search(self.es, query, self.index, p["bm25_top_k"])
-        dense_task = dense_search(self.es, rewritten_query, self.index, p["dense_top_k"], p["num_candidates"])
-        bm25_results, dense_results = await asyncio.gather(bm25_task, dense_task)
+        dense_tasks = [
+            dense_search(self.es, rq, self.index, p["dense_top_k"], p["num_candidates"])
+            for rq in rewritten_queries
+        ]
+        results = await asyncio.gather(bm25_task, *dense_tasks)
+        bm25_results = results[0]
+        dense_results_all = list(results[1:])
+
+        # 多路 Dense 结果合并去重（按 chunk_id，保留最高分）
+        dense_merged: dict[str, dict] = {}
+        for hits in dense_results_all:
+            for doc in hits:
+                cid = doc.get("chunk_id", "")
+                if cid not in dense_merged or doc.get("score", 0) > dense_merged[cid].get("score", 0):
+                    dense_merged[cid] = doc
+        dense_results = list(dense_merged.values())
+
         merged = await rrf_merge(bm25_results, dense_results, p["rrf_k"], p["bm25_weight"], p["dense_weight"])
         main_results = await rerank(merged, query, p["rerank_top_n"])
 
@@ -318,7 +368,7 @@ class KgRagService:
             expanded_results = [r for r in expanded_results if r.get("chunk_id") not in main_ids]
 
         result["steps"]["step3"] = {
-            "rewritten_query": rewritten_query,
+            "rewritten_queries": rewritten_queries,
             "bm25_count": len(bm25_results),
             "dense_count": len(dense_results),
             "rrf_count": len(merged),

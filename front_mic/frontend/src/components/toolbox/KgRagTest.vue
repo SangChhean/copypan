@@ -97,18 +97,18 @@ function formatSkeleton(skeleton) {
   if (!skeleton) return "";
   if (skeleton.root && skeleton.branches) {
     return skeleton.branches
-      .map(
-        (b) =>
-          `${skeleton.root} ──${b.relation_type || "相关"}──► ${b.name} (${Number(b.score || 0).toFixed(3)})`
-      )
+      .map((b) => {
+        const rel = b.relation_str || `${skeleton.root} ──${b.relation_type || "相关"}──► ${b.name}`;
+        return `${rel} (${Number(b.score || 0).toFixed(3)})`;
+      })
       .join("\n");
   }
   if (skeleton.roots && skeleton.branches) {
     return skeleton.branches
-      .map(
-        (b) =>
-          `${b.root} ──${b.relation_type || "相关"}──► ${b.name} (${Number(b.score || 0).toFixed(3)})`
-      )
+      .map((b) => {
+        const rel = b.relation_str || `${b.root} ──${b.relation_type || "相关"}──► ${b.name}`;
+        return `${rel} (${Number(b.score || 0).toFixed(3)})`;
+      })
       .join("\n");
   }
   return JSON.stringify(skeleton);
@@ -130,6 +130,22 @@ const graphLoading = ref(false);
 const exploreResult = ref(null);
 const pathResult = ref(null);
 const statsResult = ref(null);
+
+/** Tab2 邻居表列：关系列用 rel_from ──type──► rel_to 展示 */
+const neighborTableColumns = [
+  { title: "邻居", dataIndex: "neighbor", key: "neighbor" },
+  { title: "关系", key: "edge" },
+];
+
+function formatNeighborEdge(record) {
+  const t = record.relation_type || "相关";
+  const a = record.rel_from;
+  const b = record.rel_to;
+  if (a != null && b != null && String(a).trim() && String(b).trim()) {
+    return `${a} ──${t}──► ${b}`;
+  }
+  return t;
+}
 
 async function runExplore() {
   const c = (exploreConcept.value || "").trim();
@@ -384,7 +400,7 @@ onMounted(() => {
             <a-col :xs="24" :md="14" :lg="15">
               <div v-if="!queryResult" class="result-placeholder">执行查询后，结果将在此分步展示。</div>
               <template v-else>
-                <a-steps direction="vertical" :current="5" class="result-steps">
+                <a-steps direction="vertical" :current="6" class="result-steps">
                   <a-step title="Step 1 概念抽取">
                     <template #description>
                       <a-card size="small" class="step-card">
@@ -424,6 +440,20 @@ onMounted(() => {
                     </a-card>
                   </template>
                 </a-step>
+                <a-step title="Query 改写">
+                  <template #description>
+                    <a-card size="small" class="step-card">
+                      <template v-if="(queryResult.steps?.step3?.rewritten_queries || []).length">
+                        <div
+                          v-for="(rq, ri) in queryResult.steps.step3.rewritten_queries"
+                          :key="ri"
+                          class="rewritten-query-text"
+                        >{{ ri + 1 }}. {{ rq }}</div>
+                      </template>
+                      <div v-else class="rewritten-query-text">—（跳过改写）</div>
+                    </a-card>
+                  </template>
+                </a-step>
                 <a-step title="Step 3 检索结果">
                   <template #description>
                     <a-card size="small" class="step-card">
@@ -435,8 +465,12 @@ onMounted(() => {
                             class="chunk-row"
                           >
                             <div class="chunk-meta">
-                              {{ r.chunk_id }} · score {{ (r.score != null ? r.score : r._score).toFixed(3) }} ·
-                              {{ r.source || "" }}
+                              #{{ i + 1 }} · {{ r.chunk_id }} · score {{ (r.score != null ? r.score : r._score).toFixed(3) }}
+                              <a-tag
+                                v-if="r.source_routes && r.source_routes.length"
+                                :color="r.source_routes.length === 2 ? 'orange' : r.source_routes[0] === 'bm25' ? 'blue' : 'green'"
+                                class="source-route-tag"
+                              >{{ r.source_routes.length === 2 ? 'BM25+Dense' : r.source_routes[0] === 'bm25' ? 'BM25' : 'Dense' }}</a-tag>
                             </div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
                             <div v-if="r.book_title || r.message_title" class="chunk-meta">
@@ -450,7 +484,7 @@ onMounted(() => {
                             :key="r.chunk_id || i"
                             class="chunk-row"
                           >
-                            <div class="chunk-meta">{{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
+                            <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
                           </div>
                         </a-tab-pane>
@@ -460,8 +494,9 @@ onMounted(() => {
                             :key="r.chunk_id || i"
                             class="chunk-row"
                           >
-                            <div class="chunk-meta">{{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
+                            <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div v-if="r.rewritten_query" class="chunk-rewritten-query">改写Query: "{{ r.rewritten_query }}"</div>
                           </div>
                         </a-tab-pane>
                         <a-tab-pane
@@ -475,7 +510,7 @@ onMounted(() => {
                             class="chunk-row"
                           >
                             <div class="chunk-meta">
-                              expanded_from: {{ r.expanded_from }} · {{ r.chunk_id }} ·
+                              #{{ i + 1 }} · expanded_from: {{ r.expanded_from }} · {{ r.chunk_id }} ·
                               {{ (r.score != null ? r.score : r._score || 0).toFixed(3) }}
                             </div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
@@ -550,12 +585,18 @@ onMounted(() => {
           <div class="graph-result">
           <template v-if="graphMode === 'explore' && exploreResult">
             <a-table
-              :columns="[{ title: '邻居', dataIndex: 'neighbor' }, { title: '关系类型', dataIndex: 'relation_type' }]"
+              :columns="neighborTableColumns"
               :data-source="exploreResult.neighbors || []"
               :pagination="false"
-              row-key="neighbor"
+              :row-key="(_, index) => `nb-${index}`"
               size="small"
-            />
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'edge'">
+                  <span class="neighbor-edge-text">{{ formatNeighborEdge(record) }}</span>
+                </template>
+              </template>
+            </a-table>
           </template>
           <template v-else-if="graphMode === 'path' && pathResult">
             <p>路径数：{{ pathResult.path_count ?? 0 }}</p>
@@ -856,12 +897,28 @@ onMounted(() => {
       color: #8c8c8c;
       margin-bottom: 4px;
       line-height: 1.4;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .source-route-tag {
+      font-size: 11px;
+      line-height: 1.2;
+      padding: 0 4px;
+      margin: 0;
     }
     .chunk-text {
       font-size: 13px;
       color: #333;
       line-height: 1.5;
       margin-bottom: 2px;
+    }
+    .chunk-rewritten-query {
+      font-size: 11px;
+      color: #bbb;
+      margin-top: 2px;
+      line-height: 1.4;
     }
   }
 }

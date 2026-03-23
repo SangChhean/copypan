@@ -5,6 +5,8 @@ Gemini 英文纲目→中文纲目翻译用 system_instruction。
 """
 # 占位：请用你的完整英翻中 instruction 替换下面的内容（可包含术语表、格式要求等）
 GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH = """你是一个专业的翻译助手。请使用以下英翻中专用术语表：
+Pray-reading verses 祷读经节
+Morning Nourishment	晨兴喂养
 durable material	耐用的材料
 at the beginning of the Bible	圣经的开头
 frustrate	阻挠
@@ -220,6 +222,8 @@ miraculous normality 神奇的平常事
 References and Further Reading 参考与参读资料
 
 你是一个专业的翻译助手。请使用以下英翻中专用术语表：
+Pray-reading verses 祷读经节
+Morning Nourishment	晨兴喂养
 durable material	耐用的材料
 at the beginning of the Bible	圣经的开头
 frustrate	阻挠

@@ -181,15 +181,17 @@ try:
     if str(backend_dir) not in sys.path:
         sys.path.insert(0, str(backend_dir))
     from format_chinese_outline import format_chinese_outline_docx
-    from format_english_outline import format_english_outline_docx
+    from format_english_outline import format_english_outline_docx, format_plain_docx
     logger.info("格式刷模块导入成功")
 except ImportError as e:
     format_chinese_outline_docx = None
     format_english_outline_docx = None
+    format_plain_docx = None
     logger.warning(f"格式刷模块未找到，格式化功能将不可用: {e}", exc_info=True)
 except Exception as e:
     format_chinese_outline_docx = None
     format_english_outline_docx = None
+    format_plain_docx = None
     logger.error(f"格式刷模块导入时发生错误: {e}", exc_info=True)
 
 # 环境变量配置
@@ -2629,7 +2631,8 @@ class AISearchService:
             _fw_injection = (
                 f"\n\n【防火墙参考指示】\n"
                 f"上下文第一篇是关于「{fw_title}」的职事文档，生成纲目时需在适当位置涵盖以下思路：{fw_note}\n"
-                f"请从该文档中提取相关内容来支撑这一思路，整体纲目仍需按主题正常展开。"
+                f"从该文档中提取相关内容来支撑这一思路，需要占全篇纲目的15%。"
+                f"整体纲目仍需按主题正常展开，其余上下文内容同样需要吸收和使用。"
             )
             system_prompt += _fw_injection
             logger.info("[防火墙] 参考指示已注入 system prompt (_generate_answer): %s", _fw_injection.strip())
@@ -3777,6 +3780,7 @@ class AISearchService:
         direction: str,
         translated_text: str,
         output_format: str = "docx",
+        is_outline: bool = True,
     ) -> Dict:
         """
         仅格式化已翻译的纲目文本（不调用翻译 API）。
@@ -3785,6 +3789,7 @@ class AISearchService:
             direction: "zh2en" 或 "en2zh"（用于确定使用哪个模板和格式刷函数）
             translated_text: 已翻译的纲目文本
             output_format: "docx" 或 "pdf"，默认 "docx"
+            is_outline: True=纲目格式刷，False=通用平铺格式刷（末尾无标点→居中加粗，其余→paragraph 样式）
         
         Returns:
             {
@@ -3801,16 +3806,16 @@ class AISearchService:
         # 根据方向确定模板和格式刷函数
         if direction == "zh2en":
             template_name = "英文纲目模板.docx"
-            format_func = format_english_outline_docx
+            format_func = format_english_outline_docx if is_outline else format_plain_docx
             default_filename = "outline_en.docx"
         elif direction == "en2zh":
             template_name = "中文纲目模板.docx"
-            format_func = format_chinese_outline_docx
+            format_func = format_chinese_outline_docx if is_outline else format_plain_docx
             default_filename = "outline_zh.docx"
         elif direction in ("zh_cn2tw", "zh_tw2cn"):
             # 简繁转换：都使用中文模板和中文格式刷
             template_name = "中文纲目模板.docx"
-            format_func = format_chinese_outline_docx
+            format_func = format_chinese_outline_docx if is_outline else format_plain_docx
             default_filename = "outline_zh.docx"
         else:
             return {

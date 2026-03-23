@@ -129,6 +129,7 @@ class FormatOutlineRequest(BaseModel):
     direction: Literal["zh2en", "en2zh", "zh_cn2tw", "zh_tw2cn"] = Field(..., description="zh2en=英文纲目, en2zh/zh_cn2tw/zh_tw2cn=中文纲目")
     translated_text: str = Field(..., min_length=1, max_length=100_000, description="已翻译/转换的纲目全文")
     output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
+    is_outline: bool = Field(True, description="True=纲目格式刷，False=通用平铺格式刷（末尾无标点→居中加粗，其余→paragraph 样式）")
 
 
 class RoughOutlineRequest(BaseModel):
@@ -481,6 +482,7 @@ async def format_outline_only(request: FormatOutlineRequest):
             request.direction,
             request.translated_text,
             request.output_format,
+            request.is_outline,
         )
         
         if result.get("error") and not (result.get("docx_bytes") or result.get("pdf_bytes")):

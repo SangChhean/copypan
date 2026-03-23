@@ -6,6 +6,7 @@ import { toastSuccess, toastWarning, toastError } from "../utils/Dialog";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const direction = ref("zh2en"); // zh2en | en2zh
+const isOutline = ref(true); // true=纲目，false=非纲目
 const downloadFormats = ref([]); // ["docx", "pdf"] - 用户选择的下载格式
 const content = ref("");
 const loading = ref(false);
@@ -41,6 +42,7 @@ async function translate() {
   result.value = null;
   titleEn.value = null;
   downloadFormats.value = [];
+  isOutline.value = true; // 中翻英固定 true；英翻中允许用户在下载前切换
   const authToken = localStorage.getItem("token") || null;
   if (!authToken) {
     loading.value = false;
@@ -127,6 +129,7 @@ async function downloadFormatted() {
           direction: direction.value, 
           translated_text: result.value,
           output_format: format,
+          is_outline: isOutline.value,
         }),
       });
       
@@ -291,6 +294,18 @@ async function downloadFormatted() {
       <!-- 翻译结果后的下载选项 -->
       <div v-if="result" class="download-section">
         <a-divider :style="{ margin: '16px 0' }" />
+        <div v-if="!isZh2En" class="direction-row">
+          <span class="label">文本类型：</span>
+          <a-segmented
+            v-model:value="isOutline"
+            class="direction-segmented"
+            :options="[
+              { label: '纲目', value: true },
+              { label: '非纲目', value: false },
+            ]"
+          />
+        </div>
+        <a-divider v-if="!isZh2En" :style="{ margin: '12px 0' }" />
         <div class="direction-row">
           <span class="label">下载格式：</span>
           <a-checkbox-group v-model:value="downloadFormats">

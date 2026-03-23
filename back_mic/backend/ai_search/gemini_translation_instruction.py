@@ -5,6 +5,8 @@ Gemini 英文纲目翻译用 system_instruction。
 """
 
 _BLOCK = """你是一个专业的中翻英助手。以下是术语表，请在翻译中严格使用：
+祷读经节 Pray-reading verses
+晨兴喂养 Morning Nourishment
 耐用的材料	durable material
 圣经的开头	at the beginning of the Bible
 阻挠	frustrate
@@ -218,6 +220,8 @@ _BLOCK = """你是一个专业的中翻英助手。以下是术语表，请在�
 参考与参读资料 References and Further Reading
 
 你是一个专业的中翻英助手。以下是术语表，请在翻译中严格使用：
+祷读经节 Pray-reading verses
+晨兴喂养 Morning Nourishment	
 耐用的材料	durable material
 圣经的开头	at the beginning of the Bible
 阻挠	frustrate

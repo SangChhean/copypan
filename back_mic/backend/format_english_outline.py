@@ -6,7 +6,7 @@ import re
 import logging
 from pathlib import Path
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.text import WD_BREAK
 from docx.oxml.ns import qn
@@ -179,6 +179,18 @@ def format_english_outline_docx(docx_path: str) -> None:
             continue
 
         # 状态转换检测
+        if text.lower().startswith("pray-reading verses"):
+            state = "pray_reading"
+            set_center_bold(para)
+            para.paragraph_format.space_before = Pt(12)
+            continue
+
+        if text.lower().startswith("morning nourishment"):
+            state = "morning_nourishment"
+            set_center_bold(para)
+            para.paragraph_format.space_before = Pt(12)
+            continue
+
         if text.lower().startswith("excerpts from the ministry:"):
             state = "excerpts"
             set_left_bold(para)
@@ -212,6 +224,18 @@ def format_english_outline_docx(docx_path: str) -> None:
             else:
                 set_paragraph_font(para)
 
+        elif state == "pray_reading":
+            set_paragraph_font(para)
+            para.paragraph_format.left_indent = Cm(3)
+            para.paragraph_format.first_line_indent = Cm(-3)
+
+        elif state == "morning_nourishment":
+            if is_title_line(text):
+                set_center_bold(para)
+                para.paragraph_format.space_before = Pt(12)
+            else:
+                apply_style_with_font(para, "paragraph", doc)
+
         elif state == "excerpts":
             if is_title_line(text):
                 set_center_bold(para)
@@ -232,4 +256,28 @@ def format_english_outline_docx(docx_path: str) -> None:
         run.add_break(WD_BREAK.PAGE)
 
     # 保存文档
+    doc.save(docx_path)
+
+
+def format_plain_docx(docx_path: str) -> None:
+    """
+    通用平铺格式刷（适用于非纲目文本）。
+    规则：末尾无标点的行 → 居中加粗 + 段前 12pt；其他行 → "paragraph" 样式。
+    中英文均可使用。
+
+    Args:
+        docx_path: DOCX 文件路径（原地修改）
+    """
+    doc = Document(docx_path)
+    for para in doc.paragraphs:
+        clean_markdown_chars(para)
+        text = para.text.strip()
+        if not text:
+            set_paragraph_font(para)
+            continue
+        if is_title_line(text):
+            set_center_bold(para)
+            para.paragraph_format.space_before = Pt(12)
+        else:
+            apply_style_with_font(para, "paragraph", doc)
     doc.save(docx_path)

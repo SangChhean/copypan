@@ -72,11 +72,11 @@ async def dense_search(
     """
     路2：向量 kNN 检索。使用 embedding_adapter.get_embedding(profile="kg_rag") 生成查询向量。
     :param es: Elasticsearch 客户端实例
-    :param query_text: 查询文本
+    :param query_text: 查询文本（改写后的 Query，会记录到每条结果的 rewritten_query 字段）
     :param index: 索引名
     :param top_k: 返回条数
     :param num_candidates: kNN 候选数
-    :return: [{"chunk_id", "text", "score", "source": "dense", ...metadata}, ...]
+    :return: [{"chunk_id", "text", "score", "source": "dense", "rewritten_query": query_text, ...metadata}, ...]
     """
     try:
         query_vector = await get_embedding(query_text, profile="kg_rag")
@@ -111,6 +111,7 @@ async def dense_search(
         src = (hit.get("_source") or {}).copy()
         src["score"] = float(hit.get("_score") or 0.0)
         src["source"] = "dense"
+        src["rewritten_query"] = query_text
         src.setdefault("chunk_id", hit.get("_id", ""))
         out.append(src)
     return out
@@ -130,16 +131,19 @@ async def rrf_merge(
     :param k: RRF 常数（设计文档指定 60）
     :param bm25_weight: 路1 权重
     :param dense_weight: 路2 权重
-    :return: 去重后按 RRF 分数降序的列表，每项 score 为 rrf_score，source 为 "rrf"
+    :return: 去重后按 RRF 分数降序的列表，每项 score 为 rrf_score，source 为 "rrf"，source_routes 为来源路列表
     """
     rrf_scores = {}
     doc_map = {}
+    bm25_ids: set[str] = set()
+    dense_ids: set[str] = set()
     for rank, doc in enumerate(bm25_results, 1):
         cid = doc.get("chunk_id") or doc.get("_id") or ""
         if not cid:
             continue
         rrf_scores[cid] = rrf_scores.get(cid, 0) + bm25_weight / (k + rank)
         doc_map[cid] = dict(doc)
+        bm25_ids.add(cid)
     for rank, doc in enumerate(dense_results, 1):
         cid = doc.get("chunk_id") or doc.get("_id") or ""
         if not cid:
@@ -147,12 +151,19 @@ async def rrf_merge(
         rrf_scores[cid] = rrf_scores.get(cid, 0) + dense_weight / (k + rank)
         if cid not in doc_map:
             doc_map[cid] = dict(doc)
+        dense_ids.add(cid)
     sorted_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)
     out = []
     for cid in sorted_ids:
         d = doc_map[cid]
         d["score"] = rrf_scores[cid]
         d["source"] = "rrf"
+        routes: list[str] = []
+        if cid in bm25_ids:
+            routes.append("bm25")
+        if cid in dense_ids:
+            routes.append("dense")
+        d["source_routes"] = routes
         out.append(d)
     return out
 

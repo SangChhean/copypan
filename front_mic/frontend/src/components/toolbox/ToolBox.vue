@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeftOutlined, SearchOutlined, ToolOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined } from "@ant-design/icons-vue";
 
 const go = (val = "/") => {
   window.location.hash = val;
@@ -37,6 +37,16 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/roundtable')">
           <span class="card_text">AI圆桌</span>
         </a-card-grid>
+      </a-card>
+    </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title"><ApartmentOutlined /> 图谱测试</div>
+        </template>
+        <a-card-grid class="card c2" @click="go('/kg-rag-test')"><span class="card_text">KG-RAG 测试工作台</span></a-card-grid>
       </a-card>
     </div>
   </div>

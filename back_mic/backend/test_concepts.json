@@ -1,0 +1,11 @@
+{
+  "concepts": [
+    {"name": "基督", "aliases": ["弥赛亚", "受膏者"]},
+    {"name": "救恩", "aliases": ["得救", "救赎"]},
+    {"name": "生命", "aliases": ["神圣生命", "永远的生命"]}
+  ],
+  "relations": [
+    {"from": "基督", "to": "救恩", "type": "CONTAINS"},
+    {"from": "基督", "to": "生命", "type": "CONTAINS"}
+  ]
+}

@@ -111,21 +111,56 @@ class Neo4jClient:
         return out
 
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
-        """单概念 1 跳全部邻居，返回 [{\"neighbor\": str, \"relation_type\": str}, ...]。"""
+        """单概念 1 跳全部邻居，出边和入边分别查询后按 neighbor 合并去重。
+        每条记录包含：neighbor, relations（带方向的关系字符串列表）, relation_type（首条，供 by_name 使用）
+        """
         if not self._available or self._driver is None:
             return []
+        key = concept_name.strip()
         try:
             with self._driver.session() as session:
-                result = session.run(
-                    "MATCH (c:Concept {name: $concept_name})-[r]-(related:Concept) "
+                # 出边：key → neighbor
+                out_result = session.run(
+                    "MATCH (c:Concept {name: $name})-[r]->(related:Concept) "
                     "RETURN related.name AS neighbor, type(r) AS relation_type",
-                    concept_name=concept_name.strip(),
+                    name=key,
                 )
-                return [
-                    {"neighbor": record["neighbor"], "relation_type": record["relation_type"]}
-                    for record in result
-                    if record["neighbor"] is not None
+                out_rows = [
+                    {
+                        "neighbor": r["neighbor"],
+                        "relation_type": r["relation_type"],
+                        "relation_str": f"{key} ──{r['relation_type']}──► {r['neighbor']}",
+                    }
+                    for r in out_result if r["neighbor"]
                 ]
+                # 入边：neighbor → key
+                in_result = session.run(
+                    "MATCH (c:Concept {name: $name})<-[r]-(related:Concept) "
+                    "RETURN related.name AS neighbor, type(r) AS relation_type",
+                    name=key,
+                )
+                in_rows = [
+                    {
+                        "neighbor": r["neighbor"],
+                        "relation_type": r["relation_type"],
+                        "relation_str": f"{r['neighbor']} ──{r['relation_type']}──► {key}",
+                    }
+                    for r in in_result if r["neighbor"]
+                ]
+                # 按 neighbor 合并去重
+                merged: dict[str, dict] = {}
+                for row in out_rows + in_rows:
+                    nb = row["neighbor"]
+                    if nb not in merged:
+                        merged[nb] = {
+                            "neighbor": nb,
+                            "relation_type": row["relation_type"],
+                            "relations": [row["relation_str"]],
+                        }
+                    else:
+                        if row["relation_str"] not in merged[nb]["relations"]:
+                            merged[nb]["relations"].append(row["relation_str"])
+                return list(merged.values())
         except Exception as e:
             print(f"[KG-RAG] get_neighbors 失败: {e}")
             return []
