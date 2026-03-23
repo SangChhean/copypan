@@ -375,7 +375,7 @@ onMounted(() => {
                   :rows="4"
                   class="query-input"
                 />
-                <a-collapse class="param-collapse">
+                <a-collapse class="param-collapse" :default-active-key="['params']">
                   <a-collapse-panel key="params" header="检索参数">
                     <a-row :gutter="[12, 12]">
                       <a-col :span="12"><div class="param-item"><span class="param-label">BM25 Top-K</span><a-input-number v-model:value="params.bm25_top_k" :min="10" :max="100" size="small" class="param-control" /></div></a-col>
