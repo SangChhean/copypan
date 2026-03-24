@@ -42,7 +42,7 @@ async function translate() {
   result.value = null;
   titleEn.value = null;
   downloadFormats.value = [];
-  isOutline.value = true; // 中翻英固定 true；英翻中允许用户在下载前切换
+  isOutline.value = true; // 英翻中固定 true；中翻英允许用户在下载前切换
   const authToken = localStorage.getItem("token") || null;
   if (!authToken) {
     loading.value = false;
@@ -294,7 +294,7 @@ async function downloadFormatted() {
       <!-- 翻译结果后的下载选项 -->
       <div v-if="result" class="download-section">
         <a-divider :style="{ margin: '16px 0' }" />
-        <div v-if="!isZh2En" class="direction-row">
+        <div v-if="isZh2En" class="direction-row">
           <span class="label">文本类型：</span>
           <a-segmented
             v-model:value="isOutline"
@@ -305,7 +305,7 @@ async function downloadFormatted() {
             ]"
           />
         </div>
-        <a-divider v-if="!isZh2En" :style="{ margin: '12px 0' }" />
+        <a-divider v-if="isZh2En" :style="{ margin: '12px 0' }" />
         <div class="direction-row">
           <span class="label">下载格式：</span>
           <a-checkbox-group v-model:value="downloadFormats">
