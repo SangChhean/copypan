@@ -98,7 +98,7 @@ function formatSkeleton(skeleton) {
   if (skeleton.root && skeleton.branches) {
     return skeleton.branches
       .map((b) => {
-        const rel = b.relation_str || `${skeleton.root} ──${b.relation_type || "相关"}──► ${b.name}`;
+        const rel = b.relation_str || `${skeleton.root} —[${b.relation_type || "相关"}]— ${b.name}`;
         return `${rel} (${Number(b.score || 0).toFixed(3)})`;
       })
       .join("\n");
@@ -106,7 +106,7 @@ function formatSkeleton(skeleton) {
   if (skeleton.roots && skeleton.branches) {
     return skeleton.branches
       .map((b) => {
-        const rel = b.relation_str || `${b.root} ──${b.relation_type || "相关"}──► ${b.name}`;
+        const rel = b.relation_str || `${b.root} —[${b.relation_type || "相关"}]— ${b.name}`;
         return `${rel} (${Number(b.score || 0).toFixed(3)})`;
       })
       .join("\n");
@@ -138,13 +138,10 @@ const neighborTableColumns = [
 ];
 
 function formatNeighborEdge(record) {
-  const t = record.relation_type || "相关";
-  const a = record.rel_from;
-  const b = record.rel_to;
-  if (a != null && b != null && String(a).trim() && String(b).trim()) {
-    return `${a} ──${t}──► ${b}`;
+  if (record.relations && record.relations.length) {
+    return record.relations.join(" ／ ");
   }
-  return t;
+  return record.relation_type || "相关";
 }
 
 async function runExplore() {
@@ -214,8 +211,16 @@ function pathSegmentDisplay(pathItem) {
   const rels = pathItem.relations || [];
   const parts = [];
   for (let i = 0; i < nodes.length - 1; i++) {
-    parts.push(nodes[i]);
-    parts.push(` ──${rels[i] || "相关"}──► `);
+    const rel = rels[i];
+    const relType = (rel && typeof rel === "object") ? (rel.type || "相关") : (rel || "相关");
+    const forward = (rel && typeof rel === "object") ? rel.forward !== false : true;
+    if (forward) {
+      parts.push(nodes[i]);
+      parts.push(` ──${relType}──► `);
+    } else {
+      parts.push(nodes[i]);
+      parts.push(` ◄──${relType}── `);
+    }
   }
   if (nodes.length) parts.push(nodes[nodes.length - 1]);
   return parts.join("");
@@ -486,6 +491,7 @@ onMounted(() => {
                           >
                             <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                           </div>
                         </a-tab-pane>
                         <a-tab-pane key="dense" tab="Dense 原始">
@@ -496,6 +502,7 @@ onMounted(() => {
                           >
                             <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                             <div v-if="r.rewritten_query" class="chunk-rewritten-query">改写Query: "{{ r.rewritten_query }}"</div>
                           </div>
                         </a-tab-pane>
@@ -514,6 +521,7 @@ onMounted(() => {
                               {{ (r.score != null ? r.score : r._score || 0).toFixed(3) }}
                             </div>
                             <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                           </div>
                         </a-tab-pane>
                       </a-tabs>
@@ -913,6 +921,12 @@ onMounted(() => {
       color: #333;
       line-height: 1.5;
       margin-bottom: 2px;
+    }
+    .chunk-source {
+      font-size: 11px;
+      color: #999;
+      margin-top: 2px;
+      line-height: 1.4;
     }
     .chunk-rewritten-query {
       font-size: 11px;

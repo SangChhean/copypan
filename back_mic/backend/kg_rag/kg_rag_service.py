@@ -2,9 +2,12 @@
 """KgRagService：编排 Step 1→5 全流程与检索/预览。"""
 import asyncio
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger("kg_rag")
 
 # 确保可导入 ai_search（Claude 客户端）、retrieval、prompts
 try:
@@ -54,21 +57,21 @@ PATH_COUNT_THRESHOLD = 20  # 多概念路径数少于此则取全路径，否则
 
 
 def _format_skeleton(skeleton: dict | None) -> str:
-    """将骨架格式化为可读文本，优先使用带方向的 relation_str。"""
+    """将骨架格式化为可读文本，优先使用带方向的 relation_str；无则用 relation_type 不带方向箭头。"""
     if not skeleton:
         return ""
     lines = []
     if "root" in skeleton and "branches" in skeleton:
+        root = skeleton.get("root", "")
         for b in skeleton.get("branches", []):
             score = b.get("score", 0)
             relation_str = b.get("relation_str", "")
             if relation_str:
                 lines.append(f"{relation_str} ({score})")
             else:
-                root = skeleton.get("root", "")
                 name = b.get("name", "")
                 rel = b.get("relation_type", "相关")
-                lines.append(f"{root} ──{rel}──► {name} ({score})")
+                lines.append(f"{root} —[{rel}]— {name} ({score})")
     elif "roots" in skeleton and "branches" in skeleton:
         for b in skeleton.get("branches", []):
             score = b.get("score", 0)
@@ -79,7 +82,7 @@ def _format_skeleton(skeleton: dict | None) -> str:
                 root = b.get("root", "")
                 name = b.get("name", "")
                 rel = b.get("relation_type", "相关")
-                lines.append(f"{root} ──{rel}──► {name} ({score})")
+                lines.append(f"{root} —[{rel}]— {name} ({score})")
     return "\n".join(lines)
 
 
@@ -128,7 +131,7 @@ def _format_expanded_chunks(chunks: list[dict]) -> str:
 
 
 def _parse_json_array(text: str) -> list[Any]:
-    """从 Claude 返回文本解析 JSON 数组。"""
+    """从 Claude 返回文本解析 JSON 数组，支持被截断的 JSON 修复。"""
     if not text or not text.strip():
         return []
     s = text.strip()
@@ -138,7 +141,18 @@ def _parse_json_array(text: str) -> list[Any]:
     try:
         arr = json.loads(s)
         return arr if isinstance(arr, list) else []
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.info(f"[KG-RAG DEBUG] _parse_json_array JSON parse error: {e} — text[:200]={s[:200]}")
+        last_brace = s.rfind("}")
+        if last_brace > 0:
+            truncated = s[: last_brace + 1] + "]"
+            try:
+                arr = json.loads(truncated)
+                if isinstance(arr, list):
+                    logger.info(f"[KG-RAG DEBUG] _parse_json_array truncated recovery OK, got {len(arr)} items")
+                    return arr
+            except json.JSONDecodeError:
+                pass
         return []
 
 
@@ -206,7 +220,11 @@ class KgRagService:
         """
         self.es = es_client
         self.neo4j = neo4j_client
-        self.index = os.environ.get("KG_RAG_ES_INDEX", "kg-rag_test")
+        _DEFAULT_INDICES = ",".join([
+            "kg-rag_life", "kg-rag_cwwl", "kg-rag_cwwn",
+            "kg-rag_others", "kg-rag_bib", "kg-rag_map_note",
+        ])
+        self.index = os.environ.get("KG_RAG_ES_INDEX", _DEFAULT_INDICES)
 
     async def full_query(self, query: str, params: dict | None = None) -> dict:
         """全流程：Step 1→1.5→2→3→4→5，返回最终回答与每步中间结果。"""
@@ -241,6 +259,7 @@ class KgRagService:
             if len(normalized) == 1:
                 root = normalized[0]
                 neighbors = self.neo4j.get_neighbors(root)
+                logger.info(f"[KG-RAG DEBUG] Step2 single root={root}, neighbors count={len(neighbors)}")
                 if not neighbors:
                     skeleton = {"root": root, "branches": []}
                 else:
@@ -252,17 +271,21 @@ class KgRagService:
                             }
                             for n in neighbors
                         ]
-                        print(f"[KG-RAG DEBUG] Step2 neighbors_for_llm (root={root}): {json.dumps(neighbors_for_llm, ensure_ascii=False)}")
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
+                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
+                        logger.info(f"[KG-RAG DEBUG] Step2 single LLM raw response (root={root}): {raw2[:500]}")
                         scored = _parse_skeleton_scores(raw2)
+                        logger.info(f"[KG-RAG DEBUG] Step2 single LLM scored (root={root}): {scored}")
                         by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
                         filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
+                        logger.info(f"[KG-RAG DEBUG] Step2 single after threshold>={p['skeleton_score_threshold']}: {len(filtered)} remain — {filtered}")
                         filtered.sort(key=lambda x: x["score"], reverse=True)
+                        top_n = filtered[: p["skeleton_top_n"]]
+                        logger.info(f"[KG-RAG DEBUG] Step2 single top-{p['skeleton_top_n']}: {[x['name'] for x in top_n]}")
                         branches = [
                             {
                                 "name": x["name"],
@@ -272,17 +295,20 @@ class KgRagService:
                                 ),
                                 "score": x["score"],
                             }
-                            for x in filtered[: p["skeleton_top_n"]]
+                            for x in top_n
                         ]
                         skeleton = {"root": root, "branches": branches}
                         expanded_nodes = [b["name"] for b in branches]
+                        logger.info(f"[KG-RAG DEBUG] Step2 single expanded_nodes: {expanded_nodes}")
                     except Exception as e:
+                        logger.info(f"[KG-RAG DEBUG] Step2 single EXCEPTION root={root}: {e}")
                         result["steps"]["step2_error"] = str(e)
                         skeleton = {"root": root, "branches": []}
             else:
                 all_branches = []
                 for root in normalized:
                     neighbors = self.neo4j.get_neighbors(root)
+                    logger.info(f"[KG-RAG DEBUG] Step2 multi root={root}, neighbors count={len(neighbors)}")
                     if not neighbors:
                         continue
                     try:
@@ -293,18 +319,22 @@ class KgRagService:
                             }
                             for n in neighbors
                         ]
-                        print(f"[KG-RAG DEBUG] Step2 neighbors_for_llm (root={root}): {json.dumps(neighbors_for_llm, ensure_ascii=False)}")
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
+                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
+                        logger.info(f"[KG-RAG DEBUG] Step2 multi LLM raw response (root={root}): {raw2[:500]}")
                         scored = _parse_skeleton_scores(raw2)
+                        logger.info(f"[KG-RAG DEBUG] Step2 multi LLM scored (root={root}): {scored}")
                         by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
                         filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
+                        logger.info(f"[KG-RAG DEBUG] Step2 multi after threshold>={p['skeleton_score_threshold']} (root={root}): {len(filtered)} remain — {filtered}")
                         filtered.sort(key=lambda x: x["score"], reverse=True)
-                        for x in filtered[: p["skeleton_top_n"]]:
+                        top_n = filtered[: p["skeleton_top_n"]]
+                        logger.info(f"[KG-RAG DEBUG] Step2 multi top-{p['skeleton_top_n']} (root={root}): {[x['name'] for x in top_n]}")
+                        for x in top_n:
                             all_branches.append({
                                 "root": root,
                                 "name": x["name"],
@@ -314,10 +344,14 @@ class KgRagService:
                                 ),
                                 "score": x["score"],
                             })
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.info(f"[KG-RAG DEBUG] Step2 multi EXCEPTION root={root}: {e}")
                 expanded_nodes = list({b["name"] for b in all_branches if b["name"] not in normalized})
+                logger.info(f"[KG-RAG DEBUG] Step2 multi expanded_nodes: {expanded_nodes}")
                 skeleton = {"roots": normalized, "branches": all_branches} if all_branches else {"root": normalized[0], "branches": []}
+        has_branches = bool(skeleton and skeleton.get("branches"))
+        mode = "skeleton" if has_branches else "flat"
+        logger.info(f"[KG-RAG DEBUG] Step2 final — skeleton empty={not has_branches}, mode={mode}, expanded_nodes={expanded_nodes}")
         result["steps"]["step2"] = {"skeleton": skeleton, "expanded_nodes": expanded_nodes}
 
         # Step 3: 三路检索
@@ -443,18 +477,32 @@ class KgRagService:
                     skeleton = {"root": root, "branches": []}
                 else:
                     try:
+                        neighbors_for_llm = [
+                            {
+                                "neighbor": n["neighbor"],
+                                "relation": " ／ ".join(n["relations"]),
+                            }
+                            for n in neighbors
+                        ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
-                            neighbors_json=json.dumps(neighbors, ensure_ascii=False),
+                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
+                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
                         scored = _parse_skeleton_scores(raw2)
                         by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
                         filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
                         filtered.sort(key=lambda x: x["score"], reverse=True)
                         branches = [
-                            {"name": x["name"], "relation_type": by_name.get(x["name"], "相关"), "score": x["score"]}
+                            {
+                                "name": x["name"],
+                                "relation_type": by_name.get(x["name"], "相关"),
+                                "relation_str": " ／ ".join(
+                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
+                                ),
+                                "score": x["score"],
+                            }
                             for x in filtered[: p["skeleton_top_n"]]
                         ]
                         skeleton = {"root": root, "branches": branches}
@@ -468,12 +516,19 @@ class KgRagService:
                     if not neighbors:
                         continue
                     try:
+                        neighbors_for_llm = [
+                            {
+                                "neighbor": n["neighbor"],
+                                "relation": " ／ ".join(n["relations"]),
+                            }
+                            for n in neighbors
+                        ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
                             concept_name=root,
-                            neighbors_json=json.dumps(neighbors, ensure_ascii=False),
+                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=800)
+                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
                         scored = _parse_skeleton_scores(raw2)
                         by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
                         filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
@@ -483,6 +538,9 @@ class KgRagService:
                                 "root": root,
                                 "name": x["name"],
                                 "relation_type": by_name.get(x["name"], "相关"),
+                                "relation_str": " ／ ".join(
+                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
+                                ),
                                 "score": x["score"],
                             })
                     except Exception:

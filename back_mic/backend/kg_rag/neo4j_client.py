@@ -112,7 +112,10 @@ class Neo4jClient:
 
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
         """单概念 1 跳全部邻居，出边和入边分别查询后按 neighbor 合并去重。
-        每条记录包含：neighbor, relations（带方向的关系字符串列表）, relation_type（首条，供 by_name 使用）
+        每条记录包含：
+          neighbor      - 邻居概念名
+          relations     - 带方向的关系字符串列表（完整，供显示用）
+          relation_type - 所有关系类型用 ／ 拼接（供 by_name 等后续使用）
         """
         if not self._available or self._driver is None:
             return []
@@ -147,7 +150,7 @@ class Neo4jClient:
                     }
                     for r in in_result if r["neighbor"]
                 ]
-                # 按 neighbor 合并去重
+                # 按 neighbor 合并去重，relation_type 收集所有类型
                 merged: dict[str, dict] = {}
                 for row in out_rows + in_rows:
                     nb = row["neighbor"]
@@ -155,12 +158,21 @@ class Neo4jClient:
                         merged[nb] = {
                             "neighbor": nb,
                             "relation_type": row["relation_type"],
+                            "_rel_types": [row["relation_type"]],
                             "relations": [row["relation_str"]],
                         }
                     else:
                         if row["relation_str"] not in merged[nb]["relations"]:
                             merged[nb]["relations"].append(row["relation_str"])
-                return list(merged.values())
+                        if row["relation_type"] not in merged[nb]["_rel_types"]:
+                            merged[nb]["_rel_types"].append(row["relation_type"])
+                # 将所有类型合并为字符串，删除辅助字段
+                result = []
+                for nb_data in merged.values():
+                    rel_types = nb_data.pop("_rel_types")
+                    nb_data["relation_type"] = " ／ ".join(rel_types)
+                    result.append(nb_data)
+                return result
         except Exception as e:
             print(f"[KG-RAG] get_neighbors 失败: {e}")
             return []
@@ -180,7 +192,10 @@ class Neo4jClient:
     def get_paths(
         self, concept_a: str, concept_b: str, max_hops: int = 3
     ) -> list[dict[str, Any]]:
-        """两概念间 max_hops 内全部路径，返回 [{\"path_nodes\": [...], \"relations\": [...]}, ...]。"""
+        """两概念间 max_hops 内全部路径。
+        relations 返回 [{"type": "...", "forward": bool}, ...]，
+        forward=True 表示该边方向与路径遍历方向一致（path_nodes[i]→path_nodes[i+1]）。
+        """
         if not self._available or self._driver is None:
             return []
         n = self._clamp_hops(max_hops)
@@ -188,8 +203,12 @@ class Neo4jClient:
             with self._driver.session() as session:
                 query = (
                     f"MATCH path = (a:Concept {{name: $n1}})-[*..{n}]-(b:Concept {{name: $n2}}) "
-                    "RETURN [n IN nodes(path) | n.name] AS path_nodes, "
-                    "[r IN relationships(path) | type(r)] AS relations"
+                    "WITH path, [nd IN nodes(path) | nd.name] AS path_nodes "
+                    "RETURN path_nodes, "
+                    "[idx IN range(0, length(path)-1) | {"
+                    "  type: type(relationships(path)[idx]),"
+                    "  forward: startNode(relationships(path)[idx]).name = path_nodes[idx]"
+                    "}] AS relations"
                 )
                 result = session.run(
                     query,
@@ -207,7 +226,9 @@ class Neo4jClient:
     def get_shortest_path(
         self, concept_a: str, concept_b: str, max_hops: int = 3
     ) -> dict[str, Any] | None:
-        """shortestPath 查询，返回单条路径 dict 或 None。"""
+        """shortestPath 查询，返回单条路径 dict 或 None。
+        relations 返回 [{"type": "...", "forward": bool}, ...]，同 get_paths。
+        """
         if not self._available or self._driver is None:
             return None
         n = self._clamp_hops(max_hops)
@@ -215,8 +236,12 @@ class Neo4jClient:
             with self._driver.session() as session:
                 query = (
                     f"MATCH path = shortestPath((a:Concept {{name: $n1}})-[*..{n}]-(b:Concept {{name: $n2}})) "
-                    "RETURN [n IN nodes(path) | n.name] AS path_nodes, "
-                    "[r IN relationships(path) | type(r)] AS relations"
+                    "WITH path, [nd IN nodes(path) | nd.name] AS path_nodes "
+                    "RETURN path_nodes, "
+                    "[idx IN range(0, length(path)-1) | {"
+                    "  type: type(relationships(path)[idx]),"
+                    "  forward: startNode(relationships(path)[idx]).name = path_nodes[idx]"
+                    "}] AS relations"
                 )
                 result = session.run(
                     query,

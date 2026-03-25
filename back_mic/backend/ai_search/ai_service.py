@@ -3079,7 +3079,8 @@ class AISearchService:
 
         # 发送内容 = 需要翻译的文章 + 格式与术语说明（中翻英）
         contents_zh2en = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2EN
-        _last_error_model_not_found = [False]  # 404 / model not found 时改用备用模型
+        _last_error_model_not_found = [False]  # 404 / model not found
+        _last_error_retryable = [False]         # 503 / 429 / timeout 等临时性失败
 
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
@@ -3117,7 +3118,6 @@ class AISearchService:
                     if _is_model_not_found(error_msg):
                         _last_error_model_not_found[0] = True
                         logger.warning(f"Gemini 模型不可用(404): {e}，将尝试备用模型 {GEMINI_TRANSLATION_FALLBACK_MODEL}")
-                    # 检查是否是503或其他可重试的错误
                     is_retryable = (
                         "503" in error_msg or
                         "UNAVAILABLE" in error_msg or
@@ -3125,6 +3125,8 @@ class AISearchService:
                         "timeout" in error_msg.lower() or
                         "temporary" in error_msg.lower()
                     )
+                    if is_retryable:
+                        _last_error_retryable[0] = True
                     if is_retryable and retry_count == 0:
                         logger.warning(f"Gemini 翻译调用失败（可重试）: {e}，等待2秒后重试...")
                         time.sleep(2)
@@ -3141,8 +3143,9 @@ class AISearchService:
             result = _call_gemini(retry_count=1)
             if result is not None:
                 answer_en, tokens_zh2en = result[0], result[1]
-        if answer_en is None and _last_error_model_not_found[0]:
-            logger.info("使用备用模型进行中翻英: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
+        if answer_en is None and (_last_error_model_not_found[0] or _last_error_retryable[0]) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            logger.info("使用备用模型进行中翻英: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL,
+                        "模型不存在" if _last_error_model_not_found[0] else "主模型负载过高/暂不可用")
             result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
             if result is not None:
                 answer_en, tokens_zh2en = result[0], result[1]
@@ -3250,7 +3253,8 @@ class AISearchService:
 
         # 发送内容 = 需要翻译的文章 + 格式与术语说明（英翻中）
         contents_en2zh = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ZH
-        _last_error_model_not_found = [False]
+        _last_error_model_not_found = [False]  # 404 / model not found
+        _last_error_retryable = [False]         # 503 / 429 / timeout 等临时性失败
 
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
@@ -3295,6 +3299,8 @@ class AISearchService:
                         "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
                         or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
                     )
+                    if is_retryable:
+                        _last_error_retryable[0] = True
                     if is_retryable and retry_count == 0:
                         logger.warning("Gemini 英翻中调用失败（可重试）: %s，等待2秒后重试...", e)
                         time.sleep(2)
@@ -3311,8 +3317,9 @@ class AISearchService:
             result = _call_gemini(retry_count=1)
             if result is not None:
                 answer_zh, tokens_en2zh = result[0], result[1]
-        if answer_zh is None and _last_error_model_not_found[0]:
-            logger.info("使用备用模型进行英翻中: %s", GEMINI_TRANSLATION_FALLBACK_MODEL)
+        if answer_zh is None and (_last_error_model_not_found[0] or _last_error_retryable[0]) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            logger.info("使用备用模型进行英翻中: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL,
+                        "模型不存在" if _last_error_model_not_found[0] else "主模型负载过高/暂不可用")
             result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
             if result is not None:
                 answer_zh, tokens_en2zh = result[0], result[1]

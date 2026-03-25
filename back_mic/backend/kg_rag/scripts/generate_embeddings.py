@@ -109,80 +109,107 @@ def main() -> None:
         raise SystemExit(f"索引不存在: {index_name}")
 
     total_docs = es.count(index=index_name)["count"]
+    no_emb_query = {"query": {"bool": {"must_not": [{"exists": {"field": "embedding"}}]}}}
     docs_with_embedding = es.count(
         index=index_name,
         body={"query": {"exists": {"field": "embedding"}}},
     )["count"]
-    docs_to_process = total_docs - docs_with_embedding
+    docs_to_process = es.count(index=index_name, body=no_emb_query)["count"]
 
-    # 扫描缺 embedding 的文档，只取 chunk_id 和 text
-    body = {
-        "query": {"bool": {"must_not": [{"exists": {"field": "embedding"}}]}},
-        "_source": {"includes": ["chunk_id", "text"]},
-        "size": 10000,
-    }
-    resp = es.search(index=index_name, body=body)
-    hits = resp["hits"]["hits"]
+    effective_limit = args.limit if args.limit > 0 else docs_to_process
+
+    print(f"  index:               {index_name}")
+    print(f"  total docs:          {total_docs}")
+    print(f"  with embedding:      {docs_with_embedding}")
+    print(f"  without embedding:   {docs_to_process}")
     if args.limit > 0:
-        hits = hits[: args.limit]
-    docs_to_process_this_run = len(hits)
+        print(f"  --limit applied:     {args.limit}")
 
     if args.dry_run:
-        print("【dry-run】仅扫描，不调用 API、不写 ES")
-        print(f"  索引总文档数: {total_docs}")
-        print(f"  已有 embedding 的文档数: {docs_with_embedding}")
-        print(f"  本次需处理文档数: {docs_to_process_this_run}")
-        if args.limit > 0:
-            print(f"  (已应用 --limit {args.limit})")
+        print("\n[dry-run] scan only, no API calls, no ES writes")
+        if docs_to_process > 0:
+            avg_tokens = 230
+            target = min(docs_to_process, effective_limit)
+            print(f"  estimated tokens:  ~{target} docs x ~{avg_tokens} tok = ~{target * avg_tokens // 1000}K tokens")
         return
 
-    if not hits:
-        print("没有需要填充 embedding 的文档，退出")
+    if docs_to_process == 0:
+        print("all docs already have embeddings, nothing to do")
         return
 
+    # ── Phase 1: collect all doc IDs + text via scroll ──────────────
+    # We collect first, then process — this avoids scroll timeout issues
+    # when embedding API calls are slow.  Memory is ~1 KB/doc (chunk_id +
+    # text), so even 200K docs ≈ 200 MB which is fine.
+    print("  scrolling to collect docs without embedding ...")
+    all_hits: list[dict] = []
+    scroll_body = {
+        **no_emb_query,
+        "_source": {"includes": ["chunk_id", "text"]},
+        "size": 5000,
+    }
+    resp = es.search(index=index_name, body=scroll_body, scroll="2m")
+    scroll_id = resp.get("_scroll_id")
+    batch_hits = resp["hits"]["hits"]
+    while batch_hits:
+        all_hits.extend(batch_hits)
+        if effective_limit and len(all_hits) >= effective_limit:
+            all_hits = all_hits[:effective_limit]
+            break
+        resp = es.scroll(scroll_id=scroll_id, scroll="2m")
+        scroll_id = resp.get("_scroll_id")
+        batch_hits = resp["hits"]["hits"]
+    if scroll_id:
+        try:
+            es.clear_scroll(scroll_id=scroll_id)
+        except Exception:
+            pass
+    print(f"  collected {len(all_hits)} docs to process")
+
+    # ── Phase 2: embed and write back ────────────────────────────────
     success_count = 0
-    failed_chunk_ids = []
-    total_batches = (len(hits) + args.batch_size - 1) // args.batch_size
+    failed_chunk_ids: list[str] = []
+    processed = 0
+    batch_num = 0
     start_time = time.perf_counter()
+    last_progress = 0
+    target = len(all_hits)
 
-    for batch_num, batch in enumerate(_batches(hits, args.batch_size)):
+    for sub_batch in _batches(all_hits, args.batch_size):
+        batch_num += 1
         docs = []
-        for h in batch:
+        for h in sub_batch:
             src = h.get("_source") or {}
-            doc = {
+            docs.append({
                 "chunk_id": src.get("chunk_id") or h.get("_id", ""),
                 "text": (src.get("text") or "").strip(),
-            }
-            docs.append(doc)
-
+            })
         texts = [d["text"] or "" for d in docs]
         chunk_ids = [d["chunk_id"] for d in docs]
 
         vectors = None
         try:
             vectors = process_batch(chunk_ids, texts)
-        except Exception as e1:
+        except Exception:
             time.sleep(5)
             try:
                 vectors = process_batch(chunk_ids, texts)
             except Exception as e2:
                 failed_chunk_ids.extend(chunk_ids)
-                print(f"Batch {batch_num + 1}/{total_batches} Embedding 失败（已重试 1 次）: {e2}")
+                print(f"  batch {batch_num} embedding failed (retried once): {e2}")
                 time.sleep(1)
+                processed += len(docs)
                 continue
 
         if not vectors or len(vectors) != len(docs):
             failed_chunk_ids.extend(chunk_ids)
             time.sleep(1)
+            processed += len(docs)
             continue
 
         actions = [
-            {
-                "_op_type": "update",
-                "_index": index_name,
-                "_id": d["chunk_id"],
-                "doc": {"embedding": vec},
-            }
+            {"_op_type": "update", "_index": index_name,
+             "_id": d["chunk_id"], "doc": {"embedding": vec}}
             for d, vec in zip(docs, vectors)
         ]
         try:
@@ -192,30 +219,36 @@ def main() -> None:
                 for item in errs:
                     if item.get("update", {}).get("error"):
                         failed_chunk_ids.append(item["update"].get("_id", ""))
-        except Exception as e:
+        except Exception as exc:
             failed_chunk_ids.extend(chunk_ids)
-            print(f"Batch {batch_num + 1}/{total_batches} ES 写入异常: {e}")
+            print(f"  batch {batch_num} ES write error: {exc}")
 
-        done = min((batch_num + 1) * args.batch_size, len(hits))
-        print(f"Batch {batch_num + 1}/{total_batches}: {len(docs)} docs embedded ({done}/{len(hits)} total)")
+        processed += len(docs)
+        if processed - last_progress >= 1000 or processed >= target:
+            elapsed_so_far = time.perf_counter() - start_time
+            print(f"  progress: {processed}/{target}"
+                  f"  ok={success_count}  fail={len(failed_chunk_ids)}"
+                  f"  elapsed={elapsed_so_far:.0f}s")
+            last_progress = processed
+
         time.sleep(1)
 
     elapsed = time.perf_counter() - start_time
     failed_count = len(failed_chunk_ids)
 
-    print("\n统计：")
-    print(f"  索引总文档数: {total_docs}")
-    print(f"  已有 embedding 的文档数（本次运行前）: {docs_with_embedding}")
-    print(f"  本次需处理文档数: {docs_to_process_this_run}")
-    print(f"  成功生成: {success_count}")
-    print(f"  失败: {failed_count}")
+    print(f"\n=== summary ===")
+    print(f"  index:            {index_name}")
+    print(f"  total docs:       {total_docs}")
+    print(f"  had embedding:    {docs_with_embedding}")
+    print(f"  processed:        {processed}")
+    print(f"  success:          {success_count}")
+    print(f"  failed:           {failed_count}")
     if failed_chunk_ids:
-        print(f"  失败 chunk_id 列表: {failed_chunk_ids[:50]}" + (" ..." if len(failed_chunk_ids) > 50 else ""))
-    print(f"  总耗时: {elapsed:.2f}s")
-    if docs_to_process_this_run > 0:
+        print(f"  failed ids:       {failed_chunk_ids[:50]}" + (" ..." if failed_count > 50 else ""))
+    print(f"  elapsed:          {elapsed:.1f}s")
+    if processed > 0:
         avg_tokens = 230
-        est_tokens = docs_to_process_this_run * avg_tokens
-        print(f"  预估费用参考: 约 {docs_to_process_this_run} 条 × ~{avg_tokens} tokens/条 ≈ {est_tokens // 1000}K tokens")
+        print(f"  est tokens used:  ~{processed * avg_tokens // 1000}K tokens")
 
 
 if __name__ == "__main__":
