@@ -3,13 +3,12 @@
 Gemini generate_content 响应解析与纲目翻译专用配置。
 
 - 关闭 AFC，避免仅返回 function_call 而无正文。
-- 可选关闭 thinking（thinking_budget=0），减少「仅有思考块、用户可见 text 为空」的情况。
+- 纲目翻译不下发 thinking_config（不同 google-genai / 服务端对 ThinkingConfig 字段校验不一致，易触发 extra_forbidden）。
 - 从响应中提取可翻译正文（与 SDK 的 response.text 一致，并补充诊断日志）。
 """
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -22,29 +21,16 @@ except ImportError:
 
 def gemini_translation_generate_config(system_instruction: Any) -> Any:
     """
-    纲目翻译专用 GenerateContentConfig：关闭 AFC；可按环境变量控制 thinking。
-    GEMINI_TRANSLATION_THINKING_BUDGET：未设置或空则 0（关闭内部思考）；设为 skip 则不下发 thinking_config。
+    纲目翻译专用 GenerateContentConfig：仅关闭 AFC + system_instruction。
+    不设置 thinking_config（避免各版本 SDK/服务端对 ThinkingConfig 校验不一致导致请求失败）。
     """
     if genai_types is None:
         raise RuntimeError("google.genai 未安装")
 
-    raw_budget = os.environ.get("GEMINI_TRANSLATION_THINKING_BUDGET", "0").strip().lower()
-    kwargs: dict[str, Any] = {
-        "system_instruction": system_instruction,
-        "automatic_function_calling": genai_types.AutomaticFunctionCallingConfig(disable=True),
-    }
-    if raw_budget not in ("skip", "none", "-"):
-        try:
-            budget = 0 if raw_budget == "" else int(raw_budget)
-            kwargs["thinking_config"] = genai_types.ThinkingConfig(thinking_budget=budget)
-        except ValueError:
-            logger.warning(
-                "GEMINI_TRANSLATION_THINKING_BUDGET=%r 无效，使用 thinking_budget=0",
-                os.environ.get("GEMINI_TRANSLATION_THINKING_BUDGET"),
-            )
-            kwargs["thinking_config"] = genai_types.ThinkingConfig(thinking_budget=0)
-
-    return genai_types.GenerateContentConfig(**kwargs)
+    return genai_types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        automatic_function_calling=genai_types.AutomaticFunctionCallingConfig(disable=True),
+    )
 
 
 def _part_summary(part: Any) -> str:
