@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""统一 Chunking 脚本：支持 life / cwwl / cwwn / others / bib / map_note 六种数据源。
+"""统一 Chunking 脚本：支持 life / cwwl / cwwn / others / bib / map_note / 7feasts / pano / dictionary 九种数据源。
 
 流式读取（ijson），增量写出，避免大文件（如 cwwl 3.2 GB）导致的内存问题。
 
@@ -190,6 +190,12 @@ _SCRIPTURE_REF_RE = re.compile(
 # 括号内容匹配（中/英文括号，最长 40 字符）
 _BRACKET_RE = re.compile(r"[（(]([^）)]{1,40})[）)]")
 
+# 破折号模式（纲目类：—经文引用）
+_DASH_REF_RE = re.compile(
+    r"[—－]([^—－\n]*?(?:" + "|".join(re.escape(b) for b in _BOOK_SET)
+    + r")[^—－\n]*?)(?=$|\n|。|；)"
+)
+
 # 标点断句正则
 _PUNCT_SPLIT_RE = re.compile(r"(?<=[。！？；])")
 
@@ -230,8 +236,11 @@ def split_by_punctuation(text: str, max_tokens: int = 800) -> list[str]:
 
 
 def extract_scripture_refs(text: str) -> list[str]:
-    """提取文本中括号内含圣经书卷名+章节数字的经节引用，返回去重列表。
-    书卷名后须紧跟章节数字（汉字或阿拉伯数字），避免误识别普通词汇（如「约定」）。
+    """提取文本中含圣经书卷名+章节数字的经节引用，返回去重保序列表。
+
+    匹配两种模式：
+    1. 括号模式 — （罗八2）/ (约三16)
+    2. 破折号模式（纲目类） — —约三16 / —见罗八2
     """
     refs: list[str] = []
     seen: set[str] = set()
@@ -242,6 +251,11 @@ def extract_scripture_refs(text: str) -> list[str]:
             if key not in seen:
                 seen.add(key)
                 refs.append(key)
+    for m in _DASH_REF_RE.finditer(text):
+        content = m.group(1).strip()
+        if content and _SCRIPTURE_REF_RE.search(content) and content not in seen:
+            seen.add(content)
+            refs.append(content)
     return refs
 
 
@@ -899,24 +913,327 @@ def process_map_note(input_path: Path, output_path: Path) -> None:
     print(f"[map_note] 完成，共处理 {total} 个 doc。")
 
 
+def process_7feasts(input_path: Path, output_path: Path) -> None:
+    """7feasts 节期真理。嵌套 msg 结构，按 ot1 分组，不跨 ot1 合并。"""
+
+    def _parse_doc_id(doc_id: str) -> tuple[str, int]:
+        parts = doc_id.split("-")
+        try:
+            msg_num = int(parts[-1])
+        except (ValueError, IndexError):
+            msg_num = 0
+        return "-".join(parts[:-1]), msg_num
+
+    def _process_doc(doc: dict, writer: _JsonArrayWriter) -> None:
+        doc_id: str = doc.get("id", "")
+        raw_source: str = doc.get("source", "") or ""
+        book_title = raw_source.split("，")[0].strip() if "，" in raw_source else raw_source
+        message_title: str = (doc.get("text") or "").strip()
+        message_key, message_number = _parse_doc_id(doc_id)
+
+        msg_list: list = doc.get("msg") or []
+        ot1_index = 0
+        buf_texts: list[str] = []
+        buf_source_zh: str = ""
+
+        def flush(idx: int) -> None:
+            if not buf_texts:
+                return
+            text = "\n".join(buf_texts)
+            base_cid = f"{doc_id}_c{idx}"
+            tokens = estimate_tokens(text)
+            if tokens > 800:
+                parts = split_by_punctuation(text, 800)
+                for i, part in enumerate(parts):
+                    cid = f"{base_cid}_p{i + 1}" if len(parts) > 1 else base_cid
+                    writer.write(_build_chunk(
+                        chunk_id=cid, text=part, en="",
+                        book_title=book_title, author="李常受", year=None,
+                        message_key=message_key, message_number=message_number,
+                        message_title=message_title, section_title=None,
+                        paragraph_type="note",
+                        source_zh=raw_source, source_en="",
+                        original_ids=[doc_id],
+                    ))
+            else:
+                writer.write(_build_chunk(
+                    chunk_id=base_cid, text=text, en="",
+                    book_title=book_title, author="李常受", year=None,
+                    message_key=message_key, message_number=message_number,
+                    message_title=message_title, section_title=None,
+                    paragraph_type="note",
+                    source_zh=raw_source, source_en="",
+                    original_ids=[doc_id],
+                ))
+            buf_texts.clear()
+
+        for item in msg_list:
+            item_type = (item.get("type") or "").strip()
+            item_text = (item.get("text") or "").strip()
+
+            if item_type in ("bookname", "title", "b_read"):
+                continue
+
+            if item_type == "ot1":
+                flush(ot1_index)
+                ot1_index += 1
+                buf_source_zh = item.get("source") or ""
+                if item_text:
+                    buf_texts.append(item_text)
+            elif item_type.startswith("ot") or item_type == "otn":
+                if item_text:
+                    buf_texts.append(item_text)
+
+        flush(ot1_index)
+
+    with open(input_path, "rb") as fp, _JsonArrayWriter(output_path) as writer:
+        total = 0
+        seen_ids: dict[str, int] = {}
+        for doc in _iter_top_array(fp):
+            doc_id = doc.get("id", "")
+            if not doc_id.startswith("map_7feasts_"):
+                continue
+            seen_ids[doc_id] = seen_ids.get(doc_id, 0) + 1
+            if seen_ids[doc_id] > 1:
+                doc["id"] = f"{doc_id}_d{seen_ids[doc_id]}"
+            _process_doc(doc, writer)
+            total += 1
+            if total % 1000 == 0:
+                print(f"  [7feasts] 已处理 {total} 个 doc...")
+
+    print(f"[7feasts] 完成，共处理 {total} 个 doc。")
+
+
+def process_pano(input_path: Path, output_path: Path) -> None:
+    """pano 真理纲要。嵌套 msg 结构，短 ot1 跨合并（<150 tokens），不跨 doc。"""
+
+    def _parse_doc_id(doc_id: str) -> tuple[str, int]:
+        parts = doc_id.split("-")
+        try:
+            msg_num = int(parts[-1])
+        except (ValueError, IndexError):
+            msg_num = 0
+        return "-".join(parts[:-1]), msg_num
+
+    def _detect_author(source: str | None) -> str:
+        if source and "倪柝声" in source:
+            return "倪柝声"
+        return "李常受"
+
+    def _process_doc(doc: dict, writer: _JsonArrayWriter) -> None:
+        doc_id: str = doc.get("id", "")
+        book_title: str = doc.get("source", "") or ""
+        message_title: str = (doc.get("text") or "").strip()
+        message_key, message_number = _parse_doc_id(doc_id)
+
+        msg_list: list = doc.get("msg") or []
+        chunk_index = 0
+        buf_texts: list[str] = []
+        buf_first_ot1_source: str | None = None
+
+        def flush() -> None:
+            nonlocal chunk_index
+            if not buf_texts:
+                return
+            chunk_index += 1
+            text = "\n".join(buf_texts)
+            base_cid = f"{doc_id}_c{chunk_index}"
+            author = _detect_author(buf_first_ot1_source)
+            src_zh = buf_first_ot1_source or ""
+            tokens = estimate_tokens(text)
+            if tokens > 800:
+                parts = split_by_punctuation(text, 800)
+                for i, part in enumerate(parts):
+                    cid = f"{base_cid}_p{i + 1}" if len(parts) > 1 else base_cid
+                    writer.write(_build_chunk(
+                        chunk_id=cid, text=part, en="",
+                        book_title=book_title, author=author, year=None,
+                        message_key=message_key, message_number=message_number,
+                        message_title=message_title, section_title=None,
+                        paragraph_type="note",
+                        source_zh=src_zh, source_en="",
+                        original_ids=[doc_id],
+                    ))
+            else:
+                writer.write(_build_chunk(
+                    chunk_id=base_cid, text=text, en="",
+                    book_title=book_title, author=author, year=None,
+                    message_key=message_key, message_number=message_number,
+                    message_title=message_title, section_title=None,
+                    paragraph_type="note",
+                    source_zh=src_zh, source_en="",
+                    original_ids=[doc_id],
+                ))
+            buf_texts.clear()
+
+        def buf_tokens() -> int:
+            return estimate_tokens("\n".join(buf_texts))
+
+        for item in msg_list:
+            item_type = (item.get("type") or "").strip()
+            item_text = (item.get("text") or "").strip()
+
+            if item_type in ("bookname", "title", "b_read"):
+                continue
+
+            if item_type == "ot1":
+                if buf_texts and buf_tokens() >= 150:
+                    flush()
+                if not buf_texts:
+                    buf_first_ot1_source = item.get("source")
+                if item_text:
+                    buf_texts.append(item_text)
+            elif item_type.startswith("ot") or item_type == "otn":
+                if item_text:
+                    buf_texts.append(item_text)
+
+        flush()
+
+    with open(input_path, "rb") as fp, _JsonArrayWriter(output_path) as writer:
+        total = 0
+        seen_ids: dict[str, int] = {}
+        for doc in _iter_top_array(fp):
+            doc_id = doc.get("id", "")
+            if not doc_id.startswith("map_pano"):
+                continue
+            seen_ids[doc_id] = seen_ids.get(doc_id, 0) + 1
+            if seen_ids[doc_id] > 1:
+                doc["id"] = f"{doc_id}_d{seen_ids[doc_id]}"
+            _process_doc(doc, writer)
+            total += 1
+            if total % 1000 == 0:
+                print(f"  [pano] 已处理 {total} 个 doc...")
+
+    print(f"[pano] 完成，共处理 {total} 个 doc。")
+
+
+def process_dictionary(input_path: Path, output_path: Path) -> None:
+    """dictionary 真理词典。嵌套 msg 结构，按 ot1 分组，不跨 ot1 合并，动态 author。"""
+
+    def _parse_doc_id(doc_id: str) -> tuple[str, int]:
+        # map_dictionary-1-a → message_key="map_dictionary-1-a", message_number=1
+        parts = doc_id.replace("map_dictionary-", "").split("-")
+        try:
+            msg_num = int(parts[0])
+        except (ValueError, IndexError):
+            msg_num = 0
+        return doc_id, msg_num
+
+    def _detect_author(source: str | None) -> str:
+        if source and "倪柝声" in source:
+            return "倪柝声"
+        return "李常受"
+
+    def _extract_book_title(msg_list: list) -> str:
+        booknames = [
+            (item.get("text") or "").strip()
+            for item in msg_list
+            if (item.get("type") or "").strip() == "bookname"
+        ]
+        return "，".join(booknames) if booknames else ""
+
+    def _process_doc(doc: dict, writer: _JsonArrayWriter) -> None:
+        doc_id: str = doc.get("id", "")
+        message_title: str = (doc.get("text") or "").strip()
+        message_key, message_number = _parse_doc_id(doc_id)
+
+        msg_list: list = doc.get("msg") or []
+        book_title = _extract_book_title(msg_list)
+        ot1_index = 0
+        buf_texts: list[str] = []
+        buf_ot1_source: str | None = None
+
+        def flush(idx: int) -> None:
+            if not buf_texts:
+                return
+            text = "\n".join(buf_texts)
+            base_cid = f"{doc_id}_c{idx}"
+            author = _detect_author(buf_ot1_source)
+            src_zh = buf_ot1_source.strip("（）") if buf_ot1_source else ""
+            tokens = estimate_tokens(text)
+            if tokens > 800:
+                parts = split_by_punctuation(text, 800)
+                for i, part in enumerate(parts):
+                    cid = f"{base_cid}_p{i + 1}" if len(parts) > 1 else base_cid
+                    writer.write(_build_chunk(
+                        chunk_id=cid, text=part, en="",
+                        book_title=book_title, author=author, year=None,
+                        message_key=message_key, message_number=message_number,
+                        message_title=message_title, section_title=None,
+                        paragraph_type="note",
+                        source_zh=src_zh, source_en="",
+                        original_ids=[doc_id],
+                    ))
+            else:
+                writer.write(_build_chunk(
+                    chunk_id=base_cid, text=text, en="",
+                    book_title=book_title, author=author, year=None,
+                    message_key=message_key, message_number=message_number,
+                    message_title=message_title, section_title=None,
+                    paragraph_type="note",
+                    source_zh=src_zh, source_en="",
+                    original_ids=[doc_id],
+                ))
+            buf_texts.clear()
+
+        for item in msg_list:
+            item_type = (item.get("type") or "").strip()
+            item_text = (item.get("text") or "").strip()
+
+            if item_type in ("bookname", "title", "b_read"):
+                continue
+
+            if item_type == "ot1":
+                flush(ot1_index)
+                ot1_index += 1
+                buf_ot1_source = item.get("source")
+                if item_text:
+                    buf_texts.append(item_text)
+            elif item_type.startswith("ot"):
+                if item_text:
+                    buf_texts.append(item_text)
+
+        flush(ot1_index)
+
+    with open(input_path, "rb") as fp, _JsonArrayWriter(output_path) as writer:
+        total = 0
+        seen_ids: dict[str, int] = {}
+        for doc in _iter_top_array(fp):
+            doc_id = doc.get("id", "")
+            if not doc_id.startswith("map_dictionary"):
+                continue
+            seen_ids[doc_id] = seen_ids.get(doc_id, 0) + 1
+            if seen_ids[doc_id] > 1:
+                doc["id"] = f"{doc_id}_d{seen_ids[doc_id]}"
+            _process_doc(doc, writer)
+            total += 1
+            if total % 1000 == 0:
+                print(f"  [dictionary] 已处理 {total} 个 doc...")
+
+    print(f"[dictionary] 完成，共处理 {total} 个 doc。")
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 SOURCES = {
-    "life":     process_life,
-    "cwwl":     process_cwwl,
-    "cwwn":     process_cwwn,
-    "others":   process_others,
-    "bib":      process_bib,
-    "map_note": process_map_note,
+    "life":       process_life,
+    "cwwl":       process_cwwl,
+    "cwwn":       process_cwwn,
+    "others":     process_others,
+    "bib":        process_bib,
+    "map_note":   process_map_note,
+    "7feasts":    process_7feasts,
+    "pano":       process_pano,
+    "dictionary": process_dictionary,
 }
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="chunking_full",
-        description="统一 Chunking 脚本，支持六种数据源（流式读取，增量写出）。",
+        description="统一 Chunking 脚本，支持九种数据源（流式读取，增量写出）。",
     )
     parser.add_argument(
         "--input", required=True, metavar="INPUT_JSON",

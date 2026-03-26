@@ -22,6 +22,7 @@ except ImportError:
         claude_client = None
 
 from kg_rag.prompts import (
+    STEP0_QUERY_CLASSIFICATION,
     STEP1_CONCEPT_EXTRACTION,
     STEP2_SKELETON_SCORING,
     QUERY_REWRITE,
@@ -49,6 +50,7 @@ DEFAULT_PARAMS = {
     "skeleton_route_top_k": 5,
     "temperature": 0.3,
     "skip_query_rewrite": False,
+    "skip_skeleton_route": False,
     "skip_generation": False,
     "llm_model": os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
 }
@@ -156,6 +158,22 @@ def _parse_json_array(text: str) -> list[Any]:
         return []
 
 
+def _parse_json_object(text: str) -> dict | None:
+    """从 Claude 返回文本解析 JSON 对象，支持 ```json ... ``` 围栏。"""
+    if not text or not text.strip():
+        return None
+    s = text.strip()
+    if s.startswith("```"):
+        lines = s.split("\n")
+        if len(lines) >= 2:
+            s = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+    try:
+        obj = json.loads(s)
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
 def _parse_skeleton_scores(text: str) -> list[dict]:
     """解析 Step 2 返回的 [{\"name\": \"...\", \"score\": ...}]。"""
     arr = _parse_json_array(text)
@@ -223,13 +241,41 @@ class KgRagService:
         _DEFAULT_INDICES = ",".join([
             "kg-rag_life", "kg-rag_cwwl", "kg-rag_cwwn",
             "kg-rag_others", "kg-rag_bib", "kg-rag_map_note",
+            "kg-rag_7feasts", "kg-rag_pano", "kg-rag_dictionary",
         ])
         self.index = os.environ.get("KG_RAG_ES_INDEX", _DEFAULT_INDICES)
+
+    async def _classify_query(self, query: str, llm_model: str) -> dict:
+        """
+        Step 0.5：对用户查询进行分类，返回查询类型和优先关系列表。
+        失败时降级返回默认值，不阻断主流程。
+        """
+        try:
+            prompt = STEP0_QUERY_CLASSIFICATION.format(query=query)
+            response = await _call_claude(prompt, llm_model, temperature=0, max_tokens=100)
+            result = _parse_json_object(response) or {}
+            query_type = result.get("type", "定义型")
+            pr = result.get("priority_relations", [])
+            if not isinstance(pr, list):
+                priority_relations: list[str] = []
+            else:
+                priority_relations = [str(x) for x in pr]
+            logger.info(f"Query classification: type={query_type}, priority={priority_relations}")
+            return {"type": query_type, "priority_relations": priority_relations}
+        except Exception as e:
+            logger.warning(f"Query classification failed, falling back to default: {e}")
+            return {"type": "定义型", "priority_relations": []}
 
     async def full_query(self, query: str, params: dict | None = None) -> dict:
         """全流程：Step 1→1.5→2→3→4→5，返回最终回答与每步中间结果。"""
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}, "answer": None}
+
+        # Step 0.5: 查询分类
+        classification = await self._classify_query(query, p["llm_model"])
+        query_type = classification["type"]
+        priority_relations = classification["priority_relations"]
+        result["steps"]["step0_5"] = classification
 
         # Step 1: 概念抽取
         concepts = []
@@ -252,10 +298,10 @@ class KgRagService:
         dropped = [c for c in concepts if not (self.neo4j.normalize_concepts([c]))] if concepts else []
         result["steps"]["step1_5"] = {"input": concepts, "normalized": normalized, "dropped": dropped}
 
-        # Step 2: 骨架生成
+        # Step 2: 骨架生成（skip_skeleton_route 时整步跳过，不查邻居、不打分，省 token）
         skeleton = None
         expanded_nodes = []
-        if normalized:
+        if normalized and not p.get("skip_skeleton_route"):
             if len(normalized) == 1:
                 root = normalized[0]
                 neighbors = self.neo4j.get_neighbors(root)
@@ -273,6 +319,8 @@ class KgRagService:
                         ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
+                            query_type=query_type,
+                            priority_relations=str(priority_relations),
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
@@ -321,6 +369,8 @@ class KgRagService:
                         ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
+                            query_type=query_type,
+                            priority_relations=str(priority_relations),
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
@@ -349,10 +399,16 @@ class KgRagService:
                 expanded_nodes = list({b["name"] for b in all_branches if b["name"] not in normalized})
                 logger.info(f"[KG-RAG DEBUG] Step2 multi expanded_nodes: {expanded_nodes}")
                 skeleton = {"roots": normalized, "branches": all_branches} if all_branches else {"root": normalized[0], "branches": []}
+        elif normalized and p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route=True)")
         has_branches = bool(skeleton and skeleton.get("branches"))
         mode = "skeleton" if has_branches else "flat"
         logger.info(f"[KG-RAG DEBUG] Step2 final — skeleton empty={not has_branches}, mode={mode}, expanded_nodes={expanded_nodes}")
-        result["steps"]["step2"] = {"skeleton": skeleton, "expanded_nodes": expanded_nodes}
+        result["steps"]["step2"] = {
+            "skeleton": skeleton,
+            "expanded_nodes": expanded_nodes,
+            **({"skipped": True} if normalized and p.get("skip_skeleton_route") else {}),
+        }
 
         # Step 3: 三路检索
         if p.get("skip_query_rewrite"):
@@ -390,7 +446,7 @@ class KgRagService:
         main_results = await rerank(merged, query, p["rerank_top_n"])
 
         expanded_results = []
-        if expanded_nodes:
+        if expanded_nodes and not p.get("skip_skeleton_route"):
             route3_tasks = [
                 skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
                 for node in expanded_nodes
@@ -419,6 +475,7 @@ class KgRagService:
             expanded_chunks_text = _format_expanded_chunks(expanded_results)
             prompt = STEP5_GENERATION.format(
                 query=query,
+                query_type=query_type,
                 skeleton=skeleton_text,
                 main_chunks=main_chunks_text,
                 expanded_chunks=expanded_chunks_text,
@@ -449,6 +506,12 @@ class KgRagService:
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}}
 
+        # Step 0.5: 查询分类
+        classification = await self._classify_query(query, p["llm_model"])
+        query_type = classification["type"]
+        priority_relations = classification["priority_relations"]
+        result["steps"]["step0_5"] = classification
+
         concepts = []
         try:
             step1_prompt = STEP1_CONCEPT_EXTRACTION.format(query=query)
@@ -469,7 +532,7 @@ class KgRagService:
 
         skeleton = None
         expanded_nodes = []
-        if normalized:
+        if normalized and not p.get("skip_skeleton_route"):
             if len(normalized) == 1:
                 root = normalized[0]
                 neighbors = self.neo4j.get_neighbors(root)
@@ -486,6 +549,8 @@ class KgRagService:
                         ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
+                            query_type=query_type,
+                            priority_relations=str(priority_relations),
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
@@ -525,6 +590,8 @@ class KgRagService:
                         ]
                         step2_prompt = STEP2_SKELETON_SCORING.format(
                             query=query,
+                            query_type=query_type,
+                            priority_relations=str(priority_relations),
                             concept_name=root,
                             neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
                         )
@@ -547,7 +614,13 @@ class KgRagService:
                         pass
                 expanded_nodes = list({b["name"] for b in all_branches if b["name"] not in normalized})
                 skeleton = {"roots": normalized, "branches": all_branches} if all_branches else {"root": normalized[0], "branches": []}
-        result["steps"]["step2"] = {"skeleton": skeleton, "expanded_nodes": expanded_nodes}
+        elif normalized and p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route=True)")
+        result["steps"]["step2"] = {
+            "skeleton": skeleton,
+            "expanded_nodes": expanded_nodes,
+            **({"skipped": True} if normalized and p.get("skip_skeleton_route") else {}),
+        }
 
         if p.get("skip_query_rewrite"):
             rewritten_query = query
@@ -563,7 +636,7 @@ class KgRagService:
         merged = await rrf_merge(bm25_results, dense_results, p["rrf_k"], p["bm25_weight"], p["dense_weight"])
         main_results = await rerank(merged, query, p["rerank_top_n"])
         expanded_results = []
-        if expanded_nodes:
+        if expanded_nodes and not p.get("skip_skeleton_route"):
             route3_all = await asyncio.gather(*[
                 skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
                 for node in expanded_nodes

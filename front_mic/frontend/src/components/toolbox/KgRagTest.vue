@@ -59,11 +59,13 @@ const params = ref({
   temperature: 0.3,
   llm_model: "claude-sonnet-4-20250514",
   skip_query_rewrite: false,
+  skip_skeleton_route: false,
   skip_generation: false,
 });
 
 const llmModelOptions = [
   { label: "claude-sonnet-4-20250514", value: "claude-sonnet-4-20250514" },
+  { label: "claude-sonnet-4-6", value: "claude-sonnet-4-6" },
   { label: "claude-haiku-4-5-20251001", value: "claude-haiku-4-5-20251001" },
 ];
 
@@ -395,7 +397,7 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="20" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">模型</span><a-select v-model:value="params.llm_model" :options="llmModelOptions" size="small" class="param-control param-select" /></div></a-col>
-                      <a-col :span="24"><div class="param-item param-checkboxes"><a-checkbox v-model:checked="params.skip_query_rewrite">跳过 Query Rewrite</a-checkbox><a-checkbox v-model:checked="params.skip_generation">跳过生成/仅检索</a-checkbox></div></a-col>
+                      <a-col :span="24"><div class="param-item param-checkboxes"><a-checkbox v-model:checked="params.skip_query_rewrite">跳过 Query Rewrite</a-checkbox><a-checkbox v-model:checked="params.skip_skeleton_route">跳过路3扩展检索</a-checkbox><a-checkbox v-model:checked="params.skip_generation">跳过生成/仅检索</a-checkbox></div></a-col>
                     </a-row>
                   </a-collapse-panel>
                 </a-collapse>

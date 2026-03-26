@@ -252,6 +252,12 @@ else:
     _gemini_system_instruction = None
     logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
 
+try:
+    from .gemini_response_utils import extract_translatable_text, gemini_translation_generate_config
+except ImportError:
+    gemini_translation_generate_config = None
+    extract_translatable_text = None
+
 # 毛胚纲目 - 其他 API（.env 中填写对应 API Key 后启用）
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v3.2")
@@ -2996,6 +3002,13 @@ class AISearchService:
                         if outline_topic and outline_topic.strip() and not cached_title:
                             topic = outline_topic.strip()
                             _cache_title_404 = [False]
+                            _cache_title_retryable = [False]
+                            _cache_title_empty = [False]
+
+                            def _title_cfg_cache():
+                                if gemini_translation_generate_config:
+                                    return gemini_translation_generate_config(_gemini_system_instruction)
+                                return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
                             def _translate_title_for_cache(
                                 retry_count: int = 0, model: Optional[str] = None
@@ -3006,12 +3019,15 @@ class AISearchService:
                                         title_response = gemini_client.models.generate_content(
                                             model=use_model,
                                             contents=topic,
-                                            config=types.GenerateContentConfig(
-                                                system_instruction=_gemini_system_instruction,
-                                            ),
+                                            config=_title_cfg_cache(),
                                         )
-                                        if title_response and getattr(title_response, "text", None):
-                                            raw_title = title_response.text.strip()
+                                        log_tc = f"[Gemini翻译-缓存标题] model={use_model}"
+                                        if extract_translatable_text:
+                                            raw_title = extract_translatable_text(title_response, log_tc)
+                                        else:
+                                            rt = getattr(title_response, "text", None) if title_response else None
+                                            raw_title = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                                        if raw_title:
                                             title_en_clean = raw_title
                                             prefixes_to_remove = [
                                                 "Translation:", "English:", "翻译：", "英文：",
@@ -3038,8 +3054,8 @@ class AISearchService:
                                             except Exception:
                                                 pass
                                             return title_en_clean
-                                        else:
-                                            logger.warning("缓存标题翻译返回空响应（重试次数: %s）", retry_count)
+                                        _cache_title_empty[0] = True
+                                        logger.warning("缓存标题翻译返回空响应（重试次数: %s）", retry_count)
                                     except Exception as e:
                                         error_msg = str(e)
                                         if "404" in error_msg or "NOT_FOUND" in error_msg or "is not found" in error_msg.lower():
@@ -3048,6 +3064,8 @@ class AISearchService:
                                             "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
                                             or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
                                         )
+                                        if is_retryable:
+                                            _cache_title_retryable[0] = True
                                         if is_retryable and retry_count == 0:
                                             logger.warning("缓存标题翻译调用失败（可重试）: %s，等待2秒后重试...", e)
                                             time.sleep(2)
@@ -3058,7 +3076,9 @@ class AISearchService:
                             cached_title = _translate_title_for_cache(retry_count=0)
                             if cached_title is None:
                                 cached_title = _translate_title_for_cache(retry_count=1)
-                            if cached_title is None and _cache_title_404[0]:
+                            if cached_title is None and (
+                                _cache_title_404[0] or _cache_title_retryable[0] or _cache_title_empty[0]
+                            ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
                                 cached_title = _translate_title_for_cache(
                                     retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL
                                 )
@@ -3081,9 +3101,15 @@ class AISearchService:
         contents_zh2en = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2EN
         _last_error_model_not_found = [False]  # 404 / model not found
         _last_error_retryable = [False]         # 503 / 429 / timeout 等临时性失败
+        _last_error_empty = [False]             # 调用成功但无可翻译正文
 
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+
+        def _zh2en_config():
+            if gemini_translation_generate_config:
+                return gemini_translation_generate_config(_gemini_system_instruction)
+            return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
             use_model = model or GEMINI_MODEL
@@ -3092,12 +3118,15 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_zh2en,
-                        config=types.GenerateContentConfig(
-                            system_instruction=_gemini_system_instruction,
-                        ),
+                        config=_zh2en_config(),
                     )
-                    if response and getattr(response, "text", None):
-                        text = response.text.strip()
+                    log_p = f"[Gemini翻译] model={use_model}"
+                    if extract_translatable_text:
+                        text = extract_translatable_text(response, log_p)
+                    else:
+                        rt = getattr(response, "text", None) if response else None
+                        text = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                    if text:
                         tokens_zh2en = None
                         try:
                             usage_meta = response.usage_metadata
@@ -3111,8 +3140,8 @@ class AISearchService:
                         except Exception:
                             pass
                         return (text, tokens_zh2en)
-                    else:
-                        logger.warning(f"Gemini 翻译返回空响应（重试次数: {retry_count}）")
+                    _last_error_empty[0] = True
+                    logger.warning("Gemini 翻译返回空响应（重试次数: %s）", retry_count)
                 except Exception as e:
                     error_msg = str(e)
                     if _is_model_not_found(error_msg):
@@ -3143,9 +3172,17 @@ class AISearchService:
             result = _call_gemini(retry_count=1)
             if result is not None:
                 answer_en, tokens_zh2en = result[0], result[1]
-        if answer_en is None and (_last_error_model_not_found[0] or _last_error_retryable[0]) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
-            logger.info("使用备用模型进行中翻英: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL,
-                        "模型不存在" if _last_error_model_not_found[0] else "主模型负载过高/暂不可用")
+        if answer_en is None and (
+            _last_error_model_not_found[0] or _last_error_retryable[0] or _last_error_empty[0]
+        ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            _fb_reason = (
+                "模型不存在"
+                if _last_error_model_not_found[0]
+                else "主模型返回空正文"
+                if _last_error_empty[0]
+                else "主模型负载过高/暂不可用"
+            )
+            logger.info("使用备用模型进行中翻英: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL, _fb_reason)
             result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
             if result is not None:
                 answer_en, tokens_zh2en = result[0], result[1]
@@ -3159,6 +3196,13 @@ class AISearchService:
         if outline_topic and outline_topic.strip():
             topic = outline_topic.strip()
             _title_model_not_found = [False]
+            _title_retryable = [False]
+            _title_empty = [False]
+
+            def _title_cfg_main():
+                if gemini_translation_generate_config:
+                    return gemini_translation_generate_config(_gemini_system_instruction)
+                return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
             def _translate_title(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
                 """翻译标题，带重试逻辑；model 为空则用 GEMINI_MODEL"""
@@ -3168,12 +3212,15 @@ class AISearchService:
                         title_response = gemini_client.models.generate_content(
                             model=use_model,
                             contents=topic,
-                            config=types.GenerateContentConfig(
-                                system_instruction=_gemini_system_instruction,
-                            ),
+                            config=_title_cfg_main(),
                         )
-                        if title_response and getattr(title_response, "text", None):
-                            raw_title = title_response.text.strip()
+                        log_tm = f"[Gemini标题] model={use_model}"
+                        if extract_translatable_text:
+                            raw_title = extract_translatable_text(title_response, log_tm)
+                        else:
+                            rt = getattr(title_response, "text", None) if title_response else None
+                            raw_title = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                        if raw_title:
                             title_en_clean = raw_title
                             prefixes_to_remove = [
                                 "Translation:", "English:", "翻译：", "英文：",
@@ -3185,8 +3232,8 @@ class AISearchService:
                                     title_en_clean = title_en_clean[len(prefix):].strip()
                             title_en_clean = title_en_clean.strip('"\'')
                             return title_en_clean
-                        else:
-                            logger.warning(f"标题翻译返回空响应（重试次数: {retry_count}）")
+                        _title_empty[0] = True
+                        logger.warning("标题翻译返回空响应（重试次数: %s）", retry_count)
                     except Exception as e:
                         error_msg = str(e)
                         if _is_model_not_found(error_msg):
@@ -3195,6 +3242,8 @@ class AISearchService:
                             "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg
                             or "timeout" in error_msg.lower() or "temporary" in error_msg.lower()
                         )
+                        if is_retryable:
+                            _title_retryable[0] = True
                         if is_retryable and retry_count == 0:
                             logger.warning(f"标题翻译调用失败（可重试）: {e}，等待2秒后重试...")
                             time.sleep(2)
@@ -3205,7 +3254,9 @@ class AISearchService:
             title_en = _translate_title(retry_count=0)
             if title_en is None:
                 title_en = _translate_title(retry_count=1)
-            if title_en is None and _title_model_not_found[0]:
+            if title_en is None and (
+                _title_model_not_found[0] or _title_retryable[0] or _title_empty[0]
+            ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
                 title_en = _translate_title(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
                 if title_en is None:
                     title_en = _translate_title(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
@@ -3255,9 +3306,15 @@ class AISearchService:
         contents_en2zh = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ZH
         _last_error_model_not_found = [False]  # 404 / model not found
         _last_error_retryable = [False]         # 503 / 429 / timeout 等临时性失败
+        _last_error_empty = [False]             # 调用成功但无可翻译正文
 
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+
+        def _en2zh_config():
+            if gemini_translation_generate_config:
+                return gemini_translation_generate_config(_gemini_system_instruction_en2zh)
+            return types.GenerateContentConfig(system_instruction=_gemini_system_instruction_en2zh)
 
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
             use_model = model or GEMINI_MODEL
@@ -3266,12 +3323,15 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_en2zh,
-                        config=types.GenerateContentConfig(
-                            system_instruction=_gemini_system_instruction_en2zh,
-                        ),
+                        config=_en2zh_config(),
                     )
-                    if response and getattr(response, "text", None):
-                        text = response.text.strip()
+                    log_p = f"[Gemini英翻中] model={use_model}"
+                    if extract_translatable_text:
+                        text = extract_translatable_text(response, log_p)
+                    else:
+                        rt = getattr(response, "text", None) if response else None
+                        text = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                    if text:
                         tokens_en2zh = None
                         try:
                             usage_meta = response.usage_metadata
@@ -3285,6 +3345,7 @@ class AISearchService:
                         except Exception:
                             pass
                         return (text, tokens_en2zh)
+                    _last_error_empty[0] = True
                     logger.warning("Gemini 英翻中返回空响应（重试次数: %s）", retry_count)
                 except Exception as e:
                     error_msg = str(e)
@@ -3317,9 +3378,17 @@ class AISearchService:
             result = _call_gemini(retry_count=1)
             if result is not None:
                 answer_zh, tokens_en2zh = result[0], result[1]
-        if answer_zh is None and (_last_error_model_not_found[0] or _last_error_retryable[0]) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
-            logger.info("使用备用模型进行英翻中: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL,
-                        "模型不存在" if _last_error_model_not_found[0] else "主模型负载过高/暂不可用")
+        if answer_zh is None and (
+            _last_error_model_not_found[0] or _last_error_retryable[0] or _last_error_empty[0]
+        ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            _fb_reason_e2z = (
+                "模型不存在"
+                if _last_error_model_not_found[0]
+                else "主模型返回空正文"
+                if _last_error_empty[0]
+                else "主模型负载过高/暂不可用"
+            )
+            logger.info("使用备用模型进行英翻中: %s（原因: %s）", GEMINI_TRANSLATION_FALLBACK_MODEL, _fb_reason_e2z)
             result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
             if result is not None:
                 answer_zh, tokens_en2zh = result[0], result[1]
