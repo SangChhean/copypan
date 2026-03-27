@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Neo4j 连接、Hash 表加载与图谱查询。"""
+"""Neo4j 连接、概念名列表加载与图谱查询。"""
 import os
 from typing import Any
 
@@ -13,7 +13,7 @@ MIN_HOPS, MAX_HOPS = 1, 5
 
 
 class Neo4jClient:
-    """Neo4j 图谱客户端，管理连接、Hash 表和图谱查询。
+    """Neo4j 图谱客户端，管理连接、概念名列表和图谱查询。
 
     核心原则：图谱是增强层而非前置依赖。
     Neo4j 不可用或图谱为空时，所有方法返回空结果，不抛异常，
@@ -25,11 +25,11 @@ class Neo4jClient:
         self._user = os.environ.get("NEO4J_USER", "neo4j")
         self._password = os.environ.get("NEO4J_PASSWORD", "")
         self._driver = None
-        self._hash_table: dict[str, str] = {}
+        self._concept_names: list[str] = []
         self._available: bool = False
 
     def startup(self) -> None:
-        """尝试连接 Neo4j；成功则刷新 Hash 表，失败则不抛异常并设 _available=False。同步方法，供 FastAPI 启动或 get_service 时调用。"""
+        """尝试连接 Neo4j；成功则刷新概念名列表，失败则不抛异常并设 _available=False。同步方法，供 FastAPI 启动或 get_service 时调用。"""
         try:
             from neo4j import GraphDatabase
             driver = GraphDatabase.driver(
@@ -39,11 +39,11 @@ class Neo4jClient:
             driver.verify_connectivity()
             self._driver = driver
             self._available = True
-            self.refresh_hash_table()
+            self.refresh_concept_names()
         except Exception as e:
             print(f"[KG-RAG] Neo4j 连接失败，图谱功能将降级为空: {e}")
             self._available = False
-            self._hash_table = {}
+            self._concept_names = []
             if getattr(self, "_driver", None) is not None:
                 try:
                     self._driver.close()
@@ -61,54 +61,33 @@ class Neo4jClient:
             self._driver = None
         self._available = False
 
-    def refresh_hash_table(self) -> None:
-        """从 Neo4j 查询所有 Concept 的 name/aliases，构建 name/alias → 标准 name 的 Hash 表。"""
+    def refresh_concept_names(self) -> None:
+        """从 Neo4j 查询所有 Concept 的 name，构建供 Step 1 Prompt 使用的概念名列表。"""
         if not self._available or self._driver is None:
             return
         try:
             with self._driver.session() as session:
                 result = session.run(
-                    "MATCH (c:Concept) RETURN c.name AS name, c.aliases AS aliases"
+                    "MATCH (c:Concept) RETURN c.name AS name ORDER BY c.name"
                 )
-                self._hash_table = {}
-                n_concepts = 0
+                names: list[str] = []
                 for record in result:
                     name = record.get("name")
-                    aliases = record.get("aliases") or []
                     if name is None:
                         continue
                     name_str = str(name).strip()
                     if not name_str:
                         continue
-                    n_concepts += 1
-                    self._hash_table[name_str] = name_str
-                    for a in aliases:
-                        if a is not None:
-                            alias_str = str(a).strip()
-                            if alias_str:
-                                self._hash_table[alias_str] = name_str
-                print(f"[KG-RAG] Hash 表已加载: {len(self._hash_table)} 个映射条目（{n_concepts} 个概念节点）")
+                    names.append(name_str)
+                self._concept_names = names
+                print(f"[KG-RAG] Concept name 列表已加载: {len(self._concept_names)} 个概念节点")
         except Exception as e:
-            print(f"[KG-RAG] 加载 Hash 表失败: {e}")
-            self._hash_table = {}
+            print(f"[KG-RAG] 加载 Concept name 列表失败: {e}")
+            self._concept_names = []
 
-    def normalize_concepts(self, terms: list[str]) -> list[str]:
-        """Step 1.5 概念规范化：对每个 term 查 Hash 表，命中转为标准 name，未命中丢弃；返回去重列表。不访问 Neo4j。"""
-        if not self._hash_table:
-            return []
-        out = []
-        seen = set()
-        for t in terms:
-            if not t or not isinstance(t, str):
-                continue
-            key = t.strip()
-            if not key:
-                continue
-            standard = self._hash_table.get(key)
-            if standard is not None and standard not in seen:
-                seen.add(standard)
-                out.append(standard)
-        return out
+    def get_concept_names(self) -> list[str]:
+        """返回 Concept name 列表副本，供 Step 1 Prompt 注入。"""
+        return list(self._concept_names)
 
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
         """单概念 1 跳全部邻居，出边和入边分别查询后按 neighbor 合并去重。
@@ -175,6 +154,66 @@ class Neo4jClient:
                 return result
         except Exception as e:
             print(f"[KG-RAG] get_neighbors 失败: {e}")
+            return []
+
+    def get_paths_between(self, concepts: list[str]) -> list[dict[str, Any]]:
+        """查询给定概念集合内部的 1~2 跳路径。失败或不可用时返回空列表。"""
+        if not self._available or self._driver is None:
+            return []
+        if not concepts:
+            return []
+        names = [str(x).strip() for x in concepts if str(x).strip()]
+        if len(names) < 2:
+            return []
+        try:
+            with self._driver.session() as session:
+                # 1跳：概念之间直接关系
+                q1 = (
+                    "MATCH (a:Concept)-[r]->(b:Concept) "
+                    "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
+                    "RETURN a.name AS from_name, type(r) AS relation, b.name AS to_name"
+                )
+                r1 = session.run(q1, names=names)
+                out: list[dict[str, Any]] = []
+                seen = set()
+                for row in r1:
+                    f = row.get("from_name")
+                    rel = row.get("relation")
+                    t = row.get("to_name")
+                    if not f or not rel or not t:
+                        continue
+                    key = (f, rel, t, 1)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    out.append({"from": f, "relation": rel, "to": t, "hops": 1})
+
+                # 2跳：通过一个中间节点连接（中间节点不在输入 concepts 中）
+                q2 = (
+                    "MATCH (a:Concept)-[r1]->(mid:Concept)-[r2]->(b:Concept) "
+                    "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
+                    "AND NOT mid.name IN $names "
+                    "RETURN a.name AS from_name, type(r1) AS rel1, mid.name AS via_name, "
+                    "type(r2) AS rel2, b.name AS to_name"
+                )
+                r2 = session.run(q2, names=names)
+                for row in r2:
+                    f = row.get("from_name")
+                    r_1 = row.get("rel1")
+                    via = row.get("via_name")
+                    r_2 = row.get("rel2")
+                    t = row.get("to_name")
+                    if not f or not r_1 or not via or not r_2 or not t:
+                        continue
+                    rel = f"{r_1} → {r_2}"
+                    key = (f, rel, t, via, 2)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    out.append({"from": f, "relation": rel, "to": t, "via": via, "hops": 2})
+                return out
+        except Exception as e:
+            print(f"[KG-RAG] get_paths_between 失败: {e}")
             return []
 
     def _clamp_hops(self, max_hops: int) -> int:
@@ -283,14 +322,14 @@ class Neo4jClient:
             return 0
 
     def get_stats(self) -> dict[str, Any]:
-        """图谱统计：available、concept_count、relation_count、relation_types、hash_table_size。"""
+        """图谱统计：available、concept_count、relation_count、relation_types、concept_name_count。"""
         if not self._available or self._driver is None:
             return {
                 "available": False,
                 "concept_count": 0,
                 "relation_count": 0,
                 "relation_types": {},
-                "hash_table_size": 0,
+                "concept_name_count": 0,
             }
         try:
             with self._driver.session() as session:
@@ -317,7 +356,7 @@ class Neo4jClient:
                     "concept_count": concept_count,
                     "relation_count": relation_count,
                     "relation_types": relation_types,
-                    "hash_table_size": len(self._hash_table),
+                    "concept_name_count": len(self._concept_names),
                 }
         except Exception as e:
             print(f"[KG-RAG] get_stats 失败: {e}")
@@ -326,5 +365,5 @@ class Neo4jClient:
                 "concept_count": 0,
                 "relation_count": 0,
                 "relation_types": {},
-                "hash_table_size": len(self._hash_table),
+                "concept_name_count": len(self._concept_names),
             }

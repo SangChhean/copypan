@@ -22,13 +22,15 @@ except ImportError:
         claude_client = None
 
 from kg_rag.prompts import (
-    STEP0_QUERY_CLASSIFICATION,
     STEP1_CONCEPT_EXTRACTION,
     STEP2_SKELETON_SCORING,
     QUERY_REWRITE,
     STEP5_GENERATION,
     STEP5_GENERATION_FLAT,
 )
+
+# QUERY_REWRITE 调用时传入 Claude 的 system，与 prompts 中说明一致
+QUERY_REWRITE_SYSTEM = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
 from kg_rag.retrieval import (
     bm25_search,
     dense_search,
@@ -45,8 +47,6 @@ DEFAULT_PARAMS = {
     "bm25_weight": 1.0,
     "dense_weight": 1.0,
     "rerank_top_n": 20,
-    "skeleton_score_threshold": 0.5,
-    "skeleton_top_n": 5,
     "skeleton_route_top_k": 5,
     "temperature": 0.3,
     "skip_query_rewrite": False,
@@ -58,34 +58,11 @@ DEFAULT_PARAMS = {
 PATH_COUNT_THRESHOLD = 20  # 多概念路径数少于此则取全路径，否则 shortestPath + 单概念扩展
 
 
-def _format_skeleton(skeleton: dict | None) -> str:
-    """将骨架格式化为可读文本，优先使用带方向的 relation_str；无则用 relation_type 不带方向箭头。"""
+def _format_skeleton(skeleton: list[str] | None) -> str:
+    """将 Step 2 输出的骨架维度列表格式化为可读文本。"""
     if not skeleton:
         return ""
-    lines = []
-    if "root" in skeleton and "branches" in skeleton:
-        root = skeleton.get("root", "")
-        for b in skeleton.get("branches", []):
-            score = b.get("score", 0)
-            relation_str = b.get("relation_str", "")
-            if relation_str:
-                lines.append(f"{relation_str} ({score})")
-            else:
-                name = b.get("name", "")
-                rel = b.get("relation_type", "相关")
-                lines.append(f"{root} —[{rel}]— {name} ({score})")
-    elif "roots" in skeleton and "branches" in skeleton:
-        for b in skeleton.get("branches", []):
-            score = b.get("score", 0)
-            relation_str = b.get("relation_str", "")
-            if relation_str:
-                lines.append(f"{relation_str} ({score})")
-            else:
-                root = b.get("root", "")
-                name = b.get("name", "")
-                rel = b.get("relation_type", "相关")
-                lines.append(f"{root} —[{rel}]— {name} ({score})")
-    return "\n".join(lines)
+    return "\n".join(f"{i + 1}. {str(x)}" for i, x in enumerate(skeleton) if str(x).strip())
 
 
 def _format_chunks(chunks: list[dict]) -> str:
@@ -158,33 +135,85 @@ def _parse_json_array(text: str) -> list[Any]:
         return []
 
 
-def _parse_json_object(text: str) -> dict | None:
-    """从 Claude 返回文本解析 JSON 对象，支持 ```json ... ``` 围栏。"""
+def _parse_step1_layers(text: str) -> tuple[list[str], list[str]]:
+    """解析 Step 1 返回的 {"surface": [...], "deep": [...]}。失败时返回空数组。"""
     if not text or not text.strip():
-        return None
+        return ([], [])
     s = text.strip()
     if s.startswith("```"):
         lines = s.split("\n")
-        if len(lines) >= 2:
-            s = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        s = "\n".join(lines[1:-1] if len(lines) > 2 and lines[-1].strip() == "```" else lines[1:])
     try:
         obj = json.loads(s)
-        return obj if isinstance(obj, dict) else None
+        if not isinstance(obj, dict):
+            return ([], [])
     except json.JSONDecodeError:
-        return None
+        return ([], [])
+    surface_raw = obj.get("surface", [])
+    deep_raw = obj.get("deep", [])
+    surface = [str(x).strip() for x in surface_raw if str(x).strip()] if isinstance(surface_raw, list) else []
+    deep = [str(x).strip() for x in deep_raw if str(x).strip()] if isinstance(deep_raw, list) else []
+    return (surface[:3], deep[:3])
 
 
-def _parse_skeleton_scores(text: str) -> list[dict]:
-    """解析 Step 2 返回的 [{\"name\": \"...\", \"score\": ...}]。"""
-    arr = _parse_json_array(text)
-    out = []
-    for x in arr:
-        if isinstance(x, dict) and x.get("name") is not None:
+def _safe_parse_json(text: str) -> dict:
+    """尽量稳健地解析 JSON 对象；失败返回空 dict。"""
+    if not text or not text.strip():
+        return {}
+    s = text.strip()
+    if s.startswith("```"):
+        lines = s.split("\n")
+        s = "\n".join(lines[1:-1] if len(lines) > 2 and lines[-1].strip() == "```" else lines[1:])
+    try:
+        obj = json.loads(s)
+        return obj if isinstance(obj, dict) else {}
+    except json.JSONDecodeError:
+        last_brace = s.rfind("}")
+        if last_brace > 0:
             try:
-                out.append({"name": str(x["name"]).strip(), "score": float(x.get("score", 0))})
-            except (TypeError, ValueError):
-                pass
-    return out
+                obj = json.loads(s[: last_brace + 1])
+                return obj if isinstance(obj, dict) else {}
+            except json.JSONDecodeError:
+                return {}
+        return {}
+
+
+def _format_paths_text(paths: list[dict]) -> str:
+    if not paths:
+        return "暂无已知路径"
+    lines = []
+    for p in paths:
+        from_name = p.get("from", "")
+        relation = p.get("relation", "")
+        to_name = p.get("to", "")
+        via = p.get("via")
+        hops = p.get("hops", "")
+        if via:
+            lines.append(f"{from_name} ──{relation}──► {to_name} （经由: {via}，{hops}跳）")
+        else:
+            lines.append(f"{from_name} ──{relation}──► {to_name} （{hops}跳）")
+    return "\n".join(lines)
+
+
+def _format_all_neighbors_text(all_neighbors: dict[str, list[dict]]) -> str:
+    if not all_neighbors:
+        return "暂无邻居关系"
+    lines = []
+    for concept, neighbors in all_neighbors.items():
+        lines.append(f"【{concept}】的邻居：")
+        if not neighbors:
+            lines.append("（无）")
+            continue
+        for n in neighbors:
+            rels = n.get("relations") or []
+            rel_type = n.get("relation_type", "相关")
+            neighbor = n.get("neighbor", "")
+            if rels:
+                for rel in rels:
+                    lines.append(f"{rel} ({rel_type})")
+            else:
+                lines.append(f"{concept} ──{rel_type}──► {neighbor} ({rel_type})")
+    return "\n".join(lines)
 
 
 async def _call_claude(
@@ -229,7 +258,7 @@ async def _call_claude(
 
 
 class KgRagService:
-    """KG-RAG 流水线编排：Step 1 概念抽取 → 1.5 规范化 → Step 2 骨架 → Step 3 三路检索 → Step 4 Prompt 构建 → Step 5 生成。"""
+    """KG-RAG 流水线编排：Step 1 概念抽取 → Step 2 骨架 → Step 3 三路检索 → Step 4 Prompt 构建 → Step 5 生成。"""
 
     def __init__(self, es_client: Any, neo4j_client: Any):
         """
@@ -245,169 +274,113 @@ class KgRagService:
         ])
         self.index = os.environ.get("KG_RAG_ES_INDEX", _DEFAULT_INDICES)
 
-    async def _classify_query(self, query: str, llm_model: str) -> dict:
-        """
-        Step 0.5：对用户查询进行分类，返回查询类型和优先关系列表。
-        失败时降级返回默认值，不阻断主流程。
-        """
-        try:
-            prompt = STEP0_QUERY_CLASSIFICATION.format(query=query)
-            response = await _call_claude(prompt, llm_model, temperature=0, max_tokens=100)
-            result = _parse_json_object(response) or {}
-            query_type = result.get("type", "定义型")
-            pr = result.get("priority_relations", [])
-            if not isinstance(pr, list):
-                priority_relations: list[str] = []
-            else:
-                priority_relations = [str(x) for x in pr]
-            logger.info(f"Query classification: type={query_type}, priority={priority_relations}")
-            return {"type": query_type, "priority_relations": priority_relations}
-        except Exception as e:
-            logger.warning(f"Query classification failed, falling back to default: {e}")
-            return {"type": "定义型", "priority_relations": []}
-
     async def full_query(self, query: str, params: dict | None = None) -> dict:
-        """全流程：Step 1→1.5→2→3→4→5，返回最终回答与每步中间结果。"""
+        """全流程：Step 1→2→3→4→5，返回最终回答与每步中间结果。"""
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}, "answer": None}
 
-        # Step 0.5: 查询分类
-        classification = await self._classify_query(query, p["llm_model"])
-        query_type = classification["type"]
-        priority_relations = classification["priority_relations"]
-        result["steps"]["step0_5"] = classification
-
         # Step 1: 概念抽取
         concepts = []
+        surface: list[str] = []
+        deep: list[str] = []
         raw1 = ""
         try:
-            step1_prompt = STEP1_CONCEPT_EXTRACTION.format(query=query)
+            concept_names = self.neo4j.get_concept_names()
+            concept_list_text = "、".join(concept_names)
+            step1_prompt = STEP1_CONCEPT_EXTRACTION.format(query=query, concept_list=concept_list_text)
+            logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
             raw1 = await _call_claude(step1_prompt, p["llm_model"], temperature=0, max_tokens=500)
-            concepts = _parse_json_array(raw1)
-            if isinstance(concepts, list):
-                concepts = [str(x).strip() for x in concepts if str(x).strip()][:3]
-            else:
-                concepts = []
+            surface, deep = _parse_step1_layers(raw1)
+            logger.info(f"[KG-RAG DEBUG] Step 1 字面层: {surface}，深层: {deep}")
+            concepts = []
+            seen = set()
+            for c in surface + deep:
+                if c not in seen:
+                    seen.add(c)
+                    concepts.append(c)
         except Exception as e:
             result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
         if "step1" not in result["steps"]:
-            result["steps"]["step1"] = {"concepts": concepts, "raw_response": raw1}
+            result["steps"]["step1"] = {"concepts": concepts, "surface": surface, "deep": deep, "raw_response": raw1}
 
-        # Step 1.5: 概念规范化
-        normalized = self.neo4j.normalize_concepts(concepts) if concepts else []
-        dropped = [c for c in concepts if not (self.neo4j.normalize_concepts([c]))] if concepts else []
-        result["steps"]["step1_5"] = {"input": concepts, "normalized": normalized, "dropped": dropped}
+        # Step 1 直出概念，直接进入 Step 2
+        normalized = concepts
+        logger.info("[KG-RAG DEBUG] Step 1 done: concepts go directly to Step2")
 
-        # Step 2: 骨架生成（skip_skeleton_route 时整步跳过，不查邻居、不打分，省 token）
+        # Step 2: 统一骨架生成（一次收集关系 + 一次 LLM 筛选/构建）
+        step2_start = asyncio.get_event_loop().time()
         skeleton = None
-        expanded_nodes = []
-        if normalized and not p.get("skip_skeleton_route"):
-            if len(normalized) == 1:
-                root = normalized[0]
-                neighbors = self.neo4j.get_neighbors(root)
-                logger.info(f"[KG-RAG DEBUG] Step2 single root={root}, neighbors count={len(neighbors)}")
-                if not neighbors:
-                    skeleton = {"root": root, "branches": []}
-                else:
-                    try:
-                        neighbors_for_llm = [
-                            {
-                                "neighbor": n["neighbor"],
-                                "relation": " ／ ".join(n["relations"]),
-                            }
-                            for n in neighbors
-                        ]
-                        step2_prompt = STEP2_SKELETON_SCORING.format(
-                            query=query,
-                            query_type=query_type,
-                            priority_relations=str(priority_relations),
-                            concept_name=root,
-                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
-                        )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
-                        logger.info(f"[KG-RAG DEBUG] Step2 single LLM raw response (root={root}): {raw2[:500]}")
-                        scored = _parse_skeleton_scores(raw2)
-                        logger.info(f"[KG-RAG DEBUG] Step2 single LLM scored (root={root}): {scored}")
-                        by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
-                        filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
-                        logger.info(f"[KG-RAG DEBUG] Step2 single after threshold>={p['skeleton_score_threshold']}: {len(filtered)} remain — {filtered}")
-                        filtered.sort(key=lambda x: x["score"], reverse=True)
-                        top_n = filtered[: p["skeleton_top_n"]]
-                        logger.info(f"[KG-RAG DEBUG] Step2 single top-{p['skeleton_top_n']}: {[x['name'] for x in top_n]}")
-                        branches = [
-                            {
-                                "name": x["name"],
-                                "relation_type": by_name.get(x["name"], "相关"),
-                                "relation_str": " ／ ".join(
-                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
-                                ),
-                                "score": x["score"],
-                            }
-                            for x in top_n
-                        ]
-                        skeleton = {"root": root, "branches": branches}
-                        expanded_nodes = [b["name"] for b in branches]
-                        logger.info(f"[KG-RAG DEBUG] Step2 single expanded_nodes: {expanded_nodes}")
-                    except Exception as e:
-                        logger.info(f"[KG-RAG DEBUG] Step2 single EXCEPTION root={root}: {e}")
-                        result["steps"]["step2_error"] = str(e)
-                        skeleton = {"root": root, "branches": []}
+        expanded_nodes: list[str] = []
+        paths: list[dict] = []
+        valuable_neighbors: list[dict] = []
+        all_neighbors: dict[str, list[dict]] = {}
+
+        if not normalized or p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] Step2 skipped: no concepts or skip_skeleton_route=True")
+        else:
+            paths = self.neo4j.get_paths_between(normalized)
+            for concept in normalized:
+                neighbors = self.neo4j.get_neighbors(concept)
+                if neighbors:
+                    all_neighbors[concept] = neighbors
+
+            if not paths and not all_neighbors:
+                logger.info("[KG-RAG DEBUG] Step2 graph empty: no paths and no neighbors")
             else:
-                all_branches = []
-                for root in normalized:
-                    neighbors = self.neo4j.get_neighbors(root)
-                    logger.info(f"[KG-RAG DEBUG] Step2 multi root={root}, neighbors count={len(neighbors)}")
-                    if not neighbors:
-                        continue
-                    try:
-                        neighbors_for_llm = [
-                            {
-                                "neighbor": n["neighbor"],
-                                "relation": " ／ ".join(n["relations"]),
-                            }
-                            for n in neighbors
-                        ]
-                        step2_prompt = STEP2_SKELETON_SCORING.format(
-                            query=query,
-                            query_type=query_type,
-                            priority_relations=str(priority_relations),
-                            concept_name=root,
-                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
-                        )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
-                        logger.info(f"[KG-RAG DEBUG] Step2 multi LLM raw response (root={root}): {raw2[:500]}")
-                        scored = _parse_skeleton_scores(raw2)
-                        logger.info(f"[KG-RAG DEBUG] Step2 multi LLM scored (root={root}): {scored}")
-                        by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
-                        filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
-                        logger.info(f"[KG-RAG DEBUG] Step2 multi after threshold>={p['skeleton_score_threshold']} (root={root}): {len(filtered)} remain — {filtered}")
-                        filtered.sort(key=lambda x: x["score"], reverse=True)
-                        top_n = filtered[: p["skeleton_top_n"]]
-                        logger.info(f"[KG-RAG DEBUG] Step2 multi top-{p['skeleton_top_n']} (root={root}): {[x['name'] for x in top_n]}")
-                        for x in top_n:
-                            all_branches.append({
-                                "root": root,
-                                "name": x["name"],
-                                "relation_type": by_name.get(x["name"], "相关"),
-                                "relation_str": " ／ ".join(
-                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
-                                ),
-                                "score": x["score"],
+                try:
+                    paths_text = _format_paths_text(paths)
+                    all_neighbors_text = _format_all_neighbors_text(all_neighbors)
+                    step2_prompt = STEP2_SKELETON_SCORING.format(
+                        query=query,
+                        concepts_json=json.dumps(normalized, ensure_ascii=False),
+                        paths_text=paths_text,
+                        all_neighbors_text=all_neighbors_text,
+                    )
+                    raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
+                    logger.info(f"[KG-RAG DEBUG] Step2 single LLM raw response: {raw2[:1000]}")
+                    parsed = _safe_parse_json(raw2)
+
+                    raw_valuable = parsed.get("valuable_neighbors", [])
+                    if isinstance(raw_valuable, list):
+                        for item in raw_valuable[:8]:
+                            if not isinstance(item, dict):
+                                continue
+                            nb = str(item.get("neighbor", "")).strip()
+                            if not nb:
+                                continue
+                            valuable_neighbors.append({
+                                "neighbor": nb,
+                                "relation": str(item.get("relation", "")).strip(),
+                                "reason": str(item.get("reason", "")).strip(),
                             })
-                    except Exception as e:
-                        logger.info(f"[KG-RAG DEBUG] Step2 multi EXCEPTION root={root}: {e}")
-                expanded_nodes = list({b["name"] for b in all_branches if b["name"] not in normalized})
-                logger.info(f"[KG-RAG DEBUG] Step2 multi expanded_nodes: {expanded_nodes}")
-                skeleton = {"roots": normalized, "branches": all_branches} if all_branches else {"root": normalized[0], "branches": []}
-        elif normalized and p.get("skip_skeleton_route"):
-            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route=True)")
-        has_branches = bool(skeleton and skeleton.get("branches"))
-        mode = "skeleton" if has_branches else "flat"
-        logger.info(f"[KG-RAG DEBUG] Step2 final — skeleton empty={not has_branches}, mode={mode}, expanded_nodes={expanded_nodes}")
+
+                    sk = parsed.get("skeleton")
+                    skeleton = sk if isinstance(sk, list) else None
+
+                    deep_concepts = deep
+                    valuable_names = [v["neighbor"] for v in valuable_neighbors if v.get("neighbor")]
+                    seen_nodes = set()
+                    for name in deep_concepts + valuable_names:
+                        if name not in seen_nodes:
+                            seen_nodes.add(name)
+                            expanded_nodes.append(name)
+                except Exception as e:
+                    logger.info(f"[KG-RAG DEBUG] Step2 unified EXCEPTION: {e}")
+                    result["steps"]["step2_error"] = str(e)
+
+        step2_end = asyncio.get_event_loop().time()
+        logger.info(
+            f"[KG-RAG DEBUG] Step2 done: llm_calls={'1' if (paths or all_neighbors) and normalized and not p.get('skip_skeleton_route') else '0'}, "
+            f"paths={len(paths)}, valuable_neighbors={len(valuable_neighbors)}, expanded_nodes={len(expanded_nodes)}, "
+            f"skeleton={'yes' if skeleton else 'no'}, elapsed_ms={(step2_end - step2_start) * 1000:.1f}"
+        )
         result["steps"]["step2"] = {
+            "paths": paths,
+            "valuable_neighbors": valuable_neighbors,
             "skeleton": skeleton,
             "expanded_nodes": expanded_nodes,
-            **({"skipped": True} if normalized and p.get("skip_skeleton_route") else {}),
+            "all_neighbors": all_neighbors,
+            **({"skipped": True} if (not normalized or p.get("skip_skeleton_route")) else {}),
         }
 
         # Step 3: 三路检索
@@ -429,9 +402,16 @@ class KgRagService:
             dense_search(self.es, rq, self.index, p["dense_top_k"], p["num_candidates"])
             for rq in rewritten_queries
         ]
-        results = await asyncio.gather(bm25_task, *dense_tasks)
+        route3_tasks = []
+        if expanded_nodes and not p.get("skip_skeleton_route"):
+            route3_tasks = [
+                skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
+                for node in expanded_nodes
+            ]
+        results = await asyncio.gather(bm25_task, *dense_tasks, *route3_tasks)
         bm25_results = results[0]
-        dense_results_all = list(results[1:])
+        dense_results_all = list(results[1: 1 + len(dense_tasks)])
+        route3_all = list(results[1 + len(dense_tasks):]) if route3_tasks else []
 
         # 多路 Dense 结果合并去重（按 chunk_id，保留最高分）
         dense_merged: dict[str, dict] = {}
@@ -446,16 +426,12 @@ class KgRagService:
         main_results = await rerank(merged, query, p["rerank_top_n"])
 
         expanded_results = []
-        if expanded_nodes and not p.get("skip_skeleton_route"):
-            route3_tasks = [
-                skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
-                for node in expanded_nodes
-            ]
-            route3_all = await asyncio.gather(*route3_tasks)
-            for hits in route3_all:
-                expanded_results.extend(hits)
+        if route3_all:
             main_ids = {r.get("chunk_id") for r in main_results}
-            expanded_results = [r for r in expanded_results if r.get("chunk_id") not in main_ids]
+            for i, _node in enumerate(expanded_nodes):
+                node_hits = route3_all[i] if i < len(route3_all) else []
+                unique_hits = [r for r in node_hits if r.get("chunk_id") not in main_ids]
+                expanded_results.extend(unique_hits[:2])
 
         result["steps"]["step3"] = {
             "rewritten_queries": rewritten_queries,
@@ -475,7 +451,6 @@ class KgRagService:
             expanded_chunks_text = _format_expanded_chunks(expanded_results)
             prompt = STEP5_GENERATION.format(
                 query=query,
-                query_type=query_type,
                 skeleton=skeleton_text,
                 main_chunks=main_chunks_text,
                 expanded_chunks=expanded_chunks_text,
@@ -506,147 +481,178 @@ class KgRagService:
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}}
 
-        # Step 0.5: 查询分类
-        classification = await self._classify_query(query, p["llm_model"])
-        query_type = classification["type"]
-        priority_relations = classification["priority_relations"]
-        result["steps"]["step0_5"] = classification
-
         concepts = []
+        surface: list[str] = []
+        deep: list[str] = []
         try:
-            step1_prompt = STEP1_CONCEPT_EXTRACTION.format(query=query)
+            concept_names = self.neo4j.get_concept_names()
+            concept_list_text = "、".join(concept_names)
+            step1_prompt = STEP1_CONCEPT_EXTRACTION.format(query=query, concept_list=concept_list_text)
+            logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
             raw1 = await _call_claude(step1_prompt, p["llm_model"], temperature=0, max_tokens=500)
-            concepts = _parse_json_array(raw1)
-            if isinstance(concepts, list):
-                concepts = [str(x).strip() for x in concepts if str(x).strip()][:3]
-            else:
-                concepts = []
+            surface, deep = _parse_step1_layers(raw1)
+            logger.info(f"[KG-RAG DEBUG] Step 1 字面层: {surface}，深层: {deep}")
+            concepts = []
+            seen = set()
+            for c in surface + deep:
+                if c not in seen:
+                    seen.add(c)
+                    concepts.append(c)
         except Exception as e:
             result["steps"]["step1"] = {"concepts": [], "error": str(e)}
         if "step1" not in result["steps"]:
-            result["steps"]["step1"] = {"concepts": concepts}
+            result["steps"]["step1"] = {"concepts": concepts, "surface": surface, "deep": deep}
 
-        normalized = self.neo4j.normalize_concepts(concepts) if concepts else []
-        dropped = [c for c in concepts if not (self.neo4j.normalize_concepts([c]))] if concepts else []
-        result["steps"]["step1_5"] = {"input": concepts, "normalized": normalized, "dropped": dropped}
+        # Step 1 直出概念，直接进入 Step 2
+        normalized = concepts
+        logger.info("[KG-RAG DEBUG] Step 1 done: concepts go directly to Step2")
 
+        step2_start = asyncio.get_event_loop().time()
         skeleton = None
-        expanded_nodes = []
-        if normalized and not p.get("skip_skeleton_route"):
-            if len(normalized) == 1:
-                root = normalized[0]
-                neighbors = self.neo4j.get_neighbors(root)
-                if not neighbors:
-                    skeleton = {"root": root, "branches": []}
-                else:
-                    try:
-                        neighbors_for_llm = [
-                            {
-                                "neighbor": n["neighbor"],
-                                "relation": " ／ ".join(n["relations"]),
-                            }
-                            for n in neighbors
-                        ]
-                        step2_prompt = STEP2_SKELETON_SCORING.format(
-                            query=query,
-                            query_type=query_type,
-                            priority_relations=str(priority_relations),
-                            concept_name=root,
-                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
-                        )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
-                        scored = _parse_skeleton_scores(raw2)
-                        by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
-                        filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
-                        filtered.sort(key=lambda x: x["score"], reverse=True)
-                        branches = [
-                            {
-                                "name": x["name"],
-                                "relation_type": by_name.get(x["name"], "相关"),
-                                "relation_str": " ／ ".join(
-                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
-                                ),
-                                "score": x["score"],
-                            }
-                            for x in filtered[: p["skeleton_top_n"]]
-                        ]
-                        skeleton = {"root": root, "branches": branches}
-                        expanded_nodes = [b["name"] for b in branches]
-                    except Exception:
-                        skeleton = {"root": root, "branches": []}
+        expanded_nodes: list[str] = []
+        paths: list[dict] = []
+        valuable_neighbors: list[dict] = []
+        all_neighbors: dict[str, list[dict]] = {}
+
+        if not normalized or p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] Step2 skipped: no concepts or skip_skeleton_route=True")
+        else:
+            paths = self.neo4j.get_paths_between(normalized)
+            for concept in normalized:
+                neighbors = self.neo4j.get_neighbors(concept)
+                if neighbors:
+                    all_neighbors[concept] = neighbors
+
+            if not paths and not all_neighbors:
+                logger.info("[KG-RAG DEBUG] Step2 graph empty: no paths and no neighbors")
             else:
-                all_branches = []
-                for root in normalized:
-                    neighbors = self.neo4j.get_neighbors(root)
-                    if not neighbors:
-                        continue
-                    try:
-                        neighbors_for_llm = [
-                            {
-                                "neighbor": n["neighbor"],
-                                "relation": " ／ ".join(n["relations"]),
-                            }
-                            for n in neighbors
-                        ]
-                        step2_prompt = STEP2_SKELETON_SCORING.format(
-                            query=query,
-                            query_type=query_type,
-                            priority_relations=str(priority_relations),
-                            concept_name=root,
-                            neighbors_json=json.dumps(neighbors_for_llm, ensure_ascii=False),
-                        )
-                        raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
-                        scored = _parse_skeleton_scores(raw2)
-                        by_name = {n["neighbor"]: n["relation_type"] for n in neighbors}
-                        filtered = [s for s in scored if s["score"] >= p["skeleton_score_threshold"]]
-                        filtered.sort(key=lambda x: x["score"], reverse=True)
-                        for x in filtered[: p["skeleton_top_n"]]:
-                            all_branches.append({
-                                "root": root,
-                                "name": x["name"],
-                                "relation_type": by_name.get(x["name"], "相关"),
-                                "relation_str": " ／ ".join(
-                                    next((n["relations"] for n in neighbors if n["neighbor"] == x["name"]), [])
-                                ),
-                                "score": x["score"],
+                try:
+                    paths_text = _format_paths_text(paths)
+                    all_neighbors_text = _format_all_neighbors_text(all_neighbors)
+                    step2_prompt = STEP2_SKELETON_SCORING.format(
+                        query=query,
+                        concepts_json=json.dumps(normalized, ensure_ascii=False),
+                        paths_text=paths_text,
+                        all_neighbors_text=all_neighbors_text,
+                    )
+                    raw2 = await _call_claude(step2_prompt, p["llm_model"], temperature=0, max_tokens=4096)
+                    parsed2 = _safe_parse_json(raw2)
+                    raw_valuable = parsed2.get("valuable_neighbors", [])
+                    if isinstance(raw_valuable, list):
+                        for item in raw_valuable[:8]:
+                            if not isinstance(item, dict):
+                                continue
+                            nb = str(item.get("neighbor", "")).strip()
+                            if not nb:
+                                continue
+                            valuable_neighbors.append({
+                                "neighbor": nb,
+                                "relation": str(item.get("relation", "")).strip(),
+                                "reason": str(item.get("reason", "")).strip(),
                             })
-                    except Exception:
-                        pass
-                expanded_nodes = list({b["name"] for b in all_branches if b["name"] not in normalized})
-                skeleton = {"roots": normalized, "branches": all_branches} if all_branches else {"root": normalized[0], "branches": []}
-        elif normalized and p.get("skip_skeleton_route"):
-            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route=True)")
+                    sk = parsed2.get("skeleton")
+                    skeleton = sk if isinstance(sk, list) else None
+
+                    deep_concepts = deep
+                    valuable_names = [v["neighbor"] for v in valuable_neighbors if v.get("neighbor")]
+                    seen_nodes = set()
+                    for name in deep_concepts + valuable_names:
+                        if name not in seen_nodes:
+                            seen_nodes.add(name)
+                            expanded_nodes.append(name)
+                except Exception as e:
+                    logger.info(f"[KG-RAG DEBUG] Step2 unified EXCEPTION: {e}")
+                    result["steps"]["step2_error"] = str(e)
+
+        step2_end = asyncio.get_event_loop().time()
+        logger.info(
+            f"[KG-RAG DEBUG] Step2 done: llm_calls={'1' if (paths or all_neighbors) and normalized and not p.get('skip_skeleton_route') else '0'}, "
+            f"paths={len(paths)}, valuable_neighbors={len(valuable_neighbors)}, expanded_nodes={len(expanded_nodes)}, "
+            f"skeleton={'yes' if skeleton else 'no'}, elapsed_ms={(step2_end - step2_start) * 1000:.1f}"
+        )
         result["steps"]["step2"] = {
+            "paths": paths,
+            "valuable_neighbors": valuable_neighbors,
             "skeleton": skeleton,
             "expanded_nodes": expanded_nodes,
-            **({"skipped": True} if normalized and p.get("skip_skeleton_route") else {}),
+            "all_neighbors": all_neighbors,
+            **({"skipped": True} if (not normalized or p.get("skip_skeleton_route")) else {}),
         }
 
         if p.get("skip_query_rewrite"):
-            rewritten_query = query
+            rewritten_queries = [query]
+            dense_rqs = [query]
         else:
             try:
-                rewritten_query = (await _call_claude(QUERY_REWRITE.format(query=query), p["llm_model"], temperature=0, max_tokens=300)).strip() or query
+                raw_rw = (
+                    await _call_claude(
+                        QUERY_REWRITE.format(query=query),
+                        p["llm_model"],
+                        temperature=0,
+                        max_tokens=300,
+                        system=QUERY_REWRITE_SYSTEM,
+                    )
+                ).strip()
+                parsed = _parse_json_array(raw_rw)
+                rewritten_queries = [str(q).strip() for q in parsed if str(q).strip()] if parsed else [query]
+                if not rewritten_queries:
+                    rewritten_queries = [query]
             except Exception:
-                rewritten_query = query
-        bm25_results, dense_results = await asyncio.gather(
-            bm25_search(self.es, query, self.index, p["bm25_top_k"]),
-            dense_search(self.es, rewritten_query, self.index, p["dense_top_k"], p["num_candidates"]),
-        )
+                rewritten_queries = [query]
+            lines4 = list(rewritten_queries[:4])
+            while len(lines4) < 4:
+                lines4.append(query)
+            dense_rqs = [query] + lines4[:4]
+
+        bm25_task = bm25_search(self.es, query, self.index, p["bm25_top_k"])
+        dense_tasks = [
+            dense_search(self.es, rq, self.index, p["dense_top_k"], p["num_candidates"])
+            for rq in dense_rqs
+        ]
+        route3_tasks = []
+        if expanded_nodes and not p.get("skip_skeleton_route"):
+            route3_tasks = [
+                skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
+                for node in expanded_nodes
+            ]
+        if len(dense_rqs) == 5:
+            logger.info(
+                "[KG-RAG DEBUG] search_only Step3: 5-way concurrent dense "
+                "(theme + 启示/真理/经历/应用), asyncio.gather + chunk_id dedupe"
+            )
+        else:
+            logger.info(
+                f"[KG-RAG DEBUG] search_only Step3: {len(dense_rqs)}-way dense "
+                f"(skip_query_rewrite or fallback), asyncio.gather + chunk_id dedupe"
+            )
+        results = await asyncio.gather(bm25_task, *dense_tasks, *route3_tasks)
+        bm25_results = results[0]
+        dense_results_all = list(results[1: 1 + len(dense_tasks)])
+        route3_all = list(results[1 + len(dense_tasks):]) if route3_tasks else []
+
+        dense_merged: dict[str, dict] = {}
+        for hits in dense_results_all:
+            for doc in hits:
+                cid = doc.get("chunk_id", "")
+                if cid not in dense_merged or doc.get("score", 0) > dense_merged[cid].get("score", 0):
+                    dense_merged[cid] = doc
+        dense_results = list(dense_merged.values())
+
         merged = await rrf_merge(bm25_results, dense_results, p["rrf_k"], p["bm25_weight"], p["dense_weight"])
         main_results = await rerank(merged, query, p["rerank_top_n"])
         expanded_results = []
-        if expanded_nodes and not p.get("skip_skeleton_route"):
-            route3_all = await asyncio.gather(*[
-                skeleton_route_search(self.es, node, query, self.index, p["skeleton_route_top_k"])
-                for node in expanded_nodes
-            ])
-            for hits in route3_all:
-                expanded_results.extend(hits)
+        if route3_all:
             main_ids = {r.get("chunk_id") for r in main_results}
-            expanded_results = [r for r in expanded_results if r.get("chunk_id") not in main_ids]
+            for i, _node in enumerate(expanded_nodes):
+                node_hits = route3_all[i] if i < len(route3_all) else []
+                unique_hits = [r for r in node_hits if r.get("chunk_id") not in main_ids]
+                expanded_results.extend(unique_hits[:2])
         result["steps"]["step3"] = {
-            "rewritten_query": rewritten_query,
+            "rewritten_queries": rewritten_queries,
+            "dense_queries": dense_rqs,
+            "bm25_count": len(bm25_results),
+            "dense_count": len(dense_results),
+            "rrf_count": len(merged),
             "main_results": main_results,
             "expanded_results": expanded_results,
             "bm25_results": bm25_results,

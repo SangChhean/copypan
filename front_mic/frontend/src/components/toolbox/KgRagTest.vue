@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { ArrowLeftOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, CopyOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { message } from "ant-design-vue";
 import { toastSuccess } from "../utils/Dialog";
@@ -53,21 +53,27 @@ const params = ref({
   bm25_weight: 1,
   dense_weight: 1,
   rerank_top_n: 20,
-  skeleton_score_threshold: 0.5,
-  skeleton_top_n: 5,
   skeleton_route_top_k: 5,
   temperature: 0.3,
-  llm_model: "claude-sonnet-4-20250514",
+  llm_model: "claude-sonnet-4-6",
   skip_query_rewrite: false,
   skip_skeleton_route: false,
   skip_generation: false,
 });
 
-const llmModelOptions = [
-  { label: "claude-sonnet-4-20250514", value: "claude-sonnet-4-20250514" },
-  { label: "claude-sonnet-4-6", value: "claude-sonnet-4-6" },
-  { label: "claude-haiku-4-5-20251001", value: "claude-haiku-4-5-20251001" },
-];
+async function copyQueryAnswer() {
+  const text = queryResult.value?.answer;
+  if (!text || typeof text !== "string") {
+    message.warning("没有可复制的内容");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toastSuccess("已复制到剪贴板");
+  } catch (e) {
+    message.error(e?.message || "复制失败");
+  }
+}
 
 async function runFullQuery() {
   const q = (queryText.value || "").trim();
@@ -92,28 +98,6 @@ async function runFullQuery() {
   } finally {
     queryLoading.value = false;
   }
-}
-
-// 骨架格式化显示（与后端 _format_skeleton 一致）
-function formatSkeleton(skeleton) {
-  if (!skeleton) return "";
-  if (skeleton.root && skeleton.branches) {
-    return skeleton.branches
-      .map((b) => {
-        const rel = b.relation_str || `${skeleton.root} —[${b.relation_type || "相关"}]— ${b.name}`;
-        return `${rel} (${Number(b.score || 0).toFixed(3)})`;
-      })
-      .join("\n");
-  }
-  if (skeleton.roots && skeleton.branches) {
-    return skeleton.branches
-      .map((b) => {
-        const rel = b.relation_str || `${b.root} —[${b.relation_type || "相关"}]— ${b.name}`;
-        return `${rel} (${Number(b.score || 0).toFixed(3)})`;
-      })
-      .join("\n");
-  }
-  return JSON.stringify(skeleton);
 }
 
 function chunkPreview(text, maxLen = 200) {
@@ -231,7 +215,6 @@ function pathSegmentDisplay(pathItem) {
 // ---------- Tab 3：单独检索测试 ----------
 const searchOnlyQuery = ref("");
 const searchOnlyModes = ref([]); // 'route1' | 'route2' | 'route12' | 'route3' | 'all'
-const route3Concept = ref("");
 const searchOnlyTopK = ref(20);
 const searchOnlyRrfK = ref(60);
 const searchOnlyLoading = ref(false);
@@ -392,11 +375,9 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">BM25 权重</span><a-input-number v-model:value="params.bm25_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Dense 权重</span><a-input-number v-model:value="params.dense_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Rerank Top-N</span><a-input-number v-model:value="params.rerank_top_n" :min="5" :max="50" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">骨架阈值</span><a-input-number v-model:value="params.skeleton_score_threshold" :min="0" :max="1" :step="0.05" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">骨架 Top-N</span><a-input-number v-model:value="params.skeleton_top_n" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="20" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">模型</span><a-select v-model:value="params.llm_model" :options="llmModelOptions" size="small" class="param-control param-select" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">模型</span><span class="param-model-fixed">Claude Sonnet 4.6</span></div></a-col>
                       <a-col :span="24"><div class="param-item param-checkboxes"><a-checkbox v-model:checked="params.skip_query_rewrite">跳过 Query Rewrite</a-checkbox><a-checkbox v-model:checked="params.skip_skeleton_route">跳过路3扩展检索</a-checkbox><a-checkbox v-model:checked="params.skip_generation">跳过生成/仅检索</a-checkbox></div></a-col>
                     </a-row>
                   </a-collapse-panel>
@@ -408,11 +389,22 @@ onMounted(() => {
               <div v-if="!queryResult" class="result-placeholder">执行查询后，结果将在此分步展示。</div>
               <template v-else>
                 <a-steps direction="vertical" :current="6" class="result-steps">
-                  <a-step title="Step 1 概念抽取">
+                  <a-step title="Step 1 概念抽取（从图谱词表匹配）">
                     <template #description>
                       <a-card size="small" class="step-card">
                       <div v-if="queryResult.steps?.step1">
-                        <a-tag v-for="c in (queryResult.steps.step1.concepts || [])" :key="c">{{ c }}</a-tag>
+                        <div class="step1-layer">
+                          <span class="step1-layer-label">字面层：</span>
+                          <a-tag v-for="c in (queryResult.steps.step1.surface || [])" :key="`surface-${c}`">{{ c }}</a-tag>
+                        </div>
+                        <div class="step1-layer">
+                          <span class="step1-layer-label">深层：</span>
+                          <a-tag color="blue" v-for="c in (queryResult.steps.step1.deep || [])" :key="`deep-${c}`">{{ c }}</a-tag>
+                        </div>
+                        <div class="step1-layer">
+                          <span class="step1-layer-label">合并送 Step2：</span>
+                          <a-tag color="green" v-for="c in (queryResult.steps.step1.concepts || [])" :key="`merged-${c}`">{{ c }}</a-tag>
+                        </div>
                         <a-collapse v-if="queryResult.steps.step1.raw_response">
                           <a-collapse-panel key="raw" header="原始 LLM 响应">
                             <pre class="raw-pre">{{ queryResult.steps.step1.raw_response }}</pre>
@@ -422,28 +414,37 @@ onMounted(() => {
                     </a-card>
                   </template>
                 </a-step>
-                <a-step title="Step 1.5 概念规范化">
-                  <template #description>
-                    <a-card size="small" class="step-card">
-                      <a-tag v-for="n in (queryResult.steps?.step1_5?.normalized || [])" :key="n" color="green">
-                        {{ n }}
-                      </a-tag>
-                      <a-tag v-for="d in (queryResult.steps?.step1_5?.dropped || [])" :key="d" color="red">
-                        {{ d }}（丢弃）
-                      </a-tag>
-                    </a-card>
-                  </template>
-                </a-step>
                 <a-step title="Step 2 概念骨架">
                   <template #description>
                     <a-card size="small" class="step-card">
-                      <template v-if="queryResult.steps?.step2?.skeleton">
-                        <pre class="skeleton-pre">{{ formatSkeleton(queryResult.steps.step2.skeleton) }}</pre>
-                        <div v-if="(queryResult.steps.step2.expanded_nodes || []).length">
-                          扩展节点：<a-tag v-for="e in queryResult.steps.step2.expanded_nodes" :key="e">{{ e }}</a-tag>
+                      <div v-if="(queryResult.steps?.step2?.paths || []).length" class="step2-block">
+                        <div class="step2-title">概念间路径</div>
+                        <div v-for="(p, i) in (queryResult.steps.step2.paths || [])" :key="`p-${i}`" class="step2-line">
+                          {{ p.from }} ──{{ p.relation }}──► {{ p.to }}
+                          <span v-if="p.via">（经由: {{ p.via }}）</span>
                         </div>
+                      </div>
+                      <div v-if="(queryResult.steps?.step2?.valuable_neighbors || []).length" class="step2-block">
+                        <div class="step2-title">有价值的邻居</div>
+                        <div v-for="(v, i) in (queryResult.steps.step2.valuable_neighbors || [])" :key="`v-${i}`" class="step2-line">
+                          <a-tag color="blue">{{ v.neighbor }}</a-tag>
+                          <span>{{ v.relation }}</span>
+                          <span v-if="v.reason"> · {{ v.reason }}</span>
+                        </div>
+                      </div>
+                      <div v-if="queryResult.steps?.step2?.skeleton && queryResult.steps.step2.skeleton.length" class="step2-block">
+                        <div class="step2-title">纲目逻辑骨架</div>
+                        <ol class="step2-ol">
+                          <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">{{ s }}</li>
+                        </ol>
+                      </div>
+                      <div v-if="(queryResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
+                        <div class="step2-title">扩展节点</div>
+                        <a-tag v-for="e in queryResult.steps.step2.expanded_nodes" :key="e">{{ e }}</a-tag>
+                      </div>
+                      <template v-if="!(queryResult.steps?.step2?.paths || []).length && !(queryResult.steps?.step2?.valuable_neighbors || []).length && !(queryResult.steps?.step2?.expanded_nodes || []).length">
+                        无骨架（图谱未命中或不可用）
                       </template>
-                      <template v-else> 无骨架（图谱未命中或不可用） </template>
                     </a-card>
                   </template>
                 </a-step>
@@ -551,6 +552,12 @@ onMounted(() => {
                     <a-card size="small" class="step-card">
                       <template v-if="queryResult.steps?.step5?.skipped"> 已跳过 </template>
                       <template v-else-if="queryResult.answer">
+                        <div class="answer-toolbar">
+                          <a-button type="default" size="small" @click="copyQueryAnswer">
+                            <template #icon><CopyOutlined /></template>
+                            复制答案
+                          </a-button>
+                        </div>
                         <pre class="answer-pre">{{ queryResult.answer }}</pre>
                       </template>
                       <template v-else-if="queryResult.steps?.step5?.error">
@@ -643,9 +650,6 @@ onMounted(() => {
               <span class="label">检索模式：</span>
               <a-checkbox-group v-model:value="searchOnlyModes" :options="searchOnlyModeOptions" />
             </div>
-            <div v-if="searchOnlyModes.includes('route3')" class="route3-hint">
-              <a-input v-model:value="route3Concept" placeholder="输入概念名，用于路3 骨架扩展检索（留空则由查询自动抽取）" allow-clear class="route3-input" />
-            </div>
             <div class="search-only-params">
               <span class="label">Top-K</span>
               <a-input-number v-model:value="searchOnlyTopK" :min="1" :max="100" size="small" />
@@ -701,20 +705,49 @@ onMounted(() => {
             </div>
             <a-textarea :value="promptPreviewResult.steps?.step4?.prompt" readonly :rows="16" class="prompt-full-textarea" />
             <a-collapse class="steps-summary" :bordered="false">
-            <a-collapse-panel key="step1" header="Step 1 概念抽取">
-              <a-tag v-for="c in (promptPreviewResult.steps?.step1?.concepts || [])" :key="c">{{ c }}</a-tag>
-            </a-collapse-panel>
-            <a-collapse-panel key="step1_5" header="Step 1.5 概念规范化">
-              <span>命中：</span>
-              <a-tag v-for="n in (promptPreviewResult.steps?.step1_5?.normalized || [])" :key="n" color="green">{{ n }}</a-tag>
-              <span style="margin-left: 8px">丢弃：</span>
-              <a-tag v-for="d in (promptPreviewResult.steps?.step1_5?.dropped || [])" :key="d" color="red">{{ d }}</a-tag>
+            <a-collapse-panel key="step1" header="Step 1 概念抽取（从图谱词表匹配）">
+              <div class="step1-layer">
+                <span class="step1-layer-label">字面层：</span>
+                <a-tag v-for="c in (promptPreviewResult.steps?.step1?.surface || [])" :key="`psurface-${c}`">{{ c }}</a-tag>
+              </div>
+              <div class="step1-layer">
+                <span class="step1-layer-label">深层：</span>
+                <a-tag color="blue" v-for="c in (promptPreviewResult.steps?.step1?.deep || [])" :key="`pdeep-${c}`">{{ c }}</a-tag>
+              </div>
+              <div class="step1-layer">
+                <span class="step1-layer-label">合并送 Step2：</span>
+                <a-tag color="green" v-for="c in (promptPreviewResult.steps?.step1?.concepts || [])" :key="`pmerged-${c}`">{{ c }}</a-tag>
+              </div>
             </a-collapse-panel>
             <a-collapse-panel key="step2" header="Step 2 概念骨架">
-              <template v-if="promptPreviewResult.steps?.step2?.skeleton">
-                <pre class="skeleton-pre">{{ formatSkeleton(promptPreviewResult.steps.step2.skeleton) }}</pre>
+              <div v-if="(promptPreviewResult.steps?.step2?.paths || []).length" class="step2-block">
+                <div class="step2-title">概念间路径</div>
+                <div v-for="(p, i) in (promptPreviewResult.steps.step2.paths || [])" :key="`pp-${i}`" class="step2-line">
+                  {{ p.from }} ──{{ p.relation }}──► {{ p.to }}
+                  <span v-if="p.via">（经由: {{ p.via }}）</span>
+                </div>
+              </div>
+              <div v-if="(promptPreviewResult.steps?.step2?.valuable_neighbors || []).length" class="step2-block">
+                <div class="step2-title">有价值的邻居</div>
+                <div v-for="(v, i) in (promptPreviewResult.steps.step2.valuable_neighbors || [])" :key="`pv-${i}`" class="step2-line">
+                  <a-tag color="blue">{{ v.neighbor }}</a-tag>
+                  <span>{{ v.relation }}</span>
+                  <span v-if="v.reason"> · {{ v.reason }}</span>
+                </div>
+              </div>
+              <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
+                <div class="step2-title">纲目逻辑骨架</div>
+                <ol class="step2-ol">
+                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">{{ s }}</li>
+                </ol>
+              </div>
+              <div v-if="(promptPreviewResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
+                <div class="step2-title">扩展节点</div>
+                <a-tag v-for="e in promptPreviewResult.steps.step2.expanded_nodes" :key="`pe-${e}`">{{ e }}</a-tag>
+              </div>
+              <template v-if="!(promptPreviewResult.steps?.step2?.paths || []).length && !(promptPreviewResult.steps?.step2?.valuable_neighbors || []).length && !(promptPreviewResult.steps?.step2?.expanded_nodes || []).length">
+                无骨架
               </template>
-              <template v-else>无骨架</template>
             </a-collapse-panel>
             <a-collapse-panel key="step3" header="Step 3 检索统计">
               主检索 {{ (promptPreviewResult.steps?.step3?.main_results || []).length }} 条，
@@ -833,6 +866,11 @@ onMounted(() => {
   .param-select {
     width: 100%;
   }
+  .param-model-fixed {
+    font-size: 13px;
+    color: #333;
+    flex: 1;
+  }
   &.param-checkboxes {
     padding-top: 4px;
     .param-label {
@@ -874,8 +912,46 @@ onMounted(() => {
   :deep(.ant-card-body) {
     padding: 12px;
   }
+  .step1-layer {
+    margin-bottom: 6px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .step1-layer-label {
+    color: #666;
+    margin-right: 6px;
+    font-size: 12px;
+  }
+  .step2-block {
+    margin-bottom: 8px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .step2-title {
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .step2-line {
+    font-size: 12px;
+    color: #333;
+    margin-bottom: 2px;
+  }
+  .step2-ol {
+    margin: 0;
+    padding-left: 20px;
+    li {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.6;
+    }
+  }
+  .answer-toolbar {
+    margin-bottom: 8px;
+  }
   .raw-pre,
-  .skeleton-pre,
   .answer-pre {
     white-space: pre-wrap;
     word-break: break-all;
@@ -995,12 +1071,6 @@ onMounted(() => {
       gap: 8px 16px;
     }
   }
-  .route3-hint {
-    margin: 12px 0;
-    .route3-input {
-      max-width: 400px;
-    }
-  }
   .search-only-params {
     display: flex;
     align-items: center;
@@ -1099,15 +1169,6 @@ onMounted(() => {
       .ant-collapse-content-box {
         padding: 8px 0 12px;
       }
-    }
-    .skeleton-pre {
-      white-space: pre-wrap;
-      word-break: break-all;
-      font-size: 12px;
-      max-height: 120px;
-      overflow: auto;
-      margin: 0;
-      color: #333;
     }
   }
 }
