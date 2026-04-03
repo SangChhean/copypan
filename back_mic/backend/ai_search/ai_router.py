@@ -1,8 +1,9 @@
 """
 AI搜索API路由
-提供/api/ai_search接口（问答、健康检查、监控统计）
+提供 /api/ai_search 等接口。除 GET /api/ai_search/health 外需登录（Authorization Bearer 或 session cookie）；
+监控统计与缓存清理需管理员（role t0）。
 """
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
@@ -12,85 +13,16 @@ import json
 import logging
 from urllib.parse import quote
 
-from .ai_service import ai_service, get_index_weights_for_display, USE_VECTOR_SEARCH
+from .ai_service import ai_service, get_index_weights_for_display
 from .monitoring import get_monitoring
 from roundtable.roundtable_db import get_roundtable_cost_stats
+from user.token import require_admin, test_token
 
 logger = logging.getLogger(__name__)
 
-# 创建路由，前缀 /api 使接口为 /api/ai_search、/api/ai_search/health 等
+# 前缀 /api；除 health 外均需登录（Bearer 或 session cookie），与 /api/search 等一致
 router = APIRouter(prefix="/api")
-
-
-def _extract_metadata(payload) -> dict:
-    """从请求中提取额外提示信息"""
-    fields = {
-        "outline_topic": getattr(payload, "outline_topic", None),
-        "burden_description": getattr(payload, "burden_description", None),
-        "special_needs": getattr(payload, "special_needs", None),
-        "audience": getattr(payload, "audience", None),
-        "skeleton": getattr(payload, "skeleton", None),
-    }
-    return {
-        key: value.strip()
-        for key, value in fields.items()
-        if isinstance(value, str) and value.strip()
-    }
-
-
-class SearchRequest(BaseModel):
-    """AI搜索请求模型"""
-    question: str = Field(..., min_length=1, max_length=500, description="用户问题")
-    max_results: Optional[int] = Field(30, ge=1, le=50, description="最多返回结果数")
-    depth: Optional[str] = Field("general", description="搜索深度：general(一般)或deep(深度)")
-    outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题")
-    burden_description: Optional[str] = Field(None, max_length=1000, description="负担说明")
-    special_needs: Optional[str] = Field(None, max_length=300, description="纲目性质")
-    audience: Optional[str] = Field(None, max_length=200, description="面对对象")
-    skeleton: Optional[str] = Field(None, max_length=10000, description="摘要原文（方式二）")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "question": "圣经如何定义爱？",
-                "max_results": 30,
-                "depth": "general"
-            }
-        }
-
-
-class SearchOnlyRequest(BaseModel):
-    """方案A - 第一步：仅搜索（支持方式一/方式二）"""
-    question: str = Field(..., min_length=1, max_length=500)
-    depth: Optional[str] = Field("general", description="general 或 deep")
-    outline_topic: Optional[str] = Field(None, max_length=200)
-    burden_description: Optional[str] = Field(None, max_length=1000)
-    special_needs: Optional[str] = Field(None, max_length=300)
-    audience: Optional[str] = Field(None, max_length=200)
-    skeleton: Optional[str] = Field(None, max_length=10000, description="摘要原文（方式二）")
-
-
-class GenerateOnlyRequest(BaseModel):
-    """方案A - 第二步：生成答案"""
-    question: str = Field(..., min_length=1, max_length=500)
-    search_id: str = Field(..., description="第一步返回的 search_id")
-    max_results: Optional[int] = Field(30, ge=1, le=50)
-    outline_topic: Optional[str] = Field(None, max_length=200)
-    burden_description: Optional[str] = Field(None, max_length=1000)
-    special_needs: Optional[str] = Field(None, max_length=300)
-    audience: Optional[str] = Field(None, max_length=200)
-
-
-class SearchResponse(BaseModel):
-    """AI搜索响应模型"""
-    answer: str
-    sources: list
-    cached: bool
-    tokens: Optional[dict] = None
-    search_time: Optional[float] = None
-    ai_time: Optional[float] = None
-    total_time: Optional[float] = None
-    claude_payload: Optional[dict] = None
+_auth = APIRouter(dependencies=[Depends(test_token)])
 
 
 class TranslateOutlineRequest(BaseModel):
@@ -201,70 +133,7 @@ class InfoRetrievalRequest(BaseModel):
     max_size_mb: Optional[int] = Field(100, description="单 DOCX 合并大小上限（MB），40 或 100")
 
 
-# ========== 方案A：分步搜索接口 ==========
-
-@router.post("/ai_search/search", summary="第一步：仅检索（返回引用来源）")
-async def ai_search_step1(request: SearchOnlyRequest):
-    """
-    方案A 第一步：仅执行 ES 搜索，快速返回引用来源。
-    用户可在等待 AI 生成期间浏览这些来源。
-    返回 search_id 供第二步使用。
-    """
-    try:
-        metadata = _extract_metadata(request)
-        has_skeleton = "有" if (metadata and metadata.get("skeleton")) else "无"
-        logger.info("收到 search 请求: question=%s..., depth=%s, skeleton=%s",
-                    (request.question or "")[:50], request.depth or "general", has_skeleton)
-        if USE_VECTOR_SEARCH:
-            result = await ai_service.search_only_async(
-                request.question,
-                request.depth or "general",
-                metadata,
-            )
-        else:
-            result = await asyncio.to_thread(
-                ai_service.search_only,
-                request.question,
-                request.depth or "general",
-                metadata,
-            )
-        if result.get("error"):
-            raise HTTPException(status_code=400, detail=result.get("message", "搜索失败"))
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"ai_search/search 失败: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/ai_search/generate", response_model=SearchResponse, summary="第二步：生成答案")
-async def ai_search_step2(request: GenerateOnlyRequest):
-    """
-    方案A 第二步：使用 search_id 从 Redis 获取上下文，调用 Claude 生成答案。
-    search_id 有效期为 5 分钟。
-    """
-    try:
-        metadata = _extract_metadata(request)
-        logger.info("收到 generate 请求: search_id=%s", request.search_id)
-        result = await asyncio.to_thread(
-            ai_service.generate_only,
-            request.question,
-            request.search_id,
-            request.max_results or 30,
-            metadata,
-        )
-        if result.get("error"):
-            raise HTTPException(status_code=400, detail=result.get("answer", "生成失败"))
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"ai_search/generate 失败: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/ai_search/translate_outline", summary="将中文纲目翻译为英文纲目")
+@_auth.post("/ai_search/translate_outline", summary="将中文纲目翻译为英文纲目")
 async def translate_outline(request: TranslateOutlineRequest):
     """
     用户勾选「同时生成英文纲目」后，前端用已展示的中文纲目调用此接口。
@@ -284,7 +153,7 @@ async def translate_outline(request: TranslateOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/outline_to_traditional", summary="简体纲目转台湾繁体")
+@_auth.post("/ai_search/outline_to_traditional", summary="简体纲目转台湾繁体")
 async def outline_to_traditional(request: OutlineToTraditionalRequest):
     """
     用户勾选「同时生成繁体纲目」后，前端用已展示的简体纲目调用此接口。
@@ -303,7 +172,7 @@ async def outline_to_traditional(request: OutlineToTraditionalRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/traditional_to_simplified", summary="台湾繁体纲目转简体")
+@_auth.post("/ai_search/traditional_to_simplified", summary="台湾繁体纲目转简体")
 async def traditional_to_simplified(request: TraditionalToSimplifiedRequest):
     """
     工具箱「简繁互转」：将台湾繁体纲目转为简体。
@@ -322,7 +191,7 @@ async def traditional_to_simplified(request: TraditionalToSimplifiedRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/convert_and_format", summary="简繁转换并格式化（返回 DOCX 或 PDF）")
+@_auth.post("/ai_search/convert_and_format", summary="简繁转换并格式化（返回 DOCX 或 PDF）")
 async def convert_and_format(request: ConvertAndFormatRequest):
     """
     工具箱「简繁互转」：转换 + 格式化 + 返回 DOCX 或 PDF。
@@ -379,7 +248,7 @@ async def convert_and_format(request: ConvertAndFormatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/outline_translate", summary="工具箱 - 纲目翻译（中翻英 / 英翻中）")
+@_auth.post("/ai_search/outline_translate", summary="工具箱 - 纲目翻译（中翻英 / 英翻中）")
 async def outline_translate(request: OutlineTranslateRequest):
     """
     工具箱「纲目翻译」：按 direction 选择中翻英或英翻中，使用 Gemini 与对应 instruction。
@@ -410,7 +279,7 @@ async def outline_translate(request: OutlineTranslateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/outline_translate_and_format", summary="工具箱 - 纲目翻译并格式化下载 DOCX 或 PDF")
+@_auth.post("/ai_search/outline_translate_and_format", summary="工具箱 - 纲目翻译并格式化下载 DOCX 或 PDF")
 async def outline_translate_and_format(request: OutlineTranslateRequest):
     """
     工具箱「纲目翻译」：翻译 + 格式化 + 返回 DOCX 或 PDF。
@@ -468,7 +337,7 @@ async def outline_translate_and_format(request: OutlineTranslateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/format_outline_only", summary="工具箱 - 仅格式化已翻译的纲目（不调用翻译 API）")
+@_auth.post("/ai_search/format_outline_only", summary="工具箱 - 仅格式化已翻译的纲目（不调用翻译 API）")
 async def format_outline_only(request: FormatOutlineRequest):
     """
     工具箱「纲目翻译」：仅格式化已翻译的文本，不调用翻译 API。
@@ -525,7 +394,7 @@ async def format_outline_only(request: FormatOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/info_retrieval", summary="信息检索：多关键词/排除词导出 DOCX（单文件 40MB，超出则多个 DOCX 分别下载）")
+@_auth.post("/ai_search/info_retrieval", summary="信息检索：多关键词/排除词导出 DOCX（单文件 40MB，超出则多个 DOCX 分别下载）")
 async def info_retrieval_export(request: InfoRetrievalRequest):
     """
     多关键词 AND、排除关键词 OR。单文件上限 40MB，超出则拆成多个 DOCX（-1、-2…）分别下载。
@@ -589,99 +458,6 @@ async def info_retrieval_export(request: InfoRetrievalRequest):
         )
 
 
-@router.post("/ai_search", response_model=SearchResponse, summary="AI智能搜索（一步完成）")
-async def ai_search(request: SearchRequest):
-    """
-    AI智能问答接口
-
-    根据用户问题，搜索相关经文，并用AI生成答案。
-
-    **工作流程：**
-    1. 检查缓存（命中则直接返回）
-    2. 在Elasticsearch中检索相关经文
-    3. 调用Claude API生成答案
-    4. 返回答案和引用来源
-
-    **请求示例：**
-    ```json
-    {
-        "question": "什么是信心？",
-        "max_results": 10,
-        "depth": "general"
-    }
-    ```
-    
-    **depth参数说明：**
-    - "general"（一般）：使用50条上下文，速度快，费用低
-    - "deep"（深度）：使用200条上下文，内容更全面，费用更高
-
-    **响应示例：**
-    ```json
-    {
-        "answer": "根据希伯来书 11:1，信心是所望之事的实底...",
-        "sources": [
-            {
-                "reference": "希伯来书 11:1",
-                "content": "信就是所望之事的实底...",
-                "score": 15.2,
-                "type": "[经文]"
-            }
-        ],
-        "cached": false,
-        "tokens": {
-            "input": 245,
-            "output": 156,
-            "total": 401,
-            "cost": 0.003075
-        },
-        "search_time": 234,
-        "ai_time": 2456,
-        "total_time": 2690
-    }
-    ```
-
-    **注意事项：**
-    - 缓存有效期1小时
-    - 单次查询费用约$0.003-0.01
-    - 响应时间通常2-5秒（缓存命中<1秒）
-    """
-    try:
-        logger.info(f"收到AI搜索请求: {request.question[:50]}...")
-
-        metadata = _extract_metadata(request)
-        if USE_VECTOR_SEARCH:
-            result = await ai_service.search_async(
-                request.question,
-                request.max_results,
-                request.depth,
-                metadata,
-            )
-        else:
-            result = await asyncio.to_thread(
-                ai_service.search,
-                request.question,
-                request.max_results,
-                request.depth,
-                metadata,
-            )
-
-        # 检查是否有错误
-        if result.get("error"):
-            logger.warning(f"搜索返回错误: {result['answer']}")
-        else:
-            logger.info(f"搜索完成: {len(result.get('sources', []))}条来源, "
-                       f"缓存={'命中' if result.get('cached') else '未命中'}")
-
-        return result
-
-    except Exception as e:
-        logger.error(f"AI搜索失败: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"搜索失败: {str(e)}"
-        )
-
-
 @router.get("/ai_search/health", summary="健康检查")
 async def health_check():
     """
@@ -719,7 +495,11 @@ async def health_check():
 
 # ========== 监控统计 API ==========
 
-@router.get("/ai_search/stats/detail", summary="获取详细统计数据（供子页面使用）")
+@_auth.get(
+    "/ai_search/stats/detail",
+    summary="获取详细统计数据（供子页面使用）",
+    dependencies=[Depends(require_admin)],
+)
 async def get_stats_detail(days: int = Query(7, ge=1, le=30, description="统计包含的最近天数")):
     """
     获取详细 AI 使用统计数据，供六个子页面使用。
@@ -821,7 +601,11 @@ async def get_stats_detail(days: int = Query(7, ge=1, le=30, description="统计
         return {"status": "error", "data": None, "message": str(e)}
 
 
-@router.get("/ai_search/stats", summary="获取统计数据")
+@_auth.get(
+    "/ai_search/stats",
+    summary="获取统计数据",
+    dependencies=[Depends(require_admin)],
+)
 async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含的最近天数")):
     """
     获取 AI 搜索统计数据。
@@ -852,7 +636,11 @@ async def get_stats(days: int = Query(7, ge=1, le=30, description="统计包含�
         return {"status": "error", "data": None, "message": str(e)}
 
 
-@router.get("/ai_search/stats/errors", summary="获取最近错误记录")
+@_auth.get(
+    "/ai_search/stats/errors",
+    summary="获取最近错误记录",
+    dependencies=[Depends(require_admin)],
+)
 async def get_recent_errors(limit: int = Query(20, ge=1, le=200, description="最多返回条数")):
     """
     获取最近的 AI 搜索错误记录。
@@ -868,7 +656,11 @@ async def get_recent_errors(limit: int = Query(20, ge=1, le=200, description="�
         return {"status": "error", "data": None, "message": str(e)}
 
 
-@router.post("/ai_search/stats/reset", summary="重置统计数据")
+@_auth.post(
+    "/ai_search/stats/reset",
+    summary="重置统计数据",
+    dependencies=[Depends(require_admin)],
+)
 async def reset_stats():
     """
     重置所有监控统计（全局统计、每日统计、错误列表）。
@@ -885,7 +677,7 @@ async def reset_stats():
         return {"status": "error", "data": None, "message": str(e)}
 
 
-@router.get("/ai_search/rough_outline_config", summary="毛胚纲目 - 各类型对应的 AI 数量")
+@_auth.get("/ai_search/rough_outline_config", summary="毛胚纲目 - 各类型对应的 AI 数量")
 async def rough_outline_config():
     """返回每种纲目类型下会调用几次 AI（即需请求几次 API）。"""
     try:
@@ -896,7 +688,7 @@ async def rough_outline_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/rough_outline", summary="工具箱 - 毛胚纲目生成（单次一篇）")
+@_auth.post("/ai_search/rough_outline", summary="工具箱 - 毛胚纲目生成（单次一篇）")
 async def rough_outline(request: RoughOutlineRequest):
     """
     工具箱「毛胚纲目」：每次只调用一个 AI 生成一篇纲目。
@@ -922,7 +714,7 @@ async def rough_outline(request: RoughOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/rough_outline_format_and_download", summary="工具箱 - 毛胚纲目刷格式并下载（五类均可）")
+@_auth.post("/ai_search/rough_outline_format_and_download", summary="工具箱 - 毛胚纲目刷格式并下载（五类均可）")
 async def rough_outline_format_and_download(request: RoughOutlineFormatRequest):
     """
     毛胚纲目：将选定类型的一篇或多篇合并为一个 DOCX，使用中文模板与中文刷格式，返回 DOCX 供下载。
@@ -965,7 +757,7 @@ def _feast_outline_docx_response(result: dict, default_filename: str = "节期�
     }
 
 
-@router.post("/ai_search/feast_outline/original", summary="节期纲目 - 纲目的原文：刷格式并下载")
+@_auth.post("/ai_search/feast_outline/original", summary="节期纲目 - 纲目的原文：刷格式并下载")
 async def feast_outline_original(request: FeastOutlineOriginalRequest):
     """用户粘贴无格式纲目，刷格式并下载 DOCX。"""
     try:
@@ -981,7 +773,7 @@ async def feast_outline_original(request: FeastOutlineOriginalRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/with_scripture", summary="节期纲目 - 带经文的纲目：经文汇集后刷格式并下载")
+@_auth.post("/ai_search/feast_outline/with_scripture", summary="节期纲目 - 带经文的纲目：经文汇集后刷格式并下载")
 async def feast_outline_with_scripture(request: FeastOutlineWithScriptureRequest):
     """用经文汇集处理纲目，再刷格式并下载 DOCX。"""
     try:
@@ -1001,7 +793,7 @@ async def feast_outline_with_scripture(request: FeastOutlineWithScriptureRequest
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/morning_revival", summary="节期纲目 - 晨兴信息选读的纲目：生成后刷格式并下载")
+@_auth.post("/ai_search/feast_outline/morning_revival", summary="节期纲目 - 晨兴信息选读的纲目：生成后刷格式并下载")
 async def feast_outline_morning_revival(request: FeastOutlineMorningRevivalRequest):
     """用 Claude 根据晨兴内容生成纲目，再刷格式并下载 DOCX。"""
     try:
@@ -1023,7 +815,7 @@ async def feast_outline_morning_revival(request: FeastOutlineMorningRevivalReque
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/transcript", summary="节期纲目 - 听抄稿的纲目：原纲目+听抄稿重点后刷格式并下载")
+@_auth.post("/ai_search/feast_outline/transcript", summary="节期纲目 - 听抄稿的纲目：原纲目+听抄稿重点后刷格式并下载")
 async def feast_outline_transcript(request: FeastOutlineTranscriptRequest):
     """用 Claude 在原纲目基础上加入听抄稿重点，再刷格式并下载 DOCX。"""
     try:
@@ -1046,7 +838,7 @@ async def feast_outline_transcript(request: FeastOutlineTranscriptRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/composite", summary="节期纲目 - 复合的纲目：晨兴融入听抄稿纲目后刷格式并下载")
+@_auth.post("/ai_search/feast_outline/composite", summary="节期纲目 - 复合的纲目：晨兴融入听抄稿纲目后刷格式并下载")
 async def feast_outline_composite(request: FeastOutlineCompositeRequest):
     """用 Claude 将晨兴纲目融入听抄稿纲目，再刷格式并下载 DOCX。"""
     try:
@@ -1069,7 +861,7 @@ async def feast_outline_composite(request: FeastOutlineCompositeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/scripture_text", summary="节期纲目 - 仅经文汇集，返回带经文文本（供多选生成用）")
+@_auth.post("/ai_search/feast_outline/scripture_text", summary="节期纲目 - 仅经文汇集，返回带经文文本（供多选生成用）")
 async def feast_outline_scripture_text(request: FeastOutlineWithScriptureRequest):
     """经文汇集处理纲目，返回纯文本不生成 DOCX。"""
     try:
@@ -1083,7 +875,7 @@ async def feast_outline_scripture_text(request: FeastOutlineWithScriptureRequest
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/generate/morning_revival", summary="节期纲目 - 仅生成晨兴纲目文本（供多选生成用）")
+@_auth.post("/ai_search/feast_outline/generate/morning_revival", summary="节期纲目 - 仅生成晨兴纲目文本（供多选生成用）")
 async def feast_outline_generate_morning_revival(request: FeastOutlineMorningRevivalRequest):
     """Claude 根据晨兴内容生成纲目，仅返回纲目文本。"""
     logger.info("feast_outline/generate/morning_revival 收到请求")
@@ -1102,7 +894,7 @@ async def feast_outline_generate_morning_revival(request: FeastOutlineMorningRev
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/generate/transcript", summary="节期纲目 - 仅生成听抄稿纲目文本（供多选生成用）")
+@_auth.post("/ai_search/feast_outline/generate/transcript", summary="节期纲目 - 仅生成听抄稿纲目文本（供多选生成用）")
 async def feast_outline_generate_transcript(request: FeastOutlineTranscriptRequest):
     """Claude 在原纲目基础上加听抄稿重点，仅返回纲目文本；若提供序言/添言原文则一并生成并返回 preface_outline/addendum_outline。"""
     logger.info("feast_outline/generate/transcript 收到请求")
@@ -1129,7 +921,7 @@ async def feast_outline_generate_transcript(request: FeastOutlineTranscriptReque
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/generate/composite", summary="节期纲目 - 仅生成复合纲目文本（供多选生成用）")
+@_auth.post("/ai_search/feast_outline/generate/composite", summary="节期纲目 - 仅生成复合纲目文本（供多选生成用）")
 async def feast_outline_generate_composite(request: FeastOutlineCompositeRequest):
     """Claude 将晨兴纲目融入听抄稿纲目，仅返回纲目文本。"""
     try:
@@ -1148,7 +940,7 @@ async def feast_outline_generate_composite(request: FeastOutlineCompositeRequest
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/feast_outline/format_download", summary="节期纲目 - 刷格式并下载（传入正文列表）")
+@_auth.post("/ai_search/feast_outline/format_download", summary="节期纲目 - 刷格式并下载（传入正文列表）")
 async def feast_outline_format_download(request: FeastOutlineFormatDownloadRequest):
     """将传入的纲目正文合并、刷格式并返回 DOCX 供下载。"""
     try:
@@ -1184,7 +976,11 @@ async def feast_outline_format_download(request: FeastOutlineFormatDownloadReque
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai_search/cache/clear", summary="清理 AI 搜索缓存")
+@_auth.post(
+    "/ai_search/cache/clear",
+    summary="清理 AI 搜索缓存",
+    dependencies=[Depends(require_admin)],
+)
 async def clear_cache():
     """
     清空 AI 搜索的 Redis 缓存（所有 ai_search:* 键）。
@@ -1197,3 +993,6 @@ async def clear_cache():
     except Exception as e:
         logger.error(f"清理缓存失败: {e}", exc_info=True)
         return {"status": "error", "data": None, "message": str(e)}
+
+
+router.include_router(_auth)

@@ -72,7 +72,7 @@ const make_action = () => {
   formData.append("action", action);
   formData.append("role", rolea);
 
-  axios.post("api/usr_opts", formData).then((res) => {
+  axios.post("/api/usr_opts", formData).then((res) => {
     let data = res.data;
     if (data.msg == "datalist") {
       datarow.value = data.datalist;

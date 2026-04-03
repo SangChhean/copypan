@@ -32,18 +32,12 @@ from roundtable import roundtable_router
 from kg_rag.kg_rag_router import router as kg_rag_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
-from ai_search.vector_search import close_async_es
 import asyncio
 from pathlib import Path as pt
 from es_config import es
 
 
 app = FastAPI()
-
-# 应用关闭时关闭 AsyncElasticsearch（vector_search 中的异步 ES 客户端）
-@app.on_event("shutdown")
-async def on_shutdown():
-    await close_async_es()
 
 # 应用启动时初始化监控模块（复用 ai_search 的 Redis 客户端）
 get_monitoring(redis_client)
@@ -189,7 +183,8 @@ async def datalist_fun(r: Request, index: str = Form(), opt: str = Form()):
     session = r.cookies.get("session")
     try:
         await checkAdmin(session)
-        return datalist(index, opt)
+        # 同步 ES 调用放到线程池，避免阻塞事件循环影响其他用户并发请求
+        return await asyncio.to_thread(datalist, index, opt)
     except:
         return JSONResponse(content={"error": "403 Forbidden"}, status_code=403)
 
@@ -209,20 +204,29 @@ async def websocket_endpoint(websocket: WebSocket):
         clients.remove(websocket)
 
 
+def _scan_upload_json_paths(backend_dir: pt) -> dict:
+    """同步：扫描 upload 下 json，供 /process 在线程中调用。"""
+    jddir = (backend_dir / "database" / "upload").rglob("*.json")
+    return {item.name: item for item in jddir}
+
+
 @api_router.post("/process")
 async def start_process(r: Request, filename: str = Form(), action: str = Form()):
     session = r.cookies.get("session")
     try:
         await checkAdmin(session)
-        jddir = (pt(__file__).parent / "database" / "upload").rglob("*.json")
-        jds = {}
-        for item in jddir:
-            jds[item.name] = item
+        backend_dir = pt(__file__).parent
+        jds = await asyncio.to_thread(_scan_upload_json_paths, backend_dir)
         sn = 0
         old = 0
         pgs = 0
         if filename in jds:
-            jd = json.loads(jds[filename].read_text("utf"))
+            path = jds[filename]
+
+            def _load_jd():
+                return json.loads(path.read_text("utf"))
+
+            jd = await asyncio.to_thread(_load_jd)
             jdlen = len(jd)
             for i in jd:
                 sn += 1
@@ -237,8 +241,11 @@ async def start_process(r: Request, filename: str = Form(), action: str = Form()
                     idx = i["refid"]
                 else:
                     idx = i["id"]
-                for index in indexs:
-                    es.index(index=index, id=idx, body=i)
+                for es_index in indexs:
+                    # 每条 es.index 在线程池执行，事件循环可穿插处理其他 HTTP/WebSocket
+                    await asyncio.to_thread(
+                        es.index, **{"index": es_index, "id": idx, "body": i}
+                    )
         return {"tip": f"{filename}: 导入完成！"}
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=403)
@@ -266,7 +273,7 @@ async def upopt_fun(r: Request, filename: str = Form(), action: str = Form()):
     session = r.cookies.get("session")
     try:
         await checkAdmin(session)
-        return opt(filename, action)
+        return await asyncio.to_thread(opt, filename, action)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
@@ -278,7 +285,7 @@ async def iv_opts_fun(
     session = r.cookies.get("session")
     try:
         await checkAdmin(session)
-        return iv_opt(iv, role, action)
+        return await asyncio.to_thread(iv_opt, iv, role, action)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
@@ -290,7 +297,7 @@ async def usr_opts(
     session = r.cookies.get("session")
     try:
         await checkAdmin(session)
-        return user_opt(username, action, role)
+        return await asyncio.to_thread(user_opt, username, action, role)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=403)
 
@@ -302,7 +309,7 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
     try:
         contents = await file.read()
         filename = file.filename
-        up_load(filename, contents)
+        await asyncio.to_thread(up_load, filename, contents)
         return JSONResponse(
             content={"filename": filename, "size": len(contents)}, status_code=200
         )

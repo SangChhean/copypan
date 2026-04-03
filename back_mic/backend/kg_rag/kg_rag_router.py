@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-"""FastAPI 路由：/api/kg_rag，所有端点仅管理员可访问。"""
+"""FastAPI 路由：/api/kg_rag。query / cache_translation 对已登录用户开放，其余仅管理员可访问。"""
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from user.token import require_admin
+from user.token import require_admin, test_token
+from kg_rag.firewall import load_firewall
 from kg_rag.kg_rag_service import KgRagService
 from kg_rag.neo4j_client import Neo4jClient
 
@@ -32,6 +33,8 @@ def get_service() -> KgRagService:
         except Exception:
             pass
 
+        load_firewall()
+
         _service = KgRagService(es_client, _neo4j)
     return _service
 
@@ -56,28 +59,25 @@ class QueryRequest(BaseModel):
     params: Optional[dict] = Field(default=None, description="覆盖默认参数")
 
 
+class CacheTranslationRequest(BaseModel):
+    """缓存翻译追加请求体。"""
+
+    cache_key: str = Field(..., min_length=1, description="缓存 key（kg_rag:cache:...）")
+    field: str = Field(..., description="要更新的字段：answer_en 或 answer_zh_tw")
+    value: str = Field(..., min_length=1, description="翻译后文本")
+
+
 # ---------------------------------------------------------------------------
 # 路由实现
 # ---------------------------------------------------------------------------
 
 
-@router.post("/query", dependencies=[Depends(require_admin)])
+@router.post("/query", dependencies=[Depends(test_token)])
 async def full_query(req: QueryRequest):
     """模块1：全流程查询 Step 1→5。"""
     service = get_service()
     try:
         result = await service.full_query(req.query, req.params or {})
-        return result
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-
-@router.post("/search_only", dependencies=[Depends(require_admin)])
-async def search_only(req: QueryRequest):
-    """模块3：仅检索不生成，可勾选路1/路2/路3。"""
-    service = get_service()
-    try:
-        result = await service.search_only(req.query, req.params or {})
         return result
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -144,6 +144,15 @@ async def graph_stats():
         return stats
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/cache_translation", dependencies=[Depends(test_token)])
+async def cache_translation(req: CacheTranslationRequest):
+    """追加/更新缓存中的英文或繁体纲目翻译。"""
+    if req.field not in ("answer_en", "answer_zh_tw"):
+        return JSONResponse(status_code=400, content={"error": "field must be answer_en or answer_zh_tw"})
+    ok = KgRagService.update_cache_translation(req.cache_key, req.field, req.value)
+    return {"ok": ok, "cache_key": req.cache_key, "field": req.field}
 
 
 @router.get("/health", dependencies=[Depends(require_admin)])

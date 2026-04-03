@@ -253,7 +253,7 @@ def main() -> None:
             print(f"  关系：新建 {rel_created}，跳过 {rel_skipped}")
             print(f"  当前图谱总节点数: {total_nodes}")
             print(f"  当前图谱总关系数: {total_rels}")
-            print("导入完成。请重启后端服务以刷新概念 Hash 表，或调用 /api/kg_rag/health 触发刷新。")
+            print("导入完成。请重启后端服务以刷新概念词表缓存，或调用 /api/kg_rag/health 触发刷新。")
     except Exception as e:
         raise SystemExit(f"导入失败: {e}") from e
     finally:

@@ -12,7 +12,7 @@ const fetchStats = () => {
   showSpin.value = true;
   errMsg.value = "";
   axios
-    .get("api/ai_search/stats/detail", { params: { days: days.value } })
+    .get("/api/ai_search/stats/detail", { params: { days: days.value } })
     .then((res) => {
       if (res.data.status === "success") {
         data.value = res.data.data || {};

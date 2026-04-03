@@ -229,8 +229,8 @@ def search(input: str = Form(), args: str = Form()):
 |------|------|
 | **fix_red_indices.py** | 脚本：列出 red 索引，逐个 close/open，用于修复；依赖 IK 插件已安装。 |
 | **import_all_data.py** | 脚本：从本地数据批量导入 ES（与 backend 的 process 或 upopt 类似）。 |
-| **es_plugins/ik/** | IK 分词插件（7.17.9），供 ES 使用；需在 elasticsearch.yml 中配置 path.plugins。 |
-| **es_data/** | Elasticsearch 数据目录（通常由 ES 进程使用）。 |
+| **es_plugins/ik/** | IK 分词插件（版本需与 ES 一致；当前栈为 ES 8.19 时对应 ik 8.19.x）。 |
+| **es8_data/** | Elasticsearch 8 数据目录（Docker 卷 `elasticsearch8` 默认挂载路径，与 `start_all.bat` 一致）。 |
 
 ---
 

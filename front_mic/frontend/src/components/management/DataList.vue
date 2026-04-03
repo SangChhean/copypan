@@ -43,7 +43,7 @@ const make_action = () => {
   let formData = new FormData();
   formData.append("index", filename);
   formData.append("opt", action);
-  axios.post("api/datalist", formData).then((res) => {
+  axios.post("/api/datalist", formData).then((res) => {
     let data = res.data;
     if (data.msg == "datalist") {
       datarow.value = data.datalist;

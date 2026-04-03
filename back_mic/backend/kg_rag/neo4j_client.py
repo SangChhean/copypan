@@ -90,18 +90,17 @@ class Neo4jClient:
         return list(self._concept_names)
 
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
-        """单概念 1 跳全部邻居，出边和入边分别查询后按 neighbor 合并去重。
+        """单概念 1 跳出边邻居（c → related），同一 neighbor 多条边时按类型合并。
         每条记录包含：
           neighbor      - 邻居概念名
-          relations     - 带方向的关系字符串列表（完整，供显示用）
-          relation_type - 所有关系类型用 ／ 拼接（供 by_name 等后续使用）
+          relations     - 出边关系字符串列表（完整，供显示用）
+          relation_type - 所有关系类型用 ／ 拼接
         """
         if not self._available or self._driver is None:
             return []
         key = concept_name.strip()
         try:
             with self._driver.session() as session:
-                # 出边：key → neighbor
                 out_result = session.run(
                     "MATCH (c:Concept {name: $name})-[r]->(related:Concept) "
                     "RETURN related.name AS neighbor, type(r) AS relation_type",
@@ -113,25 +112,11 @@ class Neo4jClient:
                         "relation_type": r["relation_type"],
                         "relation_str": f"{key} ──{r['relation_type']}──► {r['neighbor']}",
                     }
-                    for r in out_result if r["neighbor"]
+                    for r in out_result
+                    if r["neighbor"]
                 ]
-                # 入边：neighbor → key
-                in_result = session.run(
-                    "MATCH (c:Concept {name: $name})<-[r]-(related:Concept) "
-                    "RETURN related.name AS neighbor, type(r) AS relation_type",
-                    name=key,
-                )
-                in_rows = [
-                    {
-                        "neighbor": r["neighbor"],
-                        "relation_type": r["relation_type"],
-                        "relation_str": f"{r['neighbor']} ──{r['relation_type']}──► {key}",
-                    }
-                    for r in in_result if r["neighbor"]
-                ]
-                # 按 neighbor 合并去重，relation_type 收集所有类型
                 merged: dict[str, dict] = {}
-                for row in out_rows + in_rows:
+                for row in out_rows:
                     nb = row["neighbor"]
                     if nb not in merged:
                         merged[nb] = {
@@ -145,7 +130,6 @@ class Neo4jClient:
                             merged[nb]["relations"].append(row["relation_str"])
                         if row["relation_type"] not in merged[nb]["_rel_types"]:
                             merged[nb]["_rel_types"].append(row["relation_type"])
-                # 将所有类型合并为字符串，删除辅助字段
                 result = []
                 for nb_data in merged.values():
                     rel_types = nb_data.pop("_rel_types")
@@ -156,15 +140,19 @@ class Neo4jClient:
             print(f"[KG-RAG] get_neighbors 失败: {e}")
             return []
 
-    def get_paths_between(self, concepts: list[str]) -> list[dict[str, Any]]:
-        """查询给定概念集合内部的 1~2 跳路径。失败或不可用时返回空列表。"""
+    def get_paths_between(self, concepts: list[str]) -> tuple[list[dict[str, Any]], bool]:
+        """查询给定概念集合内部的 1～2 跳路径；仅当 1+2 跳均无结果时再查 3 跳。
+
+        返回 (paths, used_three_hop_fallback)。后者在 1+2 为空且已执行 3 跳查询时为 True
+        （无论 3 跳是否命中），正常有 1/2 跳结果时为 False，不增加延迟。
+        """
         if not self._available or self._driver is None:
-            return []
+            return [], False
         if not concepts:
-            return []
+            return [], False
         names = [str(x).strip() for x in concepts if str(x).strip()]
         if len(names) < 2:
-            return []
+            return [], False
         try:
             with self._driver.session() as session:
                 # 1跳：概念之间直接关系
@@ -211,10 +199,41 @@ class Neo4jClient:
                         continue
                     seen.add(key)
                     out.append({"from": f, "relation": rel, "to": t, "via": via, "hops": 2})
-                return out
+
+                used_three_hop_fallback = False
+                if not out:
+                    used_three_hop_fallback = True
+                    q3 = (
+                        "MATCH (a:Concept)-[r1]->(m1:Concept)-[r2]->(m2:Concept)-[r3]->(b:Concept) "
+                        "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
+                        "AND NOT m1.name IN $names AND NOT m2.name IN $names "
+                        "AND m1.name <> m2.name "
+                        "RETURN a.name AS from_name, type(r1) AS rel1, m1.name AS via1_name, "
+                        "type(r2) AS rel2, m2.name AS via2_name, type(r3) AS rel3, b.name AS to_name"
+                    )
+                    r3 = session.run(q3, names=names)
+                    for row in r3:
+                        f = row.get("from_name")
+                        r_1 = row.get("rel1")
+                        v1 = row.get("via1_name")
+                        r_2 = row.get("rel2")
+                        v2 = row.get("via2_name")
+                        r_3 = row.get("rel3")
+                        t = row.get("to_name")
+                        if not f or not r_1 or not v1 or not r_2 or not v2 or not r_3 or not t:
+                            continue
+                        rel = f"{r_1} → {r_2} → {r_3}"
+                        via = f"{v1} → {v2}"
+                        key = (f, rel, t, via, 3)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        out.append({"from": f, "relation": rel, "to": t, "via": via, "hops": 3})
+
+                return out, used_three_hop_fallback
         except Exception as e:
             print(f"[KG-RAG] get_paths_between 失败: {e}")
-            return []
+            return [], False
 
     def _clamp_hops(self, max_hops: int) -> int:
         """将 max_hops 限制在 [MIN_HOPS, MAX_HOPS]，用于 Cypher 拼接。"""

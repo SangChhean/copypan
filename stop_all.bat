@@ -1,58 +1,66 @@
 @echo off
-chcp 65001 >nul
-title Copypan 停止服务
+setlocal
+title Copypan Stop All
 
 echo ============================================================
-echo              Copypan 服务停止脚本
+echo Copypan Stop Script
 echo ============================================================
 echo.
 
-echo [1/5] 停止Nginx...
+echo [1/5] Stopping Nginx...
 taskkill /f /im nginx.exe >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ Nginx已停止
+if errorlevel 1 (
+    echo [INFO] Nginx not running.
 ) else (
-    echo ⚠ Nginx未运行
+    echo [OK] Nginx stopped.
 )
 echo.
 
-echo [2/5] 停止 Redis...
-docker stop redis >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ Redis 已停止
+echo [2/5] Stopping Redis...
+where docker >nul 2>&1
+set "HAS_DOCKER=1"
+if errorlevel 1 (
+    set "HAS_DOCKER=0"
+    echo [WARN] docker command not found, skip Redis/Neo4j/Elasticsearch stop.
 ) else (
-    echo ⚠ Redis 未运行
+    docker stop redis >nul 2>&1
+    if errorlevel 1 (
+        echo [INFO] Redis not running.
+    ) else (
+        echo [OK] Redis stopped.
+    )
 )
 echo.
 
-echo [3/5] 停止后端服务...
-echo   提示：将停止所有 Python 进程（含 Copypan 后端）
-for /f "tokens=2" %%a in ('tasklist /fi "imagename eq python.exe" /fo list ^| find "PID:"') do (
+echo [3/5] Stopping backend...
+taskkill /f /fi "WINDOWTITLE eq Copypan Backend*" >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>&1
 )
-echo ✓ 后端服务已停止
+echo [OK] Backend stop commands executed.
 echo.
 
-echo [4/5] 停止Kibana...
-docker stop kibana >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ Kibana已停止
-) else (
-    echo ⚠ Kibana未运行
-)
-echo.
+if "%HAS_DOCKER%"=="1" (
+    echo [4/5] Stopping Neo4j...
+    docker stop neo4j >nul 2>&1
+    if errorlevel 1 (
+        echo [INFO] Neo4j not running.
+    ) else (
+        echo [OK] Neo4j stopped.
+    )
+    echo.
 
-echo [5/5] 停止Elasticsearch...
-docker stop elasticsearch >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ Elasticsearch已停止
-) else (
-    echo ⚠ Elasticsearch未运行
+    echo [5/5] Stopping Elasticsearch8...
+    docker stop elasticsearch8 >nul 2>&1
+    if errorlevel 1 (
+        echo [INFO] Elasticsearch8 not running.
+    ) else (
+        echo [OK] Elasticsearch8 stopped.
+    )
+    echo.
 )
-echo.
 
 echo ============================================================
-echo              所有服务已停止
+echo Stop completed.
 echo ============================================================
-echo.
 pause

@@ -116,7 +116,7 @@ const make_action = async () => {
     startProcess(formData);
   } else {
     showSpin.value = true;
-    axios.post("api/upopt", formData).then((res) => {
+    axios.post("/api/upopt", formData).then((res) => {
       let data = res.data;
       if (data.msg == "datalist") {
         datarow.value = data.datalist;

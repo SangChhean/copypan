@@ -60,52 +60,56 @@ git clone <你的仓库地址> .
 #   E:\copypan\ user@你的服务器IP:/opt/copypan/
 ```
 
-### 3. 启动 Elasticsearch 和 Redis（Docker）
+### 3. 启动 Elasticsearch 8 和 Redis（Docker）
+
+与本地 `start_all.bat` 对齐：镜像 **elasticsearch:8.19.0**，容器名 **elasticsearch8**，数据目录 **es8_data**，并开启安全与内置用户密码（请把示例密码改成强密码）。
 
 ```bash
 cd /opt/copypan
 
 # 创建 ES 数据目录（持久化）
-mkdir -p es_data
+mkdir -p es8_data
 
-# 启动 Elasticsearch
-docker run -d --name elasticsearch \
+# 启动 Elasticsearch 8（xpack 安全 + elastic 用户密码）
+docker run -d --name elasticsearch8 \
   -p 9200:9200 -p 9300:9300 \
   -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=true" \
+  -e "ELASTIC_PASSWORD=你的强密码" \
   -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
-  -v /opt/copypan/es_data:/usr/share/elasticsearch/data \
-  elasticsearch:7.17.9
+  -v /opt/copypan/es8_data:/usr/share/elasticsearch/data \
+  elasticsearch:8.19.0
 
-# 安装 IK 分词（如需中文检索）
-# docker exec -it elasticsearch bash
-# bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.17.9/elasticsearch-analysis-ik-7.17.9.zip
+# 安装 IK 分词（如需中文检索；版本需与 ES 一致）
+# docker exec -it elasticsearch8 bash
+# bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v8.19.0/elasticsearch-analysis-ik-8.19.0.zip
 # exit
-# docker restart elasticsearch
+# docker restart elasticsearch8
 
 # 启动 Redis
 docker run -d --name redis -p 6379:6379 redis:alpine
 
 # 等待 ES 就绪（约 15-30 秒）
 sleep 20
-curl http://localhost:9200
+curl -s -u elastic:你的强密码 http://localhost:9200
 ```
 
 ### 4. 迁移 ES 数据
 
-**方式 A：直接拷贝本机 es_data（推荐，数据完整）**
+**方式 A：直接拷贝本机 es8_data（推荐，数据完整）**
 
 **本地 Windows 打包并上传：**
 
 ```powershell
-# 在项目根目录 E:\copypan 执行
+# 在项目根目录执行
 # 仅打包（ES 可继续运行）：
 .\package_esdata.ps1
 
-# 先停止 ES 再打包（数据更一致，打包后会自动启动 ES）：
+# 先停止 ES 再打包（数据更一致，打包后会自动启动容器）：
 .\package_esdata.ps1 -StopES
 
 # 上传到服务器（替换 用户名 和 服务器IP）：
-scp E:\copypan\es_data.zip 用户名@服务器IP:/opt/copypan/
+scp .\es8_data.zip 用户名@服务器IP:/opt/copypan/
 ```
 
 **服务器上解压并挂载：**
@@ -113,24 +117,26 @@ scp E:\copypan\es_data.zip 用户名@服务器IP:/opt/copypan/
 ```bash
 cd /opt/copypan
 # 先停止并删除现有 ES 容器
-docker stop elasticsearch
-docker rm elasticsearch
+docker stop elasticsearch8
+docker rm elasticsearch8
 
-# 解压（会得到 es_data 目录）
-unzip -o es_data.zip
+# 解压（会得到 es8_data 目录）
+unzip -o es8_data.zip
 
-# 重新启动 ES（-v 指向 /opt/copypan/es_data）
-docker run -d --name elasticsearch \
+# 重新启动 ES 8（-v 指向 /opt/copypan/es8_data；密码与 .env 中 ES_PASSWORD 一致）
+docker run -d --name elasticsearch8 \
   -p 9200:9200 -p 9300:9300 \
   -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=true" \
+  -e "ELASTIC_PASSWORD=你的强密码" \
   -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
-  -v /opt/copypan/es_data:/usr/share/elasticsearch/data \
-  elasticsearch:7.17.9
+  -v /opt/copypan/es8_data:/usr/share/elasticsearch/data \
+  elasticsearch:8.19.0
 ```
 
 **方式 B：重新创建索引并导入**
 
-若无法拷贝 es_data，可在管理端重新导入 JSON：
+若无法拷贝 es8_data，可在管理端重新导入 JSON：
 
 ```bash
 # 1. 运行 es_init 创建空索引（需 Python 已安装依赖）
@@ -190,7 +196,7 @@ _CORS_ORIGINS = [
 ]
 ```
 
-**es_config.py**：后端和 ES 同机部署时，保持 `localhost:9200` 即可，无需修改。
+**es_config.py**：后端和 ES 同机部署时，默认 `localhost:9200`；若启用安全，务必在 `.env` 中配置 `ES_USERNAME` / `ES_PASSWORD`（见上）。
 
 ### 6. 启动后端（测试）
 
@@ -329,7 +335,7 @@ sudo certbot --nginx -d 你的域名.com
 
 | 项目 | 检查命令 |
 |------|----------|
-| ES | `curl http://localhost:9200` |
+| ES | `curl -s -u elastic:密码 http://localhost:9200` |
 | Redis | `docker exec redis redis-cli ping` |
 | 后端 | `curl http://localhost:8000/api/ai_search/health` |
 | 前端 | 浏览器访问 `http://你的域名` |
@@ -340,7 +346,7 @@ sudo certbot --nginx -d 你的域名.com
 ## 七、故障排查
 
 - **502 Bad Gateway**：后端未启动或端口错误，检查 `systemctl status copypan`
-- **ES 连接失败**：确认 ES 容器运行，`curl localhost:9200`
+- **ES 连接失败**：确认 **elasticsearch8** 容器运行，并用 `curl -u elastic:密码 http://localhost:9200` 验证；核对 `.env` 中 `ES_PASSWORD`
 - **AI 搜索报错**：检查 `.env` 中 `CLAUDE_API_KEY`，以及 Redis 是否运行
 - **CORS 错误**：确认 `main.py` 中已添加前端访问的域名
 

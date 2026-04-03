@@ -18,7 +18,7 @@ watch(store.is_refresh_code, (newVal, oldVal) => {
 });
 
 const api = axios.create({
-    baseURL: "api/",
+    baseURL: "/api/",
     headers: {
         "Content-Type": "application/json",
     },

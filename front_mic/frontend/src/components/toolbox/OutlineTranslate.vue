@@ -5,6 +5,8 @@ import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/ico
 import { toastSuccess, toastWarning, toastError } from "../utils/Dialog";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
+/** 与后端 OutlineTranslateRequest / translate_outline 一致（字符数，非 token） */
+const MAX_CONTENT_CHARS = 100_000;
 const direction = ref("zh2en"); // zh2en | en2zh
 const isOutline = ref(true); // true=纲目，false=非纲目
 const downloadFormats = ref([]); // ["docx", "pdf"] - 用户选择的下载格式
@@ -37,6 +39,11 @@ async function translate() {
     result.value = null;
     return;
   }
+  if (text.length > MAX_CONTENT_CHARS) {
+    error.value = `正文过长：最多 ${MAX_CONTENT_CHARS.toLocaleString()} 字（与后端一致），请分段翻译`;
+    result.value = null;
+    return;
+  }
   loading.value = true;
   error.value = null;
   result.value = null;
@@ -64,7 +71,11 @@ async function translate() {
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      error.value = errorData.detail || errorData.error || errorData.message || "翻译失败，请稍后重试";
+      let detail = errorData.detail;
+      if (Array.isArray(detail)) {
+        detail = detail.map((x) => x?.msg || x?.message || JSON.stringify(x)).join("；");
+      }
+      error.value = detail || errorData.error || errorData.message || "翻译失败，请稍后重试";
       return;
     }
     
@@ -86,7 +97,10 @@ async function translate() {
       error.value = "翻译失败，请稍后重试";
     }
   } catch (err) {
-    error.value = err.response?.data?.detail || err.response?.data?.error || err.message || "网络错误，请稍后重试";
+    error.value =
+      (err && err.message) ||
+      (typeof err === "string" ? err : "") ||
+      "网络错误，请稍后重试";
   } finally {
     loading.value = false;
   }
@@ -244,7 +258,10 @@ async function downloadFormatted() {
   <div class="box">
     <a-card>
       <p class="hint">
-        选择翻译方向后，粘贴纲目全文（含标题则一起粘贴），点击「翻译」按钮完成翻译，然后选择下载格式并点击「下载」按钮。
+        粘贴纲目后点「翻译」，再选格式「刷格式并下载」。
+        <strong>输入上限 {{ MAX_CONTENT_CHARS.toLocaleString() }} 字</strong>（下方字数统计）；
+        计费按 Gemini token。译文最长受服务端单次输出 token 限制（默认 32768，环境变量
+        <code>GEMINI_TRANSLATION_MAX_OUTPUT_TOKENS</code>，约 1024～65536）；过长请分段翻译。
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="direction-row">
@@ -266,6 +283,8 @@ async function downloadFormatted() {
           :rows="12"
           class="content-area"
           :disabled="loading"
+          :maxlength="MAX_CONTENT_CHARS"
+          show-count
           allow-clear
         />
         <button
@@ -360,6 +379,13 @@ async function downloadFormatted() {
   margin: 0;
   font-size: 0.95em;
   line-height: 1.5;
+}
+
+.hint code {
+  font-size: 0.88em;
+  padding: 0 4px;
+  background: #f5f5f5;
+  border-radius: 4px;
 }
 
 .direction-row {

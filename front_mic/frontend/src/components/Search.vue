@@ -116,12 +116,17 @@ const loadingTraditional = ref(false); // 正在生成繁体纲目
 const errorTraditional = ref(null); // 繁体纲目生成失败信息
 const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
 
-// 负担说明/简单摘要（50字）：有内容则作为摘要给 Claude 解析（方式二），无则方式一
-const isBurdenValidForMode2 = () => {
-  const text = aiForm.burdenDescription.trim();
-  const meaningful = text.replace(/[\s\p{P}\p{S}]/gu, "");
-  return meaningful.length >= 10;
-};
+// KG-RAG 返回结构化数据
+const aiMeta = reactive({
+  surface: [],
+  deep: [],
+  skeleton: null,
+  mainSources: [],
+  totalElapsedMs: null,
+  totalCostUsd: null,
+  cached: false,
+  cacheKey: null,
+});
 
 // 刷格式并下载（DOCX/PDF）
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
@@ -204,10 +209,16 @@ const fetchTranslate = async (chineseOutline) => {
     const data = res.data;
     if (data.answer_en) {
       answerEn.value = data.answer_en;
-      // 确保 title_en 存在且非空才使用，否则保持 null（前端会 fallback 到中文标题）
       titleEn.value = (data.title_en && data.title_en.trim()) ? data.title_en.trim() : null;
       if (!titleEn.value) {
         console.warn("英文标题翻译未返回，将使用中文标题");
+      }
+      if (aiMeta.cacheKey) {
+        axios.post("/api/kg_rag/cache_translation", {
+          cache_key: aiMeta.cacheKey,
+          field: "answer_en",
+          value: data.answer_en,
+        }).catch(() => {});
       }
     } else {
       errorEnglish.value = data.error || "英文纲目生成失败";
@@ -234,6 +245,13 @@ const fetchTraditionalOutline = async (simplifiedOutline) => {
     const data = res.data;
     if (data.answer_zh_tw) {
       answerZhTw.value = data.answer_zh_tw;
+      if (aiMeta.cacheKey) {
+        axios.post("/api/kg_rag/cache_translation", {
+          cache_key: aiMeta.cacheKey,
+          field: "answer_zh_tw",
+          value: data.answer_zh_tw,
+        }).catch(() => {});
+      }
     } else {
       errorTraditional.value = data.error || "繁体纲目生成失败";
     }
@@ -491,6 +509,81 @@ const aiAnswerEnFormatted = computed(() => {
   return content;
 });
 
+// ─── 引用来源：索引类型判断与格式化 ───
+
+function getSourceType(chunkId) {
+  if (!chunkId) return "unknown";
+  if (chunkId.startsWith("firewall:") || chunkId.startsWith("防火墙")) return "firewall";
+  if (chunkId.startsWith("life_")) return "life";
+  if (chunkId.startsWith("cwwl_")) return "cwwl";
+  if (chunkId.startsWith("cwwn_")) return "cwwn";
+  if (chunkId.startsWith("others_")) return "others";
+  if (chunkId.startsWith("bib_")) return "bib";
+  if (chunkId.startsWith("map_note_")) return "map_note";
+  if (chunkId.startsWith("map_7feasts_")) return "map_7feasts";
+  if (chunkId.startsWith("map_pano")) return "map_pano";
+  if (chunkId.startsWith("map_dictionary")) return "map_dictionary";
+  return "unknown";
+}
+
+const SOURCE_TYPE_LABELS = {
+  firewall:       { label: "防火墙",         color: "#f50" },
+  life:           { label: "生命读经",       color: "#2db7f5" },
+  cwwl:           { label: "李常受文集",     color: "#87d068" },
+  cwwn:           { label: "倪柝声文集",     color: "#9254de" },
+  others:         { label: "其他",           color: "#13c2c2" },
+  bib:            { label: "圣经",           color: "#fa8c16" },
+  map_note:       { label: "注解纲目",       color: "#597ef7" },
+  map_7feasts:    { label: "节期纲目",       color: "#f759ab" },
+  map_pano:       { label: "清明上河图",     color: "#36cfc9" },
+  map_dictionary: { label: "主恢复真理词典", color: "#ff85c0" },
+  unknown:        { label: "其他",           color: "#d9d9d9" },
+};
+
+function getSourceLabel(chunkId) {
+  return SOURCE_TYPE_LABELS[getSourceType(chunkId)] || SOURCE_TYPE_LABELS.unknown;
+}
+
+function formatSourceTitle(src) {
+  const type = getSourceType(src.chunk_id);
+  switch (type) {
+    case "firewall":
+      return src.book_title || src.message_title || src.chunk_id.replace(/^firewall:/, "");
+    case "cwwl": {
+      const yearMatch = src.chunk_id.match(/^cwwl_(\d{4})/);
+      const year = yearMatch ? yearMatch[1] : "";
+      const title = src.book_title || src.source_zh || src.chunk_id;
+      return year ? `${title}（${year}）` : title;
+    }
+    case "bib":
+      return src.source_zh || src.book_title || src.chunk_id;
+    case "map_dictionary":
+      return src.message_title
+        ? `${src.message_title}（${src.book_title || ""}）`
+        : src.book_title || src.chunk_id;
+    default:
+      return src.book_title || src.source_zh || src.chunk_id;
+  }
+}
+
+function formatSourceSub(src) {
+  const type = getSourceType(src.chunk_id);
+  switch (type) {
+    case "firewall":
+      return null;
+    case "bib":
+      return src.message_title || null;
+    case "map_dictionary":
+      return src.section_title || null;
+    default: {
+      const parts = [];
+      if (src.message_title) parts.push(src.message_title);
+      if (src.section_title) parts.push(src.section_title);
+      return parts.length > 0 ? parts.join(" · ") : null;
+    }
+  }
+}
+
 const toggleAiPanel = () => {
   aiPanelVisible.value = !aiPanelVisible.value;
   if (aiPanelVisible.value) {
@@ -499,11 +592,11 @@ const toggleAiPanel = () => {
   }
 };
 
-const buildAiMetadata = () => ({
-  outline_topic: aiForm.outlineTopic.trim(),
+const buildKgRagParams = () => ({
+  outline_nature: aiForm.specialNeeds.trim(),
   burden_description: aiForm.burdenDescription.trim(),
-  special_needs: aiForm.specialNeeds.trim(),
   audience: aiForm.audience.trim(),
+  depth: aiDepth.value,
 });
 
 const onSearch = (inp) => {
@@ -558,7 +651,7 @@ const onSearch = (inp) => {
       }
     })
     .catch((err) => {
-      if (err.response.status == 401) {
+      if (err?.response?.status == 401) {
         window.location.hash = "/login";
       }
       showInfo.value = 3;
@@ -633,21 +726,62 @@ const addTag = (val) => {
   } else return val;
 };
 
-// AI 问答功能（方案A：分步调用）
+/** 统一解析 KG-RAG 响应（缓存命中 / 未命中） */
+function parseKgRagResponse(data) {
+  const isCached = !!data.cached;
+  const result = {
+    answer: data.answer || null,
+    outlineTopic: aiForm.outlineTopic.trim(),
+    cached: isCached,
+    cacheKey: data.cache_key || null,
+    surface: [],
+    deep: [],
+    skeleton: null,
+    mainSources: [],
+    totalElapsedMs: null,
+    totalCostUsd: null,
+    answerEn: null,
+    answerZhTw: null,
+  };
+  if (isCached) {
+    result.surface = data.surface || [];
+    result.deep = data.deep || [];
+    result.skeleton = data.skeleton || null;
+    result.mainSources = data.main_sources || [];
+    result.totalElapsedMs = data.total_elapsed_ms ?? null;
+    result.totalCostUsd = data.total_cost_usd ?? null;
+    result.answerEn = data.answer_en || null;
+    result.answerZhTw = data.answer_zh_tw || null;
+  } else {
+    const s1 = data.steps?.step1 || {};
+    const s2 = data.steps?.step2 || {};
+    const s3 = data.steps?.step3 || {};
+    const usage = data.llm_usage || {};
+    result.surface = s1.surface || [];
+    result.deep = s1.deep || [];
+    result.skeleton = s2.skeleton || null;
+    result.mainSources = (s3.main_results || []).map(r => ({
+      chunk_id: r.chunk_id || "",
+      book_title: r.book_title || "",
+      source_zh: r.source_zh || "",
+      message_title: r.message_title || "",
+      section_title: r.section_title || "",
+    }));
+    result.totalElapsedMs = usage.total_elapsed_ms ?? null;
+    result.totalCostUsd = (usage.totals || {}).cost_usd ?? null;
+  }
+  return result;
+}
+
+// AI 纲目生成（单次调用 KG-RAG）
 const onAISearch = async () => {
-  let question = aiForm.outlineTopic.trim();
-  
-  if (!question) {
+  const question = aiForm.outlineTopic.trim();
+
+  if (!question || !aiFormValid.value) {
     tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
-  
-  if (!aiFormValid.value) {
-    tip("请至少填写纲目主题并选择纲目性质");
-    return;
-  }
-  
-  const metadataPayload = buildAiMetadata();
+
   loadingAI.value = true;
   showInfo.value = 6;
   aiResult.value = null;
@@ -657,84 +791,64 @@ const onAISearch = async () => {
   errorTraditional.value = null;
   showAISources.value = false;
   showAIAnswer.value = false;
-  aiLoadingText.value = "🔍 正在检索相关内容...";
-  
-  const searchPayload = { question, depth: aiDepth.value, ...metadataPayload };
-  if (isBurdenValidForMode2()) {
-    searchPayload.skeleton = aiForm.burdenDescription.trim();
-  }
+  aiLoadingText.value = "✨ AI 纲目生成中…";
+  Object.assign(aiMeta, { surface: [], deep: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
+
   try {
-    // 第一步：仅检索，快速返回引用来源（超时 2 分钟）
-    const searchRes = await axios.post(
-      "/api/ai_search/search",
-      searchPayload,
-      { timeout: 120000 }
+    const res = await axios.post(
+      "/api/kg_rag/query",
+      { query: question, params: buildKgRagParams() },
+      { timeout: 300000 }
     );
-    
-    const data = searchRes.data;
-    
-    // 缓存命中：search 直接返回完整结果（含 answer），无需再调 generate
-    if (data.answer) {
-      aiResult.value = { ...data, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
-      showInfo.value = 5;
-      showAISources.value = true;
-      showAIAnswer.value = true;
-      if (includeEnglishOutline.value) {
-        fetchTranslate(data.answer);
-      }
-      if (includeTraditionalOutline.value) {
-        fetchTraditionalOutline(data.answer);
-      }
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-      return;
-    }
-    
-    const { sources, search_id } = data;
-    
-    if (!search_id) {
-      tip(data.message || "未找到相关内容");
+    const data = res.data;
+    if (!data.answer) {
+      tip(data.error || "纲目生成失败，请稍后重试");
       showInfo.value = 3;
       return;
     }
-    
-    // 立即显示引用来源，用户可浏览
-    aiResult.value = { sources, answer: null, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
-    showAISources.value = true;
-    aiLoadingText.value = "💡 AI 正在生成答案...";
-    
-    const generatePayload = { question, search_id, max_results: 50, ...metadataPayload };
-    if (isBurdenValidForMode2()) {
-      generatePayload.skeleton = aiForm.burdenDescription.trim();
-    }
-    // 第二步：生成答案（耗时可能较长，超时 3 分钟）
-    const generateRes = await axios.post(
-      "/api/ai_search/generate",
-      generatePayload,
-      { timeout: 180000 }
-    );
-    
-    aiResult.value = { ...generateRes.data, outlineTopic: aiForm.outlineTopic.trim() }; // 保存生成时的标题
+
+    const parsed = parseKgRagResponse(data);
+    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
+    Object.assign(aiMeta, {
+      surface: parsed.surface,
+      deep: parsed.deep,
+      skeleton: parsed.skeleton,
+      mainSources: parsed.mainSources,
+      totalElapsedMs: parsed.totalElapsedMs,
+      totalCostUsd: parsed.totalCostUsd,
+      cached: parsed.cached,
+      cacheKey: parsed.cacheKey,
+    });
+
     showInfo.value = 5;
+    showAISources.value = true;
     showAIAnswer.value = true;
-    if (includeEnglishOutline.value) {
-      fetchTranslate(generateRes.data.answer);
+
+    if (parsed.cached) {
+      aiLoadingText.value = "已找到缓存结果";
     }
-    if (includeTraditionalOutline.value) {
-      fetchTraditionalOutline(generateRes.data.answer);
+
+    // 缓存命中且已有翻译时直接展示
+    if (parsed.cached && parsed.answerEn) {
+      answerEn.value = parsed.answerEn;
+    } else if (includeEnglishOutline.value) {
+      fetchTranslate(parsed.answer);
     }
-    // 平滑滚动到页面最顶端
+    if (parsed.cached && parsed.answerZhTw) {
+      answerZhTw.value = parsed.answerZhTw;
+    } else if (includeTraditionalOutline.value) {
+      fetchTraditionalOutline(parsed.answer);
+    }
+
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
-    
   } catch (err) {
-    console.error("AI搜索失败:", err);
+    console.error("AI纲目生成失败:", err);
     const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
     const msg = isTimeout
       ? "请求超时，AI 生成时间较长，请稍后重试"
-      : (err.response?.data?.detail || "AI搜索失败，请稍后重试");
+      : (err.response?.data?.detail || err.response?.data?.error || "AI纲目生成失败，请稍后重试");
     tip(msg);
     showInfo.value = 3;
   } finally {
@@ -936,8 +1050,7 @@ const onAISearch = async () => {
   </div>
   <!-- AI 正在思考的加载动画 -->
   <div class="ai-loading-container" v-if="showInfo == 6">
-    <!-- 如果还没有引用来源，显示加载动画 -->
-    <div class="ai-loading" v-if="!showAISources">
+    <div class="ai-loading">
       <div class="ai-loading-card">
         <div class="loading-content">
           <a-spin size="large">
@@ -957,59 +1070,34 @@ const onAISearch = async () => {
         </div>
       </div>
     </div>
-    
-    <!-- API返回后，显示引用来源 + "AI正在整理答案"提示 -->
-    <div class="ai-result-loading" v-if="showAISources && aiResult">
-      <a-alert type="info" show-icon>
-        <template #message>
-          <span style="font-size: 16px">📚 已找到相关内容</span>
-        </template>
-      </a-alert>
-      <a-divider style="margin: 10px 0"></a-divider>
-      
-      <!-- AI 正在整理答案提示 -->
-      <div class="ai-preparing">
-        <div class="preparing-content">
-          <div class="preparing-spinner">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
-          <span>✨ AI 正在整理答案...</span>
-        </div>
-      </div>
-      
-      <!-- 引用来源 -->
-      <transition name="fade-slide">
-        <div v-if="aiResult.sources && aiResult.sources.length > 0" class="ai-sources">
-          <div class="ai-sources-header">
-            <span style="font-weight: bold; color: #764ba2;">📚 引用来源 ({{ aiResult.sources.length }} 条)</span>
-          </div>
-          <a-divider style="margin: 8px 0"></a-divider>
-          <div v-for="(source, idx) in aiResult.sources" :key="idx" class="source-item">
-            <div class="source-title">
-              <span style="color: #1677ff; font-weight: bold;">{{ idx + 1 }}. </span>
-              <a-tag v-if="source.type" color="purple" :bordered="false" style="margin-right: 8px;">{{ source.type }}</a-tag>
-              <span v-text="source.reference"></span>
-            </div>
-            <div class="source-content" v-if="source.content">
-              <span v-html="source.content"></span>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
   </div>
 
   <!-- AI 问答结果显示 -->
   <div class="ai-result" v-if="showInfo == 5 && aiResult">
     <a-alert type="success" show-icon>
       <template #message>
-        <span style="font-size: 16px">✨ AI 智能问答结果</span>
+        <span style="font-size: 16px">✨ AI 纲目生成完成</span>
       </template>
     </a-alert>
     <a-divider style="margin: 10px 0"></a-divider>
-    
+
+    <!-- 信息栏：耗时 / 费用 / 缓存 / 概念 / 骨架 -->
+    <div class="kg-info-bar">
+      <div class="kg-info-stats">
+        <span v-if="aiMeta.totalElapsedMs != null">⏱ 耗时 <strong>{{ (aiMeta.totalElapsedMs / 1000).toFixed(1) }}s</strong></span>
+        <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
+        <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
+      </div>
+      <div v-if="aiMeta.surface.length" class="kg-info-row">📌 字面层：{{ aiMeta.surface.join("、") }}</div>
+      <div v-if="aiMeta.deep.length" class="kg-info-row">📌 内在层：{{ aiMeta.deep.join("、") }}</div>
+      <div v-if="aiMeta.skeleton && aiMeta.skeleton.length" class="kg-info-row">
+        <div>🦴 骨架：</div>
+        <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">{{ item }}</div>
+      </div>
+    </div>
+
+    <div class="kg-outline-divider">─── 纲目正文 ───</div>
+
     <!-- 中文纲目 -->
     <transition name="slide-down">
       <div v-if="showAIAnswer" class="ai-answer-card">
@@ -1037,7 +1125,7 @@ const onAISearch = async () => {
       </div>
     </transition>
 
-    <!-- 英文纲目（仅当用户勾选「同时生成英文纲目」时显示此区块） -->
+    <!-- 英文纲目 -->
     <div v-if="showAIAnswer && includeEnglishOutline" class="ai-answer-card ai-answer-card-en">
       <div class="ai-answer-header">
         <span style="font-weight: bold; color: #667eea;">📝 英文纲目</span>
@@ -1068,7 +1156,7 @@ const onAISearch = async () => {
       </div>
     </div>
 
-    <!-- 繁体纲目（仅当用户勾选「同时生成繁体纲目」时显示此区块） -->
+    <!-- 繁体纲目 -->
     <div v-if="showAIAnswer && includeTraditionalOutline" class="ai-answer-card ai-answer-card-zh-tw">
       <div class="ai-answer-header">
         <span style="font-weight: bold; color: #2d5016;">📝 繁体纲目</span>
@@ -1099,33 +1187,22 @@ const onAISearch = async () => {
       </div>
     </div>
 
-    <!-- 查看全部数据（可折叠） -->
-    <div v-if="aiResult.claude_payload" class="claude-payload-section">
-      <a-collapse>
-        <a-collapse-panel key="1" header="🔧 查看全部数据（可折叠）">
-          <div class="claude-payload-panel">
-            <pre class="claude-payload-pre">{{ aiResult.claude_payload.user_prompt }}</pre>
+    <!-- 引用来源（可折叠） -->
+    <div v-if="aiMeta.mainSources.length > 0" class="ai-sources">
+      <div class="ai-sources-header" @click="showAISources = !showAISources" style="cursor: pointer;">
+        <span style="font-weight: bold; color: #764ba2;">📚 引用来源 ({{ aiMeta.mainSources.length }} 条) {{ showAISources ? '▼' : '▶' }}</span>
+      </div>
+      <template v-if="showAISources">
+        <a-divider style="margin: 8px 0"></a-divider>
+        <div v-for="(src, idx) in aiMeta.mainSources" :key="idx" class="source-item">
+          <div class="source-title">
+            <span style="font-weight: bold; color: #1677ff;">{{ idx + 1 }}. </span>
+            <a-tag :color="getSourceLabel(src.chunk_id).color" size="small" style="margin-right: 6px;">{{ getSourceLabel(src.chunk_id).label }}</a-tag>
+            <span>{{ formatSourceTitle(src) }}</span>
           </div>
-        </a-collapse-panel>
-      </a-collapse>
-    </div>
-
-    <!-- 引用来源 -->
-    <div v-if="aiResult.sources && aiResult.sources.length > 0" class="ai-sources">
-      <div class="ai-sources-header">
-        <span style="font-weight: bold; color: #764ba2;">📚 引用来源 ({{ aiResult.sources.length }} 条)</span>
-      </div>
-      <a-divider style="margin: 8px 0"></a-divider>
-      <div v-for="(source, idx) in aiResult.sources" :key="idx" class="source-item">
-        <div class="source-title">
-          <span style="color: #1677ff; font-weight: bold;">{{ idx + 1 }}. </span>
-          <a-tag v-if="source.type" color="purple" :bordered="false" style="margin-right: 8px;">{{ source.type }}</a-tag>
-          <span v-text="source.reference"></span>
+          <div v-if="formatSourceSub(src)" class="source-sub">{{ formatSourceSub(src) }}</div>
         </div>
-        <div class="source-content" v-if="source.content">
-          <span v-html="source.content"></span>
-        </div>
-      </div>
+      </template>
     </div>
     
     <div style="margin-bottom: 360px"></div>
@@ -1715,6 +1792,13 @@ const onAISearch = async () => {
   color: #555;
   font-size: 14px;
 }
+.source-sub {
+  color: #888;
+  margin-left: 28px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 2px;
+}
 
 .source-meta {
   margin-top: 8px;
@@ -1755,6 +1839,48 @@ const onAISearch = async () => {
   word-break: break-word;
   max-height: 400px;
   overflow-y: auto;
+}
+
+/* KG-RAG 信息栏 */
+.kg-info-bar {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+  border: 1px solid #91caff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.kg-info-stats {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.kg-info-stats strong {
+  color: #1a1a2e;
+}
+.kg-info-sep {
+  margin-left: 16px;
+}
+.kg-info-row {
+  font-size: 14px;
+  color: #444;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.kg-skeleton-item {
+  padding-left: 20px;
+  font-size: 13px;
+  color: #555;
+}
+.kg-outline-divider {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin: 12px 0 16px;
+  letter-spacing: 2px;
 }
 
 /* ========== 移动端：768px ========== */

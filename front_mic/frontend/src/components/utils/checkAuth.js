@@ -21,7 +21,7 @@ const checkSession = (u = "") => {
         username.value = res.data.userinfo.username;
 
         if (u) {
-          if (role.value != u) window.location.hash = "pg403";
+          if (role.value != u) window.location.hash = "/pg403";
         }
       } else jumpToLogin();
     })

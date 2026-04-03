@@ -17,8 +17,8 @@ const fetchStats = () => {
   showSpin.value = true;
   errMsg.value = "";
   Promise.all([
-    axios.get("api/ai_search/stats/detail", { params: { days: days.value } }),
-    axios.get("api/ai_search/stats", { params: { days: days.value } }),
+    axios.get("/api/ai_search/stats/detail", { params: { days: days.value } }),
+    axios.get("/api/ai_search/stats", { params: { days: days.value } }),
   ])
     .then(([detailRes, legacyRes]) => {
       if (detailRes.data.status === "success") {
@@ -119,7 +119,7 @@ const clearingCache = ref(false);
 const onClearCache = () => {
   clearingCache.value = true;
   axios
-    .post("api/ai_search/cache/clear")
+    .post("/api/ai_search/cache/clear")
     .then((res) => {
       if (res.data.status === "success") {
         const data = res.data.data || {};
@@ -140,7 +140,7 @@ const onClearCache = () => {
 const onReset = () => {
   showSpin.value = true;
   axios
-    .post("api/ai_search/stats/reset")
+    .post("/api/ai_search/stats/reset")
     .then((res) => {
       if (res.data.status === "success") {
         tip("统计已重置");
@@ -183,7 +183,7 @@ const errorLimit = ref(20);
 const errors = ref([]);
 const fetchErrors = () => {
   axios
-    .get("api/ai_search/stats/errors", { params: { limit: errorLimit.value } })
+    .get("/api/ai_search/stats/errors", { params: { limit: errorLimit.value } })
     .then((res) => {
       if (res.data.status === "success") {
         errors.value = res.data.data || [];

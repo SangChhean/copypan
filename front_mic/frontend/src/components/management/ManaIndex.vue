@@ -7,8 +7,10 @@ import ShowMsg from "../tools/ShowMsg.vue";
 import { message } from "ant-design-vue";
 import type { UploadChangeParam } from "ant-design-vue";
 import { checkSession } from "../utils";
+import UploadList from "./UploadList.vue";
 import DataList from "./DataList.vue";
 import UserOpts from "./UserOpts.vue";
+import IvOpts from "./IvOpts.vue";
 import AIStatsRAG from "./AIStatsRAG.vue";
 import AIStatsFeast from "./AIStatsFeast.vue";
 import AIStatsRoughOutline from "./AIStatsRoughOutline.vue";
@@ -158,7 +160,7 @@ const navClick = (item: any) => {
         <div class="content">
           <div v-if="key === '1'" id="drag_area">
             <h1 class="center">文件上传</h1>
-            <a-upload-dragger v-model:fileList="fileList" name="file" :multiple="true" action="api/upload" @change="handleChange" @drop="handleDrop">
+            <a-upload-dragger v-model:fileList="fileList" name="file" :multiple="true" action="/api/upload" @change="handleChange" @drop="handleDrop">
               <p class="ant-upload-drag-icon">
                 <CloudUploadOutlined v-if="dragOver" />
                 <inbox-outlined v-else></inbox-outlined>

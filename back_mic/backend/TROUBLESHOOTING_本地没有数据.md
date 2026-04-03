@@ -14,13 +14,13 @@
 
 ## 2. 健康检查（是否连上 ES）
 
-在浏览器或命令行访问：
+`/api/ai_search/health` **无需登录**，可直接检查依赖是否正常：
 
 ```
 http://localhost:8000/api/ai_search/health
 ```
 
-或（需先登录拿到 token，或暂时去掉该接口的鉴权再试）：
+或：
 
 ```powershell
 curl -s http://localhost:8000/api/ai_search/health
@@ -31,30 +31,26 @@ curl -s http://localhost:8000/api/ai_search/health
 ## 3. Elasticsearch 端口与连接
 
 - 后端通过 **`es_config.py`** 连接 ES，读取环境变量：`ES_HOST`、**`ES_PORT`**、`ES_USERNAME`、`ES_PASSWORD`。
-- 默认 `ES_PORT=9200`。若你的 **ES 8.19** 映射在 **9201**（与 7.17.9 的 9200 区分），必须在 **`back_mic/backend/.env`** 里设置：
+- 与 `start_all.bat` 一致时：容器 **`elasticsearch8`** 映射 **9200:9200**，数据目录 **`es8_data`**，此时 **`.env` 中可不写 `ES_PORT`**（默认 9200）。
+- 若你把 ES 映射到其他宿主机端口，在 **`back_mic/backend/.env`** 中设置：
   ```env
-  ES_PORT=9201
+  ES_PORT=你的端口
   ```
-- 若未设置 `ES_PORT`，后端会连 9200；若此时只有 ES 8.19 在 9201 上跑，就会连错或连不上，导致「没有数据」。
 
 ## 4. ES 8.x 安全与密码
 
-- Elasticsearch 8.x 默认开启安全，会生成初始密码（首次启动日志或 `docker exec` 容器内可查）。
-- 在 **`.env`** 中配置（若 ES 需要认证）：
+- Elasticsearch 8.x 默认开启安全（如使用 `xpack.security.enabled=true` 与 `ELASTIC_PASSWORD` 启动容器）。
+- 在 **`.env`** 中配置（与容器一致）：
   ```env
   ES_USERNAME=elastic
   ES_PASSWORD=你的ES密码
   ```
 - 若密码错误或未填，ES 会返回 401，后端拿不到数据，表现也是「没有数据」。
 
-## 5. 数据在哪个 ES 上
+## 5. 数据与索引
 
-- 若你**两个 ES 同时存在**（7.17.9 与 8.19.0），数据目前只在一侧（通常是原先的 7.17.9）。
-- 后端当前连的端口由 **`.env` 的 `ES_PORT`** 决定：
-  - `ES_PORT=9200` → 连 7.17.9（若该容器映射 9200），一般有数据。
-  - `ES_PORT=9201` → 连 8.19.0；若 8.19 从未导入数据，索引为空，搜索也会「没有数据」。
-
-**建议**：若尚未向 ES 8.19 迁数据，先把 **`ES_PORT=9200`**（或删除该行用默认），让后端继续连有数据的 7.17.9，保证网站有数据。
+- 确认 **`es8_data`** 目录已包含迁移/导入后的索引数据；若为新装 ES 且从未导入，索引为空时搜索会无结果。
+- 可在管理端「已上传文件管理」等处重新导入，或按部署文档迁移数据目录。
 
 ## 6. 快速检查 ES 连接（本机）
 
@@ -74,5 +70,5 @@ python -c "from es_config import es; print('ES ping:', es.ping())"
 |----------------|------------------------------|------|
 | 白屏 / 一直转 | 后端未启动或未开 8000        | 启动 `uvicorn main:app --port 8000` |
 | 跳到登录       | 未登录或 token 失效          | 正常登录后再访问首页 |
-| 搜索无结果     | ES 连错端口或连不上          | 设置 `.env` 的 `ES_PORT`（及认证） |
-| 搜索无结果     | 连的是没有数据的 ES 8.19      | 暂时改回 `ES_PORT=9200` 连 7.17.9 |
+| 搜索无结果     | ES 连错端口或连不上          | 核对 `.env` 的 `ES_PORT`（及认证） |
+| 搜索无结果     | 索引为空或未导入数据         | 导入数据或迁移 `es8_data` |

@@ -1,68 +1,67 @@
 @echo off
-chcp 65001 >nul
-title Copypan 服务状态
+setlocal
+title Copypan Status
 
 echo ============================================================
-echo              Copypan 服务状态
+echo Copypan Service Status
 echo ============================================================
 echo.
 
-echo [Elasticsearch]
-docker ps --filter "name=elasticsearch" --format "{{.Status}}" | find "Up" >nul
-if %errorlevel% equ 0 (
-    echo ✓ 运行中
-    curl -s http://localhost:9200 >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo   可访问: http://localhost:9200
+where docker >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] docker command not found. Container status unavailable.
+) else (
+    echo [Elasticsearch8]
+    docker ps --filter "name=elasticsearch8" --filter "status=running" --format "{{.Names}}" | findstr /i "^elasticsearch8$" >nul
+    if errorlevel 1 (
+        echo [DOWN]
+    ) else (
+        echo [UP]
+        curl -s http://localhost:9200 >nul 2>&1 && echo URL: http://localhost:9200
     )
-) else (
-    echo ❌ 未运行
-)
-echo.
+    echo.
 
-echo [Kibana]
-docker ps --filter "name=kibana" --format "{{.Status}}" | find "Up" >nul
-if %errorlevel% equ 0 (
-    echo ✓ 运行中
-    echo   可访问: http://localhost:5601
-) else (
-    echo ❌ 未运行
-)
-echo.
-
-echo [Redis]
-docker ps --filter "name=redis" --format "{{.Status}}" | find "Up" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ 运行中
-    echo   端口: localhost:6379 （AI 缓存与统计）
-) else (
-    echo ❌ 未运行
-)
-echo.
-
-echo [后端服务]
-tasklist /fi "imagename eq python.exe" | find "python.exe" >nul
-if %errorlevel% equ 0 (
-    echo ✓ 运行中
-    curl -s http://localhost:8000 >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo   可访问: http://localhost:8000
+    echo [Redis]
+    docker ps --filter "name=redis" --filter "status=running" --format "{{.Names}}" | findstr /i "^redis$" >nul
+    if errorlevel 1 (
+        echo [DOWN]
+    ) else (
+        echo [UP]
+        echo URL: localhost:6379
     )
+    echo.
+
+    echo [Neo4j]
+    docker ps --filter "name=neo4j" --filter "status=running" --format "{{.Names}}" | findstr /i "^neo4j$" >nul
+    if errorlevel 1 (
+        echo [DOWN]
+    ) else (
+        echo [UP]
+        echo URL: http://localhost:7474
+        echo BOLT: localhost:7687
+    )
+    echo.
+)
+
+echo [Backend API]
+tasklist /fi "imagename eq python.exe" | findstr /i "python.exe" >nul
+if errorlevel 1 (
+    echo [DOWN]
 ) else (
-    echo ❌ 未运行
+    echo [UP]
+    curl -s http://localhost:8000 >nul 2>&1 && echo URL: http://localhost:8000
 )
 echo.
 
 echo [Nginx]
-tasklist /fi "imagename eq nginx.exe" | find "nginx.exe" >nul
-if %errorlevel% equ 0 (
-    echo ✓ 运行中
-    echo   可访问: http://localhost
+tasklist /fi "imagename eq nginx.exe" | findstr /i "nginx.exe" >nul
+if errorlevel 1 (
+    echo [DOWN]
 ) else (
-    echo ❌ 未运行
+    echo [UP]
+    echo URL: http://localhost
 )
 echo.
 
 echo ============================================================
-echo.
 pause

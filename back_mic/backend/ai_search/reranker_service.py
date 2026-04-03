@@ -12,10 +12,36 @@ logger = logging.getLogger(__name__)
 JINA_API_KEY = os.getenv("JINA_API_KEY", "")
 RERANK_ENDPOINT = "https://api.jina.ai/v1/rerank"
 RERANK_MODEL = "jina-reranker-v3"
-TIMEOUT = 30.0
+TIMEOUT = 10.0
 
 
-async def rerank(query: str, documents: list[str], top_n: int) -> list[int]:
+def _parse_rerank_response(resp: httpx.Response, documents: list[str], n: int) -> tuple[list[int], bool]:
+    """从成功响应解析下标列表；失败则返回 (原序下标, degraded=True)。"""
+    try:
+        data = resp.json()
+    except Exception as e:
+        logger.warning("Jina Reranker 响应解析失败，降级为原序: %s", e)
+        return list(range(n)), True
+
+    results = data.get("results") or []
+    out: list[int] = []
+    for r in results:
+        if len(out) >= n:
+            break
+        idx = r.get("index")
+        if isinstance(idx, int) and 0 <= idx < len(documents):
+            out.append(idx)
+    if len(out) < n:
+        seen = set(out)
+        for i in range(len(documents)):
+            if len(out) >= n:
+                break
+            if i not in seen:
+                out.append(i)
+    return out[:n], False
+
+
+async def rerank(query: str, documents: list[str], top_n: int) -> tuple[list[int], bool]:
     """
     使用 Jina Reranker v3 对文档按与 query 的相关性重排，返回原始下标列表。
 
@@ -25,15 +51,14 @@ async def rerank(query: str, documents: list[str], top_n: int) -> list[int]:
         top_n: 返回的前几名数量
 
     Returns:
-        按相关性降序的文档下标列表，长度为 min(top_n, len(documents))
-        降级时返回 list(range(min(top_n, len(documents))))
+        (indices, degraded): indices 为按相关性降序的文档下标；degraded 为 True 表示已降级为原序。
     """
     if not documents:
-        return []
+        return [], False
     n = min(top_n, len(documents))
     if not JINA_API_KEY or not JINA_API_KEY.strip():
         logger.warning("JINA_API_KEY 未配置，Reranker 降级为原序")
-        return list(range(n))
+        return list(range(n)), True
 
     payload = {
         "model": RERANK_MODEL,
@@ -43,45 +68,44 @@ async def rerank(query: str, documents: list[str], top_n: int) -> list[int]:
     }
     headers = {"Authorization": f"Bearer {JINA_API_KEY.strip()}"}
 
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            resp = await client.post(RERANK_ENDPOINT, json=payload, headers=headers)
-    except httpx.TimeoutException as e:
-        logger.warning("Jina Reranker 请求超时，降级为原序: %s", e)
-        return list(range(n))
-    except httpx.HTTPError as e:
-        logger.warning("Jina Reranker 请求失败，降级为原序: %s", e)
-        return list(range(n))
+    first_attempt_failed = False
+    resp: httpx.Response | None = None
 
-    if resp.status_code != 200:
-        logger.warning(
-            "Jina Reranker 返回非 200，降级为原序: status=%s body=%s",
-            resp.status_code,
-            resp.text[:200],
-        )
-        return list(range(n))
+    for attempt in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                resp = await client.post(RERANK_ENDPOINT, json=payload, headers=headers)
+        except httpx.TimeoutException as e:
+            reason = str(e) or "超时"
+            if attempt == 0:
+                logger.warning("[Reranker] 第1次请求失败（%s），正在重试...", reason)
+                first_attempt_failed = True
+                continue
+            logger.warning("[Reranker] 重试仍失败（%s），降级为原序", reason)
+            return list(range(n)), True
+        except httpx.HTTPError as e:
+            reason = str(e) or type(e).__name__
+            if attempt == 0:
+                logger.warning("[Reranker] 第1次请求失败（%s），正在重试...", reason)
+                first_attempt_failed = True
+                continue
+            logger.warning("[Reranker] 重试仍失败（%s），降级为原序", reason)
+            return list(range(n)), True
 
-    try:
-        data = resp.json()
-    except Exception as e:
-        logger.warning("Jina Reranker 响应解析失败，降级为原序: %s", e)
-        return list(range(n))
+        if resp is None:
+            return list(range(n)), True
 
-    results = data.get("results") or []
-    # API 返回的 results 已按 relevance 降序，每项含 index（原始下标）
-    out = []
-    for r in results:
-        if len(out) >= n:
-            break
-        idx = r.get("index")
-        if isinstance(idx, int) and 0 <= idx < len(documents):
-            out.append(idx)
-    # 若返回条数不足，用原序补齐
-    if len(out) < n:
-        seen = set(out)
-        for i in range(len(documents)):
-            if len(out) >= n:
-                break
-            if i not in seen:
-                out.append(i)
-    return out[:n]
+        if resp.status_code != 200:
+            reason = f"HTTP {resp.status_code}"
+            if attempt == 0:
+                logger.warning("[Reranker] 第1次请求失败（%s），正在重试...", reason)
+                first_attempt_failed = True
+                continue
+            logger.warning("[Reranker] 重试仍失败（%s），降级为原序", reason)
+            return list(range(n)), True
+
+        if first_attempt_failed:
+            logger.info("[Reranker] 重试成功")
+        return _parse_rerank_response(resp, documents, n)
+
+    return list(range(n)), True

@@ -8,9 +8,9 @@
   若报错 "analyzer [ik_max_word] has not been conf"，说明索引的 mapping 使用了
   IK 中文分词器，但当前集群未安装 IK 插件。必须先安装插件再重试本脚本。
 
-  安装 IK 插件（版本需与 Elasticsearch 一致，例如 ES 7.17）：
+  安装 IK 插件（版本需与 Elasticsearch 一致，例如 ES 8.19 对应 ik 8.19.0）：
     cd <ES安装目录>
-    bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.17.9/elasticsearch-analysis-ik-7.17.9.zip
+    bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v8.19.0/elasticsearch-analysis-ik-8.19.0.zip
   安装后需重启 Elasticsearch，再运行本脚本。
 """
 import sys

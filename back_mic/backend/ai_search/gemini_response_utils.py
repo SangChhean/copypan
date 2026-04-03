@@ -9,9 +9,24 @@ Gemini generate_content 响应解析与纲目翻译专用配置。
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
+
+# 纲目翻译单次输出 token 上限（避免模型默认过低导致长纲目译文被截断为空）
+_TRANSLATION_MAX_OUT_MIN = 1024
+_TRANSLATION_MAX_OUT_CAP = 65536
+
+
+def translation_max_output_tokens() -> int:
+    """环境变量 GEMINI_TRANSLATION_MAX_OUTPUT_TOKENS，默认 32768，夹在 [_TRANSLATION_MAX_OUT_MIN, _TRANSLATION_MAX_OUT_CAP]。"""
+    raw = os.getenv("GEMINI_TRANSLATION_MAX_OUTPUT_TOKENS", "32768")
+    try:
+        v = int(raw)
+    except ValueError:
+        v = 32768
+    return max(_TRANSLATION_MAX_OUT_MIN, min(v, _TRANSLATION_MAX_OUT_CAP))
 
 try:
     from google.genai import types as genai_types
@@ -21,15 +36,17 @@ except ImportError:
 
 def gemini_translation_generate_config(system_instruction: Any) -> Any:
     """
-    纲目翻译专用 GenerateContentConfig：仅关闭 AFC + system_instruction。
+    纲目翻译专用 GenerateContentConfig：关闭 AFC、显式 max_output_tokens（见 translation_max_output_tokens）。
     不设置 thinking_config（避免各版本 SDK/服务端对 ThinkingConfig 校验不一致导致请求失败）。
     """
     if genai_types is None:
         raise RuntimeError("google.genai 未安装")
 
+    max_out = translation_max_output_tokens()
     return genai_types.GenerateContentConfig(
         system_instruction=system_instruction,
         automatic_function_calling=genai_types.AutomaticFunctionCallingConfig(disable=True),
+        max_output_tokens=max_out,
     )
 
 
