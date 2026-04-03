@@ -546,42 +546,20 @@ function getSourceLabel(chunkId) {
 
 function formatSourceTitle(src) {
   const type = getSourceType(src.chunk_id);
-  switch (type) {
-    case "firewall":
-      return src.book_title || src.message_title || src.chunk_id.replace(/^firewall:/, "");
-    case "cwwl": {
-      const yearMatch = src.chunk_id.match(/^cwwl_(\d{4})/);
-      const year = yearMatch ? yearMatch[1] : "";
-      const title = src.book_title || src.source_zh || src.chunk_id;
-      return year ? `${title}（${year}）` : title;
-    }
-    case "bib":
-      return src.source_zh || src.book_title || src.chunk_id;
-    case "map_dictionary":
-      return src.message_title
-        ? `${src.message_title}（${src.book_title || ""}）`
-        : src.book_title || src.chunk_id;
-    default:
-      return src.book_title || src.source_zh || src.chunk_id;
-  }
-}
 
-function formatSourceSub(src) {
-  const type = getSourceType(src.chunk_id);
-  switch (type) {
-    case "firewall":
-      return null;
-    case "bib":
-      return src.message_title || null;
-    case "map_dictionary":
-      return src.section_title || null;
-    default: {
-      const parts = [];
-      if (src.message_title) parts.push(src.message_title);
-      if (src.section_title) parts.push(src.section_title);
-      return parts.length > 0 ? parts.join(" · ") : null;
-    }
+  if (type === "firewall") {
+    return src.chunk_id.replace(/^firewall:/, "");
   }
+
+  if (type === "bib") {
+    const sz = src.source_zh || src.chunk_id;
+    return sz.replace(/^[（(]/, "").replace(/[）)]$/, "");
+  }
+
+  const parts = [];
+  if (src.book_title) parts.push(src.book_title);
+  if (src.message_title) parts.push(src.message_title);
+  return parts.join("，") || src.chunk_id;
 }
 
 const toggleAiPanel = () => {
@@ -765,7 +743,10 @@ function parseKgRagResponse(data) {
       book_title: r.book_title || "",
       source_zh: r.source_zh || "",
       message_title: r.message_title || "",
-      section_title: r.section_title || "",
+      text_preview: (() => {
+        const t = r.text || "";
+        return t.length > 200 ? t.slice(0, 200) + "…" : t;
+      })(),
     }));
     result.totalElapsedMs = usage.total_elapsed_ms ?? null;
     result.totalCostUsd = (usage.totals || {}).cost_usd ?? null;
@@ -1200,7 +1181,11 @@ const onAISearch = async () => {
             <a-tag :color="getSourceLabel(src.chunk_id).color" size="small" style="margin-right: 6px;">{{ getSourceLabel(src.chunk_id).label }}</a-tag>
             <span>{{ formatSourceTitle(src) }}</span>
           </div>
-          <div v-if="formatSourceSub(src)" class="source-sub">{{ formatSourceSub(src) }}</div>
+          <div v-if="src.text_preview && getSourceType(src.chunk_id) !== 'firewall'"
+               class="source-content"
+               style="color: #666; margin-left: 28px; margin-top: 4px; font-size: 13px; line-height: 1.5;">
+            {{ src.text_preview }}
+          </div>
         </div>
       </template>
     </div>
@@ -1792,14 +1777,6 @@ const onAISearch = async () => {
   color: #555;
   font-size: 14px;
 }
-.source-sub {
-  color: #888;
-  margin-left: 28px;
-  font-size: 13px;
-  line-height: 1.5;
-  margin-top: 2px;
-}
-
 .source-meta {
   margin-top: 8px;
 }

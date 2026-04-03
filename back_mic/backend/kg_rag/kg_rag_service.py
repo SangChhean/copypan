@@ -97,12 +97,14 @@ def _extract_main_sources(main_results: list[dict]) -> list[dict]:
     """从 main_results 提取前端展示用的引用摘要。"""
     out = []
     for d in main_results:
+        raw_text = d.get("text", "")
+        preview = raw_text[:200] + "…" if len(raw_text) > 200 else raw_text
         out.append({
             "chunk_id": d.get("chunk_id", ""),
             "book_title": d.get("book_title", ""),
             "source_zh": d.get("source_zh", ""),
             "message_title": d.get("message_title", ""),
-            "section_title": d.get("section_title", ""),
+            "text_preview": preview,
         })
     return out
 
