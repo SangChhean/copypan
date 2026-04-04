@@ -913,6 +913,11 @@ async def feast_outline_generate_transcript(request: FeastOutlineTranscriptReque
             out["preface_outline"] = gen.get("preface_outline") or ""
         if gen.get("addendum_outline") is not None:
             out["addendum_outline"] = gen.get("addendum_outline") or ""
+        ol = out.get("outline") or ""
+        logger.info(
+            "feast_outline/generate/transcript 完成，将返回客户端 outline_len=%s",
+            len(ol),
+        )
         return out
     except HTTPException:
         raise
@@ -932,7 +937,12 @@ async def feast_outline_generate_composite(request: FeastOutlineCompositeRequest
         )
         if gen.get("error"):
             raise HTTPException(status_code=400, detail=gen.get("error"))
-        return {"outline": (gen.get("outline") or "").strip()}
+        outline = (gen.get("outline") or "").strip()
+        logger.info(
+            "feast_outline/generate/composite 完成，将返回客户端 outline_len=%s",
+            len(outline),
+        )
+        return {"outline": outline}
     except HTTPException:
         raise
     except Exception as e:

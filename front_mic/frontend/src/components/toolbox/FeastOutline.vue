@@ -388,7 +388,8 @@ function copyResult(content) {
         第二行：总题<br>
         第三行：篇题<br>
         ① 纲目原文、② 晨兴信息选读、③ 听抄稿（序言、添言需分开输入）<br>
-        点击「生成节期纲目」后即可在结果中查看并刷格式下载。
+        点击「生成节期纲目」后即可在结果中查看并刷格式下载。<br>
+        <span class="hint-warn">线上部署时，听抄稿接口常需 2～3 分钟；Nginx 等对 <code>/api/ai_search/</code> 的 <code>proxy_read_timeout</code> 须 ≥300 秒，否则浏览器会断连而后端日志仍显示 Claude 成功。</span>
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
 
@@ -573,6 +574,21 @@ function copyResult(content) {
 .hint {
   color: #666;
   margin-bottom: 0;
+}
+
+.hint-warn {
+  display: inline-block;
+  margin-top: 8px;
+  color: #ad6800;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hint-warn code {
+  font-size: 12px;
+  padding: 0 4px;
+  background: #fff7e6;
+  border-radius: 2px;
 }
 
 .type-selection {
