@@ -191,6 +191,79 @@ CLAUDE_SEMAPHORE = threading.Semaphore(CLAUDE_CONCURRENT_LIMIT)
 GEMINI_SEMAPHORE = threading.Semaphore(GEMINI_CONCURRENT_LIMIT)
 logger.info("API 并发限制: Claude=%s, Gemini=%s", CLAUDE_CONCURRENT_LIMIT, GEMINI_CONCURRENT_LIMIT)
 
+
+def _claude_error_is_retryable(exc: BaseException) -> bool:
+    """429/529/5xx 临时错误与连接/超时，可重试。"""
+    if isinstance(exc, anthropic.APIConnectionError):
+        return True
+    if isinstance(exc, anthropic.APIStatusError):
+        return exc.status_code in (429, 500, 502, 503, 504, 529)
+    return False
+
+
+def _call_claude_with_retry(
+    prompt: str,
+    max_tokens: int = 8192,
+    max_retries: int = 2,
+    backoff_seconds: Tuple[int, ...] = (5, 10),
+) -> Any:
+    """
+    节期纲目等：调用 Claude messages.create；遇可重试错误最多再试 max_retries 次（共 1+max_retries 次）。
+    CLAUDE_SEMAPHORE 仅在单次 HTTP 请求期间持有，退避等待期间释放。
+    """
+    if not claude_client:
+        raise RuntimeError("Claude 客户端未初始化")
+    for attempt in range(max_retries + 1):
+        try:
+            with CLAUDE_SEMAPHORE:
+                return claude_client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=max_tokens,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+        except Exception as e:
+            if not _claude_error_is_retryable(e) or attempt >= max_retries:
+                raise
+            wait = backoff_seconds[min(attempt, len(backoff_seconds) - 1)] if backoff_seconds else 5
+            status = getattr(e, "status_code", None) if isinstance(e, anthropic.APIStatusError) else None
+            logger.warning(
+                "Claude 调用失败（可重试）attempt=%s/%s status=%s: %s，%s 秒后重试",
+                attempt + 1,
+                max_retries + 1,
+                status,
+                e,
+                wait,
+            )
+            time.sleep(wait)
+
+
+def _claude_message_text(message: Any) -> str:
+    """
+    从 Messages API 返回的 Message 中拼接所有 text 类型块。
+    避免仅用 content[0]：若存在 thinking / tool_use 等块时首块可能无 .text，会 AttributeError 或取错内容。
+    """
+    if not message or not getattr(message, "content", None):
+        return ""
+    parts: List[str] = []
+    block_types: List[str] = []
+    for block in message.content:
+        block_types.append(str(getattr(block, "type", type(block).__name__)))
+        btype = getattr(block, "type", None)
+        if btype == "text":
+            t = getattr(block, "text", None)
+            if isinstance(t, str) and t.strip():
+                parts.append(t)
+        # 其它类型（thinking、tool_use 等）跳过
+    out = "\n".join(parts).strip()
+    if not out and block_types:
+        logger.warning(
+            "Claude 响应无可用 text 块，块类型=%s，stop_reason=%s",
+            block_types,
+            getattr(message, "stop_reason", None),
+        )
+    return out
+
+
 # 纲目翻译时与原文一起发送的 prompt（【需要翻译的文章】+ 以下说明）
 OUTLINE_TRANSLATE_PROMPT_ZH2EN = (
     "请将文章翻译为英文，严格使用System instructions中的专用术语表进行翻译。"
@@ -2230,22 +2303,17 @@ class AISearchService:
         if not claude_client:
             return {"outline": "", "error": "Claude 客户端未初始化"}
         try:
-            with CLAUDE_SEMAPHORE:
-                message = claude_client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=8192,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = message.content[0].text
-                try:
-                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                    logger.info(f"[Claude节期纲目-晨兴] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                    if self.redis:
-                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                except Exception:
-                    pass
+            message = _call_claude_with_retry(prompt, max_tokens=8192)
+            text = _claude_message_text(message)
+            try:
+                in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                logger.info(f"[Claude节期纲目-晨兴] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                if self.redis:
+                    get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+            except Exception:
+                pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": text or "", "error": None}
         except Exception as e:
@@ -2273,22 +2341,17 @@ class AISearchService:
             addendum_raw = (transcript_addendum or "").strip()
 
             def _main_outline():
-                with CLAUDE_SEMAPHORE:
-                    message = claude_client.messages.create(
-                        model=CLAUDE_MODEL,
-                        max_tokens=8192,
-                        messages=[{"role": "user", "content": prompt}],
-                    )
-                    text = message.content[0].text
-                    try:
-                        in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                        out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                        cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                        logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                        if self.redis:
-                            get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                    except Exception:
-                        pass
+                message = _call_claude_with_retry(prompt, max_tokens=8192)
+                text = _claude_message_text(message)
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
                 return _strip_code_fence_for_outline(text) or text or ""
 
             def _preface():
@@ -2312,22 +2375,17 @@ class AISearchService:
                         res = f_addendum.result()
                         result["addendum_outline"] = (res.get("outline") or "").strip() if not res.get("error") else ""
             else:
-                with CLAUDE_SEMAPHORE:
-                    message = claude_client.messages.create(
-                        model=CLAUDE_MODEL,
-                        max_tokens=8192,
-                        messages=[{"role": "user", "content": prompt}],
-                    )
-                    text = message.content[0].text
-                    try:
-                        in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                        out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                        cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                        logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                        if self.redis:
-                            get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                    except Exception:
-                        pass
+                message = _call_claude_with_retry(prompt, max_tokens=8192)
+                text = _claude_message_text(message)
+                try:
+                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                    logger.info(f"[Claude节期纲目-听抄稿] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                    if self.redis:
+                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+                except Exception:
+                    pass
                 result = {"outline": (_strip_code_fence_for_outline(text) or text or ""), "error": None}
             return result
         except Exception as e:
@@ -2344,22 +2402,17 @@ class AISearchService:
         if not claude_client:
             return {"outline": "", "error": "Claude 客户端未初始化"}
         try:
-            with CLAUDE_SEMAPHORE:
-                message = claude_client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=8192,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = message.content[0].text
-                try:
-                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                    logger.info(f"[Claude节期纲目-复合] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                    if self.redis:
-                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                except Exception:
-                    pass
+            message = _call_claude_with_retry(prompt, max_tokens=8192)
+            text = _claude_message_text(message)
+            try:
+                in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                logger.info(f"[Claude节期纲目-复合] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                if self.redis:
+                    get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+            except Exception:
+                pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": text or "", "error": None}
         except Exception as e:
@@ -2376,22 +2429,17 @@ class AISearchService:
         if not claude_client:
             return {"outline": "", "error": "Claude 客户端未初始化"}
         try:
-            with CLAUDE_SEMAPHORE:
-                message = claude_client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=4096,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = message.content[0].text
-                try:
-                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                    logger.info(f"[Claude节期纲目-序言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                    if self.redis:
-                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                except Exception:
-                    pass
+            message = _call_claude_with_retry(prompt, max_tokens=4096)
+            text = _claude_message_text(message)
+            try:
+                in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                logger.info(f"[Claude节期纲目-序言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                if self.redis:
+                    get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+            except Exception:
+                pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": (text or "").strip(), "error": None}
         except Exception as e:
@@ -2408,22 +2456,17 @@ class AISearchService:
         if not claude_client:
             return {"outline": "", "error": "Claude 客户端未初始化"}
         try:
-            with CLAUDE_SEMAPHORE:
-                message = claude_client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=4096,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = message.content[0].text
-                try:
-                    in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
-                    out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
-                    cost = (in_tok * 3 + out_tok * 15) / 1_000_000
-                    logger.info(f"[Claude节期纲目-添言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                    if self.redis:
-                        get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
-                except Exception:
-                    pass
+            message = _call_claude_with_retry(prompt, max_tokens=4096)
+            text = _claude_message_text(message)
+            try:
+                in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
+                out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)
+                cost = (in_tok * 3 + out_tok * 15) / 1_000_000
+                logger.info(f"[Claude节期纲目-添言] 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                if self.redis:
+                    get_monitoring(self.redis).record_tool_usage("feast_outline_claude", "claude", in_tok, out_tok, cost)
+            except Exception:
+                pass
             text = _strip_code_fence_for_outline(text) or text
             return {"outline": (text or "").strip(), "error": None}
         except Exception as e:

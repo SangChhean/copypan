@@ -71,6 +71,30 @@ function toggleType(value) {
   else selectedTypes.value.push(value);
 }
 
+/** 读取节期纲目 API 响应体；网关返回 504 HTML 时 JSON.parse 会失败，需给出可读说明 */
+async function readFeastOutlineApiBody(res) {
+  const raw = await res.text();
+  let data = {};
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = {};
+    }
+  }
+  const rawL = raw.toLowerCase();
+  const hasDetail = !!(data && (data.detail ?? data.error ?? data.message));
+  if (!res.ok && !hasDetail) {
+    if (res.status === 504 || rawL.includes("gateway time-out") || rawL.includes("504 gateway")) {
+      data.detail =
+        "网关超时(504)：听抄稿/复合生成耗时较长，请将 Nginx 等代理的 proxy_read_timeout 调至 300 秒以上（见 back_mic/docs/gateway-timeout-feast-outline.md）";
+    } else if (raw.trim()) {
+      data.detail = raw.trim().slice(0, 280);
+    }
+  }
+  return data;
+}
+
 // 校验：选中某类型时所需输入是否已填
 function canGenerate() {
   const o = (inputOutline.value || "").trim();
@@ -132,9 +156,9 @@ async function generateAll() {
           headers,
           body: JSON.stringify({ content: o }),
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readFeastOutlineApiBody(res);
         if (res.ok && data.content != null) return { content: data.content, error: null };
-        return { content: null, error: data.detail || data.error || "失败" };
+        return { content: null, error: data.detail || data.error || data.message || "失败" };
       } catch (err) {
         return { content: null, error: err.message || "网络错误" };
       }
@@ -149,7 +173,7 @@ async function generateAll() {
         headers,
         body: JSON.stringify({ content: m }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readFeastOutlineApiBody(res);
       const outline = getOutlineFromResponse(data);
       if (res.ok && outline) return outline;
       errors.push(`晨兴信息选读的纲目: ${getErrorFromResponse(data) || (res.ok ? "返回内容为空" : "失败")}`);
@@ -176,7 +200,7 @@ async function generateAll() {
         headers,
         body: JSON.stringify(body),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readFeastOutlineApiBody(res);
       const outline = getOutlineFromResponse(data);
       if (res.ok && outline) {
         const d = data.data ?? data;
@@ -231,7 +255,7 @@ async function generateAll() {
             morning_revival_outline: morningRevivalOutline,
           }),
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readFeastOutlineApiBody(res);
         const outline = getOutlineFromResponse(data);
         if (res.ok && outline) {
           newResults.push({
