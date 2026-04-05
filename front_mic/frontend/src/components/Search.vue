@@ -875,13 +875,10 @@ const onAISearch = async () => {
         >
           {{ aiPanelVisible ? "收起AI纲目面板" : "AI纲目制作面板" }}
         </a-button>
-        <span class="pan-ai-badge">Pan AI 3.0</span>
       </div>
       <transition name="ai-meta-panel">
         <div v-if="aiPanelVisible" class="ai-meta-panel">
-          <div class="ai-panel-header">
-            <span class="ai-panel-brand">Pan AI 3.0</span>
-          </div>
+          <span class="ai-panel-brand">Pan AI 3.0</span>
           <div class="ai-meta-grid">
             <label class="ai-meta-field">
               <span>纲目主题*（必填）</span>
@@ -1300,36 +1297,22 @@ const onAISearch = async () => {
   align-items: center;
 }
 
-.pan-ai-badge {
-  margin-left: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.85;
-}
-
-.ai-panel-header {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e8e8f0;
-}
-
 .ai-panel-brand {
+  position: absolute;
+  top: 14px;
+  right: 18px;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.5px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .ai-meta-panel {
+  position: relative;
   margin-top: 12px;
   padding: 16px;
   border: 1px solid #e6f4ff;
