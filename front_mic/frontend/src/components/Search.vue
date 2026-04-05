@@ -875,9 +875,13 @@ const onAISearch = async () => {
         >
           {{ aiPanelVisible ? "收起AI纲目面板" : "AI纲目制作面板" }}
         </a-button>
+        <span class="pan-ai-badge">Pan AI 3.0</span>
       </div>
       <transition name="ai-meta-panel">
         <div v-if="aiPanelVisible" class="ai-meta-panel">
+          <div class="ai-panel-header">
+            <span class="ai-panel-brand">Pan AI 3.0</span>
+          </div>
           <div class="ai-meta-grid">
             <label class="ai-meta-field">
               <span>纲目主题*（必填）</span>
@@ -1057,7 +1061,7 @@ const onAISearch = async () => {
   <div class="ai-result" v-if="showInfo == 5 && aiResult">
     <a-alert type="success" show-icon>
       <template #message>
-        <span style="font-size: 16px">✨ AI 纲目生成完成</span>
+        <span style="font-size: 16px">✨ <strong style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Pan AI 3.0</strong> 纲目生成完成</span>
       </template>
     </a-alert>
     <a-divider style="margin: 10px 0"></a-divider>
@@ -1293,6 +1297,36 @@ const onAISearch = async () => {
 }
 .model {
   margin-top: 5px;
+  align-items: center;
+}
+
+.pan-ai-badge {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.85;
+}
+
+.ai-panel-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8e8f0;
+}
+
+.ai-panel-brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .ai-meta-panel {
