@@ -1299,15 +1299,16 @@ const onAISearch = async () => {
 
 .ai-panel-brand {
   position: absolute;
-  top: 14px;
-  right: 18px;
+  top: 12px;
+  right: 16px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-style: italic;
+  background: linear-gradient(135deg, #5b6af0 0%, #a855f7 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  opacity: 0.7;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
   pointer-events: none;
 }
 
