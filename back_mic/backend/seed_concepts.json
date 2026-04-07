@@ -1910,7 +1910,7 @@
     {
       "from": "三一神",
       "to": "神圣的分赐",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "三一神",
@@ -2530,17 +2530,17 @@
     {
       "from": "传福音",
       "to": "得救",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
       "to": "结果子",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
       "to": "神圣的生命",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
@@ -2565,17 +2565,17 @@
     {
       "from": "传福音",
       "to": "悔改",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
       "to": "重生",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
       "to": "称义",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "传福音",
@@ -3914,11 +3914,6 @@
     },
     {
       "from": "合并",
-      "to": "新耶路撒冷",
-      "type": "LEADS_TO"
-    },
-    {
-      "from": "合并",
       "to": "建造",
       "type": "LEADS_TO"
     },
@@ -4735,17 +4730,17 @@
     {
       "from": "国度的实际",
       "to": "国度的生活",
-      "type": "PRACTICED_AS"
+      "type": "EXPERIENCES"
     },
     {
       "from": "国度的实际",
       "to": "身体的生活",
-      "type": "PRACTICED_AS"
+      "type": "EXPERIENCES"
     },
     {
       "from": "国度的实际",
       "to": "召会生活",
-      "type": "PRACTICED_AS"
+      "type": "EXPERIENCES"
     },
     {
       "from": "国度的实际",
@@ -7015,7 +7010,7 @@
     {
       "from": "得救",
       "to": "变化",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
@@ -7030,22 +7025,22 @@
     {
       "from": "得救",
       "to": "称义",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
       "to": "重生",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
       "to": "赦罪",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
       "to": "洗罪",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
@@ -7060,17 +7055,17 @@
     {
       "from": "得救",
       "to": "永远的生命",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "得救",
       "to": "与神和好",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "得救",
       "to": "神的国",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "得救",
@@ -7715,12 +7710,12 @@
     {
       "from": "恩典",
       "to": "救恩",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "恩典",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "恩典",
@@ -7780,17 +7775,17 @@
     {
       "from": "恩典",
       "to": "永远的生命",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "恩典",
       "to": "生机的救恩",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "恩典",
       "to": "复兴",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "恩典",
@@ -9430,12 +9425,12 @@
     {
       "from": "更新",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "更新",
       "to": "身体的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "更新",
@@ -9465,7 +9460,7 @@
     {
       "from": "更新",
       "to": "生命的变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "更新",
@@ -9660,7 +9655,7 @@
     {
       "from": "构成在我们里面",
       "to": "神人调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "构成在我们里面",
@@ -11905,7 +11900,7 @@
     {
       "from": "神的话",
       "to": "得救",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "神的话",
@@ -11915,7 +11910,7 @@
     {
       "from": "神的话",
       "to": "接触主",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "神的话",
@@ -11945,12 +11940,12 @@
     {
       "from": "神的话",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "神的话",
       "to": "生命的变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "神的话",
@@ -12124,11 +12119,6 @@
     },
     {
       "from": "祷告",
-      "to": "代表的权柄",
-      "type": "LEADS_TO"
-    },
-    {
-      "from": "祷告",
       "to": "召会的事奉",
       "type": "LEADS_TO"
     },
@@ -12140,7 +12130,7 @@
     {
       "from": "祷告",
       "to": "属灵的争战",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷告",
@@ -12180,12 +12170,12 @@
     {
       "from": "祷告",
       "to": "那灵的浇灌",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷告",
       "to": "生命的交通",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷告",
@@ -12200,7 +12190,7 @@
     {
       "from": "祷读主话",
       "to": "享受基督",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
@@ -12220,7 +12210,7 @@
     {
       "from": "祷读主话",
       "to": "经历基督",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
@@ -12240,12 +12230,12 @@
     {
       "from": "祷读主话",
       "to": "生命的光",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
       "to": "生命的流",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
@@ -12260,7 +12250,7 @@
     {
       "from": "祷读主话",
       "to": "与主交通",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
@@ -12290,7 +12280,7 @@
     {
       "from": "祷读主话",
       "to": "在灵里",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "祷读主话",
@@ -12865,12 +12855,12 @@
     {
       "from": "经纶",
       "to": "神性与人性的调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "经纶",
       "to": "神人调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "经纶",
@@ -13710,7 +13700,7 @@
     {
       "from": "膏油涂抹",
       "to": "教导",
-      "type": "LEADS_TO"
+      "type": "CONTAINS"
     },
     {
       "from": "膏油涂抹",
@@ -13720,7 +13710,7 @@
     {
       "from": "膏油涂抹",
       "to": "享受基督",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
@@ -13730,7 +13720,7 @@
     {
       "from": "膏油涂抹",
       "to": "调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
@@ -13740,7 +13730,7 @@
     {
       "from": "膏油涂抹",
       "to": "生命的交通",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
@@ -13750,22 +13740,22 @@
     {
       "from": "膏油涂抹",
       "to": "变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
       "to": "圣别",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
       "to": "神人调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
       "to": "相调",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
@@ -13785,7 +13775,7 @@
     {
       "from": "膏油涂抹",
       "to": "与主交通",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "膏油涂抹",
@@ -14075,17 +14065,17 @@
     {
       "from": "调和",
       "to": "变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
       "to": "身体的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
@@ -14095,7 +14085,7 @@
     {
       "from": "调和",
       "to": "尽功用",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
@@ -14130,12 +14120,12 @@
     {
       "from": "调和",
       "to": "生命的成熟",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
       "to": "生命的变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和",
@@ -14180,7 +14170,7 @@
     {
       "from": "调和的灵",
       "to": "更新",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和的灵",
@@ -14215,12 +14205,12 @@
     {
       "from": "调和的灵",
       "to": "变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和的灵",
       "to": "模成",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和的灵",
@@ -14230,7 +14220,7 @@
     {
       "from": "调和的灵",
       "to": "神人调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和的灵",
@@ -14255,12 +14245,12 @@
     {
       "from": "调和的灵",
       "to": "生命的变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "调和的灵",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "谦让宜人",
@@ -14330,7 +14320,7 @@
     {
       "from": "赐生命的灵",
       "to": "神圣的分赐",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
@@ -14395,27 +14385,27 @@
     {
       "from": "赐生命的灵",
       "to": "重生",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "圣别",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "更新",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "模成",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
@@ -14425,12 +14415,12 @@
     {
       "from": "赐生命的灵",
       "to": "生机的救恩",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "神人调和",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
@@ -14445,12 +14435,12 @@
     {
       "from": "赐生命的灵",
       "to": "生命的变化",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赐生命的灵",
       "to": "得救",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "赦罪",
@@ -15760,12 +15750,12 @@
     {
       "from": "顾惜人",
       "to": "喂养人",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "顾惜人",
       "to": "牧养",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "顾惜人",
@@ -15775,7 +15765,7 @@
     {
       "from": "顾惜人",
       "to": "按着神牧养",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "顾惜人",
@@ -15790,7 +15780,7 @@
     {
       "from": "顾惜人",
       "to": "生命的长大",
-      "type": "LEADS_TO"
+      "type": "EXPERIENCES"
     },
     {
       "from": "顾惜人",
@@ -15971,6 +15961,8286 @@
       "from": "魂生命",
       "to": "宗教",
       "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "独一的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "产生召会",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "产生召会",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "产生召会",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "产生召会",
+      "to": "接纳信徒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "儿子名分",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "儿子名分",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "儿子名分",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "儿子名分",
+      "to": "父的家",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "儿子名分",
+      "to": "神的祝福",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "儿子名分",
+      "to": "管教",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "一切正面事物的实际",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "赢得基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "享受主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "追求真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "住在基督里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的基督",
+      "to": "珍赏",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的工作",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "至圣所",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "圣灵的水流",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "被圣灵充溢",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "生命的律",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "包罗万有的灵",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "变化",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "变化",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "变化",
+      "to": "魂的变化",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "变化",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "变化",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "变化",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "变化",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "变化",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "变化",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "变化",
+      "to": "住在基督里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "变化",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "变化",
+      "to": "不再是我乃是基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "基督的丰富",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "内住的基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "与基督联合",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "生命的拯救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "享受主",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "住在主里面",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "住在基督里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "不再是我乃是基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "全备的供应",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "经历神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "吃耶稣",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "与基督联合",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "丧失魂",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "不再是我乃是基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "得胜有余",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "将万事看作亏损",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "降服的意志",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "魂的变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "否认己",
+      "to": "人的破碎",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "被破碎",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "了结旧造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "赢得基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "受对付",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "否认己",
+      "to": "受限制",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "真正的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "世代的终结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复兴",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复兴",
+      "to": "老底嘉",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复兴",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复兴",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复兴",
+      "to": "祷告的职事",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复兴",
+      "to": "复兴的律",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复兴",
+      "to": "坚定持续",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复兴",
+      "to": "灵里火热",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复合的灵",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复合的灵",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复合的灵",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复合的灵",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复合的灵",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复合的灵",
+      "to": "魂的变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复合的灵",
+      "to": "生命的律",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复合的灵",
+      "to": "圣灵的水流",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复合的灵",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复合的灵",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复合的灵",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "升天的地位",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "产生新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "不再是我乃是基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "得胜有余",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "杰出的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "复活",
+      "to": "魂的变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "生命的拯救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复活",
+      "to": "子的分赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复活的基督",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "杰出的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "生命的律",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的基督",
+      "to": "住在主里面",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复活的基督",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复活的大能",
+      "to": "杰出的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "胜过死亡",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "得胜有余",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "升天的地位",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复活的大能",
+      "to": "与基督联合",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复活的大能",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "复活的大能",
+      "to": "魂的变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "灵的出来",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "得释放",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "复活的大能",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "复活的大能",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "宝座",
+      "to": "审判",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "赏赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "清明的天",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "宝座",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "宝座",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "宝座",
+      "to": "降服的意志",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "宝座",
+      "to": "进入至圣所",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "宝座",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "宝座",
+      "to": "至圣所",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "成为一灵",
+      "to": "灵的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "与基督联合",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "不再是我乃是基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "成为一灵",
+      "to": "享受主",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "享受神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "神的同在",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "魂的变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为一灵",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "基督的为人生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "基督的死",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "基督的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "基督的升天",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "神的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "二性品",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "罗曼史",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "相互的住处",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成为肉体",
+      "to": "总括时期",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "学功课",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "生活并工作",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "人人尽功用",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "作榜样",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "话语的供应",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "健康的教训",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "身体的事奉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "供应基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "生命读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "成全圣徒",
+      "to": "生命的话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "供应基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "分赐生命",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "话语的供应",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "生命的话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "代祷",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "灵的交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "彼此相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "爱弟兄",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "作榜样",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "全备的供应",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "神的同在",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "按着神牧养",
+      "to": "新的复兴",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "得释放",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "释放灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "操练灵",
+      "to": "灵的出来",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "被圣灵充溢",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "灵的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "操练灵",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "操练灵",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "操练灵",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "操练灵",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "操练灵",
+      "to": "不销灭那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "操练灵",
+      "to": "保守那灵的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "蒙光照",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "操练灵",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "老底嘉",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "享受主",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "讨神喜悦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "属灵的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "享受神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "晨晨复兴",
+      "to": "与主是一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "产生男孩子",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "标出为神的儿子",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "因信称义",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "蒙神称义",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "赦免",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "洗净",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "在基督里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "法理的救赎",
+      "to": "神的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "彼此相爱",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "爱弟兄",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "神的喜悦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "彼此互相的聚会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "接纳信徒",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "在爱里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "爱有效能",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "爱有效能",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "爱有效能",
+      "to": "爱神",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "爱有效能",
+      "to": "代祷",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "爱有效能",
+      "to": "爱主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "爱有效能",
+      "to": "爱弟兄",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "爱有效能",
+      "to": "作奴仆",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "福音",
+      "to": "因信称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "蒙神称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "神的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "赦免",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "洗净",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "在基督里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "神的祝福",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "信仰",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "福音",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "审判",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "称义",
+      "to": "在生命里得救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "生命的拯救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "神的喜悦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "洋溢之义的恩赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "神的祝福",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "称义",
+      "to": "安息",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "高峰",
+      "to": "神经纶的异象",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "三一神的启示",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "神经纶的奥秘",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "父的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "子的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "灵的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "高峰",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "高峰",
+      "to": "独一的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "高峰",
+      "to": "现有的真理",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "完成的职事",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "高峰",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "高峰",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "高峰",
+      "to": "追求真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "高峰",
+      "to": "推广真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "高峰",
+      "to": "陈明真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的心意",
+      "to": "经纶",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "主的恢复",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神建造到我们里面",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神的居所",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "人成为神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "产生新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神成为人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的心意",
+      "to": "神的救赎",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的心意",
+      "to": "撒但的背叛",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的心意",
+      "to": "召会的堕落",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的心意",
+      "to": "与神合作",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的心意",
+      "to": "讨神喜悦",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的家",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "神的国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "建造",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的家",
+      "to": "召会的事奉",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的家",
+      "to": "帐幕",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的家",
+      "to": "圣殿",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的家",
+      "to": "神的居所",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "团体的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的家",
+      "to": "彼此相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的家",
+      "to": "弟兄相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的家",
+      "to": "独一的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的家",
+      "to": "真理的柱石和根基",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "国度",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "得救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "重生",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "生机的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命树",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的生命",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的生命",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命的交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命的感觉",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的生命",
+      "to": "生命的认识",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的生命",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "三一神",
+      "to": "三一神的身位",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "三一神的属性",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "三一神的工作",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "三一神的启示",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "三一神",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "三一神",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "三一神",
+      "to": "神的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "三一神",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "三一神",
+      "to": "神的形像",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "神的荣耀",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "三一神",
+      "to": "神的经营",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "合并",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "合并",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "合并",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "合并",
+      "to": "真正的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "合并",
+      "to": "包罗万有的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "合并",
+      "to": "新耶路撒冷",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "合并",
+      "to": "神圣启示的高峰",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "合并",
+      "to": "相互的住处",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "合并",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "合并",
+      "to": "内住的基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "合并",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "合并",
+      "to": "住在基督里",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "合并",
+      "to": "住在主里面",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "合并",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "呼求主名",
+      "to": "享受神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "享受主",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "灵的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "圣灵的水流",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "全备的供应",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "神的怜悯",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "圣灵的引导",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "圣灵的启示",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "呼求主名",
+      "to": "得释放",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "被圣灵充溢",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "回到灵里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "进入至圣所",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "蒙光照",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "释放灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "呼求主名",
+      "to": "灵的出来",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "被圣灵充溢",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "属灵的实际",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "与基督联合",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "蒙光照",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "喝那灵",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "内住的基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "喝那灵",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "喝那灵",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "喝那灵",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "喝那灵",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度子民",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度子民",
+      "to": "团体的战士",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度子民",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "神的怜悯",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "神的引导",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "管教",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "掌权",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度子民",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "信而顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "遵守主的话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "不爱世界",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "灵里火热",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "奉献",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "儆醒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "敬虔",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "付代价",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度子民",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度子民",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度子民",
+      "to": "老底嘉",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "属灵的实际",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "独一的见证",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "真正的一",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "健康的教训",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "一城一会",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "独一的彰显",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "信仰上的一",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的外表",
+      "to": "巴比伦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的外表",
+      "to": "分裂",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实现",
+      "to": "世代的终结",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "国度的实现",
+      "to": "羔羊的婚筵",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "国度的实现",
+      "to": "登宝座",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实现",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实现",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实现",
+      "to": "清明的天",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度的实现",
+      "to": "主宰权柄",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "国度的实现",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实现",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实现",
+      "to": "得胜的生活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实现",
+      "to": "儆醒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实际",
+      "to": "属天的管治",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实际",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实际",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实际",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实际",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的实际",
+      "to": "被提",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "赏赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "产生男孩子",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的实际",
+      "to": "团体的战士",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实际",
+      "to": "属灵的仗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实际",
+      "to": "编组成军",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的实际",
+      "to": "打那美好的仗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "敬虔",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "儆醒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "奉献",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "彼此相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的生活",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的生活",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "讨神喜悦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "与神同行",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "得胜有余",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "国度的生活",
+      "to": "清明的天",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的生活",
+      "to": "对付罪",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "对付世界",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "信而顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "付代价",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的生活",
+      "to": "打那美好的仗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的福音",
+      "to": "门徒",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "世代的终结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "赏赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "属天的管治",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "羔羊的妻",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "预备新妇",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "国度的福音",
+      "to": "陈明真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的福音",
+      "to": "作见证",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "国度的福音",
+      "to": "推广真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "基督的得胜",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督",
+      "to": "珍赏",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督",
+      "to": "在基督里",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督",
+      "to": "与基督联合",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督",
+      "to": "不再是我乃是基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督",
+      "to": "望断以及于耶稣",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督",
+      "to": "住在主里面",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督",
+      "to": "事奉主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督",
+      "to": "遵守主的话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "成肉体时期",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "总括时期",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督是那灵",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "是灵的基督",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的三个时期",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "独一的彰显",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "神的荣耀",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "持定元首",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "人人尽功用",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的丰满",
+      "to": "同被建造",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "基督的人性",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督的人性",
+      "to": "基督的死",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "基督的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "基督的升天",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "登宝座",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "升天的地位",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "杰出的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的人性",
+      "to": "全备的救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的人性",
+      "to": "基督生机的牧养",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "基督的人性",
+      "to": "相互的住处",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "羔羊的妻",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "完成的职事",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "神圣启示的高峰",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "神经纶的异象",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "巴比伦",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "加强到里面的人里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的奥秘",
+      "to": "基督的安家",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督的来临",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "基督的来临",
+      "to": "世代的终结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "审判",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "赏赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "基督的来临",
+      "to": "安息",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "父的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "子的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "灵的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "全备的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "胜过撒但",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "享受神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "经历神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "属灵的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "在基督里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "与神同在",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣的分赐",
+      "to": "与基督联合",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "因信称义",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "蒙神称义",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "赦免",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "洗净",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "魂的变化",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "在生命里得救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "变化为着建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神完整的救恩",
+      "to": "作成救恩",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "经纶",
+      "to": "神经纶的异象",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "新约的经纶",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "三一神的工作",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的工作",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的为人生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的升天",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "经纶",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "经纶",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "分赐生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "羔羊的妻",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "世代的终结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "独一的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "独一的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "永世的对耦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "经纶",
+      "to": "神的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "经纶",
+      "to": "基督的丰富",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "经纶",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "经纶",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "经纶",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "经纶",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "经纶",
+      "to": "传福音",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "经纶",
+      "to": "话语的职事",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "经纶",
+      "to": "神圣的分赐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "话语的职事",
+      "to": "生命读经",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "现有的真理",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "健康的教训",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "生命的话",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "神经纶的异象",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "推广真理",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "话语的供应",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "被真理构成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "神圣的光",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "蒙光照",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "话语的职事",
+      "to": "珍赏职事",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "话语的职事",
+      "to": "与职事是一",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "那灵",
+      "to": "生命的律",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "圣灵的启示",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "圣灵的引导",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "圣灵的管治",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "灵的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "那灵的圣别",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "灵的分赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "加强到里面的人里",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "内住的基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "明白神的旨意",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "那灵",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "十字架",
+      "to": "旧造",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "撒但",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "十字架",
+      "to": "死而复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "赦罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "洗罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "洗净",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "法理的救赎",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "生机的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "与神和好",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "胜过死亡",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "了结旧造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "悔改",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "认罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "罪行",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "罪性",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "对付罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "对付世界",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "了结以往",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "胜过撒但",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "十字架",
+      "to": "与基督同死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "同钉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "模成基督的死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "人的破碎",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "丧失魂",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "与基督联合",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "十字架",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "十字架",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "十字架",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "十字架",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "受浸",
+      "to": "圣灵里的浸",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "受浸",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "受浸",
+      "to": "旧造",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "受浸",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "受浸",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "受浸",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "受浸",
+      "to": "赦罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "洗罪",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "得救",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "重生",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "儿子名分",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "圣别",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "与基督同死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "死而复活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "复活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "与基督联合",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "神的国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "召会生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "生命的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "生机的救恩",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "受浸",
+      "to": "复活的大能",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "受浸",
+      "to": "生机的救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "经纶",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的行政",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的行动",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的权柄",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "属天的管治",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "基督的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "团体的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "身体的事奉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "身体的生活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "召会的建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "得胜者",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "四活物",
+      "to": "配搭",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "四活物",
+      "to": "尽功用",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "四活物",
+      "to": "顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "四活物",
+      "to": "同心合意",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "基督的得胜",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "神的权柄",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "升天的地位",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "得胜的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "国度",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "男孩子",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "登宝座",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "转移时代",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "千年国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "胜过撒但",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "认识身体",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "全副的军装",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "那灵的剑",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "救恩的头盔",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "基督的升天",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "编组成军",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "属灵的争战",
+      "to": "打那美好的仗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "复活的基督",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "末后的亚当",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "那灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "赐生命的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "终极完成的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "复合的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "七倍加强的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "成为一灵",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "神圣的分赐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "祷读主话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "喝那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "运用灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "是灵的基督",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "死而复活",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "死而复活",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "死而复活",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "死而复活",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "死而复活",
+      "to": "赐生命的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "那灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "儿子名分",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "生命的救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "复活的大能",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "得救",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "得荣",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "了结旧造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "产生新造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "胜过死亡",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "杰出的复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "死而复活",
+      "to": "与基督同死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "模成基督的死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "死而复活",
+      "to": "受浸",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "死而复活",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "死而复活",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "死而复活",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的交通",
+      "to": "身体的交通",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的交通",
+      "to": "灵的交通",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的交通",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "生命的流",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "生命的感觉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "召会的合一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "身体的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的交通",
+      "to": "弟兄相爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "彼此相爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "生命的长大",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "生命的成熟",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "同被建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的交通",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的交通",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的交通",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "生命的交通",
+      "to": "基督的身体",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "重生",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "更新",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "变化",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "模成",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "得荣",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "在生命中作王",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "儿子名分",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "生命的经历",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "主观的经历",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "在生命里得救",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "作成救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的救恩",
+      "to": "生命的拯救",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "生命水",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的流",
+      "to": "一道流",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的流",
+      "to": "撒但的国",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的流",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "神的居所",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "材料",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "生命的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的流",
+      "to": "生命的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "永远的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "喜乐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "平安",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "神的爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "全备的供应",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的流",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "运用灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "享受主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "接触主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "在灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "照着灵而行",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的流",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "生命的流",
+      "to": "宝座",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "生命的粮",
+      "to": "吗哪",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "隐藏的吗哪",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "生命的话",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "知识树",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的粮",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "身体的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "得荣",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "生命的光",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的粮",
+      "to": "圣别的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的粮",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "祷读主话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "吃耶稣",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "喝那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "接触主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的粮",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的粮",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的经历",
+      "to": "称义",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "重生",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "圣别",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "更新",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "变化",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "模成",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "得荣",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生命的长大",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "模成基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "与基督同死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "同钉",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "死而复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "丧失魂",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付罪",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付天然",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的经历",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的经历",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的经历",
+      "to": "称义",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "重生",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "圣别",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "更新",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "得荣",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "复活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "模成基督的死",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "得胜的生命",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生命的认识",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "变化为着建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "结果子",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "儿子名分",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生命的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "生机的联结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "灵的新样",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "日日得胜",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "在生命中作王",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付己",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "享受基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的经历",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "祷读主话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "接触主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付罪",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "认罪",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "悔改",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "照着灵而行",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "照着灵而活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "在灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "追求基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付良心",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "对付灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "将万事看作亏损",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "赢得基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "奉献",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "代祷",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "付代价",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "了结以往",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "活在灵中",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "晨晨复兴",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "享受主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "享受神",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "爱神",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "爱主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "望断以及于耶稣",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的经历",
+      "to": "住在基督里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "知识树",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的光",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的交通",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的认识",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "生命的感觉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "主观的经历",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的认识",
+      "to": "追求基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "学功课",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的认识",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "宗教",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "律法",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "知识树",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "旧造",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的路",
+      "to": "重生",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "更新",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "得荣",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "得胜的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "生命的经历",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "基督的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "耶稣的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的路",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "生命的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的路",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "祷读主话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "追求基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "接触主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的路",
+      "to": "事奉主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "更新",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "变化",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "模成",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "得荣",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "生命的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "魂的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "模成",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "得荣",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "生命的长大",
+      "to": "结果子",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "生命的长大",
+      "to": "生命的经历",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "生命的认识",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "享受基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "接触主",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "追求基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "照着灵而行",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "晨晨复兴",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "生命的长大",
+      "to": "对付罪",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人",
+      "to": "基督的神性",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神人",
+      "to": "基督的人性",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神人",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人",
+      "to": "旧造",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "团体的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "神的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人",
+      "to": "神性与人性的调和",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "神人生活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "复活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人",
+      "to": "运用灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人",
+      "to": "照着灵而活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人生活",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人生活",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人生活",
+      "to": "魂生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人生活",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人生活",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "身体的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "团体的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人生活",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "祷读主话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "晨晨复兴",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "日日得胜",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "享受基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "与主交通",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "运用灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "活在灵中",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "照着灵而活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "照着灵而行",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人生活",
+      "to": "晨晨复兴",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神人生活",
+      "to": "日日得胜",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神人生活",
+      "to": "操练灵",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "享受基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "与主交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "运用灵",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "活在灵中",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "照着灵而活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人生活",
+      "to": "照着灵而行",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人调和",
+      "to": "神性与人性的调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "神人生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "人成为神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神人调和",
+      "to": "神的性情",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神人调和",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人调和",
+      "to": "旧造",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人调和",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神人调和",
+      "to": "神的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人调和",
+      "to": "神的性情",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人调和",
+      "to": "经历基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神人调和",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "活在灵中",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "运用灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "调和的灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神人调和",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "神命定之路",
+      "to": "传福音",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "家聚会",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "排聚会",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "成全圣徒",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "申言",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神命定之路",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神命定之路",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神命定之路",
+      "to": "召会生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神命定之路",
+      "to": "恢复召会的建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神命定之路",
+      "to": "生命的长大",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神命定之路",
+      "to": "传福音",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "家聚会",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "排聚会",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "申言",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "尽功用",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "配搭",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神命定之路",
+      "to": "宗教",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神命定之路",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神命定之路",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "三一神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的身体",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "是灵的基督",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "终极完成的灵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "神圣的分赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "经纶的三一",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的人性",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的复活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "经纶",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "神人调和",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "生机的救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "神圣的分赐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "产生召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "照着灵而活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "照着灵而行",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "申言",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的死",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "基督的复活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神圣奥秘的范围",
+      "to": "神的爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "基督的身体",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "身体的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "新耶路撒冷",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "神的居所",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "神的家",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "生机体",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "召会的合一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "团体的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "作出新耶路撒冷",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "人成为神",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "构成在我们里面",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "经过过程",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "变化",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "更新",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "生命的长大",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "生命的成熟",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "神的分赐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "赐生命的灵",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "圣灵",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "否认己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "对付天然",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "操练灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "旧人",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "人的灵",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "神建造到我们里面",
+      "to": "里面的人",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "神的国",
+      "to": "召会",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度的实际",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度的生活",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度的外表",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度子民",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度的奥秘",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "国度的福音",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "诸天的国",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "千年国",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "得胜者",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的国",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "新天新地",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "掌权",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "神的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "在生命中作王",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的国",
+      "to": "撒但的背叛",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的国",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的国",
+      "to": "撒但的国",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的国",
+      "to": "宗教",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的国",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的工作",
+      "to": "神完整的救恩",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "法理的救赎",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "生机的救恩",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "神的建造",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "召会的建造",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "神建造到我们里面",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的工作",
+      "to": "神的创造",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "基督的彰显",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "团体的彰显",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "独一的彰显",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "召会",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "帐幕",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "圣殿",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "撒但的国",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神的国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的彰显",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神成为人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神人",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神的家",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "神的居所",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "新造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的彰显",
+      "to": "申言",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的彰显",
+      "to": "作见证",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "圣别",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "神的计划",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "经纶",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "神的心意",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "神的行动",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "撒但的背叛",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "神的旨意",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "神的国",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的旨意",
+      "to": "明白神的旨意",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的旨意",
+      "to": "讨神喜悦",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "神的旨意",
+      "to": "祷告",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的旨意",
+      "to": "奉献",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "神的计划",
+      "to": "召会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "新人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "基督的身体",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "召会的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "新耶路撒冷",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的分赐",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的居所",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "新妇",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神人调和",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的丰满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的定旨",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的心意",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "神的旨意",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "经纶",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "父的拣选",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "召会的建造",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "神完整的救恩",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "神的计划",
+      "to": "身体的建造",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "素质的灵",
+      "to": "肉体",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "素质的灵",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "素质的灵",
+      "to": "重生",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "素质的灵",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "素质的灵",
+      "to": "神的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "素质的灵",
+      "to": "生命之灵的律",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "素质的灵",
+      "to": "新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "素质的灵",
+      "to": "喜乐",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "素质的灵",
+      "to": "呼求主名",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "素质的灵",
+      "to": "喝那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "元首权柄",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "主宰权柄",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "掌权",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "属天的管治",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "信而顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "受对付",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "受限制",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "被破碎",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "代表的权柄",
+      "to": "降服的意志",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "传福音",
+      "to": "陈明真理",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "传福音",
+      "to": "作见证",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "传福音",
+      "to": "因信称义",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "传福音",
+      "to": "召会的扩增",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "传福音",
+      "to": "基督的扩增",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "传福音",
+      "to": "基督的繁殖",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "传福音",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "变化为着建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "供应生命",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "被提",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "世代的终结",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "基督的得荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "得胜的生活",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过撒但",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过死亡",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过骄傲",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过分裂",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过离弃起初的爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "胜过不冷不热",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "丧失魂",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "受限制",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "受对付",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "被破碎",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "背十字架",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "初熟的果子",
+      "to": "遵守主的话",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "一城一会",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "地方召会",
+      "to": "独一的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "独一的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "基督的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "神的荣耀",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "地方召会",
+      "to": "众圣徒的分",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "彼此相爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "身体的供应",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "身体的约束",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "地方召会",
+      "to": "擘饼聚会",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "彼此互相的聚会",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "人人尽功用",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "接纳信徒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "地方召会",
+      "to": "祷告的职事",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "彼此互相的聚会",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "保守那灵的一",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "众圣徒的分",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "神的祝福",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "彼此相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "弟兄相爱",
+      "to": "接纳信徒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "得救",
+      "to": "因信称义",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "蒙神称义",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "生命的拯救",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "在生命里得救",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得救",
+      "to": "赦免",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "洗净",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "撒但的混乱",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "得救",
+      "to": "黑暗的权势",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "得救",
+      "to": "圣别",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得救",
+      "to": "更新",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得救",
+      "to": "模成",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得救",
+      "to": "得荣",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得救",
+      "to": "模成神儿子的形像",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "变化为着建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得救",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得救",
+      "to": "在基督里",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "魂的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "生命的感觉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "得释放",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "得救",
+      "to": "作成救恩",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "得救",
+      "to": "信心的生活",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "得荣",
+      "to": "基督的得荣耀",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得荣",
+      "to": "羔羊的婚筵",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得荣",
+      "to": "神的荣耀",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "得荣",
+      "to": "永世的对耦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得荣",
+      "to": "基督丰满身材的度量",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得荣",
+      "to": "被提",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "得荣",
+      "to": "付代价",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "得荣",
+      "to": "赛程",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "恩典",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "恩典",
+      "to": "信心的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "恩典",
+      "to": "敬虔",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "恩典",
+      "to": "奉献",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "恩典",
+      "to": "顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "恩典",
+      "to": "信而顺服",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "恩典",
+      "to": "因信称义",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "恩典",
+      "to": "全备的救恩",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "恩典",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "恩典",
+      "to": "在爱里",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "恩典",
+      "to": "神的丰满",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "恩典",
+      "to": "洋溢之义的恩赐",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "更新",
+      "to": "模成神儿子的形像",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "更新",
+      "to": "神的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "更新",
+      "to": "灵的新样",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "更新",
+      "to": "魂的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "更新",
+      "to": "得胜的生活",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "更新",
+      "to": "变化为着建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "更新",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "更新",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "更新",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "更新",
+      "to": "对付己",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "模成神儿子的形像",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "神的形像",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "同被建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "生机的建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "不再是我乃是基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "团体的神人",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "变化为着建造",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "二性品",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "神的性情",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "神的丰满",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "吃基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "构成在我们里面",
+      "to": "读经",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷告",
+      "to": "代祷",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "祷告",
+      "to": "祷告的职事",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "祷告",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷告",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷告",
+      "to": "明白神的旨意",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "神的引导",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "灵里火热",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "与神同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷告",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷告",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "清明的天",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "得释放",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷告",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "读经",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "祷读主话",
+      "to": "话中之水的洗涤",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "生命的话",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "灵里火热",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "祷读主话",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷读主话",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "祷读主话",
+      "to": "被圣灵充满",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "祷读主话",
+      "to": "享受主",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "吃基督",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "属灵的实际",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "祷读主话",
+      "to": "话语的供应",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "属灵的经历",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "祷读主话",
+      "to": "神圣的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "基督的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "永远的生命",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "祷读主话",
+      "to": "生命的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "明白神的旨意",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "圣灵的启示",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "生命的感觉",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "神的性情",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "讨神喜悦",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "与神同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "属灵的实际",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "膏油涂抹",
+      "to": "神的祝福",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "二性品",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "调和",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "调和",
+      "to": "神的性情",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "相互的住处",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "神的形像",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "团体的神人",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "产生新造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和",
+      "to": "神的丰满",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "享受神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "经历神",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和",
+      "to": "不销灭那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和",
+      "to": "至圣所",
+      "type": "LOCATED_IN"
+    },
+    {
+      "from": "调和的灵",
+      "to": "保守那灵的一",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "彼此相爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "神的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和的灵",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和的灵",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和的灵",
+      "to": "独一的见证",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和的灵",
+      "to": "独一的彰显",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "调和的灵",
+      "to": "神的同在",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "真正的一",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "被圣灵充满",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "被圣灵充溢",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "灵里火热",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "得释放",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "调和的灵",
+      "to": "回到灵里",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和的灵",
+      "to": "心思置于灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和的灵",
+      "to": "唱诗",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和的灵",
+      "to": "赞美",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "调和的灵",
+      "to": "不销灭那灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "基督的死",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "天然的生命",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "得释放",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "被圣灵充满",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "被圣灵充溢",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "圣灵里的浸",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "生命的拯救",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "魂的变化",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "灵的出来",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "生命的感觉",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "蒙光照",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "赐生命的灵",
+      "to": "释放灵",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "顾到身体",
+      "to": "分裂",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "顾到身体",
+      "to": "同被建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾到身体",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾到身体",
+      "to": "接纳信徒",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "彼此相爱",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "爱弟兄",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "代祷",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "人人尽功用",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾到身体",
+      "to": "身体的供应",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "顾到身体",
+      "to": "身体的约束",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "顾到身体",
+      "to": "灵的交通",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "顾惜人",
+      "to": "爱弟兄",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾惜人",
+      "to": "供应基督",
+      "type": "PRACTICED_AS"
+    },
+    {
+      "from": "顾惜人",
+      "to": "彼此相爱",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "顾惜人",
+      "to": "召会的扩增",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾惜人",
+      "to": "基督的繁殖",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾惜人",
+      "to": "生机的建造",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾惜人",
+      "to": "神的喜悦",
+      "type": "EXPERIENCES"
+    },
+    {
+      "from": "顾惜人",
+      "to": "产生得胜者",
+      "type": "LEADS_TO"
+    },
+    {
+      "from": "顾惜人",
+      "to": "个人主义",
+      "type": "OPPOSES"
+    },
+    {
+      "from": "顾惜人",
+      "to": "神的祝福",
+      "type": "EXPERIENCES"
     }
   ]
 }
