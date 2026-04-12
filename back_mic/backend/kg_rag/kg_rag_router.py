@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from user.token import require_admin, test_token
 from kg_rag.firewall import load_firewall
+from kg_rag.golden_paths import load_golden_paths
 from kg_rag.kg_rag_service import KgRagService
 from kg_rag.neo4j_client import Neo4jClient
 
@@ -34,6 +35,7 @@ def get_service() -> KgRagService:
             pass
 
         load_firewall()
+        load_golden_paths()
 
         _service = KgRagService(es_client, _neo4j)
     return _service

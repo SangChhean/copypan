@@ -75,6 +75,7 @@ const params = ref({
   skip_skeleton_route: false,
   skip_generation: false,
   skip_cache: false,
+  golden_path_threshold: 2,
 });
 
 /** 纲目制作（与后端 params 字段名一致；由 buildQueryParams 并入请求） */
@@ -729,6 +730,7 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="20" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">黄金路径阈值</span><a-input-number v-model:value="params.golden_path_threshold" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
                       <a-col :span="24">
                         <div class="param-item param-item-stack">
                           <span class="param-label">Claude 模型</span>
@@ -836,7 +838,7 @@ onMounted(() => {
                     </a-collapse-panel>
                   </a-collapse>
                 </div>
-                <a-steps direction="vertical" :current="6" class="result-steps">
+                <a-steps direction="vertical" :current="7" class="result-steps">
                   <a-step title="Step 1 概念抽取（从图谱词表匹配）">
                     <template #description>
                       <a-card size="small" class="step-card">
@@ -859,6 +861,29 @@ onMounted(() => {
                           </a-collapse-panel>
                         </a-collapse>
                       </div>
+                    </a-card>
+                  </template>
+                </a-step>
+                <a-step title="Step 1.5 黄金路径匹配">
+                  <template #description>
+                    <a-card size="small" class="step-card">
+                      <div v-if="queryResult.steps?.step1_5">
+                        <template v-if="queryResult.steps.step1_5.strong">
+                          <div style="margin-bottom: 6px;">
+                            <a-tag color="gold">强相关</a-tag>
+                            <strong>{{ queryResult.steps.step1_5.strong.name }}</strong>
+                            <span style="color: #999; margin-left: 8px;">(id: {{ queryResult.steps.step1_5.strong.id }}, 命中 {{ queryResult.steps.step1_5.strong.hit_count }} 个概念)</span>
+                          </div>
+                          <div>
+                            <span style="color: #666;">路径节点：</span>
+                            <a-tag v-for="n in queryResult.steps.step1_5.strong.nodes" :key="n" color="purple" style="margin: 2px;">{{ n }}</a-tag>
+                          </div>
+                        </template>
+                        <template v-else>
+                          <span style="color: #999;">无匹配（命中数未达阈值 {{ params.golden_path_threshold }}）</span>
+                        </template>
+                      </div>
+                      <div v-else style="color: #999;">未执行</div>
                     </a-card>
                   </template>
                 </a-step>

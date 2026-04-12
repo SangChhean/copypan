@@ -340,6 +340,65 @@ class Neo4jClient:
             print(f"[KG-RAG] get_path_count 失败: {e}")
             return 0
 
+    def get_key_verses(self, concept_names: list[str]) -> dict[str, list[str]]:
+        """查询概念列表通过 SUPPORTED_BY 关系连接的 Scripture 节点。
+        返回 {概念名: [text_short, ...]}，无结果或不可用时返回空 dict。
+        """
+        if not self._available or self._driver is None or not concept_names:
+            return {}
+        names = [str(x).strip() for x in concept_names if str(x).strip()]
+        if not names:
+            return {}
+        try:
+            with self._driver.session() as session:
+                result = session.run(
+                    "MATCH (c:Concept)-[:SUPPORTED_BY]->(s:Scripture) "
+                    "WHERE c.name IN $names "
+                    "RETURN c.name AS concept, s.text_short AS verse",
+                    names=names,
+                )
+                out: dict[str, list[str]] = {}
+                for record in result:
+                    concept = record.get("concept")
+                    verse = record.get("verse")
+                    if not concept or not verse:
+                        continue
+                    out.setdefault(concept, []).append(verse)
+                return out
+        except Exception as e:
+            print(f"[KG-RAG] get_key_verses 失败: {e}")
+            return {}
+
+    def create_scripture_node(
+        self, concept_name: str, id: str, text_short: str, text_full: str
+    ) -> bool:
+        """创建 Scripture 节点（MERGE）并建立 Concept→SUPPORTED_BY→Scripture 关系。
+        成功返回 True，失败或不可用返回 False。
+        """
+        if not self._available or self._driver is None:
+            return False
+        concept = concept_name.strip()
+        sid = id.strip()
+        if not concept or not sid:
+            return False
+        try:
+            with self._driver.session() as session:
+                session.run(
+                    "MERGE (s:Scripture {id: $sid}) "
+                    "SET s.text_short = $text_short, s.text_full = $text_full "
+                    "WITH s "
+                    "MATCH (c:Concept {name: $concept}) "
+                    "MERGE (c)-[:SUPPORTED_BY]->(s)",
+                    sid=sid,
+                    text_short=text_short,
+                    text_full=text_full,
+                    concept=concept,
+                )
+                return True
+        except Exception as e:
+            print(f"[KG-RAG] create_scripture_node 失败: {e}")
+            return False
+
     def get_stats(self) -> dict[str, Any]:
         """图谱统计：available、concept_count、relation_count、relation_types、concept_name_count。"""
         if not self._available or self._driver is None:

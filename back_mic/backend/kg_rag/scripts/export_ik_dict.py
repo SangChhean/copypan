@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""从 Neo4j Concept 节点导出 name+aliases 为 IK 自定义词典文件。"""
+"""从 Neo4j Concept 节点导出 name 为 IK 自定义词典文件。"""
 import argparse
 import os
 from pathlib import Path
@@ -7,29 +7,23 @@ from pathlib import Path
 
 def export_from_neo4j(driver) -> tuple[list[str], int]:
     """
-    从 Neo4j 查询所有 Concept 的 name 和 aliases，合并去重、过滤空值、排序后返回 (词条列表, Concept 节点数)。
+    从 Neo4j 查询所有 Concept 的 name，去重、过滤空值、排序后返回 (词条列表, Concept 节点数)。
     空图谱或查询失败时返回 ([], 0)。
     """
     try:
         with driver.session() as session:
             result = session.run(
-                "MATCH (c:Concept) RETURN c.name AS name, c.aliases AS aliases"
+                "MATCH (c:Concept) RETURN c.name AS name"
             )
             words = set()
             concept_count = 0
             for record in result:
                 name = record.get("name")
-                aliases = record.get("aliases") or []
                 if name is not None:
                     s = str(name).strip()
                     if s:
                         words.add(s)
                         concept_count += 1
-                for a in aliases:
-                    if a is not None:
-                        s = str(a).strip()
-                        if s:
-                            words.add(s)
             return (sorted(words), concept_count)
     except Exception as e:
         print(f"[KG-RAG] export_from_neo4j 查询失败: {e}")
@@ -39,7 +33,7 @@ def export_from_neo4j(driver) -> tuple[list[str], int]:
 def main() -> None:
     """入口：连接 Neo4j、取词、写入词典文件。连接失败或空图谱时导出空文件并正常退出。"""
     parser = argparse.ArgumentParser(
-        description="Neo4j Concept name+aliases → IK 自定义词典文件"
+        description="Neo4j Concept name → IK 自定义词典文件"
     )
     parser.add_argument(
         "--output",

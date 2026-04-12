@@ -9,32 +9,13 @@ from dotenv import load_dotenv
 
 ALLOWED_RELATIONSHIP_TYPES = {
     "CONTAINS",
-    "TYPIFIES",
     "OPPOSES",
     "LEADS_TO",
-    "GOALS_FOR",
-    "CORRESPONDS_TO",
     "EXPERIENCES",
     "PRACTICED_AS",
     "LOCATED_IN",
+    "SUPPORTED_BY",
 }
-
-
-def _normalize_aliases(aliases: object) -> list[str]:
-    """将 aliases 规范化为去重后的字符串列表。"""
-    if not isinstance(aliases, list):
-        return []
-    out = []
-    seen = set()
-    for item in aliases:
-        if item is None:
-            continue
-        s = str(item).strip()
-        if not s or s in seen:
-            continue
-        seen.add(s)
-        out.append(s)
-    return out
 
 
 def _create_driver(uri: str, user: str, password: str):
@@ -69,7 +50,6 @@ def import_concepts(session, concepts: list[dict]) -> tuple[int, int, int]:
     for idx, item in enumerate(concepts, start=1):
         try:
             name = str(item.get("name", "")).strip()
-            aliases = _normalize_aliases(item.get("aliases", []))
             if not name:
                 failed += 1
                 print(f"[KG-RAG] Concept#{idx} 跳过：name 为空")
@@ -80,11 +60,9 @@ def import_concepts(session, concepts: list[dict]) -> tuple[int, int, int]:
                 OPTIONAL MATCH (c0:Concept {name: $name})
                 WITH c0, c0 IS NOT NULL AS existed
                 MERGE (c:Concept {name: $name})
-                SET c.aliases = $aliases
                 RETURN existed
                 """,
                 name=name,
-                aliases=aliases,
             ).single()
             existed = bool(rec and rec.get("existed"))
             if existed:
