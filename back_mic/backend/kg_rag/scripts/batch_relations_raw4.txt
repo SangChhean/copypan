@@ -3514,7 +3514,7 @@
 蒙光照 LEADS_TO 认罪
 蒙光照 LEADS_TO 悔改
 蒙光照 LEADS_TO 受对付
-蒙光照 LEADS_TO 了结以往
+蒙光照 LEADS_TO 了结已往
 蒙光照 LEADS_TO 魂的变化
 蒙光照 LEADS_TO 降服的意志
 蒙光照 LEADS_TO 明白神的旨意

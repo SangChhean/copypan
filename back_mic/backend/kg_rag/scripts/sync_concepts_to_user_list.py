@@ -10,7 +10,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED = ROOT / "seed_concepts.json"
-GOLDEN = ROOT / "golden_paths.json"
 
 # In seed but not in user's 637 list (from prior compare)
 REMOVE = {
@@ -124,41 +123,8 @@ def main():
     data["relations"] = new_relations
     SEED.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    paths = []
-    if GOLDEN.exists():
-        paths = json.loads(GOLDEN.read_text(encoding="utf-8"))
-        # Paths that would become empty: replace with nodes that remain in target
-        overrides = {
-            15: ["得救", "重生", "圣别", "变化", "模成", "得荣"],
-            30: [
-                "一道流",
-                "一的立场",
-                "一个身体",
-                "一个职事",
-                "一里事奉",
-                "真正的一",
-                "包罗万有的一",
-                "保守那灵的一",
-                "独一的一",
-                "信仰上的一",
-            ],
-        }
-        for p in paths:
-            pid = p["id"]
-            if pid in overrides:
-                p["nodes"] = overrides[pid]
-            else:
-                p["nodes"] = [n for n in p["nodes"] if n in target]
-            for n in p["nodes"]:
-                if n not in target:
-                    raise SystemExit(f"golden path {pid} has node not in target: {n!r}")
-        GOLDEN.write_text(
-            json.dumps(paths, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
-
     print("concepts", len(data["concepts"]))
     print("relations", len(data["relations"]))
-    print("golden_paths", len(paths))
 
 
 if __name__ == "__main__":

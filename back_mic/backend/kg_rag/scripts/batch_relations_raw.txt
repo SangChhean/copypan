@@ -696,7 +696,7 @@
 宝石 LOCATED_IN 新耶路撒冷
 将万事看作亏损 CONTAINS 不爱世界
 将万事看作亏损 CONTAINS 了结旧造
-将万事看作亏损 CONTAINS 了结以往
+将万事看作亏损 CONTAINS 了结已往
 将万事看作亏损 CONTAINS 不再是我乃是基督
 将万事看作亏损 OPPOSES 宗教
 将万事看作亏损 OPPOSES 律法
@@ -1725,7 +1725,7 @@
 信徒 EXPERIENCES 宝贝与瓦器
 信徒 EXPERIENCES 羔羊的妻
 信徒 EXPERIENCES 永世的对耦
-信徒 EXPERIENCES 了结以往
+信徒 EXPERIENCES 了结已往
 信徒 PRACTICED_AS 背十字架
 信徒 PRACTICED_AS 代祷
 信徒 PRACTICED_AS 读经
@@ -1931,7 +1931,7 @@
 肉体 EXPERIENCES 管教
 认罪 CONTAINS 罪行
 认罪 CONTAINS 罪性
-认罪 EXPERIENCES 了结以往
+认罪 EXPERIENCES 了结已往
 认罪 EXPERIENCES 生命的感觉
 认罪 PRACTICED_AS 对付己
 认罪 PRACTICED_AS 回到灵里

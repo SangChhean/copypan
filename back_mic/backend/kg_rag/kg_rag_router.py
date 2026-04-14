@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 
 from user.token import require_admin, test_token
 from kg_rag.firewall import load_firewall
-from kg_rag.golden_paths import load_golden_paths
 from kg_rag.kg_rag_service import KgRagService
 from kg_rag.neo4j_client import Neo4jClient
 
@@ -35,8 +34,6 @@ def get_service() -> KgRagService:
             pass
 
         load_firewall()
-        load_golden_paths()
-
         _service = KgRagService(es_client, _neo4j)
     return _service
 
@@ -155,6 +152,25 @@ async def cache_translation(req: CacheTranslationRequest):
         return JSONResponse(status_code=400, content={"error": "field must be answer_en or answer_zh_tw"})
     ok = KgRagService.update_cache_translation(req.cache_key, req.field, req.value)
     return {"ok": ok, "cache_key": req.cache_key, "field": req.field}
+
+
+class TestFirewallRequest(BaseModel):
+    """防火墙独立测试请求体。"""
+    query: str = Field(..., min_length=1, max_length=500, description="纲目主题")
+
+
+@router.post("/test_firewall", dependencies=[Depends(require_admin)])
+async def test_firewall(req: TestFirewallRequest):
+    """独立测试防火墙命中：输入主题，返回是否命中及精粹内容。"""
+    from kg_rag.firewall import match_firewall
+    from kg_rag.kg_rag_service import _call_kg_rag_llm
+    try:
+        doc = await match_firewall(req.query.strip(), _call_kg_rag_llm)
+        if doc:
+            return {"matched": doc["title"], "note": doc["note"]}
+        return {"matched": None, "note": None}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @router.get("/health", dependencies=[Depends(require_admin)])

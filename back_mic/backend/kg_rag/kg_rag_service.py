@@ -81,7 +81,6 @@ DEFAULT_PARAMS = {
     "audience": "",  # 面对对象（可选）
     "depth": "general",  # general / deep；deep 时可触发检索参数预设（见 full_query）
     "skip_cache": False,  # True 时跳过缓存读取（强制重跑），但仍写入缓存
-    "golden_path_threshold": 2,  # Step 1.5 黄金路径匹配：概念命中数 >= threshold 才算强相关
 }
 
 CACHE_TTL = 604800  # 7 天
@@ -853,14 +852,7 @@ class KgRagService:
                 result["steps"]["step1"] = s1
             step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
 
-        # Step 1.5：黄金路径匹配
         normalized = concepts
-        golden_path_result = {"strong": None}
-        if normalized and not p.get("skip_skeleton_route"):
-            from kg_rag.path_matcher import match_golden_paths
-            gp_threshold = int(p.get("golden_path_threshold", 2))
-            golden_path_result = match_golden_paths(normalized, threshold=gp_threshold)
-        result["steps"]["step1_5"] = golden_path_result
 
         firewall_doc: dict[str, str] | None = await firewall_task
         if firewall_doc:

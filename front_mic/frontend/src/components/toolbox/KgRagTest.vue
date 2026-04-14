@@ -75,7 +75,6 @@ const params = ref({
   skip_skeleton_route: false,
   skip_generation: false,
   skip_cache: false,
-  golden_path_threshold: 2,
 });
 
 /** 纲目制作（与后端 params 字段名一致；由 buildQueryParams 并入请求） */
@@ -625,6 +624,36 @@ async function runPromptPreview() {
   }
 }
 
+// ---------- Tab 5：防火墙测试 ----------
+const firewallQuery = ref("");
+const firewallLoading = ref(false);
+const firewallResult = ref(null);
+
+async function runFirewallTest() {
+  const q = (firewallQuery.value || "").trim();
+  if (!q) {
+    message.warning("请输入纲目主题");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  firewallLoading.value = true;
+  firewallResult.value = null;
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/test_firewall`,
+      { query: q },
+      { headers }
+    );
+    firewallResult.value = res.data;
+    toastSuccess("防火墙测试完成");
+  } catch (e) {
+    message.error(e.response?.data?.error || e.message || "防火墙测试失败");
+  } finally {
+    firewallLoading.value = false;
+  }
+}
+
 // ---------- 生命周期 ----------
 onMounted(() => {
   fetchHealth();
@@ -730,7 +759,6 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="20" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">黄金路径阈值</span><a-input-number v-model:value="params.golden_path_threshold" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
                       <a-col :span="24">
                         <div class="param-item param-item-stack">
                           <span class="param-label">Claude 模型</span>
@@ -762,6 +790,12 @@ onMounted(() => {
               <template v-else>
                 <div v-if="queryResult.cached" class="params-used-banner" style="color:#52c41a;font-weight:600">
                   ✓ 命中缓存（cache_key: {{ queryResult.cache_key || '—' }}）
+                </div>
+                <div v-if="queryResult.firewall?.matched" class="firewall-banner">
+                  <span class="firewall-banner-label">防火墙命中：</span>{{ queryResult.firewall.matched }}
+                  <span v-if="queryResult.firewall.note" class="firewall-banner-note">
+                    · 精粹：{{ queryResult.firewall.note }}
+                  </span>
                 </div>
                 <div
                   v-if="queryResult.params_used || queryResult.steps?.weight"
@@ -861,29 +895,6 @@ onMounted(() => {
                           </a-collapse-panel>
                         </a-collapse>
                       </div>
-                    </a-card>
-                  </template>
-                </a-step>
-                <a-step title="Step 1.5 黄金路径匹配">
-                  <template #description>
-                    <a-card size="small" class="step-card">
-                      <div v-if="queryResult.steps?.step1_5">
-                        <template v-if="queryResult.steps.step1_5.strong">
-                          <div style="margin-bottom: 6px;">
-                            <a-tag color="gold">强相关</a-tag>
-                            <strong>{{ queryResult.steps.step1_5.strong.name }}</strong>
-                            <span style="color: #999; margin-left: 8px;">(id: {{ queryResult.steps.step1_5.strong.id }}, 命中 {{ queryResult.steps.step1_5.strong.hit_count }} 个概念)</span>
-                          </div>
-                          <div>
-                            <span style="color: #666;">路径节点：</span>
-                            <a-tag v-for="n in queryResult.steps.step1_5.strong.nodes" :key="n" color="purple" style="margin: 2px;">{{ n }}</a-tag>
-                          </div>
-                        </template>
-                        <template v-else>
-                          <span style="color: #999;">无匹配（命中数未达阈值 {{ params.golden_path_threshold }}）</span>
-                        </template>
-                      </div>
-                      <div v-else style="color: #999;">未执行</div>
                     </a-card>
                   </template>
                 </a-step>
@@ -1445,6 +1456,36 @@ onMounted(() => {
           </a-row>
         </a-card>
       </a-tab-pane>
+
+      <!-- Tab 5：防火墙测试 -->
+      <a-tab-pane key="firewall" tab="防火墙测试">
+        <a-card class="tab-card">
+          <div class="firewall-section">
+            <a-input
+              v-model:value="firewallQuery"
+              placeholder="输入纲目主题"
+              class="firewall-input"
+              @pressEnter="runFirewallTest"
+            />
+            <a-button type="primary" :loading="firewallLoading" class="firewall-btn" @click="runFirewallTest">测试</a-button>
+          </div>
+          <div v-if="firewallResult" class="firewall-result">
+            <template v-if="firewallResult.matched">
+              <div class="firewall-hit">
+                <span class="firewall-label">命中：</span>
+                <span class="firewall-value">{{ firewallResult.matched }}</span>
+              </div>
+              <div class="firewall-hit">
+                <span class="firewall-label">精粹：</span>
+                <span class="firewall-value">{{ firewallResult.note || "（无）" }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="firewall-miss">未命中</div>
+            </template>
+          </div>
+        </a-card>
+      </a-tab-pane>
     </a-tabs>
   </div>
 </template>
@@ -1534,6 +1575,24 @@ onMounted(() => {
   margin-bottom: 16px;
   :deep(.ant-collapse-header) {
     align-items: center;
+  }
+}
+.firewall-banner {
+  font-size: 13px;
+  color: #d46b08;
+  font-weight: 600;
+  line-height: 1.55;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  .firewall-banner-label {
+    color: #ad4e00;
+  }
+  .firewall-banner-note {
+    font-weight: normal;
+    color: #874d00;
   }
 }
 .params-used-banner {
@@ -1990,6 +2049,41 @@ onMounted(() => {
       margin-top: 2px;
       line-height: 1.4;
     }
+  }
+}
+
+/* Tab 5 防火墙测试 */
+.firewall-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  .firewall-input {
+    flex: 1;
+    max-width: 400px;
+  }
+}
+.firewall-result {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  .firewall-hit {
+    margin-bottom: 8px;
+    font-size: 14px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .firewall-label {
+    color: #666;
+    font-weight: 500;
+  }
+  .firewall-value {
+    color: #333;
+  }
+  .firewall-miss {
+    color: #999;
+    font-size: 14px;
   }
 }
 
