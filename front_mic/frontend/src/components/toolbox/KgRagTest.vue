@@ -523,7 +523,11 @@ const step12SummaryText = computed(() => {
             lines.push("3 跳降级：是（1+2 跳无结果后已尝试 3 跳）");
           }
           const sk = s2?.skeleton?.length
-            ? s2.skeleton.map((t, i) => `${i + 1}. ${typeof t === "object" ? t.step || t : t}`).join("\n")
+            ? s2.skeleton.map((t, i) => {
+                const step = typeof t === "object" ? t.step || t : t;
+                const pe = typeof t === "object" && t.path_evidence ? `\n   ↳ ${t.path_evidence}` : "";
+                return `${i + 1}. ${step}${pe}`;
+              }).join("\n")
             : "（无）";
           lines.push("骨架：");
           lines.push(sk);
@@ -920,7 +924,10 @@ onMounted(() => {
                       <div v-if="queryResult.steps?.step2?.skeleton && queryResult.steps.step2.skeleton.length" class="step2-block">
                         <div class="step2-title">纲目逻辑骨架</div>
                         <ol class="step2-ol">
-                          <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
+                          <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">
+                            {{ typeof s === 'object' ? s.step : s }}
+                            <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                          </li>
                         </ol>
                       </div>
                       <div v-if="(queryResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
@@ -1255,7 +1262,10 @@ onMounted(() => {
               <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
                 <div class="step2-title">纲目逻辑骨架</div>
                 <ol class="step2-ol">
-                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
+                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">
+                    {{ typeof s === 'object' ? s.step : s }}
+                    <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                  </li>
                 </ol>
               </div>
               <div v-if="(promptPreviewResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
@@ -1414,7 +1424,10 @@ onMounted(() => {
                                 <div v-if="item.data?.steps?.step2?.skeleton?.length" class="step2-block">
                                   <div class="step2-title">骨架</div>
                                   <ol class="step2-ol">
-                                    <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
+                                    <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">
+                                      {{ typeof s === 'object' ? s.step : s }}
+                                      <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                                    </li>
                                   </ol>
                                 </div>
                                 <div v-if="(item.data?.steps?.step2?.expanded_nodes || []).length" class="step2-block">
@@ -1943,10 +1956,17 @@ onMounted(() => {
     margin: 0;
     padding-left: 20px;
     li {
-      font-size: 12px;
+      font-size: 14px;
       color: #333;
-      line-height: 1.6;
+      line-height: 1.7;
     }
+  }
+  .skeleton-path-evidence {
+    font-size: 12px;
+    color: #6090c0;
+    margin-top: 2px;
+    margin-bottom: 3px;
+    line-height: 1.4;
   }
   .answer-toolbar {
     margin-bottom: 8px;

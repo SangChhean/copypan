@@ -1074,7 +1074,10 @@ const onAISearch = async () => {
       <div v-if="aiMeta.deep.length" class="kg-info-row">📌 内在层：{{ aiMeta.deep.join("、") }}</div>
       <div v-if="aiMeta.skeleton && aiMeta.skeleton.length" class="kg-info-row">
         <div>🦴 骨架：</div>
-        <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">{{ item }}</div>
+        <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">
+          {{ typeof item === 'object' ? item.step : item }}
+          <span v-if="item && typeof item === 'object' && item.path_evidence" class="kg-skeleton-evidence">↳ {{ item.path_evidence }}</span>
+        </div>
       </div>
     </div>
 
@@ -1867,8 +1870,16 @@ const onAISearch = async () => {
 }
 .kg-skeleton-item {
   padding-left: 20px;
-  font-size: 13px;
+  font-size: 15px;
   color: #555;
+  line-height: 1.7;
+}
+.kg-skeleton-evidence {
+  display: block;
+  font-size: 13px;
+  color: #6090c0;
+  padding-left: 8px;
+  line-height: 1.4;
 }
 .kg-outline-divider {
   text-align: center;

@@ -457,7 +457,7 @@ def _format_paths_text(paths: list[dict]) -> str:
 
 
 def _parse_step2_skeleton(text: str) -> list[dict] | None:
-    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int]}, ...]；为 null 或失败时返回 None。"""
+    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int], "path_evidence": str|None}, ...]；为 null 或失败时返回 None。"""
     obj = _safe_parse_json(text or "")
     if not obj:
         return None
@@ -473,10 +473,12 @@ def _parse_step2_skeleton(text: str) -> list[dict] | None:
                 if not isinstance(indices, list):
                     indices = []
                 indices = [i for i in indices if isinstance(i, int)]
+                pe_raw = x.get("path_evidence")
+                path_evidence = str(pe_raw).strip() if pe_raw and str(pe_raw).strip() else None
                 if step:
-                    result.append({"step": step, "deep_indices": indices})
+                    result.append({"step": step, "deep_indices": indices, "path_evidence": path_evidence})
             elif isinstance(x, str) and x.strip():
-                result.append({"step": x.strip(), "deep_indices": []})
+                result.append({"step": x.strip(), "deep_indices": [], "path_evidence": None})
         return result if result else None
     return None
 

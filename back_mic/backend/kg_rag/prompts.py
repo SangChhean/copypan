@@ -128,9 +128,10 @@ STEP2_SKELETON_BUILD = """你是一位深入熟悉倪柝声与李常受职事的
 3. 骨架中的维度应能对应到具体概念（surface/deep 均可）
 4. 若用户填写了负担说明，骨架的每一步推进方向必须围绕该负担展开，概念间的图谱关系仅作参考，不可凌驾于负担方向之上
 5. 每步须标注 deep_indices：该步骤主要对应的 deep 概念在 deep 数组中的下标（从 0 开始），一步可对应多个概念
+6. 每步须从"概念间已知路径"中挑选一条最能支撑该步方向的路径，原样填入 path_evidence；若没有合适的路径则填 null
 
 ## 输出格式
-{{"skeleton": [{{"step": "第一步：...", "deep_indices": [0]}}, {{"step": "第二步：...", "deep_indices": [1, 2]}}, {{"step": "第三步：...", "deep_indices": [2]}}]}}
+{{"skeleton": [{{"step": "第一步：...", "deep_indices": [0], "path_evidence": "祷告 CONTAINS 代祷"}}, {{"step": "第二步：...", "deep_indices": [1], "path_evidence": "与神合作 PRACTICED_AS 代祷"}}, {{"step": "第三步：...", "deep_indices": [2], "path_evidence": null}}]}}
 或
 {{"skeleton": null}}
 """
