@@ -67,8 +67,8 @@ const params = ref({
   bm25_weight: 1,
   dense_weight: 1,
   rerank_top_n: 20,
-  skeleton_route_top_k: 5,
-  skeleton_route_max_per_node: 2, // 路3 每扩展节点去重后并入条数；deep 默认后端为 4
+  skeleton_route_top_k: 15,
+  skeleton_route_max_per_node: 5, // 路3 每扩展节点去重后并入条数；deep 默认后端为 8
   temperature: 0.3,
   llm_model: "claude-sonnet-4-6",
   skip_query_rewrite: false,
@@ -523,7 +523,7 @@ const step12SummaryText = computed(() => {
             lines.push("3 跳降级：是（1+2 跳无结果后已尝试 3 跳）");
           }
           const sk = s2?.skeleton?.length
-            ? s2.skeleton.map((t, i) => `${i + 1}. ${t}`).join("\n")
+            ? s2.skeleton.map((t, i) => `${i + 1}. ${typeof t === "object" ? t.step || t : t}`).join("\n")
             : "（无）";
           lines.push("骨架：");
           lines.push(sk);
@@ -560,7 +560,6 @@ async function runStep12Test() {
   step12Loading.value = true;
   step12Results.value = null;
   const baseParams = {
-    step1_model: "",
     stop_after_step1: mode === "step1_only",
     stop_after_step2: mode === "step1_step2",
     skip_generation: true,
@@ -570,7 +569,7 @@ async function runStep12Test() {
       models.map((modelId) =>
         axios.post(
           `${apiBase}/api/kg_rag/query`,
-          { query: q, params: { ...buildQueryParams(), ...baseParams, llm_model: modelId } },
+          { query: q, params: { ...buildQueryParams(), ...baseParams, step1_model: modelId, llm_model: modelId } },
           { headers }
         )
       )
@@ -756,8 +755,8 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">BM25 权重</span><a-input-number v-model:value="params.bm25_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Dense 权重</span><a-input-number v-model:value="params.dense_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Rerank Top-N</span><a-input-number v-model:value="params.rerank_top_n" :min="5" :max="50" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="20" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="10" size="small" class="param-control" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="40" size="small" class="param-control" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="15" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="24">
                         <div class="param-item param-item-stack">
@@ -921,7 +920,7 @@ onMounted(() => {
                       <div v-if="queryResult.steps?.step2?.skeleton && queryResult.steps.step2.skeleton.length" class="step2-block">
                         <div class="step2-title">纲目逻辑骨架</div>
                         <ol class="step2-ol">
-                          <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">{{ s }}</li>
+                          <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
                         </ol>
                       </div>
                       <div v-if="(queryResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
@@ -1256,7 +1255,7 @@ onMounted(() => {
               <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
                 <div class="step2-title">纲目逻辑骨架</div>
                 <ol class="step2-ol">
-                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">{{ s }}</li>
+                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
                 </ol>
               </div>
               <div v-if="(promptPreviewResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
@@ -1415,7 +1414,7 @@ onMounted(() => {
                                 <div v-if="item.data?.steps?.step2?.skeleton?.length" class="step2-block">
                                   <div class="step2-title">骨架</div>
                                   <ol class="step2-ol">
-                                    <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">{{ s }}</li>
+                                    <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">{{ typeof s === 'object' ? s.step : s }}</li>
                                   </ol>
                                 </div>
                                 <div v-if="(item.data?.steps?.step2?.expanded_nodes || []).length" class="step2-block">

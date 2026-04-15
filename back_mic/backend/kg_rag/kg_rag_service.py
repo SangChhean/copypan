@@ -66,8 +66,8 @@ DEFAULT_PARAMS = {
     "bm25_weight": 1.0,
     "dense_weight": 1.0,
     "rerank_top_n": 20,
-    "skeleton_route_top_k": 5,
-    "skeleton_route_max_per_node": 2,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
+    "skeleton_route_top_k": 15,
+    "skeleton_route_max_per_node": 5,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
     "temperature": 0.3,
     "skip_query_rewrite": False,
     "skip_skeleton_route": False,
@@ -205,9 +205,9 @@ FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
 
 
 def _resolve_step1_model(p: dict) -> str:
-    """Step1 专用模型；未配置时回退到 llm_model。"""
+    """Step1 专用模型；未配置时回退到 FULL_QUERY_OPUS_MODEL（全流程默认）。"""
     m = str(p.get("step1_model") or "").strip()
-    return m if m else str(p.get("llm_model") or DEFAULT_PARAMS["llm_model"])
+    return m if m else FULL_QUERY_OPUS_MODEL
 
 
 def _max_tokens_for_model(model: str, base: int) -> int:
@@ -222,11 +222,13 @@ def _max_tokens_for_model(model: str, base: int) -> int:
 PATH_COUNT_THRESHOLD = 20  # 多概念路径数少于此则取全路径，否则 shortestPath + 单概念扩展
 
 
-def _format_skeleton(skeleton: list[str] | None) -> str:
-    """将 Step 2 输出的骨架维度列表格式化为可读文本。"""
+def _format_skeleton(skeleton: list[dict] | None) -> str:
+    """将 Step 2 输出的骨架步骤列表格式化为可读文本（兼容 Prompt 预览等旧路径）。"""
     if not skeleton:
         return ""
-    return "\n".join(f"{i + 1}. {str(x)}" for i, x in enumerate(skeleton) if str(x).strip())
+    return "\n".join(
+        f"{i + 1}. {s['step']}" for i, s in enumerate(skeleton) if s.get("step")
+    )
 
 
 def _format_chunks(chunks: list[dict]) -> str:
@@ -271,6 +273,77 @@ def _format_expanded_chunks(chunks: list[dict]) -> str:
         out.append(text.strip() if text else "")
         out.append("---")
     return "\n".join(out)
+
+
+def _format_chunk_line(c: dict, max_text: int = 300) -> str:
+    """单条段落格式化为一行摘要。"""
+    chunk_id = c.get("chunk_id", "")
+    book = c.get("book_title", "")
+    msg = c.get("message_number", "")
+    msg_title = c.get("message_title", "")
+    text = (c.get("text") or "").strip()
+    header = f"[{chunk_id}] {book}"
+    if msg:
+        header += f" 第{msg}篇"
+    if msg_title:
+        header += f" {msg_title}"
+    preview = text if len(text) <= max_text else text[:max_text] + "…"
+    return f"{header}\n{preview}"
+
+
+def _build_skeleton_bound_prompt_block(
+    skeleton: list[dict],
+    expanded_results: list[dict],
+    deep: list[str],
+    main_results: list[dict],
+) -> str:
+    """将骨架步骤与 expanded_results 按 deep_indices 绑定，构建结构化的 Prompt 文本块。
+
+    每步输出：
+        【第N步】{step}
+          支撑段落：
+            [段落] ...
+    末尾追加补充段落（main_results）。
+    """
+    used_expanded_ids: set[str] = set()
+    sections: list[str] = []
+
+    for idx, sk_item in enumerate(skeleton):
+        step_text = sk_item.get("step", "")
+        deep_indices = sk_item.get("deep_indices", [])
+        target_concepts = {deep[i] for i in deep_indices if 0 <= i < len(deep)}
+
+        bound_chunks = []
+        for c in expanded_results:
+            if c.get("expanded_from") in target_concepts:
+                bound_chunks.append(c)
+                used_expanded_ids.add(c.get("chunk_id", ""))
+
+        lines = [f"【第{idx + 1}步】{step_text}"]
+        if bound_chunks:
+            lines.append("  支撑段落：")
+            for c in bound_chunks:
+                lines.append(f"    {_format_chunk_line(c)}")
+                lines.append("    ---")
+        else:
+            lines.append("  支撑段落：（无绑定段落）")
+        sections.append("\n".join(lines))
+
+    leftover_expanded = [
+        c for c in expanded_results if c.get("chunk_id", "") not in used_expanded_ids
+    ]
+
+    supplement_lines = ["【补充段落】（来自 BM25 与向量检索，适用于任何大点）"]
+    for c in main_results:
+        supplement_lines.append(f"  {_format_chunk_line(c)}")
+        supplement_lines.append("  ---")
+    if leftover_expanded:
+        for c in leftover_expanded:
+            supplement_lines.append(f"  {_format_chunk_line(c)}")
+            supplement_lines.append("  ---")
+    sections.append("\n".join(supplement_lines))
+
+    return "\n\n".join(sections)
 
 
 def _parse_json_array(text: str) -> list[Any]:
@@ -383,8 +456,8 @@ def _format_paths_text(paths: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _parse_step2_skeleton(text: str) -> list[str] | None:
-    """解析 Step 2 骨架 JSON，返回 skeleton 列表；为 null 或失败时返回 None。"""
+def _parse_step2_skeleton(text: str) -> list[dict] | None:
+    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int]}, ...]；为 null 或失败时返回 None。"""
     obj = _safe_parse_json(text or "")
     if not obj:
         return None
@@ -392,7 +465,19 @@ def _parse_step2_skeleton(text: str) -> list[str] | None:
     if sk is None:
         return None
     if isinstance(sk, list):
-        return [str(x).strip() for x in sk if str(x).strip()]
+        result = []
+        for x in sk:
+            if isinstance(x, dict) and "step" in x:
+                step = str(x.get("step", "")).strip()
+                indices = x.get("deep_indices", [])
+                if not isinstance(indices, list):
+                    indices = []
+                indices = [i for i in indices if isinstance(i, int)]
+                if step:
+                    result.append({"step": step, "deep_indices": indices})
+            elif isinstance(x, str) and x.strip():
+                result.append({"step": x.strip(), "deep_indices": []})
+        return result if result else None
     return None
 
 
@@ -710,9 +795,9 @@ class KgRagService:
             if "rerank_top_n" not in raw_params:
                 p["rerank_top_n"] = 40
             if "skeleton_route_top_k" not in raw_params:
-                p["skeleton_route_top_k"] = 10
+                p["skeleton_route_top_k"] = 30
             if "skeleton_route_max_per_node" not in raw_params:
-                p["skeleton_route_max_per_node"] = 4
+                p["skeleton_route_max_per_node"] = 8
 
         outline_nature = str(p.get("outline_nature", "一般性") or "一般性").strip() or "一般性"
         burden_description = str(p.get("burden_description") or "").strip()
@@ -760,7 +845,7 @@ class KgRagService:
         step1_elapsed_ms = 0.0
         raw1 = ""
         u1: dict[str, int] | None = None
-        m1 = FULL_QUERY_OPUS_MODEL
+        m1 = _resolve_step1_model(p)
         if p.get("skip_skeleton_route"):
             logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
@@ -1211,20 +1296,18 @@ class KgRagService:
         metadata_block = "\n".join(metadata_lines)
 
         if skeleton:
-            skeleton_text = _format_skeleton(skeleton)
-            main_chunks_text = _format_chunks(main_results)
-            ctx_head = main_chunks_text[:300] if len(main_chunks_text) > 300 else main_chunks_text
+            skeleton_with_chunks = _build_skeleton_bound_prompt_block(
+                skeleton, expanded_results, deep, main_results,
+            )
+            ctx_head = skeleton_with_chunks[:500] if len(skeleton_with_chunks) > 500 else skeleton_with_chunks
             logger.info(
-                "[KG-RAG DEBUG] Step5 context (skeleton main_chunks) first_300_chars: %r",
+                "[KG-RAG DEBUG] Step5 context (skeleton_with_chunks) first_500_chars: %r",
                 ctx_head,
             )
-            expanded_chunks_text = _format_expanded_chunks(expanded_results)
             base_prompt = STEP5_GENERATION.format(
                 query=query,
                 metadata_block=metadata_block,
-                skeleton=skeleton_text,
-                main_chunks=main_chunks_text,
-                expanded_chunks=expanded_chunks_text,
+                skeleton_with_chunks=skeleton_with_chunks,
             )
             prompt_type = "skeleton"
         else:
