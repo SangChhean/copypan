@@ -151,6 +151,54 @@ const aiFormValid = computed(() => {
   return outline && nature;
 });
 
+// ---------- 两阶段概念抽取 ----------
+const conceptStage = ref("idle"); // idle | candidates_ready
+const conceptLoading = ref(false);
+const conceptCandidates = ref(null);
+const selectedSurface = ref([]);
+const selectedDeep = ref([]);
+
+watch(
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription, aiForm.audience],
+  () => {
+    if (conceptStage.value !== "idle") {
+      conceptStage.value = "idle";
+      conceptCandidates.value = null;
+      selectedSurface.value = [];
+      selectedDeep.value = [];
+    }
+  }
+);
+
+async function extractConcepts() {
+  const q = aiForm.outlineTopic.trim();
+  if (!q) { tip("请填写纲目主题"); return; }
+  conceptLoading.value = true;
+  try {
+    const res = await axios.post("/api/kg_rag/extract_concepts", {
+      query: q,
+      outline_nature: aiForm.specialNeeds.trim(),
+      burden_description: aiForm.burdenDescription.trim(),
+      audience: aiForm.audience.trim(),
+    });
+    conceptCandidates.value = res.data;
+    selectedSurface.value = [...(res.data.surface || [])];
+    selectedDeep.value = [...(res.data.deep_candidates || [])];
+    conceptStage.value = "candidates_ready";
+  } catch (e) {
+    tip(e.response?.data?.error || e.message || "概念抽取失败");
+  } finally {
+    conceptLoading.value = false;
+  }
+}
+
+function resetConceptState() {
+  conceptStage.value = "idle";
+  conceptCandidates.value = null;
+  selectedSurface.value = [];
+  selectedDeep.value = [];
+}
+
 // AI 回答复制（包含标题）
 const aiAnswerCopied = ref(false);
 const copyAiAnswer = async () => {
@@ -776,9 +824,14 @@ const onAISearch = async () => {
   Object.assign(aiMeta, { surface: [], deep: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
 
   try {
+    const qParams = buildKgRagParams();
+    if (conceptStage.value === "candidates_ready" && conceptCandidates.value && selectedDeep.value.length > 0) {
+      qParams.preset_surface = selectedSurface.value;
+      qParams.preset_deep = selectedDeep.value;
+    }
     const res = await axios.post(
       "/api/kg_rag/query",
-      { query: question, params: buildKgRagParams() },
+      { query: question, params: qParams },
       { timeout: 300000 }
     );
     const data = res.data;
@@ -834,6 +887,7 @@ const onAISearch = async () => {
     showInfo.value = 3;
   } finally {
     loadingAI.value = false;
+    resetConceptState();
   }
 };
 </script>
@@ -926,6 +980,25 @@ const onAISearch = async () => {
           </div>
             <div class="ai-panel-actions">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
+            <!-- 概念候选面板 -->
+            <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="ai-concept-panel">
+              <div class="ai-concept-hint">以下是 AI 识别到的相关概念，请勾选确认后生成纲目</div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">字面意义层：</span>
+                <a-checkbox-group v-model:value="selectedSurface" class="ai-concept-checks">
+                  <a-checkbox v-for="s in conceptCandidates.surface" :key="s" :value="s">{{ s }}</a-checkbox>
+                </a-checkbox-group>
+                <span v-if="!conceptCandidates.surface?.length" class="ai-concept-empty">（无）</span>
+              </div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">内在意义层：</span>
+                <a-checkbox-group v-model:value="selectedDeep" class="ai-concept-checks">
+                  <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
+                </a-checkbox-group>
+              </div>
+              <div v-if="conceptCandidates.reasoning" class="ai-concept-reasoning">{{ conceptCandidates.reasoning }}</div>
+              <div v-if="selectedDeep.length === 0" class="ai-concept-warn">请至少选择一个内在意义</div>
+            </div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
                 <span>模式选择</span>
@@ -937,12 +1010,21 @@ const onAISearch = async () => {
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
+                v-if="conceptStage === 'idle'"
+                :loading="conceptLoading"
+                :disabled="conceptLoading || !aiFormValid"
+                @click="extractConcepts"
+              >
+                {{ conceptLoading ? "抽取中…" : "抽取概念" }}
+              </a-button>
+              <a-button
+                v-else
                 type="primary"
                 :loading="loadingAI"
-                :disabled="loadingAI || !aiFormValid"
+                :disabled="loadingAI || selectedDeep.length === 0"
                 @click="onAISearch"
               >
-                {{ loadingAI ? "加载中…" : "开始AI纲目制作" }}
+                {{ loadingAI ? "生成中…" : "生成纲目" }}
               </a-button>
             </div>
           </div>
@@ -1411,10 +1493,56 @@ const onAISearch = async () => {
 .ai-panel-actions {
   margin-top: 16px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
+}
+.ai-concept-panel {
+  background: #f6f8fc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.ai-concept-hint {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+}
+.ai-concept-section {
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.ai-concept-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #444;
+  white-space: nowrap;
+}
+.ai-concept-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.ai-concept-empty {
+  color: #aaa;
+  font-size: 12px;
+}
+.ai-concept-reasoning {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+  background: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  margin-top: 6px;
+}
+.ai-concept-warn {
+  color: #fa541c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .ai-panel-hint {
@@ -1423,11 +1551,11 @@ const onAISearch = async () => {
 }
 
 .ai-panel-cta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-left: auto;
 }
 
 .ai-panel-cta :deep(.ant-btn) {
@@ -1435,7 +1563,8 @@ const onAISearch = async () => {
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  padding: 0 20px;
+  min-width: 200px;
+  padding: 0 32px;
 }
 
 .ai-depth-inline {

@@ -690,7 +690,6 @@ class KgRagService:
     ) -> dict[str, Any]:
         """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 仅为 deep 概念。"""
         paths: list[dict] = []
-        used_three_hop_fallback = False
         skeleton: list[str] | None = None
         expanded_nodes = list(deep)
         graph_error: str | None = None
@@ -705,7 +704,6 @@ class KgRagService:
                 "paths": paths,
                 "skeleton": None,
                 "expanded_nodes": expanded_nodes,
-                "used_three_hop_fallback": False,
                 "graph_error": None,
                 "llm_elapsed_ms": {},
                 "prompt": None,
@@ -714,17 +712,13 @@ class KgRagService:
                 "inner_reason": "no_concepts",
             }
 
-        paths, used_three_hop_fallback = self.neo4j.get_paths_between(normalized)
+        paths = self.neo4j.get_paths_between(normalized)
         if not paths:
-            logger.info(
-                "[KG-RAG DEBUG] Step2: no paths (1–3 hop), skeleton=None, skip LLM | "
-                f"used_three_hop_fallback={used_three_hop_fallback}"
-            )
+            logger.info("[KG-RAG DEBUG] Step2: no 1-hop paths, skeleton=None, skip LLM")
             return {
                 "paths": paths,
                 "skeleton": None,
                 "expanded_nodes": expanded_nodes,
-                "used_three_hop_fallback": used_three_hop_fallback,
                 "graph_error": None,
                 "llm_elapsed_ms": {},
                 "prompt": None,
@@ -737,8 +731,10 @@ class KgRagService:
         reasoning_s = (reasoning or "").strip() or "（无）"
         bd = (burden_description or "").strip()
         burden_description_line = f"用户负担说明：{bd}" if bd else ""
+        outline_nature = str(p.get("outline_nature", "一般性") or "一般性").strip() or "一般性"
         step2_prompt = STEP2_SKELETON_BUILD.format(
             query=query,
+            outline_nature=outline_nature,
             reasoning=reasoning_s,
             burden_description_line=burden_description_line,
             surface_json=json.dumps(surface, ensure_ascii=False),
@@ -774,7 +770,6 @@ class KgRagService:
             "paths": paths,
             "skeleton": skeleton,
             "expanded_nodes": expanded_nodes,
-            "used_three_hop_fallback": used_three_hop_fallback,
             "graph_error": graph_error,
             "llm_elapsed_ms": {"step2": llm_elapsed_ms_step2} if llm_elapsed_ms_step2 else {},
             "prompt": prompt_out,
@@ -988,7 +983,6 @@ class KgRagService:
                 "paths_count": 0,
                 "skeleton": None,
                 "expanded_nodes": list(deep),
-                "used_three_hop_fallback": False,
                 "elapsed_ms": 0.0,
             }
             result["steps"]["step3"] = {
@@ -1025,7 +1019,6 @@ class KgRagService:
                 "paths_count": 0,
                 "skeleton": None,
                 "expanded_nodes": expanded_nodes,
-                "used_three_hop_fallback": False,
                 "elapsed_ms": round((step2_end - step2_start) * 1000, 1),
                 "skipped": True,
                 "reason": "skip_skeleton_route",
@@ -1047,7 +1040,6 @@ class KgRagService:
             paths = s2["paths"]
             skeleton = s2["skeleton"]
             expanded_nodes = s2["expanded_nodes"]
-            used_3hop = s2["used_three_hop_fallback"]
             for k, v in (s2.get("llm_elapsed_ms") or {}).items():
                 step_elapsed_ms[k] = round(float(v), 1)
             if s2.get("graph_error"):
@@ -1059,7 +1051,6 @@ class KgRagService:
                 "paths_count": len(paths),
                 "skeleton": skeleton,
                 "expanded_nodes": expanded_nodes,
-                "used_three_hop_fallback": used_3hop,
                 "elapsed_ms": step2_elapsed,
             }
             if s2.get("inner_reason") == "no_concepts":
@@ -1077,8 +1068,7 @@ class KgRagService:
             result["steps"]["step2"] = step2_body
             logger.info(
                 f"[KG-RAG DEBUG] Step2 done: paths={len(paths)}, expanded_nodes={len(expanded_nodes)} (deep only), "
-                f"skeleton={'yes' if skeleton else 'no'}, used_three_hop_fallback={used_3hop}, "
-                f"elapsed_ms={step2_elapsed:.1f}"
+                f"skeleton={'yes' if skeleton else 'no'}, elapsed_ms={step2_elapsed:.1f}"
             )
             if s2.get("llm_usage"):
                 u2 = s2["llm_usage"]

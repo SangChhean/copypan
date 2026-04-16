@@ -538,12 +538,8 @@ const step12SummaryText = computed(() => {
       lines.push(item.label);
       const step2Cost = item.data?.steps?.step2?.llm_usage?.cost_usd;
       const step2Ms = item.data?.steps?.step2?.elapsed_ms;
-      const used3 = item.data?.steps?.step2?.used_three_hop_fallback;
       lines.push(`Step2 价格（单次骨架 LLM）：$${formatUsd(step2Cost)} USD`);
       lines.push(`Step2 耗时（图谱查询+骨架 LLM 总墙钟）：${formatSec(step2Ms)} s`);
-      if (used3 === true) {
-        lines.push("Step2：已触发 3 跳路径降级（1+2 跳无结果）");
-      }
       if (!item.ok) {
         lines.push("路径：");
         lines.push("（—）");
@@ -575,9 +571,6 @@ const step12SummaryText = computed(() => {
             : "（无）";
           lines.push("路径：");
           lines.push(paths);
-          if (s2?.used_three_hop_fallback === true) {
-            lines.push("3 跳降级：是（1+2 跳无结果后已尝试 3 跳）");
-          }
           const sk = s2?.skeleton?.length
             ? s2.skeleton.map((t, i) => {
                 const step = typeof t === "object" ? t.step || t : t;
@@ -996,7 +989,6 @@ onMounted(() => {
                         <span>总耗时 {{ formatSec(queryResult.steps.step2.elapsed_ms) }} s</span>
                         <span v-if="queryResult.steps.step2.llm_usage"> · 估算 ${{ formatUsd(queryResult.steps.step2.llm_usage.cost_usd) }} USD</span>
                         <span v-else> · 无 LLM 费用</span>
-                        <span v-if="queryResult.steps.step2.used_three_hop_fallback"> · 已触发 3 跳路径降级</span>
                       </div>
                       <div
                         v-else-if="queryResult.steps?.step2?.skipped && queryResult.steps.step2.reason === 'stop_after_step1'"
@@ -1340,7 +1332,6 @@ onMounted(() => {
                 <span>总耗时 {{ formatSec(promptPreviewResult.steps.step2.elapsed_ms) }} s</span>
                 <span v-if="promptPreviewResult.steps.step2.llm_usage"> · 估算 ${{ formatUsd(promptPreviewResult.steps.step2.llm_usage.cost_usd) }} USD</span>
                 <span v-else> · 无 LLM 费用</span>
-                <span v-if="promptPreviewResult.steps.step2.used_three_hop_fallback"> · 已触发 3 跳路径降级</span>
               </div>
               <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
                 <div class="step2-title">纲目逻辑骨架</div>
@@ -1496,7 +1487,6 @@ onMounted(() => {
                                 <span>总耗时 {{ formatSec(item.data.steps.step2.elapsed_ms) }} s</span>
                                 <span v-if="item.data.steps.step2.llm_usage"> · ${{ formatUsd(item.data.steps.step2.llm_usage.cost_usd) }}</span>
                                 <span v-else> · 无 LLM 费用</span>
-                                <span v-if="item.data.steps.step2.used_three_hop_fallback"> · 3 跳降级</span>
                               </div>
                               <template v-if="item.data?.steps?.step2?.skipped && item.data.steps.step2.reason === 'stop_after_step1'">
                                 <span class="step-skipped-hint">未执行（仅 Step1）</span>

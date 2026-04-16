@@ -140,22 +140,17 @@ class Neo4jClient:
             print(f"[KG-RAG] get_neighbors 失败: {e}")
             return []
 
-    def get_paths_between(self, concepts: list[str]) -> tuple[list[dict[str, Any]], bool]:
-        """查询给定概念集合内部的 1～2 跳路径；仅当 1+2 跳均无结果时再查 3 跳。
-
-        返回 (paths, used_three_hop_fallback)。后者在 1+2 为空且已执行 3 跳查询时为 True
-        （无论 3 跳是否命中），正常有 1/2 跳结果时为 False，不增加延迟。
-        """
+    def get_paths_between(self, concepts: list[str]) -> list[dict[str, Any]]:
+        """查询给定概念集合内部的 1 跳直接路径。"""
         if not self._available or self._driver is None:
-            return [], False
+            return []
         if not concepts:
-            return [], False
+            return []
         names = [str(x).strip() for x in concepts if str(x).strip()]
         if len(names) < 2:
-            return [], False
+            return []
         try:
             with self._driver.session() as session:
-                # 1跳：概念之间直接关系
                 q1 = (
                     "MATCH (a:Concept)-[r]->(b:Concept) "
                     "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
@@ -163,77 +158,22 @@ class Neo4jClient:
                 )
                 r1 = session.run(q1, names=names)
                 out: list[dict[str, Any]] = []
-                seen = set()
+                seen: set[tuple] = set()
                 for row in r1:
                     f = row.get("from_name")
                     rel = row.get("relation")
                     t = row.get("to_name")
                     if not f or not rel or not t:
                         continue
-                    key = (f, rel, t, 1)
+                    key = (f, rel, t)
                     if key in seen:
                         continue
                     seen.add(key)
                     out.append({"from": f, "relation": rel, "to": t, "hops": 1})
-
-                # 2跳：通过一个中间节点连接（中间节点不在输入 concepts 中）
-                q2 = (
-                    "MATCH (a:Concept)-[r1]->(mid:Concept)-[r2]->(b:Concept) "
-                    "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
-                    "AND NOT mid.name IN $names "
-                    "RETURN a.name AS from_name, type(r1) AS rel1, mid.name AS via_name, "
-                    "type(r2) AS rel2, b.name AS to_name"
-                )
-                r2 = session.run(q2, names=names)
-                for row in r2:
-                    f = row.get("from_name")
-                    r_1 = row.get("rel1")
-                    via = row.get("via_name")
-                    r_2 = row.get("rel2")
-                    t = row.get("to_name")
-                    if not f or not r_1 or not via or not r_2 or not t:
-                        continue
-                    rel = f"{r_1} → {r_2}"
-                    key = (f, rel, t, via, 2)
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    out.append({"from": f, "relation": rel, "to": t, "via": via, "hops": 2})
-
-                used_three_hop_fallback = False
-                if not out:
-                    used_three_hop_fallback = True
-                    q3 = (
-                        "MATCH (a:Concept)-[r1]->(m1:Concept)-[r2]->(m2:Concept)-[r3]->(b:Concept) "
-                        "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
-                        "AND NOT m1.name IN $names AND NOT m2.name IN $names "
-                        "AND m1.name <> m2.name "
-                        "RETURN a.name AS from_name, type(r1) AS rel1, m1.name AS via1_name, "
-                        "type(r2) AS rel2, m2.name AS via2_name, type(r3) AS rel3, b.name AS to_name"
-                    )
-                    r3 = session.run(q3, names=names)
-                    for row in r3:
-                        f = row.get("from_name")
-                        r_1 = row.get("rel1")
-                        v1 = row.get("via1_name")
-                        r_2 = row.get("rel2")
-                        v2 = row.get("via2_name")
-                        r_3 = row.get("rel3")
-                        t = row.get("to_name")
-                        if not f or not r_1 or not v1 or not r_2 or not v2 or not r_3 or not t:
-                            continue
-                        rel = f"{r_1} → {r_2} → {r_3}"
-                        via = f"{v1} → {v2}"
-                        key = (f, rel, t, via, 3)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        out.append({"from": f, "relation": rel, "to": t, "via": via, "hops": 3})
-
-                return out, used_three_hop_fallback
+                return out
         except Exception as e:
             print(f"[KG-RAG] get_paths_between 失败: {e}")
-            return [], False
+            return []
 
     def _clamp_hops(self, max_hops: int) -> int:
         """将 max_hops 限制在 [MIN_HOPS, MAX_HOPS]，用于 Cypher 拼接。"""
