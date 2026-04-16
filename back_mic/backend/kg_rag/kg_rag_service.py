@@ -66,8 +66,8 @@ DEFAULT_PARAMS = {
     "bm25_weight": 1.0,
     "dense_weight": 1.0,
     "rerank_top_n": 20,
-    "skeleton_route_top_k": 15,
-    "skeleton_route_max_per_node": 5,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
+    "skeleton_route_top_k": 45,
+    "skeleton_route_max_per_node": 15,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
     "temperature": 0.3,
     "skip_query_rewrite": False,
     "skip_skeleton_route": False,
@@ -398,7 +398,7 @@ def _parse_step1_layers(text: str) -> tuple[list[str], list[str], str]:
     deep_raw = obj.get("deep", [])
     surface = [str(x).strip() for x in surface_raw if str(x).strip()] if isinstance(surface_raw, list) else []
     deep = [str(x).strip() for x in deep_raw if str(x).strip()] if isinstance(deep_raw, list) else []
-    return (surface[:3], deep[:4], reasoning)
+    return (surface[:3], deep[:10], reasoning)
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -797,9 +797,9 @@ class KgRagService:
             if "rerank_top_n" not in raw_params:
                 p["rerank_top_n"] = 40
             if "skeleton_route_top_k" not in raw_params:
-                p["skeleton_route_top_k"] = 30
+                p["skeleton_route_top_k"] = 45
             if "skeleton_route_max_per_node" not in raw_params:
-                p["skeleton_route_max_per_node"] = 8
+                p["skeleton_route_max_per_node"] = 15
 
         outline_nature = str(p.get("outline_nature", "一般性") or "一般性").strip() or "一般性"
         burden_description = str(p.get("burden_description") or "").strip()
@@ -848,7 +848,27 @@ class KgRagService:
         raw1 = ""
         u1: dict[str, int] | None = None
         m1 = _resolve_step1_model(p)
-        if p.get("skip_skeleton_route"):
+
+        preset_surface = p.get("preset_surface") or []
+        preset_deep = p.get("preset_deep") or []
+        if isinstance(preset_surface, list) and isinstance(preset_deep, list) and preset_surface and preset_deep:
+            surface = [str(c) for c in preset_surface[:3]]
+            deep = [str(c) for c in preset_deep[:10]]
+            concepts = list(dict.fromkeys(surface + deep))
+            reasoning = "（人工指定概念，跳过 Step 1）"
+            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+            result["steps"]["step1"] = {
+                "concepts": concepts,
+                "surface": surface,
+                "deep": deep,
+                "reasoning": reasoning,
+                "elapsed_ms": round(step1_elapsed_ms, 1),
+                "raw_response": None,
+                "preset": True,
+            }
+            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+            logger.info("[KG-RAG] Step 1 skipped: using preset surface=%s deep=%s", surface, deep)
+        elif p.get("skip_skeleton_route"):
             logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
             result["steps"]["step1"] = {
@@ -879,7 +899,7 @@ class KgRagService:
                 logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
                 step1_extract_start = asyncio.get_event_loop().time()
                 raw1, u1 = await _call_kg_rag_llm(
-                    step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 500)
+                    step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
                 )
                 if (m1 or "").strip().lower() == "gpt-5.4-thinking":
                     logger.info(

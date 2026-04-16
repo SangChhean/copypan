@@ -154,6 +154,36 @@ async def cache_translation(req: CacheTranslationRequest):
     return {"ok": ok, "cache_key": req.cache_key, "field": req.field}
 
 
+class ExtractConceptsRequest(BaseModel):
+    """概念抽取请求体。"""
+    query: str = Field(..., min_length=1, max_length=500, description="纲目主题")
+    outline_nature: str = Field(default="一般性", description="纲目性质")
+    burden_description: str = Field(default="", description="负担说明")
+    audience: str = Field(default="", description="面对对象")
+
+
+@router.post("/extract_concepts", dependencies=[Depends(test_token)])
+async def extract_concepts(req: ExtractConceptsRequest):
+    """独立执行 Step 1 概念抽取，返回 surface + deep 候选列表，供人工筛选。"""
+    service = get_service()
+    try:
+        result = await service.full_query(req.query, {
+            "burden_description": req.burden_description,
+            "audience": req.audience,
+            "outline_nature": req.outline_nature,
+            "stop_after_step1": True,
+            "skip_cache": True,
+        })
+        s1 = (result.get("steps") or {}).get("step1") or {}
+        return {
+            "surface": s1.get("surface", []),
+            "deep_candidates": s1.get("deep", []),
+            "reasoning": s1.get("reasoning", ""),
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 class TestFirewallRequest(BaseModel):
     """防火墙独立测试请求体。"""
     query: str = Field(..., min_length=1, max_length=500, description="纲目主题")

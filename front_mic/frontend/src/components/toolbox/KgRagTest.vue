@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
 import { ArrowLeftOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { message } from "ant-design-vue";
@@ -67,8 +67,8 @@ const params = ref({
   bm25_weight: 1,
   dense_weight: 1,
   rerank_top_n: 20,
-  skeleton_route_top_k: 15,
-  skeleton_route_max_per_node: 5, // 路3 每扩展节点去重后并入条数；deep 默认后端为 8
+  skeleton_route_top_k: 45,
+  skeleton_route_max_per_node: 15, // 路3 每扩展节点去重后并入条数
   temperature: 0.3,
   llm_model: "claude-sonnet-4-6",
   skip_query_rewrite: false,
@@ -100,6 +100,54 @@ function buildQueryParams() {
     outline_nature: outlineNature.value,
     depth: depth.value,
   };
+}
+
+// ---------- 两阶段概念抽取 ----------
+const conceptStage = ref("idle"); // idle | candidates_ready | generating
+const conceptLoading = ref(false);
+const conceptCandidates = ref(null); // { surface, deep_candidates, reasoning }
+const selectedDeep = ref([]);
+
+watch(
+  [queryText, outlineNature, burdenDescription, audience],
+  () => {
+    if (conceptStage.value !== "idle") {
+      conceptStage.value = "idle";
+      conceptCandidates.value = null;
+      selectedDeep.value = [];
+    }
+  }
+);
+
+async function extractConcepts() {
+  const q = (queryText.value || "").trim();
+  if (!q) {
+    message.warning("请输入查询主题");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  conceptLoading.value = true;
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/extract_concepts`,
+      {
+        query: q,
+        outline_nature: outlineNature.value,
+        burden_description: burdenDescription.value,
+        audience: audience.value,
+      },
+      { headers }
+    );
+    conceptCandidates.value = res.data;
+    selectedDeep.value = [...(res.data.deep_candidates || [])];
+    conceptStage.value = "candidates_ready";
+    toastSuccess("概念抽取完成，请筛选内在意义概念");
+  } catch (e) {
+    message.error(e.response?.data?.error || e.message || "概念抽取失败");
+  } finally {
+    conceptLoading.value = false;
+  }
 }
 
 async function copyStep12Summary() {
@@ -173,9 +221,14 @@ async function runFullQuery() {
   traditionalOutline.value = "";
   outlineResultTab.value = "zh";
   try {
+    const qParams = buildQueryParams();
+    if (conceptStage.value === "candidates_ready" && conceptCandidates.value && selectedDeep.value.length > 0) {
+      qParams.preset_surface = conceptCandidates.value.surface || [];
+      qParams.preset_deep = selectedDeep.value;
+    }
     const res = await axios.post(
       `${apiBase}/api/kg_rag/query`,
-      { query: q, params: buildQueryParams() },
+      { query: q, params: qParams },
       { headers }
     );
     queryResult.value = res.data;
@@ -759,8 +812,8 @@ onMounted(() => {
                       <a-col :span="12"><div class="param-item"><span class="param-label">BM25 权重</span><a-input-number v-model:value="params.bm25_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Dense 权重</span><a-input-number v-model:value="params.dense_weight" :min="0.1" :max="3" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Rerank Top-N</span><a-input-number v-model:value="params.rerank_top_n" :min="5" :max="50" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="40" size="small" class="param-control" /></div></a-col>
-                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="15" size="small" class="param-control" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 Top-K</span><a-input-number v-model:value="params.skeleton_route_top_k" :min="1" :max="80" size="small" class="param-control" /></div></a-col>
+                      <a-col :span="12"><div class="param-item"><span class="param-label">路3 每节点保留</span><a-input-number v-model:value="params.skeleton_route_max_per_node" :min="1" :max="30" size="small" class="param-control" /></div></a-col>
                       <a-col :span="12"><div class="param-item"><span class="param-label">Temperature</span><a-input-number v-model:value="params.temperature" :min="0" :max="1" :step="0.1" size="small" class="param-control" /></div></a-col>
                       <a-col :span="24">
                         <div class="param-item param-item-stack">
@@ -785,7 +838,39 @@ onMounted(() => {
                     </a-row>
                   </a-collapse-panel>
                 </a-collapse>
-                <a-button type="primary" :loading="queryLoading" class="query-btn" @click="runFullQuery">开始查询</a-button>
+                <!-- 两阶段概念抽取面板 -->
+                <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="concept-candidates-panel">
+                  <div class="concept-section">
+                    <span class="concept-label">字面意义（surface）</span>
+                    <div class="concept-tags">
+                      <a-tag v-for="s in conceptCandidates.surface" :key="s" color="blue">{{ s }}</a-tag>
+                      <span v-if="!conceptCandidates.surface?.length" class="concept-empty">（无）</span>
+                    </div>
+                  </div>
+                  <div class="concept-section">
+                    <span class="concept-label">内在意义候选（deep） <span class="concept-hint">请勾选 3-5 个</span></span>
+                    <a-checkbox-group v-model:value="selectedDeep" class="concept-checkbox-group">
+                      <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
+                    </a-checkbox-group>
+                  </div>
+                  <div v-if="conceptCandidates.reasoning" class="concept-section">
+                    <span class="concept-label">reasoning</span>
+                    <div class="concept-reasoning">{{ conceptCandidates.reasoning }}</div>
+                  </div>
+                </div>
+                <div class="query-btn-row">
+                  <a-button :loading="conceptLoading" @click="extractConcepts">抽取概念</a-button>
+                  <a-button
+                    type="primary"
+                    :loading="queryLoading"
+                    class="query-btn"
+                    @click="runFullQuery"
+                    :disabled="conceptStage === 'candidates_ready' && selectedDeep.length === 0"
+                  >
+                    {{ conceptStage === 'candidates_ready' ? '生成纲目' : '开始查询' }}
+                  </a-button>
+                  <span v-if="conceptStage === 'candidates_ready' && selectedDeep.length === 0" class="concept-warn">请至少选择一个内在意义概念</span>
+                </div>
               </div>
             </a-col>
             <a-col :xs="24" :md="14" :lg="15">
@@ -1875,9 +1960,71 @@ onMounted(() => {
   }
 }
 
+.query-btn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
 .query-btn {
   width: 100%;
   margin-top: 0;
+}
+.query-btn-row .query-btn {
+  flex: 1;
+  width: auto;
+}
+.concept-warn {
+  color: #fa541c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.concept-candidates-panel {
+  background: #f6f9ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.concept-section {
+  margin-bottom: 10px;
+  &:last-child { margin-bottom: 0; }
+}
+.concept-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  display: block;
+  margin-bottom: 4px;
+}
+.concept-hint {
+  font-weight: 400;
+  color: #888;
+  font-size: 12px;
+}
+.concept-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.concept-empty {
+  color: #aaa;
+  font-size: 12px;
+}
+.concept-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.concept-reasoning {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.6;
+  background: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #eee;
 }
 
 .result-placeholder {
