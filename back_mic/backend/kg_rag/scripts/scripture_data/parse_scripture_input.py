@@ -8,6 +8,7 @@
   - 空行忽略
 
 未匹配的非空行可写入 ``unparsed_out``（用于自检，避免静默丢失）。
+每项为 dict：``file_line``（源文件物理行号，从 1 起）、``text``、``concept``（当前概念块，可能为 None）、``reason``（简要说明）。
 """
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 
@@ -76,10 +78,42 @@ def _parse_scripture_line(line: str) -> tuple[str, str] | None:
     return None
 
 
+def _unparsed_reason(line: str, *, current: dict | None, lang_before_concept: bool) -> str:
+    """人类可读的未解析原因（启发式）。"""
+    if lang_before_concept:
+        return "希腊/希伯来行出现在第一个「序号+概念」行之前"
+    if re.match(r"^(?:希腊文|希伯来文)[：:]\s*$", line):
+        return (
+            "希腊/希伯来行仅有前缀、冒号后无任何字符；"
+            "当前语言行正则为 (.+) 要求冒号后至少一个字符，故整行未识别为语言行"
+        )
+    if current is None:
+        return "非空行，且尚未进入任一概念块，也不匹配概念行格式"
+    return "在当前概念块内：非希腊/希伯来行，且经文行未匹配（需出处与正文之间为全角空格、空白或冒号）"
+
+
+def _append_unparsed(
+    unparsed_out: list[dict],
+    *,
+    file_line: int,
+    text: str,
+    current: dict | None,
+    reason: str,
+) -> None:
+    unparsed_out.append(
+        {
+            "file_line": file_line,
+            "text": text,
+            "concept": current["concept"] if current else None,
+            "reason": reason,
+        }
+    )
+
+
 def parse_txt(
     text: str,
     *,
-    unparsed_out: list[str] | None = None,
+    unparsed_out: list[dict] | None = None,
 ) -> list[dict]:
     lines = text.splitlines()
     results: list[dict] = []
@@ -93,7 +127,7 @@ def parse_txt(
     )
     greek_or_hebrew_re = re.compile(r"^(?:希腊文|希伯来文)[：:](.+)$")
 
-    for raw_line in lines:
+    for file_line, raw_line in enumerate(lines, start=1):
         line = raw_line.strip()
         if not line:
             continue
@@ -114,7 +148,15 @@ def parse_txt(
         if m_lang:
             if current is None:
                 if unparsed_out is not None:
-                    unparsed_out.append(line)
+                    _append_unparsed(
+                        unparsed_out,
+                        file_line=file_line,
+                        text=line,
+                        current=None,
+                        reason=_unparsed_reason(
+                            line, current=None, lang_before_concept=True
+                        ),
+                    )
                 continue
             current["greek_terms"].extend(_split_lang_terms(m_lang.group(1)))
             continue
@@ -126,7 +168,15 @@ def parse_txt(
             continue
 
         if unparsed_out is not None:
-            unparsed_out.append(line)
+            _append_unparsed(
+                unparsed_out,
+                file_line=file_line,
+                text=line,
+                current=current,
+                reason=_unparsed_reason(
+                    line, current=current, lang_before_concept=False
+                ),
+            )
 
     return results
 
@@ -187,7 +237,7 @@ _SELF_TEST_TEXT = """1概念全角顿号序号
 
 
 def _run_self_test() -> None:
-    unparsed: list[str] = []
+    unparsed: list[dict] = []
     rows = parse_txt(_SELF_TEST_TEXT, unparsed_out=unparsed)
     if unparsed:
         raise SystemExit(f"自检失败：存在未解析行: {unparsed!r}")
@@ -250,6 +300,11 @@ def main() -> None:
         action="store_true",
         help="运行内置格式变体自检（可不提供 --input）",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="未解析行较多时，在 stderr 末尾打印按原因汇总的条数",
+    )
     args = parser.parse_args()
 
     if args.self_test:
@@ -264,12 +319,30 @@ def main() -> None:
         raise SystemExit(f"输入文件不存在: {input_path}")
 
     text = input_path.read_text(encoding="utf-8")
-    unparsed: list[str] = []
+    unparsed: list[dict] = []
     results = parse_txt(text, unparsed_out=unparsed)
 
     if unparsed:
-        for ln in unparsed:
-            print(f"警告：未解析行（已跳过）: {ln!r}", file=sys.stderr)
+        for rec in unparsed:
+            block = (
+                rec["concept"]
+                if rec["concept"] is not None
+                else "（尚未进入任一概念块）"
+            )
+            print(
+                f"警告：未解析行（已跳过） 源文件第 {rec['file_line']} 行  "
+                f"当前概念块={block!r}\n"
+                f"       原因: {rec['reason']}\n"
+                f"       原文: {rec['text']!r}",
+                file=sys.stderr,
+            )
+        if args.debug:
+            by_reason = Counter(r["reason"] for r in unparsed)
+            print(
+                f"[DEBUG] 未解析共 {len(unparsed)} 条，按原因统计:\n"
+                + "\n".join(f"  {n}× {reason}" for reason, n in by_reason.most_common()),
+                file=sys.stderr,
+            )
 
     if not results:
         print("警告：未解析到任何概念条目")

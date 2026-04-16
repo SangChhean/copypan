@@ -398,7 +398,7 @@ def _parse_step1_layers(text: str) -> tuple[list[str], list[str], str]:
     deep_raw = obj.get("deep", [])
     surface = [str(x).strip() for x in surface_raw if str(x).strip()] if isinstance(surface_raw, list) else []
     deep = [str(x).strip() for x in deep_raw if str(x).strip()] if isinstance(deep_raw, list) else []
-    return (surface[:3], deep[:10], reasoning)
+    return (surface[:5], deep[:10], reasoning)
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -852,7 +852,7 @@ class KgRagService:
         preset_surface = p.get("preset_surface") or []
         preset_deep = p.get("preset_deep") or []
         if isinstance(preset_surface, list) and isinstance(preset_deep, list) and preset_surface and preset_deep:
-            surface = [str(c) for c in preset_surface[:3]]
+            surface = [str(c) for c in preset_surface[:5]]
             deep = [str(c) for c in preset_deep[:10]]
             concepts = list(dict.fromkeys(surface + deep))
             reasoning = "（人工指定概念，跳过 Step 1）"

@@ -106,6 +106,7 @@ function buildQueryParams() {
 const conceptStage = ref("idle"); // idle | candidates_ready | generating
 const conceptLoading = ref(false);
 const conceptCandidates = ref(null); // { surface, deep_candidates, reasoning }
+const selectedSurface = ref([]);
 const selectedDeep = ref([]);
 
 watch(
@@ -114,6 +115,7 @@ watch(
     if (conceptStage.value !== "idle") {
       conceptStage.value = "idle";
       conceptCandidates.value = null;
+      selectedSurface.value = [];
       selectedDeep.value = [];
     }
   }
@@ -140,6 +142,7 @@ async function extractConcepts() {
       { headers }
     );
     conceptCandidates.value = res.data;
+    selectedSurface.value = [...(res.data.surface || [])];
     selectedDeep.value = [...(res.data.deep_candidates || [])];
     conceptStage.value = "candidates_ready";
     toastSuccess("概念抽取完成，请筛选内在意义概念");
@@ -223,7 +226,7 @@ async function runFullQuery() {
   try {
     const qParams = buildQueryParams();
     if (conceptStage.value === "candidates_ready" && conceptCandidates.value && selectedDeep.value.length > 0) {
-      qParams.preset_surface = conceptCandidates.value.surface || [];
+      qParams.preset_surface = selectedSurface.value;
       qParams.preset_deep = selectedDeep.value;
     }
     const res = await axios.post(
@@ -842,13 +845,13 @@ onMounted(() => {
                 <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="concept-candidates-panel">
                   <div class="concept-section">
                     <span class="concept-label">字面意义（surface）</span>
-                    <div class="concept-tags">
-                      <a-tag v-for="s in conceptCandidates.surface" :key="s" color="blue">{{ s }}</a-tag>
-                      <span v-if="!conceptCandidates.surface?.length" class="concept-empty">（无）</span>
-                    </div>
+                    <a-checkbox-group v-model:value="selectedSurface" class="concept-checkbox-group">
+                      <a-checkbox v-for="s in conceptCandidates.surface" :key="s" :value="s">{{ s }}</a-checkbox>
+                    </a-checkbox-group>
+                    <span v-if="!conceptCandidates.surface?.length" class="concept-empty">（无）</span>
                   </div>
                   <div class="concept-section">
-                    <span class="concept-label">内在意义候选（deep） <span class="concept-hint">请勾选 3-5 个</span></span>
+                    <span class="concept-label">内在意义候选（deep）</span>
                     <a-checkbox-group v-model:value="selectedDeep" class="concept-checkbox-group">
                       <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
                     </a-checkbox-group>
