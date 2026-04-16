@@ -1003,12 +1003,6 @@ onMounted(() => {
                         class="step2-meta step2-meta-muted"
                       >Step2 未执行（在 Step1 后停止）</div>
                       <div v-else-if="queryResult.steps?.step2?.skipped" class="step2-meta step2-meta-muted">Step2 已跳过（无概念或跳过骨架路由）</div>
-                      <div v-if="(queryResult.steps?.step2?.paths || []).length" class="step2-block">
-                        <div class="step2-title">概念间路径</div>
-                        <div v-for="(p, i) in (queryResult.steps.step2.paths || [])" :key="`p-${i}`" class="step2-line">
-                          {{ formatStep2Path(p) }}
-                        </div>
-                      </div>
                       <div v-if="queryResult.steps?.step2?.skeleton && queryResult.steps.step2.skeleton.length" class="step2-block">
                         <div class="step2-title">纲目逻辑骨架</div>
                         <ol class="step2-ol">
@@ -1022,6 +1016,13 @@ onMounted(() => {
                         <div class="step2-title">扩展节点（deep）</div>
                         <a-tag v-for="e in queryResult.steps.step2.expanded_nodes" :key="e">{{ e }}</a-tag>
                       </div>
+                      <a-collapse v-if="(queryResult.steps?.step2?.paths || []).length" class="step2-inner-collapse" :bordered="false">
+                        <a-collapse-panel key="paths" :header="`概念间路径 · ${queryResult.steps.step2.paths.length} 条`">
+                          <div v-for="(p, i) in (queryResult.steps.step2.paths || [])" :key="`p-${i}`" class="step2-line">
+                            {{ formatStep2Path(p) }}
+                          </div>
+                        </a-collapse-panel>
+                      </a-collapse>
                       <template
                         v-if="queryResult.steps?.step2 && !queryResult.steps.step2.skipped && !(queryResult.steps.step2.paths || []).length && !(queryResult.steps.step2.skeleton || []).length"
                       >
@@ -1341,12 +1342,6 @@ onMounted(() => {
                 <span v-else> · 无 LLM 费用</span>
                 <span v-if="promptPreviewResult.steps.step2.used_three_hop_fallback"> · 已触发 3 跳路径降级</span>
               </div>
-              <div v-if="(promptPreviewResult.steps?.step2?.paths || []).length" class="step2-block">
-                <div class="step2-title">概念间路径</div>
-                <div v-for="(p, i) in (promptPreviewResult.steps.step2.paths || [])" :key="`pp-${i}`" class="step2-line">
-                  {{ formatStep2Path(p) }}
-                </div>
-              </div>
               <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
                 <div class="step2-title">纲目逻辑骨架</div>
                 <ol class="step2-ol">
@@ -1360,6 +1355,13 @@ onMounted(() => {
                 <div class="step2-title">扩展节点（deep）</div>
                 <a-tag v-for="e in promptPreviewResult.steps.step2.expanded_nodes" :key="`pe-${e}`">{{ e }}</a-tag>
               </div>
+              <a-collapse v-if="(promptPreviewResult.steps?.step2?.paths || []).length" class="step2-inner-collapse" :bordered="false">
+                <a-collapse-panel key="paths" :header="`概念间路径 · ${promptPreviewResult.steps.step2.paths.length} 条`">
+                  <div v-for="(p, i) in (promptPreviewResult.steps.step2.paths || [])" :key="`pp-${i}`" class="step2-line">
+                    {{ formatStep2Path(p) }}
+                  </div>
+                </a-collapse-panel>
+              </a-collapse>
               <template
                 v-if="promptPreviewResult.steps?.step2 && !promptPreviewResult.steps.step2.skipped && !(promptPreviewResult.steps.step2.paths || []).length && !(promptPreviewResult.steps.step2.skeleton || []).length"
               >
@@ -1503,12 +1505,6 @@ onMounted(() => {
                                 <span class="step-skipped-hint">未执行骨架</span>
                               </template>
                               <template v-else>
-                                <div v-if="(item.data?.steps?.step2?.paths || []).length" class="step2-block">
-                                  <div class="step2-title">路径</div>
-                                  <div v-for="(p, i) in (item.data.steps.step2.paths || [])" :key="`${item.model}-p-${i}`" class="step2-line">
-                                    {{ formatStep2Path(p) }}
-                                  </div>
-                                </div>
                                 <div v-if="item.data?.steps?.step2?.skeleton?.length" class="step2-block">
                                   <div class="step2-title">骨架</div>
                                   <ol class="step2-ol">
@@ -1521,6 +1517,13 @@ onMounted(() => {
                                 <div v-if="(item.data?.steps?.step2?.expanded_nodes || []).length" class="step2-block">
                                   <a-tag v-for="e in item.data.steps.step2.expanded_nodes" :key="`${item.model}-ex-${e}`">{{ e }}</a-tag>
                                 </div>
+                                <a-collapse v-if="(item.data?.steps?.step2?.paths || []).length" class="step2-inner-collapse" :bordered="false">
+                                  <a-collapse-panel key="paths" :header="`路径 · ${item.data.steps.step2.paths.length} 条`">
+                                    <div v-for="(p, i) in (item.data.steps.step2.paths || [])" :key="`${item.model}-p-${i}`" class="step2-line">
+                                      {{ formatStep2Path(p) }}
+                                    </div>
+                                  </a-collapse-panel>
+                                </a-collapse>
                                 <template
                                   v-if="!(item.data?.steps?.step2?.paths || []).length && !(item.data?.steps?.step2?.expanded_nodes || []).length && !(item.data?.steps?.step2?.skeleton || []).length"
                                 >
@@ -2090,6 +2093,18 @@ onMounted(() => {
     margin-bottom: 8px;
     &:last-child {
       margin-bottom: 0;
+    }
+  }
+  .step2-inner-collapse {
+    background: transparent;
+    margin-bottom: 6px;
+    :deep(.ant-collapse-header) {
+      padding: 4px 0 !important;
+      font-size: 12px;
+      color: #666;
+    }
+    :deep(.ant-collapse-content-box) {
+      padding: 6px 0 !important;
     }
   }
   .step2-title {
