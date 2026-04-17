@@ -41,6 +41,8 @@ def price_per_million_usd(billing_model: str) -> tuple[float, float, str]:
     返回 (input_usd_per_mtok, output_usd_per_mtok, 人类可读档位说明)。
     """
     m = (billing_model or "").strip().lower()
+    if m == "claude-opus-4-7":
+        return 5.0, 25.0, "Claude Opus 4.7 标准价 $5/$25 per MTok"
     if m == "claude-opus-4-6":
         return 5.0, 25.0, "Claude Opus 4.6 标准价 $5/$25 per MTok"
     if m == "claude-sonnet-4-6":

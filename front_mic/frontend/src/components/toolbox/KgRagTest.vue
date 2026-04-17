@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, reactive, watch, onMounted, computed } from "vue";
 import { ArrowLeftOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { message } from "ant-design-vue";
@@ -54,6 +54,7 @@ const claudeModelOptions = [
 const step12BenchmarkModels = [
   { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
   { value: "claude-opus-4-6", label: "Claude Opus 4.6" },
+  { value: "claude-opus-4-7", label: "Claude Opus 4.7" },
   { value: "gpt-5.4", label: "GPT-5.4" },
   { value: "gpt-5.4-thinking", label: "GPT-5.4 Thinking" },
 ];
@@ -486,10 +487,15 @@ const promptPreviewResult = ref(null);
 // ---------- Tab 4：Step1~2 测试 ----------
 const step12Query = ref("");
 const step12Mode = ref("step1_only"); // step1_only | step1_step2
-const step12SelectedModels = ref(step12BenchmarkModels.map((m) => m.value));
+const step12SelectedModels = ref([]);
 const step12Loading = ref(false);
 /** 并行结果：{ model, label, ok, data?, error? }[] */
 const step12Results = ref(null);
+const step12Phase = ref("idle"); // idle | step1_done
+const step12ConceptSelections = reactive({});
+const hasAnyStep12DeepSelected = computed(() =>
+  Object.values(step12ConceptSelections).some(sel => sel && sel.deep && sel.deep.length > 0)
+);
 
 /** 最下方汇总窗口：按固定标题输出题目、Step1；Step1+2 时再输出 Step2 */
 const step12SummaryText = computed(() => {
@@ -612,9 +618,12 @@ async function runStep12Test() {
   const mode = step12Mode.value;
   step12Loading.value = true;
   step12Results.value = null;
+  step12Phase.value = "idle";
+  for (const key of Object.keys(step12ConceptSelections)) {
+    delete step12ConceptSelections[key];
+  }
   const baseParams = {
-    stop_after_step1: mode === "step1_only",
-    stop_after_step2: mode === "step1_step2",
+    stop_after_step1: true,
     skip_generation: true,
   };
   try {
@@ -638,16 +647,94 @@ async function runStep12Test() {
       const errMsg = err?.response?.data?.error || err?.message || "请求失败";
       return { model: modelId, label, ok: false, error: errMsg };
     });
+    for (const item of step12Results.value) {
+      if (item.ok && item.data?.steps?.step1) {
+        step12ConceptSelections[item.model] = { surface: [], deep: [] };
+      }
+    }
     const okN = step12Results.value.filter((r) => r.ok).length;
     if (okN === models.length) {
-      toastSuccess(`已完成 ${okN} 路并行`);
+      toastSuccess(`已完成 ${okN} 路 Step1`);
     } else {
       message.warning(`部分失败：${okN} / ${models.length} 路成功`);
+    }
+    if (mode === "step1_step2") {
+      step12Phase.value = "step1_done";
     }
   } catch (e) {
     message.error(e?.message || "执行失败");
   } finally {
     step12Loading.value = false;
+  }
+}
+
+async function runStep12ContinueStep2() {
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  const modelsToRun = (step12Results.value || []).filter(item => {
+    if (!item.ok) return false;
+    const sel = step12ConceptSelections[item.model];
+    return sel && sel.deep.length > 0;
+  });
+  if (!modelsToRun.length) {
+    message.warning("请至少为一个模型勾选内在意义概念");
+    return;
+  }
+  step12Loading.value = true;
+  try {
+    const settled = await Promise.allSettled(
+      modelsToRun.map(item => {
+        const sel = step12ConceptSelections[item.model];
+        return axios.post(
+          `${apiBase}/api/kg_rag/query`,
+          {
+            query: step12Query.value.trim(),
+            params: {
+              ...buildQueryParams(),
+              stop_after_step2: true,
+              skip_generation: true,
+              step1_model: item.model,
+              llm_model: item.model,
+              preset_surface: sel.surface,
+              preset_deep: sel.deep,
+            },
+          },
+          { headers }
+        );
+      })
+    );
+    modelsToRun.forEach((item, i) => {
+      const s = settled[i];
+      const resultItem = step12Results.value.find(r => r.model === item.model);
+      if (!resultItem) return;
+      if (s.status === "fulfilled") {
+        const newData = s.value.data;
+        resultItem.data.steps.step2 = newData.steps?.step2;
+        resultItem.data.stopped_after = newData.stopped_after;
+        if (newData.llm_usage) {
+          const existingCalls = resultItem.data.llm_usage?.calls || [];
+          const newCalls = (newData.llm_usage?.calls || []).filter(c => c.step !== "step1");
+          resultItem.data.llm_usage = {
+            ...resultItem.data.llm_usage,
+            calls: [...existingCalls, ...newCalls],
+          };
+        }
+      } else {
+        const err = s.reason;
+        const errMsg = err?.response?.data?.error || err?.message || "Step2 请求失败";
+        if (resultItem.data) {
+          resultItem.data.steps = resultItem.data.steps || {};
+          resultItem.data.steps.step2 = { skipped: true, reason: errMsg };
+        }
+      }
+    });
+    const okN = modelsToRun.filter((_, i) => settled[i].status === "fulfilled").length;
+    toastSuccess(`Step2 完成：${okN} / ${modelsToRun.length} 路成功`);
+  } catch (e) {
+    message.error(e?.message || "Step2 执行失败");
+  } finally {
+    step12Loading.value = false;
+    step12Phase.value = "idle";
   }
 }
 
@@ -1440,7 +1527,7 @@ onMounted(() => {
                         </a-collapse>
                       </div>
                       <a-alert
-                        v-if="item.data?.stopped_after === 'step1'"
+                        v-if="item.data?.stopped_after === 'step1' && step12Phase !== 'step1_done'"
                         type="info"
                         show-icon
                         class="stopped-after-alert step12-mini-alert"
@@ -1460,15 +1547,28 @@ onMounted(() => {
                               <div v-if="item.data?.steps?.step1">
                                 <div class="step1-layer">
                                   <span class="step1-layer-label">字面意义候选：</span>
-                                  <a-tag v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`">{{ c }}</a-tag>
+                                  <template v-if="step12ConceptSelections[item.model]">
+                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].surface" class="concept-checkbox-group">
+                                      <a-checkbox v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`" :value="c">{{ c }}</a-checkbox>
+                                    </a-checkbox-group>
+                                  </template>
+                                  <template v-else>
+                                    <a-tag v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`">{{ c }}</a-tag>
+                                  </template>
                                 </div>
                                 <div class="step1-layer">
                                   <span class="step1-layer-label">内在意义、经历、实行候选：</span>
-                                  <a-tag color="blue" v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`">{{ c }}</a-tag>
+                                  <template v-if="step12ConceptSelections[item.model]">
+                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].deep" class="concept-checkbox-group">
+                                      <a-checkbox v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`" :value="c">{{ c }}</a-checkbox>
+                                    </a-checkbox-group>
+                                  </template>
+                                  <template v-else>
+                                    <a-tag color="blue" v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`">{{ c }}</a-tag>
+                                  </template>
                                 </div>
-                                <div class="step1-layer">
-                                  <span class="step1-layer-label">合并：</span>
-                                  <a-tag color="green" v-for="c in (item.data.steps.step1.concepts || [])" :key="`${item.model}-m-${c}`">{{ c }}</a-tag>
+                                <div v-if="step12ConceptSelections[item.model] && step12ConceptSelections[item.model].deep.length === 0 && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
+                                  请勾选至少一个内在意义概念
                                 </div>
                                 <a-collapse v-if="item.data.steps.step1.raw_response">
                                   <a-collapse-panel key="raw" header="原始响应">
@@ -1526,6 +1626,17 @@ onMounted(() => {
                       </a-steps>
                     </template>
                 </a-card>
+              </div>
+              <div v-if="step12Phase === 'step1_done'" class="step12-continue-wrap">
+                <a-button
+                  type="primary"
+                  :loading="step12Loading"
+                  :disabled="!hasAnyStep12DeepSelected"
+                  @click="runStep12ContinueStep2"
+                >
+                  用所选概念继续 Step2
+                </a-button>
+                <span v-if="!hasAnyStep12DeepSelected" class="concept-warn" style="margin-left: 12px;">请至少为一个模型勾选内在意义概念</span>
               </div>
             </a-col>
             <a-col v-if="step12Results" :span="24">
@@ -1868,6 +1979,12 @@ onMounted(() => {
   color: #cf1322;
   font-size: 13px;
   margin-top: 8px;
+}
+.step12-continue-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
 }
 
 .llm-usage-timing {
