@@ -142,8 +142,8 @@ async function extractConcepts() {
       { headers }
     );
     conceptCandidates.value = res.data;
-    selectedSurface.value = [...(res.data.surface || [])];
-    selectedDeep.value = [...(res.data.deep_candidates || [])];
+    selectedSurface.value = [];
+    selectedDeep.value = [];
     conceptStage.value = "candidates_ready";
     toastSuccess("概念抽取完成，请筛选内在意义概念");
   } catch (e) {

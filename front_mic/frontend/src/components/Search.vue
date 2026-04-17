@@ -182,8 +182,8 @@ async function extractConcepts() {
       audience: aiForm.audience.trim(),
     });
     conceptCandidates.value = res.data;
-    selectedSurface.value = [...(res.data.surface || [])];
-    selectedDeep.value = [...(res.data.deep_candidates || [])];
+    selectedSurface.value = [];
+    selectedDeep.value = [];
     conceptStage.value = "candidates_ready";
   } catch (e) {
     tip(e.response?.data?.error || e.message || "概念抽取失败");
