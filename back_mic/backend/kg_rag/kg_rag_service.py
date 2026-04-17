@@ -506,13 +506,15 @@ async def _call_claude(
         raise RuntimeError("Claude 客户端未配置（请设置 CLAUDE_API_KEY）")
 
     def _sync_create():
-        return client.messages.create(
+        kwargs = dict(
             model=model,
             max_tokens=max_tokens,
-            temperature=temperature,
             system=system or "你是一位专业、精确的助手。请严格按要求的格式输出。",
             messages=[{"role": "user", "content": prompt}],
         )
+        if not (model or "").startswith("claude-opus-4-7"):
+            kwargs["temperature"] = temperature
+        return client.messages.create(**kwargs)
 
     try:
         msg = await asyncio.to_thread(_sync_create)
