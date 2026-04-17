@@ -581,7 +581,8 @@ const step12SummaryText = computed(() => {
             ? s2.skeleton.map((t, i) => {
                 const step = typeof t === "object" ? t.step || t : t;
                 const pe = typeof t === "object" && t.path_evidence ? `\n   ↳ ${t.path_evidence}` : "";
-                return `${i + 1}. ${step}${pe}`;
+                const sa = typeof t === "object" && t.scripture_anchor ? `\n   📖 ${t.scripture_anchor}` : "";
+                return `${i + 1}. ${step}${pe}${sa}`;
               }).join("\n")
             : "（无）";
           lines.push("骨架：");
@@ -1088,6 +1089,7 @@ onMounted(() => {
                           <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">
                             {{ typeof s === 'object' ? s.step : s }}
                             <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                            <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                           </li>
                         </ol>
                       </div>
@@ -1426,6 +1428,7 @@ onMounted(() => {
                   <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">
                     {{ typeof s === 'object' ? s.step : s }}
                     <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                    <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                   </li>
                 </ol>
               </div>
@@ -1601,6 +1604,7 @@ onMounted(() => {
                                     <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">
                                       {{ typeof s === 'object' ? s.step : s }}
                                       <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                                      <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                                     </li>
                                   </ol>
                                 </div>

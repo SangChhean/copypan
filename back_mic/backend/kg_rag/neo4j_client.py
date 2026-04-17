@@ -280,9 +280,10 @@ class Neo4jClient:
             print(f"[KG-RAG] get_path_count 失败: {e}")
             return 0
 
-    def get_key_verses(self, concept_names: list[str]) -> dict[str, list[str]]:
+    def get_key_verses(self, concept_names: list[str]) -> dict[str, list[tuple[str, str]]]:
         """查询概念列表通过 SUPPORTED_BY 关系连接的 Scripture 节点。
-        返回 {概念名: [text_short, ...]}，无结果或不可用时返回空 dict。
+        返回 {概念名: [(id, text), ...]}，id 为 Scripture 节点唯一键（经卷简称节号等），
+        text 为节点正文。无结果或不可用时返回空 dict。
         """
         if not self._available or self._driver is None or not concept_names:
             return {}
@@ -294,16 +295,17 @@ class Neo4jClient:
                 result = session.run(
                     "MATCH (c:Concept)-[:SUPPORTED_BY]->(s:Scripture) "
                     "WHERE c.name IN $names "
-                    "RETURN c.name AS concept, s.text_short AS verse",
+                    "RETURN c.name AS concept, s.id AS sid, s.text AS stext",
                     names=names,
                 )
-                out: dict[str, list[str]] = {}
+                out: dict[str, list[tuple[str, str]]] = {}
                 for record in result:
                     concept = record.get("concept")
-                    verse = record.get("verse")
-                    if not concept or not verse:
+                    stext = (record.get("stext") or "").strip()
+                    sid = (record.get("sid") or "").strip()
+                    if not concept or not stext:
                         continue
-                    out.setdefault(concept, []).append(verse)
+                    out.setdefault(concept, []).append((sid, stext))
                 return out
         except Exception as e:
             print(f"[KG-RAG] get_key_verses 失败: {e}")

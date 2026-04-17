@@ -1159,6 +1159,7 @@ const onAISearch = async () => {
         <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">
           {{ typeof item === 'object' ? item.step : item }}
           <span v-if="item && typeof item === 'object' && item.path_evidence" class="kg-skeleton-evidence">↳ {{ item.path_evidence }}</span>
+          <span v-if="item && typeof item === 'object' && item.scripture_anchor" class="kg-skeleton-evidence">📖 {{ item.scripture_anchor }}</span>
         </div>
       </div>
     </div>

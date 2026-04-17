@@ -456,8 +456,30 @@ def _format_paths_text(paths: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _format_key_verses_text(raw: dict[str, list[tuple[str, str]]]) -> str:
+    """将 get_key_verses 结果格式化为 Step2 Prompt 块：每行「- 概念名：id「正文」；id「正文」…」。"""
+    if not raw:
+        return "（无）"
+    lines_out: list[str] = []
+    for concept, pairs in raw.items():
+        parts: list[str] = []
+        for vid, vtext in pairs:
+            vtext = (vtext or "").strip()
+            vid = (vid or "").strip()
+            if not vtext:
+                continue
+            if vid:
+                parts.append(f"{vid}「{vtext}」")
+            else:
+                parts.append(f"「{vtext}」")
+        if parts:
+            lines_out.append(f"- {concept}：{'；'.join(parts)}")
+    return "\n".join(lines_out) if lines_out else "（无）"
+
+
 def _parse_step2_skeleton(text: str) -> list[dict] | None:
-    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int], "path_evidence": str|None}, ...]；为 null 或失败时返回 None。"""
+    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int], "path_evidence": str|None, "scripture_anchor": str|None}, ...]；为 null 或失败时返回 None。
+    若 scripture_anchor 含全角「，则将其前缀作为出处拼入 step：step +「（出处）」；scripture_anchor 字段原样保留。"""
     obj = _safe_parse_json(text or "")
     if not obj:
         return None
@@ -475,10 +497,32 @@ def _parse_step2_skeleton(text: str) -> list[dict] | None:
                 indices = [i for i in indices if isinstance(i, int)]
                 pe_raw = x.get("path_evidence")
                 path_evidence = str(pe_raw).strip() if pe_raw and str(pe_raw).strip() else None
+                sa_raw = x.get("scripture_anchor")
+                scripture_anchor = str(sa_raw).strip() if sa_raw and str(sa_raw).strip() else None
                 if step:
-                    result.append({"step": step, "deep_indices": indices, "path_evidence": path_evidence})
+                    if scripture_anchor is not None:
+                        pos = scripture_anchor.find("「")
+                        if pos != -1:
+                            scripture_id = scripture_anchor[:pos].strip()
+                            if scripture_id:
+                                step = f"{step}（{scripture_id}）"
+                    result.append(
+                        {
+                            "step": step,
+                            "deep_indices": indices,
+                            "path_evidence": path_evidence,
+                            "scripture_anchor": scripture_anchor,
+                        }
+                    )
             elif isinstance(x, str) and x.strip():
-                result.append({"step": x.strip(), "deep_indices": [], "path_evidence": None})
+                result.append(
+                    {
+                        "step": x.strip(),
+                        "deep_indices": [],
+                        "path_evidence": None,
+                        "scripture_anchor": None,
+                    }
+                )
         return result if result else None
     return None
 
@@ -730,6 +774,9 @@ class KgRagService:
             }
 
         paths_text = _format_paths_text(paths)
+        key_verses_raw = self.neo4j.get_key_verses(surface + deep)
+        key_verses_text = _format_key_verses_text(key_verses_raw)
+        logger.info(f"[KG-RAG DEBUG] Step2 key_verses_text:\n{key_verses_text}")
         reasoning_s = (reasoning or "").strip() or "（无）"
         bd = (burden_description or "").strip()
         burden_description_line = f"用户负担说明：{bd}" if bd else ""
@@ -742,6 +789,7 @@ class KgRagService:
             surface_json=json.dumps(surface, ensure_ascii=False),
             deep_json=json.dumps(deep, ensure_ascii=False),
             paths_text=paths_text,
+            key_verses_text=key_verses_text,
         )
         prompt_out = step2_prompt
         logger.info(f"[KG-RAG DEBUG] Step2 prompt (first 1200 chars): {step2_prompt[:1200]}")
@@ -895,9 +943,13 @@ class KgRagService:
                 )
                 logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
                 step1_extract_start = asyncio.get_event_loop().time()
+                logger.info(
+                    f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
+                )
                 raw1, u1 = await _call_kg_rag_llm(
                     step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
                 )
+                logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
                 if (m1 or "").strip().lower() == "gpt-5.4-thinking":
                     logger.info(
                         f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
@@ -977,6 +1029,8 @@ class KgRagService:
             logger.info("[KG-RAG DEBUG] Step 1 done: concepts go directly to Step2")
 
         if p.get("stop_after_step1"):
+            stop_after_step1 = p.get("stop_after_step1")
+            logger.info(f"[KG-RAG DEBUG] stop_after_step1={stop_after_step1}，准备返回")
             result["stopped_after"] = "step1"
             result["steps"]["step2"] = {
                 "skipped": True,
