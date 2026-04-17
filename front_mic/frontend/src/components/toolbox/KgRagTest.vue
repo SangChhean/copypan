@@ -510,18 +510,18 @@ const step12SummaryText = computed(() => {
     lines.push(`Step1 价格：$${formatUsd(step1Cost)} USD`);
     lines.push(`Step1 耗时：${formatSec(step1Ms)} s`);
     if (!item.ok) {
-      lines.push("字面意义层：");
+      lines.push("字面意义候选：");
       lines.push(`（请求失败）${item.error || ""}`);
-      lines.push("内在意义层：");
+      lines.push("内在意义、经历、实行候选：");
       lines.push("（请求失败）");
     } else {
       const s1 = item.data?.steps?.step1;
       const rs = s1?.reasoning != null ? String(s1.reasoning).trim() : "";
       lines.push("推理说明：");
       lines.push(rs || "（无）");
-      lines.push("字面意义层：");
+      lines.push("字面意义候选：");
       lines.push(joinList(s1?.surface));
-      lines.push("内在意义层：");
+      lines.push("内在意义、经历、实行候选：");
       lines.push(joinList(s1?.deep));
       if (s1?.error) {
         lines.push("Step1 异常：");
@@ -962,11 +962,11 @@ onMounted(() => {
                       <a-card size="small" class="step-card">
                       <div v-if="queryResult.steps?.step1">
                         <div class="step1-layer">
-                          <span class="step1-layer-label">字面意义层：</span>
+                          <span class="step1-layer-label">字面意义候选：</span>
                           <a-tag v-for="c in (queryResult.steps.step1.surface || [])" :key="`surface-${c}`">{{ c }}</a-tag>
                         </div>
                         <div class="step1-layer">
-                          <span class="step1-layer-label">内在意义层：</span>
+                          <span class="step1-layer-label">内在意义、经历、实行候选：</span>
                           <a-tag color="blue" v-for="c in (queryResult.steps.step1.deep || [])" :key="`deep-${c}`">{{ c }}</a-tag>
                         </div>
                         <div class="step1-layer">
@@ -1315,11 +1315,11 @@ onMounted(() => {
             <a-collapse class="steps-summary" :bordered="false">
             <a-collapse-panel key="step1" header="Step 1 概念抽取（从图谱词表匹配）">
               <div class="step1-layer">
-                <span class="step1-layer-label">字面意义层：</span>
+                <span class="step1-layer-label">字面意义候选：</span>
                 <a-tag v-for="c in (promptPreviewResult.steps?.step1?.surface || [])" :key="`psurface-${c}`">{{ c }}</a-tag>
               </div>
               <div class="step1-layer">
-                <span class="step1-layer-label">内在意义层：</span>
+                <span class="step1-layer-label">内在意义、经历、实行候选：</span>
                 <a-tag color="blue" v-for="c in (promptPreviewResult.steps?.step1?.deep || [])" :key="`pdeep-${c}`">{{ c }}</a-tag>
               </div>
               <div class="step1-layer">
@@ -1459,11 +1459,11 @@ onMounted(() => {
                             <a-card size="small" class="step-card step12-nested-card">
                               <div v-if="item.data?.steps?.step1">
                                 <div class="step1-layer">
-                                  <span class="step1-layer-label">字面意义层：</span>
+                                  <span class="step1-layer-label">字面意义候选：</span>
                                   <a-tag v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`">{{ c }}</a-tag>
                                 </div>
                                 <div class="step1-layer">
-                                  <span class="step1-layer-label">内在意义层：</span>
+                                  <span class="step1-layer-label">内在意义、经历、实行候选：</span>
                                   <a-tag color="blue" v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`">{{ c }}</a-tag>
                                 </div>
                                 <div class="step1-layer">

@@ -984,14 +984,14 @@ const onAISearch = async () => {
             <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="ai-concept-panel">
               <div class="ai-concept-hint">以下是 AI 识别到的相关概念，请勾选确认后生成纲目</div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">字面意义层：</span>
+                <span class="ai-concept-label">字面意义候选：</span>
                 <a-checkbox-group v-model:value="selectedSurface" class="ai-concept-checks">
                   <a-checkbox v-for="s in conceptCandidates.surface" :key="s" :value="s">{{ s }}</a-checkbox>
                 </a-checkbox-group>
                 <span v-if="!conceptCandidates.surface?.length" class="ai-concept-empty">（无）</span>
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">内在意义层：</span>
+                <span class="ai-concept-label">内在意义、经历、实行候选：</span>
                 <a-checkbox-group v-model:value="selectedDeep" class="ai-concept-checks">
                   <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
                 </a-checkbox-group>
