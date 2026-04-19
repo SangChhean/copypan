@@ -199,15 +199,16 @@ def _apply_outline_nature_weight(
     return results
 
 
-# 全流程 full_query：Step1 与 Query Rewrite 固定 Opus 4.6；Step2a/2b 使用 params.llm_model（前端下拉）；Step5 固定 Sonnet
-FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"
+# 全流程 full_query：Step1 默认 Opus 4.7；Query Rewrite 固定 Opus 4.6；Step2 使用 params.llm_model（前端下拉）；Step5 固定 Sonnet
+FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"  # Query 改写专用
+FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 params.step1_model 覆盖）
 FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
 
 
 def _resolve_step1_model(p: dict) -> str:
-    """Step1 专用模型；未配置时回退到 FULL_QUERY_OPUS_MODEL（全流程默认）。"""
+    """Step1 专用模型；未配置时回退到 FULL_QUERY_STEP1_MODEL。"""
     m = str(p.get("step1_model") or "").strip()
-    return m if m else FULL_QUERY_OPUS_MODEL
+    return m if m else FULL_QUERY_STEP1_MODEL
 
 
 def _max_tokens_for_model(model: str, base: int) -> int:

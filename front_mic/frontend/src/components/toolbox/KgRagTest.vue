@@ -910,7 +910,7 @@ onMounted(() => {
                             :dropdown-match-select-width="false"
                           />
                           <p class="param-explain">
-                            全流程：Step1 与 Query 改写固定 Opus 4.6；Step5 纲目生成固定 Sonnet 4.6；下方所选模型仅用于 Step2（单次骨架 LLM）。仅测 Step1 或 Step1+2 请用 Tab「Step1~2 测试」。
+                            全流程：Step1 默认 Opus 4.7；Query 改写固定 Opus 4.6；Step5 纲目生成固定 Sonnet 4.6；下方所选模型仅用于 Step2（单次骨架 LLM）。仅测 Step1 或 Step1+2 请用 Tab「Step1~2 测试」。
                             与路1 / 路2 / 路3 的 Elasticsearch 检索参数无关。
                           </p>
                           <p class="param-explain param-explain-secondary">
@@ -1477,7 +1477,7 @@ onMounted(() => {
                   </a-radio-group>
                 </div>
                 <p class="hint step12-gpt-hint">
-                  勾选多个模型后点击执行，将<strong>同时</strong>发起多路请求（浏览器并行）；下方按<strong>自上而下</strong>展示，顺序固定为 Sonnet 4.6 → Opus 4.6 → GPT-5.4 → GPT-5.4 Thinking。最底部为 Step1/Step2 纯文本汇总。每路 Step1/Step2 使用同一模型；<strong>GPT-5.4 Thinking</strong> 为 <code>gpt-5.4</code> + 更高 <code>reasoning.effort</code>（非 Pro）。GPT 需 <code>OPENAI_API_KEY</code>。
+                  勾选多个模型后点击执行，将<strong>同时</strong>发起多路请求（浏览器并行）；下方按<strong>自上而下</strong>展示，顺序固定为 Sonnet 4.6 → Opus 4.6 → Opus 4.7 → GPT-5.4 → GPT-5.4 Thinking。最底部为 Step1/Step2 纯文本汇总。每路 Step1/Step2 使用同一模型；<strong>GPT-5.4 Thinking</strong> 为 <code>gpt-5.4</code> + 更高 <code>reasoning.effort</code>（非 Pro）。GPT 需 <code>OPENAI_API_KEY</code>。
                 </p>
                 <div class="param-item param-item-stack step12-model-row">
                   <span class="param-label">并行模型（多选）</span>
