@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Optional
@@ -413,8 +414,17 @@ def _safe_parse_json(text: str) -> dict:
         s = "\n".join(lines[1:-1] if len(lines) > 2 and lines[-1].strip() == "```" else lines[1:])
     try:
         obj = json.loads(s)
+        logger.info(f"[KG-RAG DEBUG] _safe_parse_json success, type={type(obj)}, is_dict={isinstance(obj, dict)}")
         return obj if isinstance(obj, dict) else {}
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.info(f"[KG-RAG DEBUG] _safe_parse_json JSONDecodeError: {e}, s preview: {s[:200]}")
+        # 尝试替换全角引号后重新解析
+        try:
+            s2 = s.replace("“", "\"").replace("”", "\"")
+            obj = json.loads(s2)
+            return obj if isinstance(obj, dict) else {}
+        except json.JSONDecodeError:
+            pass
         last_brace = s.rfind("}")
         if last_brace > 0:
             try:
@@ -470,10 +480,11 @@ def _format_key_verses_text(raw: dict[str, list[tuple[str, str]]]) -> str:
             vid = (vid or "").strip()
             if not vtext:
                 continue
+            clean_text = vtext.replace("“", "'").replace("”", "'")
             if vid:
-                parts.append(f"{vid}「{vtext}」")
+                parts.append(f"{vid}「{clean_text}」")
             else:
-                parts.append(f"「{vtext}」")
+                parts.append(f"「{clean_text}」")
         if parts:
             lines_out.append(f"- {concept}：{'；'.join(parts)}")
     return "\n".join(lines_out) if lines_out else "（无）"
@@ -482,7 +493,17 @@ def _format_key_verses_text(raw: dict[str, list[tuple[str, str]]]) -> str:
 def _parse_step2_skeleton(text: str) -> list[dict] | None:
     """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int], "path_evidence": str|None, "scripture_anchor": str|None}, ...]；为 null 或失败时返回 None。
     若 scripture_anchor 含全角「，则将其前缀作为出处拼入 step：step +「（出处）」；scripture_anchor 字段原样保留。"""
-    obj = _safe_parse_json(text or "")
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+        text = text.strip()
+    logger.info(f"[KG-RAG DEBUG] Step2 parse input (first 100): {text[:100]}")
+    try:
+        obj = _safe_parse_json(text or "")
+    except Exception as e:
+        logger.info(f"[KG-RAG DEBUG] Step2 parse FAILED: {e}, text preview: {text[:200]}")
+        return None
     if not obj:
         return None
     sk = obj.get("skeleton")
