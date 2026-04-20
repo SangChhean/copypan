@@ -2692,21 +2692,6 @@ class AISearchService:
         log_message = f"共导出 {total_items} 条，已生成 {len(batches)} 个文件：{base_name}-1.docx ～ {base_name}-{len(batches)}.docx"
         return (files_list, None, log_message)
 
-    def clear_cache(self) -> Dict:
-        """清空 AI 搜索 Redis 缓存（所有 ai_search:* 键）。返回删除的键数量。"""
-        if not self.redis:
-            return {"cleared": 0, "message": "Redis 未启用"}
-        try:
-            keys = self.redis.keys("ai_search:*")
-            if keys:
-                self.redis.delete(*keys)
-            count = len(keys)
-            logger.info(f"AI 搜索缓存已清理，删除 {count} 条")
-            return {"cleared": count, "message": f"已清理 {count} 条缓存" if count else "缓存为空，无需清理"}
-        except Exception as e:
-            logger.warning(f"清理缓存失败: {e}")
-            return {"cleared": 0, "message": str(e)}
-
     def health_check(self) -> Dict:
         """健康检查"""
         status = {

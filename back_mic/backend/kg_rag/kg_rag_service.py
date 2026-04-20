@@ -32,6 +32,7 @@ from kg_rag.prompts import (
     STEP5_GENERATION,
     STEP5_GENERATION_FLAT,
 )
+from ai_search.monitoring import get_monitoring
 
 # QUERY_REWRITE 调用时传入 Claude 的 system，与 prompts 中说明一致
 QUERY_REWRITE_SYSTEM = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
@@ -88,9 +89,17 @@ DEFAULT_PARAMS = {
 CACHE_TTL = 604800  # 7 天
 
 
-def _make_cache_key(query: str, outline_nature: str, burden_description: str, audience: str, depth: str) -> str:
-    """query + outline_nature + burden_description + audience + depth 拼接 SHA256，返回 Redis key。"""
-    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}"
+def _make_cache_key(
+    query: str,
+    outline_nature: str,
+    burden_description: str,
+    audience: str,
+    depth: str,
+    surface_joined: str = "",
+    deep_joined: str = "",
+) -> str:
+    """query + outline_nature + burden_description + audience + depth + surface_joined + deep_joined 拼接 SHA256，返回 Redis key。"""
+    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{surface_joined}|{deep_joined}"
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"kg_rag:cache:{h}"
 
@@ -880,7 +889,27 @@ class KgRagService:
         }
 
         # ── Redis 缓存读取 ──
-        cache_key = _make_cache_key(query, outline_nature, burden_description, audience, depth)
+        preset_surface = p.get("preset_surface") or []
+        preset_deep = p.get("preset_deep") or []
+        surface_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_surface if str(c).strip()))
+            if isinstance(preset_surface, list)
+            else ""
+        )
+        deep_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_deep if str(c).strip()))
+            if isinstance(preset_deep, list)
+            else ""
+        )
+        cache_key = _make_cache_key(
+            query,
+            outline_nature,
+            burden_description,
+            audience,
+            depth,
+            surface_joined,
+            deep_joined,
+        )
         skip_cache = bool(p.get("skip_cache"))
         if self.redis and not skip_cache:
             try:
@@ -917,8 +946,6 @@ class KgRagService:
         u1: dict[str, int] | None = None
         m1 = _resolve_step1_model(p)
 
-        preset_surface = p.get("preset_surface") or []
-        preset_deep = p.get("preset_deep") or []
         if isinstance(preset_surface, list) and isinstance(preset_deep, list) and preset_surface and preset_deep:
             surface = [str(c) for c in preset_surface[:5]]
             deep = [str(c) for c in preset_deep[:10]]
@@ -1488,6 +1515,63 @@ class KgRagService:
                 logger.info(f"[KG-RAG CACHE] written: key={cache_key}, ttl={CACHE_TTL}")
             except Exception as e:
                 logger.warning(f"[KG-RAG CACHE] write error: {e}")
+
+        # === 监控写入 ===
+        try:
+            monitoring = get_monitoring(self.redis)
+            req_params = params or {}
+
+            # 基础字段
+            query_str = query
+            cache_hit = bool(result.get("from_cache", False) or result.get("cached", False))
+            elapsed_ms = float(result.get("total_elapsed_ms") or (result.get("llm_usage") or {}).get("total_elapsed_ms") or 0)
+            cost = float(result.get("total_cost_usd") or ((result.get("llm_usage") or {}).get("totals") or {}).get("cost_usd") or 0.0)
+
+            llm_usage = result.get("llm_usage") or {}
+            totals = llm_usage.get("totals") or {}
+            input_tokens = int(totals.get("input_tokens") or 0)
+            output_tokens = int(totals.get("output_tokens") or 0)
+
+            outline_nature = req_params.get("outline_nature") or "一般性"
+            depth = "深度" if (req_params.get("depth") == "deep") else "普通"
+            burden_description = req_params.get("burden_description") or ""
+            burden_flag = "是" if str(burden_description).strip() else "否"
+
+            monitoring.record_query(
+                question=query_str,
+                response_time_ms=elapsed_ms,
+                cache_hit=cache_hit,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost=cost,
+                special_needs=outline_nature,
+                mode="KG-RAG",
+                depth=depth,
+                api_type="claude",
+            )
+
+            # 检索统计（仅非缓存命中时才有意义）
+            if not cache_hit:
+                step3_data = result.get("steps", {}).get("step3") or {}
+                main_sources = _extract_main_sources(step3_data.get("main_results") or [])
+                main_results = step3_data.get("main_results") or []
+                expanded = step3_data.get("expanded_results") or []
+                total_retrieved = len(main_results) + len(expanded)
+                used_count = len(main_sources)
+                waste_rate = round((1 - used_count / total_retrieved) * 100, 1) if total_retrieved > 0 else 0.0
+
+                monitoring.record_retrieval_stats(
+                    question_preview=query_str[:30],
+                    total=total_retrieved,
+                    used=used_count,
+                    waste_rate=waste_rate,
+                    mode="KG-RAG",
+                    depth=depth,
+                    burden=burden_flag,
+                )
+        except Exception as e:
+            logger.warning(f"[KG-RAG] 监控写入失败（不影响主流程）: {e}")
+        # === 监控写入结束 ===
 
         return result
 

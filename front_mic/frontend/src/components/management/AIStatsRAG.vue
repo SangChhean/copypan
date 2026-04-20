@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
 import { ref, computed, onMounted, watch } from "vue";
-import { ReloadOutlined, DeleteOutlined, ClearOutlined, ExportOutlined } from "@ant-design/icons-vue";
+import { ReloadOutlined, DeleteOutlined, ExportOutlined } from "@ant-design/icons-vue";
 import { Modal } from "ant-design-vue";
 import { tip } from "../utils";
 
@@ -88,52 +88,24 @@ const retrievalLogColumns = [
 
 const retrievalLog = computed(() => legacyStats.value?.retrieval_log || []);
 
-const natureWeightColumns = computed(() => {
-  const w = legacyStats.value?.index_weights;
-  if (!w || !w._labels) return [];
-  const cols = [{ title: "纲目性质", dataIndex: "nature", key: "nature", width: 100 }];
-  for (const [key, label] of Object.entries(w._labels)) {
-    cols.push({ title: label, dataIndex: key, key, width: 88, align: "center" });
-  }
-  cols.push({ title: "说明", dataIndex: "note", key: "note", width: 200 });
-  return cols;
-});
-
-const natureWeightRows = computed(() => {
-  const w = legacyStats.value?.index_weights;
-  if (!w || !w._labels) return [];
-  return NATURE_ORDER.map((nature) => {
-    const config = w[nature];
-    const row = { nature, key: nature };
-    if (config) {
-      for (const key of Object.keys(w._labels)) {
-        row[key] = config[key] ?? "-";
-      }
-    }
-    row.note = (w._notes && w._notes[nature]) || "-";
-    return row;
-  });
-});
-
-const clearingCache = ref(false);
-const onClearCache = () => {
-  clearingCache.value = true;
+const clearingKgRagCache = ref(false);
+const onClearKgRagCache = () => {
+  clearingKgRagCache.value = true;
   axios
-    .post("/api/ai_search/cache/clear")
+    .post("/api/kg_rag/cache/clear")
     .then((res) => {
-      if (res.data.status === "success") {
-        const data = res.data.data || {};
-        tip(data.message || `已清理 ${data.cleared ?? 0} 条缓存`);
+      if (res.data && typeof res.data.deleted === "number") {
+        tip(`已清理 ${res.data.deleted} 条纲目缓存`);
         fetchStats();
       } else {
-        tip("清理失败：" + (res.data.message || ""));
+        tip("清理失败：" + (res.data?.error || "未知错误"));
       }
     })
     .catch((e) => {
       tip("清理失败：" + (e.message || ""));
     })
     .finally(() => {
-      clearingCache.value = false;
+      clearingKgRagCache.value = false;
     });
 };
 
@@ -220,17 +192,16 @@ onMounted(() => {
         刷新
       </a-button>
       <a-popconfirm
-        title="确定要清理 AI 搜索缓存吗？"
+        title="确定要清理纲目缓存吗？"
         ok-text="确定清理"
         cancel-text="取消"
-        @confirm="onClearCache"
+        @confirm="onClearKgRagCache"
       >
         <template #description>
-          <span>清理后，相同问题将重新调用 Claude 生成答案，可能产生费用。</span>
+          <span>清理后，KG-RAG 相同问题会重新执行全流程，可能产生费用。</span>
         </template>
-        <a-button :loading="clearingCache">
-          <template #icon><ClearOutlined /></template>
-          清理缓存
+        <a-button :loading="clearingKgRagCache">
+          清理纲目缓存
         </a-button>
       </a-popconfirm>
       <a-button danger :loading="showSpin" @click="onResetClick">
@@ -354,18 +325,6 @@ onMounted(() => {
         <div v-if="errors.length === 0" class="empty-tip">
           <a-empty description="暂无错误记录" />
         </div>
-      </div>
-      <div class="section" v-if="legacyStats?.index_weights && legacyStats.index_weights._labels">
-        <h3>AI 检索权重</h3>
-        <a-table
-          :columns="natureWeightColumns"
-          :data-source="natureWeightRows"
-          :pagination="false"
-          bordered
-          size="small"
-          row-key="nature"
-          class="weights-table"
-        />
       </div>
     </template>
   </a-spin>

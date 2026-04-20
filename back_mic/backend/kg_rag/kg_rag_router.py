@@ -133,6 +133,22 @@ async def prompt_preview(req: QueryRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+@router.post("/cache/clear", dependencies=[Depends(require_admin)])
+async def clear_kg_rag_cache():
+    """清理 KG-RAG Redis 缓存（kg_rag:cache:*）。"""
+    service = get_service()
+    redis_client = getattr(service, "redis", None)
+    if not redis_client:
+        return {"deleted": 0, "error": "Redis unavailable"}
+    try:
+        keys = redis_client.keys("kg_rag:cache:*")
+        if keys:
+            redis_client.delete(*keys)
+        return {"deleted": len(keys)}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"deleted": 0, "error": str(e)})
+
+
 @router.get("/graph/explore", dependencies=[Depends(require_admin)])
 async def graph_explore(
     concept: str = Query(..., min_length=1, description="概念名称"),

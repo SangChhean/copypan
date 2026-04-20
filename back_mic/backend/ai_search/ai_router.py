@@ -986,23 +986,4 @@ async def feast_outline_format_download(request: FeastOutlineFormatDownloadReque
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@_auth.post(
-    "/ai_search/cache/clear",
-    summary="清理 AI 搜索缓存",
-    dependencies=[Depends(require_admin)],
-)
-async def clear_cache():
-    """
-    清空 AI 搜索的 Redis 缓存（所有 ai_search:* 键）。
-
-    清理后，相同问题将重新调用 Claude 生成答案。
-    """
-    try:
-        result = ai_service.clear_cache()
-        return {"status": "success", "data": result}
-    except Exception as e:
-        logger.error(f"清理缓存失败: {e}", exc_info=True)
-        return {"status": "error", "data": None, "message": str(e)}
-
-
 router.include_router(_auth)
