@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""FastAPI 路由：/api/kg_rag。query / cache_translation 对已登录用户开放，其余仅管理员可访问。"""
+"""FastAPI 路由：/api/kg_rag。query / cache_translation / generate_step5 对已登录用户开放，其余仅管理员可访问。"""
+import asyncio
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -66,6 +67,14 @@ class CacheTranslationRequest(BaseModel):
     value: str = Field(..., min_length=1, description="翻译后文本")
 
 
+class GenerateStep5Request(BaseModel):
+    """仅执行 Step5：对已有 Step4 prompt 调用 LLM 生成纲目。"""
+
+    prompt: str = Field(..., min_length=1, description="Step 4 构建的完整 prompt")
+    model: str = "claude-sonnet-4-6"
+    temperature: float = 0.3
+
+
 # ---------------------------------------------------------------------------
 # 路由实现
 # ---------------------------------------------------------------------------
@@ -78,6 +87,37 @@ async def full_query(req: QueryRequest):
     try:
         result = await service.full_query(req.query, req.params or {})
         return result
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/generate_step5", dependencies=[Depends(test_token)])
+async def generate_step5(req: GenerateStep5Request):
+    """仅调用 Step5 LLM：输入 Step4 prompt，返回生成文本与估算费用、耗时。"""
+    from kg_rag.kg_rag_service import _call_kg_rag_llm
+    from kg_rag.llm_pricing import register_llm_usage
+
+    t0 = asyncio.get_event_loop().time()
+    try:
+        gen, usage = await _call_kg_rag_llm(
+            req.prompt,
+            req.model,
+            temperature=req.temperature,
+            max_tokens=4096,
+            system=None,
+        )
+        elapsed_ms = round((asyncio.get_event_loop().time() - t0) * 1000, 1)
+        sn = register_llm_usage(
+            [], step="generate_step5", request_model=req.model, usage=usage
+        )
+        cost_usd = float(sn["cost_usd"]) if sn else 0.0
+        text = (gen or "").strip()
+        return {
+            "answer": text if text else None,
+            "model": req.model,
+            "cost_usd": cost_usd,
+            "elapsed_ms": elapsed_ms,
+        }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

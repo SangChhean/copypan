@@ -65,7 +65,7 @@ DEFAULT_PARAMS = {
     "rrf_k": 60,
     "bm25_weight": 1.0,
     "dense_weight": 1.0,
-    "rerank_top_n": 20,
+    "rerank_top_n": 15,
     "skeleton_route_top_k": 45,
     "skeleton_route_max_per_node": 15,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
     "temperature": 0.3,
@@ -74,6 +74,7 @@ DEFAULT_PARAMS = {
     "skip_generation": False,
     "llm_model": os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6"),
     "step1_model": "",  # 空字符串表示与 llm_model 相同
+    "step5_model": "",  # 空字符串则 Step5 用 FULL_QUERY_STEP5_MODEL（默认 Sonnet 4.6）
     "stop_after_step1": False,
     "stop_after_step2": False,  # True 时在 Step2 完成后返回（需与 stop_after_step1 互斥）
     "outline_nature": "一般性",  # 一般性 / 高真理浓度 / 高生命浓度 / 重实行应用
@@ -199,7 +200,7 @@ def _apply_outline_nature_weight(
     return results
 
 
-# 全流程 full_query：Step1 默认 Opus 4.7；Query Rewrite 固定 Opus 4.6；Step2 使用 params.llm_model（前端下拉）；Step5 固定 Sonnet
+# 全流程 full_query：Step1 默认 Opus 4.7；Query Rewrite 固定 Opus 4.6；Step2 使用 params.llm_model（前端下拉）；Step5 默认 Sonnet（可被 params.step5_model 覆盖）
 FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"  # Query 改写专用
 FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 params.step1_model 覆盖）
 FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
@@ -841,9 +842,9 @@ class KgRagService:
             if "bm25_top_k" not in raw_params:
                 p["bm25_top_k"] = 60
             if "rerank_top_n" not in raw_params:
-                p["rerank_top_n"] = 40
+                p["rerank_top_n"] = 25
             if "skeleton_route_top_k" not in raw_params:
-                p["skeleton_route_top_k"] = 45
+                p["skeleton_route_top_k"] = 75
             if "skeleton_route_max_per_node" not in raw_params:
                 p["skeleton_route_max_per_node"] = 15
 
@@ -1306,8 +1307,15 @@ class KgRagService:
             )
 
         expanded_results = []
-        max_per_node = int(p.get("skeleton_route_max_per_node", 2) or 2)
-        max_per_node = max(1, max_per_node)
+        # 路3 每节点并入 expanded_results 的条数：skeleton_route_top_k // deep 概念数（skeleton_route_max_per_node 保留在 params 中供测试台等手动场景，此处不参与计算）
+        # _sk_top_k 取自 merged 后的 p（深度模式已在上方把 p["skeleton_route_top_k"] 覆盖为 75，未使用字面量 45）
+        _deep_count = len(expanded_nodes) if expanded_nodes else 1
+        _sk_top_k = int(p["skeleton_route_top_k"])
+        max_per_node = max(1, _sk_top_k // max(1, _deep_count))
+        logger.info(
+            f"[KG-RAG DEBUG] route3 expanded per-node cap: skeleton_route_top_k={_sk_top_k}, "
+            f"deep_nodes={len(expanded_nodes) if expanded_nodes else 0}, max_per_node={max_per_node}"
+        )
         if route3_all:
             main_ids = {r.get("chunk_id") for r in main_results}
             for i, _node in enumerate(expanded_nodes):
@@ -1414,18 +1422,19 @@ class KgRagService:
                 len(step5_prompt),
                 tail_preview,
             )
+            step5_model = p.get("step5_model") or FULL_QUERY_STEP5_MODEL
             t5_0 = asyncio.get_event_loop().time()
             gen, u5 = await _call_kg_rag_llm(
-                step5_prompt, FULL_QUERY_STEP5_MODEL, temperature=p["temperature"], max_tokens=4096, system=None
+                step5_prompt, step5_model, temperature=p["temperature"], max_tokens=4096, system=None
             )
             step_elapsed_ms["step5"] = round((asyncio.get_event_loop().time() - t5_0) * 1000, 1)
             result["answer"] = gen.strip() if gen else None
-            s5: dict[str, Any] = {"answer": result["answer"], "model": FULL_QUERY_STEP5_MODEL}
-            sn5 = register_llm_usage(llm_calls, step="step5", request_model=FULL_QUERY_STEP5_MODEL, usage=u5)
+            s5: dict[str, Any] = {"answer": result["answer"], "model": step5_model}
+            sn5 = register_llm_usage(llm_calls, step="step5", request_model=step5_model, usage=u5)
             if sn5:
                 s5["llm_usage"] = sn5
                 logger.info(
-                    f"[KG-RAG LLM] step5 model={FULL_QUERY_STEP5_MODEL} billing={sn5['billing_model']} "
+                    f"[KG-RAG LLM] step5 model={step5_model} billing={sn5['billing_model']} "
                     f"in={sn5['input_tokens']} out={sn5['output_tokens']} cost_usd≈{sn5['cost_usd']}"
                 )
             result["steps"]["step5"] = s5

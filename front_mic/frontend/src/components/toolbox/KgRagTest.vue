@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, watch, onMounted, computed } from "vue";
-import { ArrowLeftOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, CheckOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { message } from "ant-design-vue";
 import { toastSuccess } from "../utils/Dialog";
@@ -43,6 +43,12 @@ async function fetchHealth() {
 const queryText = ref("");
 const queryLoading = ref(false);
 const queryResult = ref(null);
+/** 并发 Opus 4.7 对比：主流程完成后用 Step4 prompt 调 generate_step5（Opus 4.7） */
+const queryResultOpus = ref(null);
+const compareOpus = ref(false);
+const compareOpusPromptUnavailable = ref(false);
+const opusCompareError = ref("");
+const opusOutlineCopied = ref(false);
 
 /** 与后端 KG-RAG 约定一致的 Claude 模型 ID（全流程下拉） */
 const claudeModelOptions = [
@@ -67,7 +73,7 @@ const params = ref({
   rrf_k: 60,
   bm25_weight: 1,
   dense_weight: 1,
-  rerank_top_n: 20,
+  rerank_top_n: 15,
   skeleton_route_top_k: 45,
   skeleton_route_max_per_node: 15, // 路3 每扩展节点去重后并入条数
   temperature: 0.3,
@@ -199,6 +205,24 @@ async function copyCurrentOutlineText() {
   }
 }
 
+async function copyOpusOutlineText() {
+  const text = queryResultOpus.value?.answer;
+  if (!text || !String(text).trim()) {
+    message.warning("当前没有可复制的 Opus 对比纲目");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(String(text));
+    opusOutlineCopied.value = true;
+    toastSuccess("已复制到剪贴板");
+    setTimeout(() => {
+      opusOutlineCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    message.error(e?.message || "复制失败");
+  }
+}
+
 function downloadCurrentOutlineTxt() {
   const text = getCurrentOutlineTextForDownload();
   if (!text || !String(text).trim()) {
@@ -221,6 +245,10 @@ async function runFullQuery() {
   if (!headers) return;
   queryLoading.value = true;
   queryResult.value = null;
+  queryResultOpus.value = null;
+  compareOpusPromptUnavailable.value = false;
+  opusCompareError.value = "";
+  opusOutlineCopied.value = false;
   englishOutline.value = "";
   traditionalOutline.value = "";
   outlineResultTab.value = "zh";
@@ -230,12 +258,29 @@ async function runFullQuery() {
       qParams.preset_surface = selectedSurface.value;
       qParams.preset_deep = selectedDeep.value;
     }
-    const res = await axios.post(
-      `${apiBase}/api/kg_rag/query`,
-      { query: q, params: qParams },
-      { headers }
-    );
+    const res = await axios.post(`${apiBase}/api/kg_rag/query`, { query: q, params: qParams }, { headers });
     queryResult.value = res.data;
+    if (compareOpus.value) {
+      const step4Prompt = String(res.data?.steps?.step4?.prompt ?? "").trim();
+      if (!step4Prompt) {
+        compareOpusPromptUnavailable.value = true;
+      } else {
+        try {
+          const opusRes = await axios.post(
+            `${apiBase}/api/kg_rag/generate_step5`,
+            {
+              prompt: step4Prompt,
+              model: "claude-opus-4-7",
+              temperature: 0.3,
+            },
+            { headers }
+          );
+          queryResultOpus.value = opusRes.data;
+        } catch (e2) {
+          opusCompareError.value = e2.response?.data?.error || e2.message || "Opus 对比生成失败";
+        }
+      }
+    }
     const ans = res.data?.answer;
     if (ans && (includeEnglish.value || includeTraditional.value)) {
       translating.value = true;
@@ -881,6 +926,7 @@ onMounted(() => {
                         <div class="param-item param-checkboxes outline-translate-checks">
                           <a-checkbox v-model:checked="includeEnglish">同时生成英文纲目</a-checkbox>
                           <a-checkbox v-model:checked="includeTraditional">同时生成繁体纲目</a-checkbox>
+                          <a-checkbox v-model:checked="compareOpus">并发 Opus 4.7 对比</a-checkbox>
                         </div>
                       </a-col>
                     </a-row>
@@ -910,7 +956,7 @@ onMounted(() => {
                             :dropdown-match-select-width="false"
                           />
                           <p class="param-explain">
-                            全流程：Step1 默认 Opus 4.7；Query 改写固定 Opus 4.6；Step5 纲目生成固定 Sonnet 4.6；下方所选模型仅用于 Step2（单次骨架 LLM）。仅测 Step1 或 Step1+2 请用 Tab「Step1~2 测试」。
+                            全流程：Step1 默认 Opus 4.7；Query 改写固定 Opus 4.6；Step5 纲目生成默认 Sonnet 4.6（可通过请求参数 step5_model 覆盖）；测试台勾选「并发 Opus 4.7 对比」时，主流程完成后会用同一 Step4 prompt 再调 Opus 4.7 仅生成对比纲目。下方所选模型仅用于 Step2（单次骨架 LLM）。仅测 Step1 或 Step1+2 请用 Tab「Step1~2 测试」。
                             与路1 / 路2 / 路3 的 Elasticsearch 检索参数无关。
                           </p>
                           <p class="param-explain param-explain-secondary">
@@ -1250,6 +1296,37 @@ onMounted(() => {
                               <pre v-else class="answer-pre answer-pre-outline">{{ traditionalOutline || "（暂无）" }}</pre>
                             </a-tab-pane>
                           </a-tabs>
+                        </div>
+                        <div v-if="compareOpus" class="opus-compare-section">
+                          <div class="opus-compare-title">Opus 4.7 对比纲目</div>
+                          <p v-if="compareOpusPromptUnavailable" class="opus-compare-unavailable">
+                            Step 4 prompt 不可用，无法生成对比纲目
+                          </p>
+                          <p v-else-if="opusCompareError" class="opus-compare-unavailable">{{ opusCompareError }}</p>
+                          <template v-else-if="queryResultOpus">
+                            <div class="answer-outline-toolbar opus-compare-toolbar">
+                              <span class="opus-compare-meta">
+                                费用：<strong>{{
+                                  queryResultOpus.cost_usd != null
+                                    ? "$" + formatUsd(queryResultOpus.cost_usd)
+                                    : "—"
+                                }}</strong>
+                                　耗时：<strong>{{
+                                  queryResultOpus.elapsed_ms != null
+                                    ? formatSec(queryResultOpus.elapsed_ms) + "s"
+                                    : "—"
+                                }}</strong>
+                              </span>
+                              <a-button type="default" size="small" @click="copyOpusOutlineText">
+                                <template #icon>
+                                  <CheckOutlined v-if="opusOutlineCopied" style="color: #52c41a" />
+                                  <CopyOutlined v-else />
+                                </template>
+                                {{ opusOutlineCopied ? "已复制" : "复制对比纲目" }}
+                              </a-button>
+                            </div>
+                            <pre class="answer-pre answer-pre-outline">{{ queryResultOpus.answer }}</pre>
+                          </template>
                         </div>
                       </template>
                       <template v-else-if="queryResult.steps?.step5?.error">
@@ -2253,6 +2330,31 @@ onMounted(() => {
   }
   .answer-outline-wrap {
     width: 100%;
+  }
+  .opus-compare-section {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .opus-compare-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .opus-compare-unavailable {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #8c8c8c;
+  }
+  .opus-compare-toolbar {
+    margin-bottom: 8px;
+  }
+  .opus-compare-meta {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.5;
+    flex: 1;
+    min-width: 0;
   }
   .answer-outline-toolbar {
     display: flex;
