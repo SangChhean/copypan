@@ -367,6 +367,24 @@ function formatSec(n) {
   return s || "0";
 }
 
+function opusCompareTotalCostUsd() {
+  const main = Number(queryResult.value?.llm_usage?.totals?.cost_usd);
+  const opus = Number(queryResultOpus.value?.cost_usd);
+  const hasMain = !Number.isNaN(main);
+  const hasOpus = !Number.isNaN(opus);
+  if (!hasMain && !hasOpus) return null;
+  return (hasMain ? main : 0) + (hasOpus ? opus : 0);
+}
+
+function opusCompareTotalElapsedMs() {
+  const main = Number(queryResult.value?.llm_usage?.total_elapsed_ms);
+  const opus = Number(queryResultOpus.value?.elapsed_ms);
+  const hasMain = !Number.isNaN(main);
+  const hasOpus = !Number.isNaN(opus);
+  if (!hasMain && !hasOpus) return null;
+  return (hasMain ? main : 0) + (hasOpus ? opus : 0);
+}
+
 function formatStep2Path(p) {
   const from = p?.from || "";
   const relation = p?.relation || "";
@@ -1306,14 +1324,14 @@ onMounted(() => {
                           <template v-else-if="queryResultOpus">
                             <div class="answer-outline-toolbar opus-compare-toolbar">
                               <span class="opus-compare-meta">
-                                费用：<strong>{{
-                                  queryResultOpus.cost_usd != null
-                                    ? "$" + formatUsd(queryResultOpus.cost_usd)
+                                总价格：<strong>{{
+                                  opusCompareTotalCostUsd() != null
+                                    ? "$" + formatUsd(opusCompareTotalCostUsd())
                                     : "—"
                                 }}</strong>
-                                　耗时：<strong>{{
-                                  queryResultOpus.elapsed_ms != null
-                                    ? formatSec(queryResultOpus.elapsed_ms) + "s"
+                                　总耗时：<strong>{{
+                                  opusCompareTotalElapsedMs() != null
+                                    ? formatSec(opusCompareTotalElapsedMs()) + "s"
                                     : "—"
                                 }}</strong>
                               </span>
