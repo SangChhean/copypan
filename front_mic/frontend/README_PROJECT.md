@@ -23,7 +23,6 @@
 
 ### 5. **现有文件未被覆盖**
 - `src/App.vue`、`src/main.js`、`src/router/index.js`
-- `src/components/AIChat.vue`、`src/components/SearchPage.vue`
 - `fonts/`、`imgs/`、`style/`、旧 `assets/` (构建产物)
 
 ---
@@ -37,11 +36,11 @@ cd e:\copypan\front_mic\frontend
 npm run dev
 ```
 
-访问 `http://localhost:5173`，路由：
+访问 `http://localhost:5173`，主要路由示例：
 
-- **`#/search`**：新搜索页（传统搜索 + AI 问答 Tab）
-- **`#/search-ai`**：同上（备用路径）
-- **`#/ai-assistant`**：AI 对话页
+- **`#/`**：首页（`Index.vue`，内含主搜索与纲目流程）
+- **`#/tools`**：工具箱
+- **`#/kg-rag-test`**：KG-RAG 测试（需登录）
 
 ### 构建生产版
 
@@ -65,11 +64,12 @@ frontend/
 │   ├── main.js         # Vue 应用入口
 │   ├── App.vue         # 根组件
 │   ├── router/
-│   │   └── index.js    # 路由配置（/search、/ai-assistant 等）
+│   │   └── index.js    # 路由配置
 │   ├── components/
-│   │   ├── SearchPage.vue  # 搜索页（传统 + AI Tab）
-│   │   └── AIChat.vue      # AI 对话页
-│   └── README_AI.md    # AI 功能说明
+│   │   ├── Index.vue   # 首页
+│   │   ├── Search.vue  # 主搜索 / 纲目（由 Index 引用）
+│   │   └── toolbox/    # 工具箱各页
+│   └── README_AI.md    # AI 相关说明（摘要）
 ├── style/              # 全局样式
 ├── fonts/              # 字体
 ├── imgs/               # 图片

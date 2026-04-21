@@ -25,6 +25,7 @@ except ImportError:
         claude_client = None
 
 from kg_rag.prompts import (
+    BURDEN_DESCRIPTION_PROMPT,
     STEP1_CONCEPT_EXTRACTION,
     FIREWALL_INSTRUCTION,
     STEP2_SKELETON_BUILD,
@@ -384,8 +385,36 @@ def _parse_json_array(text: str) -> list[Any]:
         return []
 
 
+def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
+    """解析负担说明 LLM 输出：情境 A（负担说明：）或情境 B（候选一～三）。"""
+    text = (raw or "").strip()
+    if not text:
+        return {"scenario": "B", "candidates": [], "error": "解析失败"}
+    if "候选一" in text:
+        candidates: list[str] = []
+        for label in ("候选一", "候选二", "候选三"):
+            pat = rf"{re.escape(label)}[：:]\s*(.+?)(?=\n\s*候选[一二三][：:]|$)"
+            m = re.search(pat, text, re.DOTALL)
+            if m:
+                candidates.append(re.sub(r"\s+", " ", m.group(1).strip()))
+            else:
+                candidates.append("")
+        if not any(c.strip() for c in candidates):
+            return {"scenario": "B", "candidates": [], "error": "解析失败"}
+        while len(candidates) < 3:
+            candidates.append("")
+        return {"scenario": "B", "candidates": candidates[:3]}
+    if "负担说明" in text:
+        m = re.search(r"负担说明[：:]\s*(.+)", text, re.DOTALL)
+        if m:
+            line = m.group(1).strip().split("\n")[0].strip()
+            if line:
+                return {"scenario": "A", "result": line}
+    return {"scenario": "B", "candidates": [], "error": "解析失败"}
+
+
 def _parse_step1_layers(text: str) -> tuple[list[str], list[str], str]:
-    """解析 Step 1 返回的 JSON（含 reasoning、surface、deep）。reasoning 传入 Step 2a/2b。"""
+    """解析 Step 1 返回的 JSON（含 reasoning、surface、deep）。reasoning 仅写入 Step1 结果，不传入 Step2。"""
     if not text or not text.strip():
         return ([], [], "")
     s = text.strip()
@@ -760,7 +789,6 @@ class KgRagService:
         query: str,
         surface: list[str],
         deep: list[str],
-        reasoning: str,
         normalized: list[str],
         p: dict,
         llm_calls: list[dict[str, Any]],
@@ -809,15 +837,13 @@ class KgRagService:
         key_verses_raw = self.neo4j.get_key_verses(surface + deep)
         key_verses_text = _format_key_verses_text(key_verses_raw)
         logger.info(f"[KG-RAG DEBUG] Step2 key_verses_text:\n{key_verses_text}")
-        reasoning_s = (reasoning or "").strip() or "（无）"
         bd = (burden_description or "").strip()
-        burden_description_line = f"用户负担说明：{bd}" if bd else ""
+        intrinsic_burden_text = bd if bd else "（未填写负担说明）"
         outline_nature = str(p.get("outline_nature", "一般性") or "一般性").strip() or "一般性"
         step2_prompt = STEP2_SKELETON_BUILD.format(
             query=query,
             outline_nature=outline_nature,
-            reasoning=reasoning_s,
-            burden_description_line=burden_description_line,
+            intrinsic_burden_text=intrinsic_burden_text,
             surface_json=json.dumps(surface, ensure_ascii=False),
             deep_json=json.dumps(deep, ensure_ascii=False),
             paths_text=paths_text,
@@ -1060,19 +1086,6 @@ class KgRagService:
 
         normalized = concepts
 
-        firewall_doc: dict[str, str] | None = await firewall_task
-        if firewall_doc:
-            logger.info(
-                "[KG-RAG] firewall hit: title=%r note_preview=%s",
-                firewall_doc.get("title"),
-                (firewall_doc.get("note") or "")[:80],
-            )
-            result["firewall"] = {
-                "matched": firewall_doc["title"],
-                "note": firewall_doc["note"],
-            }
-        else:
-            logger.info("[KG-RAG DEBUG] firewall: full_query no hit (will not inject chunk)")
         if p.get("skip_skeleton_route"):
             logger.info("[KG-RAG DEBUG] skip_skeleton_route: Step1/2 已跳过，进入 Step3")
         else:
@@ -1112,7 +1125,61 @@ class KgRagService:
             result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
             return result
 
-        # Step 2：路径查询 + 单次 LLM 骨架（skip_skeleton_route 时跳过，与路3 一致）
+        # Step 2 + Query Rewrite：rewrite prompt 提前构建；Step2 与 Query Rewrite LLM 并发（未 skip 时）
+        bd_rw = (burden_description or "").strip()
+        rewrite_input = f"{query}\n负担方向：{bd_rw}" if bd_rw else query
+        rewrite_prompt = QUERY_REWRITE.format(query=rewrite_input)
+
+        u_rw: dict[str, int] | None = None
+        query_rewrite_parsed_ok = False
+        rewritten_queries: list[str] = [query]
+
+        async def _run_query_rewrite() -> tuple[list[str], bool, dict[str, int] | None]:
+            try:
+                t_rw0 = asyncio.get_event_loop().time()
+                raw_rw, u_rw_local = await _call_kg_rag_llm(
+                    rewrite_prompt,
+                    FULL_QUERY_OPUS_MODEL,
+                    temperature=0,
+                    max_tokens=_max_tokens_for_model(FULL_QUERY_OPUS_MODEL, 300),
+                    system=QUERY_REWRITE_SYSTEM,
+                )
+                step_elapsed_ms["query_rewrite"] = round(
+                    (asyncio.get_event_loop().time() - t_rw0) * 1000, 1
+                )
+                raw_rewrite = (raw_rw or "").strip()
+                parsed = _parse_json_array(raw_rewrite)
+                query_rewrite_parsed_ok_local = False
+                rewritten_queries_local: list[str] = [query]
+                if parsed:
+                    rq_list = [str(q).strip() for q in parsed if str(q).strip()]
+                    if rq_list:
+                        rewritten_queries_local = rq_list
+                        query_rewrite_parsed_ok_local = True
+                    else:
+                        rewritten_queries_local = [query]
+                else:
+                    rewritten_queries_local = [query]
+                if not rewritten_queries_local:
+                    rewritten_queries_local = [query]
+                return rewritten_queries_local, query_rewrite_parsed_ok_local, u_rw_local
+            except Exception:
+                return [query], False, None
+
+        async def _measure_step2() -> tuple[dict[str, Any], float]:
+            t0 = asyncio.get_event_loop().time()
+            s2 = await self._run_step2(
+                query,
+                surface,
+                deep,
+                normalized,
+                p,
+                llm_calls,
+                burden_description=burden_description,
+            )
+            dt_ms = (asyncio.get_event_loop().time() - t0) * 1000
+            return s2, dt_ms
+
         step2_start = asyncio.get_event_loop().time()
         if p.get("skip_skeleton_route"):
             logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step2")
@@ -1131,17 +1198,18 @@ class KgRagService:
             }
             result["steps"]["step2"] = step2_body
             logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route)")
+            if not p.get("skip_query_rewrite"):
+                rewritten_queries, query_rewrite_parsed_ok, u_rw = await _run_query_rewrite()
         else:
-            s2 = await self._run_step2(
-                query,
-                surface,
-                deep,
-                reasoning,
-                normalized,
-                p,
-                llm_calls,
-                burden_description=burden_description,
-            )
+            if p.get("skip_query_rewrite"):
+                s2, dt_step2 = await _measure_step2()
+            else:
+                (s2, dt_step2), rw_pack = await asyncio.gather(
+                    _measure_step2(),
+                    _run_query_rewrite(),
+                )
+                rewritten_queries, query_rewrite_parsed_ok, u_rw = rw_pack
+
             step2_end = asyncio.get_event_loop().time()
             paths = s2["paths"]
             skeleton = s2["skeleton"]
@@ -1150,9 +1218,9 @@ class KgRagService:
                 step_elapsed_ms[k] = round(float(v), 1)
             if s2.get("graph_error"):
                 result["steps"]["step2_error"] = s2["graph_error"]
-            step2_elapsed = round((step2_end - step2_start) * 1000, 1)
+            step2_elapsed = round(dt_step2, 1)
             step_elapsed_ms["step2"] = step2_elapsed
-            step2_body: dict[str, Any] = {
+            step2_body = {
                 "paths": paths,
                 "paths_count": len(paths),
                 "skeleton": skeleton,
@@ -1207,43 +1275,7 @@ class KgRagService:
             result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
             return result
 
-        # Step 3: 三路检索
-        u_rw: dict[str, int] | None = None
-        query_rewrite_parsed_ok = False
-        if p.get("skip_query_rewrite"):
-            rewritten_queries = [query]
-        else:
-            try:
-                bd_rw = (burden_description or "").strip()
-                rewrite_input = f"{query}\n负担方向：{bd_rw}" if bd_rw else query
-                rewrite_prompt = QUERY_REWRITE.format(query=rewrite_input)
-                t_rw0 = asyncio.get_event_loop().time()
-                raw_rw, u_rw = await _call_kg_rag_llm(
-                    rewrite_prompt,
-                    FULL_QUERY_OPUS_MODEL,
-                    temperature=0,
-                    max_tokens=_max_tokens_for_model(FULL_QUERY_OPUS_MODEL, 300),
-                    system=QUERY_REWRITE_SYSTEM,
-                )
-                step_elapsed_ms["query_rewrite"] = round(
-                    (asyncio.get_event_loop().time() - t_rw0) * 1000, 1
-                )
-                raw_rewrite = (raw_rw or "").strip()
-                parsed = _parse_json_array(raw_rewrite)
-                if parsed:
-                    rq_list = [str(q).strip() for q in parsed if str(q).strip()]
-                    if rq_list:
-                        rewritten_queries = rq_list
-                        query_rewrite_parsed_ok = True
-                    else:
-                        rewritten_queries = [query]
-                else:
-                    rewritten_queries = [query]
-                if not rewritten_queries:
-                    rewritten_queries = [query]
-            except Exception:
-                rewritten_queries = [query]
-
+        # Step 3: 三路检索（Query Rewrite 已在 Step2 阶段与骨架并发或单独完成）
         # Dense：dense_query_list 每路独立 kNN；dense_top_k 默认按 bm25_top_k / 路数向上取整（p["dense_top_k"]>0 则用显式值）
         # 改写成功时在最前追加原始主题，与四条角度并列（通常共 5 路）。
         dense_query_list = (
@@ -1340,6 +1372,19 @@ class KgRagService:
         logger.info(f"[KG-RAG TRACE] #3 RRF done: merged={len(merged)}")
         main_results = await rerank(merged, query, p["rerank_top_n"])
         logger.info(f"[KG-RAG TRACE] #4 main rerank done: main_results={len(main_results)}")
+        firewall_doc: dict[str, str] | None = await firewall_task
+        if firewall_doc:
+            logger.info(
+                "[KG-RAG] firewall hit: title=%r note_preview=%s",
+                firewall_doc.get("title"),
+                (firewall_doc.get("note") or "")[:80],
+            )
+            result["firewall"] = {
+                "matched": firewall_doc["title"],
+                "note": firewall_doc["note"],
+            }
+        else:
+            logger.info("[KG-RAG DEBUG] firewall: full_query no hit (will not inject chunk)")
         if firewall_doc:
             fw_chunk: dict[str, Any] = {
                 "chunk_id": f"firewall:{firewall_doc['title']}",
@@ -1574,6 +1619,29 @@ class KgRagService:
         # === 监控写入结束 ===
 
         return result
+
+    async def generate_burden_description(
+        self,
+        query: str,
+        outline_nature: str = "",
+        audience: str = "",
+        reference_excerpt: str = "",
+    ) -> dict[str, Any]:
+        """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
+        prompt = BURDEN_DESCRIPTION_PROMPT.format(
+            query=(query or "").strip(),
+            outline_nature=(outline_nature or "").strip() or "（未填）",
+            audience=(audience or "").strip() or "（未填）",
+            reference_excerpt=(reference_excerpt or "").strip() or "（空）",
+        )
+        raw, _usage = await _call_kg_rag_llm(
+            prompt,
+            "claude-sonnet-4-6",
+            temperature=0.3,
+            max_tokens=500,
+            system=None,
+        )
+        return _parse_burden_generation_output(raw or "")
 
     @staticmethod
     def update_cache_translation(cache_key: str, field: str, value: str) -> bool:

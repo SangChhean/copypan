@@ -151,6 +151,107 @@ const aiFormValid = computed(() => {
   return outline && nature;
 });
 
+// ---------- AI 生成负担说明 ----------
+const referenceExcerpt = ref("");
+const burdenPhaseReady = ref(false);
+const burdenGenLoading = ref(false);
+const burdenGenScenario = ref(null); // 'A' | 'B' | null
+const burdenGenCandidates = ref([]);
+const burdenSelectedIdx = ref(0);
+const burdenGenLineA = ref("");
+/** 跳过「跳过负担说明」后隐藏整块面板，直到纲目主题与跳过时不一致 */
+const burdenHiddenBySkip = ref(false);
+const burdenSkipTopicSnapshot = ref("");
+
+const showBurdenPhasePanel = computed(() => {
+  if (!burdenHiddenBySkip.value) return true;
+  return aiForm.outlineTopic.trim() !== burdenSkipTopicSnapshot.value;
+});
+
+watch(
+  () => aiForm.outlineTopic,
+  () => {
+    if (
+      burdenHiddenBySkip.value &&
+      aiForm.outlineTopic.trim() !== burdenSkipTopicSnapshot.value
+    ) {
+      burdenHiddenBySkip.value = false;
+    }
+  }
+);
+
+watch(
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.audience, referenceExcerpt.value],
+  () => {
+    burdenPhaseReady.value = false;
+    burdenGenScenario.value = null;
+    burdenGenCandidates.value = [];
+    burdenGenLineA.value = "";
+  }
+);
+
+watch(burdenSelectedIdx, (idx) => {
+  if (burdenGenScenario.value !== "B") return;
+  const c = burdenGenCandidates.value[idx];
+  if (c != null && String(c).trim() !== "") {
+    aiForm.burdenDescription = c;
+  }
+});
+
+function skipBurdenPhase() {
+  aiForm.burdenDescription = "";
+  burdenPhaseReady.value = true;
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenSkipTopicSnapshot.value = aiForm.outlineTopic.trim();
+  burdenHiddenBySkip.value = true;
+}
+
+function confirmBurdenPhase() {
+  burdenPhaseReady.value = true;
+}
+
+async function onGenerateBurden() {
+  if (!aiForm.outlineTopic.trim() || !aiForm.specialNeeds.trim()) {
+    tip("请先填写主题和纲目性质");
+    return;
+  }
+  burdenGenLoading.value = true;
+  try {
+    const res = await axios.post("/api/kg_rag/generate_burden", {
+      query: aiForm.outlineTopic.trim(),
+      outline_nature: aiForm.specialNeeds.trim(),
+      audience: aiForm.audience.trim(),
+      reference_excerpt: referenceExcerpt.value.trim(),
+    });
+    const d = res.data || {};
+    if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
+      burdenGenScenario.value = "A";
+      const line = String(d.result).trim();
+      burdenGenLineA.value = line;
+      aiForm.burdenDescription = line;
+      return;
+    }
+    if (d.scenario === "B" && d.candidates && d.candidates.length) {
+      burdenGenScenario.value = "B";
+      burdenGenCandidates.value = d.candidates.slice(0, 3);
+      burdenSelectedIdx.value = 0;
+      const first = burdenGenCandidates.value[0];
+      aiForm.burdenDescription = first != null ? String(first).trim() : "";
+      return;
+    }
+    tip(d.error || "生成失败");
+    burdenGenScenario.value = null;
+  } catch (e) {
+    tip(e.response?.data?.error || e.message || "生成失败");
+    burdenGenScenario.value = null;
+  } finally {
+    burdenGenLoading.value = false;
+  }
+}
+
 // ---------- 两阶段概念抽取 ----------
 const conceptStage = ref("idle"); // idle | candidates_ready
 const conceptLoading = ref(false);
@@ -173,6 +274,10 @@ watch(
 async function extractConcepts() {
   const q = aiForm.outlineTopic.trim();
   if (!q) { tip("请填写纲目主题"); return; }
+  if (!burdenPhaseReady.value) {
+    tip("请先完成负担说明阶段（跳过或确认）");
+    return;
+  }
   conceptLoading.value = true;
   try {
     const res = await axios.post("/api/kg_rag/extract_concepts", {
@@ -810,6 +915,10 @@ const onAISearch = async () => {
     tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
+  if (!burdenPhaseReady.value) {
+    tip("请先完成负担说明阶段（跳过或确认）");
+    return;
+  }
 
   loadingAI.value = true;
   showInfo.value = 6;
@@ -952,16 +1061,6 @@ const onAISearch = async () => {
                 placeholder="例如：一般性、初信者、大专学生..."
               />
             </label>
-            <label class="ai-meta-field full">
-              <span>负担说明/简单摘要（50字）</span>
-              <textarea
-                class="ai-burden-textarea"
-                rows="5"
-                v-model="aiForm.burdenDescription"
-                :disabled="loadingAI"
-                placeholder="约50字概括纲目摘要，说明纲目负担"
-              ></textarea>
-            </label>
             <div class="ai-meta-field full">
               <span>纲目性质*（必选）</span>
               <div class="ai-nature-btns">
@@ -977,9 +1076,64 @@ const onAISearch = async () => {
                 </button>
               </div>
             </div>
+            <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
+              <div class="ai-burden-phase-head">
+                <span class="ai-burden-phase-title">AI生成负担说明</span>
+                <a href="#" class="ai-burden-skip" @click.prevent="skipBurdenPhase">跳过负担说明</a>
+              </div>
+              <label class="ai-meta-field full ai-burden-phase-inner">
+                <span>参考摘录（选填）</span>
+                <textarea
+                  class="ai-burden-textarea"
+                  rows="3"
+                  v-model="referenceExcerpt"
+                  :disabled="loadingAI || burdenGenLoading"
+                  placeholder="有摘录走情境A，无摘录走情境B"
+                ></textarea>
+              </label>
+              <div class="ai-burden-btn-wrap">
+                <a-button
+                  block
+                  :loading="burdenGenLoading"
+                  :disabled="loadingAI || burdenGenLoading || !aiFormValid"
+                  @click="onGenerateBurden"
+                >生成负担说明</a-button>
+              </div>
+              <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="ai-burden-gen-out">
+                <div class="ai-burden-gen-label">情境 A</div>
+                <div class="ai-burden-gen-text">{{ burdenGenLineA }}</div>
+              </div>
+              <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="ai-burden-gen-out">
+                <div class="ai-burden-gen-label">情境 B</div>
+                <a-radio-group v-model:value="burdenSelectedIdx" class="ai-burden-radio-group">
+                  <div
+                    v-for="(c, i) in burdenGenCandidates"
+                    :key="i"
+                    class="ai-burden-radio-line"
+                  >
+                    <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
+                    <span class="ai-burden-cand-body">{{ c }}</span>
+                  </div>
+                </a-radio-group>
+              </div>
+              <label class="ai-meta-field full ai-burden-phase-inner">
+                <span>负担说明</span>
+                <textarea
+                  class="ai-burden-textarea"
+                  rows="4"
+                  v-model="aiForm.burdenDescription"
+                  :disabled="loadingAI"
+                  placeholder="在此输入或编辑负担说明，也可留空"
+                ></textarea>
+              </label>
+              <div class="ai-burden-btn-wrap">
+                <a-button block :disabled="loadingAI" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+              </div>
+            </div>
           </div>
             <div class="ai-panel-actions">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
+            <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
             <!-- 概念候选面板 -->
             <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="ai-concept-panel">
               <div class="ai-concept-hint">以下是 AI 识别到的相关概念，请勾选确认后生成纲目</div>
@@ -996,7 +1150,6 @@ const onAISearch = async () => {
                   <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
                 </a-checkbox-group>
               </div>
-              <div v-if="conceptCandidates.reasoning" class="ai-concept-reasoning">{{ conceptCandidates.reasoning }}</div>
               <div v-if="selectedDeep.length === 0" class="ai-concept-warn">请至少选择一个内在意义</div>
             </div>
             <div class="ai-panel-cta">
@@ -1012,7 +1165,7 @@ const onAISearch = async () => {
               <a-button
                 v-if="conceptStage === 'idle'"
                 :loading="conceptLoading"
-                :disabled="conceptLoading || !aiFormValid"
+                :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
                 @click="extractConcepts"
               >
                 {{ conceptLoading ? "抽取中…" : "抽取概念" }}
@@ -1021,7 +1174,7 @@ const onAISearch = async () => {
                 v-else
                 type="primary"
                 :loading="loadingAI"
-                :disabled="loadingAI || selectedDeep.length === 0"
+                :disabled="loadingAI || selectedDeep.length === 0 || !burdenPhaseReady"
                 @click="onAISearch"
               >
                 {{ loadingAI ? "生成中…" : "生成纲目" }}
@@ -1431,6 +1584,85 @@ const onAISearch = async () => {
   grid-column: 1 / -1;
 }
 
+.ai-burden-phase {
+  border: 1px dashed #d3adf7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #faf5ff;
+}
+
+.ai-burden-phase-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ai-burden-phase-title {
+  font-weight: 700;
+  color: #391085;
+}
+
+.ai-burden-skip {
+  font-size: 13px;
+  color: #722ed1;
+}
+
+.ai-burden-phase-inner {
+  margin-top: 6px;
+}
+
+.ai-burden-btn-wrap {
+  margin-top: 10px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+.ai-burden-btn-wrap :deep(.ant-btn) {
+  min-height: 40px;
+}
+
+.ai-burden-gen-out {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #efdbff;
+}
+
+.ai-burden-gen-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #722ed1;
+  margin-bottom: 6px;
+}
+
+.ai-burden-gen-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.ai-burden-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-burden-radio-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ai-burden-cand-body {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+
 .ai-meta-field input,
 .ai-meta-field textarea {
   border: 1px solid #d9d9d9;
@@ -1529,16 +1761,6 @@ const onAISearch = async () => {
 .ai-concept-empty {
   color: #aaa;
   font-size: 12px;
-}
-.ai-concept-reasoning {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.5;
-  background: #fff;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #eee;
-  margin-top: 6px;
 }
 .ai-concept-warn {
   color: #fa541c;

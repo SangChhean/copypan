@@ -75,6 +75,15 @@ class GenerateStep5Request(BaseModel):
     temperature: float = 0.3
 
 
+class GenerateBurdenRequest(BaseModel):
+    """负担说明生成：主题 + 纲目性质/面对对象/参考摘录（后三项选填）。"""
+
+    query: str = Field(..., min_length=1, max_length=500, description="纲目主题")
+    outline_nature: str = Field(default="", description="纲目性质")
+    audience: str = Field(default="", description="面对对象")
+    reference_excerpt: str = Field(default="", description="参考摘录")
+
+
 # ---------------------------------------------------------------------------
 # 路由实现
 # ---------------------------------------------------------------------------
@@ -118,6 +127,21 @@ async def generate_step5(req: GenerateStep5Request):
             "cost_usd": cost_usd,
             "elapsed_ms": elapsed_ms,
         }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/generate_burden", dependencies=[Depends(test_token)])
+async def generate_burden(req: GenerateBurdenRequest):
+    """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
+    service = get_service()
+    try:
+        return await service.generate_burden_description(
+            req.query,
+            outline_nature=req.outline_nature,
+            audience=req.audience,
+            reference_excerpt=req.reference_excerpt,
+        )
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

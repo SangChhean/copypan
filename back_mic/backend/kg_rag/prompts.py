@@ -3,7 +3,7 @@
 
 # ---------------------------------------------------------------------------
 # Step 1 概念抽取
-# 用途：从概念词表中按字面层 + 深层选取核心概念；reasoning 会传入 Step 2 骨架构建的参考，不传入 Step 3 及之后
+# 用途：从概念词表中按字面层 + 深层选取核心概念；reasoning 仅随 Step1 结果返回（前端/调试），不传入 Step 2 及之后
 # 占位符：{query}、{burden_line}、{concept_list}（burden_line 非空时为主题下一行「信息负担说明：…」）
 # 输出：严格 JSON 对象 {"reasoning": "...", "surface": [...], "deep": [...]}
 # ---------------------------------------------------------------------------
@@ -191,15 +191,14 @@ FIREWALL_INSTRUCTION = """【防火墙参考指示】
 
 # ---------------------------------------------------------------------------
 # Step 2 骨架构建（单次 LLM）
-# 占位符：{query}、{outline_nature}、{reasoning}、{burden_description_line}、{surface_json}、{deep_json}、{paths_text}、{key_verses_text}
+# 占位符：{query}、{outline_nature}、{intrinsic_burden_text}（与请求参数 burden_description 一致，即信息内在负担）、{surface_json}、{deep_json}、{paths_text}、{key_verses_text}
 # ---------------------------------------------------------------------------
 STEP2_SKELETON_BUILD = """你是一位深入熟悉倪柝声与李常受职事的资深圣经研究者。
 
 ## 输入
 纲目主题：{query}
 纲目性质：{outline_nature}
-信息内在负担：{reasoning}
-{burden_description_line}
+信息内在负担：{intrinsic_burden_text}
 核心概念（surface）：{surface_json}
 核心概念（deep）：{deep_json}
 概念间已知路径：
@@ -250,6 +249,33 @@ QUERY_REWRITE = """你是一个资深的圣经研究学者，更是一位专业�
 若输入中包含「负担方向：」后的补充说明，展开时应围绕该负担重点展开。
 以JSON数组返回，例如["启示句","真理句","经历句","应用句"]，不输出其他内容。
 主题：{query}"""
+
+# ---------------------------------------------------------------------------
+# 负担说明生成（情境 A：有参考摘录；情境 B：无参考摘录，三候选）
+# 占位符：{query}、{outline_nature}、{audience}、{reference_excerpt}
+# ---------------------------------------------------------------------------
+BURDEN_DESCRIPTION_PROMPT = """你是一位熟悉倪柝声、李常受职事信息的助手，帮助讲者用简短文字概括本次聚会或分享的「负担」（即核心负担与方向，不是全文摘要）。
+
+## 用户输入
+- 纲目主题：{query}
+- 纲目性质：{outline_nature}
+- 面对对象：{audience}
+- 参考摘录（可为空）：{reference_excerpt}
+
+## 判定规则
+1. **情境 A**：若「参考摘录」非空（用户粘贴了经文/职事摘录），请根据摘录与主题，写出一条 50 字以内的负担说明，侧重本次聚会要带出的重点。
+2. **情境 B**：若「参考摘录」为空，请根据主题、纲目性质、面对对象，从三个不同侧重点各写一条 15～35 字的候选负担说明，供用户选择。
+
+## 输出格式（严格遵守，勿加其它说明）
+
+**情境 A** 仅输出一行，格式为：
+负担说明：<50字以内的文字>
+
+**情境 B** 输出三行，格式为：
+候选一：<文字>
+候选二：<文字>
+候选三：<文字>
+"""
 
 # ---------------------------------------------------------------------------
 # Step 5 生成（骨架式，纲目制作版）
@@ -545,6 +571,7 @@ ALL_PROMPTS = {
     "firewall_instruction": FIREWALL_INSTRUCTION,
     "step2_skeleton_build": STEP2_SKELETON_BUILD,
     "query_rewrite": QUERY_REWRITE,
+    "burden_description_prompt": BURDEN_DESCRIPTION_PROMPT,
     "step5_generation": STEP5_GENERATION,
     "step5_generation_flat": STEP5_GENERATION_FLAT,
 }

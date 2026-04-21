@@ -89,6 +89,56 @@ const audience = ref("");
 const burdenDescription = ref("");
 const outlineNature = ref("一般性");
 const depth = ref("general");
+const referenceExcerpt = ref("");
+const burdenPhaseReady = ref(false);
+const burdenGenLoading = ref(false);
+const burdenGenScenario = ref(null);
+const burdenGenCandidates = ref([]);
+const burdenSelectedIdx = ref(0);
+const burdenGenLineA = ref("");
+const burdenHiddenBySkip = ref(false);
+const burdenSkipTopicSnapshot = ref("");
+
+const showBurdenPhasePanel = computed(() => {
+  if (!burdenHiddenBySkip.value) return true;
+  return (queryText.value || "").trim() !== burdenSkipTopicSnapshot.value;
+});
+
+watch(
+  () => queryText.value,
+  () => {
+    if (
+      burdenHiddenBySkip.value &&
+      (queryText.value || "").trim() !== burdenSkipTopicSnapshot.value
+    ) {
+      burdenHiddenBySkip.value = false;
+    }
+  }
+);
+
+const outlineMetaValid = computed(() => {
+  const q = (queryText.value || "").trim().length > 0;
+  const n = (outlineNature.value || "").trim().length > 0;
+  return q && n;
+});
+
+watch(
+  () => [queryText.value, outlineNature.value, audience.value, referenceExcerpt.value],
+  () => {
+    burdenPhaseReady.value = false;
+    burdenGenScenario.value = null;
+    burdenGenCandidates.value = [];
+    burdenGenLineA.value = "";
+  }
+);
+
+watch(burdenSelectedIdx, (idx) => {
+  if (burdenGenScenario.value !== "B") return;
+  const c = burdenGenCandidates.value[idx];
+  if (c != null && String(c).trim() !== "") {
+    burdenDescription.value = c;
+  }
+});
 
 /** 纲目翻译 / 繁体（全流程 Step5 完成后按需请求 ai_search 接口） */
 const includeEnglish = ref(false);
@@ -117,7 +167,7 @@ const selectedSurface = ref([]);
 const selectedDeep = ref([]);
 
 watch(
-  [queryText, outlineNature, burdenDescription, audience],
+  [queryText, outlineNature, burdenDescription, audience, referenceExcerpt],
   () => {
     if (conceptStage.value !== "idle") {
       conceptStage.value = "idle";
@@ -128,10 +178,75 @@ watch(
   }
 );
 
+function skipBurdenPhase() {
+  burdenDescription.value = "";
+  burdenPhaseReady.value = true;
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenSkipTopicSnapshot.value = (queryText.value || "").trim();
+  burdenHiddenBySkip.value = true;
+}
+
+function confirmBurdenPhase() {
+  burdenPhaseReady.value = true;
+}
+
+async function onGenerateBurden() {
+  const q = (queryText.value || "").trim();
+  if (!q || !(outlineNature.value || "").trim()) {
+    message.warning("请先填写主题和纲目性质");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  burdenGenLoading.value = true;
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/generate_burden`,
+      {
+        query: q,
+        outline_nature: outlineNature.value.trim(),
+        audience: audience.value.trim(),
+        reference_excerpt: referenceExcerpt.value.trim(),
+      },
+      { headers }
+    );
+    const d = res.data || {};
+    if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
+      burdenGenScenario.value = "A";
+      const line = String(d.result).trim();
+      burdenGenLineA.value = line;
+      burdenDescription.value = line;
+      return;
+    }
+    if (d.scenario === "B" && d.candidates && d.candidates.length) {
+      burdenGenScenario.value = "B";
+      burdenGenCandidates.value = d.candidates.slice(0, 3);
+      burdenSelectedIdx.value = 0;
+      const first = burdenGenCandidates.value[0];
+      burdenDescription.value = first != null ? String(first).trim() : "";
+      return;
+    }
+    message.warning(d.error || "生成失败");
+    burdenGenScenario.value = null;
+  } catch (e) {
+    message.error(e.response?.data?.error || e.message || "生成失败");
+    burdenGenScenario.value = null;
+  } finally {
+    burdenGenLoading.value = false;
+  }
+}
+
 async function extractConcepts() {
   const q = (queryText.value || "").trim();
   if (!q) {
     message.warning("请输入查询主题");
+    return;
+  }
+  if (!burdenPhaseReady.value) {
+    message.warning("请先完成负担说明阶段（跳过或确认）");
     return;
   }
   const headers = getAuthHeaders();
@@ -239,6 +354,10 @@ async function runFullQuery() {
   const q = (queryText.value || "").trim();
   if (!q) {
     message.warning("请输入查询问题");
+    return;
+  }
+  if (!burdenPhaseReady.value) {
+    message.warning("请先完成负担说明阶段（跳过或确认）");
     return;
   }
   const headers = getAuthHeaders();
@@ -910,18 +1029,6 @@ onMounted(() => {
                       </a-col>
                       <a-col :span="24">
                         <div class="param-item param-item-stack">
-                          <span class="param-label">负担说明</span>
-                          <a-textarea
-                            v-model:value="burdenDescription"
-                            placeholder="约50字概括纲目摘要，说明纲目负担"
-                            :rows="3"
-                            allow-clear
-                            class="param-control"
-                          />
-                        </div>
-                      </a-col>
-                      <a-col :span="24">
-                        <div class="param-item param-item-stack">
                           <span class="param-label">纲目性质</span>
                           <a-radio-group v-model:value="outlineNature" button-style="solid" size="small" class="param-control">
                             <a-radio-button value="一般性">一般性</a-radio-button>
@@ -929,6 +1036,61 @@ onMounted(() => {
                             <a-radio-button value="高生命浓度">高生命浓度</a-radio-button>
                             <a-radio-button value="重实行应用">重实行应用</a-radio-button>
                           </a-radio-group>
+                        </div>
+                      </a-col>
+                      <a-col v-if="showBurdenPhasePanel" :span="24">
+                        <div class="burden-phase-block param-item-stack">
+                          <div class="burden-phase-head">
+                            <span class="burden-phase-title">AI生成负担说明</span>
+                            <a class="burden-phase-skip" href="#" @click.prevent="skipBurdenPhase">跳过负担说明</a>
+                          </div>
+                          <div class="param-item param-item-stack">
+                            <span class="param-label">参考摘录（选填）</span>
+                            <a-textarea
+                              v-model:value="referenceExcerpt"
+                              placeholder="有摘录走情境A，无摘录走情境B"
+                              :rows="3"
+                              allow-clear
+                              size="small"
+                              class="param-control"
+                              :disabled="burdenGenLoading"
+                            />
+                          </div>
+                          <div class="burden-btn-wrap">
+                            <a-button
+                              block
+                              :loading="burdenGenLoading"
+                              :disabled="burdenGenLoading || !outlineMetaValid"
+                              @click="onGenerateBurden"
+                            >生成负担说明</a-button>
+                          </div>
+                          <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="burden-gen-out">
+                            <div class="burden-gen-label">情境 A</div>
+                            <div class="burden-gen-text">{{ burdenGenLineA }}</div>
+                          </div>
+                          <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="burden-gen-out">
+                            <div class="burden-gen-label">情境 B</div>
+                            <a-radio-group v-model:value="burdenSelectedIdx" class="burden-radio-group">
+                              <div v-for="(c, i) in burdenGenCandidates" :key="i" class="burden-radio-line">
+                                <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
+                                <span class="burden-cand-body">{{ c }}</span>
+                              </div>
+                            </a-radio-group>
+                          </div>
+                          <div class="param-item param-item-stack">
+                            <span class="param-label">负担说明</span>
+                            <a-textarea
+                              v-model:value="burdenDescription"
+                              placeholder="在此输入或编辑负担说明，也可留空"
+                              :rows="4"
+                              allow-clear
+                              size="small"
+                              class="param-control"
+                            />
+                          </div>
+                          <div class="burden-btn-wrap">
+                            <a-button block @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+                          </div>
                         </div>
                       </a-col>
                       <a-col :span="24">
@@ -986,6 +1148,7 @@ onMounted(() => {
                     </a-row>
                   </a-collapse-panel>
                 </a-collapse>
+                <div v-if="outlineMetaValid && !burdenPhaseReady" class="burden-phase-hint">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
                 <!-- 两阶段概念抽取面板 -->
                 <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="concept-candidates-panel">
                   <div class="concept-section">
@@ -1001,19 +1164,15 @@ onMounted(() => {
                       <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
                     </a-checkbox-group>
                   </div>
-                  <div v-if="conceptCandidates.reasoning" class="concept-section">
-                    <span class="concept-label">reasoning</span>
-                    <div class="concept-reasoning">{{ conceptCandidates.reasoning }}</div>
-                  </div>
                 </div>
                 <div class="query-btn-row">
-                  <a-button :loading="conceptLoading" @click="extractConcepts">抽取概念</a-button>
+                  <a-button :loading="conceptLoading" :disabled="!burdenPhaseReady" @click="extractConcepts">抽取概念</a-button>
                   <a-button
                     type="primary"
                     :loading="queryLoading"
                     class="query-btn"
                     @click="runFullQuery"
-                    :disabled="conceptStage === 'candidates_ready' && selectedDeep.length === 0"
+                    :disabled="!burdenPhaseReady || (conceptStage === 'candidates_ready' && selectedDeep.length === 0)"
                   >
                     {{ conceptStage === 'candidates_ready' ? '生成纲目' : '开始查询' }}
                   </a-button>
@@ -1874,6 +2033,81 @@ onMounted(() => {
 .query-input {
   margin-bottom: 16px;
 }
+.burden-phase-block {
+  padding: 12px;
+  border: 1px dashed #d3adf7;
+  border-radius: 8px;
+  background: #faf5ff;
+  margin-bottom: 8px;
+}
+.burden-phase-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.burden-phase-title {
+  font-weight: 700;
+  color: #391085;
+  font-size: 13px;
+}
+.burden-phase-skip {
+  font-size: 12px;
+  color: #722ed1;
+}
+.burden-btn-wrap {
+  margin-top: 10px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+.burden-btn-wrap :deep(.ant-btn) {
+  min-height: 40px;
+}
+.burden-gen-out {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #efdbff;
+  border-radius: 6px;
+}
+.burden-gen-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #722ed1;
+  margin-bottom: 6px;
+}
+.burden-gen-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+.burden-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.burden-radio-line {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.burden-cand-body {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #333;
+}
+.burden-phase-hint {
+  font-size: 12px;
+  color: #ad6800;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+}
 .outline-collapse {
   margin-bottom: 16px;
   :deep(.ant-collapse-header) {
@@ -2228,15 +2462,6 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-}
-.concept-reasoning {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.6;
-  background: #fff;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #eee;
 }
 
 .result-placeholder {
