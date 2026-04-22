@@ -9,6 +9,8 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
+from back_qa.qa.rate_limit import check_rate_limit
+
 router = APIRouter()
 
 
@@ -111,6 +113,10 @@ async def readiness(request: Request):
 async def query(req: QueryRequest, request: Request):
     """提交问题，返回答案。流水线实现在 qa_service。"""
     from back_qa.qa.qa_service import run_pipeline
+    from back_qa.qa.dependencies import get_redis_client
+
+    if not check_rate_limit(request, get_redis_client()):
+        raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
 
     request_id = _resolve_request_id(request)
     result = await run_pipeline(
