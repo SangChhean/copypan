@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
-from back_qa.qa.rate_limit import check_rate_limit
+from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
 
 router = APIRouter()
 
@@ -117,6 +117,8 @@ async def query(req: QueryRequest, request: Request):
 
     if not check_rate_limit(request, get_redis_client()):
         raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
+    if not check_prompt_injection(req.question):
+        raise HTTPException(status_code=400, detail="输入包含不支持的内容")
 
     request_id = _resolve_request_id(request)
     result = await run_pipeline(

@@ -162,9 +162,10 @@ function buildQueryParams() {
 // ---------- 两阶段概念抽取 ----------
 const conceptStage = ref("idle"); // idle | candidates_ready | generating
 const conceptLoading = ref(false);
-const conceptCandidates = ref(null); // { surface, deep_candidates, reasoning }
-const selectedSurface = ref([]);
-const selectedDeep = ref([]);
+const conceptCandidates = ref(null); // { revelation, experience, practice, reasoning }
+const selectedRevelation = ref([]);
+const selectedExperience = ref([]);
+const selectedPractice = ref([]);
 
 watch(
   [queryText, outlineNature, burdenDescription, audience, referenceExcerpt],
@@ -172,8 +173,9 @@ watch(
     if (conceptStage.value !== "idle") {
       conceptStage.value = "idle";
       conceptCandidates.value = null;
-      selectedSurface.value = [];
-      selectedDeep.value = [];
+      selectedRevelation.value = [];
+      selectedExperience.value = [];
+      selectedPractice.value = [];
     }
   }
 );
@@ -264,8 +266,9 @@ async function extractConcepts() {
       { headers }
     );
     conceptCandidates.value = res.data;
-    selectedSurface.value = [];
-    selectedDeep.value = [];
+    selectedRevelation.value = [];
+    selectedExperience.value = [];
+    selectedPractice.value = [];
     conceptStage.value = "candidates_ready";
     toastSuccess("概念抽取完成，请筛选内在意义概念");
   } catch (e) {
@@ -373,9 +376,16 @@ async function runFullQuery() {
   outlineResultTab.value = "zh";
   try {
     const qParams = buildQueryParams();
-    if (conceptStage.value === "candidates_ready" && conceptCandidates.value && selectedDeep.value.length > 0) {
-      qParams.preset_surface = selectedSurface.value;
-      qParams.preset_deep = selectedDeep.value;
+    if (
+      conceptStage.value === "candidates_ready" &&
+      conceptCandidates.value &&
+      selectedRevelation.value.length > 0 &&
+      selectedExperience.value.length > 0 &&
+      selectedPractice.value.length > 0
+    ) {
+      qParams.preset_revelation = selectedRevelation.value;
+      qParams.preset_experience = selectedExperience.value;
+      qParams.preset_practice = selectedPractice.value;
     }
     const res = await axios.post(`${apiBase}/api/kg_rag/query`, { query: q, params: qParams }, { headers });
     queryResult.value = res.data;
@@ -676,7 +686,16 @@ const step12Results = ref(null);
 const step12Phase = ref("idle"); // idle | step1_done
 const step12ConceptSelections = reactive({});
 const hasAnyStep12DeepSelected = computed(() =>
-  Object.values(step12ConceptSelections).some(sel => sel && sel.deep && sel.deep.length > 0)
+  Object.values(step12ConceptSelections).some(
+    sel =>
+      sel &&
+      sel.revelation &&
+      sel.experience &&
+      sel.practice &&
+      sel.revelation.length > 0 &&
+      sel.experience.length > 0 &&
+      sel.practice.length > 0
+  )
 );
 
 /** 最下方汇总窗口：按固定标题输出题目、Step1；Step1+2 时再输出 Step2 */
@@ -707,10 +726,12 @@ const step12SummaryText = computed(() => {
       const rs = s1?.reasoning != null ? String(s1.reasoning).trim() : "";
       lines.push("推理说明：");
       lines.push(rs || "（无）");
-      lines.push("字面意义候选：");
-      lines.push(joinList(s1?.surface));
-      lines.push("内在意义、经历、实行候选：");
-      lines.push(joinList(s1?.deep));
+      lines.push("启示层候选：");
+      lines.push(joinList(s1?.revelation));
+      lines.push("经历层候选：");
+      lines.push(joinList(s1?.experience));
+      lines.push("实行层候选：");
+      lines.push(joinList(s1?.practice));
       if (s1?.error) {
         lines.push("Step1 异常：");
         lines.push(s1.error);
@@ -733,7 +754,7 @@ const step12SummaryText = computed(() => {
         lines.push("（—）");
         lines.push("骨架：");
         lines.push("（—）");
-        lines.push("扩展节点（deep）：");
+        lines.push("扩展节点（三层并集）：");
         lines.push("（—）");
       } else {
         const s2 = item.data?.steps?.step2;
@@ -742,14 +763,14 @@ const step12SummaryText = computed(() => {
           lines.push("（未执行，仅 Step1）");
           lines.push("骨架：");
           lines.push("（未执行）");
-          lines.push("扩展节点（deep）：");
+          lines.push("扩展节点（三层并集）：");
           lines.push("（未执行）");
         } else if (s2?.skipped) {
           lines.push("路径：");
           lines.push("（未执行骨架）");
           lines.push("骨架：");
           lines.push("（未执行）");
-          lines.push("扩展节点（deep）：");
+          lines.push("扩展节点（三层并集）：");
           lines.push("（未执行）");
         } else {
           const paths = s2?.paths?.length
@@ -769,7 +790,7 @@ const step12SummaryText = computed(() => {
             : "（无）";
           lines.push("骨架：");
           lines.push(sk);
-          lines.push("扩展节点（deep）：");
+          lines.push("扩展节点（三层并集）：");
           lines.push(joinList(s2?.expanded_nodes));
         }
       }
@@ -832,7 +853,7 @@ async function runStep12Test() {
     });
     for (const item of step12Results.value) {
       if (item.ok && item.data?.steps?.step1) {
-        step12ConceptSelections[item.model] = { surface: [], deep: [] };
+        step12ConceptSelections[item.model] = { revelation: [], experience: [], practice: [] };
       }
     }
     const okN = step12Results.value.filter((r) => r.ok).length;
@@ -857,10 +878,10 @@ async function runStep12ContinueStep2() {
   const modelsToRun = (step12Results.value || []).filter(item => {
     if (!item.ok) return false;
     const sel = step12ConceptSelections[item.model];
-    return sel && sel.deep.length > 0;
+    return sel && sel.revelation.length > 0 && sel.experience.length > 0 && sel.practice.length > 0;
   });
   if (!modelsToRun.length) {
-    message.warning("请至少为一个模型勾选内在意义概念");
+    message.warning("请至少为一个模型分别勾选启示/经历/实行概念");
     return;
   }
   step12Loading.value = true;
@@ -878,8 +899,9 @@ async function runStep12ContinueStep2() {
               skip_generation: true,
               step1_model: item.model,
               llm_model: item.model,
-              preset_surface: sel.surface,
-              preset_deep: sel.deep,
+              preset_revelation: sel.revelation,
+              preset_experience: sel.experience,
+              preset_practice: sel.practice,
             },
           },
           { headers }
@@ -1152,16 +1174,22 @@ onMounted(() => {
                 <!-- 两阶段概念抽取面板 -->
                 <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="concept-candidates-panel">
                   <div class="concept-section">
-                    <span class="concept-label">字面意义（surface）</span>
-                    <a-checkbox-group v-model:value="selectedSurface" class="concept-checkbox-group">
-                      <a-checkbox v-for="s in conceptCandidates.surface" :key="s" :value="s">{{ s }}</a-checkbox>
+                    <span class="concept-label">启示层（revelation）</span>
+                    <a-checkbox-group v-model:value="selectedRevelation" class="concept-checkbox-group">
+                      <a-checkbox v-for="s in (conceptCandidates.revelation || [])" :key="s" :value="s">{{ s }}</a-checkbox>
                     </a-checkbox-group>
-                    <span v-if="!conceptCandidates.surface?.length" class="concept-empty">（无）</span>
+                    <span v-if="!conceptCandidates.revelation?.length" class="concept-empty">（无）</span>
                   </div>
                   <div class="concept-section">
-                    <span class="concept-label">内在意义候选（deep）</span>
-                    <a-checkbox-group v-model:value="selectedDeep" class="concept-checkbox-group">
-                      <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
+                    <span class="concept-label">经历层（experience）</span>
+                    <a-checkbox-group v-model:value="selectedExperience" class="concept-checkbox-group">
+                      <a-checkbox v-for="d in (conceptCandidates.experience || [])" :key="d" :value="d">{{ d }}</a-checkbox>
+                    </a-checkbox-group>
+                  </div>
+                  <div class="concept-section">
+                    <span class="concept-label">实行层（practice）</span>
+                    <a-checkbox-group v-model:value="selectedPractice" class="concept-checkbox-group">
+                      <a-checkbox v-for="p in (conceptCandidates.practice || [])" :key="p" :value="p">{{ p }}</a-checkbox>
                     </a-checkbox-group>
                   </div>
                 </div>
@@ -1172,11 +1200,11 @@ onMounted(() => {
                     :loading="queryLoading"
                     class="query-btn"
                     @click="runFullQuery"
-                    :disabled="!burdenPhaseReady || (conceptStage === 'candidates_ready' && selectedDeep.length === 0)"
+                    :disabled="!burdenPhaseReady || (conceptStage === 'candidates_ready' && (selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0))"
                   >
                     {{ conceptStage === 'candidates_ready' ? '生成纲目' : '开始查询' }}
                   </a-button>
-                  <span v-if="conceptStage === 'candidates_ready' && selectedDeep.length === 0" class="concept-warn">请至少选择一个内在意义概念</span>
+                  <span v-if="conceptStage === 'candidates_ready' && (selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0)" class="concept-warn">请分别至少选择一个启示/经历/实行概念</span>
                 </div>
               </div>
             </a-col>
@@ -1273,12 +1301,16 @@ onMounted(() => {
                       <a-card size="small" class="step-card">
                       <div v-if="queryResult.steps?.step1">
                         <div class="step1-layer">
-                          <span class="step1-layer-label">字面意义候选：</span>
-                          <a-tag v-for="c in (queryResult.steps.step1.surface || [])" :key="`surface-${c}`">{{ c }}</a-tag>
+                          <span class="step1-layer-label">启示层候选：</span>
+                          <a-tag v-for="c in (queryResult.steps.step1.revelation || [])" :key="`revelation-${c}`">{{ c }}</a-tag>
                         </div>
                         <div class="step1-layer">
-                          <span class="step1-layer-label">内在意义、经历、实行候选：</span>
-                          <a-tag color="blue" v-for="c in (queryResult.steps.step1.deep || [])" :key="`deep-${c}`">{{ c }}</a-tag>
+                          <span class="step1-layer-label">经历层候选：</span>
+                          <a-tag color="blue" v-for="c in (queryResult.steps.step1.experience || [])" :key="`experience-${c}`">{{ c }}</a-tag>
+                        </div>
+                        <div class="step1-layer">
+                          <span class="step1-layer-label">实行层候选：</span>
+                          <a-tag color="purple" v-for="c in (queryResult.steps.step1.practice || [])" :key="`practice-${c}`">{{ c }}</a-tag>
                         </div>
                         <div class="step1-layer">
                           <span class="step1-layer-label">合并送 Step2：</span>
@@ -1658,12 +1690,16 @@ onMounted(() => {
             <a-collapse class="steps-summary" :bordered="false">
             <a-collapse-panel key="step1" header="Step 1 概念抽取（从图谱词表匹配）">
               <div class="step1-layer">
-                <span class="step1-layer-label">字面意义候选：</span>
-                <a-tag v-for="c in (promptPreviewResult.steps?.step1?.surface || [])" :key="`psurface-${c}`">{{ c }}</a-tag>
+                <span class="step1-layer-label">启示层候选：</span>
+                <a-tag v-for="c in (promptPreviewResult.steps?.step1?.revelation || [])" :key="`prevelation-${c}`">{{ c }}</a-tag>
               </div>
               <div class="step1-layer">
-                <span class="step1-layer-label">内在意义、经历、实行候选：</span>
-                <a-tag color="blue" v-for="c in (promptPreviewResult.steps?.step1?.deep || [])" :key="`pdeep-${c}`">{{ c }}</a-tag>
+                <span class="step1-layer-label">经历层候选：</span>
+                <a-tag color="blue" v-for="c in (promptPreviewResult.steps?.step1?.experience || [])" :key="`pexperience-${c}`">{{ c }}</a-tag>
+              </div>
+              <div class="step1-layer">
+                <span class="step1-layer-label">实行层候选：</span>
+                <a-tag color="purple" v-for="c in (promptPreviewResult.steps?.step1?.practice || [])" :key="`ppractice-${c}`">{{ c }}</a-tag>
               </div>
               <div class="step1-layer">
                 <span class="step1-layer-label">合并送 Step2：</span>
@@ -1803,29 +1839,40 @@ onMounted(() => {
                             <a-card size="small" class="step-card step12-nested-card">
                               <div v-if="item.data?.steps?.step1">
                                 <div class="step1-layer">
-                                  <span class="step1-layer-label">字面意义候选：</span>
+                                  <span class="step1-layer-label">启示层候选：</span>
                                   <template v-if="step12ConceptSelections[item.model]">
-                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].surface" class="concept-checkbox-group">
-                                      <a-checkbox v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`" :value="c">{{ c }}</a-checkbox>
+                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].revelation" class="concept-checkbox-group">
+                                      <a-checkbox v-for="c in (item.data.steps.step1.revelation || [])" :key="`${item.model}-r-${c}`" :value="c">{{ c }}</a-checkbox>
                                     </a-checkbox-group>
                                   </template>
                                   <template v-else>
-                                    <a-tag v-for="c in (item.data.steps.step1.surface || [])" :key="`${item.model}-s-${c}`">{{ c }}</a-tag>
+                                    <a-tag v-for="c in (item.data.steps.step1.revelation || [])" :key="`${item.model}-r-${c}`">{{ c }}</a-tag>
                                   </template>
                                 </div>
                                 <div class="step1-layer">
-                                  <span class="step1-layer-label">内在意义、经历、实行候选：</span>
+                                  <span class="step1-layer-label">经历层候选：</span>
                                   <template v-if="step12ConceptSelections[item.model]">
-                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].deep" class="concept-checkbox-group">
-                                      <a-checkbox v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`" :value="c">{{ c }}</a-checkbox>
+                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].experience" class="concept-checkbox-group">
+                                      <a-checkbox v-for="c in (item.data.steps.step1.experience || [])" :key="`${item.model}-e-${c}`" :value="c">{{ c }}</a-checkbox>
                                     </a-checkbox-group>
                                   </template>
                                   <template v-else>
-                                    <a-tag color="blue" v-for="c in (item.data.steps.step1.deep || [])" :key="`${item.model}-d-${c}`">{{ c }}</a-tag>
+                                    <a-tag color="blue" v-for="c in (item.data.steps.step1.experience || [])" :key="`${item.model}-e-${c}`">{{ c }}</a-tag>
                                   </template>
                                 </div>
-                                <div v-if="step12ConceptSelections[item.model] && step12ConceptSelections[item.model].deep.length === 0 && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
-                                  请勾选至少一个内在意义概念
+                                <div class="step1-layer">
+                                  <span class="step1-layer-label">实行层候选：</span>
+                                  <template v-if="step12ConceptSelections[item.model]">
+                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].practice" class="concept-checkbox-group">
+                                      <a-checkbox v-for="c in (item.data.steps.step1.practice || [])" :key="`${item.model}-p-${c}`" :value="c">{{ c }}</a-checkbox>
+                                    </a-checkbox-group>
+                                  </template>
+                                  <template v-else>
+                                    <a-tag color="purple" v-for="c in (item.data.steps.step1.practice || [])" :key="`${item.model}-p-${c}`">{{ c }}</a-tag>
+                                  </template>
+                                </div>
+                                <div v-if="step12ConceptSelections[item.model] && (step12ConceptSelections[item.model].revelation.length === 0 || step12ConceptSelections[item.model].experience.length === 0 || step12ConceptSelections[item.model].practice.length === 0) && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
+                                  请分别勾选至少一个启示/经历/实行概念
                                 </div>
                                 <a-collapse v-if="item.data.steps.step1.raw_response">
                                   <a-collapse-panel key="raw" header="原始响应">

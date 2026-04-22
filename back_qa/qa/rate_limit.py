@@ -57,3 +57,40 @@ def check_rate_limit(request, redis_client) -> bool:
     except Exception as e:
         logger.warning("[QA] 限流检查失败，降级放行: %s", e)
         return True
+
+
+# ---------------------------------------------------------------------------
+# 提示注入过滤
+# ---------------------------------------------------------------------------
+
+# 明显越权指令的特征词（大小写不敏感）
+_INJECTION_PATTERNS = [
+    "ignore previous instructions",
+    "ignore all instructions",
+    "disregard your instructions",
+    "你现在是",
+    "忘记之前的指令",
+    "忘记你的指令",
+    "忽略之前",
+    "忽略上面",
+    "不要遵守",
+    "system prompt",
+    "new instructions:",
+    "override instructions",
+    "jailbreak",
+]
+
+
+def check_prompt_injection(question: str) -> bool:
+    """
+    检查输入是否含有明显的提示注入特征。
+    返回 True 表示安全，返回 False 表示疑似注入（调用方返回 400）。
+    """
+    if not question:
+        return True
+    lower = question.lower()
+    for pattern in _INJECTION_PATTERNS:
+        if pattern.lower() in lower:
+            logger.warning("[QA] 疑似提示注入，已拦截: pattern=%r question=%r", pattern, question[:100])
+            return False
+    return True

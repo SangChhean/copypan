@@ -118,8 +118,9 @@ const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
 
 // KG-RAG 返回结构化数据
 const aiMeta = reactive({
-  surface: [],
-  deep: [],
+  revelation: [],
+  experience: [],
+  practice: [],
   skeleton: null,
   mainSources: [],
   totalElapsedMs: null,
@@ -256,8 +257,9 @@ async function onGenerateBurden() {
 const conceptStage = ref("idle"); // idle | candidates_ready
 const conceptLoading = ref(false);
 const conceptCandidates = ref(null);
-const selectedSurface = ref([]);
-const selectedDeep = ref([]);
+const selectedRevelation = ref([]);
+const selectedExperience = ref([]);
+const selectedPractice = ref([]);
 
 watch(
   () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription, aiForm.audience],
@@ -265,8 +267,9 @@ watch(
     if (conceptStage.value !== "idle") {
       conceptStage.value = "idle";
       conceptCandidates.value = null;
-      selectedSurface.value = [];
-      selectedDeep.value = [];
+      selectedRevelation.value = [];
+      selectedExperience.value = [];
+      selectedPractice.value = [];
     }
   }
 );
@@ -287,8 +290,9 @@ async function extractConcepts() {
       audience: aiForm.audience.trim(),
     });
     conceptCandidates.value = res.data;
-    selectedSurface.value = [];
-    selectedDeep.value = [];
+    selectedRevelation.value = [];
+    selectedExperience.value = [];
+    selectedPractice.value = [];
     conceptStage.value = "candidates_ready";
   } catch (e) {
     tip(e.response?.data?.error || e.message || "概念抽取失败");
@@ -300,8 +304,9 @@ async function extractConcepts() {
 function resetConceptState() {
   conceptStage.value = "idle";
   conceptCandidates.value = null;
-  selectedSurface.value = [];
-  selectedDeep.value = [];
+  selectedRevelation.value = [];
+  selectedExperience.value = [];
+  selectedPractice.value = [];
 }
 
 // AI 回答复制（包含标题）
@@ -865,8 +870,9 @@ function parseKgRagResponse(data) {
     outlineTopic: aiForm.outlineTopic.trim(),
     cached: isCached,
     cacheKey: data.cache_key || null,
-    surface: [],
-    deep: [],
+    revelation: [],
+    experience: [],
+    practice: [],
     skeleton: null,
     mainSources: [],
     totalElapsedMs: null,
@@ -875,8 +881,9 @@ function parseKgRagResponse(data) {
     answerZhTw: null,
   };
   if (isCached) {
-    result.surface = data.surface || [];
-    result.deep = data.deep || [];
+    result.revelation = data.revelation || [];
+    result.experience = data.experience || [];
+    result.practice = data.practice || [];
     result.skeleton = data.skeleton || null;
     result.mainSources = data.main_sources || [];
     result.totalElapsedMs = data.total_elapsed_ms ?? null;
@@ -888,8 +895,9 @@ function parseKgRagResponse(data) {
     const s2 = data.steps?.step2 || {};
     const s3 = data.steps?.step3 || {};
     const usage = data.llm_usage || {};
-    result.surface = s1.surface || [];
-    result.deep = s1.deep || [];
+    result.revelation = s1.revelation || [];
+    result.experience = s1.experience || [];
+    result.practice = s1.practice || [];
     result.skeleton = s2.skeleton || null;
     result.mainSources = (s3.main_results || []).map(r => ({
       chunk_id: r.chunk_id || "",
@@ -930,13 +938,20 @@ const onAISearch = async () => {
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "✨ AI 纲目生成中…";
-  Object.assign(aiMeta, { surface: [], deep: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
+  Object.assign(aiMeta, { revelation: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
 
   try {
     const qParams = buildKgRagParams();
-    if (conceptStage.value === "candidates_ready" && conceptCandidates.value && selectedDeep.value.length > 0) {
-      qParams.preset_surface = selectedSurface.value;
-      qParams.preset_deep = selectedDeep.value;
+    if (
+      conceptStage.value === "candidates_ready" &&
+      conceptCandidates.value &&
+      selectedRevelation.value.length > 0 &&
+      selectedExperience.value.length > 0 &&
+      selectedPractice.value.length > 0
+    ) {
+      qParams.preset_revelation = selectedRevelation.value;
+      qParams.preset_experience = selectedExperience.value;
+      qParams.preset_practice = selectedPractice.value;
     }
     const res = await axios.post(
       "/api/kg_rag/query",
@@ -953,8 +968,9 @@ const onAISearch = async () => {
     const parsed = parseKgRagResponse(data);
     aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
     Object.assign(aiMeta, {
-      surface: parsed.surface,
-      deep: parsed.deep,
+      revelation: parsed.revelation,
+      experience: parsed.experience,
+      practice: parsed.practice,
       skeleton: parsed.skeleton,
       mainSources: parsed.mainSources,
       totalElapsedMs: parsed.totalElapsedMs,
@@ -1138,19 +1154,25 @@ const onAISearch = async () => {
             <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="ai-concept-panel">
               <div class="ai-concept-hint">以下是 AI 识别到的相关概念，请勾选确认后生成纲目</div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">字面意义候选：</span>
-                <a-checkbox-group v-model:value="selectedSurface" class="ai-concept-checks">
-                  <a-checkbox v-for="s in conceptCandidates.surface" :key="s" :value="s">{{ s }}</a-checkbox>
+                <span class="ai-concept-label">启示层（revelation）：</span>
+                <a-checkbox-group v-model:value="selectedRevelation" class="ai-concept-checks">
+                  <a-checkbox v-for="s in (conceptCandidates.revelation || [])" :key="s" :value="s">{{ s }}</a-checkbox>
                 </a-checkbox-group>
-                <span v-if="!conceptCandidates.surface?.length" class="ai-concept-empty">（无）</span>
+                <span v-if="!conceptCandidates.revelation?.length" class="ai-concept-empty">（无）</span>
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">内在意义、经历、实行候选：</span>
-                <a-checkbox-group v-model:value="selectedDeep" class="ai-concept-checks">
-                  <a-checkbox v-for="d in conceptCandidates.deep_candidates" :key="d" :value="d">{{ d }}</a-checkbox>
+                <span class="ai-concept-label">经历层（experience）：</span>
+                <a-checkbox-group v-model:value="selectedExperience" class="ai-concept-checks">
+                  <a-checkbox v-for="d in (conceptCandidates.experience || [])" :key="d" :value="d">{{ d }}</a-checkbox>
                 </a-checkbox-group>
               </div>
-              <div v-if="selectedDeep.length === 0" class="ai-concept-warn">请至少选择一个内在意义</div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">实行层（practice）：</span>
+                <a-checkbox-group v-model:value="selectedPractice" class="ai-concept-checks">
+                  <a-checkbox v-for="p in (conceptCandidates.practice || [])" :key="p" :value="p">{{ p }}</a-checkbox>
+                </a-checkbox-group>
+              </div>
+              <div v-if="selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0" class="ai-concept-warn">请分别至少选择一个启示/经历/实行概念</div>
             </div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
@@ -1174,7 +1196,7 @@ const onAISearch = async () => {
                 v-else
                 type="primary"
                 :loading="loadingAI"
-                :disabled="loadingAI || selectedDeep.length === 0 || !burdenPhaseReady"
+                :disabled="loadingAI || selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0 || !burdenPhaseReady"
                 @click="onAISearch"
               >
                 {{ loadingAI ? "生成中…" : "生成纲目" }}
@@ -1305,8 +1327,9 @@ const onAISearch = async () => {
         <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
         <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
       </div>
-      <div v-if="aiMeta.surface.length" class="kg-info-row">📌 字面层：{{ aiMeta.surface.join("、") }}</div>
-      <div v-if="aiMeta.deep.length" class="kg-info-row">📌 内在层：{{ aiMeta.deep.join("、") }}</div>
+      <div v-if="aiMeta.revelation.length" class="kg-info-row">📌 启示层：{{ aiMeta.revelation.join("、") }}</div>
+      <div v-if="aiMeta.experience.length" class="kg-info-row">📌 经历层：{{ aiMeta.experience.join("、") }}</div>
+      <div v-if="aiMeta.practice.length" class="kg-info-row">📌 实行层：{{ aiMeta.practice.join("、") }}</div>
       <div v-if="aiMeta.skeleton && aiMeta.skeleton.length" class="kg-info-row">
         <div>🦴 骨架：</div>
         <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">

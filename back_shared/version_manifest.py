@@ -5,7 +5,7 @@
 任何变更只改这一个文件，旧缓存自动失效。
 """
 
-PROMPT_VERSION = "v1.0"
+PROMPT_VERSION = "v1.1"
 # Prompt 有实质改动时手动递增
 
 FIREWALL_RULES_VERSION = "v1.0"

@@ -40,8 +40,11 @@ DENSE_TOP_K = 30
 RRF_K = 60
 RERANK_TOP_N = 20
 
-# ES 索引（复用 KG-RAG 现有索引）
-QA_INDEX = os.environ.get("QA_ES_INDEX", "kg-rag_cwwl")
+# ES 索引（多索引用逗号分隔）
+QA_INDEX = os.environ.get(
+    "QA_ES_INDEX",
+    "kg-rag_7feasts,kg-rag_bib,kg-rag_cwwl,kg-rag_cwwn,kg-rag_life,kg-rag_map_note,kg-rag_others"
+)
 
 # ---------------------------------------------------------------------------
 # LLM 客户端（复用 back_mic 的 CLAUDE_API_KEY）
@@ -292,9 +295,11 @@ async def _run_firewall(question: str) -> dict | None:
 async def _step1(question: str, neo4j_client) -> dict:
     """
     返回：{
-        concepts: list[str],
-        greek_terms_context: str,   # 注入 Step 4 Prompt 的希腊原文段落
-        key_verses_context: str,    # 注入 Step 4 Prompt 的关键经文段落
+        surface: list[str],
+        deep: list[str],
+        concepts: list[str],        # surface + deep 去重，供监控与前端展示
+        greek_terms_context: str,
+        key_verses_context: str,
         cost_usd: float,
     }
     """
@@ -310,8 +315,7 @@ async def _step1(question: str, neo4j_client) -> dict:
 
     try:
         raw, usage = await _call_llm(
-            prompt,
-            STEP1_MODEL,
+            prompt, STEP1_MODEL,
             temperature=0,
             max_tokens=512,
             system="你是一位深研圣经与职事文献的神学助手。请严格按要求的格式输出 JSON，不输出其他内容。",
@@ -319,19 +323,56 @@ async def _step1(question: str, neo4j_client) -> dict:
         cost = _calc_cost(STEP1_MODEL, usage)
     except Exception as e:
         logger.warning("[QA] Step1 LLM 失败，降级为空概念: %s", e)
-        return {"concepts": [], "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0}
+        return {
+            "surface": [], "deep": [], "concepts": [],
+            "targeted": None,
+            "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0,
+        }
 
-    logger.info("[QA] Step1 raw_len=%s", len(raw or ""))
+    logger.info("[QA] Step1 raw_len=%d", len(raw or ""))
     parsed = _safe_parse_json(raw)
-    concepts: list[str] = []
+    surface: list[str] = []
+    deep: list[str] = []
+    targeted: dict | None = None
+
     if parsed:
-        raw_concepts = parsed.get("concepts", [])
-        if isinstance(raw_concepts, list):
-            concepts = [str(c).strip() for c in raw_concepts if str(c).strip()][:5]
+        raw_surface = parsed.get("surface", [])
+        raw_deep = parsed.get("deep", [])
+        if isinstance(raw_surface, list):
+            surface = [str(c).strip() for c in raw_surface if str(c).strip()][:3]
+        if isinstance(raw_deep, list):
+            deep = [str(c).strip() for c in raw_deep if str(c).strip()][:5]
 
-    logger.info("[QA] Step1 识别概念: %s", concepts)
+        # 解析定向查询
+        raw_targeted = parsed.get("targeted")
+        if isinstance(raw_targeted, dict):
+            book_keyword = str(raw_targeted.get("book_keyword", "")).strip()
+            message_keyword = str(raw_targeted.get("message_keyword", "")).strip()
+            if book_keyword and message_keyword:
+                targeted = {
+                    "book_keyword": book_keyword,
+                    "message_keyword": message_keyword,
+                }
 
-    # 从 Neo4j 取 greek_terms 与 key_verses
+        logger.info(
+            "[QA] Step1 surface=%s deep=%s targeted=%s reasoning=%s",
+            surface,
+            deep,
+            targeted,
+            (parsed.get("reasoning", "") or "")[:100],
+        )
+    else:
+        logger.warning("[QA] Step1 JSON 解析失败，raw=%s", (raw or "")[:200])
+
+    # concepts = surface + deep 去重，供前端展示
+    seen = set()
+    concepts = []
+    for c in surface + deep:
+        if c not in seen:
+            seen.add(c)
+            concepts.append(c)
+
+    # 从 Neo4j 取 greek_terms 与 key_verses（用全部 concepts）
     greek_terms_context = ""
     key_verses_context = ""
 
@@ -349,7 +390,7 @@ async def _step1(question: str, neo4j_client) -> dict:
             if verses_map:
                 lines = []
                 for concept, verse_list in verses_map.items():
-                    for sid, stext in verse_list[:3]:  # 每概念最多 3 条经文
+                    for sid, stext in verse_list[:3]:
                         lines.append(f"- {sid}：{stext}")
                 if lines:
                     key_verses_context = "\n【相关关键经文】\n" + "\n".join(lines) + "\n"
@@ -357,7 +398,10 @@ async def _step1(question: str, neo4j_client) -> dict:
             logger.warning("[QA] get_key_verses 失败: %s", e)
 
     return {
+        "surface": surface,
+        "deep": deep,
         "concepts": concepts,
+        "targeted": targeted,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
         "cost_usd": cost,
@@ -385,6 +429,167 @@ async def _step2(question: str, es_client) -> list[dict]:
     logger.info("[QA] Step2 reranked=%d", len(reranked))
 
     return reranked
+
+
+async def _step2_with_expansion(
+    question: str,
+    deep: list[str],
+    es_client,
+) -> list[dict]:
+    """
+    主路检索 + deep 概念扩展检索并发。
+    主路：原始问题 BM25 + Dense → RRF → Reranker（Top 20）
+    扩展路：对每个 deep 概念用「问题 + 概念名」做独立检索，去重后追加
+    """
+    import back_shared.retrieval as retrieval
+
+    index = QA_INDEX
+
+    async def _expand_one(combined_q: str, concept: str) -> list[dict]:
+        bm25 = await retrieval.bm25_search(es_client, combined_q, index, top_k=15)
+        dense = await retrieval.dense_search(es_client, combined_q, index, top_k=15)
+        merged = await retrieval.rrf_merge(bm25, dense, k=RRF_K)
+        reranked = await retrieval.rerank(merged, combined_q, top_n=5)
+        for doc in reranked:
+            doc["expanded_from"] = concept
+        return reranked
+
+    main_task = asyncio.create_task(_step2(question, es_client))
+    expansion_tasks = []
+    for concept in deep:
+        combined_query = f"{question} {concept}".strip()
+        expansion_tasks.append(asyncio.create_task(_expand_one(combined_query, concept)))
+
+    all_results = await asyncio.gather(main_task, *expansion_tasks, return_exceptions=True)
+
+    main_results = all_results[0] if not isinstance(all_results[0], Exception) else []
+    if isinstance(all_results[0], Exception):
+        logger.warning("[QA] Step2 主路失败: %s", all_results[0])
+    logger.info("[QA] Step2 主路=%d 段落", len(main_results))
+
+    main_ids = {r.get("chunk_id") for r in main_results if r.get("chunk_id")}
+    expanded: list[dict] = []
+    for i, result in enumerate(all_results[1:]):
+        if isinstance(result, Exception):
+            logger.warning("[QA] 扩展检索失败 deep[%d]: %s", i, result)
+            continue
+        for doc in result:
+            cid = doc.get("chunk_id")
+            if cid and cid not in main_ids:
+                expanded.append(doc)
+                main_ids.add(cid)
+
+    logger.info("[QA] Step2 扩展路=%d 段落（去重后）", len(expanded))
+    return main_results + expanded
+
+
+# 支持定向查询的索引（message_title 字段可靠）
+_TARGETED_SUPPORTED_INDICES = {
+    "kg-rag_cwwl",
+    "kg-rag_life",
+    "kg-rag_bib",
+    "kg-rag_map_note",
+    "kg-rag_others",
+    "kg-rag_7feasts",
+    "kg-rag_cwwn",
+}
+
+# 定向查询单篇段落数上限
+_TARGETED_MAX_PASSAGES = 50
+
+
+def _normalize_unit(s: str) -> str:
+    """把篇章单位词统一去掉，只保留数字部分，用于模糊匹配。"""
+    return s.replace("章", "").replace("篇", "").replace("课", "").replace("题", "").replace("问", "").strip()
+
+
+async def _step2_targeted(
+    book_keyword: str,
+    message_keyword: str,
+    es_client,
+) -> list[dict]:
+    """
+    定向精确查询，两步走：
+    Step A：book_title match book_keyword，取最多 500 条，Python 层过滤 message_title
+            找到第一条命中，取其 message_key
+    Step B：term message_key 精确取出该章/篇所有段落（上限 50 条）
+    返回空列表时调用方降级为语义检索。
+    """
+    target_indices = ",".join(_TARGETED_SUPPORTED_INDICES)
+
+    # Step A：找 message_key
+    body_a = {
+        "query": {"match": {"book_title": book_keyword}},
+        "size": 500,
+        "_source": ["chunk_id", "message_key", "message_title", "book_title"],
+    }
+
+    try:
+        resp_a = await asyncio.to_thread(
+            es_client.search, index=target_indices, body=body_a
+        )
+    except Exception as e:
+        logger.warning("[QA] 定向查询 Step A 失败: %s", e)
+        return []
+
+    hits_a = (resp_a.get("hits") or {}).get("hits") or []
+
+    # Python 层：找 message_title 包含 message_keyword 数字部分的第一条
+    normalized_keyword = _normalize_unit(message_keyword)
+    message_key = None
+    for hit in hits_a:
+        src = hit.get("_source") or {}
+        msg_title = src.get("message_title") or ""
+        if normalized_keyword and normalized_keyword in _normalize_unit(msg_title):
+            message_key = src.get("message_key")
+            if message_key:
+                logger.info(
+                    "[QA] 定向查询 Step A 命中 message_key=%s book=%s",
+                    message_key,
+                    src.get("book_title"),
+                )
+                break
+
+    if not message_key:
+        logger.info(
+            "[QA] 定向查询 Step A 未找到匹配的 message_key，book=%s msg=%s",
+            book_keyword,
+            message_keyword,
+        )
+        return []
+
+    # Step B：用 message_key 精确取出所有段落
+    body_b = {
+        "query": {"term": {"message_key": message_key}},
+        "size": _TARGETED_MAX_PASSAGES,
+        "_source": [
+            "chunk_id", "text", "book_title", "author",
+            "source_zh", "message_number", "message_title",
+            "section_title", "paragraph_type", "tokens",
+        ],
+    }
+
+    try:
+        resp_b = await asyncio.to_thread(
+            es_client.search, index=target_indices, body=body_b
+        )
+    except Exception as e:
+        logger.warning("[QA] 定向查询 Step B 失败: %s", e)
+        return []
+
+    hits_b = (resp_b.get("hits") or {}).get("hits") or []
+    results = []
+    for hit in hits_b:
+        src = (hit.get("_source") or {}).copy()
+        src["score"] = float(hit.get("_score") or 0.0)
+        src["source"] = "targeted"
+        src["_index"] = hit.get("_index") or ""
+        src.setdefault("chunk_id", hit.get("_id", ""))
+        results.append(src)
+
+    logger.info("[QA] 定向查询 Step B message_key=%s 命中=%d 段",
+                message_key, len(results))
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -449,16 +654,10 @@ async def _step4(
     # 构建段落文本
     passage_lines = []
     for p in passages:
-        chunk_id = p.get("chunk_id", "")
         book = p.get("book_title", "")
-        msg = p.get("message_number", "")
-        msg_title = p.get("message_title", "")
         text = (p.get("text") or "").strip()
-        header = f"[{chunk_id}] {book}"
-        if msg:
-            header += f" 第{msg}篇"
-        if msg_title:
-            header += f" {msg_title}"
+        source_zh = (p.get("source_zh") or "").strip()
+        header = f"[来源：{source_zh or book}]"
         passage_lines.append(f"{header}\n{text}")
     passages_text = "\n---\n".join(passage_lines)
 
@@ -486,16 +685,21 @@ async def _step4(
     )
     cost = _calc_cost(STEP4_MODEL, usage)
 
-    # 提取引用书目
+    # 提取引用书目（格式：➡️ 编号 完整书名）
     sources: list[str] = []
     if "【引用书目】" in raw:
         bib_block = raw.split("【引用书目】", 1)[1]
         for line in bib_block.splitlines():
-            line = line.strip().lstrip("·").strip()
-            if line.startswith("《") and "》" in line:
-                title = line[:line.index("》") + 1]
-                if title not in sources:
-                    sources.append(title)
+            line = line.strip()
+            # 匹配 ➡️ 编号 书名 格式
+            if "➡️" in line:
+                # 去掉 ➡️ 和编号，取书名
+                after = line.split("➡️", 1)[1].strip()
+                # 去掉开头的数字编号（如 "1 " 或 "1. "）
+                import re as _re
+                after = _re.sub(r"^\d+[\.\s]+", "", after).strip()
+                if after and after not in sources:
+                    sources.append(after)
 
     return raw.strip(), sources, cost
 
@@ -540,20 +744,47 @@ async def run_pipeline(
     step1_result = await _step1(question, neo4j_client)
     total_cost += step1_result["cost_usd"]
     concepts = step1_result["concepts"]
+    surface = step1_result["surface"]
+    deep = step1_result["deep"]
+    targeted = step1_result["targeted"]
     greek_terms_context = step1_result["greek_terms_context"]
     key_verses_context = step1_result["key_verses_context"]
 
     firewall_task = asyncio.create_task(_run_firewall(question))
 
-    # Step 2：检索
-    try:
-        passages = await _step2(question, es_client)
-    except Exception as e:
-        logger.error("[QA] Step2 检索失败: %s", e)
-        passages = []
+    # Step 2：定向查询 或 主路检索 + deep 概念扩展检索
+    passages = []
+    is_targeted = False
+    if targeted:
+        try:
+            targeted_passages = await _step2_targeted(
+                targeted["book_keyword"],
+                targeted["message_keyword"],
+                es_client,
+            )
+            if targeted_passages:
+                passages = targeted_passages
+                is_targeted = True
+                logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
+            else:
+                logger.info("[QA] 定向查询无结果，降级为语义检索")
+        except Exception as e:
+            logger.warning("[QA] 定向查询异常，降级为语义检索: %s", e)
 
-    # Step 3：相关性判断
-    relevant, step3_cost = await _step3(question, passages)
+    if not is_targeted:
+        try:
+            passages = await _step2_with_expansion(question, deep, es_client)
+        except Exception as e:
+            logger.error("[QA] Step2 检索失败: %s", e)
+            passages = []
+
+    # Step 3：相关性判断（定向查询命中时直接跳过）
+    if is_targeted:
+        relevant = True
+        step3_cost = 0.0
+        logger.info("[QA] 定向查询，跳过 Step3")
+    else:
+        relevant, step3_cost = await _step3(question, passages)
     total_cost += step3_cost
 
     if not relevant:

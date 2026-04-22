@@ -10,6 +10,7 @@
   "dependencies": {
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.4",
+    "marked": "^18.0.2",
     "pinia": "^3.0.4",
     "vue": "^3.4.0",
     "vue-router": "^4.3.0"

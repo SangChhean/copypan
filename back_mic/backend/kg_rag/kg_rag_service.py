@@ -96,11 +96,12 @@ def _make_cache_key(
     burden_description: str,
     audience: str,
     depth: str,
-    surface_joined: str = "",
-    deep_joined: str = "",
+    revelation_joined: str = "",
+    experience_joined: str = "",
+    practice_joined: str = "",
 ) -> str:
-    """query + outline_nature + burden_description + audience + depth + surface_joined + deep_joined 拼接 SHA256，返回 Redis key。"""
-    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{surface_joined}|{deep_joined}"
+    """query + outline_nature + burden_description + audience + depth + revelation_joined + experience_joined + practice_joined 拼接 SHA256，返回 Redis key。"""
+    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{revelation_joined}|{experience_joined}|{practice_joined}"
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"kg_rag:cache:{h}"
 
@@ -414,10 +415,10 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
     return {"scenario": "B", "candidates": [], "error": "解析失败"}
 
 
-def _parse_step1_layers(text: str) -> tuple[list[str], list[str], str]:
-    """解析 Step 1 返回的 JSON（含 reasoning、surface、deep）。reasoning 仅写入 Step1 结果，不传入 Step2。"""
+def _parse_step1_layers(text: str) -> tuple[list[str], list[str], list[str], str]:
+    """解析 Step 1 返回的 JSON（含 reasoning、revelation、experience、practice）。reasoning 仅写入 Step1 结果，不传入 Step2。"""
     if not text or not text.strip():
-        return ([], [], "")
+        return ([], [], [], "")
     s = text.strip()
     if s.startswith("```"):
         lines = s.split("\n")
@@ -433,14 +434,16 @@ def _parse_step1_layers(text: str) -> tuple[list[str], list[str], str]:
         recovered = _safe_parse_json(s)
         obj = recovered if recovered else None
     if not obj:
-        return ([], [], "")
+        return ([], [], [], "")
     r_raw = obj.get("reasoning", "")
     reasoning = str(r_raw).strip() if r_raw is not None else ""
-    surface_raw = obj.get("surface", [])
-    deep_raw = obj.get("deep", [])
-    surface = [str(x).strip() for x in surface_raw if str(x).strip()] if isinstance(surface_raw, list) else []
-    deep = [str(x).strip() for x in deep_raw if str(x).strip()] if isinstance(deep_raw, list) else []
-    return (surface[:5], deep[:10], reasoning)
+    revelation_raw = obj.get("revelation", [])
+    experience_raw = obj.get("experience", [])
+    practice_raw = obj.get("practice", [])
+    revelation = [str(x).strip() for x in revelation_raw if str(x).strip()] if isinstance(revelation_raw, list) else []
+    experience = [str(x).strip() for x in experience_raw if str(x).strip()] if isinstance(experience_raw, list) else []
+    practice = [str(x).strip() for x in practice_raw if str(x).strip()] if isinstance(practice_raw, list) else []
+    return (revelation[:6], experience[:3], practice[:3], reasoning)
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -788,17 +791,18 @@ class KgRagService:
     async def _run_step2(
         self,
         query: str,
-        surface: list[str],
-        deep: list[str],
+        revelation: list[str],
+        experience: list[str],
+        practice: list[str],
         normalized: list[str],
         p: dict,
         llm_calls: list[dict[str, Any]],
         burden_description: str = "",
     ) -> dict[str, Any]:
-        """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 仅为 deep 概念。"""
+        """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 为 Step1 三层概念并集。"""
         paths: list[dict] = []
         skeleton: list[str] | None = None
-        expanded_nodes = list(deep)
+        expanded_nodes = list(dict.fromkeys(revelation + experience + practice))
         graph_error: str | None = None
         llm_elapsed_ms_step2 = 0.0
         prompt_out: str | None = None
@@ -835,7 +839,7 @@ class KgRagService:
             }
 
         paths_text = _format_paths_text(paths)
-        key_verses_raw = self.neo4j.get_key_verses(surface + deep)
+        key_verses_raw = self.neo4j.get_key_verses(revelation + experience + practice)
         key_verses_text = _format_key_verses_text(key_verses_raw)
         logger.info(f"[KG-RAG DEBUG] Step2 key_verses_text:\n{key_verses_text}")
         bd = (burden_description or "").strip()
@@ -845,8 +849,9 @@ class KgRagService:
             query=query,
             outline_nature=outline_nature,
             intrinsic_burden_text=intrinsic_burden_text,
-            surface_json=json.dumps(surface, ensure_ascii=False),
-            deep_json=json.dumps(deep, ensure_ascii=False),
+            revelation_json=json.dumps(revelation, ensure_ascii=False),
+            experience_json=json.dumps(experience, ensure_ascii=False),
+            practice_json=json.dumps(practice, ensure_ascii=False),
             paths_text=paths_text,
             key_verses_text=key_verses_text,
         )
@@ -916,16 +921,22 @@ class KgRagService:
         }
 
         # ── Redis 缓存读取 ──
-        preset_surface = p.get("preset_surface") or []
-        preset_deep = p.get("preset_deep") or []
-        surface_joined = (
-            "|".join(sorted(str(c).strip() for c in preset_surface if str(c).strip()))
-            if isinstance(preset_surface, list)
+        preset_revelation = p.get("preset_revelation") or []
+        preset_experience = p.get("preset_experience") or []
+        preset_practice = p.get("preset_practice") or []
+        revelation_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_revelation if str(c).strip()))
+            if isinstance(preset_revelation, list)
             else ""
         )
-        deep_joined = (
-            "|".join(sorted(str(c).strip() for c in preset_deep if str(c).strip()))
-            if isinstance(preset_deep, list)
+        experience_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_experience if str(c).strip()))
+            if isinstance(preset_experience, list)
+            else ""
+        )
+        practice_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_practice if str(c).strip()))
+            if isinstance(preset_practice, list)
             else ""
         )
         cache_key = _make_cache_key(
@@ -934,8 +945,9 @@ class KgRagService:
             burden_description,
             audience,
             depth,
-            surface_joined,
-            deep_joined,
+            revelation_joined,
+            experience_joined,
+            practice_joined,
         )
         skip_cache = bool(p.get("skip_cache"))
         if self.redis and not skip_cache:
@@ -964,8 +976,9 @@ class KgRagService:
 
         # Step 1: 概念抽取（skip_skeleton_route 时与 Step2 一并跳过，不走路3 骨架时无需图谱概念）
         concepts = []
-        surface: list[str] = []
-        deep: list[str] = []
+        revelation: list[str] = []
+        experience: list[str] = []
+        practice: list[str] = []
         reasoning = ""
         step1_start = asyncio.get_event_loop().time()
         step1_elapsed_ms = 0.0
@@ -973,23 +986,37 @@ class KgRagService:
         u1: dict[str, int] | None = None
         m1 = _resolve_step1_model(p)
 
-        if isinstance(preset_surface, list) and isinstance(preset_deep, list) and preset_surface and preset_deep:
-            surface = [str(c) for c in preset_surface[:5]]
-            deep = [str(c) for c in preset_deep[:10]]
-            concepts = list(dict.fromkeys(surface + deep))
+        if (
+            isinstance(preset_revelation, list)
+            and isinstance(preset_experience, list)
+            and isinstance(preset_practice, list)
+            and preset_revelation
+            and preset_experience
+            and preset_practice
+        ):
+            revelation = [str(c) for c in preset_revelation[:6]]
+            experience = [str(c) for c in preset_experience[:3]]
+            practice = [str(c) for c in preset_practice[:3]]
+            concepts = list(dict.fromkeys(revelation + experience + practice))
             reasoning = "（人工指定概念，跳过 Step 1）"
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
             result["steps"]["step1"] = {
                 "concepts": concepts,
-                "surface": surface,
-                "deep": deep,
+                "revelation": revelation,
+                "experience": experience,
+                "practice": practice,
                 "reasoning": reasoning,
                 "elapsed_ms": round(step1_elapsed_ms, 1),
                 "raw_response": None,
                 "preset": True,
             }
             step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-            logger.info("[KG-RAG] Step 1 skipped: using preset surface=%s deep=%s", surface, deep)
+            logger.info(
+                "[KG-RAG] Step 1 skipped: using preset revelation=%s experience=%s practice=%s",
+                revelation,
+                experience,
+                practice,
+            )
         elif p.get("skip_skeleton_route"):
             logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
@@ -997,8 +1024,9 @@ class KgRagService:
                 "skipped": True,
                 "reason": "skip_skeleton_route",
                 "concepts": [],
-                "surface": [],
-                "deep": [],
+                "revelation": [],
+                "experience": [],
+                "practice": [],
                 "reasoning": "",
                 "elapsed_ms": round(step1_elapsed_ms, 1),
                 "raw_response": None,
@@ -1032,34 +1060,37 @@ class KgRagService:
                         f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
                         f"preview={(raw1 or '')[:300]}"
                     )
-                surface, deep, reasoning = _parse_step1_layers(raw1)
-                if not surface and not deep and (m1 or "").strip().lower() == "gpt-5.4-thinking":
+                revelation, experience, practice, reasoning = _parse_step1_layers(raw1)
+                if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
                     logger.info(
                         "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
                     )
                     raw1_fallback, u1_fallback = await _call_kg_rag_llm(
                         step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
                     )
-                    s_fb, d_fb, r_fb = _parse_step1_layers(raw1_fallback)
+                    r_fb, e_fb, p_fb, reason_fb = _parse_step1_layers(raw1_fallback)
                     logger.info(
                         f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
                         f"preview={(raw1_fallback or '')[:300]}"
                     )
-                    if s_fb or d_fb:
+                    if r_fb or e_fb or p_fb:
                         raw1, u1 = raw1_fallback, u1_fallback
-                        surface, deep, reasoning = s_fb, d_fb, r_fb
+                        revelation, experience, practice, reasoning = r_fb, e_fb, p_fb, reason_fb
                         m1 = "gpt-5.4"
                         logger.info(
-                            f"[KG-RAG DEBUG] Step1 fallback success: surface={surface}, deep={deep}"
+                            f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
                         )
                 step1_extract_elapsed_ms = (asyncio.get_event_loop().time() - step1_extract_start) * 1000
                 logger.info(
                     f"[KG-RAG DEBUG] Step1 extraction_parse elapsed_ms={step1_extract_elapsed_ms:.1f}"
                 )
-                logger.info(f"[KG-RAG DEBUG] Step 1 surface: {surface}, deep(校验前): {deep}, reasoning: {reasoning[:200] if reasoning else ''}")
+                logger.info(
+                    f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, experience(校验前): {experience}, "
+                    f"practice(校验前): {practice}, reasoning: {reasoning[:200] if reasoning else ''}"
+                )
                 concepts = []
                 seen = set()
-                for c in surface + deep:
+                for c in revelation + experience + practice:
                     if c not in seen:
                         seen.add(c)
                         concepts.append(c)
@@ -1069,8 +1100,9 @@ class KgRagService:
             if "step1" not in result["steps"]:
                 s1: dict[str, Any] = {
                     "concepts": concepts,
-                    "surface": surface,
-                    "deep": deep,
+                    "revelation": revelation,
+                    "experience": experience,
+                    "practice": practice,
                     "reasoning": reasoning,
                     "elapsed_ms": round(step1_elapsed_ms, 1),
                     "raw_response": raw1,
@@ -1102,7 +1134,7 @@ class KgRagService:
                 "paths": [],
                 "paths_count": 0,
                 "skeleton": None,
-                "expanded_nodes": list(deep),
+                "expanded_nodes": list(dict.fromkeys(revelation + experience + practice)),
                 "elapsed_ms": 0.0,
             }
             result["steps"]["step3"] = {
@@ -1171,8 +1203,9 @@ class KgRagService:
             t0 = asyncio.get_event_loop().time()
             s2 = await self._run_step2(
                 query,
-                surface,
-                deep,
+                revelation,
+                experience,
+                practice,
                 normalized,
                 p,
                 llm_calls,
@@ -1187,7 +1220,7 @@ class KgRagService:
             step2_end = asyncio.get_event_loop().time()
             paths = []
             skeleton = None
-            expanded_nodes = list(deep)
+            expanded_nodes = list(dict.fromkeys(revelation + experience + practice))
             step2_body = {
                 "paths": [],
                 "paths_count": 0,
@@ -1468,7 +1501,7 @@ class KgRagService:
 
         if skeleton:
             skeleton_with_chunks = _build_skeleton_bound_prompt_block(
-                skeleton, expanded_results, deep, main_results,
+                skeleton, expanded_results, list(dict.fromkeys(revelation + experience + practice)), main_results,
             )
             ctx_head = skeleton_with_chunks[:500] if len(skeleton_with_chunks) > 500 else skeleton_with_chunks
             logger.info(
@@ -1547,8 +1580,9 @@ class KgRagService:
                 llm_usage = result.get("llm_usage") or {}
                 cache_value = {
                     "answer": result["answer"],
-                    "surface": step1_data.get("surface", []),
-                    "deep": step1_data.get("deep", []),
+                    "revelation": step1_data.get("revelation", []),
+                    "experience": step1_data.get("experience", []),
+                    "practice": step1_data.get("practice", []),
                     "reasoning": step1_data.get("reasoning", ""),
                     "skeleton": (result["steps"].get("step2") or {}).get("skeleton"),
                     "main_sources": _extract_main_sources(step3_data.get("main_results") or []),

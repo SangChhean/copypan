@@ -244,7 +244,7 @@ class ExtractConceptsRequest(BaseModel):
 
 @router.post("/extract_concepts", dependencies=[Depends(test_token)])
 async def extract_concepts(req: ExtractConceptsRequest):
-    """独立执行 Step 1 概念抽取，返回 surface + deep 候选列表，供人工筛选。"""
+    """独立执行 Step 1 概念抽取，返回 revelation / experience / practice 候选列表，供人工筛选。"""
     service = get_service()
     try:
         result = await service.full_query(req.query, {
@@ -256,8 +256,9 @@ async def extract_concepts(req: ExtractConceptsRequest):
         })
         s1 = (result.get("steps") or {}).get("step1") or {}
         return {
-            "surface": s1.get("surface", []),
-            "deep_candidates": s1.get("deep", []),
+            "revelation": s1.get("revelation", []),
+            "experience": s1.get("experience", []),
+            "practice": s1.get("practice", []),
             "reasoning": s1.get("reasoning", ""),
         }
     except Exception as e:

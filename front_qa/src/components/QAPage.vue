@@ -61,11 +61,14 @@
               <div v-if="item.sources && item.sources.length" class="qa-sources">
                 <div class="qa-sources-title">引用书目</div>
                 <div class="qa-sources-list">
-                  <span
-                    v-for="src in item.sources"
+                  <div
+                    v-for="(src, idx) in item.sources"
                     :key="src"
-                    class="qa-source-tag"
-                  >{{ src }}</span>
+                    class="qa-source-item"
+                  >
+                    <span class="qa-source-idx">{{ idx + 1 }}</span>
+                    <span class="qa-source-name">{{ src }}</span>
+                  </div>
                 </div>
               </div>
 
@@ -114,6 +117,7 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import axios from 'axios'
+import { marked } from 'marked'
 
 const question = ref('')
 const loading = ref(false)
@@ -133,10 +137,10 @@ function fillExample(ex) {
 
 function renderAnswer(text) {
   if (!text) return ''
-  // 将【引用书目】之前的正文部分取出，换行转 <br>
+  // 取【引用书目】之前的正文部分，用 marked 渲染 Markdown
   const parts = text.split('【引用书目】')
   const body = parts[0].trim()
-  return body.replace(/\n/g, '<br>')
+  return marked.parse(body)
 }
 
 async function submit() {
@@ -350,14 +354,30 @@ async function scrollToBottom() {
   font-weight: 600;
   letter-spacing: 0.05em;
 }
-.qa-sources-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.qa-source-tag {
-  font-size: 12px;
-  padding: 2px 10px;
-  border-radius: 12px;
-  background: #f5f0e8;
+.qa-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.qa-source-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+  &:last-child { border-bottom: none; }
+}
+.qa-source-idx {
+  flex-shrink: 0;
+  font-size: 11px;
   color: var(--color-primary);
-  border: 1px solid #e8dcc8;
+  font-weight: 600;
+  min-width: 16px;
+}
+.qa-source-name {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 /* 元信息 */

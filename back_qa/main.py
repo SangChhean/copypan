@@ -23,6 +23,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse as _JSONResponse
 
 from back_qa.qa.qa_router import router as qa_router
 from back_qa.qa.dependencies import get_neo4j_client
@@ -69,6 +71,23 @@ def _utcnow() -> str:
 
 app = FastAPI(title="职事信息问答系统", version="1.0.0", lifespan=lifespan)
 
+
+class TimeoutMiddleware(BaseHTTPMiddleware):
+    """单次请求最长 90 秒，超时返回 504。"""
+
+    async def dispatch(self, request, call_next):
+        import asyncio as _asyncio
+
+        try:
+            return await _asyncio.wait_for(call_next(request), timeout=90.0)
+        except _asyncio.TimeoutError:
+            return _JSONResponse(
+                status_code=504,
+                content={"detail": "请求超时，请稍后重试"},
+            )
+
+
+app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
