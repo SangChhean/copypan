@@ -393,7 +393,8 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
     if "候选一" in text:
         candidates: list[str] = []
         for label in ("候选一", "候选二", "候选三"):
-            pat = rf"{re.escape(label)}[：:]\s*(.+?)(?=\n\s*候选[一二三][：:]|$)"
+            # 候选一：… 或 候选一（侧重…）：…
+            pat = rf"{re.escape(label)}(?:（侧重[^）]*）)?[：:]\s*(.+?)(?=\n\s*候选[一二三]|$)"
             m = re.search(pat, text, re.DOTALL)
             if m:
                 candidates.append(re.sub(r"\s+", " ", m.group(1).strip()))

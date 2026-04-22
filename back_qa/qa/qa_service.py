@@ -1,0 +1,623 @@
+# -*- coding: utf-8 -*-
+"""
+QA 四步流水线核心逻辑。
+
+Step 1: 概念抽取（Opus）→ greek_terms + key_verses
+Step 2: BM25 + Dense → RRF → Reranker
+Step 3: 相关性判断（Haiku）
+Step 4: 答案生成（Sonnet，temp=0.3）
+
+Firewall 在 Step 1 完成后并发发起，Step 3 通过后 await。
+"""
+import asyncio
+import hashlib
+import json
+import logging
+import os
+import re
+import sys
+import threading
+import time
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger("qa")
+
+# Anthropic 同步客户端非线程安全：并行 Step1 与 Firewall 时须串行化 messages.create
+_claude_thread_lock = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# 模型常量
+# ---------------------------------------------------------------------------
+# Step1 默认 Sonnet：Opus 对长词表 + JSON 任务可能 stop=refusal 且无正文；可用 QA_STEP1_MODEL=claude-opus-4-6 覆盖
+STEP1_MODEL = os.environ.get("QA_STEP1_MODEL", "claude-sonnet-4-6")
+STEP3_MODEL = "claude-haiku-4-5-20251001"
+STEP4_MODEL = "claude-sonnet-4-6"
+
+# 检索参数
+BM25_TOP_K = 30
+DENSE_TOP_K = 30
+RRF_K = 60
+RERANK_TOP_N = 20
+
+# ES 索引（复用 KG-RAG 现有索引）
+QA_INDEX = os.environ.get("QA_ES_INDEX", "kg-rag_cwwl")
+
+# ---------------------------------------------------------------------------
+# LLM 客户端（复用 back_mic 的 CLAUDE_API_KEY）
+# ---------------------------------------------------------------------------
+
+def _get_claude_client():
+    """懒加载 Claude 同步客户端。"""
+    api_key = os.environ.get("CLAUDE_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("未配置 CLAUDE_API_KEY")
+    import anthropic
+    return anthropic.Anthropic(api_key=api_key)
+
+
+def _claude_message_text(message: Any) -> str:
+    """拼接 Messages API 中所有 type==text 的块（与 ai_search.ai_service._claude_message_text 一致）。"""
+    if not message or not getattr(message, "content", None):
+        return ""
+    parts: list[str] = []
+    for block in message.content:
+        btype = getattr(block, "type", None)
+        if btype == "text":
+            t = getattr(block, "text", None)
+            if isinstance(t, str) and t.strip():
+                parts.append(t)
+        elif isinstance(block, dict) and block.get("type") == "text":
+            t = block.get("text")
+            if isinstance(t, str) and t.strip():
+                parts.append(t)
+    out = "\n".join(parts).strip()
+    if out:
+        return out
+    # 回退：首块 .text（兼容仅一块或非标准 SDK 表示）
+    try:
+        b0 = message.content[0]
+        t0 = getattr(b0, "text", None) if not isinstance(b0, dict) else b0.get("text")
+        if isinstance(t0, str) and t0.strip():
+            return t0.strip()
+    except (IndexError, TypeError):
+        pass
+    return ""
+
+
+async def _call_llm(
+    prompt: str,
+    model: str,
+    temperature: float = 0.0,
+    max_tokens: int = 1024,
+    system: str = "你是一位专业、精确的助手。请严格按要求的格式输出。",
+) -> tuple[str, Any]:
+    """异步调用 Claude（asyncio.to_thread 包同步 SDK）。返回 (text, usage)。"""
+    client = _get_claude_client()
+
+    def _sync():
+        kwargs = dict(
+            model=model,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        # Opus 4.7+ 不支持 temperature 参数
+        if not model.startswith("claude-opus-4-7"):
+            kwargs["temperature"] = temperature
+        with _claude_thread_lock:
+            return client.messages.create(**kwargs)
+
+    try:
+        msg = await asyncio.to_thread(_sync)
+        text = _claude_message_text(msg)
+        if not text:
+            blocks = getattr(msg, "content", None) or []
+            logger.warning(
+                "[QA] Claude 返回空文本 model=%s stop=%s block_types=%s",
+                model,
+                getattr(msg, "stop_reason", None),
+                [getattr(b, "type", type(b).__name__) for b in blocks],
+            )
+        usage = getattr(msg, "usage", None)
+        return text, usage
+    except Exception as e:
+        logger.error("[QA] LLM 调用失败 model=%s: %s", model, e)
+        raise
+
+
+# ---------------------------------------------------------------------------
+# 费用计算
+# ---------------------------------------------------------------------------
+
+# 美元每百万 token（输入/输出）
+_PRICING: dict[str, tuple[float, float]] = {
+    "claude-opus-4-6":           (5.0,  25.0),
+    "claude-opus-4-7":           (5.0,  25.0),
+    "claude-sonnet-4-6":         (3.0,   15.0),
+    "claude-haiku-4-5-20251001": (1.0,   5.0),
+}
+
+def _calc_cost(model: str, usage: Any) -> float:
+    """根据 usage 对象计算费用（美元）。"""
+    if usage is None:
+        return 0.0
+    input_tokens = getattr(usage, "input_tokens", 0) or 0
+    output_tokens = getattr(usage, "output_tokens", 0) or 0
+    in_price, out_price = _PRICING.get(model, (3.0, 15.0))
+    return round(
+        input_tokens * in_price / 1_000_000 + output_tokens * out_price / 1_000_000,
+        6,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 缓存
+# ---------------------------------------------------------------------------
+
+def _make_cache_key(question: str) -> str:
+    from back_shared.version_manifest import PROMPT_VERSION, MODEL_PROFILE, FIREWALL_RULES_VERSION
+    raw = f"{question}|{PROMPT_VERSION}|{MODEL_PROFILE}|{FIREWALL_RULES_VERSION}"
+    h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    prefix = os.environ.get("QA_REDIS_PREFIX", "qa:cache:")
+    return f"{prefix}{h}"
+
+
+def _read_cache(redis_client, key: str) -> dict | None:
+    if redis_client is None:
+        return None
+    try:
+        raw = redis_client.get(key)
+        if raw:
+            return json.loads(raw)
+    except Exception as e:
+        logger.warning("[QA] 缓存读取失败: %s", e)
+    return None
+
+
+def _write_cache(redis_client, key: str, value: dict) -> None:
+    if redis_client is None:
+        return
+    try:
+        ttl = int(os.environ.get("QA_CACHE_TTL", "259200"))
+        redis_client.setex(key, ttl, json.dumps(value, ensure_ascii=False))
+    except Exception as e:
+        logger.warning("[QA] 缓存写入失败: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# 监控写入
+# ---------------------------------------------------------------------------
+
+_MONITOR_KEY = "qa:monitor:records"
+_MONITOR_MAX = 1000  # 最多保留最近 N 条
+
+
+def _write_monitor(redis_client, record: dict) -> None:
+    if redis_client is None:
+        return
+    try:
+        import time as _time
+        record["ts"] = _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime())
+        redis_client.lpush(_MONITOR_KEY, json.dumps(record, ensure_ascii=False))
+        redis_client.ltrim(_MONITOR_KEY, 0, _MONITOR_MAX - 1)
+    except Exception as e:
+        logger.warning("[QA] 监控写入失败: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# JSON 解析工具
+# ---------------------------------------------------------------------------
+
+def _safe_parse_json(text: str) -> dict | None:
+    """尽力解析 LLM 输出的 JSON，去除 markdown 代码块；支持首尾多余文字。"""
+    if not text:
+        return None
+    s = text.strip()
+    # 去除 ```json ... ``` 或 ``` ... ```（可多行）
+    s = re.sub(r"^```(?:json)?\s*", "", s, count=1)
+    s = re.sub(r"\s*```\s*$", "", s, count=1)
+    s = s.strip()
+    try:
+        obj = json.loads(s)
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        pass
+    # 从首个 { 起用 raw_decode 解析单个对象（忽略尾部杂质）
+    i = s.find("{")
+    if i >= 0:
+        try:
+            obj, _end = json.JSONDecoder().raw_decode(s[i:])
+            return obj if isinstance(obj, dict) else None
+        except json.JSONDecodeError:
+            pass
+    i2 = s.find("{")
+    last = s.rfind("}")
+    if i2 >= 0 and last > i2:
+        try:
+            obj = json.loads(s[i2 : last + 1])
+            return obj if isinstance(obj, dict) else None
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Firewall（直接调用 back_mic 的 firewall 模块）
+# ---------------------------------------------------------------------------
+
+def _ensure_backend_on_path() -> Path:
+    """back_qa 运行时使 back_mic/backend 可被 import（kg_rag.firewall）。"""
+    root = Path(__file__).resolve().parents[2]
+    backend = root / "back_mic" / "backend"
+    s = str(backend)
+    if s not in sys.path:
+        sys.path.insert(0, s)
+    return backend
+
+
+def _load_firewall():
+    """加载防火墙数据（复用 back_mic kg_rag firewall）。"""
+    try:
+        _ensure_backend_on_path()
+        from kg_rag.firewall import load_firewall, match_firewall
+        load_firewall()
+        return match_firewall
+    except Exception as e:
+        logger.warning("[QA] Firewall 加载失败，跳过: %s", e)
+        return None
+
+
+_match_firewall_fn = None  # 延迟初始化
+
+
+async def _run_firewall(question: str) -> dict | None:
+    """运行防火墙匹配，失败时静默返回 None。"""
+    global _match_firewall_fn
+    if _match_firewall_fn is None:
+        _match_firewall_fn = _load_firewall()
+    if _match_firewall_fn is None:
+        return None
+    try:
+        return await _match_firewall_fn(question, _call_llm)
+    except Exception as e:
+        logger.warning("[QA] Firewall 执行失败: %s", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Step 1：概念抽取
+# ---------------------------------------------------------------------------
+
+async def _step1(question: str, neo4j_client) -> dict:
+    """
+    返回：{
+        concepts: list[str],
+        greek_terms_context: str,   # 注入 Step 4 Prompt 的希腊原文段落
+        key_verses_context: str,    # 注入 Step 4 Prompt 的关键经文段落
+        cost_usd: float,
+    }
+    """
+    from back_qa.qa.prompts import STEP1_CONCEPT_EXTRACTION
+
+    concept_names = neo4j_client.get_concept_names()
+    concept_list = "\n".join(f"- {name}" for name in concept_names) if concept_names else "（词表暂不可用）"
+
+    prompt = STEP1_CONCEPT_EXTRACTION.format(
+        question=question,
+        concept_list=concept_list,
+    )
+
+    try:
+        raw, usage = await _call_llm(prompt, STEP1_MODEL, temperature=0, max_tokens=512)
+        cost = _calc_cost(STEP1_MODEL, usage)
+    except Exception as e:
+        logger.warning("[QA] Step1 LLM 失败，降级为空概念: %s", e)
+        return {"concepts": [], "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0}
+
+    logger.info("[QA] Step1 raw_len=%s", len(raw or ""))
+    parsed = _safe_parse_json(raw)
+    concepts: list[str] = []
+    if parsed:
+        raw_concepts = parsed.get("concepts", [])
+        if isinstance(raw_concepts, list):
+            concepts = [str(c).strip() for c in raw_concepts if str(c).strip()][:5]
+
+    logger.info("[QA] Step1 识别概念: %s", concepts)
+
+    # 从 Neo4j 取 greek_terms 与 key_verses
+    greek_terms_context = ""
+    key_verses_context = ""
+
+    if concepts:
+        try:
+            greek_map = neo4j_client.get_greek_terms(concepts)
+            if greek_map:
+                lines = [f"- {c}：{g}" for c, g in greek_map.items()]
+                greek_terms_context = "\n【相关原文参考】\n" + "\n".join(lines) + "\n"
+        except Exception as e:
+            logger.warning("[QA] get_greek_terms 失败: %s", e)
+
+        try:
+            verses_map = neo4j_client.get_key_verses(concepts)
+            if verses_map:
+                lines = []
+                for concept, verse_list in verses_map.items():
+                    for sid, stext in verse_list[:3]:  # 每概念最多 3 条经文
+                        lines.append(f"- {sid}：{stext}")
+                if lines:
+                    key_verses_context = "\n【相关关键经文】\n" + "\n".join(lines) + "\n"
+        except Exception as e:
+            logger.warning("[QA] get_key_verses 失败: %s", e)
+
+    return {
+        "concepts": concepts,
+        "greek_terms_context": greek_terms_context,
+        "key_verses_context": key_verses_context,
+        "cost_usd": cost,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Step 2：文献检索
+# ---------------------------------------------------------------------------
+
+async def _step2(question: str, es_client) -> list[dict]:
+    """BM25 + Dense → RRF → Reranker，返回精排后段落列表。"""
+    import back_shared.retrieval as retrieval
+
+    index = QA_INDEX
+
+    bm25_task = retrieval.bm25_search(es_client, question, index, top_k=BM25_TOP_K)
+    dense_task = retrieval.dense_search(es_client, question, index, top_k=DENSE_TOP_K)
+
+    bm25_results, dense_results = await asyncio.gather(bm25_task, dense_task)
+    logger.info("[QA] Step2 BM25=%d Dense=%d", len(bm25_results), len(dense_results))
+
+    merged = await retrieval.rrf_merge(bm25_results, dense_results, k=RRF_K)
+    reranked = await retrieval.rerank(merged, question, top_n=RERANK_TOP_N)
+    logger.info("[QA] Step2 reranked=%d", len(reranked))
+
+    return reranked
+
+
+# ---------------------------------------------------------------------------
+# Step 3：相关性判断
+# ---------------------------------------------------------------------------
+
+async def _step3(question: str, passages: list[dict]) -> tuple[bool, float]:
+    """
+    返回 (relevant: bool, cost_usd: float)。
+    relevant=False 时调用方写入 step_fail_stage 监控并返回「未找到」。
+    """
+    from back_qa.qa.prompts import STEP3_RELEVANCE_CHECK
+
+    # 构建段落摘要（每段最多 200 字）
+    passage_lines = []
+    for i, p in enumerate(passages[:10], 1):
+        text = (p.get("text") or "").strip()[:200]
+        book = p.get("book_title", "")
+        passage_lines.append(f"[{i}] {book}\n{text}")
+    passages_text = "\n---\n".join(passage_lines) if passage_lines else "（无检索结果）"
+
+    prompt = STEP3_RELEVANCE_CHECK.format(
+        question=question,
+        passages=passages_text,
+    )
+
+    try:
+        raw, usage = await _call_llm(prompt, STEP3_MODEL, temperature=0, max_tokens=512)
+        cost = _calc_cost(STEP3_MODEL, usage)
+    except Exception as e:
+        logger.warning("[QA] Step3 LLM 失败，默认 relevant=True: %s", e)
+        return True, 0.0
+
+    parsed = _safe_parse_json(raw)
+    if parsed is None:
+        logger.warning("[QA] Step3 JSON 解析失败，默认 relevant=True，raw=%s", raw[:200])
+        logger.info("[QA] Step3 relevant=True reason=(parse_fallback)")
+        return True, cost
+
+    relevant = bool(parsed.get("relevant", True))
+    logger.info("[QA] Step3 relevant=%s reason=%s", relevant, parsed.get("reason", ""))
+    return relevant, cost
+
+
+# ---------------------------------------------------------------------------
+# Step 4：答案生成
+# ---------------------------------------------------------------------------
+
+async def _step4(
+    question: str,
+    passages: list[dict],
+    greek_terms_context: str,
+    key_verses_context: str,
+    firewall_doc: dict | None,
+) -> tuple[str, list[str], float]:
+    """
+    返回 (answer: str, sources: list[str], cost_usd: float)。
+    sources 从答案中的【引用书目】块提取。
+    """
+    from back_qa.qa.prompts import STEP4_ANSWER_GENERATION, FIREWALL_INSTRUCTION
+
+    # 构建段落文本
+    passage_lines = []
+    for p in passages:
+        chunk_id = p.get("chunk_id", "")
+        book = p.get("book_title", "")
+        msg = p.get("message_number", "")
+        msg_title = p.get("message_title", "")
+        text = (p.get("text") or "").strip()
+        header = f"[{chunk_id}] {book}"
+        if msg:
+            header += f" 第{msg}篇"
+        if msg_title:
+            header += f" {msg_title}"
+        passage_lines.append(f"{header}\n{text}")
+    passages_text = "\n---\n".join(passage_lines)
+
+    # Firewall 指示
+    firewall_instruction = ""
+    if firewall_doc:
+        firewall_instruction = FIREWALL_INSTRUCTION.format(
+            fw_title=firewall_doc.get("title", ""),
+            fw_note=firewall_doc.get("note", ""),
+        )
+
+    prompt = STEP4_ANSWER_GENERATION.format(
+        question=question,
+        passages=passages_text,
+        greek_context=greek_terms_context,
+        verse_context=key_verses_context,
+        firewall_instruction=firewall_instruction,
+    )
+
+    raw, usage = await _call_llm(
+        prompt, STEP4_MODEL,
+        temperature=0.3,
+        max_tokens=2048,
+        system="你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。",
+    )
+    cost = _calc_cost(STEP4_MODEL, usage)
+
+    # 提取引用书目
+    sources: list[str] = []
+    if "【引用书目】" in raw:
+        bib_block = raw.split("【引用书目】", 1)[1]
+        for line in bib_block.splitlines():
+            line = line.strip().lstrip("·").strip()
+            if line.startswith("《") and "》" in line:
+                title = line[:line.index("》") + 1]
+                if title not in sources:
+                    sources.append(title)
+
+    return raw.strip(), sources, cost
+
+
+# ---------------------------------------------------------------------------
+# 主入口
+# ---------------------------------------------------------------------------
+
+async def run_pipeline(
+    question: str,
+    skip_cache: bool,
+    request_id: str,
+    app,
+) -> dict:
+    """四步流水线主入口。"""
+    start = time.monotonic()
+
+    from back_qa.qa.dependencies import get_es_client, get_redis_client
+    neo4j_client = app.state.neo4j_client
+    es_client = get_es_client()
+    redis_client = get_redis_client()
+
+    # 缓存查询
+    cache_key = _make_cache_key(question)
+    if not skip_cache:
+        cached = _read_cache(redis_client, cache_key)
+        if cached:
+            logger.info("[QA] 缓存命中 request_id=%s", request_id)
+            cached["cache_hit"] = True
+            cached["request_id"] = request_id
+            _write_monitor(redis_client, {
+                "request_id": request_id,
+                "question": question,
+                "cache_hit": True,
+                "found": cached.get("found", False),
+            })
+            return cached
+
+    total_cost = 0.0
+
+    # Step 1 先完成；随后与 Step 2 并行发起 Firewall（避免与 Step1 争抢同一 Claude 客户端）
+    step1_result = await _step1(question, neo4j_client)
+    total_cost += step1_result["cost_usd"]
+    concepts = step1_result["concepts"]
+    greek_terms_context = step1_result["greek_terms_context"]
+    key_verses_context = step1_result["key_verses_context"]
+
+    firewall_task = asyncio.create_task(_run_firewall(question))
+
+    # Step 2：检索
+    try:
+        passages = await _step2(question, es_client)
+    except Exception as e:
+        logger.error("[QA] Step2 检索失败: %s", e)
+        passages = []
+
+    # Step 3：相关性判断
+    relevant, step3_cost = await _step3(question, passages)
+    total_cost += step3_cost
+
+    if not relevant:
+        firewall_task.cancel()
+        try:
+            await firewall_task
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            pass
+        # 未找到分支
+        elapsed = int((time.monotonic() - start) * 1000)
+        _write_monitor(redis_client, {
+            "request_id": request_id,
+            "question": question,
+            "cache_hit": False,
+            "found": False,
+            "step_fail_stage": "step3",
+            "total_elapsed_ms": elapsed,
+            "total_cost_usd": round(total_cost, 4),
+        })
+        result = {
+            "request_id": request_id,
+            "answer": "以下内容未能在职事信息中找到相关依据。",
+            "sources": [],
+            "concepts": concepts,
+            "found": False,
+            "cache_hit": False,
+            "total_elapsed_ms": elapsed,
+            "total_cost_usd": round(total_cost, 4),
+        }
+        _write_cache(redis_client, cache_key, result)
+        return result
+
+    # Firewall await（Step 3 通过后）
+    firewall_doc = await firewall_task
+
+    # Step 4：答案生成
+    try:
+        answer, sources, step4_cost = await _step4(
+            question, passages, greek_terms_context, key_verses_context, firewall_doc
+        )
+        total_cost += step4_cost
+    except Exception as e:
+        logger.error("[QA] Step4 生成失败: %s", e)
+        answer = "答案生成失败，请稍后重试。"
+        sources = []
+
+    elapsed = int((time.monotonic() - start) * 1000)
+
+    result = {
+        "request_id": request_id,
+        "answer": answer,
+        "sources": sources,
+        "concepts": concepts,
+        "found": True,
+        "cache_hit": False,
+        "total_elapsed_ms": elapsed,
+        "total_cost_usd": round(total_cost, 4),
+    }
+
+    # 写缓存与监控
+    _write_cache(redis_client, cache_key, result)
+    _write_monitor(redis_client, {
+        "request_id": request_id,
+        "question": question,
+        "cache_hit": False,
+        "found": True,
+        "total_elapsed_ms": elapsed,
+        "total_cost_usd": round(total_cost, 4),
+    })
+
+    return result
