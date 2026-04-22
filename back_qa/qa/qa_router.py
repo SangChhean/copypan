@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """QA 路由：输入校验、request_id 处理、健康检查。"""
+import json
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -118,3 +120,77 @@ async def query(req: QueryRequest, request: Request):
         app=request.app,
     )
     return QueryResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# 管理接口（需 X-Admin-Token 验证）
+# ---------------------------------------------------------------------------
+
+
+def _check_admin(request: Request):
+    """简单 token 验证，从环境变量 QA_ADMIN_TOKEN 读取。未配置时拒绝所有请求。"""
+    token = os.environ.get("QA_ADMIN_TOKEN", "")
+    if not token:
+        raise HTTPException(status_code=503, detail="管理接口未配置 QA_ADMIN_TOKEN")
+    provided = request.headers.get("X-Admin-Token", "")
+    if provided != token:
+        raise HTTPException(status_code=401, detail="无效的管理员 Token")
+
+
+@router.post("/cache/clear")
+async def cache_clear(request: Request):
+    """清理所有 qa:cache:* 缓存，返回删除条数。"""
+    _check_admin(request)
+    from back_qa.qa.dependencies import get_redis_client
+
+    r = get_redis_client()
+    if r is None:
+        raise HTTPException(status_code=503, detail="Redis 不可用")
+    prefix = os.environ.get("QA_REDIS_PREFIX", "qa:cache:")
+    keys = r.keys(f"{prefix}*")
+    deleted = 0
+    if keys:
+        deleted = r.delete(*keys)
+    return {"deleted": deleted, "prefix": prefix}
+
+
+@router.get("/stats")
+async def stats(request: Request):
+    """查看用量与监控统计。"""
+    _check_admin(request)
+    from back_qa.qa.dependencies import get_redis_client
+    from back_qa.qa.qa_service import _MONITOR_KEY
+
+    r = get_redis_client()
+    if r is None:
+        raise HTTPException(status_code=503, detail="Redis 不可用")
+
+    raw_records = r.lrange(_MONITOR_KEY, 0, -1)
+    records = []
+    for raw in raw_records:
+        try:
+            records.append(json.loads(raw))
+        except Exception:
+            pass
+
+    total = len(records)
+    cache_hits = sum(1 for rec in records if rec.get("cache_hit"))
+    found_non_cache = [rec for rec in records if not rec.get("cache_hit")]
+    found_count = sum(1 for rec in found_non_cache if rec.get("found"))
+    step_fail = [rec for rec in found_non_cache if not rec.get("found")]
+
+    total_cost = sum(rec.get("total_cost_usd", 0) for rec in found_non_cache)
+    avg_elapsed = (
+        sum(rec.get("total_elapsed_ms", 0) for rec in found_non_cache) / len(found_non_cache)
+        if found_non_cache
+        else 0
+    )
+
+    return {
+        "total_requests": total,
+        "cache_hit_rate": round(cache_hits / total, 4) if total else 0,
+        "found_rate_new": round(found_count / len(found_non_cache), 4) if found_non_cache else 0,
+        "total_cost_usd": round(total_cost, 4),
+        "avg_elapsed_ms": round(avg_elapsed),
+        "step_fail_records": step_fail[-20:],  # 最近 20 条未找到记录
+    }

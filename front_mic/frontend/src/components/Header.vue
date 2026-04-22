@@ -59,7 +59,7 @@ watch(selectedIndex, () => {
 <template>
   <a-affix :offset-top="0" v-if="showMobile">
     <div id="header_mobile">
-      <a-menu v-model:selectedKeys="selectedIndex" mode="horizontal" class="menu">
+      <a-menu v-model:selectedKeys="selectedIndex" mode="horizontal" class="menu" :disabled-overflow="true">
         <a-menu-item key="0"><span id="logo">Pansearch-ai</span></a-menu-item>
         <a-menu-item v-for="item in items_mo" :key="item.key" v-text="item.label"></a-menu-item>
       </a-menu>
@@ -67,7 +67,7 @@ watch(selectedIndex, () => {
   </a-affix>
 
   <div id="header" v-else>
-    <a-menu v-model:selectedKeys="selectedIndex" mode="horizontal" class="menu">
+    <a-menu v-model:selectedKeys="selectedIndex" mode="horizontal" class="menu" :disabled-overflow="true">
       <a-menu-item key="0"><span id="logo">Pansearch-ai</span></a-menu-item>
       <a-menu-item v-for="item in items" :key="item.key" v-text="item.label"></a-menu-item>
     </a-menu>

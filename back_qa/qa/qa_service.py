@@ -29,8 +29,8 @@ _claude_thread_lock = threading.Lock()
 # ---------------------------------------------------------------------------
 # 模型常量
 # ---------------------------------------------------------------------------
-# Step1 默认 Sonnet：Opus 对长词表 + JSON 任务可能 stop=refusal 且无正文；可用 QA_STEP1_MODEL=claude-opus-4-6 覆盖
-STEP1_MODEL = os.environ.get("QA_STEP1_MODEL", "claude-sonnet-4-6")
+# Step1 与设计方案一致默认 Opus；长词表偶发 refusal 可观察日志；可用 QA_STEP1_MODEL 临时覆盖
+STEP1_MODEL = os.environ.get("QA_STEP1_MODEL", "claude-opus-4-6")
 STEP3_MODEL = "claude-haiku-4-5-20251001"
 STEP4_MODEL = "claude-sonnet-4-6"
 
@@ -309,7 +309,13 @@ async def _step1(question: str, neo4j_client) -> dict:
     )
 
     try:
-        raw, usage = await _call_llm(prompt, STEP1_MODEL, temperature=0, max_tokens=512)
+        raw, usage = await _call_llm(
+            prompt,
+            STEP1_MODEL,
+            temperature=0,
+            max_tokens=512,
+            system="你是一位深研圣经与职事文献的神学助手。请严格按要求的格式输出 JSON，不输出其他内容。",
+        )
         cost = _calc_cost(STEP1_MODEL, usage)
     except Exception as e:
         logger.warning("[QA] Step1 LLM 失败，降级为空概念: %s", e)
