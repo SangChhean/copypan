@@ -4,22 +4,27 @@
     <header class="qa-header">
       <div class="qa-header-inner">
         <div class="qa-logo">
-          <span class="qa-logo-icon">📖</span>
           <span class="qa-logo-text">职事信息问答</span>
         </div>
-        <div class="qa-header-actions">
-          <span class="qa-user">当前用户：{{ currentUsername || '未登录' }}</span>
-          <a class="qa-admin-link" href="#/admin">管理后台</a>
-          <a-button size="small" @click="logout">退出登录</a-button>
-        </div>
+        <a-dropdown placement="bottomRight">
+          <a-avatar class="qa-user-avatar">{{ avatarText }}</a-avatar>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item disabled>{{ currentUsername || '未登录' }}</a-menu-item>
+              <a-menu-divider />
+              <a-menu-item @click="goAdmin">管理后台</a-menu-item>
+              <a-menu-item class="qa-logout-item" @click="logout">退出登录</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </div>
     </header>
 
     <!-- 主体：对话区可滚动 -->
     <main class="qa-main" ref="historyRef">
       <div v-if="messages.length === 0" class="qa-welcome">
-        <div class="qa-welcome-title">以自然语言提问</div>
-        <div class="qa-welcome-sub">从职事信息中寻找答案</div>
+        <div class="qa-welcome-title">真理必叫你们得以自由</div>
+        <div class="qa-welcome-sub">The truth shall set you free</div>
         <div class="qa-example-list">
           <div
             v-for="ex in examples"
@@ -139,6 +144,12 @@ const examples = [
 
 function fillExample(ex) {
   question.value = ex
+}
+
+const avatarText = (currentUsername.value || '?').slice(0, 1).toUpperCase()
+
+function goAdmin() {
+  router.push('/admin')
 }
 
 function logout() {
@@ -273,7 +284,7 @@ async function scrollToBottom() {
   background: var(--color-surface);
 }
 .qa-header-inner {
-  max-width: 760px;
+  max-width: min(860px, 90vw);
   margin: 0 auto;
   padding: 14px 24px;
   display: flex;
@@ -285,27 +296,20 @@ async function scrollToBottom() {
   align-items: center;
   gap: 8px;
 }
-.qa-logo-icon { font-size: 20px; }
 .qa-logo-text {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 400;
   color: var(--color-primary);
   letter-spacing: 0.05em;
+  font-family: 'KaiTi', 'Kaiti SC', 'STKaiti', serif;
 }
-.qa-admin-link {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  &:hover { color: var(--color-primary); }
+.qa-user-avatar {
+  cursor: pointer;
+  background-color: #8b6914;
+  user-select: none;
 }
-.qa-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.qa-user {
-  font-size: 12px;
-  color: var(--color-text-secondary);
+:deep(.qa-logout-item) {
+  color: #ff4d4f;
 }
 
 /* 主体：中间可滚动 */
@@ -329,8 +333,9 @@ async function scrollToBottom() {
   margin-bottom: 8px;
 }
 .qa-welcome-sub {
-  font-size: 15px;
-  color: var(--color-text-secondary);
+  font-size: 13px;
+  color: #a8a39c;
+  font-style: italic;
   margin-bottom: 32px;
 }
 .qa-example-list {
@@ -357,7 +362,7 @@ async function scrollToBottom() {
 
 /* 对话流 */
 .qa-chat {
-  max-width: 760px;
+  max-width: min(860px, 90vw);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -500,7 +505,7 @@ async function scrollToBottom() {
   padding: 16px 24px 20px;
 }
 .qa-input-wrap {
-  max-width: 760px;
+  max-width: min(860px, 90vw);
   margin: 0 auto;
   display: flex;
   gap: 10px;
@@ -523,10 +528,27 @@ async function scrollToBottom() {
   flex-shrink: 0;
 }
 .qa-input-hint {
-  max-width: 760px;
+  max-width: min(860px, 90vw);
   margin: 6px auto 0;
   font-size: 11px;
   color: var(--color-text-secondary);
   text-align: right;
+}
+
+@media (max-width: 768px) {
+  .qa-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--color-bg);
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .qa-main {
+    padding-bottom: 100px;
+  }
 }
 </style>
