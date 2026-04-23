@@ -39,6 +39,7 @@
         <div
           v-for="msg in messages"
           :key="msg.id"
+          :ref="(el) => setMessageRef(msg.id, el)"
           class="qa-msg-row"
           :class="msg.role === 'user' ? 'qa-msg-row--user' : 'qa-msg-row--assistant'"
         >
@@ -95,7 +96,7 @@
         <a-textarea
           :key="textareaKey"
           v-model:value="question"
-          :placeholder="'请输入问题，例如：神的经纶的中心是什么？'"
+          :placeholder="'请输入问题'"
           :auto-size="{ minRows: 1, maxRows: 5 }"
           :maxlength="500"
           :disabled="loading"
@@ -110,7 +111,6 @@
           @click="submit"
         >问</a-button>
       </div>
-      <div class="qa-input-hint">Enter 发送 · 最多 500 字</div>
     </footer>
   </div>
 </template>
@@ -133,6 +133,7 @@ const messages = ref([])
 const historyRef = ref(null)
 
 let nextMessageId = 0
+const messageRefMap = new Map()
 
 const examples = [
   '神的经纶的中心是什么？',
@@ -257,7 +258,7 @@ async function submit() {
     })
     history.value = history.value.slice(-3)
     await nextTick()
-    await scrollToBottom()
+    await scrollToMessageTop(assistantMsg.id)
   }
 }
 
@@ -265,6 +266,22 @@ async function scrollToBottom() {
   await nextTick()
   if (historyRef.value) {
     historyRef.value.scrollTop = historyRef.value.scrollHeight
+  }
+}
+
+function setMessageRef(id, el) {
+  if (el) {
+    messageRefMap.set(id, el)
+  } else {
+    messageRefMap.delete(id)
+  }
+}
+
+async function scrollToMessageTop(messageId) {
+  await nextTick()
+  const el = messageRefMap.get(messageId)
+  if (el && typeof el.scrollIntoView === 'function') {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
 </script>
