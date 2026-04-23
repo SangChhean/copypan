@@ -46,6 +46,9 @@ QA_INDEX = os.environ.get(
     "kg-rag_7feasts,kg-rag_bib,kg-rag_cwwl,kg-rag_cwwn,kg-rag_life,kg-rag_map_note,kg-rag_others"
 )
 
+# 调试用：最近一次 Step4 发给 LLM 的完整 prompt
+_last_step4_prompt = ""
+
 # ---------------------------------------------------------------------------
 # LLM 客户端（复用 back_mic 的 CLAUDE_API_KEY）
 # ---------------------------------------------------------------------------
@@ -158,9 +161,12 @@ def _calc_cost(model: str, usage: Any) -> float:
 # 缓存
 # ---------------------------------------------------------------------------
 
-def _make_cache_key(question: str) -> str:
+def _make_cache_key(question: str, history: list[dict] | None = None) -> str:
     from back_shared.version_manifest import PROMPT_VERSION, MODEL_PROFILE, FIREWALL_RULES_VERSION
-    raw = f"{question}|{PROMPT_VERSION}|{MODEL_PROFILE}|{FIREWALL_RULES_VERSION}"
+
+    hist = history or []
+    hist_ser = json.dumps(hist, ensure_ascii=False, separators=(",", ":"))
+    raw = f"{question}|{hist_ser}|{PROMPT_VERSION}|{MODEL_PROFILE}|{FIREWALL_RULES_VERSION}"
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     prefix = os.environ.get("QA_REDIS_PREFIX", "qa:cache:")
     return f"{prefix}{h}"
@@ -292,6 +298,47 @@ async def _run_firewall(question: str) -> dict | None:
 # Step 1：概念抽取
 # ---------------------------------------------------------------------------
 
+async def _detect_targeted(question: str) -> dict | None:
+    """
+    用 Haiku 轻量预判是否为定向查询。
+    命中返回 {"book_keyword": "...", "message_keyword": "..."}，否则返回 None。
+    失败时静默返回 None（降级为完整流水线）。
+    """
+    from back_qa.qa.prompts import TARGETED_DETECTION
+
+    prompt = TARGETED_DETECTION.format(question=question)
+
+    try:
+        raw, _ = await _call_llm(
+            prompt,
+            STEP3_MODEL,  # Haiku
+            temperature=0,
+            max_tokens=128,
+            system="你是一位书目专家，只输出 JSON，不输出其他任何内容。",
+        )
+    except Exception as e:
+        logger.warning("[QA] 定向预判失败，降级为完整流水线: %s", e)
+        return None
+
+    parsed = _safe_parse_json(raw)
+    if not parsed:
+        logger.warning("[QA] 定向预判 JSON 解析失败，raw=%s", raw[:200])
+        return None
+
+    raw_targeted = parsed.get("targeted")
+    if not isinstance(raw_targeted, dict):
+        return None
+
+    book_keyword = str(raw_targeted.get("book_keyword", "")).strip()
+    message_keyword = str(raw_targeted.get("message_keyword", "")).strip()
+
+    if book_keyword and message_keyword:
+        logger.info("[QA] 定向预判命中 book=%s msg=%s", book_keyword, message_keyword)
+        return {"book_keyword": book_keyword, "message_keyword": message_keyword}
+
+    return None
+
+
 async def _step1(question: str, neo4j_client) -> dict:
     """
     返回：{
@@ -326,6 +373,7 @@ async def _step1(question: str, neo4j_client) -> dict:
         return {
             "surface": [], "deep": [], "concepts": [],
             "targeted": None,
+            "reasoning": "",
             "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0,
         }
 
@@ -334,6 +382,7 @@ async def _step1(question: str, neo4j_client) -> dict:
     surface: list[str] = []
     deep: list[str] = []
     targeted: dict | None = None
+    reasoning = ""
 
     if parsed:
         raw_surface = parsed.get("surface", [])
@@ -354,12 +403,14 @@ async def _step1(question: str, neo4j_client) -> dict:
                     "message_keyword": message_keyword,
                 }
 
+        reasoning = str(parsed.get("reasoning", "") or "").strip()
+
         logger.info(
             "[QA] Step1 surface=%s deep=%s targeted=%s reasoning=%s",
             surface,
             deep,
             targeted,
-            (parsed.get("reasoning", "") or "")[:100],
+            reasoning[:100],
         )
     else:
         logger.warning("[QA] Step1 JSON 解析失败，raw=%s", (raw or "")[:200])
@@ -402,6 +453,7 @@ async def _step1(question: str, neo4j_client) -> dict:
         "deep": deep,
         "concepts": concepts,
         "targeted": targeted,
+        "reasoning": reasoning,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
         "cost_usd": cost,
@@ -412,20 +464,29 @@ async def _step1(question: str, neo4j_client) -> dict:
 # Step 2：文献检索
 # ---------------------------------------------------------------------------
 
-async def _step2(question: str, es_client) -> list[dict]:
+async def _step2(
+    question: str,
+    es_client,
+    bm25_top_k: int | None = None,
+    dense_top_k: int | None = None,
+    rerank_top_n: int | None = None,
+) -> list[dict]:
     """BM25 + Dense → RRF → Reranker，返回精排后段落列表。"""
     import back_shared.retrieval as retrieval
 
     index = QA_INDEX
+    tk_bm25 = bm25_top_k if bm25_top_k is not None else BM25_TOP_K
+    tk_dense = dense_top_k if dense_top_k is not None else DENSE_TOP_K
+    tk_rerank = rerank_top_n if rerank_top_n is not None else RERANK_TOP_N
 
-    bm25_task = retrieval.bm25_search(es_client, question, index, top_k=BM25_TOP_K)
-    dense_task = retrieval.dense_search(es_client, question, index, top_k=DENSE_TOP_K)
+    bm25_task = retrieval.bm25_search(es_client, question, index, top_k=tk_bm25)
+    dense_task = retrieval.dense_search(es_client, question, index, top_k=tk_dense)
 
     bm25_results, dense_results = await asyncio.gather(bm25_task, dense_task)
     logger.info("[QA] Step2 BM25=%d Dense=%d", len(bm25_results), len(dense_results))
 
     merged = await retrieval.rrf_merge(bm25_results, dense_results, k=RRF_K)
-    reranked = await retrieval.rerank(merged, question, top_n=RERANK_TOP_N)
+    reranked = await retrieval.rerank(merged, question, top_n=tk_rerank)
     logger.info("[QA] Step2 reranked=%d", len(reranked))
 
     return reranked
@@ -435,6 +496,10 @@ async def _step2_with_expansion(
     question: str,
     deep: list[str],
     es_client,
+    bm25_top_k: int | None = None,
+    dense_top_k: int | None = None,
+    rerank_top_n: int | None = None,
+    expansion_top_n: int | None = None,
 ) -> list[dict]:
     """
     主路检索 + deep 概念扩展检索并发。
@@ -444,17 +509,26 @@ async def _step2_with_expansion(
     import back_shared.retrieval as retrieval
 
     index = QA_INDEX
+    exp_rerank = expansion_top_n if expansion_top_n is not None else 5
 
     async def _expand_one(combined_q: str, concept: str) -> list[dict]:
         bm25 = await retrieval.bm25_search(es_client, combined_q, index, top_k=15)
         dense = await retrieval.dense_search(es_client, combined_q, index, top_k=15)
         merged = await retrieval.rrf_merge(bm25, dense, k=RRF_K)
-        reranked = await retrieval.rerank(merged, combined_q, top_n=5)
+        reranked = await retrieval.rerank(merged, combined_q, top_n=exp_rerank)
         for doc in reranked:
             doc["expanded_from"] = concept
         return reranked
 
-    main_task = asyncio.create_task(_step2(question, es_client))
+    main_task = asyncio.create_task(
+        _step2(
+            question,
+            es_client,
+            bm25_top_k=bm25_top_k,
+            dense_top_k=dense_top_k,
+            rerank_top_n=rerank_top_n,
+        )
+    )
     expansion_tasks = []
     for concept in deep:
         combined_query = f"{question} {concept}".strip()
@@ -499,8 +573,16 @@ _TARGETED_MAX_PASSAGES = 50
 
 
 def _normalize_unit(s: str) -> str:
-    """把篇章单位词统一去掉，只保留数字部分，用于模糊匹配。"""
-    return s.replace("章", "").replace("篇", "").replace("课", "").replace("题", "").replace("问", "").strip()
+    """把篇章单位词统一去掉，只保留数字部分，用于精确匹配。
+    注意：只去单位词，保留「第」字和数字，不做 strip 以免影响前缀匹配。
+    """
+    return (
+        s.replace("章", "")
+        .replace("篇", "")
+        .replace("课", "")
+        .replace("题", "")
+        .replace("问", "")
+    )
 
 
 async def _step2_targeted(
@@ -510,18 +592,27 @@ async def _step2_targeted(
 ) -> list[dict]:
     """
     定向精确查询，两步走：
-    Step A：book_title match book_keyword，取最多 500 条，Python 层过滤 message_title
-            找到第一条命中，取其 message_key
+    Step A：book_title match book_keyword，按 message_key 聚合（最多 500 个 key），
+            每个 key 取一个 message_title，Python 层过滤匹配篇/章号，得到 message_key
     Step B：term message_key 精确取出该章/篇所有段落（上限 50 条）
     返回空列表时调用方降级为语义检索。
     """
     target_indices = ",".join(_TARGETED_SUPPORTED_INDICES)
 
-    # Step A：找 message_key
+    # Step A：找 message_key（聚合，避免被 size 截断漏掉靠后的篇）
     body_a = {
         "query": {"match": {"book_title": book_keyword}},
-        "size": 500,
-        "_source": ["chunk_id", "message_key", "message_title", "book_title"],
+        "size": 0,
+        "aggs": {
+            "by_message_key": {
+                "terms": {"field": "message_key", "size": 500},
+                "aggs": {
+                    "title": {
+                        "terms": {"field": "message_title", "size": 1}
+                    }
+                },
+            }
+        },
     }
 
     try:
@@ -532,23 +623,30 @@ async def _step2_targeted(
         logger.warning("[QA] 定向查询 Step A 失败: %s", e)
         return []
 
-    hits_a = (resp_a.get("hits") or {}).get("hits") or []
+    # 从聚合结果里解析所有 message_key + message_title
+    buckets = (resp_a.get("aggregations") or {}).get("by_message_key", {}).get("buckets") or []
 
-    # Python 层：找 message_title 包含 message_keyword 数字部分的第一条
     normalized_keyword = _normalize_unit(message_keyword)
     message_key = None
-    for hit in hits_a:
-        src = hit.get("_source") or {}
-        msg_title = src.get("message_title") or ""
-        if normalized_keyword and normalized_keyword in _normalize_unit(msg_title):
-            message_key = src.get("message_key")
-            if message_key:
-                logger.info(
-                    "[QA] 定向查询 Step A 命中 message_key=%s book=%s",
-                    message_key,
-                    src.get("book_title"),
-                )
-                break
+    for bucket in buckets:
+        mk = bucket.get("key", "")
+        # 取该 message_key 下的第一个 message_title
+        title_buckets = bucket.get("title", {}).get("buckets") or []
+        msg_title = title_buckets[0].get("key", "") if title_buckets else ""
+        normalized_title = _normalize_unit(msg_title)
+        if normalized_keyword and (
+            normalized_title == normalized_keyword
+            or normalized_title.startswith(normalized_keyword + "\u3000")
+            or normalized_title.startswith(normalized_keyword + " ")
+            or normalized_title.startswith(normalized_keyword + "　")
+        ):
+            message_key = mk
+            logger.info(
+                "[QA] 定向查询 Step A 命中 message_key=%s title=%s",
+                message_key,
+                msg_title,
+            )
+            break
 
     if not message_key:
         logger.info(
@@ -634,6 +732,30 @@ async def _step3(question: str, passages: list[dict]) -> tuple[bool, float]:
     return relevant, cost
 
 
+def _build_history_context(history: list[dict]) -> str:
+    """取最近 3 轮问答格式化为 Step4 历史块；history 为空返回空串。"""
+    if not history:
+        return ""
+    from back_qa.qa.prompts import HISTORY_CONTEXT_TEMPLATE, HISTORY_TURN_TEMPLATE
+
+    recent = history[-3:]
+    turns: list[str] = []
+    idx = 0
+    for turn in recent:
+        q = str(turn.get("question", "")).strip()
+        a = str(turn.get("answer", "")).strip()
+        if not q and not a:
+            continue
+        idx += 1
+        turns.append(
+            HISTORY_TURN_TEMPLATE.format(idx=idx, question=q, answer=a)
+        )
+    if not turns:
+        return ""
+    count = len(turns)
+    return HISTORY_CONTEXT_TEMPLATE.format(count=count, turns="\n".join(turns))
+
+
 # ---------------------------------------------------------------------------
 # Step 4：答案生成
 # ---------------------------------------------------------------------------
@@ -644,6 +766,7 @@ async def _step4(
     greek_terms_context: str,
     key_verses_context: str,
     firewall_doc: dict | None,
+    history_context: str = "",
 ) -> tuple[str, list[str], float]:
     """
     返回 (answer: str, sources: list[str], cost_usd: float)。
@@ -657,7 +780,14 @@ async def _step4(
         book = p.get("book_title", "")
         text = (p.get("text") or "").strip()
         source_zh = (p.get("source_zh") or "").strip()
-        header = f"[来源：{source_zh or book}]"
+        # 去掉「第x段」「第x节」等段落级信息，只保留到篇/章级别
+        source_zh_clean = re.sub(
+            r"，第[零一二三四五六七八九十百千]+[段节].*$",
+            "",
+            source_zh,
+        ).strip()
+        source_zh_clean = source_zh_clean.strip("（）()").strip()
+        header = f"[来源：{source_zh_clean or book}]"
         passage_lines.append(f"{header}\n{text}")
     passages_text = "\n---\n".join(passage_lines)
 
@@ -670,6 +800,7 @@ async def _step4(
         )
 
     prompt = STEP4_ANSWER_GENERATION.format(
+        history_context=history_context or "",
         question=question,
         passages=passages_text,
         greek_context=greek_terms_context,
@@ -677,10 +808,13 @@ async def _step4(
         firewall_instruction=firewall_instruction,
     )
 
+    global _last_step4_prompt
+    _last_step4_prompt = prompt
+
     raw, usage = await _call_llm(
         prompt, STEP4_MODEL,
         temperature=0.3,
-        max_tokens=2048,
+        max_tokens=4096,
         system="你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。",
     )
     cost = _calc_cost(STEP4_MODEL, usage)
@@ -689,16 +823,14 @@ async def _step4(
     sources: list[str] = []
     if "【引用书目】" in raw:
         bib_block = raw.split("【引用书目】", 1)[1]
+        seen_sources = set()
         for line in bib_block.splitlines():
             line = line.strip()
-            # 匹配 ➡️ 编号 书名 格式
             if "➡️" in line:
-                # 去掉 ➡️ 和编号，取书名
                 after = line.split("➡️", 1)[1].strip()
-                # 去掉开头的数字编号（如 "1 " 或 "1. "）
-                import re as _re
-                after = _re.sub(r"^\d+[\.\s]+", "", after).strip()
-                if after and after not in sources:
+                after = re.sub(r"^\d+[\.\s]+", "", after).strip()
+                if after and after not in seen_sources:
+                    seen_sources.add(after)
                     sources.append(after)
 
     return raw.strip(), sources, cost
@@ -713,6 +845,9 @@ async def run_pipeline(
     skip_cache: bool,
     request_id: str,
     app,
+    debug: bool = False,
+    debug_params: dict | None = None,
+    history: list[dict] | None = None,
 ) -> dict:
     """四步流水线主入口。"""
     start = time.monotonic()
@@ -721,9 +856,10 @@ async def run_pipeline(
     neo4j_client = app.state.neo4j_client
     es_client = get_es_client()
     redis_client = get_redis_client()
+    history = history or []
 
     # 缓存查询
-    cache_key = _make_cache_key(question)
+    cache_key = _make_cache_key(question, history)
     if not skip_cache:
         cached = _read_cache(redis_client, cache_key)
         if cached:
@@ -738,24 +874,33 @@ async def run_pipeline(
             })
             return cached
 
+    # 调试模式：用前端传入的参数覆盖默认值
+    _bm25_top_k = BM25_TOP_K
+    _dense_top_k = DENSE_TOP_K
+    _rerank_top_n = RERANK_TOP_N
+    _expansion_top_n = 5
+    if debug_params:
+        _bm25_top_k = int(debug_params.get("bm25_top_k", BM25_TOP_K))
+        _dense_top_k = int(debug_params.get("dense_top_k", DENSE_TOP_K))
+        _rerank_top_n = int(debug_params.get("rerank_top_n", RERANK_TOP_N))
+        _expansion_top_n = int(debug_params.get("expansion_top_n", 5))
+
     total_cost = 0.0
 
-    # Step 1 先完成；随后与 Step 2 并行发起 Firewall（避免与 Step1 争抢同一 Claude 客户端）
-    step1_result = await _step1(question, neo4j_client)
-    total_cost += step1_result["cost_usd"]
-    concepts = step1_result["concepts"]
-    surface = step1_result["surface"]
-    deep = step1_result["deep"]
-    targeted = step1_result["targeted"]
-    greek_terms_context = step1_result["greek_terms_context"]
-    key_verses_context = step1_result["key_verses_context"]
+    # 定向查询预判（Haiku，轻量，优先于 Step 1）
+    precheck_targeted = await _detect_targeted(question)
+    targeted = precheck_targeted
 
-    firewall_task = asyncio.create_task(_run_firewall(question))
-
-    # Step 2：定向查询 或 主路检索 + deep 概念扩展检索
     passages = []
     is_targeted = False
+    concepts = []
+    greek_terms_context = ""
+    key_verses_context = ""
+    firewall_task = None
+    step1_snapshot: dict | None = None
+
     if targeted:
+        # 定向通道：跳过 Step 1，直接精确查询
         try:
             targeted_passages = await _step2_targeted(
                 targeted["book_keyword"],
@@ -767,13 +912,35 @@ async def run_pipeline(
                 is_targeted = True
                 logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
             else:
-                logger.info("[QA] 定向查询无结果，降级为语义检索")
+                logger.info("[QA] 定向查询无结果，降级为完整流水线")
+                targeted = None
         except Exception as e:
-            logger.warning("[QA] 定向查询异常，降级为语义检索: %s", e)
+            logger.warning("[QA] 定向查询异常，降级为完整流水线: %s", e)
+            targeted = None
 
     if not is_targeted:
+        # 完整流水线：Step 1 + Firewall 并发
+        step1_task = asyncio.create_task(_step1(question, neo4j_client))
+        firewall_task = asyncio.create_task(_run_firewall(question))
+
+        step1_result = await step1_task
+        step1_snapshot = step1_result
+        total_cost += step1_result["cost_usd"]
+        concepts = step1_result["concepts"]
+        deep = step1_result["deep"]
+        greek_terms_context = step1_result["greek_terms_context"]
+        key_verses_context = step1_result["key_verses_context"]
+
         try:
-            passages = await _step2_with_expansion(question, deep, es_client)
+            passages = await _step2_with_expansion(
+                question,
+                deep,
+                es_client,
+                bm25_top_k=_bm25_top_k,
+                dense_top_k=_dense_top_k,
+                rerank_top_n=_rerank_top_n,
+                expansion_top_n=_expansion_top_n,
+            )
         except Exception as e:
             logger.error("[QA] Step2 检索失败: %s", e)
             passages = []
@@ -788,13 +955,14 @@ async def run_pipeline(
     total_cost += step3_cost
 
     if not relevant:
-        firewall_task.cancel()
-        try:
-            await firewall_task
-        except asyncio.CancelledError:
-            pass
-        except Exception:
-            pass
+        if firewall_task is not None:
+            firewall_task.cancel()
+            try:
+                await firewall_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
         # 未找到分支
         elapsed = int((time.monotonic() - start) * 1000)
         _write_monitor(redis_client, {
@@ -816,16 +984,34 @@ async def run_pipeline(
             "total_elapsed_ms": elapsed,
             "total_cost_usd": round(total_cost, 4),
         }
-        _write_cache(redis_client, cache_key, result)
+        if debug:
+            result["debug"] = {
+                "targeted": precheck_targeted,
+                "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
+                "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
+                "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+                "firewall": None,
+                "step4_prompt": "",
+            }
+        if not debug:
+            _write_cache(redis_client, cache_key, result)
         return result
 
-    # Firewall await（Step 3 通过后）
-    firewall_doc = await firewall_task
+    # Firewall await（Step 3 通过后，仅非定向通道）
+    firewall_doc = None
+    if not is_targeted and firewall_task is not None:
+        firewall_doc = await firewall_task
 
     # Step 4：答案生成
+    history_context = _build_history_context(history)
     try:
         answer, sources, step4_cost = await _step4(
-            question, passages, greek_terms_context, key_verses_context, firewall_doc
+            question,
+            passages,
+            greek_terms_context,
+            key_verses_context,
+            firewall_doc,
+            history_context=history_context,
         )
         total_cost += step4_cost
     except Exception as e:
@@ -846,8 +1032,19 @@ async def run_pipeline(
         "total_cost_usd": round(total_cost, 4),
     }
 
+    if debug:
+        result["debug"] = {
+            "targeted": precheck_targeted,
+            "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
+            "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
+            "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+            "firewall": firewall_doc,
+            "step4_prompt": _last_step4_prompt,
+        }
+
     # 写缓存与监控
-    _write_cache(redis_client, cache_key, result)
+    if not debug:
+        _write_cache(redis_client, cache_key, result)
     _write_monitor(redis_client, {
         "request_id": request_id,
         "question": question,

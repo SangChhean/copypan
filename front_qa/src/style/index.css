@@ -20,7 +20,7 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Noto Serif SC', 'Source Han Serif CN', serif;
+  font-family: 'Noto Sans SC', sans-serif;
   font-size: 16px;
   line-height: 1.8;
 }

@@ -4,10 +4,11 @@ import json
 import os
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
 
@@ -16,9 +17,25 @@ router = APIRouter()
 
 # ---------- 请求 / 响应模型 ----------
 
+
+class HistoryTurn(BaseModel):
+    question: str
+    answer: str
+
+
+class DebugParams(BaseModel):
+    bm25_top_k: int = 30
+    dense_top_k: int = 30
+    expansion_top_n: int = 5
+    rerank_top_n: int = 20
+
+
 class QueryRequest(BaseModel):
     question: str
     skip_cache: bool = False
+    debug: bool = False
+    params: DebugParams = DebugParams()
+    history: list[HistoryTurn] = Field(default_factory=list)
 
     @field_validator("question")
     @classmethod
@@ -40,6 +57,7 @@ class QueryResponse(BaseModel):
     cache_hit: bool
     total_elapsed_ms: int
     total_cost_usd: float
+    debug: dict[str, Any] | None = None
 
 
 # ---------- 工具函数 ----------
@@ -121,11 +139,15 @@ async def query(req: QueryRequest, request: Request):
         raise HTTPException(status_code=400, detail="输入包含不支持的内容")
 
     request_id = _resolve_request_id(request)
+    history_payload = [{"question": h.question, "answer": h.answer} for h in req.history]
     result = await run_pipeline(
         question=req.question,
         skip_cache=req.skip_cache,
         request_id=request_id,
         app=request.app,
+        debug=req.debug,
+        debug_params=req.params.model_dump(),
+        history=history_payload,
     )
     return QueryResponse(**result)
 

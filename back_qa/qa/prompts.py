@@ -66,14 +66,27 @@ STEP3_RELEVANCE_CHECK = """你是一位职事信息相关性判断助手。
 {{"relevant": true, "reason": "简要说明"}}"""
 
 # ---------------------------------------------------------------------------
+# 多轮对话历史（注入 Step4，空 history_context 时不影响版式）
+# ---------------------------------------------------------------------------
+HISTORY_CONTEXT_TEMPLATE = """以下是本次对话的历史记录（最近 {count} 轮），供你理解用户追问的上下文，不需要重复回答：
+{turns}
+---
+"""
+
+HISTORY_TURN_TEMPLATE = """第 {idx} 轮
+用户：{question}
+助手：{answer}
+"""
+
+# ---------------------------------------------------------------------------
 # Step 4：答案生成（Sonnet，temp=0.3）
-# 占位符：{question}、{passages}、{greek_context}、{verse_context}、{firewall_instruction}
-# greek_context / verse_context / firewall_instruction 为空时传空串即可
+# 占位符：{history_context}、{question}、{passages}、{greek_context}、{verse_context}、{firewall_instruction}
+# history_context / greek_context / verse_context / firewall_instruction 为空时传空串即可
 # ---------------------------------------------------------------------------
 STEP4_ANSWER_GENERATION = """你是一位专注于倪柝声与李常受弟兄职事著作的真理问答助手。
 用户带着对真理的疑惑而来，你的任务是从以下职事著作段落中找到答案，让原文直接供应用户。
 
-用户问题：
+{history_context}用户问题：
 {question}
 {greek_context}{verse_context}
 以下是相关职事著作段落（每段含来源信息）：

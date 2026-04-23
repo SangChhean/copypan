@@ -9,6 +9,10 @@ const routes = [
     path: '/admin',
     component: () => import('@/components/AdminPage.vue'),
   },
+  {
+    path: '/debug',
+    component: () => import('@/components/DebugPanel.vue'),
+  },
 ]
 
 export default createRouter({

@@ -73,13 +73,13 @@ app = FastAPI(title="职事信息问答系统", version="1.0.0", lifespan=lifesp
 
 
 class TimeoutMiddleware(BaseHTTPMiddleware):
-    """单次请求最长 90 秒，超时返回 504。"""
+    """单次请求最长 120 秒，超时返回 504。"""
 
     async def dispatch(self, request, call_next):
         import asyncio as _asyncio
 
         try:
-            return await _asyncio.wait_for(call_next(request), timeout=90.0)
+            return await _asyncio.wait_for(call_next(request), timeout=120.0)
         except _asyncio.TimeoutError:
             return _JSONResponse(
                 status_code=504,

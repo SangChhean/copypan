@@ -7,14 +7,14 @@
           <span class="qa-logo-icon">📖</span>
           <span class="qa-logo-text">职事信息问答</span>
         </div>
+        <a class="qa-admin-link" href="#/debug" style="margin-right:12px">调试</a>
         <a class="qa-admin-link" href="#/admin">管理</a>
       </div>
     </header>
 
-    <!-- 主体 -->
+    <!-- 主体：对话区可滚动 -->
     <main class="qa-main" ref="historyRef">
-      <!-- 欢迎语（无历史时显示） -->
-      <div v-if="history.length === 0" class="qa-welcome">
+      <div v-if="messages.length === 0" class="qa-welcome">
         <div class="qa-welcome-title">以自然语言提问</div>
         <div class="qa-welcome-sub">从职事信息中寻找答案</div>
         <div class="qa-example-list">
@@ -27,61 +27,53 @@
         </div>
       </div>
 
-      <!-- 历史问答 -->
-      <div class="qa-history">
+      <div v-else class="qa-chat">
         <div
-          v-for="(item, idx) in history"
-          :key="idx"
-          class="qa-history-item"
+          v-for="msg in messages"
+          :key="msg.id"
+          class="qa-msg-row"
+          :class="msg.role === 'user' ? 'qa-msg-row--user' : 'qa-msg-row--assistant'"
         >
-          <!-- 问题气泡 -->
-          <div class="qa-bubble qa-bubble-question">
-            <span>{{ item.question }}</span>
+          <div v-if="msg.role === 'user'" class="qa-bubble qa-bubble-user">
+            {{ msg.content }}
           </div>
 
-          <!-- 答案卡片 -->
-          <div class="qa-bubble qa-bubble-answer">
-            <!-- 加载中 -->
-            <div v-if="item.loading" class="qa-loading">
+          <div v-else class="qa-bubble qa-bubble-assistant">
+            <div v-if="msg.loading" class="qa-loading">
               <a-spin size="small" />
               <span class="qa-loading-text">正在检索职事信息…</span>
             </div>
 
-            <!-- 未找到 -->
-            <div v-else-if="!item.found" class="qa-not-found">
+            <div v-else-if="!msg.found" class="qa-not-found">
               <span class="qa-not-found-icon">🔍</span>
               以下内容未能在职事信息中找到相关依据。
             </div>
 
-            <!-- 答案正文 -->
             <template v-else>
-              <div class="qa-answer-body" v-html="renderAnswer(item.answer)"></div>
+              <div class="qa-answer-body" v-html="renderAnswer(msg.answer)"></div>
 
-              <!-- 引用书目 -->
-              <div v-if="item.sources && item.sources.length" class="qa-sources">
+              <div v-if="msg.sources && msg.sources.length" class="qa-sources">
                 <div class="qa-sources-title">引用书目</div>
                 <div class="qa-sources-list">
                   <div
-                    v-for="(src, idx) in item.sources"
-                    :key="src"
+                    v-for="(src, srcIdx) in msg.sources"
+                    :key="srcIdx + '-' + src"
                     class="qa-source-item"
                   >
-                    <span class="qa-source-idx">{{ idx + 1 }}</span>
-                    <span class="qa-source-name">{{ src }}</span>
+                    <span class="qa-source-idx">{{ srcIdx + 1 }}</span>
+                    <span class="qa-source-name">{{ src.replace('➡️', '').trim() }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- 元信息 -->
               <div class="qa-meta">
-                <span v-if="item.cache_hit" class="qa-meta-badge qa-meta-cache">缓存</span>
-                <span class="qa-meta-time">{{ item.elapsed }}s</span>
-                <span class="qa-meta-cost">¢{{ (item.cost * 100).toFixed(3) }}</span>
+                <span v-if="msg.cache_hit" class="qa-meta-badge qa-meta-cache">缓存</span>
+                <span class="qa-meta-time">{{ msg.elapsed }}s</span>
+                <span class="qa-meta-cost">${{ Number(msg.cost || 0).toFixed(4) }}</span>
               </div>
             </template>
 
-            <!-- 免责说明 -->
-            <div v-if="!item.loading" class="qa-disclaimer">
+            <div v-if="!msg.loading" class="qa-disclaimer">
               以上答案由 AI 根据职事信息归纳生成，建议对照原文查证。
             </div>
           </div>
@@ -93,6 +85,7 @@
     <footer class="qa-footer">
       <div class="qa-input-wrap">
         <a-textarea
+          :key="textareaKey"
           v-model:value="question"
           :placeholder="'请输入问题，例如：神的经纶的中心是什么？'"
           :auto-size="{ minRows: 1, maxRows: 5 }"
@@ -120,15 +113,22 @@ import axios from 'axios'
 import { marked } from 'marked'
 
 const question = ref('')
+const textareaKey = ref(0)
 const loading = ref(false)
+/** 发往接口的最近 3 轮 { question, answer } */
 const history = ref([])
+/** 界面气泡：user / assistant，assistant 含 loading 与展示字段 */
+const messages = ref([])
 const historyRef = ref(null)
+
+let nextMessageId = 0
 
 const examples = [
   '神的经纶的中心是什么？',
   '生命与性情有何关系？',
-  '教会是基督的身体，如何理解？',
+  '召会是基督的身体，如何理解？',
   '圣灵的膏抹是什么意思？',
+  '创世记生命读经第三十篇的重点是什么？',
 ]
 
 function fillExample(ex) {
@@ -137,7 +137,6 @@ function fillExample(ex) {
 
 function renderAnswer(text) {
   if (!text) return ''
-  // 取【引用书目】之前的正文部分，用 marked 渲染 Markdown
   const parts = text.split('【引用书目】')
   const body = parts[0].trim()
   return marked.parse(body)
@@ -148,41 +147,84 @@ async function submit() {
   if (!q || loading.value) return
 
   question.value = ''
+  textareaKey.value += 1
   loading.value = true
+  await nextTick()
 
-  const item = {
-    question: q,
+  messages.value.push({
+    id: ++nextMessageId,
+    role: 'user',
+    content: q,
+    loading: false,
+  })
+
+  const assistantMsg = {
+    id: ++nextMessageId,
+    role: 'assistant',
+    content: '',
     loading: true,
-    found: false,
     answer: '',
+    found: false,
     sources: [],
     concepts: [],
     cache_hit: false,
     elapsed: 0,
     cost: 0,
   }
-  history.value.push(item)
+  messages.value.push(assistantMsg)
   await scrollToBottom()
+
+  // 追问补全：若当前问题疑似追问（不含书名但含篇章词），用上一轮问题的书名补全
+  let finalQuestion = q
+  const lastTurn = history.value[history.value.length - 1]
+  if (lastTurn) {
+    const hasChapter = /第[零一二三四五六七八九十百千]+[篇章课]|第\d+[篇章课]/.test(finalQuestion)
+    const hasBookName =
+      /文集|读经|训练|特会|总论|课程|福音|使徒|罗马|创世|出埃及|利未|民数|申命|约书亚|士师|路得|撒母耳|列王|历代|以斯|约伯|诗篇|箴言|传道|雅歌|以赛亚|耶利米|以西结|但以理|何西阿|约珥|阿摩司|俄巴底|约拿|弥迦|那鸿|哈巴谷|西番雅|哈该|撒迦利亚|玛拉基|马太|马可|路加|约翰|歌林多|加拉太|以弗所|腓利比|歌罗西|帖撒|提摩太|提多|腓利门|希伯来|雅各|彼得|犹大|启示/.test(
+        finalQuestion,
+      )
+    const isTooShort = finalQuestion.length <= 15
+    if (hasChapter && !hasBookName && isTooShort) {
+      const prevQ = lastTurn.question
+      const bookMatch = prevQ.match(/^(.+?)(?:第[零一二三四五六七八九十百千\d]+[篇章课]|的)/)
+      if (bookMatch && bookMatch[1].length >= 4) {
+        finalQuestion = bookMatch[1].trim() + finalQuestion
+      }
+    }
+  }
 
   try {
     const res = await axios.post('/api/qa/query', {
-      question: q,
-      skip_cache: false,
+      question: finalQuestion,
+      skip_cache: true,
+      debug: true,
+      history: history.value.map((h) => ({
+        question: h.question,
+        answer: h.answer,
+      })),
     })
     const d = res.data
-    item.found = d.found
-    item.answer = d.answer
-    item.sources = d.sources || []
-    item.concepts = d.concepts || []
-    item.cache_hit = d.cache_hit
-    item.elapsed = (d.total_elapsed_ms / 1000).toFixed(1)
-    item.cost = d.total_cost_usd || 0
+    assistantMsg.found = d.found
+    assistantMsg.answer = d.answer
+    assistantMsg.sources = d.sources || []
+    assistantMsg.concepts = d.concepts || []
+    assistantMsg.cache_hit = d.cache_hit
+    assistantMsg.elapsed = (d.total_elapsed_ms / 1000).toFixed(1)
+    assistantMsg.cost = d.total_cost_usd || 0
   } catch (e) {
-    item.found = false
-    item.answer = '请求失败，请稍后重试。'
+    assistantMsg.found = false
+    assistantMsg.answer = '请求失败，请稍后重试。'
   } finally {
-    item.loading = false
+    assistantMsg.loading = false
     loading.value = false
+    question.value = ''
+    // 存补全后的问句，便于下一轮从 history 提取书名再做追问补全（气泡仍用上面的 q）
+    history.value.push({
+      question: finalQuestion,
+      answer: assistantMsg.answer || '',
+    })
+    history.value = history.value.slice(-3)
+    await nextTick()
     await scrollToBottom()
   }
 }
@@ -236,9 +278,10 @@ async function scrollToBottom() {
   &:hover { color: var(--color-primary); }
 }
 
-/* 主体 */
+/* 主体：中间可滚动 */
 .qa-main {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px;
 }
@@ -282,18 +325,25 @@ async function scrollToBottom() {
   }
 }
 
-/* 历史问答 */
-.qa-history {
+/* 对话流 */
+.qa-chat {
   max-width: 760px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  padding-bottom: 8px;
 }
-.qa-history-item {
+
+.qa-msg-row {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  width: 100%;
+}
+.qa-msg-row--user {
+  justify-content: flex-end;
+}
+.qa-msg-row--assistant {
+  justify-content: flex-start;
 }
 
 /* 气泡 */
@@ -303,20 +353,20 @@ async function scrollToBottom() {
   line-height: 1.8;
   font-size: 15px;
 }
-.qa-bubble-question {
-  align-self: flex-end;
+.qa-bubble-user {
+  max-width: 78%;
   background: var(--color-primary);
   color: #fff;
-  max-width: 75%;
   border-bottom-right-radius: 2px;
+  word-break: break-word;
 }
-.qa-bubble-answer {
-  align-self: flex-start;
+.qa-bubble-assistant {
+  max-width: 92%;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  max-width: 100%;
   box-shadow: var(--shadow);
   border-bottom-left-radius: 2px;
+  word-break: break-word;
 }
 
 /* 加载 */
@@ -435,7 +485,8 @@ async function scrollToBottom() {
 }
 .qa-submit-btn {
   height: 40px;
-  width: 56px;
+  min-width: 80px;
+  padding: 0 18px;
   border-radius: var(--radius) !important;
   font-size: 16px;
   font-weight: 600;
