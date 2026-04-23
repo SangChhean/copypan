@@ -2,3 +2,4 @@
 starlette
 bcrypt
 python-jose[cryptography]
+sse-starlette>=1.6.5

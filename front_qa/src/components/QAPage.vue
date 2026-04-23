@@ -118,7 +118,6 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import { marked } from 'marked'
 
 const router = useRouter()
@@ -188,7 +187,8 @@ async function submit() {
     content: '',
     loading: true,
     answer: '',
-    found: false,
+    /** 流式过程中先视为有答案，避免 loading 结束后短暂出现「未找到」；最终以 done / error 为准 */
+    found: true,
     sources: [],
     concepts: [],
     cache_hit: false,
@@ -223,27 +223,70 @@ async function submit() {
 
   try {
     const token = localStorage.getItem('qa_token') || ''
-    const res = await axios.post('/api/qa/query', {
-      question: finalQuestion,
-      skip_cache: false,
-      debug: false,
-      history: history.value.map((h) => ({
-        question: h.question,
-        answer: h.answer,
-      })),
-    }, {
+    const response = await fetch('/api/qa/stream', {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        question: finalQuestion,
+        skip_cache: false,
+        debug: false,
+        history: history.value.map((h) => ({
+          question: h.question,
+          answer: h.answer,
+        })),
+      }),
     })
-    const d = res.data
-    assistantMsg.found = d.found
-    assistantMsg.answer = d.answer
-    assistantMsg.sources = d.sources || []
-    assistantMsg.concepts = d.concepts || []
-    assistantMsg.cache_hit = d.cache_hit
-    assistantMsg.elapsed = (d.total_elapsed_ms / 1000).toFixed(1)
-    assistantMsg.cost = d.total_cost_usd || 0
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      buffer = buffer.replace(/\r\n/g, '\n')
+      let sepIdx
+      while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+        const rawEvent = buffer.slice(0, sepIdx)
+        buffer = buffer.slice(sepIdx + 2)
+        for (const line of rawEvent.split('\n')) {
+          if (!line.startsWith('data:')) continue
+          const raw = line.startsWith('data: ') ? line.slice(6).trim() : line.slice(5).trim()
+          if (!raw) continue
+          let chunk
+          try {
+            chunk = JSON.parse(raw)
+          } catch {
+            continue
+          }
+          if (chunk.type === 'token') {
+            assistantMsg.loading = false
+            assistantMsg.answer += chunk.text || ''
+          } else if (chunk.type === 'done') {
+            assistantMsg.found = chunk.found ?? true
+            assistantMsg.answer = chunk.answer ?? assistantMsg.answer
+            assistantMsg.sources = chunk.sources || []
+            assistantMsg.concepts = chunk.concepts || []
+            assistantMsg.cache_hit = chunk.cache_hit ?? false
+            assistantMsg.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
+            assistantMsg.cost = chunk.cost || 0
+            assistantMsg.loading = false
+          } else if (chunk.type === 'error') {
+            assistantMsg.answer = '请求失败，请稍后重试。'
+            assistantMsg.found = false
+            assistantMsg.loading = false
+          }
+        }
+      }
+    }
   } catch (e) {
     assistantMsg.found = false
     assistantMsg.answer = '请求失败，请稍后重试。'

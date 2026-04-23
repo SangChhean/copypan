@@ -18,6 +18,7 @@ import re
 import sys
 import threading
 import time
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
@@ -795,6 +796,67 @@ def _build_history_context(history: list[dict]) -> str:
 # Step 4：答案生成
 # ---------------------------------------------------------------------------
 
+def _step4_build_prompt(
+    question: str,
+    passages: list[dict],
+    greek_terms_context: str,
+    key_verses_context: str,
+    firewall_doc: dict | None,
+    history_context: str = "",
+) -> str:
+    """构建 Step4 发给 Claude 的 user prompt（不含 LLM 调用）。"""
+    from back_qa.qa.prompts import STEP4_ANSWER_GENERATION, FIREWALL_INSTRUCTION
+
+    passage_lines = []
+    for p in passages:
+        book = p.get("book_title", "")
+        text = (p.get("text") or "").strip()
+        source_zh = (p.get("source_zh") or "").strip()
+        source_zh_clean = re.sub(
+            r"，第[零一二三四五六七八九十百千]+[段节].*$",
+            "",
+            source_zh,
+        ).strip()
+        source_zh_clean = source_zh_clean.strip("（）()").strip()
+        header = f"[来源：{source_zh_clean or book}]"
+        passage_lines.append(f"{header}\n{text}")
+    passages_text = "\n---\n".join(passage_lines)
+
+    firewall_instruction = ""
+    if firewall_doc:
+        firewall_instruction = FIREWALL_INSTRUCTION.format(
+            fw_title=firewall_doc.get("title", ""),
+            fw_note=firewall_doc.get("note", ""),
+        )
+
+    return STEP4_ANSWER_GENERATION.format(
+        history_context=history_context or "",
+        question=question,
+        passages=passages_text,
+        greek_context=greek_terms_context,
+        verse_context=key_verses_context,
+        firewall_instruction=firewall_instruction,
+    )
+
+
+def _extract_step4_sources(raw: str) -> list[str]:
+    """从 Step4 原始输出中提取【引用书目】列表。"""
+    sources: list[str] = []
+    if "【引用书目】" not in raw:
+        return sources
+    bib_block = raw.split("【引用书目】", 1)[1]
+    seen_sources: set[str] = set()
+    for line in bib_block.splitlines():
+        line = line.strip()
+        if "➡️" in line:
+            after = line.split("➡️", 1)[1].strip()
+            after = re.sub(r"^\d+[\.\s]+", "", after).strip()
+            if after and after not in seen_sources:
+                seen_sources.add(after)
+                sources.append(after)
+    return sources
+
+
 async def _step4(
     question: str,
     passages: list[dict],
@@ -807,40 +869,13 @@ async def _step4(
     返回 (answer: str, sources: list[str], cost_usd: float)。
     sources 从答案中的【引用书目】块提取。
     """
-    from back_qa.qa.prompts import STEP4_ANSWER_GENERATION, FIREWALL_INSTRUCTION
-
-    # 构建段落文本
-    passage_lines = []
-    for p in passages:
-        book = p.get("book_title", "")
-        text = (p.get("text") or "").strip()
-        source_zh = (p.get("source_zh") or "").strip()
-        # 去掉「第x段」「第x节」等段落级信息，只保留到篇/章级别
-        source_zh_clean = re.sub(
-            r"，第[零一二三四五六七八九十百千]+[段节].*$",
-            "",
-            source_zh,
-        ).strip()
-        source_zh_clean = source_zh_clean.strip("（）()").strip()
-        header = f"[来源：{source_zh_clean or book}]"
-        passage_lines.append(f"{header}\n{text}")
-    passages_text = "\n---\n".join(passage_lines)
-
-    # Firewall 指示
-    firewall_instruction = ""
-    if firewall_doc:
-        firewall_instruction = FIREWALL_INSTRUCTION.format(
-            fw_title=firewall_doc.get("title", ""),
-            fw_note=firewall_doc.get("note", ""),
-        )
-
-    prompt = STEP4_ANSWER_GENERATION.format(
-        history_context=history_context or "",
-        question=question,
-        passages=passages_text,
-        greek_context=greek_terms_context,
-        verse_context=key_verses_context,
-        firewall_instruction=firewall_instruction,
+    prompt = _step4_build_prompt(
+        question,
+        passages,
+        greek_terms_context,
+        key_verses_context,
+        firewall_doc,
+        history_context=history_context,
     )
 
     global _last_step4_prompt
@@ -853,47 +888,31 @@ async def _step4(
         system="你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。",
     )
     cost = _calc_cost(STEP4_MODEL, usage)
-
-    # 提取引用书目（格式：➡️ 编号 完整书名）
-    sources: list[str] = []
-    if "【引用书目】" in raw:
-        bib_block = raw.split("【引用书目】", 1)[1]
-        seen_sources = set()
-        for line in bib_block.splitlines():
-            line = line.strip()
-            if "➡️" in line:
-                after = line.split("➡️", 1)[1].strip()
-                after = re.sub(r"^\d+[\.\s]+", "", after).strip()
-                if after and after not in seen_sources:
-                    seen_sources.add(after)
-                    sources.append(after)
-
+    sources = _extract_step4_sources(raw)
     return raw.strip(), sources, cost
 
 
-# ---------------------------------------------------------------------------
-# 主入口
-# ---------------------------------------------------------------------------
-
-async def run_pipeline(
+async def _run_pipeline_until_step4(
     question: str,
     skip_cache: bool,
     request_id: str,
-    app,
-    debug: bool = False,
-    debug_params: dict | None = None,
-    history: list[dict] | None = None,
-) -> dict:
-    """四步流水线主入口。"""
+    app: Any,
+    history: list[dict],
+    debug: bool,
+    debug_params: dict | None,
+) -> tuple[dict | None, dict | None]:
+    """
+    缓存检查、定向/Step1-2-3、Firewall await，直到 Step4 之前。
+    返回 (early_result, ctx)：early 非空则直接作为最终响应；ctx 非空则进入 Step4。
+    """
     start = time.monotonic()
 
     from back_qa.qa.dependencies import get_es_client, get_redis_client
+
     neo4j_client = app.state.neo4j_client
     es_client = get_es_client()
     redis_client = get_redis_client()
-    history = history or []
 
-    # 缓存查询
     cache_key = _make_cache_key(question, history)
     if not skip_cache:
         cached = _read_cache(redis_client, cache_key)
@@ -907,9 +926,8 @@ async def run_pipeline(
                 "cache_hit": True,
                 "found": cached.get("found", False),
             })
-            return cached
+            return cached, None
 
-    # 调试模式：用前端传入的参数覆盖默认值
     _bm25_top_k = BM25_TOP_K
     _dense_top_k = DENSE_TOP_K
     _rerank_top_n = RERANK_TOP_N
@@ -922,20 +940,18 @@ async def run_pipeline(
 
     total_cost = 0.0
 
-    # 定向查询预判（Haiku，轻量，优先于 Step 1）
     precheck_targeted = await _detect_targeted(question)
     targeted = precheck_targeted
 
-    passages = []
+    passages: list[dict] = []
     is_targeted = False
-    concepts = []
+    concepts: list = []
     greek_terms_context = ""
     key_verses_context = ""
     firewall_task = None
     step1_snapshot: dict | None = None
 
     if targeted:
-        # 定向通道：跳过 Step 1，直接精确查询
         try:
             targeted_passages = await _step2_targeted(
                 targeted["book_keyword"],
@@ -954,7 +970,6 @@ async def run_pipeline(
             targeted = None
 
     if not is_targeted:
-        # 完整流水线：Step 1 + Firewall 并发
         step1_task = asyncio.create_task(_step1(question, neo4j_client))
         firewall_task = asyncio.create_task(_run_firewall(question))
 
@@ -980,7 +995,6 @@ async def run_pipeline(
             logger.error("[QA] Step2 检索失败: %s", e)
             passages = []
 
-    # Step 3：相关性判断（定向查询命中时直接跳过）
     if is_targeted:
         relevant = True
         step3_cost = 0.0
@@ -998,7 +1012,6 @@ async def run_pipeline(
                 pass
             except Exception:
                 pass
-        # 未找到分支
         elapsed = int((time.monotonic() - start) * 1000)
         _write_monitor(redis_client, {
             "request_id": request_id,
@@ -1030,15 +1043,123 @@ async def run_pipeline(
             }
         if not debug:
             _write_cache(redis_client, cache_key, result)
-        return result
+        return result, None
 
-    # Firewall await（Step 3 通过后，仅非定向通道）
     firewall_doc = None
     if not is_targeted and firewall_task is not None:
         firewall_doc = await firewall_task
 
-    # Step 4：答案生成
     history_context = _build_history_context(history)
+    ctx = {
+        "start": start,
+        "question": question,
+        "passages": passages,
+        "greek_terms_context": greek_terms_context,
+        "key_verses_context": key_verses_context,
+        "firewall_doc": firewall_doc,
+        "history_context": history_context,
+        "concepts": concepts,
+        "total_cost": total_cost,
+        "cache_key": cache_key,
+        "redis_client": redis_client,
+        "request_id": request_id,
+        "precheck_targeted": precheck_targeted,
+        "is_targeted": is_targeted,
+        "step1_snapshot": step1_snapshot,
+        "debug": debug,
+        "debug_params": debug_params,
+    }
+    return None, ctx
+
+
+async def _iter_step4_stream_tokens(prompt: str) -> AsyncGenerator[tuple[str, Any], None]:
+    """
+    在线程中跑 Claude messages.stream，向主协程产出 ("token", text) 与末尾 ("usage", usage|None)。
+    """
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue[Any] = asyncio.Queue()
+    system = "你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。"
+
+    def _worker() -> None:
+        usage: Any = None
+        try:
+            client = _get_claude_client()
+            kwargs: dict[str, Any] = dict(
+                model=STEP4_MODEL,
+                max_tokens=4096,
+                system=system,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            if not STEP4_MODEL.startswith("claude-opus-4-7"):
+                kwargs["temperature"] = 0.3
+            with _claude_thread_lock:
+                with client.messages.stream(**kwargs) as stream:
+                    for text in stream.text_stream:
+                        if text:
+                            loop.call_soon_threadsafe(
+                                queue.put_nowait, ("token", text)
+                            )
+                    try:
+                        fm = stream.get_final_message()
+                        usage = getattr(fm, "usage", None)
+                    except Exception:
+                        pass
+            loop.call_soon_threadsafe(queue.put_nowait, ("usage", usage))
+        except Exception as e:
+            logger.error("[QA] Step4 stream 失败: %s", e)
+            loop.call_soon_threadsafe(queue.put_nowait, ("error", str(e)))
+        finally:
+            loop.call_soon_threadsafe(queue.put_nowait, None)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    while True:
+        item = await queue.get()
+        if item is None:
+            break
+        if isinstance(item, tuple) and item and item[0] == "error":
+            yield ("error", item[1])
+            return
+        yield item
+
+
+# ---------------------------------------------------------------------------
+# 主入口
+# ---------------------------------------------------------------------------
+
+async def run_pipeline(
+    question: str,
+    skip_cache: bool,
+    request_id: str,
+    app,
+    debug: bool = False,
+    debug_params: dict | None = None,
+    history: list[dict] | None = None,
+) -> dict:
+    """四步流水线主入口。"""
+    history = history or []
+
+    early, ctx = await _run_pipeline_until_step4(
+        question, skip_cache, request_id, app, history, debug, debug_params
+    )
+    if early is not None:
+        return early
+    assert ctx is not None
+
+    start = ctx["start"]
+    total_cost = float(ctx["total_cost"])
+    question = ctx["question"]
+    passages = ctx["passages"]
+    greek_terms_context = ctx["greek_terms_context"]
+    key_verses_context = ctx["key_verses_context"]
+    firewall_doc = ctx["firewall_doc"]
+    history_context = ctx["history_context"]
+    concepts = ctx["concepts"]
+    cache_key = ctx["cache_key"]
+    redis_client = ctx["redis_client"]
+    precheck_targeted = ctx["precheck_targeted"]
+    is_targeted = ctx["is_targeted"]
+    step1_snapshot = ctx["step1_snapshot"]
+
     try:
         answer, sources, step4_cost = await _step4(
             question,
@@ -1077,7 +1198,6 @@ async def run_pipeline(
             "step4_prompt": _last_step4_prompt,
         }
 
-    # 写缓存与监控
     if not debug:
         _write_cache(redis_client, cache_key, result)
     _write_monitor(redis_client, {
@@ -1090,3 +1210,144 @@ async def run_pipeline(
     })
 
     return result
+
+
+async def stream_query(
+    question: str,
+    skip_cache: bool,
+    request_id: str,
+    app: Any,
+    history: list[dict] | None = None,
+    debug: bool = False,
+    debug_params: dict | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    """
+    流式问答：Steps 0-3 与 run_pipeline 相同；Step4 使用 Claude stream。
+    yield: step / token / done / error
+    """
+    history = history or []
+
+    early, ctx = await _run_pipeline_until_step4(
+        question, skip_cache, request_id, app, history, debug, debug_params
+    )
+    if early is not None:
+        yield {
+            "type": "done",
+            "answer": early.get("answer", ""),
+            "sources": early.get("sources", []),
+            "found": bool(early.get("found", False)),
+            "cache_hit": bool(early.get("cache_hit", False)),
+            "concepts": early.get("concepts", []),
+            "elapsed_ms": int(early.get("total_elapsed_ms", 0)),
+            "cost": float(early.get("total_cost_usd", 0.0)),
+            "request_id": early.get("request_id", request_id),
+        }
+        return
+
+    assert ctx is not None
+    start = ctx["start"]
+    total_cost = float(ctx["total_cost"])
+    q = ctx["question"]
+    passages = ctx["passages"]
+    greek_terms_context = ctx["greek_terms_context"]
+    key_verses_context = ctx["key_verses_context"]
+    firewall_doc = ctx["firewall_doc"]
+    history_context = ctx["history_context"]
+    concepts = ctx["concepts"]
+    cache_key = ctx["cache_key"]
+    redis_client = ctx["redis_client"]
+    precheck_targeted = ctx["precheck_targeted"]
+    is_targeted = ctx["is_targeted"]
+    step1_snapshot = ctx["step1_snapshot"]
+
+    yield {
+        "type": "step",
+        "stage": "step1",
+        "data": {
+            "skipped": is_targeted,
+            "concept_count": len(concepts) if concepts else 0,
+        },
+    }
+    yield {
+        "type": "step",
+        "stage": "step2",
+        "data": {"passage_count": len(passages), "targeted": is_targeted},
+    }
+    yield {"type": "step", "stage": "step3", "data": {"relevant": True}}
+
+    prompt = _step4_build_prompt(
+        q,
+        passages,
+        greek_terms_context,
+        key_verses_context,
+        firewall_doc,
+        history_context=history_context,
+    )
+    global _last_step4_prompt
+    _last_step4_prompt = prompt
+
+    full_text = ""
+    step4_usage = None
+    async for item in _iter_step4_stream_tokens(prompt):
+        if isinstance(item, tuple) and len(item) == 2 and item[0] == "error":
+            yield {"type": "error", "message": str(item[1])}
+            return
+        kind, payload = item
+        if kind == "token":
+            full_text += payload
+            yield {"type": "token", "text": payload}
+        elif kind == "usage":
+            step4_usage = payload
+
+    step4_cost = _calc_cost(STEP4_MODEL, step4_usage)
+    total_cost += step4_cost
+    sources = _extract_step4_sources(full_text)
+    answer = full_text.strip()
+    if not answer:
+        answer = "答案生成失败，请稍后重试。"
+        sources = []
+
+    elapsed = int((time.monotonic() - start) * 1000)
+
+    result = {
+        "request_id": request_id,
+        "answer": answer,
+        "sources": sources,
+        "concepts": concepts,
+        "found": True,
+        "cache_hit": False,
+        "total_elapsed_ms": elapsed,
+        "total_cost_usd": round(total_cost, 4),
+    }
+    if debug:
+        result["debug"] = {
+            "targeted": precheck_targeted,
+            "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
+            "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
+            "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+            "firewall": firewall_doc,
+            "step4_prompt": _last_step4_prompt,
+        }
+
+    if not debug:
+        _write_cache(redis_client, cache_key, result)
+    _write_monitor(redis_client, {
+        "request_id": request_id,
+        "question": q,
+        "cache_hit": False,
+        "found": True,
+        "total_elapsed_ms": elapsed,
+        "total_cost_usd": round(total_cost, 4),
+    })
+
+    yield {
+        "type": "done",
+        "answer": answer,
+        "sources": sources,
+        "found": True,
+        "cache_hit": False,
+        "concepts": concepts,
+        "elapsed_ms": elapsed,
+        "cost": round(total_cost, 4),
+        "request_id": request_id,
+    }

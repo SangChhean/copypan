@@ -9,6 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
+from sse_starlette.sse import EventSourceResponse
 
 from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
 from back_qa.qa.auth_router import _require_user
@@ -152,6 +153,39 @@ async def query(req: QueryRequest, request: Request):
         history=history_payload,
     )
     return QueryResponse(**result)
+
+
+@router.post("/stream")
+async def stream_answer(req: QueryRequest, request: Request):
+    """流式问答（SSE）。Steps 0–3 与 /query 一致；非缓存时 Step4 逐 token 推送。缓存命中仅返回一条 done。"""
+    from back_qa.qa.qa_service import stream_query
+    from back_qa.qa.dependencies import get_redis_client
+
+    _require_user(request)
+    if not check_rate_limit(request, get_redis_client()):
+        raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
+    if not check_prompt_injection(req.question):
+        raise HTTPException(status_code=400, detail="输入包含不支持的内容")
+
+    request_id = _resolve_request_id(request)
+    history_payload = [{"question": h.question, "answer": h.answer} for h in req.history]
+
+    async def event_generator():
+        try:
+            async for chunk in stream_query(
+                question=req.question,
+                skip_cache=req.skip_cache,
+                request_id=request_id,
+                app=request.app,
+                history=history_payload,
+                debug=req.debug,
+                debug_params=req.params.model_dump(),
+            ):
+                yield {"data": json.dumps(chunk, ensure_ascii=False)}
+        except Exception as e:
+            yield {"data": json.dumps({"type": "error", "message": str(e)}, ensure_ascii=False)}
+
+    return EventSourceResponse(event_generator())
 
 
 # ---------------------------------------------------------------------------
