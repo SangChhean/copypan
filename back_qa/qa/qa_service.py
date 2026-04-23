@@ -633,7 +633,11 @@ async def _step2_targeted(
         # 取该 message_key 下的第一个 message_title
         title_buckets = bucket.get("title", {}).get("buckets") or []
         msg_title = title_buckets[0].get("key", "") if title_buckets else ""
-        normalized_title = _normalize_unit(msg_title)
+        # 截到「篇/章/课」为止，去掉副标题，再与 message_keyword 归一化比较
+        msg_title_for_match = re.sub(
+            r"([篇章课]).*$", r"\1", (msg_title or "").strip()
+        )
+        normalized_title = _normalize_unit(msg_title_for_match)
         if normalized_keyword and (
             normalized_title == normalized_keyword
             or normalized_title.startswith(normalized_keyword + "\u3000")
@@ -654,6 +658,37 @@ async def _step2_targeted(
             book_keyword,
             message_keyword,
         )
+        # 兜底：message_title 未命中时，尝试在 book_title 里匹配 message_keyword
+        logger.info("[QA] 定向查询 Step A 兜底：尝试从 book_title 匹配 message_keyword")
+        try:
+            resp_fallback = await asyncio.to_thread(
+                es_client.search,
+                index=target_indices,
+                body={
+                    "size": 1,
+                    "query": {
+                        "wildcard": {
+                            "book_title": {
+                                "value": f"*{book_keyword}*{message_keyword}*"
+                            }
+                        }
+                    },
+                    "_source": ["message_key", "message_title", "book_title"],
+                },
+            )
+            fallback_hits = (resp_fallback.get("hits") or {}).get("hits") or []
+            if fallback_hits:
+                src = fallback_hits[0].get("_source") or {}
+                message_key = src.get("message_key", "")
+                logger.info(
+                    "[QA] 定向查询 Step A 兜底命中 message_key=%s book_title=%s",
+                    message_key,
+                    src.get("book_title", ""),
+                )
+        except Exception as e:
+            logger.warning("[QA] 定向查询 Step A 兜底失败: %s", e)
+
+    if not message_key:
         return []
 
     # Step B：用 message_key 精确取出所有段落

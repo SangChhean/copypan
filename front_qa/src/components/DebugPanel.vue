@@ -1,6 +1,6 @@
 <template>
-  <div class="debug-root">
-    <header class="debug-header">
+  <div class="debug-root" :class="{ 'debug-root--embedded': embedded }">
+    <header v-if="!embedded" class="debug-header">
       <div class="debug-header-inner">
         <a class="debug-back" href="#/">← 返回问答</a>
         <span class="debug-title">🔧 调试面板</span>
@@ -118,6 +118,13 @@
 import { ref } from 'vue'
 import axios from 'axios'
 
+defineProps({
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const question = ref('')
 const loading = ref(false)
 const result = ref(null)
@@ -166,6 +173,18 @@ async function submit() {
   min-height: 100vh;
   background: #f0f0f0;
   font-family: 'Noto Sans SC', sans-serif;
+}
+.debug-root--embedded {
+  min-height: auto;
+  background: transparent;
+}
+.debug-root--embedded .debug-main {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+.debug-root--embedded .debug-layout {
+  grid-template-columns: 300px 1fr;
 }
 
 .debug-header {

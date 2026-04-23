@@ -27,72 +27,158 @@
           <div v-if="tokenError" class="admin-error">{{ tokenError }}</div>
         </section>
 
-        <!-- 统计面板 -->
         <section v-if="stats" class="admin-section">
-          <div class="admin-section-title">用量统计</div>
-          <div class="admin-stat-grid">
-            <div class="admin-stat-card">
-              <div class="admin-stat-value">{{ stats.total_requests }}</div>
-              <div class="admin-stat-label">总请求数</div>
-            </div>
-            <div class="admin-stat-card">
-              <div class="admin-stat-value">{{ pct(stats.cache_hit_rate) }}</div>
-              <div class="admin-stat-label">缓存命中率</div>
-            </div>
-            <div class="admin-stat-card">
-              <div class="admin-stat-value">{{ pct(stats.found_rate_new) }}</div>
-              <div class="admin-stat-label">找到率（非缓存）</div>
-            </div>
-            <div class="admin-stat-card">
-              <div class="admin-stat-value">${{ stats.total_cost_usd }}</div>
-              <div class="admin-stat-label">累计费用</div>
-            </div>
-            <div class="admin-stat-card">
-              <div class="admin-stat-value">{{ stats.avg_elapsed_ms }}ms</div>
-              <div class="admin-stat-label">平均耗时</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 未找到记录 -->
-        <section v-if="stats && stats.step_fail_records && stats.step_fail_records.length" class="admin-section">
-          <div class="admin-section-title">
-            未找到记录
-            <span class="admin-section-sub">（最近 {{ stats.step_fail_records.length }} 条）</span>
-          </div>
-          <div class="admin-fail-list">
-            <div
-              v-for="(rec, idx) in stats.step_fail_records"
-              :key="idx"
-              class="admin-fail-item"
-            >
-              <div class="admin-fail-question">{{ rec.question }}</div>
-              <div class="admin-fail-meta">
-                <span>{{ rec.ts }}</span>
-                <span>{{ rec.total_elapsed_ms }}ms</span>
-                <span>${{ rec.total_cost_usd }}</span>
+          <a-tabs v-model:activeKey="activeTab">
+            <a-tab-pane key="stats" tab="统计">
+              <div class="admin-stat-grid">
+                <div class="admin-stat-card">
+                  <div class="admin-stat-value">{{ stats.total_requests }}</div>
+                  <div class="admin-stat-label">总请求数</div>
+                </div>
+                <div class="admin-stat-card">
+                  <div class="admin-stat-value">{{ pct(stats.cache_hit_rate) }}</div>
+                  <div class="admin-stat-label">缓存命中率</div>
+                </div>
+                <div class="admin-stat-card">
+                  <div class="admin-stat-value">{{ pct(stats.found_rate_new) }}</div>
+                  <div class="admin-stat-label">找到率（非缓存）</div>
+                </div>
+                <div class="admin-stat-card">
+                  <div class="admin-stat-value">${{ stats.total_cost_usd }}</div>
+                  <div class="admin-stat-label">累计费用</div>
+                </div>
+                <div class="admin-stat-card">
+                  <div class="admin-stat-value">{{ stats.avg_elapsed_ms }}ms</div>
+                  <div class="admin-stat-label">平均耗时</div>
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- 缓存管理 -->
-        <section v-if="stats" class="admin-section">
-          <div class="admin-section-title">缓存管理</div>
-          <div class="admin-cache-row">
-            <span class="admin-cache-desc">清除所有 <code>qa:cache:*</code> 缓存</span>
-            <a-popconfirm
-              title="确认清除所有问答缓存？"
-              ok-text="确认"
-              cancel-text="取消"
-              @confirm="clearCache"
-            >
-              <a-button danger :loading="clearLoading">清除缓存</a-button>
-            </a-popconfirm>
-          </div>
-          <div v-if="clearResult" class="admin-clear-result">
-            已删除 {{ clearResult.deleted }} 条缓存（前缀：{{ clearResult.prefix }}）
-          </div>
+              <div v-if="stats.step_fail_records && stats.step_fail_records.length" class="admin-fail-wrap">
+                <div class="admin-section-title">
+                  未找到记录
+                  <span class="admin-section-sub">（最近 {{ stats.step_fail_records.length }} 条）</span>
+                </div>
+                <div class="admin-fail-list">
+                  <div
+                    v-for="(rec, idx) in stats.step_fail_records"
+                    :key="idx"
+                    class="admin-fail-item"
+                  >
+                    <div class="admin-fail-question">{{ rec.question }}</div>
+                    <div class="admin-fail-meta">
+                      <span>{{ rec.ts }}</span>
+                      <span>{{ rec.total_elapsed_ms }}ms</span>
+                      <span>${{ rec.total_cost_usd }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </a-tab-pane>
+
+            <a-tab-pane key="cache" tab="缓存">
+              <div class="admin-cache-row">
+                <span class="admin-cache-desc">清除所有 <code>qa:cache:*</code> 缓存</span>
+                <a-popconfirm
+                  title="确认清除所有问答缓存？"
+                  ok-text="确认"
+                  cancel-text="取消"
+                  @confirm="clearCache"
+                >
+                  <a-button danger :loading="clearLoading">清除缓存</a-button>
+                </a-popconfirm>
+              </div>
+              <div v-if="clearResult" class="admin-clear-result">
+                已删除 {{ clearResult.deleted }} 条缓存（前缀：{{ clearResult.prefix }}）
+              </div>
+            </a-tab-pane>
+
+            <a-tab-pane key="debug" tab="调试">
+              <DebugPanel embedded />
+            </a-tab-pane>
+
+            <a-tab-pane key="invites" tab="邀请码">
+              <div class="admin-invite-create">
+                <a-input
+                  v-model:value="inviteCode"
+                  placeholder="输入邀请码（留空可自动生成）"
+                  class="admin-invite-input"
+                  @pressEnter="createInvite"
+                />
+                <a-button type="primary" :loading="inviteLoading" @click="createInvite">
+                  生成邀请码
+                </a-button>
+              </div>
+
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>邀请码</th>
+                      <th>状态</th>
+                      <th>使用者</th>
+                      <th>创建时间</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="invitesLoading">
+                      <td colspan="4" class="admin-table-empty">加载中...</td>
+                    </tr>
+                    <tr v-else-if="!invites.length">
+                      <td colspan="4" class="admin-table-empty">暂无邀请码</td>
+                    </tr>
+                    <tr v-else v-for="row in invites" :key="row.id">
+                      <td>{{ row.code }}</td>
+                      <td>
+                        <span :class="row.used ? 'tag-fail' : 'tag-ok'">
+                          {{ row.used ? '已使用' : '未使用' }}
+                        </span>
+                      </td>
+                      <td>{{ row.used_by || '-' }}</td>
+                      <td>{{ row.created_at || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </a-tab-pane>
+
+            <a-tab-pane key="users" tab="用户">
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>用户名</th>
+                      <th>创建时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="usersLoading">
+                      <td colspan="3" class="admin-table-empty">加载中...</td>
+                    </tr>
+                    <tr v-else-if="!users.length">
+                      <td colspan="3" class="admin-table-empty">暂无用户</td>
+                    </tr>
+                    <tr v-else v-for="row in users" :key="row.id">
+                      <td>{{ row.username }}</td>
+                      <td>{{ row.created_at || '-' }}</td>
+                      <td>
+                        <a-popconfirm
+                          title="确认删除该用户？"
+                          ok-text="确认"
+                          cancel-text="取消"
+                          @confirm="deleteUser(row.username)"
+                        >
+                          <a-button danger size="small" :loading="deletingUser === row.username">
+                            删除
+                          </a-button>
+                        </a-popconfirm>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </a-tab-pane>
+          </a-tabs>
         </section>
 
       </div>
@@ -103,6 +189,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import DebugPanel from '@/components/DebugPanel.vue'
 
 const adminToken = ref('')
 const stats = ref(null)
@@ -110,6 +197,14 @@ const statsLoading = ref(false)
 const clearLoading = ref(false)
 const tokenError = ref('')
 const clearResult = ref(null)
+const activeTab = ref('stats')
+const inviteCode = ref('')
+const invites = ref([])
+const users = ref([])
+const inviteLoading = ref(false)
+const invitesLoading = ref(false)
+const usersLoading = ref(false)
+const deletingUser = ref('')
 
 function pct(val) {
   if (val == null) return '-'
@@ -129,6 +224,7 @@ async function loadStats() {
       headers: { 'X-Admin-Token': adminToken.value.trim() }
     })
     stats.value = res.data
+    await Promise.all([loadInvites(), loadUsers()])
   } catch (e) {
     const status = e.response?.status
     if (status === 401) tokenError.value = 'Token 无效'
@@ -137,6 +233,87 @@ async function loadStats() {
     stats.value = null
   } finally {
     statsLoading.value = false
+  }
+}
+
+function _adminHeaders() {
+  return { 'X-Admin-Token': adminToken.value.trim() }
+}
+
+async function loadInvites() {
+  if (!adminToken.value.trim()) return
+  invitesLoading.value = true
+  try {
+    const res = await axios.get('/api/qa/auth/invites', {
+      headers: _adminHeaders(),
+    })
+    invites.value = res.data?.items || []
+  } catch (e) {
+    const status = e.response?.status
+    tokenError.value = `邀请码列表加载失败（${status || '网络错误'}）`
+  } finally {
+    invitesLoading.value = false
+  }
+}
+
+async function loadUsers() {
+  if (!adminToken.value.trim()) return
+  usersLoading.value = true
+  try {
+    const res = await axios.get('/api/qa/auth/users', {
+      headers: _adminHeaders(),
+    })
+    users.value = res.data?.items || []
+  } catch (e) {
+    const status = e.response?.status
+    tokenError.value = `用户列表加载失败（${status || '网络错误'}）`
+  } finally {
+    usersLoading.value = false
+  }
+}
+
+async function deleteUser(username) {
+  if (!adminToken.value.trim() || !username) return
+  deletingUser.value = username
+  tokenError.value = ''
+  try {
+    await axios.delete(`/api/qa/auth/users/${encodeURIComponent(username)}`, {
+      headers: _adminHeaders(),
+    })
+    await loadUsers()
+  } catch (e) {
+    const status = e.response?.status
+    tokenError.value = `删除用户失败（${status || '网络错误'}）`
+  } finally {
+    deletingUser.value = ''
+  }
+}
+
+function _randomCode() {
+  return `INVITE-${Date.now().toString(36).toUpperCase()}`
+}
+
+async function createInvite() {
+  if (!adminToken.value.trim()) {
+    tokenError.value = '请先输入 Token'
+    return
+  }
+  inviteLoading.value = true
+  tokenError.value = ''
+  try {
+    const code = inviteCode.value.trim() || _randomCode()
+    await axios.post(
+      '/api/qa/auth/invite',
+      { code },
+      { headers: _adminHeaders() },
+    )
+    inviteCode.value = ''
+    await loadInvites()
+  } catch (e) {
+    const status = e.response?.status
+    tokenError.value = `生成邀请码失败（${status || '网络错误'}）`
+  } finally {
+    inviteLoading.value = false
   }
 }
 
@@ -197,6 +374,9 @@ async function clearCache() {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+.admin-fail-wrap {
+  margin-top: 20px;
 }
 
 /* Section */
@@ -300,5 +480,36 @@ async function clearCache() {
   margin-top: 10px;
   font-size: 13px;
   color: #389e0d;
+}
+.admin-invite-create {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.admin-invite-input {
+  flex: 1;
+}
+.admin-table-wrap {
+  overflow-x: auto;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  th,
+  td {
+    border: 1px solid var(--color-border);
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--color-text);
+    text-align: left;
+  }
+  th {
+    background: #fafafa;
+    font-weight: 600;
+  }
+}
+.admin-table-empty {
+  text-align: center !important;
+  color: var(--color-text-secondary) !important;
 }
 </style>

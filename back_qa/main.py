@@ -27,6 +27,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse as _JSONResponse
 
 from back_qa.qa.qa_router import router as qa_router
+from back_qa.qa.auth_router import router as auth_router
 from back_qa.qa.dependencies import get_neo4j_client
 
 
@@ -96,6 +97,7 @@ app.add_middleware(
 )
 
 app.include_router(qa_router, prefix="/api/qa")
+app.include_router(auth_router)
 
 
 if __name__ == "__main__":

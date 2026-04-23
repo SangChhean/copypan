@@ -1,0 +1,4 @@
+# back_qa additional dependencies not listed in back_mic/backend/requirements.txt
+starlette
+bcrypt
+python-jose[cryptography]

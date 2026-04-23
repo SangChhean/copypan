@@ -7,8 +7,11 @@
           <span class="qa-logo-icon">📖</span>
           <span class="qa-logo-text">职事信息问答</span>
         </div>
-        <a class="qa-admin-link" href="#/debug" style="margin-right:12px">调试</a>
-        <a class="qa-admin-link" href="#/admin">管理</a>
+        <div class="qa-header-actions">
+          <span class="qa-user">当前用户：{{ currentUsername || '未登录' }}</span>
+          <a class="qa-admin-link" href="#/admin">管理后台</a>
+          <a-button size="small" @click="logout">退出登录</a-button>
+        </div>
       </div>
     </header>
 
@@ -109,12 +112,15 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { marked } from 'marked'
 
+const router = useRouter()
 const question = ref('')
 const textareaKey = ref(0)
 const loading = ref(false)
+const currentUsername = ref(localStorage.getItem('qa_username') || '')
 /** 发往接口的最近 3 轮 { question, answer } */
 const history = ref([])
 /** 界面气泡：user / assistant，assistant 含 loading 与展示字段 */
@@ -133,6 +139,12 @@ const examples = [
 
 function fillExample(ex) {
   question.value = ex
+}
+
+function logout() {
+  localStorage.removeItem('qa_token')
+  localStorage.removeItem('qa_username')
+  router.replace('/login')
 }
 
 function renderAnswer(text) {
@@ -177,16 +189,20 @@ async function submit() {
   // 追问补全：若当前问题疑似追问（不含书名但含篇章词），用上一轮问题的书名补全
   let finalQuestion = q
   const lastTurn = history.value[history.value.length - 1]
+  let hasChapter = false
+  let hasBookName = false
+  let isTooShort = false
+  let bookMatch = null
   if (lastTurn) {
-    const hasChapter = /第[零一二三四五六七八九十百千]+[篇章课]|第\d+[篇章课]/.test(finalQuestion)
-    const hasBookName =
+    hasChapter = /第?[零一二三四五六七八九十百千]+[篇章课]|第\d+[篇章课]/.test(finalQuestion)
+    hasBookName =
       /文集|读经|训练|特会|总论|课程|福音|使徒|罗马|创世|出埃及|利未|民数|申命|约书亚|士师|路得|撒母耳|列王|历代|以斯|约伯|诗篇|箴言|传道|雅歌|以赛亚|耶利米|以西结|但以理|何西阿|约珥|阿摩司|俄巴底|约拿|弥迦|那鸿|哈巴谷|西番雅|哈该|撒迦利亚|玛拉基|马太|马可|路加|约翰|歌林多|加拉太|以弗所|腓利比|歌罗西|帖撒|提摩太|提多|腓利门|希伯来|雅各|彼得|犹大|启示/.test(
         finalQuestion,
       )
-    const isTooShort = finalQuestion.length <= 15
+    isTooShort = finalQuestion.length <= 15
     if (hasChapter && !hasBookName && isTooShort) {
       const prevQ = lastTurn.question
-      const bookMatch = prevQ.match(/^(.+?)(?:第[零一二三四五六七八九十百千\d]+[篇章课]|的)/)
+      bookMatch = prevQ.match(/^(.+?)(?:第[零一二三四五六七八九十百千\d]+[篇章课]|的)/)
       if (bookMatch && bookMatch[1].length >= 4) {
         finalQuestion = bookMatch[1].trim() + finalQuestion
       }
@@ -194,14 +210,19 @@ async function submit() {
   }
 
   try {
+    const token = localStorage.getItem('qa_token') || ''
     const res = await axios.post('/api/qa/query', {
       question: finalQuestion,
-      skip_cache: true,
-      debug: true,
+      skip_cache: false,
+      debug: false,
       history: history.value.map((h) => ({
         question: h.question,
         answer: h.answer,
       })),
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
     const d = res.data
     assistantMsg.found = d.found
@@ -276,6 +297,15 @@ async function scrollToBottom() {
   color: var(--color-text-secondary);
   text-decoration: none;
   &:hover { color: var(--color-primary); }
+}
+.qa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.qa-user {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 /* 主体：中间可滚动 */

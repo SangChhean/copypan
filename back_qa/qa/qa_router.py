@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
+from back_qa.qa.auth_router import _require_user
 
 router = APIRouter()
 
@@ -133,6 +134,7 @@ async def query(req: QueryRequest, request: Request):
     from back_qa.qa.qa_service import run_pipeline
     from back_qa.qa.dependencies import get_redis_client
 
+    _require_user(request)
     if not check_rate_limit(request, get_redis_client()):
         raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
     if not check_prompt_injection(req.question):
