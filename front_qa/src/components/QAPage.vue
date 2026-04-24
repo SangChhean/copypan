@@ -835,6 +835,27 @@ async function scrollToMessageTop(messageId) {
 }
 
 @media (max-width: 768px) {
+  /* 顶栏固定：与底栏输入区对称，中间主区域单独滚动 */
+  .qa-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 101;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    /* 刘海屏安全区 */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .qa-header-inner {
+    padding: 10px 16px;
+  }
+
+  .qa-logo-text {
+    font-size: 22px;
+  }
+
   .qa-footer {
     position: fixed;
     bottom: 0;
@@ -843,11 +864,13 @@ async function scrollToMessageTop(messageId) {
     z-index: 100;
     background: var(--color-bg);
     padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--color-border);
   }
 
+  /* 顶栏约 52px + safe-area + 原有内容边距；底栏约 72px + safe-area */
   .qa-main {
-    padding-bottom: 100px;
+    padding: calc(16px + env(safe-area-inset-top, 0px) + 52px) 16px calc(100px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>
