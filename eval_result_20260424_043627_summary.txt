@@ -1,0 +1,16 @@
+============ 评测报告 ============
+总题数:         3
+API/网络错误:   3题（不计入维度1 误拒/误放）
+维度1 found符合预期:   N/A（全部为 API/网络错误）
+  - 误拒 (ANSWER→not found):  0题
+  - 误放 (NO_ANSWER→found):    0题
+维度2 chunks命中:      N/A（无 ANSWER 且维度1 通过题）
+维度3 forbidden未出现: N/A
+维度4 LLM评审通过:     N/A
+综合得分:       N/A
+
+---- 失败题目 ----
+smoke_001 [API错误] HTTP 401: {"detail":"token 无效或已过期"}
+smoke_002 [API错误] HTTP 401: {"detail":"token 无效或已过期"}
+smoke_003 [API错误] HTTP 401: {"detail":"token 无效或已过期"}
+=================================

@@ -8,12 +8,12 @@ from back_shared.version_manifest import PROMPT_VERSION, MODEL_PROFILE
 
 # ---------------------------------------------------------------------------
 # Step 1：概念抽取（Opus）
-# 占位符：{question}、{concept_list}
-# 输出：严格 JSON {"surface": [...], "deep": [...], "reasoning": "..."}
+# 占位符：{question}、{concept_list}、{history_questions}
+# 输出：严格 JSON {"surface": [...], "deep": [...], "reasoning": "...", "rewritten_query": "..."}
 # ---------------------------------------------------------------------------
 STEP1_CONCEPT_EXTRACTION = """你是一位深研圣经与倪柝声、李常受职事文献的神学助手。
 
-用户提问：
+{history_questions}用户提问：
 {question}
 
 以下是职事信息概念词表（共 637 个概念）：
@@ -34,33 +34,40 @@ STEP1_CONCEPT_EXTRACTION = """你是一位深研圣经与倪柝声、李常受�
 - 不是 surface 里已有的概念
 - 数量 1-5 个
 
+### rewritten_query
+结合对话历史消解所有指代词（那、祂、这、它），补全省略的主语和宾语，
+改写为适合在职事信息语料库检索的书面语查询句，长度控制在10-30字。
+若当前问题已经清晰完整，rewritten_query 与 question 保持一致即可。
+
 ## 规则
 1. 所有选词必须逐字存在于词表中，不得自造或修改
 2. surface 与 deep 之间不重复
 3. 只输出 JSON，不输出其他任何内容
 
 ## 输出格式
-{{"surface": ["概念A"], "deep": ["概念1", "概念2"], "reasoning": "一句话说明为何选这些概念"}}"""
+{{"surface": ["概念A"], "deep": ["概念1", "概念2"], "reasoning": "一句话说明为何选这些概念", "rewritten_query": "书面语检索句"}}"""
 
 # ---------------------------------------------------------------------------
 # Step 3：相关性判断（Haiku）
-# 占位符：{question}、{passages}
+# 占位符：{rewritten_query}、{passages}
 # 输出：严格 JSON {"relevant": true/false, "reason": "..."}
 # ---------------------------------------------------------------------------
 STEP3_RELEVANCE_CHECK = """你是一位职事信息相关性判断助手。
 
-用户问题：
-{question}
+检索查询：
+{rewritten_query}
 
 以下是从职事信息中检索到的段落：
 {passages}
 
-请判断：上述段落是否足以回答用户的问题？
+请判断：上述段落是否足以回答这个检索查询所指向的具体问题？
 
 判断标准：
-- 段落中有与问题直接相关的内容 → relevant: true
-- 段落内容与问题完全无关或严重不足 → relevant: false
-- 有部分相关但不充分时，偏向 true（宁可尝试作答）
+- 段落中有能直接回答这个具体问题的内容 → relevant: true
+- 段落主题相关但无法直接回答这个具体问题 → relevant: false
+- 问题涉及多卷书或多篇对比，但段落只来自单一来源 → relevant: false
+- 段落内容与问题完全无关 → relevant: false
+- 有部分相关但不充分时，偏向 false（宁可不答，不可乱答）
 
 只输出 JSON，不输出其他任何内容：
 {{"relevant": true, "reason": "简要说明"}}"""

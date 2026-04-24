@@ -1,0 +1,1784 @@
+[
+  {
+    "query_id": "gen_001",
+    "query": "神的创造和复造中用了几个不同的动词，是哪几个，分别又是什么意思",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-1-66"
+    ],
+    "gold_answer_summary": "主要提到了三个词：创造、造作和作成。创造就是从无到有，并且只有神能创造，造作就是将已经存在的进行加工产生出来新的东西。然后神给人造作出一个身体就是作成。",
+    "forbidden_concepts": [
+      "人创造事物",
+      "撒但破坏"
+    ],
+    "notes": "重点在于只有神能创造，不是突出人的价值"
+  },
+  {
+    "query_id": "gen_002",
+    "query": "撒但为什么会背叛",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-2-18"
+    ],
+    "gold_answer_summary": "撒但背叛是因为他看自己的美丽，心里骄傲",
+    "forbidden_concepts": [
+      "路西弗",
+      "污鬼"
+    ],
+    "notes": "重点在于背叛的原因，不用讲述撒但的历史"
+  },
+  {
+    "query_id": "gen_003",
+    "query": "产生生命需要几个条件，分别是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-3-18",
+      "life_1-3-20",
+      "life_1-3-24",
+      "life_1-3-29",
+      "life_1-3-35",
+      "life_1-3-40"
+    ],
+    "gold_answer_summary": "共有6个条件，分别是灵来了、话来了、光来了、光暗分开、空气以下的水与空气以上的水分开、陆地与水分开",
+    "forbidden_concepts": [
+      "造人",
+      "生命成熟"
+    ],
+    "notes": "重点在于陈述产生生命的六个条件，不在于生命的发展"
+  },
+  {
+    "query_id": "gen_004",
+    "query": "创世记一章3节的光和14~17节的光体有什么不一样",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-4-11"
+    ],
+    "gold_answer_summary": "第一天的光比较弱，不是那么强；第四天不只有光，也有光体，光更强、更结实、更便利",
+    "forbidden_concepts": [
+      "血月",
+      "末日审判"
+    ],
+    "notes": "重点是比较光和光体的不同，不是审判和末日"
+  },
+  {
+    "query_id": "gen_005",
+    "query": "太阳、月亮和众星分别预表什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-5-15",
+      "life_1-5-17",
+      "life_1-5-27"
+    ],
+    "gold_answer_summary": "太阳预表基督和祂的众圣徒；月亮指召会；众星是基督和众圣徒",
+    "forbidden_concepts": [
+      "日头变黑",
+      "跪拜"
+    ],
+    "notes": "重点在于这三方面的预表，不是哪个光体更重要"
+  },
+  {
+    "query_id": "gen_006",
+    "query": "创世记和约翰福音所启示的三一神有什么不同",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_007",
+    "query": "神要人管治的范围",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-7-9",
+      "life_1-7-11",
+      "life_1-7-13"
+    ],
+    "gold_answer_summary": "管治海里的一切；管治空中的一切；管治地上的一切",
+    "forbidden_concepts": [
+      "作宰相",
+      "管五座城"
+    ],
+    "notes": "重点是三方面管治的范围，生命的掌权，不是外面物质的作王"
+  },
+  {
+    "query_id": "gen_008",
+    "query": "创世记一章里的两粒种子是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-8-8"
+    ],
+    "gold_answer_summary": "形像和管治",
+    "forbidden_concepts": [
+      "庄重肃穆",
+      "教皇"
+    ],
+    "notes": "重点是撒的种子，不是种子的发展和成熟"
+  },
+  {
+    "query_id": "gen_009",
+    "query": "神为什么在第六天说甚好",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-9-18"
+    ],
+    "gold_answer_summary": "神所造的人有祂的形像和管治权，也没有发怨言，更没有饥饿",
+    "forbidden_concepts": [
+      "争闹",
+      "下跪"
+    ],
+    "notes": "重点是人真正满足神，不是其他造物的美丽"
+  },
+  {
+    "query_id": "gen_010",
+    "query": "创世记二章七节的气与箴言二十章二七节的灵有什么关联",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-10-49"
+    ],
+    "gold_answer_summary": "创世记二章七节的气在箴言二十章二十七节翻译作灵，这气就是人的灵，也就是耶和华的灯",
+    "forbidden_concepts": [
+      "永生",
+      "神的灵"
+    ],
+    "notes": "重在对气概念的解释，不是得永生"
+  },
+  {
+    "query_id": "gen_011",
+    "query": "伊甸是什么意思",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-11-19"
+    ],
+    "gold_answer_summary": "伊甸的希伯来文意思是快乐，伊甸是个快乐、享受和娱乐的地方",
+    "forbidden_concepts": [
+      "起来玩耍",
+      "天堂"
+    ],
+    "notes": "重在对气概念的解释，不是得永生"
+  },
+  {
+    "query_id": "gen_012",
+    "query": "变化和改变有什么区别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-12-3"
+    ],
+    "gold_answer_summary": "变化不是仅仅外面的改变，是生机的、新陈代谢的；变化就是将原来的形状和元素改编成别的形状和元素",
+    "forbidden_concepts": [
+      "洗手",
+      "禁食"
+    ],
+    "notes": "重在变化和改变两者的关联，不是宗教实行的传统"
+  },
+  {
+    "query_id": "gen_013",
+    "query": "依靠和倚靠有什么区别",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_014",
+    "query": "生命与生命的原则是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-14-23"
+    ],
+    "gold_answer_summary": "生命就是神自己；生命的原则就是在每件事上都倚靠神，若是倚靠神，每一件是也就是生命",
+    "forbidden_concepts": [
+      "出生",
+      "做好事"
+    ],
+    "notes": "重在与神发生关系，不是出于人的行为"
+  },
+  {
+    "query_id": "gen_015",
+    "query": "今天我们该走在哪条线上，该作什么",
+    "query_type": "实践应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-15-57"
+    ],
+    "gold_answer_summary": "我们要走在生命的线上；我们不该作什么，只要享受神作我们的生命和生命的供应，神会照顾我们的一切，因着这样的享受，我们就有生活行事、工作和建造",
+    "forbidden_concepts": [
+      "行善",
+      "立志"
+    ],
+    "notes": "重在与神发生关系，不是出于人的行为"
+  },
+  {
+    "query_id": "gen_016",
+    "query": "创世记生命读经中哪里说的神成为人，人成为神",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_017",
+    "query": "创三15节中的夏娃与启示录十二章的宇宙妇人是什么关系",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-19-28"
+    ],
+    "gold_answer_summary": "创世记三章15节的女人夏娃就是这个宇宙妇人的象征",
+    "forbidden_concepts": [
+      "禁果",
+      "蒙头"
+    ],
+    "notes": "重在说明夏娃和宇宙妇人的关联，不重在女人的地位"
+  },
+  {
+    "query_id": "gen_018",
+    "query": "创二23～24中亚当与夏娃成为一体与弗五31~32的丈夫与妻子联合有什么联系",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-17-40"
+    ],
+    "gold_answer_summary": "在预表上亚当与夏娃成为一体，实际上就是基督与召会成为一灵；丈夫与妻子婚姻的联合也就是指着基督与召会说的",
+    "forbidden_concepts": [
+      "与世联婚",
+      "圣婚"
+    ],
+    "notes": "重在讲基督与召会的关联，不在于世俗的婚娶"
+  },
+  {
+    "query_id": "gen_019",
+    "query": "蛇的形状和蛇的性情有什么差别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-20-7"
+    ],
+    "gold_answer_summary": "蛇的形状指罪之肉体的样式；有蛇的性情就是指中了蛇毒的人，他们有罪的性情",
+    "forbidden_concepts": [
+      "大红龙",
+      "主耶稣的肉体有罪"
+    ],
+    "notes": "重在讲主耶稣与罪人的不同，不是讲蛇的发展"
+  },
+  {
+    "query_id": "gen_020",
+    "query": "创世记中提到蛇有几次",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_021",
+    "query": "神是用哪几样东西封闭生命树的道路，分别表征什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-21-43",
+      "life_1-21-45",
+      "life_1-21-47",
+      "life_1-21-49"
+    ],
+    "gold_answer_summary": "神是借着基路伯和发火焰的剑封闭生命树的道路，在这里我们看见三个项目：基路伯、火焰及剑。基路伯表征神的荣耀；火焰表征神的圣别，剑表征神的公义。",
+    "forbidden_concepts": [
+      "天使的护卫",
+      "神的愤怒"
+    ],
+    "notes": "标准答案有严格的三组对应：基路伯→荣耀，火焰→圣别，剑→公义，三组对应需完整且准确；'火焰'的表征不是审判或忿怒，而是神的圣别"
+  },
+  {
+    "query_id": "gen_022",
+    "query": "创世记三章二十节和四章一节有什么内涵上的关联",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-22-5",
+      "life_1-22-6"
+    ],
+    "gold_answer_summary": "这两节经文说出了相信福音，在创世记三章二十节，亚当的反应证明他相信了福音，亚当相信了，他的反应就是称他的妻子为“活”;创世记四章一节告诉我们，夏娃相信了福音，夏娃给她的孩子取名叫该隐，证明她相信了创世记三章十五节神所宣告的福音。",
+    "forbidden_concepts": [
+      "罪的后果",
+      "人类繁衍秩序",
+      "婚姻关系"
+    ],
+    "notes": "本题核心联系点是'相信创三15的福音'——两节经文分别呈现亚当（命名夏娃为'活'）和夏娃（以该隐之名表达得男的信心）对神所宣告的原始福音的信心回应。"
+  },
+  {
+    "query_id": "gen_023",
+    "query": "亚伯和该隐的故事的种子在圣经里的终极完成分别是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-23-5"
+    ],
+    "gold_answer_summary": "亚伯的种子的终极完成是新耶路撒冷；该隐的种子的终极完成是启示录十七和十八章所启示的大巴比伦",
+    "forbidden_concepts": [
+      "该隐的种子终极完成于某一历史性地上帝国（如罗马帝国、古巴比伦帝国）",
+      "亚伯的种子终极完成于以色列国复兴或地上千年国"
+    ],
+    "notes": "本题要求精确列出两个终极完成的对应关系：亚伯→新耶路撒冷，该隐→大巴比伦（启十七至十八章），而不是事实论述"
+  },
+  {
+    "query_id": "gen_024",
+    "query": "人类文化出现的原因是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-24-25"
+    ],
+    "gold_answer_summary": "人类文化出现的原因乃是由于人类失去了神。原初那位创造人的神乃是人的一切；神是人的保护、维持、供应、喜乐、娱乐和防卫。人失去了神，就失去了一切，就不得不发明自己的文化。",
+    "forbidden_concepts": [
+      "神借文化眷顾人类",
+      "人类理性/创造力的自然结果"
+    ],
+    "notes": "重点是失去神，而不是社会发展规律，或神所允许的补偿手段"
+  },
+  {
+    "query_id": "gen_025",
+    "query": "我们该如何呼求主",
+    "query_type": "实践应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-25-58"
+    ],
+    "gold_answer_summary": "第一，我们必须从清洁的心呼求祂；第二，我们必须以清洁的嘴唇呼求祂;第三，我们需要大大张口呼求主；第四，我们还要团体的呼求主",
+    "forbidden_concepts": [
+      "安静等候",
+      "诚心"
+    ],
+    "notes": "四点须基本完整，允许措辞出入，但'清洁的心'、'清洁的嘴唇'、'大大张口'、'团体呼求'四个要素缺两项以上应判不完整"
+  },
+  {
+    "query_id": "gen_026",
+    "query": "与神同行是什么意思",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-26-20"
+    ],
+    "gold_answer_summary": "与神同行就是不越过神，不自以为是，不照自己的观念和喜好作事，也不在神以外作事；与神同行乃是以神为我们的中心和一切，照着祂的启示和引导作事，并且与祂同作一切事。",
+    "forbidden_concepts": [
+      "克己苦修",
+      "道德伦理改进",
+      "行为称义"
+    ],
+    "notes": "重点在于'不越过神'与'以神为中心'，不是道德/禁欲层面的克己或靠行为或顺从换取神的悦纳"
+  },
+  {
+    "query_id": "gen_027",
+    "query": "人第三次堕落的结果是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-27-32",
+      "life_1-27-34"
+    ],
+    "gold_answer_summary": "人第三次堕落的第一个结果是收回圣灵，表明神弃绝人；第二个结果是洪水的来临，带来毁灭的审判。",
+    "forbidden_concepts": [
+      "原罪",
+      "悔改与救赎"
+    ],
+    "notes": "重点在于收回圣灵和洪水审判，非系统神学的原罪论述"
+  },
+  {
+    "query_id": "gen_028",
+    "query": "创世记六章八节和希伯来四章十六节两处经文说到了什么相同的事",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-28-8",
+      "life_1-28-9"
+    ],
+    "gold_answer_summary": "得恩典。创世记六章八节说，“但挪亚在耶和华眼前蒙恩”，这里说到挪亚得恩典；希伯来四章十六节告诉我们，来到施恩的宝座前，为要受怜悯，得恩典，作应时的帮助。",
+    "forbidden_concepts": [
+      "因信称义",
+      "大祭司基督论"
+    ],
+    "notes": "若答出'蒙神悦纳''得帮助'等近义表述而未点明'恩典'，判定为 Partial。"
+  },
+  {
+    "query_id": "gen_029",
+    "query": "挪亚、约伯对神的时代价值有什么不同",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_030",
+    "query": "方舟的上层是指三一神的哪一位",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-30-18",
+      "life_1-30-19"
+    ],
+    "gold_answer_summary": "方舟的上层是指父，父那一层是最高、最大、最奥秘的",
+    "forbidden_concepts": [
+      "子",
+      "灵"
+    ],
+    "notes": "重点要准确对应，不能将子或灵错误对应到上层"
+  },
+  {
+    "query_id": "gen_031",
+    "query": "世界和世代的区别是什么",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-31-18"
+    ],
+    "gold_answer_summary": "世界只有一个，世代却有许多。有古老时尚的世代，也有摩登时尚的世代，有短发型的世代，也有长发型的世代；挪亚世代的世界被定罪，埃及世代的世界也被定罪",
+    "forbidden_concepts": [
+      "千禧年世代",
+      "世界有许多个"
+    ],
+    "notes": "正确答案需体现二者的本质区分，世界=单数体系，世代=复数时期，不能以以末世论框架解释「世代」，也不能将「世界」与「世代」混用"
+  },
+  {
+    "query_id": "gen_032",
+    "query": "创世记一章二十六节和歌罗西三章十节这两处经文有什么共同点",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-32-34"
+    ],
+    "gold_answer_summary": "创世记一章二十六节和歌罗西三章十节都讲到了神的形像。创世记一章二十六节说，人是照着神的形像造的。歌罗西三章十节告诉我们，召会是照着神的形像所造的新人。",
+    "forbidden_concepts": [
+      "更新",
+      "灵魂体三部分"
+    ],
+    "notes": "重点在于神的形像，不能用其他内容来替换'形像'作为共同点"
+  },
+  {
+    "query_id": "gen_033",
+    "query": "闪和雅弗因遮盖分别得了什么祝福",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-33-28",
+      "life_1-33-29"
+    ],
+    "gold_answer_summary": "神要使雅弗扩张；神要称为闪的神",
+    "forbidden_concepts": [
+      "闪得地为业",
+      "雅弗得着基督"
+    ],
+    "notes": "闪得的是关系性祝福（神称为闪的神），雅弗得的是扩张性祝福（民族版图扩张）；不能将两者混淆"
+  },
+  {
+    "query_id": "gen_034",
+    "query": "巴别和巴比伦这两个词有什么异同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-34-32"
+    ],
+    "gold_answer_summary": "巴比伦的希腊文相当于希伯来文的巴别；古时的各邦国产生巴别，而基督教的各公会至终要完成于大巴比伦。",
+    "forbidden_concepts": [
+      "世界政治体系",
+      "世俗政权"
+    ],
+    "notes": "答案核心有两层：①语言层面——巴比伦（希腊文）= 巴别（希伯来文），二者是同一词的不同语言形式；②历史-神学层面——巴别是起点（邦国所产生），大巴比伦是终局（基督教各公会所完成）。不能将大巴比伦与政治性国家或世俗政权直接等同"
+  },
+  {
+    "query_id": "gen_035",
+    "query": "在实际里的国度和在实现里的国度有什么联系和区别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-35-48"
+    ],
+    "gold_answer_summary": "召会是在实际里的国度，带进在实现里的国度；在召会中，我们有在实际里的国度，但没有在实现里的国度。国度藉我们的召会生活得以实化，但不是得以实现。国度的实化，内在的实际，是在今天的召会里；而外在的实现，将来才要来到。",
+    "forbidden_concepts": [
+      "天国与神的国",
+      "个人灵命论"
+    ],
+    "notes": "此题考核'实际'（realization，内在实化）与'实现'（manifestation，外在彰显）的时间性与性质之别。评分时须警惕两类漂移：(1) 末世论混入，将'实现'锁定为千年国地上统治；(2) 过度个人化，遗漏召会生活作为国度实化之载体这一关键点。"
+  },
+  {
+    "query_id": "gen_036",
+    "query": "前三次的堕落与第四次的'背叛'在本质上有何不同？为何作者特别强调第四次不能仅称为'堕落'，而必须称为'背叛'",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-36-23"
+    ],
+    "gold_answer_summary": "堕落：泛指人偏离神的状态，可以是被动的、渐进的、因软弱或受诱惑而发生的;背叛：则是主动的、集体的、带有宣告性质的行动。第四次的堕落不是不道德、凶杀或强暴的问题,乃是在宇宙中谁该有权利和权柄的问题",
+    "forbidden_concepts": [
+      "第四次背叛主要涉及伦理或社会秩序的破坏",
+      "背叛是个人性的、偶发性的行为"
+    ],
+    "notes": "第四次堕落为宇宙权柄归属之争，而不是道德范围"
+  },
+  {
+    "query_id": "gen_037",
+    "query": "在保罗身上怎么体现神呼召的意义",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_038",
+    "query": "创十二10～20和创四七7两处经文的背景都说到下埃及，有什么区别",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-38-42"
+    ],
+    "gold_answer_summary": "亚伯拉罕的埃及之行是羞耻的，因他为妻子的事撒了谎；但雅各到埃及的访问却是光荣的，因为他祝福法老",
+    "forbidden_concepts": [
+      "埃及作为神管教之地",
+      "雅各下埃及预表基督降世"
+    ],
+    "notes": "仅需指出两次下埃及在品格与处境上的对比，不能引入预表论、类型解经或属灵意义延伸"
+  },
+  {
+    "query_id": "gen_039",
+    "query": "结合全本圣经，我们要如何活出新耶路撒冷",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_040",
+    "query": "民数记中以色列人过约旦河与亚伯拉罕过河有什么关联",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_041",
+    "query": "亚伯拉罕在创世记里一共筑了几座坛，各在什么地方，每一座坛有什么意义",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-41-19",
+      "life_1-41-26",
+      "life_1-41-29"
+    ],
+    "gold_answer_summary": "亚伯拉罕一共筑了三座坛：第一座在摩利，表征将所是所有的一切都献给神；第二座在伯特利（神的家）和艾（废墟）之间，表征在召会生活与世界的废墟之间献上自己，看重神的家（召会）价值，此外一切都是废墟；第三座在希伯仑的幔利，意义是维持与神不断的交通，不是偶然的交通，也不该时有时无的交通，必须是继续不断的交通。",
+    "notes": "三座坛各有具体地点和意义，须三者俱全；核心是献上自己与和神交通，非宗教仪式"
+  },
+  {
+    "query_id": "gen_042",
+    "query": "创世记十二章七至八节亚伯拉罕筑坛搭棚，与巴别人造城建塔（创十一）对比，说明什么",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-41-33",
+      "life_1-41-35"
+    ],
+    "gold_answer_summary": "巴别人先造城（为自己的生活）再建塔（传扬自己的名），巴别人所作的都是为着自己；亚伯拉罕先筑坛（把一切献给神）再搭棚（安排日常生活），亚伯拉罕所作的是先顾神再顾自己，祭坛是他向世人为神作见证的开始；帐棚是他向世人为神作见证的完成，他所作的都是为着神在地上的见证。",
+    "forbidden_concepts": [
+      "文化使命",
+      "社会参与",
+      "建立神国"
+    ],
+    "notes": "经节的对比须明确两者的建造动机和次序，坛先于棚是关键"
+  },
+  {
+    "query_id": "gen_043",
+    "query": "创世记十五章的以利以谢和创世记十六章的以实玛利，各代表亚伯拉罕什么样的问题，神为何都不接受",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-44-12",
+      "life_1-44-13",
+      "life_1-47-6",
+      "life_1-47-39"
+    ],
+    "gold_answer_summary": "以利以谢（创十五）代表亚伯拉罕所拥有的客观外在资源，是他从大马色带来的家仆，表征用现成拥有的东西来达成神的目的；以实玛利（创十六）代表亚伯拉罕天然能力所作的努力，是凭肉体生出的产品，表征靠自己努力来成就神的心意。前者是倚靠所有，后者是倚靠所能作；两者都被神拒绝，因为达成神的目的只能靠神自己作到人里面的恩典，任何出于人的东西都不算数。",
+    "forbidden_concepts": [
+      "律法与恩典的神学辩论",
+      "以实玛利的种族意涵",
+      "以色列与阿拉伯的历史冲突"
+    ],
+    "notes": "对比创十五以利以谢（所有=客观资源）与创十六以实玛利（所能=天然努力），并说明神拒绝两者的共同理由"
+  },
+  {
+    "query_id": "gen_044",
+    "query": "创世记十五章里，后裔和地分别象征什么，为什么相信后裔比相信地容易",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-44-47",
+      "life_1-45-6"
+    ],
+    "gold_answer_summary": "后裔象征基督活在我们里面成为内里的生命；地象征我们活在基督里面，就是今天的召会生活。相信基督作后裔（进入我们里面）比相信基督作地（我们实际的召会生活）容易，因为前者只需内里接受，后者却要求人放弃自己对生活的安排，完全活在召会这块地上。",
+    "forbidden_concepts": [
+      "天堂",
+      "以色列地",
+      "灵魂归宿"
+    ],
+    "notes": "须清楚说明后裔=基督在我们里面，地=我们活在基督/召会里；并解释难易的原因"
+  },
+  {
+    "query_id": "gen_045",
+    "query": "罗得最后落到那么惨的结局，根本原因是什么，圣经明明说他是义人，为什么还是失败了",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-52-7",
+      "life_1-52-9",
+      "life_1-52-11"
+    ],
+    "gold_answer_summary": "罗得虽然是得救且公义敬虔的人（彼后二8），但他从起头就是被动的被人带到神的路上，从未主动寻求神，也没有得过神的显现，与神没有直接的关系；他的属灵生命完全依赖他人的影响，一旦离开亚伯拉罕就失去了方向，逐渐漂流到所多玛，以致整个家庭陷入败坏之中。",
+    "forbidden_concepts": [
+      "失去救恩",
+      "永火",
+      "背道堕落"
+    ],
+    "notes": "须强调罗得是得救的义人，失败原因不是失去救恩，而是被动依赖、无主动追求所致"
+  },
+  {
+    "query_id": "gen_046",
+    "query": "创世记十八章神以普通人的样子来到亚伯拉罕帐棚前，和前几次显现（创十二、十五、十七章）有什么不同",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-50-7",
+      "life_1-50-11"
+    ],
+    "gold_answer_summary": "创十二神以荣耀的神显现，令人敬畏；创十五如冒烟的炉烧着的火把，严肃立约；创十七以以利沙代显现，是全足的大能者；创十八则以平常人的形态坐在帐棚前、接受洗脚与饮食，好像亲密的朋友来访，完全没有宗教仪式的距离感，是亚伯拉罕经历神最深、最甜的阶段。",
+    "forbidden_concepts": [
+      "圣灵浇灌",
+      "神迹显现",
+      "异象经历"
+    ],
+    "notes": "须对比四个阶段的显现形态，突出第四阶段人性化、朋友式亲密的独特性"
+  },
+  {
+    "query_id": "gen_047",
+    "query": "创世记十八章亚伯拉罕的代祷有什么原则，“代祷是挑战的谈话，不是祷告或恳求”的意思",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-51-5",
+      "life_1-51-19",
+      "life_1-51-22"
+    ],
+    "gold_answer_summary": "代祷必须照着神主动启示的心愿而发起，而非人自己想到的请求；由于亚伯拉罕与神有亲密的交通，他懂得神不愿将义人与恶人一同剿灭的心意，因此照着神公义的法则向神挑战说「审判全地的主岂不行公义吗」，这是以神的义约束神，是最有力的代祷方式，不是软弱的哀哭恳求。",
+    "forbidden_concepts": [
+      "认罪祷告",
+      "功德祷告",
+      "代祷团"
+    ],
+    "notes": "须点出三个层面：照着神的启示、照着神的义、挑战性谈话非恳求"
+  },
+  {
+    "query_id": "gen_048",
+    "query": "亚伯拉罕在创世记十二章和创世记十三章的行为有哪些具体变化，说明了什么",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-42-14",
+      "life_1-42-26"
+    ],
+    "gold_answer_summary": "创世记十二章记载亚伯拉罕遇饥荒时没有祷告，忘记神，擅自下埃及，并以谎言出卖妻子；创世记十三章记载他从埃及上来，重新回到伯特利与艾之间，就是当初筑坛支棚的地方，恢复呼求耶和华的名，重新回到凭信而活的地位上。一下一上，显出人的失败与神的保守恩典把人带回的过程。",
+    "forbidden_concepts": [
+      "道德改进",
+      "悔改仪式",
+      "罚款赎罪"
+    ],
+    "notes": "须具体对比创十二（下埃及/失败）与创十三（回到起初/恢复），经节须明确"
+  },
+  {
+    "query_id": "gen_049",
+    "query": "创世记二十三章亚伯拉罕购买麦比拉洞，为何坚持要连田地一起购买",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-59-27",
+      "life_1-59-29"
+    ],
+    "gold_answer_summary": "亚伯拉罕坚持购买带有田地和树木的洞穴，因为生长的田地象征复活的生命，他要把撒拉放在满有复活盼望的地方等候那日，而不是放进只有浮木（死亡之象）的死地；这片坟地在亚伯拉罕眼中是通往新耶路撒冷的门路，表达他对复活与将来的坚定盼望。",
+    "forbidden_concepts": [
+      "灵魂不灭",
+      "炼狱等候",
+      "祖先崇拜"
+    ],
+    "notes": "须说明田地=复活象征；购买田地连同洞穴表达的是对复活的信心，非葬礼习俗"
+  },
+  {
+    "query_id": "gen_050",
+    "query": "创世记十五章神和亚伯拉罕立约的时候，那三只被劈开的牲口和两只活鸟分别预表什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-45-13",
+      "life_1-45-17"
+    ],
+    "gold_answer_summary": "三只被劈开的牲口（母牛、母山羊、公绵羊，各三岁）预表在人性里被钉死的基督，分别对应平安祭、赎罪祭、燔祭；两只活鸟（斑鸠和雏鸽）预表在神性里复活活着的基督，是钉死不能胜过的那一位。五样合在一起表明基督担负起成就神永远目的的全部责任。",
+    "forbidden_concepts": [
+      "旧约献祭制度",
+      "动物血祭",
+      "利未律法"
+    ],
+    "notes": "须分清三牲与二鸟各自的预表意义；三岁的意义（在复活里被杀）也是重要细节"
+  },
+  {
+    "query_id": "gen_051",
+    "query": "亚伯拉罕在创世记二十四章没有等候神特别的异象或命令，就差仆人去为以撒求妻，他怎么知道这是神的旨意",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-60-11",
+      "life_1-60-12",
+      "life_1-60-18"
+    ],
+    "gold_answer_summary": "亚伯拉罕不是按着今天传统、宗教的作法行动得知神的旨意，而是长期与神在一里生活，自然地同有神的感觉与观念；因为他在主面前行事为人，他无论作什么都自然合乎神的心意。这是与神合一所带来的属灵直觉，而非宗教方法获得的特殊启示。",
+    "forbidden_concepts": [
+      "先知预言",
+      "禁食求问",
+      "圣签抽签"
+    ],
+    "notes": "重点是「与神在一里生活」自然产生的认识，对比宗教性的寻求旨意方法"
+  },
+  {
+    "query_id": "gen_052",
+    "query": "「凭信而活」和「凭眼见而活」有什么区别，亚伯拉罕的帐棚和祭坛如何体现凭信的生活",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-41-16",
+      "life_1-41-4"
+    ],
+    "gold_answer_summary": "凭信是在一切事上靠神，不以眼前看见的情形决定行动；凭眼见则是靠人自己的判断和安排。凭信的生活就是蒙召者日常的生活，日常的行事为人。这种日常的行事为人，是凭着信心，不是凭着眼见来过生活",
+    "forbidden_concepts": [
+      "理性主义",
+      "实证主义",
+      "人文主义"
+    ],
+    "notes": "澄清「信」与「见」的对立"
+  },
+  {
+    "query_id": "gen_053",
+    "query": "创世记里亚伯拉罕的帐棚和以西结中的殿有什么关联",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_054",
+    "query": "罗得的妻子变成盐柱和亚伯拉罕代祷，有何关联",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "「罗得之妻变盐柱」与「亚伯拉罕代祷」两者之间的关联，无法从本语料库直接得出答案",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试涉及未提及内容的作答"
+  },
+  {
+    "query_id": "gen_055",
+    "query": "亚伯拉罕「照着神的经纶行动」而不是等候明显的启示或异象，从中给我们的启示为何",
+    "query_type": "实践应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-60-16",
+      "life_1-60-11"
+    ],
+    "gold_answer_summary": "亚伯拉罕在以撒娶妻子的事上得着启示，乃是因为他照着神的观念来过生活，他的所作完全是为着达成神永远的目的。我们也要看见，召会中一切的婚姻都是为着达成神的目的。我们所作的每件事都该是照着神的经纶，甚至我们的婚姻也该是为着成就祂的经纶，我们需要过亚伯拉罕相似的生活。我们的动机、行动和所作的一切，都是照着神的经纶。",
+    "forbidden_concepts": [
+      "圣灵直接感动",
+      "神秘主义",
+      "求神签"
+    ],
+    "notes": "重点是照着神的观念来过生活，一切都是为着神的经纶"
+  },
+  {
+    "query_id": "gen_056",
+    "query": "亚伯兰与亚伯拉罕，在属灵意义上的区别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-47-20"
+    ],
+    "gold_answer_summary": "亚伯兰四个字母代表人（四是受造物的数字），加上的字母h代表神（一是造物者的数字），四加一等于五，五是负责任的数字。改名的属灵意义是神加到人里面；亚伯兰只是天然的人，亚伯拉罕是神加到里面而改变了的人。名字改变代表人本身的改变，神必须加到我们里面，我们才能完全，才能达成神的目的；没有神加进来，人永远是不完全的。",
+    "forbidden_concepts": [
+      "割礼仪式",
+      "出埃及记的名字神学",
+      "希腊文字研究"
+    ],
+    "notes": "须指出四个字母=人，加上h=神，4+1=5=负责；改名=改人"
+  },
+  {
+    "query_id": "gen_057",
+    "query": "罗得的妻子变成盐柱，变成盐柱与永远沉沦有何不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-53-6",
+      "life_1-53-11"
+    ],
+    "gold_answer_summary": "盐柱象征得救的信徒失去了功用，成为一个羞耻的记号。罗得的妻子确实是得救的（被拉出城外），但她回头看所多玛，变成了盐柱，失去了她的功用，因此这不是永远沉沦。",
+    "forbidden_concepts": [
+      "炼狱",
+      "永远灭亡",
+      "灵魂消灭论"
+    ],
+    "notes": "须明确区分：盐柱≠永远沉沦,变成盐柱虽然羞耻，但缺是得救的"
+  },
+  {
+    "query_id": "gen_58",
+    "query": "亚伯拉罕最老的仆人叫什么名字？他完成使命返回后的结局如何？",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "文本始终以「最老的仆人」或「仆人」称呼他，从未提及其名字，也没有记载他完成使命返回后的个人结局，无法从创世记生命读经语料库中找到答案。",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试涉及未提及内容的作答"
+  },
+  {
+    "query_id": "gen_59",
+    "query": "「帐棚」和「帐幕」在创世记的叙述中是同一样东西吗？",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-41-35"
+    ],
+    "gold_answer_summary": "两者不同但有关联。亚伯拉罕的帐棚是他个人日常的居所与见证，是属于创世记时代的；帐幕则是他的后裔在旷野按神的吩咐所建造的会幕，是帐棚的「长大」与完成。帐棚是帐幕的小影和预影，两者方向一致，但规模与性质有别。",
+    "forbidden_concepts": [
+      "帐棚与帐幕完全相同",
+      "帐幕只是更大的帐棚"
+    ],
+    "notes": "须明确区分：帐棚是个人的临时居所与见证，帐幕是神所命定、集体性的会幕；前者是种子，后者是生长"
+  },
+  {
+    "query_id": "gen_060",
+    "query": "创世记十五章六节说亚伯拉罕信神,雅各书二章也说到信神，这两处经文对信神的解释有何异同？",
+    "query_type": "经节对比",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_061",
+    "query": "为什么说以撒的婚姻是基督娶召会的预表",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-61-4",
+      "life_1-61-6"
+    ],
+    "gold_answer_summary": "父亲（亚伯拉罕）预表父神定计划，仆人预表圣灵完成托付，儿子（以撒）预表基督，新妇（利百加）预表召会，三一神共同作工，为要得着新妇",
+    "forbidden_concepts": [
+      "圣礼",
+      "灵魂得救"
+    ],
+    "notes": "重点是三一神共同作工为子得新妇这一主题，而非仅仅描述故事情节"
+  },
+  {
+    "query_id": "gen_062",
+    "query": "仆人给利百加的礼物是什么意思",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-61-36",
+      "life_1-61-38",
+      "life_1-61-39"
+    ],
+    "gold_answer_summary": "鼻子上的金环（半舍客勒）代表神圣的嗅觉口味，是属天恩赐的预尝，是部分的；手上的手镯（十舍客勒）代表神圣的功用，是完整的。这些礼物指明基督的一切丰富。",
+    "forbidden_concepts": [
+      "圣礼",
+      "受洗"
+    ],
+    "notes": "需要注意半舍客勒与十舍客勒的对比，以及预尝与完整功用的区别"
+  },
+  {
+    "query_id": "gen_063",
+    "query": "恩典和祝福有什么区别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-63-11",
+      "life_1-63-21"
+    ],
+    "gold_answer_summary": "祝福是神给我们外面的东西，祝福作到我们里面就成为恩典",
+    "forbidden_concepts": [
+      "因信称义",
+      "赦罪"
+    ],
+    "notes": "祝福是外在的，恩典是内在化的，这是本篇核心区分"
+  },
+  {
+    "query_id": "gen_064",
+    "query": "以撒在别是巴和在利河伯的经历有什么不同",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-64-19",
+      "life_1-64-22"
+    ],
+    "gold_answer_summary": "以撒在各处都有享受，但只有在别是巴有主的显现，所以只有在这里才能达成神的目的",
+    "forbidden_concepts": [
+      "历史考古",
+      "圣地朝圣"
+    ],
+    "notes": "强调立场正确才能达成神的目的"
+  },
+  {
+    "query_id": "gen_065",
+    "query": "以撒也很天然，生命也不很成熟，为什么却有享受恩典的一生",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-65-5",
+      "life_1-65-12"
+    ],
+    "gold_answer_summary": "享受恩典不是根据我们是否属灵，乃是神命定我们成为恩典的对象",
+    "forbidden_concepts": [
+      "行为称义",
+      "灵命成长"
+    ],
+    "notes": "需要澄清恩典不以属灵程度为前提"
+  },
+  {
+    "query_id": "gen_066",
+    "query": "雅各为什么蒙拣选，罗马九章是怎么解释的",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-66-20",
+      "life_1-66-22"
+    ],
+    "gold_answer_summary": "在雅各出生以前神就拣选了雅各，这是出于神的旨意，与人的行为无关",
+    "forbidden_concepts": [
+      "预知论",
+      "条件拣选",
+      "阿民念主义"
+    ],
+    "notes": "罗马书九章十一节是本题的核心经节，需要直接定位"
+  },
+  {
+    "query_id": "gen_067",
+    "query": "长子名分有什么属灵含义，轻看长子名分有什么后果",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-67-27",
+      "life_1-67-28"
+    ],
+    "gold_answer_summary": "长子名分包含：彰显神、代表神、有分于神的国。像以扫一样因贪爱物质享受而放弃长子名分，就在国度来到时无分",
+    "forbidden_concepts": [
+      "财产继承",
+      "世代神学"
+    ],
+    "notes": "后果与国度有关"
+  },
+  {
+    "query_id": "gen_068",
+    "query": "雅各在伯特利梦见的天梯代表什么，与约翰福音一章五十一节有何关联",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-68-21",
+      "life_1-68-22"
+    ],
+    "gold_answer_summary": "天梯预表基督是那把天带到地，将地联于天的一位。约翰一章五十一节是这个梦的新约应验",
+    "forbidden_concepts": [
+      "天堂入口",
+      "天使崇拜"
+    ],
+    "notes": "需联合创二八12与约一51来回答"
+  },
+  {
+    "query_id": "gen_069",
+    "query": "利百加和以斯帖这两位女性在圣经里都是被神所用的，她们有什么相同的属灵特质",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "创世记生命读经语料库中没有关于以斯帖的内容，无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "以斯帖完全不在语料范围内，不可作答"
+  },
+  {
+    "query_id": "gen_070",
+    "query": "就像拉结和利亚一样，按照天然喜好的选择与神的旨意冲突时该怎么办",
+    "query_type": "实际应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-70-15",
+      "life_1-70-18"
+    ],
+    "gold_answer_summary": "神允许我们得着自己所偏好的，但同时用这偏好带来对付和变化；神所给的才是真正适合我们且能达成祂目的的",
+    "forbidden_concepts": [
+      "心理咨询",
+      "自我提升"
+    ],
+    "notes": "答案落脚点应在神的主宰与对付，而非婚恋建议"
+  },
+  {
+    "query_id": "gen_071",
+    "query": "新约里除了彼得和保罗以外，还有哪些使徒或作者提到神的建造这个主题",
+    "query_type": "经节对比",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试作答"
+  },
+  {
+    "query_id": "gen_072",
+    "query": "拉班压榨雅各这件事，在神的计划里有什么意义",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-71-12"
+    ],
+    "gold_answer_summary": "拉班对雅各的压榨是神的主宰，借以变化雅各",
+    "forbidden_concepts": [
+      "忍耐的美德",
+      "道德教训"
+    ],
+    "notes": "重点在神主宰的变化，而非拉班本人的道德评价或雅各的心理成长"
+  },
+  {
+    "query_id": "gen_073",
+    "query": "为什么说枕头必须立成柱子？枕头和柱子有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-72-17"
+    ],
+    "gold_answer_summary": "枕头是为着个人的安息，柱子是为着神的建造，使神得安息",
+    "forbidden_concepts": [
+      "奉献礼仪",
+      "属灵恩赐"
+    ],
+    "notes": "澄清枕头与柱子的区别，神的安息不要解释为神在天上的宁静，而是神在地上得着居所"
+  },
+  {
+    "query_id": "gen_074",
+    "query": "雅各斥责拉班这段记载中，如何看出雅各还是很天然",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-73-5"
+    ],
+    "gold_answer_summary": "雅各听见拉班的梦后，第一个反应是斥责拉班而不是赞美神，暴露他的天然",
+    "forbidden_concepts": [
+      "心理创伤",
+      "正义申诉"
+    ],
+    "notes": "要答出正确的反应应该是什么"
+  },
+  {
+    "query_id": "gen_075",
+    "query": "雅各看见了两队天使的异象，为什么还是不信靠神",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-74-8"
+    ],
+    "gold_answer_summary": "雅各看见异象但没有信靠这个异象，还是用天然的能力，说出他的天然还没有对付干净",
+    "forbidden_concepts": [
+      "信心软弱的心理分析",
+      "理性主义"
+    ],
+    "notes": "区分「看见异象」和「信靠异象」，雅各的问题不是没看见，而是看见了仍不信靠"
+  },
+  {
+    "query_id": "gen_076",
+    "query": "创世记三十二章三十一节中雅各大腿瘸了和日头升起有什么关系",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-75-28"
+    ],
+    "gold_answer_summary": "活在光中的人必定是瘸腿的，就是被破碎过的，被摸过的",
+    "forbidden_concepts": [
+      "道德成长",
+      "悔改认罪"
+    ],
+    "notes": "准确定位圣经节，清楚说明瘸腿和日头的含义"
+  },
+  {
+    "query_id": "gen_077",
+    "query": "雅各从拉班那里回来，为什么先停在疏割和示剑，而不是直接去伯特利",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-76-6"
+    ],
+    "gold_answer_summary": "他忘记了在伯特利所许的愿，满足于当下，还没有走到神要他去的地方",
+    "forbidden_concepts": [
+      "地理历史考证",
+      "迦南地产权"
+    ],
+    "notes": "疏割、示剑、伯特利是三个属灵层次的对比，不是地理或历史问题"
+  },
+  {
+    "query_id": "gen_078",
+    "query": "行传四章说耶稣是房角石，这和我们得救有什么关系，彼得为什么在那里提建造",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-77-9"
+    ],
+    "gold_answer_summary": "行传四章十二节说到我们靠耶稣的名得救，十三节就启示基督是房角石，救赎是为着神的建造。",
+    "forbidden_concepts": [
+      "宗教改革",
+      "教会论"
+    ],
+    "notes": "引用行传四章十二节至十三节"
+  },
+  {
+    "query_id": "gen_079",
+    "query": "圣殿历次重建的历史",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "关于圣殿重建，语料库只有简短提及，没有展开,系统不应尝试作答"
+  },
+  {
+    "query_id": "gen_080",
+    "query": "雅各和约伯都经历了极大的苦难，他们两个人的苦难有什么本质上的不同",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_081",
+    "query": "神启示自己是全足的神，目的是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-81-5",
+      "life_1-81-9"
+    ],
+    "gold_answer_summary": "神启示自己是全足的神，目的是为着伯特利，神的家的建造；全足的神乃是为着召会生活，今日的伯特利",
+    "forbidden_concepts": [
+      "得救",
+      "属灵",
+      "创造"
+    ],
+    "notes": "重点在建造，不是仅仅供应我们使我们得救或属灵"
+  },
+  {
+    "query_id": "gen_082",
+    "query": "如何经历全足的神",
+    "query_type": "实践应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-81-9",
+      "life_1-81-11"
+    ],
+    "gold_answer_summary": "必须在召会这团体身体中,与众圣徒一同经历。离开召会生活就没有地位领受这经历",
+    "forbidden_concepts": [
+      "个人灵修",
+      "单独追求",
+      "私下祷告"
+    ],
+    "notes": "强调在召会生活中才能经历，不能单独"
+  },
+  {
+    "query_id": "gen_083",
+    "query": "雅各在创世记二十八章和三十五章立的石柱有什么意义",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-82-4"
+    ],
+    "gold_answer_summary": "石柱不是普通的记号,而是神家的建造。这柱子要成为伯特利,就是神的殿,表明建造神家的见证",
+    "forbidden_concepts": [
+      "立碑纪念",
+      "个人记录",
+      "宗教仪式"
+    ],
+    "notes": "雅各两次在伯特利立石柱"
+  },
+  {
+    "query_id": "gen_084",
+    "query": "铜柱的属灵意义是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-83-9",
+      "life_1-83-10"
+    ],
+    "gold_answer_summary": "铜表征神的审判。作柱子的人必须持续在神的审判下,也审判自己。认识自己一无是处,只配钉死,不可自我称义或表白",
+    "forbidden_concepts": [
+      "自我肯定",
+      "正面思想",
+      "建立信心"
+    ],
+    "notes": "铜表征审判"
+  },
+  {
+    "query_id": "gen_085",
+    "query": "柱子高十八肘和围十二肘各表征什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-83-16",
+      "life_1-83-17",
+      "life_1-83-20"
+    ],
+    "gold_answer_summary": "十八是三个完整单位的一半,表明虽被神充满仍需配搭。十二(四乘三)表征受造之物与三一神完全调和",
+    "forbidden_concepts": [
+      "个人完全",
+      "数字游戏",
+      "神秘主义"
+    ],
+    "notes": "十八是三个完整单位的一半，十二(四乘三)"
+  },
+  {
+    "query_id": "gen_086",
+    "query": "圣经中数字'三'表征的复活和数字'八'表征的复活有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-84-9",
+      "life_1-84-20"
+    ],
+    "gold_answer_summary": "三表征复活的过程;八表征复活的新鲜、复活的新开始,指复活的起头和新鲜,不是过程",
+    "forbidden_concepts": [
+      "第三天",
+      "七日的第一日",
+      "数字含义"
+    ],
+    "notes": "三与八都表征复活但侧重点不同"
+  },
+  {
+    "query_id": "gen_087",
+    "query": "天然的人如何能成为召会的柱石",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-87-6"
+    ],
+    "gold_answer_summary": "天然人成为柱石必须借着变化。借着重生得着新生命,这生命要变化我们。",
+    "forbidden_concepts": [
+      "个人努力",
+      "属灵操练",
+      "品格培养"
+    ],
+    "notes": "需要重生得着新生命，并被这生命变化"
+  },
+  {
+    "query_id": "gen_088",
+    "query": "被成全为柱子的秘诀是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-88-16",
+      "life_1-88-26"
+    ],
+    "gold_answer_summary": "秘诀是没有自己的观念,只知道吸收这职事的一切,浸润在积极的事物里，不浪费时间注意消极的东西",
+    "forbidden_concepts": [
+      "学习方法",
+      "技能训练",
+      "个人修养"
+    ],
+    "notes": "被成全为柱子的关键秘诀是只享受积极的东西"
+  },
+  {
+    "query_id": "gen_089",
+    "query": "雅各在柱子上浇奠祭和浇油有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-89-2",
+      "life_1-89-5"
+    ],
+    "gold_answer_summary": "油不需要我们这一面很多经历,但酒(奠祭)在于我们的经历。雅各第一次只浇油,第二次既浇奠祭又浇油,表明他有了更深的经历",
+    "forbidden_concepts": [
+      "宗教仪式",
+      "外面形式",
+      "礼仪程序"
+    ],
+    "notes": "油和奠祭的核心区别在于经历"
+  },
+  {
+    "query_id": "gen_090",
+    "query": "马太九章十七节的酒和提后四章六节保罗被浇奠的酒有什么不同",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-89-18"
+    ],
+    "gold_answer_summary": "马太九17的酒只是基督本身,是新酒。提后四6保罗被浇奠的酒,是基督浸透了保罗,使保罗成了酒",
+    "forbidden_concepts": [
+      "酒的种类",
+      "时间先后",
+      "字面意义"
+    ],
+    "notes": "经历被基督浸透成为奠祭"
+  },
+  {
+    "query_id": "gen_091",
+    "query": "拉结之死对雅各有什么属灵意义",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-90-6",
+      "life_1-90-7"
+    ],
+    "gold_answer_summary": "拉结代表雅各天然的拣选。借着失去拉结,雅各失去了天然的拣选,这是神对付我们天然拣选的见证",
+    "forbidden_concepts": [
+      "人生遭遇",
+      "命运安排",
+      "苦难试炼"
+    ],
+    "notes": "拉结代表雅各天然的拣选"
+  },
+  {
+    "query_id": "gen_092",
+    "query": "创世记三十五章十八节中拉结给儿子起名便俄尼,雅各却改名为便雅悯,这有什么不同意义",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-91-15",
+      "life_1-91-28"
+    ],
+    "gold_answer_summary": "便俄尼意思是'忧患之子';便雅悯意思是'右手之子'。对天然的人而言便雅悯的出生是忧患,但对属灵的人而言是喜乐。两个名字预表基督既是受苦的忧患之子,又是被高举的右手之子",
+    "forbidden_concepts": [
+      "名字长短",
+      "发音区别",
+      "文字意义"
+    ],
+    "notes": "两个名字代表两种观点，忧患之子与右手之子"
+  },
+  {
+    "query_id": "gen_093",
+    "query": "变化与成熟有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-93-2",
+      "life_1-93-3"
+    ],
+    "gold_answer_summary": "变化是生命里新陈代谢的改变,成熟是生命达到丰满。成熟是变化的最后阶段。我们越被变化就越被生命充满,最终达到成熟",
+    "forbidden_concepts": [
+      "渐进成长",
+      "年龄增长",
+      "经历累积"
+    ],
+    "notes": "成熟是变化的最后阶段"
+  },
+  {
+    "query_id": "gen_094",
+    "query": "创世记四十八章15-16节雅各提到的三一神是指什么",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-94-33"
+    ],
+    "gold_answer_summary": "雅各提到：亚伯拉罕和以撒所事奉的神必定是父,牧养雅各一生的神必定是灵,救赎他脱离一切患难的那使者必定是子。这是雅各经历中的三一神,不是在道理上的三一神",
+    "forbidden_concepts": [
+      "三个神",
+      "神的三种形态",
+      "神的三个名字"
+    ],
+    "notes": "雅各经历中的三一神"
+  },
+  {
+    "query_id": "gen_095",
+    "query": "祭司职分和君王职分有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-96-3"
+    ],
+    "gold_answer_summary": "祭司职任是将人带给神,君王职任是将神带给人。",
+    "forbidden_concepts": [
+      "职责范围",
+      "权柄大小",
+      "服事对象"
+    ],
+    "notes": "两个职分的核心区别"
+  },
+  {
+    "query_id": "gen_096",
+    "query": "长子名分由哪三部分组成",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-98-28"
+    ],
+    "gold_answer_summary": "长子名分由双分地土、君王职分和祭司职分所组成。",
+    "forbidden_concepts": [
+      "物质产业",
+      "家族权利",
+      "地位特权"
+    ],
+    "notes": "长子名分的三个组成部分"
+  },
+  {
+    "query_id": "gen_097",
+    "query": "以弗所书一章如何启示神永远的定旨",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷的问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "故意问其他书卷的内容，语料库中虽然可能简略提及以弗所书经节，但没有对以弗所书一章的详细解释"
+  },
+  {
+    "query_id": "gen_098",
+    "query": "雅各的十二个儿子分别是在什么地方出生的",
+    "query_type": "概念澄清",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "语料库有十二个儿子的属灵意义，但没有详细说明每个儿子的出生地点",
+    "forbidden_concepts": [],
+    "notes": "地理细节在语料库中没有展开"
+  },
+  {
+    "query_id": "gen_099",
+    "query": "新约如何解释雅各在伯特利的梦",
+    "query_type": "概念澄清",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷的综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "跨书卷综合性问题"
+  },
+  {
+    "query_id": "gen_100",
+    "query": "保罗在哪些书信中提到柱子",
+    "query_type": "概念澄清",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "语料库提到新约有柱子的观念,但没有详细列出保罗所有相关书信。这需要查考全部保罗书信",
+    "forbidden_concepts": [],
+    "notes": "需要综合新约多卷书"
+  },
+  {
+    "query_id": "gen_101",
+    "query": "以萨迦的属灵意义是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-101-24",
+      "life_1-101-26",
+      "life_1-101-31"
+    ],
+    "gold_answer_summary": "以萨迦表征并代表召会生活，在以萨迦这里，我们是强壮的驴，卧在羊圈之间，安息在基督里面，享受基督作肥美的地",
+    "forbidden_concepts": [
+      "教会",
+      "灵魂"
+    ],
+    "notes": "重点在召会生活，不是劳苦或跋涉"
+  },
+  {
+    "query_id": "gen_102",
+    "query": "创世记四十九章但的图画给我们看见了什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-102-14",
+      "life_1-102-15"
+    ],
+    "gold_answer_summary": "但因着接受偶像，成了虺，成了极大的拦阻，使人退后。在基督教的历史中有许多的但。这些但原是得着更多基督的小狮子，最终却成了蛇，甚至成了虺，设立了其它的敬拜中心。我们需要问问自己有没有设立其他的敬拜中心",
+    "forbidden_concepts": [
+      "重蹈覆辙",
+      "团体"
+    ],
+    "notes": "重点在另立敬拜中心，成了拦阻，不是批评某个具体的团体"
+  },
+  {
+    "query_id": "gen_103",
+    "query": "母鹿与嘉美的言语有什么关系",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-103-50",
+      "life_1-103-51"
+    ],
+    "gold_answer_summary": "拿弗他利这释放的母鹿，经历了基督，就被嘉美的言语充满了。在复活里的基督是朝鹿，丰富嘉美的话，都来自对复活基督的经历，当一个人真实经历了这位复活的基督，被祂充满，嘉美的言语就自然从内里涌流而出。",
+    "forbidden_concepts": [
+      "口才",
+      "操练"
+    ],
+    "notes": "重点是经历复活的基督，就会有嘉美言语的流露，不是强调属灵口才的培养"
+  },
+  {
+    "query_id": "gen_104",
+    "query": "约瑟的枝条探出墙外，有什么属灵的意义",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-104-16"
+    ],
+    "gold_answer_summary": "基督是在我们里面的约瑟，我们的约瑟有许多探出墙外的枝条，这些枝子要越过一切的限制，就如家庭或反对者的限制，探出墙外",
+    "forbidden_concepts": [
+      "埃及",
+      "奋斗"
+    ],
+    "notes": "重点在枝子越过限制，不是家庭的限制有多大、反对者的阻力有多强"
+  },
+  {
+    "query_id": "gen_105",
+    "query": "创世记四十九章二十二节说，约瑟是多结果子之树的儿子，儿子在这里指明什么",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-105-10",
+      "life_1-105-11"
+    ],
+    "gold_answer_summary": "儿子指明大干或枝子。意思是说约瑟是多结果子之树的枝子。在全宇宙中只有一棵多结果子的树，那就是基督，我们作为这样一棵多结果子之树的枝子，需要多结果子。",
+    "forbidden_concepts": [
+      "树干",
+      "果树"
+    ],
+    "notes": "重点在枝子多结果子，不是果树或者软弱的光景"
+  },
+  {
+    "query_id": "gen_106",
+    "query": "雅各对约瑟的祝福没有条件，给我们看见什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-106-32",
+      "life_1-106-33"
+    ],
+    "gold_answer_summary": "我们若是约瑟，一切就都是得着。只要我们爱主，万有就都互相效力，叫我们得益处，没有一事对我们会是损失。",
+    "forbidden_concepts": [
+      "好处",
+      "损失"
+    ],
+    "notes": "重点在一切都是得着，不是环境的平顺或者福利平安"
+  },
+  {
+    "query_id": "gen_107",
+    "query": "创世记四十九章二十七节说，便雅悯是撕掠的狼，但申命记三十三章十二节说，他是耶和华所亲爱的，撕掠的狼为什么成为耶和华所亲爱的",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-107-18"
+    ],
+    "gold_answer_summary": "对仇敌，便雅悯是撕掠的狼。但在申命记里，便雅悯是耶和华所亲爱的。耶和华爱便雅悯这个撕掠的狼，因为神的居所在便雅悯境内。",
+    "forbidden_concepts": [
+      "肉食动物",
+      "居住地"
+    ],
+    "notes": "重点在神的居所在便雅悯境内，不是狼的习性"
+  },
+  {
+    "query_id": "gen_108",
+    "query": "创世记中与神同工和雅歌书中佳偶与神同工有什么内在关系",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_109",
+    "query": "雅各叫约瑟把手放在他大腿底下，这指明了什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-109-14",
+      "life_1-109-15"
+    ],
+    "gold_answer_summary": "雅各请他把手放在他大腿底下，借着这样的请求，他承认自己已经受神对付到了极点；他已经完全被了结，他绝对从自已天然的力量转向神在基督里的恩典。",
+    "forbidden_concepts": [
+      "结束",
+      "能力"
+    ],
+    "notes": "重点在信靠神恩典，不是天然能力"
+  },
+  {
+    "query_id": "gen_110",
+    "query": "约瑟作的两个梦向我们启示出什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-110-38",
+      "life_1-110-45"
+    ],
+    "gold_answer_summary": "在第一个梦里，约瑟看见田里的禾捆；这个梦启示，约瑟再好，不过是禾捆；他的哥哥们再坏，也是禾捆；约瑟在第二个梦里，看见太阳、月亮和十一个星向他下拜，这个梦指明在神眼中，所有被定罪并受控告的人都满了光",
+    "forbidden_concepts": [
+      "庄稼",
+      "星宿"
+    ],
+    "notes": "重点在神看祂的子民为生命的禾捆，为发光的大阳、月亮和众星，不是以色列人作的恶事"
+  },
+  {
+    "query_id": "gen_111",
+    "query": "创世记四十一章一节指明，又过了整整两年，为什么约瑟的梦没有及时应验",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-110-38",
+      "life_1-110-45"
+    ],
+    "gold_answer_summary": "使他进一步受到试炼，末后的两年的试验是最艰苦的，但约瑟必须经过长期的试炼和试验",
+    "forbidden_concepts": [
+      "试诱",
+      "苦难"
+    ],
+    "notes": "重点在受试炼，不是靠自己撑过试炼或如何坚持熬过去"
+  },
+  {
+    "query_id": "gen_112",
+    "query": "创世记四十一章四十二节里三个恩赐的次序说明了什么",
+    "query_type": "经节对比",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-110-38",
+      "life_1-110-45"
+    ],
+    "gold_answer_summary": "照着属灵的次序，我们首先领受圣灵而得救，然后我们得着义袍，开始活出基督。要活出基督，我们的颈项上需要有链子，表明我们的颈项被圣灵治服、征服并链住。",
+    "forbidden_concepts": [
+      "衣服",
+      "恩惠"
+    ],
+    "notes": "重点在三个恩赐的属灵含义，不是外面的事物或荣华"
+  },
+  {
+    "query_id": "gen_113",
+    "query": "约瑟对付他的哥哥们，非常有智慧，我们可以从中学到什么功课",
+    "query_type": "实践应用",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-116-22"
+    ],
+    "gold_answer_summary": "在召会生活中，我们需要学习镇静，约束自己；我们也需要学习不显扬自己的荣耀；不仅如此，我们必须学习在行事上不随便、不愚昧，乃是清明的、有鉴别的；最终，我们也必须对弟兄们有爱，甚至对那需要管教的有爱",
+    "forbidden_concepts": [
+      "苦待自己",
+      "辱骂"
+    ],
+    "notes": "重点在约束自己，行事不随便，爱弟兄，不是鼓励人公开表达爱或管教弟兄的方式"
+  },
+  {
+    "query_id": "gen_114",
+    "query": "照着异象说话与照着经历说话有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-114-21",
+      "life_1-114-23"
+    ],
+    "gold_answer_summary": "不要照着我们的经历说话，要照着我们的异象说话，因为我们是异象人，我们就照着异象作每件事",
+    "forbidden_concepts": [
+      "属灵恩赐",
+      "先知讲道",
+      "方言"
+    ],
+    "notes": "核心区分在于两者的顺序之别"
+  },
+  {
+    "query_id": "gen_115",
+    "query": "以色列人在饥荒中到了埃及，为什么后来还要出埃及",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_116",
+    "query": "约瑟对以色列弟兄们的爱，与新约保罗书信中对爱的阐述有何关联",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_117",
+    "query": "约瑟在坑中受苦的经历，与保罗在腓立比书四章“无论在什么境况，都可以知足”有何属灵上的对应",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "forbidden_concepts": [],
+    "notes": "系统不应尝试综合两卷书作答"
+  },
+  {
+    "query_id": "gen_118",
+    "query": "恩典与祝福在雅各预言中有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-103-53"
+    ],
+    "gold_answer_summary": "在主的恢复里，我们天天满足于丰富的恩典，并充满了神的祝福。这种祝福不是指物质的福，乃是指灵里的福，生命里的福，和诸天界里的福。",
+    "forbidden_concepts": [
+      "好处",
+      "普遍恩典"
+    ],
+    "notes": "足沾恩惠是方式，满得祝福是结果"
+  },
+  {
+    "query_id": "gen_119",
+    "query": "甘露的福与雨雪的福有什么不同",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-106-9",
+      "life_1-106-11"
+    ],
+    "gold_answer_summary": "雨雪是得天上的宝物，雨是好的，雪是可享受的；甘露的福比雨雪的福细致。圣经用甘露形容神怜悯的看顾。这指明天上总有东西降在我们身上。这种东西不是非常强烈粗鲁，乃是细致柔和，似乎是静悄悄的来，一次一点点。",
+    "forbidden_concepts": [
+      "圣灵的浇灌",
+      "五旬节大雨",
+      "方言"
+    ],
+    "notes": "两者的区别主要是甘露的福比雨雪的福细致"
+  },
+  {
+    "query_id": "gen_120",
+    "query": "出卖与逼迫二者有何分别",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": [
+      "life_1-112-4",
+      "life_1-112-8"
+    ],
+    "gold_answer_summary": "就圣经的意义说，被出卖的意思就是被藐视，被贬抑，蒙羞辱，或受轻忽；今天一切的逼迫和反对，都是一种出卖",
+    "forbidden_concepts": [
+      "背叛",
+      "咒骂"
+    ],
+    "notes": "两者的区别在于出卖是广义的，今天一切的逼迫和反对，都是一种出卖"
+  }
+]

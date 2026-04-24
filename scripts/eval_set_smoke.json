@@ -1,0 +1,32 @@
+[
+  {
+    "query_id": "smoke_001",
+    "query": "神的创造和复造中用了几个不同的动词，是哪几个，分别又是什么意思",
+    "query_type": "概念澄清",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": ["life_1-1-66"],
+    "gold_answer_summary": "主要提到了三个词：创造、造作和作成。创造就是从无到有，并且只有神能创造。",
+    "forbidden_concepts": ["人创造事物"],
+    "notes": "smoke ANSWER"
+  },
+  {
+    "query_id": "smoke_002",
+    "query": "创世记和约翰福音所启示的三一神有什么不同",
+    "query_type": "教义解释",
+    "expected_answer_state": "NO_ANSWER",
+    "gold_chunks": [],
+    "gold_answer_summary": "跨书卷综合性问题",
+    "forbidden_concepts": [],
+    "notes": "smoke NO_ANSWER"
+  },
+  {
+    "query_id": "smoke_003",
+    "query": "产生生命需要几个条件，分别是什么",
+    "query_type": "教义解释",
+    "expected_answer_state": "ANSWER",
+    "gold_chunks": ["life_1-3-18", "life_1-3-20"],
+    "gold_answer_summary": "共有6个条件，分别是灵来了、话来了、光来了等。",
+    "forbidden_concepts": [],
+    "notes": "smoke ANSWER no forbidden"
+  }
+]

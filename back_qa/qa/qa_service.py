@@ -340,7 +340,7 @@ async def _detect_targeted(question: str) -> dict | None:
     return None
 
 
-async def _step1(question: str, neo4j_client) -> dict:
+async def _step1(question: str, neo4j_client, history: list[dict] | None = None) -> dict:
     """
     返回：{
         surface: list[str],
@@ -348,10 +348,25 @@ async def _step1(question: str, neo4j_client) -> dict:
         concepts: list[str],        # surface + deep 去重，供监控与前端展示
         greek_terms_context: str,
         key_verses_context: str,
+        rewritten_query: str,
         cost_usd: float,
     }
     """
     from back_qa.qa.prompts import STEP1_CONCEPT_EXTRACTION
+
+    history = history or []
+    if history:
+        recent = history[-3:]
+        lines = [
+            f"第{i + 1}轮：{t.get('question', '').strip()}"
+            for i, t in enumerate(recent)
+            if str(t.get("question", "")).strip()
+        ]
+        history_questions = (
+            "对话历史（仅供理解追问上下文）：\n" + "\n".join(lines) + "\n" if lines else ""
+        )
+    else:
+        history_questions = ""
 
     concept_names = neo4j_client.get_concept_names()
     concept_list = "\n".join(f"- {name}" for name in concept_names) if concept_names else "（词表暂不可用）"
@@ -359,6 +374,7 @@ async def _step1(question: str, neo4j_client) -> dict:
     prompt = STEP1_CONCEPT_EXTRACTION.format(
         question=question,
         concept_list=concept_list,
+        history_questions=history_questions,
     )
 
     try:
@@ -376,6 +392,7 @@ async def _step1(question: str, neo4j_client) -> dict:
             "targeted": None,
             "reasoning": "",
             "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0,
+            "rewritten_query": question,
         }
 
     logger.info("[QA] Step1 raw_len=%d", len(raw or ""))
@@ -415,6 +432,14 @@ async def _step1(question: str, neo4j_client) -> dict:
         )
     else:
         logger.warning("[QA] Step1 JSON 解析失败，raw=%s", (raw or "")[:200])
+
+    rw_raw = (parsed or {}).get("rewritten_query") if parsed else None
+    if rw_raw is None or rw_raw == "":
+        rewritten_query = ""
+    else:
+        rewritten_query = str(rw_raw).strip()
+    if not rewritten_query:
+        rewritten_query = question
 
     # concepts = surface + deep 去重，供前端展示
     seen = set()
@@ -457,6 +482,7 @@ async def _step1(question: str, neo4j_client) -> dict:
         "reasoning": reasoning,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
+        "rewritten_query": rewritten_query,
         "cost_usd": cost,
     }
 
@@ -466,7 +492,7 @@ async def _step1(question: str, neo4j_client) -> dict:
 # ---------------------------------------------------------------------------
 
 async def _step2(
-    question: str,
+    rewritten_query: str,
     es_client,
     bm25_top_k: int | None = None,
     dense_top_k: int | None = None,
@@ -480,21 +506,21 @@ async def _step2(
     tk_dense = dense_top_k if dense_top_k is not None else DENSE_TOP_K
     tk_rerank = rerank_top_n if rerank_top_n is not None else RERANK_TOP_N
 
-    bm25_task = retrieval.bm25_search(es_client, question, index, top_k=tk_bm25)
-    dense_task = retrieval.dense_search(es_client, question, index, top_k=tk_dense)
+    bm25_task = retrieval.bm25_search(es_client, rewritten_query, index, top_k=tk_bm25)
+    dense_task = retrieval.dense_search(es_client, rewritten_query, index, top_k=tk_dense)
 
     bm25_results, dense_results = await asyncio.gather(bm25_task, dense_task)
     logger.info("[QA] Step2 BM25=%d Dense=%d", len(bm25_results), len(dense_results))
 
     merged = await retrieval.rrf_merge(bm25_results, dense_results, k=RRF_K)
-    reranked = await retrieval.rerank(merged, question, top_n=tk_rerank)
+    reranked = await retrieval.rerank(merged, rewritten_query, top_n=tk_rerank)
     logger.info("[QA] Step2 reranked=%d", len(reranked))
 
     return reranked
 
 
 async def _step2_with_expansion(
-    question: str,
+    rewritten_query: str,
     deep: list[str],
     es_client,
     bm25_top_k: int | None = None,
@@ -504,8 +530,8 @@ async def _step2_with_expansion(
 ) -> list[dict]:
     """
     主路检索 + deep 概念扩展检索并发。
-    主路：原始问题 BM25 + Dense → RRF → Reranker（Top 20）
-    扩展路：对每个 deep 概念用「问题 + 概念名」做独立检索，去重后追加
+    主路：改写检索句 BM25 + Dense → RRF → Reranker（Top 20）
+    扩展路：对每个 deep 概念用「改写句 + 概念名」做独立检索，去重后追加
     """
     import back_shared.retrieval as retrieval
 
@@ -523,7 +549,7 @@ async def _step2_with_expansion(
 
     main_task = asyncio.create_task(
         _step2(
-            question,
+            rewritten_query,
             es_client,
             bm25_top_k=bm25_top_k,
             dense_top_k=dense_top_k,
@@ -532,7 +558,7 @@ async def _step2_with_expansion(
     )
     expansion_tasks = []
     for concept in deep:
-        combined_query = f"{question} {concept}".strip()
+        combined_query = f"{rewritten_query} {concept}".strip()
         expansion_tasks.append(asyncio.create_task(_expand_one(combined_query, concept)))
 
     all_results = await asyncio.gather(main_task, *expansion_tasks, return_exceptions=True)
@@ -730,7 +756,7 @@ async def _step2_targeted(
 # Step 3：相关性判断
 # ---------------------------------------------------------------------------
 
-async def _step3(question: str, passages: list[dict]) -> tuple[bool, float]:
+async def _step3(rewritten_query: str, passages: list[dict]) -> tuple[bool, float]:
     """
     返回 (relevant: bool, cost_usd: float)。
     relevant=False 时调用方写入 step_fail_stage 监控并返回「未找到」。
@@ -746,7 +772,7 @@ async def _step3(question: str, passages: list[dict]) -> tuple[bool, float]:
     passages_text = "\n---\n".join(passage_lines) if passage_lines else "（无检索结果）"
 
     prompt = STEP3_RELEVANCE_CHECK.format(
-        question=question,
+        rewritten_query=rewritten_query,
         passages=passages_text,
     )
 
@@ -958,6 +984,7 @@ async def _run_pipeline_until_step4(
     key_verses_context = ""
     firewall_task = None
     step1_snapshot: dict | None = None
+    rewritten_query = question
 
     if targeted:
         try:
@@ -978,7 +1005,7 @@ async def _run_pipeline_until_step4(
             targeted = None
 
     if not is_targeted:
-        step1_task = asyncio.create_task(_step1(question, neo4j_client))
+        step1_task = asyncio.create_task(_step1(question, neo4j_client, history=history))
         firewall_task = asyncio.create_task(_run_firewall(question))
 
         step1_result = await step1_task
@@ -988,10 +1015,14 @@ async def _run_pipeline_until_step4(
         deep = step1_result["deep"]
         greek_terms_context = step1_result["greek_terms_context"]
         key_verses_context = step1_result["key_verses_context"]
+        rw = step1_result.get("rewritten_query")
+        rewritten_query = str(rw).strip() if rw else ""
+        if not rewritten_query:
+            rewritten_query = question
 
         try:
             passages = await _step2_with_expansion(
-                question,
+                rewritten_query,
                 deep,
                 es_client,
                 bm25_top_k=_bm25_top_k,
@@ -1008,7 +1039,7 @@ async def _run_pipeline_until_step4(
         step3_cost = 0.0
         logger.info("[QA] 定向查询，跳过 Step3")
     else:
-        relevant, step3_cost = await _step3(question, passages)
+        relevant, step3_cost = await _step3(rewritten_query, passages)
     total_cost += step3_cost
 
     if not relevant:
@@ -1046,8 +1077,10 @@ async def _run_pipeline_until_step4(
                 "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
                 "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
                 "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+                "rewritten_query": rewritten_query,
                 "firewall": None,
                 "step4_prompt": "",
+                "retrieved_chunks": [p.get("chunk_id", "") for p in (passages or [])],
             }
         if not debug:
             _write_cache(redis_client, cache_key, result)
@@ -1061,6 +1094,7 @@ async def _run_pipeline_until_step4(
     ctx = {
         "start": start,
         "question": question,
+        "rewritten_query": rewritten_query,
         "passages": passages,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
@@ -1167,6 +1201,7 @@ async def run_pipeline(
     precheck_targeted = ctx["precheck_targeted"]
     is_targeted = ctx["is_targeted"]
     step1_snapshot = ctx["step1_snapshot"]
+    rewritten_query = ctx.get("rewritten_query", question)
 
     try:
         answer, sources, step4_cost = await _step4(
@@ -1202,8 +1237,10 @@ async def run_pipeline(
             "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
             "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
             "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+            "rewritten_query": rewritten_query,
             "firewall": firewall_doc,
             "step4_prompt": _last_step4_prompt,
+            "retrieved_chunks": [p.get("chunk_id", "") for p in (passages or [])],
         }
 
     if not debug:
@@ -1267,6 +1304,7 @@ async def stream_query(
     precheck_targeted = ctx["precheck_targeted"]
     is_targeted = ctx["is_targeted"]
     step1_snapshot = ctx["step1_snapshot"]
+    rewritten_query = ctx.get("rewritten_query", q)
 
     yield {
         "type": "step",
@@ -1333,8 +1371,10 @@ async def stream_query(
             "surface": (step1_snapshot or {}).get("surface", []) if not is_targeted else [],
             "deep": (step1_snapshot or {}).get("deep", []) if not is_targeted else [],
             "reasoning": (step1_snapshot or {}).get("reasoning", "") if not is_targeted else "",
+            "rewritten_query": rewritten_query,
             "firewall": firewall_doc,
             "step4_prompt": _last_step4_prompt,
+            "retrieved_chunks": [p.get("chunk_id", "") for p in (passages or [])],
         }
 
     if not debug:

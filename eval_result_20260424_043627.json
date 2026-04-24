@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "eval_set": "scripts\\eval_set_smoke.json",
+    "api_url": "http://127.0.0.1:8001",
+    "timestamp_utc": "20260424_043627",
+    "stats": {
+      "n": 3,
+      "dim1_ok": 0,
+      "false_reject": 0,
+      "false_accept": 0,
+      "api_errors": 3,
+      "eligible_answer_dim1": 0,
+      "dim2_ok": 0,
+      "dim3_ok": 0,
+      "dim4_ok": 0,
+      "sum_pts": 0,
+      "max_pts": 0
+    }
+  },
+  "results": [
+    {
+      "query_id": "smoke_001",
+      "query": "神的创造和复造中用了几个不同的动词，是哪几个，分别又是什么意思",
+      "expected_answer_state": "ANSWER",
+      "found": false,
+      "dim1_pass": null,
+      "dim2_pass": null,
+      "dim3_pass": null,
+      "dim4_pass": null,
+      "score": 0,
+      "retrieved_chunks": [],
+      "gold_chunks": [
+        "life_1-1-66"
+      ],
+      "forbidden_hit": [],
+      "answer": "",
+      "elapsed_ms": 16,
+      "error": "HTTP 401: {\"detail\":\"token 无效或已过期\"}"
+    },
+    {
+      "query_id": "smoke_002",
+      "query": "创世记和约翰福音所启示的三一神有什么不同",
+      "expected_answer_state": "NO_ANSWER",
+      "found": false,
+      "dim1_pass": null,
+      "dim2_pass": null,
+      "dim3_pass": null,
+      "dim4_pass": null,
+      "score": 0,
+      "retrieved_chunks": [],
+      "gold_chunks": [],
+      "forbidden_hit": [],
+      "answer": "",
+      "elapsed_ms": 0,
+      "error": "HTTP 401: {\"detail\":\"token 无效或已过期\"}"
+    },
+    {
+      "query_id": "smoke_003",
+      "query": "产生生命需要几个条件，分别是什么",
+      "expected_answer_state": "ANSWER",
+      "found": false,
+      "dim1_pass": null,
+      "dim2_pass": null,
+      "dim3_pass": null,
+      "dim4_pass": null,
+      "score": 0,
+      "retrieved_chunks": [],
+      "gold_chunks": [
+        "life_1-3-18",
+        "life_1-3-20"
+      ],
+      "forbidden_hit": [],
+      "answer": "",
+      "elapsed_ms": 0,
+      "error": "HTTP 401: {\"detail\":\"token 无效或已过期\"}"
+    }
+  ]
+}
