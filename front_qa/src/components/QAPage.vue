@@ -850,10 +850,13 @@ async function scrollToMessageTop(messageId) {
 
   .qa-header-inner {
     padding: 10px 16px;
+    min-height: 48px;
+    box-sizing: border-box;
   }
 
   .qa-logo-text {
     font-size: 22px;
+    line-height: 1.25;
   }
 
   .qa-footer {
@@ -868,9 +871,23 @@ async function scrollToMessageTop(messageId) {
     border-top: 1px solid var(--color-border);
   }
 
-  /* 顶栏约 52px + safe-area + 原有内容边距；底栏约 72px + safe-area */
+  /*
+   * 主区域预留：必须 ≥ 实际固定顶栏/底栏高度，否则首尾文字会被遮住。
+   * 底栏含多行输入时会变高，故底部留白加大并用 min 兜底。
+   */
   .qa-main {
-    padding: calc(16px + env(safe-area-inset-top, 0px) + 52px) 16px calc(100px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px) + 56px);
+    padding-bottom: calc(max(140px, 32vh) + env(safe-area-inset-bottom, 0px));
+    scroll-padding-top: calc(8px + env(safe-area-inset-top, 0px) + 56px);
+    scroll-padding-bottom: calc(max(140px, 32vh) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 欢迎区原先 margin-top 较大，与顶栏留白叠加后首屏过空，略收紧 */
+  .qa-welcome {
+    margin-top: 24px;
   }
 }
 </style>
