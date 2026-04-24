@@ -203,6 +203,10 @@ def _check_admin(request: Request):
         raise HTTPException(status_code=401, detail="无效的管理员 Token")
 
 
+def _require_admin(request: Request):
+    _check_admin(request)
+
+
 @router.post("/cache/clear")
 async def cache_clear(request: Request):
     """清理所有 qa:cache:* 缓存，返回删除条数。"""
@@ -218,6 +222,18 @@ async def cache_clear(request: Request):
     if keys:
         deleted = r.delete(*keys)
     return {"deleted": deleted, "prefix": prefix}
+
+
+@router.post("/stats/clear")
+async def stats_clear(request: Request):
+    """清空监控统计数据（管理员）"""
+    _require_admin(request)
+    r = getattr(request.app.state, "redis_client", None)
+    if r is None:
+        raise HTTPException(status_code=503, detail="Redis 不可用")
+    from back_qa.qa.qa_service import _MONITOR_KEY
+    deleted = r.delete(_MONITOR_KEY)
+    return {"deleted": bool(deleted), "key": _MONITOR_KEY}
 
 
 @router.get("/stats")

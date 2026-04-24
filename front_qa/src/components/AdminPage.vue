@@ -78,14 +78,19 @@
             <a-tab-pane key="cache" tab="缓存">
               <div class="admin-cache-row">
                 <span class="admin-cache-desc">清除所有 <code>qa:cache:*</code> 缓存</span>
-                <a-popconfirm
-                  title="确认清除所有问答缓存？"
-                  ok-text="确认"
-                  cancel-text="取消"
-                  @confirm="clearCache"
-                >
-                  <a-button danger :loading="clearLoading">清除缓存</a-button>
-                </a-popconfirm>
+                <div class="admin-cache-actions">
+                  <a-popconfirm
+                    title="确认清除所有问答缓存？"
+                    ok-text="确认"
+                    cancel-text="取消"
+                    @confirm="clearCache"
+                  >
+                    <a-button danger :loading="clearLoading">清除缓存</a-button>
+                  </a-popconfirm>
+                  <a-button danger ghost :loading="clearStatsLoading" @click="clearStats">
+                    清空统计
+                  </a-button>
+                </div>
               </div>
               <div v-if="clearResult" class="admin-clear-result">
                 已删除 {{ clearResult.deleted }} 条缓存（前缀：{{ clearResult.prefix }}）
@@ -195,6 +200,7 @@ const adminToken = ref('')
 const stats = ref(null)
 const statsLoading = ref(false)
 const clearLoading = ref(false)
+const clearStatsLoading = ref(false)
 const tokenError = ref('')
 const clearResult = ref(null)
 const activeTab = ref('stats')
@@ -333,6 +339,23 @@ async function clearCache() {
     clearLoading.value = false
   }
 }
+
+async function clearStats() {
+  if (!window.confirm('确认清空统计数据？')) return
+  clearStatsLoading.value = true
+  tokenError.value = ''
+  try {
+    await axios.post('/api/qa/stats/clear', {}, {
+      headers: { 'X-Admin-Token': adminToken.value.trim() }
+    })
+    window.alert('统计数据已清空')
+    await loadStats()
+  } catch (e) {
+    tokenError.value = `清空统计失败（${e.response?.status || '网络错误'}）`
+  } finally {
+    clearStatsLoading.value = false
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -464,6 +487,11 @@ async function clearCache() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.admin-cache-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .admin-cache-desc {
   font-size: 13px;
