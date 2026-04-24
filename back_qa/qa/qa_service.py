@@ -16,16 +16,12 @@ import logging
 import os
 import re
 import sys
-import threading
 import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("qa")
-
-# Anthropic 同步客户端非线程安全：并行 Step1 与 Firewall 时须串行化 messages.create
-_claude_thread_lock = threading.Lock()
 
 # ---------------------------------------------------------------------------
 # 模型常量
@@ -54,13 +50,19 @@ _last_step4_prompt = ""
 # LLM 客户端（复用 back_mic 的 CLAUDE_API_KEY）
 # ---------------------------------------------------------------------------
 
-def _get_claude_client():
-    """懒加载 Claude 同步客户端。"""
-    api_key = os.environ.get("CLAUDE_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("未配置 CLAUDE_API_KEY")
-    import anthropic
-    return anthropic.Anthropic(api_key=api_key)
+_async_claude_client: Any = None
+
+
+def _get_async_claude_client():
+    global _async_claude_client
+    if _async_claude_client is None:
+        api_key = os.environ.get("CLAUDE_API_KEY", "")
+        if not api_key:
+            raise RuntimeError("未配置 CLAUDE_API_KEY")
+        from anthropic import AsyncAnthropic
+
+        _async_claude_client = AsyncAnthropic(api_key=api_key)
+    return _async_claude_client
 
 
 def _claude_message_text(message: Any) -> str:
@@ -99,24 +101,18 @@ async def _call_llm(
     max_tokens: int = 1024,
     system: str = "你是一位专业、精确的助手。请严格按要求的格式输出。",
 ) -> tuple[str, Any]:
-    """异步调用 Claude（asyncio.to_thread 包同步 SDK）。返回 (text, usage)。"""
-    client = _get_claude_client()
-
-    def _sync():
-        kwargs = dict(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        # Opus 4.7+ 不支持 temperature 参数
-        if not model.startswith("claude-opus-4-7"):
-            kwargs["temperature"] = temperature
-        with _claude_thread_lock:
-            return client.messages.create(**kwargs)
-
+    """异步调用 Claude（AsyncAnthropic）。返回 (text, usage)。"""
+    client = _get_async_claude_client()
+    kwargs = dict(
+        model=model,
+        max_tokens=max_tokens,
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if not model.startswith("claude-opus-4-7"):
+        kwargs["temperature"] = temperature
     try:
-        msg = await asyncio.to_thread(_sync)
+        msg = await client.messages.create(**kwargs)
         text = _claude_message_text(msg)
         if not text:
             blocks = getattr(msg, "content", None) or []
@@ -1116,52 +1112,32 @@ async def _run_pipeline_until_step4(
 
 async def _iter_step4_stream_tokens(prompt: str) -> AsyncGenerator[tuple[str, Any], None]:
     """
-    在线程中跑 Claude messages.stream，向主协程产出 ("token", text) 与末尾 ("usage", usage|None)。
+    使用 AsyncAnthropic messages.stream，产出 ("token", text) 与末尾 ("usage", usage|None)。
     """
-    loop = asyncio.get_running_loop()
-    queue: asyncio.Queue[Any] = asyncio.Queue()
+    client = _get_async_claude_client()
     system = "你是一位职事信息问答助手，严格基于所提供的段落作答。回答要有清晰的主线，用原文支撑论述，不编造，不拼凑。"
-
-    def _worker() -> None:
-        usage: Any = None
-        try:
-            client = _get_claude_client()
-            kwargs: dict[str, Any] = dict(
-                model=STEP4_MODEL,
-                max_tokens=4096,
-                system=system,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            if not STEP4_MODEL.startswith("claude-opus-4-7"):
-                kwargs["temperature"] = 0.3
-            with _claude_thread_lock:
-                with client.messages.stream(**kwargs) as stream:
-                    for text in stream.text_stream:
-                        if text:
-                            loop.call_soon_threadsafe(
-                                queue.put_nowait, ("token", text)
-                            )
-                    try:
-                        fm = stream.get_final_message()
-                        usage = getattr(fm, "usage", None)
-                    except Exception:
-                        pass
-            loop.call_soon_threadsafe(queue.put_nowait, ("usage", usage))
-        except Exception as e:
-            logger.error("[QA] Step4 stream 失败: %s", e)
-            loop.call_soon_threadsafe(queue.put_nowait, ("error", str(e)))
-        finally:
-            loop.call_soon_threadsafe(queue.put_nowait, None)
-
-    threading.Thread(target=_worker, daemon=True).start()
-    while True:
-        item = await queue.get()
-        if item is None:
-            break
-        if isinstance(item, tuple) and item and item[0] == "error":
-            yield ("error", item[1])
-            return
-        yield item
+    kwargs: dict[str, Any] = dict(
+        model=STEP4_MODEL,
+        max_tokens=4096,
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if not STEP4_MODEL.startswith("claude-opus-4-7"):
+        kwargs["temperature"] = 0.3
+    try:
+        async with client.messages.stream(**kwargs) as stream:
+            async for text in stream.text_stream:
+                if text:
+                    yield ("token", text)
+            try:
+                fm = await stream.get_final_message()
+                usage = getattr(fm, "usage", None)
+            except Exception:
+                usage = None
+            yield ("usage", usage)
+    except Exception as e:
+        logger.error("[QA] Step4 stream 失败: %s", e)
+        yield ("error", str(e))
 
 
 # ---------------------------------------------------------------------------
