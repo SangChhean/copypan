@@ -827,6 +827,7 @@ def _step4_build_prompt(
         firewall_instruction = FIREWALL_INSTRUCTION.format(
             fw_title=firewall_doc.get("title", ""),
             fw_note=firewall_doc.get("note", ""),
+            fw_full_text=firewall_doc.get("full_text", ""),
         )
 
     return STEP4_ANSWER_GENERATION.format(
@@ -840,20 +841,27 @@ def _step4_build_prompt(
 
 
 def _extract_step4_sources(raw: str) -> list[str]:
-    """从 Step4 原始输出中提取【引用书目】列表。"""
+    """从 Step4 原始输出中提取【引用书目】列表（保留编号；按书名去重）。"""
     sources: list[str] = []
     if "【引用书目】" not in raw:
         return sources
     bib_block = raw.split("【引用书目】", 1)[1]
-    seen_sources: set[str] = set()
+    seen: set[str] = set()
     for line in bib_block.splitlines():
         line = line.strip()
+        if not line:
+            continue
+        # 兼容有无 ➡️（旧缓存可能仍带符号）
         if "➡️" in line:
             after = line.split("➡️", 1)[1].strip()
-            after = re.sub(r"^\d+[\.\s]+", "", after).strip()
-            if after and after not in seen_sources:
-                seen_sources.add(after)
-                sources.append(after)
+        elif re.match(r"^\d+", line):
+            after = line.strip()
+        else:
+            continue
+        key = re.sub(r"^\d+[\.\s]+", "", after).strip()
+        if key and key not in seen:
+            seen.add(key)
+            sources.append(after)
     return sources
 
 
@@ -885,7 +893,7 @@ async def _step4(
         prompt, STEP4_MODEL,
         temperature=0.3,
         max_tokens=4096,
-        system="你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。",
+        system="你是一位职事信息问答助手，严格基于所提供的段落作答。回答要有清晰的主线，用原文支撑论述，不编造，不拼凑。",
     )
     cost = _calc_cost(STEP4_MODEL, usage)
     sources = _extract_step4_sources(raw)
@@ -1078,7 +1086,7 @@ async def _iter_step4_stream_tokens(prompt: str) -> AsyncGenerator[tuple[str, An
     """
     loop = asyncio.get_running_loop()
     queue: asyncio.Queue[Any] = asyncio.Queue()
-    system = "你是一位职事信息问答助手，严格基于所提供的段落归纳作答，不编造。"
+    system = "你是一位职事信息问答助手，严格基于所提供的段落作答。回答要有清晰的主线，用原文支撑论述，不编造，不拼凑。"
 
     def _worker() -> None:
         usage: Any = None

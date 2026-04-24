@@ -69,8 +69,7 @@
                     :key="srcIdx + '-' + src"
                     class="qa-source-item"
                   >
-                    <span class="qa-source-idx">{{ srcIdx + 1 }}</span>
-                    <span class="qa-source-name">{{ src.replace('➡️', '').trim() }}</span>
+                    <span class="qa-source-name">{{ src }}</span>
                   </div>
                 </div>
               </div>
@@ -165,6 +164,30 @@ function renderAnswer(text) {
   return marked.parse(body)
 }
 
+// 打字机队列
+const typewriterQueue = ref([])
+let typewriterTimer = null
+
+function startTypewriter(targetMsg) {
+  if (typewriterTimer) return
+  typewriterTimer = setInterval(() => {
+    if (typewriterQueue.value.length === 0) return
+    const char = typewriterQueue.value.shift()
+    const idx = messages.value.findIndex((m) => m.id === targetMsg.id)
+    if (idx !== -1) {
+      messages.value[idx].answer += char
+    }
+  }, 20) // 每 20ms 一个字符
+}
+
+function stopTypewriter() {
+  if (typewriterTimer) {
+    clearInterval(typewriterTimer)
+    typewriterTimer = null
+  }
+  typewriterQueue.value = []
+}
+
 async function submit() {
   const q = question.value.trim()
   if (!q || loading.value) return
@@ -194,8 +217,16 @@ async function submit() {
     cache_hit: false,
     elapsed: 0,
     cost: 0,
+    /** 流式遇到「【引用书目】」后为 true，后续 token 不再入打字机队列 */
+    _bodyDone: false,
   }
   messages.value.push(assistantMsg)
+
+  const assistantRow = () => {
+    const i = messages.value.findIndex((m) => m.id === assistantMsg.id)
+    return i !== -1 ? messages.value[i] : assistantMsg
+  }
+
   await scrollToBottom()
 
   // 追问补全：若当前问题疑似追问（不含书名但含篇章词），用上一轮问题的书名补全
@@ -222,6 +253,9 @@ async function submit() {
   }
 
   try {
+    const sendTime = Date.now()
+    let firstTokenReceived = false
+
     const token = localStorage.getItem('qa_token') || ''
     const response = await fetch('/api/qa/stream', {
       method: 'POST',
@@ -268,40 +302,84 @@ async function submit() {
             continue
           }
           if (chunk.type === 'token') {
-            assistantMsg.loading = false
-            assistantMsg.answer += chunk.text || ''
+            if (!firstTokenReceived) {
+              firstTokenReceived = true
+              const row = assistantRow()
+              if (row) {
+                row.elapsed = ((Date.now() - sendTime) / 1000).toFixed(1)
+              }
+              await scrollToMessageTop(assistantMsg.id - 1)
+            }
+            const idx = messages.value.findIndex((m) => m.id === assistantMsg.id)
+            if (idx !== -1) {
+              messages.value[idx].loading = false
+            }
+            const text = chunk.text || ''
+            const row = assistantRow()
+            if (row && row._bodyDone) {
+              // 已进入书目区，不再打字
+            } else {
+              let bodyText = text
+              if (text.includes('【引用书目】')) {
+                bodyText = text.split('【引用书目】')[0]
+                if (row) row._bodyDone = true
+              }
+              for (const char of bodyText) {
+                typewriterQueue.value.push(char)
+              }
+              startTypewriter(assistantMsg)
+            }
           } else if (chunk.type === 'done') {
-            assistantMsg.found = chunk.found ?? true
-            assistantMsg.answer = chunk.answer ?? assistantMsg.answer
-            assistantMsg.sources = chunk.sources || []
-            assistantMsg.concepts = chunk.concepts || []
-            assistantMsg.cache_hit = chunk.cache_hit ?? false
-            assistantMsg.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
-            assistantMsg.cost = chunk.cost || 0
-            assistantMsg.loading = false
+            await new Promise((resolve) => {
+              const wait = setInterval(() => {
+                if (typewriterQueue.value.length === 0) {
+                  clearInterval(wait)
+                  resolve()
+                }
+              }, 50)
+            })
+            stopTypewriter()
+            const row = assistantRow()
+            row.found = chunk.found ?? true
+            if (!row.answer) {
+              row.answer = chunk.answer || ''
+            }
+            row.sources = chunk.sources || []
+            row.concepts = chunk.concepts || []
+            row.cache_hit = chunk.cache_hit ?? false
+            if (!firstTokenReceived) {
+              row.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
+            }
+            row.cost = chunk.cost || 0
+            row.loading = false
           } else if (chunk.type === 'error') {
-            assistantMsg.answer = '请求失败，请稍后重试。'
-            assistantMsg.found = false
-            assistantMsg.loading = false
+            stopTypewriter()
+            const row = assistantRow()
+            row.answer = '请求失败，请稍后重试。'
+            row.found = false
+            row.loading = false
           }
         }
       }
     }
   } catch (e) {
-    assistantMsg.found = false
-    assistantMsg.answer = '请求失败，请稍后重试。'
+    stopTypewriter()
+    const r = assistantRow()
+    r.found = false
+    r.answer = '请求失败，请稍后重试。'
   } finally {
-    assistantMsg.loading = false
+    stopTypewriter()
+    const r = assistantRow()
+    r.loading = false
     loading.value = false
     question.value = ''
     // 存补全后的问句，便于下一轮从 history 提取书名再做追问补全（气泡仍用上面的 q）
     history.value.push({
       question: finalQuestion,
-      answer: assistantMsg.answer || '',
+      answer: r.answer || '',
     })
     history.value = history.value.slice(-3)
     await nextTick()
-    await scrollToMessageTop(assistantMsg.id)
   }
 }
 
@@ -511,13 +589,6 @@ async function scrollToMessageTop(messageId) {
   padding: 4px 0;
   border-bottom: 1px solid var(--color-border);
   &:last-child { border-bottom: none; }
-}
-.qa-source-idx {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--color-primary);
-  font-weight: 600;
-  min-width: 16px;
 }
 .qa-source-name {
   font-size: 12px;

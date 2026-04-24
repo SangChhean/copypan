@@ -148,17 +148,26 @@ async function submit() {
   loading.value = true
   result.value = null
   try {
-    const res = await axios.post('/api/qa/query', {
-      question: question.value.trim(),
-      skip_cache: params.value.skip_cache,
-      debug: true,
-      params: {
-        bm25_top_k: params.value.bm25_top_k,
-        dense_top_k: params.value.dense_top_k,
-        expansion_top_n: params.value.expansion_top_n,
-        rerank_top_n: params.value.rerank_top_n,
-      }
-    })
+    const token = localStorage.getItem('qa_token') || ''
+    const res = await axios.post(
+      '/api/qa/query',
+      {
+        question: question.value.trim(),
+        skip_cache: params.value.skip_cache,
+        debug: true,
+        params: {
+          bm25_top_k: params.value.bm25_top_k,
+          dense_top_k: params.value.dense_top_k,
+          expansion_top_n: params.value.expansion_top_n,
+          rerank_top_n: params.value.rerank_top_n,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
     result.value = res.data
   } catch (e) {
     result.value = { error: e.response?.data?.detail || '请求失败' }
