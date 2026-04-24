@@ -73,6 +73,39 @@
                   </div>
                 </div>
               </div>
+
+              <div class="admin-feedback-wrap">
+                <div class="admin-section-title">答案反馈汇总</div>
+                <div v-if="feedbackStats" class="admin-feedback-grid">
+                  <div class="admin-stat-card">
+                    <div class="admin-stat-value">{{ feedbackStats.thumbs_up || 0 }}</div>
+                    <div class="admin-stat-label">👍 总数</div>
+                  </div>
+                  <div class="admin-stat-card">
+                    <div class="admin-stat-value">{{ feedbackStats.thumbs_down || 0 }}</div>
+                    <div class="admin-stat-label">👎 总数</div>
+                  </div>
+                  <div class="admin-stat-card">
+                    <div class="admin-stat-value">{{ pct(feedbackStats.rate || 0) }}</div>
+                    <div class="admin-stat-label">好评率</div>
+                  </div>
+                </div>
+                <div v-if="feedbackStats && feedbackStats.recent_down && feedbackStats.recent_down.length" class="admin-feedback-list">
+                  <div
+                    v-for="(rec, idx) in feedbackStats.recent_down"
+                    :key="idx"
+                    class="admin-feedback-item"
+                  >
+                    <div class="admin-feedback-head">
+                      <span>{{ rec.created_at || '-' }}</span>
+                      <span>{{ rec.username || '-' }}</span>
+                    </div>
+                    <div class="admin-feedback-text"><b>问：</b>{{ truncateText(rec.question, 50) }}</div>
+                    <div class="admin-feedback-text"><b>答：</b>{{ truncateText(rec.answer, 100) }}</div>
+                  </div>
+                </div>
+                <div v-else-if="feedbackStats" class="admin-feedback-empty">暂无反馈数据</div>
+              </div>
             </a-tab-pane>
 
             <a-tab-pane key="cache" tab="缓存">
@@ -203,6 +236,7 @@ const clearLoading = ref(false)
 const clearStatsLoading = ref(false)
 const tokenError = ref('')
 const clearResult = ref(null)
+const feedbackStats = ref(null)
 const activeTab = ref('stats')
 const inviteCode = ref('')
 const invites = ref([])
@@ -230,13 +264,14 @@ async function loadStats() {
       headers: { 'X-Admin-Token': adminToken.value.trim() }
     })
     stats.value = res.data
-    await Promise.all([loadInvites(), loadUsers()])
+    await Promise.all([loadInvites(), loadUsers(), loadFeedbackStats()])
   } catch (e) {
     const status = e.response?.status
     if (status === 401) tokenError.value = 'Token 无效'
     else if (status === 503) tokenError.value = '服务不可用（Redis 未连接或 Token 未配置）'
     else tokenError.value = `请求失败（${status || '网络错误'}）`
     stats.value = null
+    feedbackStats.value = null
   } finally {
     statsLoading.value = false
   }
@@ -356,6 +391,25 @@ async function clearStats() {
     clearStatsLoading.value = false
   }
 }
+
+async function loadFeedbackStats() {
+  if (!adminToken.value.trim()) return
+  try {
+    const res = await axios.get('/api/qa/feedback/stats', {
+      headers: _adminHeaders(),
+    })
+    feedbackStats.value = res.data || null
+  } catch (e) {
+    console.error('load feedback stats failed', e)
+    feedbackStats.value = null
+  }
+}
+
+function truncateText(text, maxLen) {
+  const s = (text || '').trim()
+  if (!s) return '-'
+  return s.length > maxLen ? `${s.slice(0, maxLen)}...` : s
+}
 </script>
 
 <style lang="less" scoped>
@@ -400,6 +454,42 @@ async function clearStats() {
 }
 .admin-fail-wrap {
   margin-top: 20px;
+}
+.admin-feedback-wrap {
+  margin-top: 24px;
+}
+.admin-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin-feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-feedback-item {
+  padding: 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.admin-feedback-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+.admin-feedback-text {
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+.admin-feedback-empty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 /* Section */

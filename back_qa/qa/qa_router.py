@@ -62,6 +62,13 @@ class QueryResponse(BaseModel):
     debug: dict[str, Any] | None = None
 
 
+class FeedbackRequest(BaseModel):
+    request_id: str
+    question: str
+    answer: str
+    rating: int  # 1 或 -1
+
+
 # ---------- 工具函数 ----------
 
 def _resolve_request_id(request: Request) -> str:
@@ -188,6 +195,25 @@ async def stream_answer(req: QueryRequest, request: Request):
     return EventSourceResponse(event_generator())
 
 
+@router.post("/feedback")
+async def submit_feedback(req: FeedbackRequest, request: Request):
+    """提交答案质量反馈（需登录）。"""
+    username = _require_user(request)
+    if req.rating not in (1, -1):
+        raise HTTPException(status_code=400, detail="rating 只能是 1 或 -1")
+
+    from back_qa.qa.auth import insert_feedback
+
+    insert_feedback(
+        request_id=(req.request_id or "").strip(),
+        username=username,
+        question=(req.question or "").strip(),
+        answer=(req.answer or "").strip(),
+        rating=req.rating,
+    )
+    return {"ok": True}
+
+
 # ---------------------------------------------------------------------------
 # 管理接口（需 X-Admin-Token 验证）
 # ---------------------------------------------------------------------------
@@ -276,3 +302,11 @@ async def stats(request: Request):
         "avg_elapsed_ms": round(avg_elapsed),
         "step_fail_records": step_fail[-20:],  # 最近 20 条未找到记录
     }
+
+
+@router.get("/feedback/stats")
+async def feedback_stats(request: Request):
+    _require_admin(request)
+    from back_qa.qa.auth import get_feedback_stats
+
+    return get_feedback_stats()

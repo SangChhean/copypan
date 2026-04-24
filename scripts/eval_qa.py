@@ -127,7 +127,7 @@ async def _llm_judge(
     block = msg.content[0]
     text = getattr(block, "text", "") or ""
     text = text.strip().lower()
-    return text.startswith("yes")
+    return text.startswith("yes") or text.startswith("是")
 
 
 async def _call_qa(

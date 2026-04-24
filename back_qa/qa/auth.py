@@ -61,6 +61,19 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT NOT NULL,
+                username TEXT,
+                question TEXT,
+                answer TEXT,
+                rating INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
         conn.commit()
 
 
@@ -183,6 +196,52 @@ def list_invite_codes() -> list[dict]:
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def insert_feedback(request_id: str, username: str, question: str, answer: str, rating: int) -> None:
+    """写入一条反馈记录"""
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO feedback(request_id, username, question, answer, rating, created_at)
+            VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            (request_id, username, question, answer, int(rating), now),
+        )
+        conn.commit()
+
+
+def get_feedback_stats() -> dict:
+    """返回反馈统计与最近 20 条差评记录。"""
+    with _connect() as conn:
+        up = conn.execute(
+            "SELECT COUNT(1) AS c FROM feedback WHERE rating = 1"
+        ).fetchone()
+        down = conn.execute(
+            "SELECT COUNT(1) AS c FROM feedback WHERE rating = -1"
+        ).fetchone()
+        rows = conn.execute(
+            """
+            SELECT request_id, username, question, answer, created_at
+            FROM feedback
+            WHERE rating = -1
+            ORDER BY id DESC
+            LIMIT 20
+            """
+        ).fetchall()
+
+    thumbs_up = int((up or {}).get("c", 0)) if isinstance(up, dict) else int(up["c"] if up else 0)
+    thumbs_down = int((down or {}).get("c", 0)) if isinstance(down, dict) else int(down["c"] if down else 0)
+    total = thumbs_up + thumbs_down
+    rate = round(thumbs_up / total, 4) if total else 0.0
+    recent_down = [dict(row) for row in rows]
+    return {
+        "thumbs_up": thumbs_up,
+        "thumbs_down": thumbs_down,
+        "rate": rate,
+        "recent_down": recent_down,
+    }
 
 
 # 模块加载即确保表存在（满足“启动时自动建表”）

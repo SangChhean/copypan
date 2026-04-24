@@ -74,10 +74,77 @@
                 </div>
               </div>
 
-              <div class="qa-meta">
+              <div class="qa-meta" v-if="!msg.streaming">
                 <span v-if="msg.cache_hit" class="qa-meta-badge qa-meta-cache">缓存</span>
                 <span class="qa-meta-time">{{ msg.elapsed }}s</span>
                 <span class="qa-meta-cost">${{ Number(msg.cost || 0).toFixed(4) }}</span>
+              </div>
+
+              <div
+                v-if="!msg.streaming"
+                class="qa-feedback"
+              >
+                <button
+                  class="qa-feedback-btn qa-copy-btn"
+                  :disabled="msg.copied"
+                  @click="copyAnswer(msg)"
+                >
+                  <svg
+                    v-if="msg.copied"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span v-if="msg.copied">copied</span>
+                  <svg
+                    v-if="!msg.copied"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span v-if="!msg.copied">copy</span>
+                </button>
+                <button
+                  v-if="msg.found"
+                  class="qa-feedback-btn"
+                  :class="{
+                    'is-selected': msg.feedback === 1,
+                    'is-muted': msg.feedback === -1,
+                  }"
+                  :disabled="msg.feedback !== null || msg.feedbackSubmitting"
+                  @click="submitFeedback(msg, 1)"
+                >
+                  👍
+                </button>
+                <button
+                  v-if="msg.found"
+                  class="qa-feedback-btn"
+                  :class="{
+                    'is-selected': msg.feedback === -1,
+                    'is-muted': msg.feedback === 1,
+                  }"
+                  :disabled="msg.feedback !== null || msg.feedbackSubmitting"
+                  @click="submitFeedback(msg, -1)"
+                >
+                  👎
+                </button>
               </div>
             </template>
 
@@ -209,6 +276,7 @@ async function submit() {
     role: 'assistant',
     content: '',
     loading: true,
+    streaming: true,
     answer: '',
     /** 流式过程中先视为有答案，避免 loading 结束后短暂出现「未找到」；最终以 done / error 为准 */
     found: true,
@@ -217,6 +285,11 @@ async function submit() {
     cache_hit: false,
     elapsed: 0,
     cost: 0,
+    request_id: '',
+    question: q,
+    feedback: null,
+    feedbackSubmitting: false,
+    copied: false,
     /** 流式遇到「【引用书目】」后为 true，后续 token 不再入打字机队列 */
     _bodyDone: false,
   }
@@ -347,17 +420,20 @@ async function submit() {
             row.sources = chunk.sources || []
             row.concepts = chunk.concepts || []
             row.cache_hit = chunk.cache_hit ?? false
+            row.request_id = chunk.request_id || ''
             if (!firstTokenReceived) {
               row.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
             }
             row.cost = chunk.cost || 0
             row.loading = false
+            row.streaming = false
           } else if (chunk.type === 'error') {
             stopTypewriter()
             const row = assistantRow()
             row.answer = '请求失败，请稍后重试。'
             row.found = false
             row.loading = false
+            row.streaming = false
           }
         }
       }
@@ -371,6 +447,7 @@ async function submit() {
     stopTypewriter()
     const r = assistantRow()
     r.loading = false
+    r.streaming = false
     loading.value = false
     question.value = ''
     // 存补全后的问句，便于下一轮从 history 提取书名再做追问补全（气泡仍用上面的 q）
@@ -380,6 +457,63 @@ async function submit() {
     })
     history.value = history.value.slice(-3)
     await nextTick()
+  }
+}
+
+async function submitFeedback(msg, rating) {
+  if (!msg || msg.feedback !== null || msg.feedbackSubmitting) return
+  const token = localStorage.getItem('qa_token') || ''
+  if (!token) return
+
+  msg.feedbackSubmitting = true
+  try {
+    const res = await fetch('/api/qa/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        request_id: msg.request_id || '',
+        question: msg.question || '',
+        answer: msg.answer || '',
+        rating,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    msg.feedback = rating
+  } catch (e) {
+    console.error('submit feedback failed', e)
+  } finally {
+    msg.feedbackSubmitting = false
+  }
+}
+
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')   // **粗体** -> 粗体
+    .replace(/\*(.*?)\*/g, '$1')        // *斜体* -> 斜体
+    .replace(/^---+$/gm, '——')          // --- 分隔线 -> ——
+    .replace(/^#{1,6}\s+/gm, '')        // ## 标题 -> 去掉#
+    .replace(/`(.*?)`/g, '$1')          // `代码` -> 代码
+    .trim()
+}
+
+async function copyAnswer(msg) {
+  if (!msg || msg.copied) return
+  try {
+    const cleanAnswer = stripMarkdown(msg.answer || '')
+    const sourcesText = msg.sources && msg.sources.length
+      ? '\n\n【引用书目】\n' + msg.sources.join('\n')
+      : ''
+    const fullText = cleanAnswer + sourcesText
+    await navigator.clipboard.writeText(fullText)
+    msg.copied = true
+    setTimeout(() => {
+      msg.copied = false
+    }, 1500)
+  } catch (e) {
+    console.error('copy answer failed', e)
   }
 }
 
@@ -616,6 +750,40 @@ async function scrollToMessageTop(messageId) {
 .qa-meta-time, .qa-meta-cost {
   font-size: 11px;
   color: var(--color-text-secondary);
+}
+
+.qa-feedback {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+.qa-feedback-btn {
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: 14px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: all 0.2s;
+}
+.qa-feedback-btn.is-selected {
+  border-color: var(--color-primary);
+  background: #f5ead2;
+  color: #7a5a0f;
+}
+.qa-feedback-btn.is-muted {
+  opacity: 0.45;
+}
+.qa-feedback-btn:disabled {
+  cursor: not-allowed;
+}
+.qa-copy-btn {
+  min-width: 84px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* 免责说明 */
