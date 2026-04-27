@@ -443,7 +443,11 @@ def _parse_step1_layers(text: str) -> tuple[list[str], list[str], list[str], str
     revelation = [str(x).strip() for x in revelation_raw if str(x).strip()] if isinstance(revelation_raw, list) else []
     experience = [str(x).strip() for x in experience_raw if str(x).strip()] if isinstance(experience_raw, list) else []
     practice = [str(x).strip() for x in practice_raw if str(x).strip()] if isinstance(practice_raw, list) else []
-    return (revelation[:6], experience[:3], practice[:3], reasoning)
+    experience = experience[:3]
+    practice = practice[:3]
+    max_revelation = 12 - len(experience) - len(practice)
+    revelation = revelation[:max_revelation]
+    return (revelation, experience, practice, reasoning)
 
 
 def _safe_parse_json(text: str) -> dict:
