@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """FastAPI 路由：/api/kg_rag。query / cache_translation / generate_step5 对已登录用户开放，其余仅管理员可访问。"""
 import asyncio
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -13,6 +14,7 @@ from kg_rag.kg_rag_service import KgRagService
 from kg_rag.neo4j_client import Neo4jClient
 
 router = APIRouter(prefix="/api/kg_rag", tags=["kg_rag"])
+logger = logging.getLogger("kg_rag")
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +257,15 @@ async def extract_concepts(req: ExtractConceptsRequest):
             "skip_cache": True,
         })
         s1 = (result.get("steps") or {}).get("step1") or {}
+        logger.info(
+            "[KG-RAG DEBUG] extract_concepts step1 summary: revelation=%s experience=%s practice=%s reasoning_len=%s raw_response_len=%s error=%s",
+            s1.get("revelation", []),
+            s1.get("experience", []),
+            s1.get("practice", []),
+            len(str(s1.get("reasoning", "") or "")),
+            len(str(s1.get("raw_response", "") or "")),
+            s1.get("error"),
+        )
         return {
             "revelation": s1.get("revelation", []),
             "experience": s1.get("experience", []),
