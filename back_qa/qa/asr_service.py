@@ -24,18 +24,19 @@ def _get_client() -> AsyncOpenAI:
 
 
 def _build_prompt() -> str:
+    prefix = "以下是简体中文内容。"
     cfg_path = Path(__file__).resolve().parents[1] / "asr_corrections.json"
     if not cfg_path.exists():
-        return ""
+        return prefix
     try:
         data = json.loads(cfg_path.read_text(encoding="utf-8"))
     except Exception:
-        return ""
+        return prefix
     hints = data.get("hints", [])
     if not isinstance(hints, list):
-        return ""
+        return prefix
     words = [str(x).strip() for x in hints if str(x).strip()]
-    return ",".join(words)
+    return prefix + "、".join(words) if words else prefix
 
 
 async def transcribe(audio_bytes: bytes, filename: str) -> str:
