@@ -80,7 +80,7 @@ DEFAULT_PARAMS = {
     "step5_model": "",  # 空字符串则 Step5 用 FULL_QUERY_STEP5_MODEL（默认 Sonnet 4.6）
     "stop_after_step1": False,
     "stop_after_step2": False,  # True 时在 Step2 完成后返回（需与 stop_after_step1 互斥）
-    "outline_nature": "一般性",  # 一般性 / 高真理浓度 / 高生命浓度 / 重实行应用
+    "outline_nature": "一般性",  # 一般性 / 真理启示 / 生命经历 / 启示应用
     "burden_description": "",  # 负担说明（可选）
     "audience": "",  # 面对对象（可选）
     "depth": "general",  # general / deep；deep 时可触发检索参数预设（见 full_query）
@@ -145,13 +145,13 @@ OUTLINE_NATURE_WEIGHTS: dict[str, list[tuple[Callable[[str, str], bool], float]]
     "一般性": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.1),
     ],
-    "高真理浓度": [
+    "真理启示": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.5),
     ],
-    "高生命浓度": [
+    "生命经历": [
         (lambda idx, cid: idx in ("kg-rag_cwwn", "kg-rag_life"), 1.5),
     ],
-    "重实行应用": [
+    "启示应用": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1985, 1993), 1.5),
     ],
 }
@@ -415,7 +415,9 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
     return {"scenario": "B", "candidates": [], "error": "解析失败"}
 
 
-def _parse_step1_layers(text: str) -> tuple[list[str], list[str], list[str], str]:
+def _parse_step1_layers(
+    text: str, outline_nature: str = "一般性"
+) -> tuple[list[str], list[str], list[str], str]:
     """解析 Step 1 返回的 JSON（含 reasoning、revelation、experience、practice）。reasoning 仅写入 Step1 结果，不传入 Step2。"""
     if not text or not text.strip():
         return ([], [], [], "")
@@ -443,9 +445,19 @@ def _parse_step1_layers(text: str) -> tuple[list[str], list[str], list[str], str
     revelation = [str(x).strip() for x in revelation_raw if str(x).strip()] if isinstance(revelation_raw, list) else []
     experience = [str(x).strip() for x in experience_raw if str(x).strip()] if isinstance(experience_raw, list) else []
     practice = [str(x).strip() for x in practice_raw if str(x).strip()] if isinstance(practice_raw, list) else []
-    experience = experience[:3]
-    practice = practice[:3]
-    max_revelation = 12 - len(experience) - len(practice)
+    nature = (outline_nature or "一般性").strip()
+    if nature == "真理启示":
+        max_rev, max_exp, max_prac = 6, 3, 3
+    elif nature == "生命经历":
+        max_rev, max_exp, max_prac = 3, 6, 3
+    elif nature == "启示应用":
+        max_rev, max_exp, max_prac = 3, 3, 6
+    else:
+        max_rev, max_exp, max_prac = 4, 4, 4
+
+    experience = experience[:max_exp]
+    practice = practice[:max_prac]
+    max_revelation = min(max_rev, 12 - len(experience) - len(practice))
     revelation = revelation[:max_revelation]
     return (revelation, experience, practice, reasoning)
 
@@ -1041,6 +1053,7 @@ class KgRagService:
                 )
                 step1_prompt = STEP1_CONCEPT_EXTRACTION.format(
                     query=query,
+                    outline_nature=outline_nature,
                     burden_line=burden_line,
                     concept_list=concept_list_text,
                 )
@@ -1058,7 +1071,9 @@ class KgRagService:
                         f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
                         f"preview={(raw1 or '')[:300]}"
                     )
-                revelation, experience, practice, reasoning = _parse_step1_layers(raw1)
+                revelation, experience, practice, reasoning = _parse_step1_layers(
+                    raw1, outline_nature=outline_nature
+                )
                 if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
                     logger.info(
                         "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
@@ -1066,7 +1081,9 @@ class KgRagService:
                     raw1_fallback, u1_fallback = await _call_kg_rag_llm(
                         step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
                     )
-                    r_fb, e_fb, p_fb, reason_fb = _parse_step1_layers(raw1_fallback)
+                    r_fb, e_fb, p_fb, reason_fb = _parse_step1_layers(
+                        raw1_fallback, outline_nature=outline_nature
+                    )
                     logger.info(
                         f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
                         f"preview={(raw1_fallback or '')[:300]}"

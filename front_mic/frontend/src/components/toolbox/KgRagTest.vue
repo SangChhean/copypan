@@ -1103,16 +1103,16 @@ onMounted(() => {
                           <span class="param-label">纲目性质</span>
                           <a-radio-group v-model:value="outlineNature" button-style="solid" size="small" class="param-control">
                             <a-radio-button value="一般性">一般性</a-radio-button>
-                            <a-radio-button value="高真理浓度">高真理浓度</a-radio-button>
-                            <a-radio-button value="高生命浓度">高生命浓度</a-radio-button>
-                            <a-radio-button value="重实行应用">重实行应用</a-radio-button>
+                            <a-radio-button value="真理启示">真理启示</a-radio-button>
+                            <a-radio-button value="生命经历">生命经历</a-radio-button>
+                            <a-radio-button value="启示应用">启示应用</a-radio-button>
                           </a-radio-group>
                         </div>
                       </a-col>
                       <a-col v-if="showBurdenPhasePanel" :span="24">
                         <div class="burden-phase-block param-item-stack">
                           <div class="burden-phase-head">
-                            <span class="burden-phase-title">AI生成负担说明</span>
+                            <span class="burden-phase-title">负担说明的生成（120字）</span>
                             <a
                               class="burden-phase-skip"
                               :class="{ 'burden-phase-skip--locked': burdenPhaseReady }"
@@ -1121,10 +1121,10 @@ onMounted(() => {
                             >跳过负担说明</a>
                           </div>
                           <div class="param-item param-item-stack">
-                            <span class="param-label">参考摘录（选填）</span>
+                            <span class="param-label">原稿请贴这里</span>
                             <a-textarea
                               v-model:value="referenceExcerpt"
-                              placeholder="有摘录走情境A，无摘录走情境B"
+                              placeholder="有原稿直接生成负担说明，无原稿可生成三个负担说明以供选择"
                               :rows="3"
                               allow-clear
                               size="small"
@@ -1158,7 +1158,7 @@ onMounted(() => {
                             </a-radio-group>
                           </div>
                           <div class="param-item param-item-stack">
-                            <span class="param-label">负担说明</span>
+                            <span class="param-label">生成的负担说明</span>
                             <a-textarea
                               v-model:value="burdenDescription"
                               placeholder="在此输入或编辑负担说明，也可留空"
@@ -1170,7 +1170,7 @@ onMounted(() => {
                             />
                           </div>
                           <div class="burden-btn-wrap">
-                            <a-button block :disabled="burdenPhaseReady" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+                            <a-button block :disabled="burdenPhaseReady" @click="confirmBurdenPhase">确认，开始推荐重点</a-button>
                           </div>
                         </div>
                       </a-col>
@@ -1236,20 +1236,19 @@ onMounted(() => {
                       size="small"
                       :type="conceptMode === 'ai' ? 'primary' : 'default'"
                       @click="setConceptModeKg('ai')"
-                    >AI 抽取概念</a-button>
+                    >推荐重点</a-button>
                     <a-button
                       size="small"
                       :type="conceptMode === 'manual' ? 'primary' : 'default'"
                       @click="setConceptModeKg('manual')"
-                    >人工输入概念</a-button>
+                    >输入重点</a-button>
                   </div>
                   <div
                     v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
                     class="concept-candidates-panel"
                   >
-                    <div class="concept-hint">请勾选各层候选概念；启示层至少一项。经历层、实行层可不选。</div>
                     <div v-if="(conceptCandidates.revelation || []).length" class="concept-section concept-checkwrap">
-                      <span class="concept-label">启示层（revelation）</span>
+                      <span class="concept-label">真理启示</span>
                       <a-checkbox-group
                         v-model:value="selectedRevelation"
                         :options="conceptCandidates.revelation"
@@ -1258,7 +1257,7 @@ onMounted(() => {
                     </div>
                     <div v-else class="concept-empty">（启示层无候选）</div>
                     <div v-if="(conceptCandidates.experience || []).length" class="concept-section concept-checkwrap">
-                      <span class="concept-label">经历层（experience）</span>
+                      <span class="concept-label">生命经历</span>
                       <a-checkbox-group
                         v-model:value="selectedExperience"
                         :options="conceptCandidates.experience"
@@ -1266,7 +1265,7 @@ onMounted(() => {
                       />
                     </div>
                     <div v-if="(conceptCandidates.practice || []).length" class="concept-section concept-checkwrap">
-                      <span class="concept-label">实行层（practice）</span>
+                      <span class="concept-label">启示应用</span>
                       <a-checkbox-group
                         v-model:value="selectedPractice"
                         :options="conceptCandidates.practice"
@@ -1275,37 +1274,37 @@ onMounted(() => {
                     </div>
                   </div>
                   <div v-if="conceptMode === 'manual'" class="concept-candidates-panel concept-manual-panel">
-                    <div class="concept-hint">直接输入各层概念；启示层至少一词。无需先抽取。</div>
+                    <div class="concept-hint">直接输入重点。回车或逗号添加，× 删除。</div>
                     <div class="concept-section concept-tags-row">
-                      <span class="concept-label">启示层（revelation）</span>
+                      <span class="concept-label">真理启示</span>
                       <a-select
                         v-model:value="manualRevelation"
                         mode="tags"
                         class="concept-tags-select concept-tags-select--revelation"
                         :token-separators="[',', '，']"
-                        placeholder="至少一词"
+                        placeholder=""
                         allow-clear
                       />
                     </div>
                     <div class="concept-section concept-tags-row">
-                      <span class="concept-label">经历层（experience）</span>
+                      <span class="concept-label">生命经历</span>
                       <a-select
                         v-model:value="manualExperience"
                         mode="tags"
                         class="concept-tags-select concept-tags-select--experience"
                         :token-separators="[',', '，']"
-                        placeholder="可为空"
+                        placeholder=""
                         allow-clear
                       />
                     </div>
                     <div class="concept-section concept-tags-row">
-                      <span class="concept-label">实行层（practice）</span>
+                      <span class="concept-label">启示应用</span>
                       <a-select
                         v-model:value="manualPractice"
                         mode="tags"
                         class="concept-tags-select concept-tags-select--practice"
                         :token-separators="[',', '，']"
-                        placeholder="可为空"
+                        placeholder=""
                         allow-clear
                       />
                     </div>
@@ -1317,7 +1316,7 @@ onMounted(() => {
                     :loading="conceptLoading"
                     :disabled="!burdenPhaseReady"
                     @click="extractConcepts"
-                  >抽取概念</a-button>
+                  >推荐重点</a-button>
                   <a-button
                     type="primary"
                     :loading="queryLoading"
@@ -1327,14 +1326,6 @@ onMounted(() => {
                   >
                     {{ queryPrimaryLabel }}
                   </a-button>
-                  <span
-                    v-if="burdenPhaseReady && conceptMode === 'ai' && conceptStage === 'candidates_ready' && selectedRevelation.length === 0"
-                    class="concept-warn"
-                  >请至少勾选一项启示层概念</span>
-                  <span
-                    v-if="burdenPhaseReady && conceptMode === 'manual' && manualRevelation.length === 0"
-                    class="concept-warn"
-                  >请至少输入一个启示层概念</span>
                 </div>
               </div>
             </a-col>
@@ -2702,6 +2693,10 @@ onMounted(() => {
 .concept-checkbox-group {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
   gap: 4px 12px;
 }
 

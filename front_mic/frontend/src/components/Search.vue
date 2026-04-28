@@ -139,7 +139,7 @@ const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
-const AI_NATURE_OPTIONS = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
+const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "启示应用"];
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
@@ -1135,7 +1135,7 @@ const onAISearch = async () => {
             </div>
             <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
-                <span class="ai-burden-phase-title">AI生成负担说明</span>
+                <span class="ai-burden-phase-title">负担说明的生成（120字）</span>
                 <a
                   href="#"
                   class="ai-burden-skip"
@@ -1144,13 +1144,13 @@ const onAISearch = async () => {
                 >跳过负担说明</a>
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
-                <span>参考摘录（选填）</span>
+                <span>原稿请贴这里</span>
                 <textarea
                   class="ai-burden-textarea"
                   rows="3"
                   v-model="referenceExcerpt"
                   :disabled="loadingAI || burdenGenLoading || burdenPhaseReady"
-                  placeholder="有摘录走情境A，无摘录走情境B"
+                  placeholder="有原稿直接生成负担说明，无原稿可生成三个负担说明以供选择"
                 ></textarea>
               </label>
               <div class="ai-burden-btn-wrap">
@@ -1183,7 +1183,7 @@ const onAISearch = async () => {
                 </a-radio-group>
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
-                <span>负担说明</span>
+                <span>生成的负担说明</span>
                 <textarea
                   class="ai-burden-textarea"
                   rows="4"
@@ -1193,7 +1193,7 @@ const onAISearch = async () => {
                 ></textarea>
               </label>
               <div class="ai-burden-btn-wrap">
-                <a-button block :disabled="loadingAI || burdenPhaseReady" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+                <a-button block :disabled="loadingAI || burdenPhaseReady" @click="confirmBurdenPhase">确认，开始推荐重点</a-button>
               </div>
             </div>
           </div>
@@ -1204,20 +1204,19 @@ const onAISearch = async () => {
               <a-button
                 :type="conceptMode === 'ai' ? 'primary' : 'default'"
                 @click="setConceptMode('ai')"
-              >AI 抽取概念</a-button>
+              >推荐重点</a-button>
               <a-button
                 :type="conceptMode === 'manual' ? 'primary' : 'default'"
                 @click="setConceptMode('manual')"
-              >人工输入概念</a-button>
+              >输入重点</a-button>
             </div>
             <!-- AI：勾选候选（不可自由输入） -->
             <div
               v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
               class="ai-concept-panel"
             >
-              <div class="ai-concept-hint">请勾选各层候选概念；启示层至少选一项。经历层、实行层可不选。</div>
               <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">启示层（revelation）</span>
+                <span class="ai-concept-label">真理启示</span>
                 <a-checkbox-group
                   v-model:value="selectedRevelation"
                   :options="conceptCandidates.revelation"
@@ -1226,7 +1225,7 @@ const onAISearch = async () => {
               </div>
               <div v-else class="ai-concept-empty">（启示层无候选）</div>
               <div v-if="(conceptCandidates.experience || []).length" class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">经历层（experience）</span>
+                <span class="ai-concept-label">生命经历</span>
                 <a-checkbox-group
                   v-model:value="selectedExperience"
                   :options="conceptCandidates.experience"
@@ -1234,52 +1233,50 @@ const onAISearch = async () => {
                 />
               </div>
               <div v-if="(conceptCandidates.practice || []).length" class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">实行层（practice）</span>
+                <span class="ai-concept-label">启示应用</span>
                 <a-checkbox-group
                   v-model:value="selectedPractice"
                   :options="conceptCandidates.practice"
                   class="ai-concept-checks"
                 />
               </div>
-              <div v-if="selectedRevelation.length === 0 && (conceptCandidates.revelation || []).length" class="ai-concept-warn">请至少勾选一项启示层概念</div>
             </div>
             <!-- 人工：三层 tag -->
             <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
-              <div class="ai-concept-hint">直接输入各层概念；启示层至少填一词。回车或逗号添加，× 删除。</div>
+              <div class="ai-concept-hint">直接输入重点。回车或逗号添加，× 删除。</div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">启示层（revelation）</span>
+                <span class="ai-concept-label">真理启示</span>
                 <a-select
                   v-model:value="manualRevelation"
                   mode="tags"
                   class="ai-concept-tags ai-concept-tags--revelation"
                   :token-separators="[',', '，']"
-                  placeholder="至少一词"
+                  placeholder=""
                   allow-clear
                 />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">经历层（experience）</span>
+                <span class="ai-concept-label">生命经历</span>
                 <a-select
                   v-model:value="manualExperience"
                   mode="tags"
                   class="ai-concept-tags ai-concept-tags--experience"
                   :token-separators="[',', '，']"
-                  placeholder="可为空"
+                  placeholder=""
                   allow-clear
                 />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">实行层（practice）</span>
+                <span class="ai-concept-label">启示应用</span>
                 <a-select
                   v-model:value="manualPractice"
                   mode="tags"
                   class="ai-concept-tags ai-concept-tags--practice"
                   :token-separators="[',', '，']"
-                  placeholder="可为空"
+                  placeholder=""
                   allow-clear
                 />
               </div>
-              <div v-if="manualRevelation.length === 0" class="ai-concept-warn">请至少输入一个启示层概念</div>
             </div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
@@ -1297,7 +1294,7 @@ const onAISearch = async () => {
                 :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
                 @click="extractConcepts"
               >
-                {{ conceptLoading ? "抽取中…" : "抽取概念" }}
+                {{ conceptLoading ? "推荐中…" : "推荐重点" }}
               </a-button>
               <a-button
                 v-else-if="conceptMode === 'manual' || (conceptMode === 'ai' && conceptStage === 'candidates_ready')"
@@ -1925,6 +1922,10 @@ const onAISearch = async () => {
 .ai-concept-checks {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
   gap: 4px 10px;
 }
 .ai-concept-empty {
