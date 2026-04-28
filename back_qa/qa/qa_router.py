@@ -6,8 +6,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 from sse_starlette.sse import EventSourceResponse
 
@@ -15,6 +16,7 @@ from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
 from back_qa.qa.auth_router import _require_user
 
 router = APIRouter()
+_bearer = HTTPBearer()
 
 
 # ---------- 请求 / 响应模型 ----------
@@ -310,3 +312,34 @@ async def feedback_stats(request: Request):
     from back_qa.qa.auth import get_feedback_stats
 
     return get_feedback_stats()
+
+
+@router.post("/asr")
+async def asr_transcribe(
+    request: Request,
+    file: UploadFile = File(...),
+    _: HTTPAuthorizationCredentials = Depends(_bearer),
+):
+    _require_user(request)
+
+    allowed_types = {
+        "audio/webm",
+        "audio/wav",
+        "audio/mp4",
+        "audio/mpeg",
+        "audio/ogg",
+    }
+    if (file.content_type or "").lower() not in allowed_types:
+        raise HTTPException(status_code=400, detail="不支持的音频格式")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="文件大小不能超过 10MB")
+
+    from back_qa.qa import asr_service
+
+    try:
+        text = await asr_service.transcribe(content, file.filename or "audio.webm")
+        return {"text": text}
+    except Exception:
+        raise HTTPException(status_code=500, detail="语音识别失败，请重试")

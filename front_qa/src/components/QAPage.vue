@@ -161,6 +161,7 @@
       <div class="qa-input-wrap">
         <a-textarea
           :key="textareaKey"
+          ref="textareaRef"
           v-model:value="question"
           :placeholder="'请输入问题'"
           :auto-size="{ minRows: 1, maxRows: 5 }"
@@ -169,6 +170,44 @@
           class="qa-textarea"
           @keydown.enter.exact.prevent="submit"
         />
+        <button
+          class="qa-mic-btn"
+          :class="audioState"
+          :disabled="loading"
+          @click="toggleRecording"
+        >
+          <svg
+            v-if="audioState !== 'recording'"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+          </svg>
+        </button>
         <a-button
           type="primary"
           :loading="loading"
@@ -185,11 +224,13 @@
 import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { marked } from 'marked'
+import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const question = ref('')
 const textareaKey = ref(0)
 const loading = ref(false)
+const textareaRef = ref(null)
 const currentUsername = ref(localStorage.getItem('qa_username') || '')
 /** 发往接口的最近 3 轮 { question, answer } */
 const history = ref([])
@@ -234,6 +275,10 @@ function renderAnswer(text) {
 // 打字机队列
 const typewriterQueue = ref([])
 let typewriterTimer = null
+const audioState = ref('idle') // 'idle' | 'recording' | 'processing'
+let mediaRecorder = null
+let audioChunks = []
+let audioStopTimer = null
 
 function startTypewriter(targetMsg) {
   if (typewriterTimer) return
@@ -253,6 +298,85 @@ function stopTypewriter() {
     typewriterTimer = null
   }
   typewriterQueue.value = []
+}
+
+async function uploadAudio() {
+  audioState.value = 'processing'
+  try {
+    const token = localStorage.getItem('qa_token') || ''
+    if (!token) throw new Error('no token')
+    const blob = new Blob(audioChunks, { type: 'audio/webm' })
+    const formData = new FormData()
+    formData.append('file', blob, 'recording.webm')
+    const res = await fetch('/api/qa/asr', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const text = (data?.text || '').trim()
+    if (text) {
+      question.value = question.value.trim()
+        ? `${question.value.trim()} ${text}`
+        : text
+      await nextTick()
+      if (textareaRef.value?.focus) {
+        textareaRef.value.focus()
+      } else if (textareaRef.value?.resizableTextArea?.textArea?.focus) {
+        textareaRef.value.resizableTextArea.textArea.focus()
+      }
+    }
+  } catch (e) {
+    message.error('语音识别失败，请重试')
+  } finally {
+    audioState.value = 'idle'
+    audioChunks = []
+  }
+}
+
+async function toggleRecording() {
+  if (loading.value || audioState.value === 'processing') return
+  if (audioState.value === 'recording') {
+    if (audioStopTimer) {
+      clearTimeout(audioStopTimer)
+      audioStopTimer = null
+    }
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop()
+    }
+    return
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    audioChunks = []
+    mediaRecorder = new MediaRecorder(stream)
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        audioChunks.push(event.data)
+      }
+    }
+    mediaRecorder.onstop = async () => {
+      if (audioStopTimer) {
+        clearTimeout(audioStopTimer)
+        audioStopTimer = null
+      }
+      stream.getTracks().forEach((track) => track.stop())
+      await uploadAudio()
+    }
+    mediaRecorder.start()
+    audioState.value = 'recording'
+    audioStopTimer = setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop()
+      }
+    }, 60000)
+  } catch (e) {
+    message.warning('请允许麦克风权限后重试')
+  }
 }
 
 async function submit() {
@@ -825,6 +949,26 @@ async function scrollToMessageTop(messageId) {
   font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
+}
+.qa-mic-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  color: #bbb;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.qa-mic-btn:hover { color: #666; }
+.qa-mic-btn.recording {
+  color: #ff4d4f;
+  animation: mic-pulse 1s ease-in-out infinite;
+}
+.qa-mic-btn.processing { color: #bbb; cursor: default; }
+@keyframes mic-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 .qa-input-hint {
   max-width: min(860px, 90vw);
