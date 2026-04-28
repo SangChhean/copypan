@@ -970,7 +970,10 @@ async def _run_pipeline_until_step4(
 
     total_cost = 0.0
 
-    precheck_targeted = await _detect_targeted(question)
+    if os.environ.get("QA_SKIP_TARGETED") == "1":
+        precheck_targeted = None
+    else:
+        precheck_targeted = await _detect_targeted(question)
     targeted = precheck_targeted
 
     passages: list[dict] = []

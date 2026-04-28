@@ -166,21 +166,64 @@ const conceptCandidates = ref(null); // { revelation, experience, practice, reas
 const selectedRevelation = ref([]);
 const selectedExperience = ref([]);
 const selectedPractice = ref([]);
+const conceptMode = ref("ai"); // 'ai' | 'manual'
+const manualRevelation = ref([]);
+const manualExperience = ref([]);
+const manualPractice = ref([]);
+
+function resetAiConceptStateKg() {
+  conceptStage.value = "idle";
+  conceptCandidates.value = null;
+  selectedRevelation.value = [];
+  selectedExperience.value = [];
+  selectedPractice.value = [];
+}
+function resetManualConceptStateKg() {
+  manualRevelation.value = [];
+  manualExperience.value = [];
+  manualPractice.value = [];
+}
+function setConceptModeKg(mode) {
+  if (conceptMode.value === mode) return;
+  conceptMode.value = mode;
+  if (mode === "manual") {
+    resetAiConceptStateKg();
+  } else {
+    resetManualConceptStateKg();
+  }
+}
+
+const queryPrimaryDisabled = computed(() => {
+  if (!burdenPhaseReady.value) return true;
+  if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
+  if (conceptStage.value === "candidates_ready") return selectedRevelation.value.length === 0;
+  return false;
+});
+
+const queryPrimaryLabel = computed(() => {
+  if (conceptMode.value === "manual") return "生成纲目";
+  if (conceptStage.value === "candidates_ready") return "生成纲目";
+  return "开始查询";
+});
 
 watch(
   [queryText, outlineNature, burdenDescription, audience, referenceExcerpt],
   () => {
     if (conceptStage.value !== "idle") {
-      conceptStage.value = "idle";
-      conceptCandidates.value = null;
-      selectedRevelation.value = [];
-      selectedExperience.value = [];
-      selectedPractice.value = [];
+      resetAiConceptStateKg();
+    }
+    if (
+      manualRevelation.value.length ||
+      manualExperience.value.length ||
+      manualPractice.value.length
+    ) {
+      resetManualConceptStateKg();
     }
   }
 );
 
 function skipBurdenPhase() {
+  if (burdenPhaseReady.value) return;
   burdenDescription.value = "";
   burdenPhaseReady.value = true;
   burdenGenScenario.value = null;
@@ -192,6 +235,7 @@ function skipBurdenPhase() {
 }
 
 function confirmBurdenPhase() {
+  if (burdenPhaseReady.value) return;
   burdenPhaseReady.value = true;
 }
 
@@ -265,12 +309,13 @@ async function extractConcepts() {
       },
       { headers }
     );
-    conceptCandidates.value = res.data;
-    selectedRevelation.value = [];
-    selectedExperience.value = [];
-    selectedPractice.value = [];
+    const d = res.data || {};
+    conceptCandidates.value = d;
+    selectedRevelation.value = [...(d.revelation || [])];
+    selectedExperience.value = [...(d.experience || [])];
+    selectedPractice.value = [...(d.practice || [])];
     conceptStage.value = "candidates_ready";
-    toastSuccess("概念抽取完成，请筛选内在意义概念");
+    toastSuccess("概念抽取完成，请勾选候选词后生成纲目");
   } catch (e) {
     message.error(e.response?.data?.error || e.message || "概念抽取失败");
   } finally {
@@ -377,15 +422,21 @@ async function runFullQuery() {
   try {
     const qParams = buildQueryParams();
     if (
+      conceptMode.value === "manual" &&
+      manualRevelation.value.length > 0
+    ) {
+      qParams.preset_revelation = [...manualRevelation.value];
+      qParams.preset_experience = [...manualExperience.value];
+      qParams.preset_practice = [...manualPractice.value];
+    } else if (
+      conceptMode.value === "ai" &&
       conceptStage.value === "candidates_ready" &&
       conceptCandidates.value &&
-      selectedRevelation.value.length > 0 &&
-      selectedExperience.value.length > 0 &&
-      selectedPractice.value.length > 0
+      selectedRevelation.value.length > 0
     ) {
-      qParams.preset_revelation = selectedRevelation.value;
-      qParams.preset_experience = selectedExperience.value;
-      qParams.preset_practice = selectedPractice.value;
+      qParams.preset_revelation = [...selectedRevelation.value];
+      qParams.preset_experience = [...selectedExperience.value];
+      qParams.preset_practice = [...selectedPractice.value];
     }
     const res = await axios.post(`${apiBase}/api/kg_rag/query`, { query: q, params: qParams }, { headers });
     queryResult.value = res.data;
@@ -687,14 +738,7 @@ const step12Phase = ref("idle"); // idle | step1_done
 const step12ConceptSelections = reactive({});
 const hasAnyStep12DeepSelected = computed(() =>
   Object.values(step12ConceptSelections).some(
-    sel =>
-      sel &&
-      sel.revelation &&
-      sel.experience &&
-      sel.practice &&
-      sel.revelation.length > 0 &&
-      sel.experience.length > 0 &&
-      sel.practice.length > 0
+    (sel) => sel && sel.revelation && sel.revelation.length > 0
   )
 );
 
@@ -853,7 +897,12 @@ async function runStep12Test() {
     });
     for (const item of step12Results.value) {
       if (item.ok && item.data?.steps?.step1) {
-        step12ConceptSelections[item.model] = { revelation: [], experience: [], practice: [] };
+        const s1 = item.data.steps.step1;
+        step12ConceptSelections[item.model] = {
+          revelation: [...(s1.revelation || [])],
+          experience: [...(s1.experience || [])],
+          practice: [...(s1.practice || [])],
+        };
       }
     }
     const okN = step12Results.value.filter((r) => r.ok).length;
@@ -875,13 +924,13 @@ async function runStep12Test() {
 async function runStep12ContinueStep2() {
   const headers = getAuthHeaders();
   if (!headers) return;
-  const modelsToRun = (step12Results.value || []).filter(item => {
+  const modelsToRun = (step12Results.value || []).filter((item) => {
     if (!item.ok) return false;
     const sel = step12ConceptSelections[item.model];
-    return sel && sel.revelation.length > 0 && sel.experience.length > 0 && sel.practice.length > 0;
+    return sel && sel.revelation.length > 0;
   });
   if (!modelsToRun.length) {
-    message.warning("请至少为一个模型分别勾选启示/经历/实行概念");
+    message.warning("请至少为一个模型保留至少一个启示层概念");
     return;
   }
   step12Loading.value = true;
@@ -899,9 +948,9 @@ async function runStep12ContinueStep2() {
               skip_generation: true,
               step1_model: item.model,
               llm_model: item.model,
-              preset_revelation: sel.revelation,
-              preset_experience: sel.experience,
-              preset_practice: sel.practice,
+              preset_revelation: [...(sel.revelation || [])],
+              preset_experience: [...(sel.experience || [])],
+              preset_practice: [...(sel.practice || [])],
             },
           },
           { headers }
@@ -1064,7 +1113,12 @@ onMounted(() => {
                         <div class="burden-phase-block param-item-stack">
                           <div class="burden-phase-head">
                             <span class="burden-phase-title">AI生成负担说明</span>
-                            <a class="burden-phase-skip" href="#" @click.prevent="skipBurdenPhase">跳过负担说明</a>
+                            <a
+                              class="burden-phase-skip"
+                              :class="{ 'burden-phase-skip--locked': burdenPhaseReady }"
+                              href="#"
+                              @click.prevent="skipBurdenPhase"
+                            >跳过负担说明</a>
                           </div>
                           <div class="param-item param-item-stack">
                             <span class="param-label">参考摘录（选填）</span>
@@ -1075,14 +1129,14 @@ onMounted(() => {
                               allow-clear
                               size="small"
                               class="param-control"
-                              :disabled="burdenGenLoading"
+                              :disabled="burdenGenLoading || burdenPhaseReady"
                             />
                           </div>
                           <div class="burden-btn-wrap">
                             <a-button
                               block
                               :loading="burdenGenLoading"
-                              :disabled="burdenGenLoading || !outlineMetaValid"
+                              :disabled="burdenGenLoading || !outlineMetaValid || burdenPhaseReady"
                               @click="onGenerateBurden"
                             >生成负担说明</a-button>
                           </div>
@@ -1092,7 +1146,11 @@ onMounted(() => {
                           </div>
                           <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="burden-gen-out">
                             <div class="burden-gen-label">情境 B</div>
-                            <a-radio-group v-model:value="burdenSelectedIdx" class="burden-radio-group">
+                            <a-radio-group
+                              v-model:value="burdenSelectedIdx"
+                              class="burden-radio-group"
+                              :disabled="burdenPhaseReady"
+                            >
                               <div v-for="(c, i) in burdenGenCandidates" :key="i" class="burden-radio-line">
                                 <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
                                 <span class="burden-cand-body">{{ c }}</span>
@@ -1108,10 +1166,11 @@ onMounted(() => {
                               allow-clear
                               size="small"
                               class="param-control"
+                              :disabled="burdenPhaseReady"
                             />
                           </div>
                           <div class="burden-btn-wrap">
-                            <a-button block @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+                            <a-button block :disabled="burdenPhaseReady" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
                           </div>
                         </div>
                       </a-col>
@@ -1171,40 +1230,111 @@ onMounted(() => {
                   </a-collapse-panel>
                 </a-collapse>
                 <div v-if="outlineMetaValid && !burdenPhaseReady" class="burden-phase-hint">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
-                <!-- 两阶段概念抽取面板 -->
-                <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="concept-candidates-panel">
-                  <div class="concept-section">
-                    <span class="concept-label">启示层（revelation）</span>
-                    <a-checkbox-group v-model:value="selectedRevelation" class="concept-checkbox-group">
-                      <a-checkbox v-for="s in (conceptCandidates.revelation || [])" :key="s" :value="s">{{ s }}</a-checkbox>
-                    </a-checkbox-group>
-                    <span v-if="!conceptCandidates.revelation?.length" class="concept-empty">（无）</span>
+                <template v-if="outlineMetaValid && burdenPhaseReady">
+                  <div class="concept-mode-toggle">
+                    <a-button
+                      size="small"
+                      :type="conceptMode === 'ai' ? 'primary' : 'default'"
+                      @click="setConceptModeKg('ai')"
+                    >AI 抽取概念</a-button>
+                    <a-button
+                      size="small"
+                      :type="conceptMode === 'manual' ? 'primary' : 'default'"
+                      @click="setConceptModeKg('manual')"
+                    >人工输入概念</a-button>
                   </div>
-                  <div class="concept-section">
-                    <span class="concept-label">经历层（experience）</span>
-                    <a-checkbox-group v-model:value="selectedExperience" class="concept-checkbox-group">
-                      <a-checkbox v-for="d in (conceptCandidates.experience || [])" :key="d" :value="d">{{ d }}</a-checkbox>
-                    </a-checkbox-group>
+                  <div
+                    v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
+                    class="concept-candidates-panel"
+                  >
+                    <div class="concept-hint">请勾选各层候选概念；启示层至少一项。经历层、实行层可不选。</div>
+                    <div v-if="(conceptCandidates.revelation || []).length" class="concept-section concept-checkwrap">
+                      <span class="concept-label">启示层（revelation）</span>
+                      <a-checkbox-group
+                        v-model:value="selectedRevelation"
+                        :options="conceptCandidates.revelation"
+                        class="concept-checkbox-group"
+                      />
+                    </div>
+                    <div v-else class="concept-empty">（启示层无候选）</div>
+                    <div v-if="(conceptCandidates.experience || []).length" class="concept-section concept-checkwrap">
+                      <span class="concept-label">经历层（experience）</span>
+                      <a-checkbox-group
+                        v-model:value="selectedExperience"
+                        :options="conceptCandidates.experience"
+                        class="concept-checkbox-group"
+                      />
+                    </div>
+                    <div v-if="(conceptCandidates.practice || []).length" class="concept-section concept-checkwrap">
+                      <span class="concept-label">实行层（practice）</span>
+                      <a-checkbox-group
+                        v-model:value="selectedPractice"
+                        :options="conceptCandidates.practice"
+                        class="concept-checkbox-group"
+                      />
+                    </div>
                   </div>
-                  <div class="concept-section">
-                    <span class="concept-label">实行层（practice）</span>
-                    <a-checkbox-group v-model:value="selectedPractice" class="concept-checkbox-group">
-                      <a-checkbox v-for="p in (conceptCandidates.practice || [])" :key="p" :value="p">{{ p }}</a-checkbox>
-                    </a-checkbox-group>
+                  <div v-if="conceptMode === 'manual'" class="concept-candidates-panel concept-manual-panel">
+                    <div class="concept-hint">直接输入各层概念；启示层至少一词。无需先抽取。</div>
+                    <div class="concept-section concept-tags-row">
+                      <span class="concept-label">启示层（revelation）</span>
+                      <a-select
+                        v-model:value="manualRevelation"
+                        mode="tags"
+                        class="concept-tags-select concept-tags-select--revelation"
+                        :token-separators="[',', '，']"
+                        placeholder="至少一词"
+                        allow-clear
+                      />
+                    </div>
+                    <div class="concept-section concept-tags-row">
+                      <span class="concept-label">经历层（experience）</span>
+                      <a-select
+                        v-model:value="manualExperience"
+                        mode="tags"
+                        class="concept-tags-select concept-tags-select--experience"
+                        :token-separators="[',', '，']"
+                        placeholder="可为空"
+                        allow-clear
+                      />
+                    </div>
+                    <div class="concept-section concept-tags-row">
+                      <span class="concept-label">实行层（practice）</span>
+                      <a-select
+                        v-model:value="manualPractice"
+                        mode="tags"
+                        class="concept-tags-select concept-tags-select--practice"
+                        :token-separators="[',', '，']"
+                        placeholder="可为空"
+                        allow-clear
+                      />
+                    </div>
                   </div>
-                </div>
+                </template>
                 <div class="query-btn-row">
-                  <a-button :loading="conceptLoading" :disabled="!burdenPhaseReady" @click="extractConcepts">抽取概念</a-button>
+                  <a-button
+                    v-if="conceptMode === 'ai'"
+                    :loading="conceptLoading"
+                    :disabled="!burdenPhaseReady"
+                    @click="extractConcepts"
+                  >抽取概念</a-button>
                   <a-button
                     type="primary"
                     :loading="queryLoading"
                     class="query-btn"
                     @click="runFullQuery"
-                    :disabled="!burdenPhaseReady || (conceptStage === 'candidates_ready' && (selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0))"
+                    :disabled="queryPrimaryDisabled"
                   >
-                    {{ conceptStage === 'candidates_ready' ? '生成纲目' : '开始查询' }}
+                    {{ queryPrimaryLabel }}
                   </a-button>
-                  <span v-if="conceptStage === 'candidates_ready' && (selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0)" class="concept-warn">请分别至少选择一个启示/经历/实行概念</span>
+                  <span
+                    v-if="burdenPhaseReady && conceptMode === 'ai' && conceptStage === 'candidates_ready' && selectedRevelation.length === 0"
+                    class="concept-warn"
+                  >请至少勾选一项启示层概念</span>
+                  <span
+                    v-if="burdenPhaseReady && conceptMode === 'manual' && manualRevelation.length === 0"
+                    class="concept-warn"
+                  >请至少输入一个启示层概念</span>
                 </div>
               </div>
             </a-col>
@@ -1838,41 +1968,44 @@ onMounted(() => {
                           <template #description>
                             <a-card size="small" class="step-card step12-nested-card">
                               <div v-if="item.data?.steps?.step1">
-                                <div class="step1-layer">
-                                  <span class="step1-layer-label">启示层候选：</span>
-                                  <template v-if="step12ConceptSelections[item.model]">
-                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].revelation" class="concept-checkbox-group">
-                                      <a-checkbox v-for="c in (item.data.steps.step1.revelation || [])" :key="`${item.model}-r-${c}`" :value="c">{{ c }}</a-checkbox>
-                                    </a-checkbox-group>
-                                  </template>
-                                  <template v-else>
-                                    <a-tag v-for="c in (item.data.steps.step1.revelation || [])" :key="`${item.model}-r-${c}`">{{ c }}</a-tag>
-                                  </template>
+                                <div class="step1-layer step12-tags-layer">
+                                  <span class="step1-layer-label">启示层：</span>
+                                  <a-select
+                                    v-if="step12ConceptSelections[item.model]"
+                                    v-model:value="step12ConceptSelections[item.model].revelation"
+                                    mode="tags"
+                                    class="concept-tags-select step12-concept-tags"
+                                    :token-separators="[',', '，']"
+                                    placeholder="回车或逗号添加"
+                                    allow-clear
+                                  />
                                 </div>
-                                <div class="step1-layer">
-                                  <span class="step1-layer-label">经历层候选：</span>
-                                  <template v-if="step12ConceptSelections[item.model]">
-                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].experience" class="concept-checkbox-group">
-                                      <a-checkbox v-for="c in (item.data.steps.step1.experience || [])" :key="`${item.model}-e-${c}`" :value="c">{{ c }}</a-checkbox>
-                                    </a-checkbox-group>
-                                  </template>
-                                  <template v-else>
-                                    <a-tag color="blue" v-for="c in (item.data.steps.step1.experience || [])" :key="`${item.model}-e-${c}`">{{ c }}</a-tag>
-                                  </template>
+                                <div class="step1-layer step12-tags-layer">
+                                  <span class="step1-layer-label">经历层：</span>
+                                  <a-select
+                                    v-if="step12ConceptSelections[item.model]"
+                                    v-model:value="step12ConceptSelections[item.model].experience"
+                                    mode="tags"
+                                    class="concept-tags-select step12-concept-tags"
+                                    :token-separators="[',', '，']"
+                                    placeholder="可为空"
+                                    allow-clear
+                                  />
                                 </div>
-                                <div class="step1-layer">
-                                  <span class="step1-layer-label">实行层候选：</span>
-                                  <template v-if="step12ConceptSelections[item.model]">
-                                    <a-checkbox-group v-model:value="step12ConceptSelections[item.model].practice" class="concept-checkbox-group">
-                                      <a-checkbox v-for="c in (item.data.steps.step1.practice || [])" :key="`${item.model}-p-${c}`" :value="c">{{ c }}</a-checkbox>
-                                    </a-checkbox-group>
-                                  </template>
-                                  <template v-else>
-                                    <a-tag color="purple" v-for="c in (item.data.steps.step1.practice || [])" :key="`${item.model}-p-${c}`">{{ c }}</a-tag>
-                                  </template>
+                                <div class="step1-layer step12-tags-layer">
+                                  <span class="step1-layer-label">实行层：</span>
+                                  <a-select
+                                    v-if="step12ConceptSelections[item.model]"
+                                    v-model:value="step12ConceptSelections[item.model].practice"
+                                    mode="tags"
+                                    class="concept-tags-select step12-concept-tags"
+                                    :token-separators="[',', '，']"
+                                    placeholder="可为空"
+                                    allow-clear
+                                  />
                                 </div>
-                                <div v-if="step12ConceptSelections[item.model] && (step12ConceptSelections[item.model].revelation.length === 0 || step12ConceptSelections[item.model].experience.length === 0 || step12ConceptSelections[item.model].practice.length === 0) && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
-                                  请分别勾选至少一个启示/经历/实行概念
+                                <div v-if="step12ConceptSelections[item.model] && step12ConceptSelections[item.model].revelation.length === 0 && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
+                                  请至少保留一个启示层概念
                                 </div>
                                 <a-collapse v-if="item.data.steps.step1.raw_response">
                                   <a-collapse-panel key="raw" header="原始响应">
@@ -2101,6 +2234,11 @@ onMounted(() => {
 .burden-phase-skip {
   font-size: 12px;
   color: #722ed1;
+}
+.burden-phase-skip--locked {
+  pointer-events: none;
+  color: #bfbfbf;
+  cursor: not-allowed;
 }
 .burden-btn-wrap {
   margin-top: 10px;
@@ -2472,6 +2610,13 @@ onMounted(() => {
   font-size: 12px;
   white-space: nowrap;
 }
+.concept-mode-toggle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
 .concept-candidates-panel {
   background: #f6f9ff;
   border: 1px solid #d6e4ff;
@@ -2480,9 +2625,58 @@ onMounted(() => {
   margin-top: 8px;
   margin-bottom: 4px;
 }
+.concept-candidates-panel > .concept-hint {
+  display: block;
+  margin-bottom: 10px;
+}
+.concept-checkwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .concept-section {
   margin-bottom: 10px;
   &:last-child { margin-bottom: 0; }
+}
+.concept-tags-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.concept-tags-select {
+  width: 100%;
+}
+.concept-tags-select :deep(.ant-select-selector) {
+  min-height: 38px;
+}
+.concept-manual-panel .concept-tags-select--revelation :deep(.ant-select-selection-item) {
+  background: #ede7f6 !important;
+  border: 1px solid #d1c4e9;
+  border-radius: 4px;
+}
+.concept-manual-panel .concept-tags-select--experience :deep(.ant-select-selection-item) {
+  background: #e8f5e9 !important;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+}
+.concept-manual-panel .concept-tags-select--practice :deep(.ant-select-selection-item) {
+  background: #fff9e6 !important;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+}
+.concept-manual-panel .concept-tags-select :deep(.ant-select-selection-item-remove) {
+  color: rgba(0, 0, 0, 0.45);
+}
+.concept-manual-panel .concept-tags-select :deep(.ant-select-selection-item-remove:hover) {
+  color: rgba(0, 0, 0, 0.75);
+}
+.step12-tags-layer {
+  flex-direction: column;
+  align-items: stretch;
+}
+.step12-concept-tags :deep(.ant-select-selector) {
+  min-height: 36px;
 }
 .concept-label {
   font-weight: 600;

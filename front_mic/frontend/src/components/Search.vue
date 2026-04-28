@@ -200,6 +200,7 @@ watch(burdenSelectedIdx, (idx) => {
 });
 
 function skipBurdenPhase() {
+  if (burdenPhaseReady.value) return;
   aiForm.burdenDescription = "";
   burdenPhaseReady.value = true;
   burdenGenScenario.value = null;
@@ -211,6 +212,7 @@ function skipBurdenPhase() {
 }
 
 function confirmBurdenPhase() {
+  if (burdenPhaseReady.value) return;
   burdenPhaseReady.value = true;
 }
 
@@ -260,16 +262,51 @@ const conceptCandidates = ref(null);
 const selectedRevelation = ref([]);
 const selectedExperience = ref([]);
 const selectedPractice = ref([]);
+/** 概念来源：ai = 勾选候选；manual = 三层 tag 手动输入（互斥） */
+const conceptMode = ref("ai"); // 'ai' | 'manual'
+const manualRevelation = ref([]);
+const manualExperience = ref([]);
+const manualPractice = ref([]);
+
+function resetAiConceptState() {
+  conceptStage.value = "idle";
+  conceptCandidates.value = null;
+  selectedRevelation.value = [];
+  selectedExperience.value = [];
+  selectedPractice.value = [];
+}
+function resetManualConceptState() {
+  manualRevelation.value = [];
+  manualExperience.value = [];
+  manualPractice.value = [];
+}
+function setConceptMode(mode) {
+  if (conceptMode.value === mode) return;
+  conceptMode.value = mode;
+  if (mode === "manual") {
+    resetAiConceptState();
+  } else {
+    resetManualConceptState();
+  }
+}
+
+const outlineGenerateDisabled = computed(() => {
+  if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
+  return selectedRevelation.value.length === 0;
+});
 
 watch(
   () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription, aiForm.audience],
   () => {
     if (conceptStage.value !== "idle") {
-      conceptStage.value = "idle";
-      conceptCandidates.value = null;
-      selectedRevelation.value = [];
-      selectedExperience.value = [];
-      selectedPractice.value = [];
+      resetAiConceptState();
+    }
+    if (
+      manualRevelation.value.length ||
+      manualExperience.value.length ||
+      manualPractice.value.length
+    ) {
+      resetManualConceptState();
     }
   }
 );
@@ -289,10 +326,11 @@ async function extractConcepts() {
       burden_description: aiForm.burdenDescription.trim(),
       audience: aiForm.audience.trim(),
     });
-    conceptCandidates.value = res.data;
-    selectedRevelation.value = [];
-    selectedExperience.value = [];
-    selectedPractice.value = [];
+    const d = res.data || {};
+    conceptCandidates.value = d;
+    selectedRevelation.value = [...(d.revelation || [])];
+    selectedExperience.value = [...(d.experience || [])];
+    selectedPractice.value = [...(d.practice || [])];
     conceptStage.value = "candidates_ready";
   } catch (e) {
     tip(e.response?.data?.error || e.message || "概念抽取失败");
@@ -302,11 +340,8 @@ async function extractConcepts() {
 }
 
 function resetConceptState() {
-  conceptStage.value = "idle";
-  conceptCandidates.value = null;
-  selectedRevelation.value = [];
-  selectedExperience.value = [];
-  selectedPractice.value = [];
+  resetAiConceptState();
+  resetManualConceptState();
 }
 
 // AI 回答复制（包含标题）
@@ -943,15 +978,21 @@ const onAISearch = async () => {
   try {
     const qParams = buildKgRagParams();
     if (
+      conceptMode.value === "manual" &&
+      manualRevelation.value.length > 0
+    ) {
+      qParams.preset_revelation = [...manualRevelation.value];
+      qParams.preset_experience = [...manualExperience.value];
+      qParams.preset_practice = [...manualPractice.value];
+    } else if (
+      conceptMode.value === "ai" &&
       conceptStage.value === "candidates_ready" &&
       conceptCandidates.value &&
-      selectedRevelation.value.length > 0 &&
-      selectedExperience.value.length > 0 &&
-      selectedPractice.value.length > 0
+      selectedRevelation.value.length > 0
     ) {
-      qParams.preset_revelation = selectedRevelation.value;
-      qParams.preset_experience = selectedExperience.value;
-      qParams.preset_practice = selectedPractice.value;
+      qParams.preset_revelation = [...selectedRevelation.value];
+      qParams.preset_experience = [...selectedExperience.value];
+      qParams.preset_practice = [...selectedPractice.value];
     }
     const res = await axios.post(
       "/api/kg_rag/query",
@@ -1095,7 +1136,12 @@ const onAISearch = async () => {
             <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
                 <span class="ai-burden-phase-title">AI生成负担说明</span>
-                <a href="#" class="ai-burden-skip" @click.prevent="skipBurdenPhase">跳过负担说明</a>
+                <a
+                  href="#"
+                  class="ai-burden-skip"
+                  :class="{ 'ai-burden-skip--locked': burdenPhaseReady }"
+                  @click.prevent="skipBurdenPhase"
+                >跳过负担说明</a>
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
                 <span>参考摘录（选填）</span>
@@ -1103,7 +1149,7 @@ const onAISearch = async () => {
                   class="ai-burden-textarea"
                   rows="3"
                   v-model="referenceExcerpt"
-                  :disabled="loadingAI || burdenGenLoading"
+                  :disabled="loadingAI || burdenGenLoading || burdenPhaseReady"
                   placeholder="有摘录走情境A，无摘录走情境B"
                 ></textarea>
               </label>
@@ -1111,7 +1157,7 @@ const onAISearch = async () => {
                 <a-button
                   block
                   :loading="burdenGenLoading"
-                  :disabled="loadingAI || burdenGenLoading || !aiFormValid"
+                  :disabled="loadingAI || burdenGenLoading || !aiFormValid || burdenPhaseReady"
                   @click="onGenerateBurden"
                 >生成负担说明</a-button>
               </div>
@@ -1121,7 +1167,11 @@ const onAISearch = async () => {
               </div>
               <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="ai-burden-gen-out">
                 <div class="ai-burden-gen-label">情境 B</div>
-                <a-radio-group v-model:value="burdenSelectedIdx" class="ai-burden-radio-group">
+                <a-radio-group
+                  v-model:value="burdenSelectedIdx"
+                  class="ai-burden-radio-group"
+                  :disabled="burdenPhaseReady"
+                >
                   <div
                     v-for="(c, i) in burdenGenCandidates"
                     :key="i"
@@ -1138,41 +1188,98 @@ const onAISearch = async () => {
                   class="ai-burden-textarea"
                   rows="4"
                   v-model="aiForm.burdenDescription"
-                  :disabled="loadingAI"
+                  :disabled="loadingAI || burdenPhaseReady"
                   placeholder="在此输入或编辑负担说明，也可留空"
                 ></textarea>
               </label>
               <div class="ai-burden-btn-wrap">
-                <a-button block :disabled="loadingAI" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
+                <a-button block :disabled="loadingAI || burdenPhaseReady" @click="confirmBurdenPhase">确认，进入概念抽取</a-button>
               </div>
             </div>
           </div>
             <div class="ai-panel-actions">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
             <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
-            <!-- 概念候选面板 -->
-            <div v-if="conceptStage === 'candidates_ready' && conceptCandidates" class="ai-concept-panel">
-              <div class="ai-concept-hint">以下是 AI 识别到的相关概念，请勾选确认后生成纲目</div>
+            <div v-else class="concept-mode-toggle">
+              <a-button
+                :type="conceptMode === 'ai' ? 'primary' : 'default'"
+                @click="setConceptMode('ai')"
+              >AI 抽取概念</a-button>
+              <a-button
+                :type="conceptMode === 'manual' ? 'primary' : 'default'"
+                @click="setConceptMode('manual')"
+              >人工输入概念</a-button>
+            </div>
+            <!-- AI：勾选候选（不可自由输入） -->
+            <div
+              v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
+              class="ai-concept-panel"
+            >
+              <div class="ai-concept-hint">请勾选各层候选概念；启示层至少选一项。经历层、实行层可不选。</div>
+              <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">启示层（revelation）</span>
+                <a-checkbox-group
+                  v-model:value="selectedRevelation"
+                  :options="conceptCandidates.revelation"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div v-else class="ai-concept-empty">（启示层无候选）</div>
+              <div v-if="(conceptCandidates.experience || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">经历层（experience）</span>
+                <a-checkbox-group
+                  v-model:value="selectedExperience"
+                  :options="conceptCandidates.experience"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div v-if="(conceptCandidates.practice || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">实行层（practice）</span>
+                <a-checkbox-group
+                  v-model:value="selectedPractice"
+                  :options="conceptCandidates.practice"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div v-if="selectedRevelation.length === 0 && (conceptCandidates.revelation || []).length" class="ai-concept-warn">请至少勾选一项启示层概念</div>
+            </div>
+            <!-- 人工：三层 tag -->
+            <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
+              <div class="ai-concept-hint">直接输入各层概念；启示层至少填一词。回车或逗号添加，× 删除。</div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">启示层（revelation）：</span>
-                <a-checkbox-group v-model:value="selectedRevelation" class="ai-concept-checks">
-                  <a-checkbox v-for="s in (conceptCandidates.revelation || [])" :key="s" :value="s">{{ s }}</a-checkbox>
-                </a-checkbox-group>
-                <span v-if="!conceptCandidates.revelation?.length" class="ai-concept-empty">（无）</span>
+                <span class="ai-concept-label">启示层（revelation）</span>
+                <a-select
+                  v-model:value="manualRevelation"
+                  mode="tags"
+                  class="ai-concept-tags ai-concept-tags--revelation"
+                  :token-separators="[',', '，']"
+                  placeholder="至少一词"
+                  allow-clear
+                />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">经历层（experience）：</span>
-                <a-checkbox-group v-model:value="selectedExperience" class="ai-concept-checks">
-                  <a-checkbox v-for="d in (conceptCandidates.experience || [])" :key="d" :value="d">{{ d }}</a-checkbox>
-                </a-checkbox-group>
+                <span class="ai-concept-label">经历层（experience）</span>
+                <a-select
+                  v-model:value="manualExperience"
+                  mode="tags"
+                  class="ai-concept-tags ai-concept-tags--experience"
+                  :token-separators="[',', '，']"
+                  placeholder="可为空"
+                  allow-clear
+                />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">实行层（practice）：</span>
-                <a-checkbox-group v-model:value="selectedPractice" class="ai-concept-checks">
-                  <a-checkbox v-for="p in (conceptCandidates.practice || [])" :key="p" :value="p">{{ p }}</a-checkbox>
-                </a-checkbox-group>
+                <span class="ai-concept-label">实行层（practice）</span>
+                <a-select
+                  v-model:value="manualPractice"
+                  mode="tags"
+                  class="ai-concept-tags ai-concept-tags--practice"
+                  :token-separators="[',', '，']"
+                  placeholder="可为空"
+                  allow-clear
+                />
               </div>
-              <div v-if="selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0" class="ai-concept-warn">请分别至少选择一个启示/经历/实行概念</div>
+              <div v-if="manualRevelation.length === 0" class="ai-concept-warn">请至少输入一个启示层概念</div>
             </div>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
@@ -1185,7 +1292,7 @@ const onAISearch = async () => {
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
-                v-if="conceptStage === 'idle'"
+                v-if="conceptMode === 'ai' && conceptStage === 'idle'"
                 :loading="conceptLoading"
                 :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
                 @click="extractConcepts"
@@ -1193,10 +1300,10 @@ const onAISearch = async () => {
                 {{ conceptLoading ? "抽取中…" : "抽取概念" }}
               </a-button>
               <a-button
-                v-else
+                v-else-if="conceptMode === 'manual' || (conceptMode === 'ai' && conceptStage === 'candidates_ready')"
                 type="primary"
                 :loading="loadingAI"
-                :disabled="loadingAI || selectedRevelation.length === 0 || selectedExperience.length === 0 || selectedPractice.length === 0 || !burdenPhaseReady"
+                :disabled="loadingAI || !burdenPhaseReady || outlineGenerateDisabled"
                 @click="onAISearch"
               >
                 {{ loadingAI ? "生成中…" : "生成纲目" }}
@@ -1630,6 +1737,11 @@ const onAISearch = async () => {
   font-size: 13px;
   color: #722ed1;
 }
+.ai-burden-skip--locked {
+  pointer-events: none;
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
 
 .ai-burden-phase-inner {
   margin-top: 6px;
@@ -1752,6 +1864,12 @@ const onAISearch = async () => {
   flex-direction: column;
   gap: 12px;
 }
+.concept-mode-toggle {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
 .ai-concept-panel {
   background: #f6f8fc;
   border: 1px solid #dbe4f0;
@@ -1764,11 +1882,39 @@ const onAISearch = async () => {
   margin-bottom: 10px;
 }
 .ai-concept-section {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.ai-concept-tags {
+  width: 100%;
+}
+.ai-concept-tags :deep(.ant-select-selector) {
+  min-height: 38px;
+}
+/* 人工输入概念：三层 tag 分色 */
+.ai-concept-manual .ai-concept-tags--revelation :deep(.ant-select-selection-item) {
+  background: #ede7f6 !important;
+  border: 1px solid #d1c4e9;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags--experience :deep(.ant-select-selection-item) {
+  background: #e8f5e9 !important;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags--practice :deep(.ant-select-selection-item) {
+  background: #fff9e6 !important;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags :deep(.ant-select-selection-item-remove) {
+  color: rgba(0, 0, 0, 0.45);
+}
+.ai-concept-manual .ai-concept-tags :deep(.ant-select-selection-item-remove:hover) {
+  color: rgba(0, 0, 0, 0.75);
 }
 .ai-concept-label {
   font-weight: 600;

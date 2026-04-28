@@ -458,19 +458,13 @@ def _safe_parse_json(text: str) -> dict:
     if s.startswith("```"):
         lines = s.split("\n")
         s = "\n".join(lines[1:-1] if len(lines) > 2 and lines[-1].strip() == "```" else lines[1:])
+    s = s.replace("\u201c", '"').replace("\u201d", '"')
     try:
         obj = json.loads(s)
         logger.info(f"[KG-RAG DEBUG] _safe_parse_json success, type={type(obj)}, is_dict={isinstance(obj, dict)}")
         return obj if isinstance(obj, dict) else {}
     except json.JSONDecodeError as e:
         logger.info(f"[KG-RAG DEBUG] _safe_parse_json JSONDecodeError: {e}, s preview: {s[:200]}")
-        # 尝试替换全角引号后重新解析
-        try:
-            s2 = s.replace("“", "\"").replace("”", "\"")
-            obj = json.loads(s2)
-            return obj if isinstance(obj, dict) else {}
-        except json.JSONDecodeError:
-            pass
         last_brace = s.rfind("}")
         if last_brace > 0:
             try:
@@ -995,12 +989,12 @@ class KgRagService:
             and isinstance(preset_experience, list)
             and isinstance(preset_practice, list)
             and preset_revelation
-            and preset_experience
-            and preset_practice
         ):
-            revelation = [str(c) for c in preset_revelation[:6]]
             experience = [str(c) for c in preset_experience[:3]]
             practice = [str(c) for c in preset_practice[:3]]
+            rev_raw = [str(c) for c in preset_revelation]
+            max_rev = 12 - len(experience) - len(practice)
+            revelation = rev_raw[: max(0, max_rev)]
             concepts = list(dict.fromkeys(revelation + experience + practice))
             reasoning = "（人工指定概念，跳过 Step 1）"
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
