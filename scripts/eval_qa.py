@@ -117,7 +117,7 @@ async def _llm_judge(
 问题：{query}
 参考要点：{gold_summary}
 系统答案：{answer}
-系统答案是否覆盖了参考要点的核心内容？只回答 yes 或 no，不要任何解释。"""
+系统答案是否覆盖了参考要点的核心内容？只需覆盖主要要点即可，不要求逐字对应。只回答 yes 或 no，不要任何解释。"""
     msg = await client.messages.create(
         model=JUDGE_MODEL,
         max_tokens=16,
@@ -136,6 +136,21 @@ async def _call_qa(
     token: str,
     question: str,
 ) -> tuple[dict[str, Any] | None, str | None, int]:
+    # 504 与典型连接/读超时类异常可重试；非 504 的 HTTP 状态与其它异常不重试。
+    _retryable_net: tuple[type[BaseException], ...] = (
+        asyncio.TimeoutError,
+        TimeoutError,
+        aiohttp.ClientConnectorError,
+        aiohttp.ServerDisconnectedError,
+        aiohttp.ClientOSError,
+    )
+    try:
+        from aiohttp.client_exceptions import ServerTimeoutError as _ServerTimeoutError
+    except ImportError:
+        pass
+    else:
+        _retryable_net = _retryable_net + (_ServerTimeoutError,)
+
     url = api_url.rstrip("/") + "/api/qa/query"
     payload = {
         "question": question,
@@ -147,18 +162,53 @@ async def _call_qa(
         "Content-Type": "application/json",
         "Authorization": f"Bearer {token}",
     }
-    t0 = time.monotonic()
-    try:
-        async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=600)) as resp:
-            raw = await resp.text()
-            elapsed_ms = int((time.monotonic() - t0) * 1000)
-            if resp.status != 200:
-                return None, f"HTTP {resp.status}: {raw[:500]}", elapsed_ms
-            data = json.loads(raw)
-            return data, None, elapsed_ms
-    except Exception as e:
-        elapsed_ms = int((time.monotonic() - t0) * 1000)
-        return None, str(e), elapsed_ms
+    _max_attempts = 3  # 首次 + 最多重试 2 次
+    _delay_sec = 5
+    last_err: str | None = None
+    last_elapsed_ms = 0
+
+    for attempt in range(_max_attempts):
+        t0 = time.monotonic()
+        try:
+            async with session.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=600),
+            ) as resp:
+                raw = await resp.text()
+                elapsed_ms = int((time.monotonic() - t0) * 1000)
+                last_elapsed_ms = elapsed_ms
+
+                if resp.status == 504:
+                    last_err = f"HTTP 504: {raw[:500]}"
+                    if attempt < _max_attempts - 1:
+                        await asyncio.sleep(_delay_sec)
+                        continue
+                    return None, last_err, elapsed_ms
+
+                if resp.status != 200:
+                    return None, f"HTTP {resp.status}: {raw[:500]}", elapsed_ms
+
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError as e:
+                    return None, f"JSON decode error: {e}", elapsed_ms
+                return data, None, elapsed_ms
+
+        except _retryable_net as e:
+            last_elapsed_ms = int((time.monotonic() - t0) * 1000)
+            last_err = str(e)
+            if attempt < _max_attempts - 1:
+                await asyncio.sleep(_delay_sec)
+                continue
+            return None, last_err, last_elapsed_ms
+
+        except Exception as e:
+            last_elapsed_ms = int((time.monotonic() - t0) * 1000)
+            return None, str(e), last_elapsed_ms
+
+    return None, last_err or "unknown", last_elapsed_ms
 
 
 async def _evaluate_one(

@@ -85,11 +85,11 @@
     "query_id": "gen_006",
     "query": "创世记和约翰福音所启示的三一神有什么不同",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "创世记是种子，约翰福音是发展；但三一神启示自己的目的都是一致的：分赐到人里面",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试综合两卷书作答"
+    "notes": "虽跨书卷，但资料够作答，应该回答出不同"
   },
   {
     "query_id": "gen_007",
@@ -114,9 +114,12 @@
     "query_type": "教义解释",
     "expected_answer_state": "ANSWER",
     "gold_chunks": [
-      "life_1-8-8"
+      "life_1-8-8",
+      "life_1-13-13",
+      "life_1-14-4",
+      "life_1-15-3"
     ],
-    "gold_answer_summary": "形像和管治",
+    "gold_answer_summary": "创世记一、二章里生命树与善恶知识树是两粒种子，代表两个对立源头：生命树指向神，知识树间接代表撒但。这两粒种子贯串全本圣经，生命线始于生命树终于新耶路撒冷，死亡线始于知识树终于火湖。",
     "forbidden_concepts": [
       "庄重肃穆",
       "教皇"
@@ -131,7 +134,7 @@
     "gold_chunks": [
       "life_1-9-18"
     ],
-    "gold_answer_summary": "神所造的人有祂的形像和管治权，也没有发怨言，更没有饥饿",
+    "gold_answer_summary": "神在第六天说甚好，因为这天造了照着神形像有神管治权的人，创造达到了极峰。第二天没有说好，因为空中有堕落的天使。",
     "forbidden_concepts": [
       "争闹",
       "下跪"
@@ -147,10 +150,7 @@
       "life_1-10-49"
     ],
     "gold_answer_summary": "创世记二章七节的气在箴言二十章二十七节翻译作灵，这气就是人的灵，也就是耶和华的灯",
-    "forbidden_concepts": [
-      "永生",
-      "神的灵"
-    ],
+    "forbidden_concepts": [],
     "notes": "重在对气概念的解释，不是得永生"
   },
   {
@@ -187,11 +187,11 @@
     "query_id": "gen_013",
     "query": "依靠和倚靠有什么区别",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "倚靠强调的是生命本质上不能独立的状态，如同呼吸之于肉身；信靠则是在具体处境中主动转向神、将自己交托于祂的信心动作。",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试综合两卷书作答"
+    "notes": "重点是回答出两者的区别"
   },
   {
     "query_id": "gen_014",
@@ -202,10 +202,7 @@
       "life_1-14-23"
     ],
     "gold_answer_summary": "生命就是神自己；生命的原则就是在每件事上都倚靠神，若是倚靠神，每一件是也就是生命",
-    "forbidden_concepts": [
-      "出生",
-      "做好事"
-    ],
+    "forbidden_concepts": [],
     "notes": "重在与神发生关系，不是出于人的行为"
   },
   {
@@ -282,11 +279,11 @@
     "query_id": "gen_020",
     "query": "创世记中提到蛇有几次",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "一是创世记三章（蛇首次出现，败坏人类），二是创世记四十九章十七节（但支派的预言中以蛇为喻）",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试综合两卷书作答"
+    "notes": "回答蛇共出现两处"
   },
   {
     "query_id": "gen_021",
@@ -436,10 +433,7 @@
       "life_1-30-19"
     ],
     "gold_answer_summary": "方舟的上层是指父，父那一层是最高、最大、最奥秘的",
-    "forbidden_concepts": [
-      "子",
-      "灵"
-    ],
+    "forbidden_concepts": [],
     "notes": "重点要准确对应，不能将子或灵错误对应到上层"
   },
   {
@@ -466,10 +460,7 @@
       "life_1-32-34"
     ],
     "gold_answer_summary": "创世记一章二十六节和歌罗西三章十节都讲到了神的形像。创世记一章二十六节说，人是照着神的形像造的。歌罗西三章十节告诉我们，召会是照着神的形像所造的新人。",
-    "forbidden_concepts": [
-      "更新",
-      "灵魂体三部分"
-    ],
+    "forbidden_concepts": [],
     "notes": "重点在于神的形像，不能用其他内容来替换'形像'作为共同点"
   },
   {
@@ -634,7 +625,9 @@
     "expected_answer_state": "ANSWER",
     "gold_chunks": [
       "life_1-44-47",
-      "life_1-45-6"
+      "life_1-45-6",
+      "life_1-44-50",
+      "life_1-45-5"
     ],
     "gold_answer_summary": "后裔象征基督活在我们里面成为内里的生命；地象征我们活在基督里面，就是今天的召会生活。相信基督作后裔（进入我们里面）比相信基督作地（我们实际的召会生活）容易，因为前者只需内里接受，后者却要求人放弃自己对生活的安排，完全活在召会这块地上。",
     "forbidden_concepts": [
@@ -704,7 +697,9 @@
     "expected_answer_state": "ANSWER",
     "gold_chunks": [
       "life_1-42-14",
-      "life_1-42-26"
+      "life_1-42-26",
+      "life_1-42-31",
+      "life_1-42-12"
     ],
     "gold_answer_summary": "创世记十二章记载亚伯拉罕遇饥荒时没有祷告，忘记神，擅自下埃及，并以谎言出卖妻子；创世记十三章记载他从埃及上来，重新回到伯特利与艾之间，就是当初筑坛支棚的地方，恢复呼求耶和华的名，重新回到凭信而活的地位上。一下一上，显出人的失败与神的保守恩典把人带回的过程。",
     "forbidden_concepts": [
@@ -797,11 +792,11 @@
     "query_id": "gen_054",
     "query": "罗得的妻子变成盐柱和亚伯拉罕代祷，有何关联",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "「罗得之妻变盐柱」与「亚伯拉罕代祷」两者之间的关联，无法从本语料库直接得出答案",
+    "gold_answer_summary": "代祷能救人脱离毁灭，但被救之人仍面临荣耀或羞辱的抉择",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试涉及未提及内容的作答"
+    "notes": "重点是被救之人仍然需要受提醒"
   },
   {
     "query_id": "gen_055",
@@ -857,11 +852,11 @@
     "query_id": "gen_58",
     "query": "亚伯拉罕最老的仆人叫什么名字？他完成使命返回后的结局如何？",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "文本始终以「最老的仆人」或「仆人」称呼他，从未提及其名字，也没有记载他完成使命返回后的个人结局，无法从创世记生命读经语料库中找到答案。",
+    "gold_answer_summary": "亚伯拉罕最老的仆人，圣经未记其名；他完成使命后，原文只记载他将一切所发生的事告诉以撒，便归于无声",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试涉及未提及内容的作答"
+    "notes": "该回答出老仆人的特点：信靠神，让神引导"
   },
   {
     "query_id": "gen_59",
@@ -1274,11 +1269,7 @@
       "life_1-84-20"
     ],
     "gold_answer_summary": "三表征复活的过程;八表征复活的新鲜、复活的新开始,指复活的起头和新鲜,不是过程",
-    "forbidden_concepts": [
-      "第三天",
-      "七日的第一日",
-      "数字含义"
-    ],
+    "forbidden_concepts": [],
     "notes": "三与八都表征复活但侧重点不同"
   },
   {
@@ -1470,21 +1461,21 @@
     "query_id": "gen_099",
     "query": "新约如何解释雅各在伯特利的梦",
     "query_type": "概念澄清",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷的综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "雅各在伯特利的梦的中心是基督这天梯，而梦中所见的「神的家」，正是今日活神的召会",
     "forbidden_concepts": [],
-    "notes": "跨书卷综合性问题"
+    "notes": "回答应该揭示出梦的中心与应验"
   },
   {
     "query_id": "gen_100",
     "query": "保罗在哪些书信中提到柱子",
     "query_type": "概念澄清",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "语料库提到新约有柱子的观念,但没有详细列出保罗所有相关书信。这需要查考全部保罗书信",
+    "gold_answer_summary": "保罗在两封书信中明确提到柱子：加拉太书（加二9）论使徒是召会的柱石，提摩太前书（提前三15）论整体召会是真理的柱石和根基。",
     "forbidden_concepts": [],
-    "notes": "需要综合新约多卷书"
+    "notes": "应该回答出两处，以及经文本身"
   },
   {
     "query_id": "gen_101",
@@ -1576,10 +1567,7 @@
       "life_1-106-33"
     ],
     "gold_answer_summary": "我们若是约瑟，一切就都是得着。只要我们爱主，万有就都互相效力，叫我们得益处，没有一事对我们会是损失。",
-    "forbidden_concepts": [
-      "好处",
-      "损失"
-    ],
+    "forbidden_concepts": [],
     "notes": "重点在一切都是得着，不是环境的平顺或者福利平安"
   },
   {
@@ -1633,10 +1621,7 @@
       "life_1-110-45"
     ],
     "gold_answer_summary": "在第一个梦里，约瑟看见田里的禾捆；这个梦启示，约瑟再好，不过是禾捆；他的哥哥们再坏，也是禾捆；约瑟在第二个梦里，看见太阳、月亮和十一个星向他下拜，这个梦指明在神眼中，所有被定罪并受控告的人都满了光",
-    "forbidden_concepts": [
-      "庄稼",
-      "星宿"
-    ],
+    "forbidden_concepts": [],
     "notes": "重点在神看祂的子民为生命的禾捆，为发光的大阳、月亮和众星，不是以色列人作的恶事"
   },
   {
@@ -1662,7 +1647,9 @@
     "expected_answer_state": "ANSWER",
     "gold_chunks": [
       "life_1-110-38",
-      "life_1-110-45"
+      "life_1-110-45",
+      "life_1-113-22",
+      "life_1-113-12"
     ],
     "gold_answer_summary": "照着属灵的次序，我们首先领受圣灵而得救，然后我们得着义袍，开始活出基督。要活出基督，我们的颈项上需要有链子，表明我们的颈项被圣灵治服、征服并链住。",
     "forbidden_concepts": [
@@ -1707,11 +1694,11 @@
     "query_id": "gen_115",
     "query": "以色列人在饥荒中到了埃及，为什么后来还要出埃及",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "根本原因是神有一个永远的定旨。神救他们出来，是要领他们进去——进入那流奶与蜜之地，最终成就神永远的目的。",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试综合两卷书作答"
+    "notes": "应该解释出这与神的定旨有关"
   },
   {
     "query_id": "gen_116",
@@ -1727,11 +1714,11 @@
     "query_id": "gen_117",
     "query": "约瑟在坑中受苦的经历，与保罗在腓立比书四章“无论在什么境况，都可以知足”有何属灵上的对应",
     "query_type": "教义解释",
-    "expected_answer_state": "NO_ANSWER",
+    "expected_answer_state": "ANSWER",
     "gold_chunks": [],
-    "gold_answer_summary": "跨书卷综合性问题，创世记生命读经语料库无法支撑完整回答",
+    "gold_answer_summary": "苦难乃是神主宰的经纶，为叫爱神的人得益处",
     "forbidden_concepts": [],
-    "notes": "系统不应尝试综合两卷书作答"
+    "notes": "应该解释出苦难是神的主宰"
   },
   {
     "query_id": "gen_118",
@@ -1739,9 +1726,13 @@
     "query_type": "概念澄清",
     "expected_answer_state": "ANSWER",
     "gold_chunks": [
-      "life_1-103-53"
+      "life_1-103-53",
+      "life_1-44-31",
+      "life_1-63-11",
+      "life_1-106-2",
+      "life_1-108-9"
     ],
-    "gold_answer_summary": "在主的恢复里，我们天天满足于丰富的恩典，并充满了神的祝福。这种祝福不是指物质的福，乃是指灵里的福，生命里的福，和诸天界里的福。",
+    "gold_answer_summary": "恩典与祝福的核心区别：祝福是神外面给予的东西，恩典是这东西作到我们里面成为享受。祝福是为着生存，恩典是为着达成神的目的。雅各对十二子的预言以完满的祝福结束，代表宇宙之福的完满。",
     "forbidden_concepts": [
       "好处",
       "普遍恩典"

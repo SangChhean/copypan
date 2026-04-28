@@ -64,10 +64,10 @@ STEP3_RELEVANCE_CHECK = """你是一位职事信息相关性判断助手。
 
 判断标准：
 - 段落中有能直接回答这个具体问题的内容 → relevant: true
-- 段落主题相关但无法直接回答这个具体问题 → relevant: false
-- 问题涉及多卷书或多篇对比，但段落只来自单一来源 → relevant: false
+- 段落主题相关，能提供有意义的参考内容 → relevant: true
+- 问题明确要求对比多卷书或多篇书籍，但段落只来自单一来源 → relevant: false
 - 段落内容与问题完全无关 → relevant: false
-- 有部分相关但不充分时，偏向 false（宁可不答，不可乱答）
+- 段落主题相关但无法直接回答这个具体问题 → relevant: false
 
 只输出 JSON，不输出其他任何内容：
 {{"relevant": true, "reason": "简要说明"}}"""
