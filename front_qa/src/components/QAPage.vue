@@ -171,6 +171,7 @@
           @keydown.enter.exact.prevent="submit"
         />
         <button
+          v-if="false"
           class="qa-mic-btn"
           :class="audioState"
           :disabled="loading"
