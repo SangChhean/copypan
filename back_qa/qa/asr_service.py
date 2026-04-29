@@ -9,12 +9,10 @@ import logging
 import os
 from pathlib import Path
 
-from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
 _client: AsyncOpenAI | None = None
 logger = logging.getLogger("qa")
-anthropic_client = AsyncAnthropic()
 
 
 def _get_client() -> AsyncOpenAI:
@@ -59,15 +57,21 @@ async def correct_transcript(text: str) -> str:
 
 待校对文本：{text}"""
     try:
-        response = await anthropic_client.messages.create(
+        import os
+        from anthropic import AsyncAnthropic
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("CLAUDE_API_KEY")
+        client = AsyncAnthropic(api_key=api_key)
+        response = await client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
         corrected = (response.content[0].text or "").strip()
+        logging.info(f"[ASR] Haiku 校对完成：{corrected[:50]}...")
         return corrected if corrected else text
     except Exception as e:
-        logger.warning("[ASR] transcript correction failed: %s", e)
+        logging.warning(f"[ASR] transcript correction failed: {e}")
         return text
 
 
@@ -85,5 +89,6 @@ async def transcribe(audio_bytes: bytes, filename: str) -> str:
         prompt=prompt,
     )
     raw_text = (getattr(response, "text", "") or "").strip()
+    logging.info(f"[ASR] Whisper 转写成功：{raw_text[:50]}...")
     corrected_text = await correct_transcript(raw_text)
     return corrected_text
