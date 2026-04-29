@@ -171,11 +171,14 @@
           @keydown.enter.exact.prevent="submit"
         />
         <button
-          v-if="false"
           class="qa-mic-btn"
           :class="audioState"
-          :disabled="loading"
-          @click="toggleRecording"
+          :disabled="loading || audioState === 'processing'"
+          @mousedown.prevent="startRecording"
+          @mouseup="stopRecording"
+          @mouseleave="stopRecording"
+          @touchstart.prevent="startRecording"
+          @touchend.prevent="stopRecording"
         >
           <svg
             v-if="audioState !== 'recording'"
@@ -338,19 +341,8 @@ async function uploadAudio() {
   }
 }
 
-async function toggleRecording() {
-  if (loading.value || audioState.value === 'processing') return
-  if (audioState.value === 'recording') {
-    if (audioStopTimer) {
-      clearTimeout(audioStopTimer)
-      audioStopTimer = null
-    }
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop()
-    }
-    return
-  }
-
+async function startRecording() {
+  if (loading.value || audioState.value !== 'idle') return
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     audioChunks = []
@@ -377,6 +369,17 @@ async function toggleRecording() {
     }, 60000)
   } catch (e) {
     message.warning('请允许麦克风权限后重试')
+  }
+}
+
+function stopRecording() {
+  if (audioState.value !== 'recording') return
+  if (audioStopTimer) {
+    clearTimeout(audioStopTimer)
+    audioStopTimer = null
+  }
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop()
   }
 }
 
