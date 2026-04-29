@@ -230,6 +230,7 @@ async function onGenerateBurden() {
       reference_excerpt: referenceExcerpt.value.trim(),
     });
     const d = res.data || {};
+    console.debug("[KG-RAG BURDEN DEBUG] generate_burden response:", d);
     if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
       burdenGenScenario.value = "A";
       const line = String(d.result).trim();
@@ -248,6 +249,11 @@ async function onGenerateBurden() {
     tip(d.error || "生成失败");
     burdenGenScenario.value = null;
   } catch (e) {
+    console.error("[KG-RAG BURDEN DEBUG] generate_burden error:", {
+      message: e?.message,
+      response: e?.response?.data,
+      status: e?.response?.status,
+    });
     tip(e.response?.data?.error || e.message || "生成失败");
     burdenGenScenario.value = null;
   } finally {
@@ -411,6 +417,27 @@ function onManualConceptSearch(layer, value) {
 function onManualConceptSelect(layer) {
   manualConceptSearchValue[layer] = "";
   manualConceptOptions[layer] = [];
+}
+
+function addManualConceptValue(layer, value) {
+  const v = String(value || "").trim();
+  if (!v) return;
+  const target =
+    layer === "revelation"
+      ? manualRevelation.value
+      : layer === "experience"
+        ? manualExperience.value
+        : manualPractice.value;
+  if (!target.includes(v)) target.push(v);
+}
+
+function onManualConceptInputKeydown(layer, event) {
+  if (event.key !== "Enter") return;
+  const inputValue = String(manualConceptSearchValue[layer] || "").trim();
+  if (!inputValue) return;
+  event.preventDefault();
+  addManualConceptValue(layer, inputValue);
+  onManualConceptSelect(layer);
 }
 
 watch(
@@ -1417,6 +1444,7 @@ const onAISearch = async () => {
                   placeholder=""
                   @search="(v) => onManualConceptSearch('revelation', v)"
                   @select="() => onManualConceptSelect('revelation')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('revelation', e)"
                   allow-clear
                 />
               </div>
@@ -1433,6 +1461,7 @@ const onAISearch = async () => {
                   placeholder=""
                   @search="(v) => onManualConceptSearch('experience', v)"
                   @select="() => onManualConceptSelect('experience')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('experience', e)"
                   allow-clear
                 />
               </div>
@@ -1449,6 +1478,7 @@ const onAISearch = async () => {
                   placeholder=""
                   @search="(v) => onManualConceptSearch('practice', v)"
                   @select="() => onManualConceptSelect('practice')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('practice', e)"
                   allow-clear
                 />
               </div>

@@ -322,6 +322,27 @@ function onManualConceptSelectKg(layer) {
   manualConceptOptions[layer] = [];
 }
 
+function addManualConceptValueKg(layer, value) {
+  const v = String(value || "").trim();
+  if (!v) return;
+  const target =
+    layer === "revelation"
+      ? manualRevelation.value
+      : layer === "experience"
+        ? manualExperience.value
+        : manualPractice.value;
+  if (!target.includes(v)) target.push(v);
+}
+
+function onManualConceptInputKeydownKg(layer, event) {
+  if (event.key !== "Enter") return;
+  const inputValue = String(manualConceptSearchValue[layer] || "").trim();
+  if (!inputValue) return;
+  event.preventDefault();
+  addManualConceptValueKg(layer, inputValue);
+  onManualConceptSelectKg(layer);
+}
+
 const queryPrimaryDisabled = computed(() => {
   if (!burdenPhaseReady.value) return true;
   if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
@@ -402,6 +423,7 @@ async function onGenerateBurden() {
       { headers }
     );
     const d = res.data || {};
+    console.debug("[KG-RAG BURDEN DEBUG] generate_burden response:", d);
     if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
       burdenGenScenario.value = "A";
       const line = String(d.result).trim();
@@ -420,6 +442,11 @@ async function onGenerateBurden() {
     message.warning(d.error || "生成失败");
     burdenGenScenario.value = null;
   } catch (e) {
+    console.error("[KG-RAG BURDEN DEBUG] generate_burden error:", {
+      message: e?.message,
+      response: e?.response?.data,
+      status: e?.response?.status,
+    });
     message.error(e.response?.data?.error || e.message || "生成失败");
     burdenGenScenario.value = null;
   } finally {
@@ -1444,6 +1471,7 @@ onMounted(() => {
                         placeholder=""
                         @search="(v) => onManualConceptSearchKg('revelation', v)"
                         @select="() => onManualConceptSelectKg('revelation')"
+                        @inputKeyDown="(e) => onManualConceptInputKeydownKg('revelation', e)"
                         allow-clear
                       />
                     </div>
@@ -1460,6 +1488,7 @@ onMounted(() => {
                         placeholder=""
                         @search="(v) => onManualConceptSearchKg('experience', v)"
                         @select="() => onManualConceptSelectKg('experience')"
+                        @inputKeyDown="(e) => onManualConceptInputKeydownKg('experience', e)"
                         allow-clear
                       />
                     </div>
@@ -1476,6 +1505,7 @@ onMounted(() => {
                         placeholder=""
                         @search="(v) => onManualConceptSearchKg('practice', v)"
                         @select="() => onManualConceptSelectKg('practice')"
+                        @inputKeyDown="(e) => onManualConceptInputKeydownKg('practice', e)"
                         allow-clear
                       />
                     </div>

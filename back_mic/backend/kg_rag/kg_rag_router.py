@@ -138,13 +138,27 @@ async def generate_burden(req: GenerateBurdenRequest):
     """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
     service = get_service()
     try:
-        return await service.generate_burden_description(
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] /generate_burden req: query_len=%s outline=%r audience=%r excerpt_len=%s",
+            len((req.query or "").strip()),
+            (req.outline_nature or "").strip(),
+            (req.audience or "").strip(),
+            len((req.reference_excerpt or "").strip()),
+        )
+        result = await service.generate_burden_description(
             req.query,
             outline_nature=req.outline_nature,
             audience=req.audience,
             reference_excerpt=req.reference_excerpt,
         )
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] /generate_burden resp: scenario=%s has_error=%s",
+            result.get("scenario"),
+            bool(result.get("error")),
+        )
+        return result
     except Exception as e:
+        logger.exception("[KG-RAG BURDEN DEBUG] /generate_burden exception")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 

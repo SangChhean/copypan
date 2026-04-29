@@ -37,6 +37,12 @@ from ai_search.monitoring import get_monitoring
 
 # QUERY_REWRITE 调用时传入 Claude 的 system，与 prompts 中说明一致
 QUERY_REWRITE_SYSTEM = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
+BURDEN_DESCRIPTION_SYSTEM = (
+    "你是一个资深的圣经研究学者。"
+    "严格只输出最终结果，不输出内部流程、步骤说明、分析过程、分隔线。"
+    "情境A时只输出一行：负担说明：..."
+    "情境B时只输出三行：候选一（侧重...）：...\\n候选二（侧重...）：...\\n候选三（侧重...）：..."
+)
 from kg_rag.firewall import match_firewall
 from kg_rag.llm_pricing import pack_llm_usage_response, register_llm_usage
 
@@ -389,8 +395,13 @@ def _parse_json_array(text: str) -> list[Any]:
 def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
     """解析负担说明 LLM 输出：情境 A（负担说明：）或情境 B（候选一～三）。"""
     text = (raw or "").strip()
+    logger.info(
+        "[KG-RAG BURDEN DEBUG] parse start: raw_len=%s preview=%r",
+        len(text),
+        text[:300],
+    )
     if not text:
-        return {"scenario": "B", "candidates": [], "error": "解析失败"}
+        return {"scenario": "B", "candidates": [], "error": "解析失败", "debug": {"reason": "empty_raw"}}
     if "候选一" in text:
         candidates: list[str] = []
         for label in ("候选一", "候选二", "候选三"):
@@ -401,18 +412,33 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
                 candidates.append(re.sub(r"\s+", " ", m.group(1).strip()))
             else:
                 candidates.append("")
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] parse scenario B: candidate_lens=%s",
+            [len(c or "") for c in candidates],
+        )
         if not any(c.strip() for c in candidates):
-            return {"scenario": "B", "candidates": [], "error": "解析失败"}
+            return {"scenario": "B", "candidates": [], "error": "解析失败", "debug": {"reason": "b_candidates_all_empty"}}
         while len(candidates) < 3:
             candidates.append("")
-        return {"scenario": "B", "candidates": candidates[:3]}
+        return {
+            "scenario": "B",
+            "candidates": candidates[:3],
+            "debug": {"reason": "matched_b", "candidate_lens": [len(c or "") for c in candidates[:3]]},
+        }
     if "负担说明" in text:
         m = re.search(r"负担说明[：:]\s*(.+)", text, re.DOTALL)
         if m:
-            line = m.group(1).strip().split("\n")[0].strip()
+            # 保留整段，避免只取首行导致前端看起来“被截断”
+            line = re.sub(r"\s+", " ", m.group(1).strip())
             if line:
-                return {"scenario": "A", "result": line}
-    return {"scenario": "B", "candidates": [], "error": "解析失败"}
+                logger.info(
+                    "[KG-RAG BURDEN DEBUG] parse scenario A: result_len=%s preview=%r",
+                    len(line),
+                    line[:200],
+                )
+                return {"scenario": "A", "result": line, "debug": {"reason": "matched_a", "result_len": len(line)}}
+    logger.info("[KG-RAG BURDEN DEBUG] parse failed: fallback to error")
+    return {"scenario": "B", "candidates": [], "error": "解析失败", "debug": {"reason": "no_pattern_matched"}}
 
 
 def _parse_step1_layers(
@@ -1678,20 +1704,45 @@ class KgRagService:
         reference_excerpt: str = "",
     ) -> dict[str, Any]:
         """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
+        query_v = (query or "").strip()
+        outline_v = (outline_nature or "").strip() or "（未填）"
+        audience_v = (audience or "").strip() or "（未填）"
+        excerpt_v = (reference_excerpt or "").strip() or "（空）"
         prompt = BURDEN_DESCRIPTION_PROMPT.format(
-            query=(query or "").strip(),
-            outline_nature=(outline_nature or "").strip() or "（未填）",
-            audience=(audience or "").strip() or "（未填）",
-            reference_excerpt=(reference_excerpt or "").strip() or "（空）",
+            query=query_v,
+            outline_nature=outline_v,
+            audience=audience_v,
+            reference_excerpt=excerpt_v,
+        )
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] request: query_len=%s outline=%r audience=%r excerpt_len=%s prompt_len=%s",
+            len(query_v),
+            outline_v,
+            audience_v,
+            len(excerpt_v if excerpt_v != "（空）" else ""),
+            len(prompt),
         )
         raw, _usage = await _call_kg_rag_llm(
             prompt,
             "claude-sonnet-4-6",
             temperature=0.3,
-            max_tokens=500,
-            system=None,
+            max_tokens=1200,
+            system=BURDEN_DESCRIPTION_SYSTEM,
         )
-        return _parse_burden_generation_output(raw or "")
+        raw_text = raw or ""
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] llm response: raw_len=%s preview=%r",
+            len(raw_text),
+            raw_text[:500],
+        )
+        parsed = _parse_burden_generation_output(raw_text)
+        logger.info(
+            "[KG-RAG BURDEN DEBUG] parsed: scenario=%s has_error=%s keys=%s",
+            parsed.get("scenario"),
+            bool(parsed.get("error")),
+            list(parsed.keys()),
+        )
+        return parsed
 
     @staticmethod
     def update_cache_translation(cache_key: str, field: str, value: str) -> bool:
