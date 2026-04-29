@@ -1874,7 +1874,7 @@ const onAISearch = async () => {
   <ShowRes />
   <div v-if="aiPanelVisible" class="history-entry-fixed">
     <a-badge :count="pendingConfirmCount" :offset="[-2, 2]">
-      <a-button type="primary" @click="historyDrawerOpen = true">历史记录</a-button>
+      <a-button type="primary" @click="historyDrawerOpen = !historyDrawerOpen">历史记录</a-button>
     </a-badge>
   </div>
   <a-drawer
