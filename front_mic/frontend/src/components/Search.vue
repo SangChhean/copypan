@@ -2219,6 +2219,11 @@ const onAISearch = async () => {
   flex-direction: column;
   gap: 12px;
 }
+.ai-panel-actions > .ai-concept-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
 .concept-mode-toggle {
   display: flex;
   gap: 10px;
@@ -2230,6 +2235,9 @@ const onAISearch = async () => {
   border: 1px solid #dbe4f0;
   border-radius: 8px;
   padding: 14px 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .ai-concept-search-panel {
   padding-bottom: 10px;
@@ -2239,12 +2247,20 @@ const onAISearch = async () => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .ai-concept-search :deep(.ant-select),
 .ai-concept-search :deep(.ant-select-selector),
 .ai-concept-search :deep(.ant-input-affix-wrapper),
 .ai-concept-search :deep(.ant-input) {
   width: 100% !important;
+  max-width: 100% !important;
+}
+.ai-concept-search :deep(.ant-select),
+.ai-concept-search :deep(.ant-select .ant-select-selector) {
+  min-width: 0;
 }
 .ai-concept-hint {
   font-size: 12px;
@@ -2257,11 +2273,23 @@ const onAISearch = async () => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .ai-concept-tags {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+}
+.ai-concept-tags :deep(.ant-select) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
 }
 .ai-concept-tags :deep(.ant-select-selector) {
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 38px;
 }
 .ai-concept-tags :deep(.ant-select-selection-search-input) {
