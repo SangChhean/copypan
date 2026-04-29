@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, reactive, onMounted, nextTick } from "vue";
+import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined } from "@ant-design/icons-vue";
@@ -302,6 +302,11 @@ const conceptSearchOpen = ref(false);
 let conceptSearchTimer = null;
 const historyDrawerOpen = ref(false);
 const historyList = ref([]);
+const isMobileView = ref(false);
+
+function updateIsMobileView() {
+  isMobileView.value = window.innerWidth <= 768;
+}
 
 function resetAiConceptState() {
   conceptStage.value = "idle";
@@ -612,7 +617,13 @@ async function loadHistoryRecord(item) {
 }
 
 onMounted(() => {
+  updateIsMobileView();
+  window.addEventListener("resize", updateIsMobileView);
   loadHistory();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateIsMobileView);
 });
 
 // AI 回答复制（包含标题）
@@ -1881,7 +1892,8 @@ const onAISearch = async () => {
     v-model:open="historyDrawerOpen"
     title="历史记录"
     placement="right"
-    width="460"
+    :width="isMobileView ? '100vw' : 460"
+    :bodyStyle="isMobileView ? { paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' } : {}"
   >
     <div v-if="historyList.length === 0" class="history-empty">暂无历史记录</div>
     <a-collapse v-else>
@@ -2227,6 +2239,12 @@ const onAISearch = async () => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.ai-concept-search :deep(.ant-select),
+.ai-concept-search :deep(.ant-select-selector),
+.ai-concept-search :deep(.ant-input-affix-wrapper),
+.ai-concept-search :deep(.ant-input) {
+  width: 100% !important;
 }
 .ai-concept-hint {
   font-size: 12px;
@@ -2863,6 +2881,16 @@ const onAISearch = async () => {
   .ai-panel-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+  .ai-concept-search :deep(.ant-select-selector),
+  .ai-concept-tags :deep(.ant-select-selector) {
+    min-height: 42px;
+  }
+  :deep(.ant-drawer-content-wrapper) {
+    max-width: 100vw !important;
+  }
+  :deep(.ant-drawer-header) {
+    padding-top: calc(16px + env(safe-area-inset-top));
   }
   .ai-panel-cta {
     margin-left: 0;
