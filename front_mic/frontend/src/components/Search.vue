@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, watch, reactive } from "vue";
+import { ref, computed, watch, reactive, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { tip } from "./utils/Dialog";
+import { message } from "ant-design-vue";
 import ShowRes from "./tools/ShowRes.vue";
 
 const plainOptions = [
@@ -139,6 +140,7 @@ const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
+const KG_RAG_HISTORY_KEY = "kg_rag_history";
 const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 const aiForm = reactive({
   outlineTopic: "",
@@ -298,6 +300,8 @@ const conceptSearchOptions = ref([]);
 const conceptSearchLoading = ref(false);
 const conceptSearchOpen = ref(false);
 let conceptSearchTimer = null;
+const historyDrawerOpen = ref(false);
+const historyList = ref([]);
 
 function resetAiConceptState() {
   conceptStage.value = "idle";
@@ -516,6 +520,100 @@ function resetConceptState() {
   resetAiConceptState();
   resetManualConceptState();
 }
+
+function formatHistoryTime(ts) {
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(KG_RAG_HISTORY_KEY);
+    const arr = JSON.parse(raw || "[]");
+    historyList.value = Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    historyList.value = [];
+  }
+}
+
+function persistHistory() {
+  localStorage.setItem(KG_RAG_HISTORY_KEY, JSON.stringify(historyList.value));
+}
+
+const pendingConfirmCount = computed(
+  () => historyList.value.filter((x) => x?.status === "待确认").length
+);
+
+function saveCurrentToHistory() {
+  const record = {
+    id: Date.now(),
+    createdAt: formatHistoryTime(Date.now()),
+    status: "待确认",
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: aiForm.specialNeeds.trim(),
+    audience: aiForm.audience.trim(),
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: [...selectedRevelation.value],
+    experience: [...selectedExperience.value],
+    practice: [...selectedPractice.value],
+  };
+  historyList.value = [record, ...historyList.value];
+  persistHistory();
+  message.success("已保存到历史记录");
+}
+
+function setHistoryStatus(id, status) {
+  historyList.value = historyList.value.map((item) =>
+    item.id === id ? { ...item, status } : item
+  );
+  persistHistory();
+}
+
+function deleteHistoryRecord(id) {
+  historyList.value = historyList.value.filter((item) => item.id !== id);
+  persistHistory();
+}
+
+async function loadHistoryRecord(item) {
+  aiForm.outlineTopic = "";
+  aiForm.audience = "";
+  aiForm.specialNeeds = "";
+  aiForm.burdenDescription = "";
+  referenceExcerpt.value = "";
+  burdenPhaseReady.value = false;
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenHiddenBySkip.value = false;
+  burdenSkipTopicSnapshot.value = "";
+  resetConceptState();
+  conceptMode.value = "manual";
+  aiForm.outlineTopic = item.query || "";
+  aiForm.audience = item.audience || "";
+  aiForm.specialNeeds = item.outline_nature || "";
+  aiForm.burdenDescription = item.burden_description || "";
+  historyDrawerOpen.value = false;
+  await nextTick();
+  burdenPhaseReady.value = true;
+  manualRevelation.value = [...(item.revelation || [])];
+  manualExperience.value = [...(item.experience || [])];
+  manualPractice.value = [...(item.practice || [])];
+  console.log("载入后状态", {
+    outlineTopic: aiForm.outlineTopic,
+    specialNeeds: aiForm.specialNeeds,
+    burdenPhaseReady: burdenPhaseReady.value,
+    conceptMode: conceptMode.value,
+    manualRevelation: manualRevelation.value,
+    aiFormValid: aiFormValid.value,
+    outlineGenerateDisabled: outlineGenerateDisabled.value
+  });
+}
+
+onMounted(() => {
+  loadHistory();
+});
 
 // AI 回答复制（包含标题）
 const aiAnswerCopied = ref(false);
@@ -1427,6 +1525,9 @@ const onAISearch = async () => {
                   class="ai-concept-checks"
                 />
               </div>
+              <div class="ai-history-save-row">
+                <a-button size="small" @click="saveCurrentToHistory">保存记录</a-button>
+              </div>
             </div>
             <!-- 人工：三层 tag -->
             <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
@@ -1771,6 +1872,46 @@ const onAISearch = async () => {
     <a-spin tip="加载中……" size="large" />
   </div>
   <ShowRes />
+  <div v-if="aiPanelVisible" class="history-entry-fixed">
+    <a-badge :count="pendingConfirmCount" :offset="[-2, 2]">
+      <a-button type="primary" @click="historyDrawerOpen = true">历史记录</a-button>
+    </a-badge>
+  </div>
+  <a-drawer
+    v-model:open="historyDrawerOpen"
+    title="历史记录"
+    placement="right"
+    width="460"
+  >
+    <div v-if="historyList.length === 0" class="history-empty">暂无历史记录</div>
+    <a-collapse v-else>
+      <a-collapse-panel v-for="item in historyList" :key="item.id">
+        <template #header>
+          <div class="history-item-header">
+            <div class="history-item-title">{{ item.query || "（无主题）" }}</div>
+            <a-tag :color="item.status === '待确认' ? 'orange' : item.status === '待生成' ? 'blue' : 'green'">
+              {{ item.status }}
+            </a-tag>
+            <span class="history-item-time">{{ item.createdAt }}</span>
+          </div>
+        </template>
+        <div class="history-item-body">
+          <div>纲目性质：{{ item.outline_nature || "—" }}</div>
+          <div>面对对象：{{ item.audience || "—" }}</div>
+          <div>负担说明：{{ item.burden_description || "—" }}</div>
+          <div>真理启示：{{ (item.revelation || []).join("、") || "—" }}</div>
+          <div>生命经历：{{ (item.experience || []).join("、") || "—" }}</div>
+          <div>应用实行：{{ (item.practice || []).join("、") || "—" }}</div>
+          <div class="history-actions">
+            <a-button size="small" @click.stop="loadHistoryRecord(item)">载入</a-button>
+            <a-button size="small" @click="setHistoryStatus(item.id, '待生成')">待生成</a-button>
+            <a-button size="small" @click="setHistoryStatus(item.id, '已生成')">已生成</a-button>
+            <a-button danger size="small" @click="deleteHistoryRecord(item.id)">删除</a-button>
+          </div>
+        </div>
+      </a-collapse-panel>
+    </a-collapse>
+  </a-drawer>
 </template>
 
 <style scoped>
@@ -2153,6 +2294,9 @@ const onAISearch = async () => {
   color: #aaa;
   font-size: 12px;
 }
+.ai-history-save-row {
+  margin-top: 10px;
+}
 .ai-concept-warn {
   color: #fa541c;
   font-size: 12px;
@@ -2224,6 +2368,42 @@ const onAISearch = async () => {
 /* AI 问答样式 */
 .ai-result {
   margin: 0 2em;
+}
+.history-entry-fixed {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1001;
+}
+.history-empty {
+  color: #999;
+}
+.history-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.history-item-title {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+.history-item-time {
+  color: #999;
+  font-size: 12px;
+}
+.history-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.history-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* AI 加载动画容器 */
