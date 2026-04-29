@@ -5,12 +5,16 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 from pathlib import Path
 
+from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
 _client: AsyncOpenAI | None = None
+logger = logging.getLogger("qa")
+anthropic_client = AsyncAnthropic()
 
 
 def _get_client() -> AsyncOpenAI:
@@ -39,6 +43,34 @@ def _build_prompt() -> str:
     return prefix + "、".join(words) if words else prefix
 
 
+async def correct_transcript(text: str) -> str:
+    if not text.strip():
+        return text
+    prompt = f"""你是一个专业的文字校对助手，专门处理基督徒职事信息领域的语音转写文本。
+
+请对以下语音转写文本进行校对，规则如下：
+1. 修正专有词错误，例如：「那灵」「经纶」「召会」「生机」「职事」「擘饼」「李常受」「倪柝声」「恢复本」「生命读经」「晨兴圣言」等
+2. 将繁体字统一改为简体字
+3. 修正明显的同音字错误
+4. 保持原句的语序和提问意图，不补充、不扩写、不润色
+5. 如果文本已经正确，原样返回
+
+只返回校对后的文本，不要任何解释或前缀。
+
+待校对文本：{text}"""
+    try:
+        response = await anthropic_client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        corrected = (response.content[0].text or "").strip()
+        return corrected if corrected else text
+    except Exception as e:
+        logger.warning("[ASR] transcript correction failed: %s", e)
+        return text
+
+
 async def transcribe(audio_bytes: bytes, filename: str) -> str:
     client = _get_client()
     prompt = _build_prompt()
@@ -52,4 +84,6 @@ async def transcribe(audio_bytes: bytes, filename: str) -> str:
         language="zh",
         prompt=prompt,
     )
-    return (getattr(response, "text", "") or "").strip()
+    raw_text = (getattr(response, "text", "") or "").strip()
+    corrected_text = await correct_transcript(raw_text)
+    return corrected_text
