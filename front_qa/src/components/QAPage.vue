@@ -370,6 +370,9 @@ async function uploadAudio() {
     const data = await res.json()
     const text = (data?.text || '')
     question.value = ''
+    voiceMode.value = false
+    pressing.value = false
+    await nextTick()
     for (let i = 0; i < text.length; i++) {
       await new Promise((r) => setTimeout(r, 30))
       question.value += text[i]
@@ -384,8 +387,6 @@ async function uploadAudio() {
     message.error('语音识别失败，请重试')
   } finally {
     audioState.value = 'idle'
-    voiceMode.value = false
-    pressing.value = false
     audioChunks = []
   }
 }
