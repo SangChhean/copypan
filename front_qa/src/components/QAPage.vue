@@ -160,6 +160,7 @@
     <footer class="qa-footer">
       <div class="qa-input-wrap">
         <a-textarea
+          v-if="!voiceMode"
           :key="textareaKey"
           ref="textareaRef"
           v-model:value="question"
@@ -170,18 +171,49 @@
           class="qa-textarea"
           @keydown.enter.exact.prevent="submit"
         />
+        <div v-else class="qa-voice-area">
+          <div v-if="audioState === 'recording'" class="qa-recording-panel">
+            <div class="qa-recording-top">
+              <span class="qa-recording-dot"></span>
+              <span class="qa-recording-label">录音中...</span>
+              <span class="qa-recording-timer">{{ recordingTimeStr }}</span>
+            </div>
+            <div class="qa-recording-wave">
+              <span
+                v-for="(h, i) in waveHeights"
+                :key="i"
+                class="qa-wave-bar"
+                :style="{ height: h + 'px' }"
+              ></span>
+            </div>
+          </div>
+          <button
+            class="qa-press-btn"
+            :class="{
+              pressing: pressing,
+              processing: audioState === 'processing'
+            }"
+            :disabled="audioState === 'processing'"
+            @mousedown.prevent="startRecording"
+            @mouseup="stopRecording"
+            @mouseleave="stopRecording"
+            @touchstart.prevent="startRecording"
+            @touchend.prevent="stopRecording"
+            @touchcancel.prevent="stopRecording"
+          >
+            <span v-if="audioState === 'processing'">识别中...</span>
+            <span v-else-if="pressing">松开 结束</span>
+            <span v-else>按住 说话</span>
+          </button>
+        </div>
         <button
           class="qa-mic-btn"
-          :class="audioState"
+          :class="{ active: voiceMode }"
           :disabled="loading || audioState === 'processing'"
-          @mousedown.prevent="startRecording"
-          @mouseup="stopRecording"
-          @mouseleave="stopRecording"
-          @touchstart.prevent="startRecording"
-          @touchend.prevent="stopRecording"
+          @click="clickMic"
         >
           <svg
-            v-if="audioState !== 'recording'"
+            v-if="!voiceMode"
             xmlns="http://www.w3.org/2000/svg"
             width="20"
             height="20"
@@ -209,7 +241,8 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
         <a-button
@@ -225,7 +258,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
@@ -280,9 +313,23 @@ function renderAnswer(text) {
 const typewriterQueue = ref([])
 let typewriterTimer = null
 const audioState = ref('idle') // 'idle' | 'recording' | 'processing'
+const voiceMode = ref(false) // 是否处于语音模式
+const pressing = ref(false) // 是否正在长按「按住 说话」
 let mediaRecorder = null
 let audioChunks = []
 let audioStopTimer = null
+const recordingSeconds = ref(0)
+const waveHeights = ref(Array(12).fill(3))
+let recordingTimer = null
+let analyserNode = null
+let audioContext = null
+let waveAnimFrame = null
+
+const recordingTimeStr = computed(() => {
+  const m = String(Math.floor(recordingSeconds.value / 60)).padStart(2, '0')
+  const s = String(recordingSeconds.value % 60).padStart(2, '0')
+  return `${m}:${s}`
+})
 
 function startTypewriter(targetMsg) {
   if (typewriterTimer) return
@@ -321,23 +368,48 @@ async function uploadAudio() {
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    const text = (data?.text || '').trim()
-    if (text) {
-      question.value = question.value.trim()
-        ? `${question.value.trim()} ${text}`
-        : text
-      await nextTick()
-      if (textareaRef.value?.focus) {
-        textareaRef.value.focus()
-      } else if (textareaRef.value?.resizableTextArea?.textArea?.focus) {
-        textareaRef.value.resizableTextArea.textArea.focus()
-      }
+    const text = (data?.text || '')
+    question.value = ''
+    for (let i = 0; i < text.length; i++) {
+      await new Promise((r) => setTimeout(r, 30))
+      question.value += text[i]
+    }
+    await nextTick()
+    if (textareaRef.value?.focus) {
+      textareaRef.value.focus()
+    } else if (textareaRef.value?.resizableTextArea?.textArea?.focus) {
+      textareaRef.value.resizableTextArea.textArea.focus()
     }
   } catch (e) {
     message.error('语音识别失败，请重试')
   } finally {
     audioState.value = 'idle'
+    voiceMode.value = false
+    pressing.value = false
     audioChunks = []
+  }
+}
+
+async function clickMic() {
+  if (!voiceMode.value) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((t) => t.stop())
+      voiceMode.value = true
+    } catch (err) {
+      const name = err?.name || ''
+      if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        message.warning('未检测到麦克风，请连接麦克风后重试')
+      } else if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        message.warning('请允许麦克风权限后重试')
+      } else {
+        message.warning('麦克风启动失败，请重试')
+      }
+    }
+  } else {
+    voiceMode.value = false
+    pressing.value = false
+    if (audioState.value === 'recording') stopRecording()
   }
 }
 
@@ -362,21 +434,60 @@ async function startRecording() {
     }
     mediaRecorder.start()
     audioState.value = 'recording'
+    recordingSeconds.value = 0
+    recordingTimer = setInterval(() => {
+      recordingSeconds.value += 1
+    }, 1000)
+    audioContext = new AudioContext()
+    const source = audioContext.createMediaStreamSource(stream)
+    analyserNode = audioContext.createAnalyser()
+    analyserNode.fftSize = 64
+    source.connect(analyserNode)
+    const dataArray = new Uint8Array(analyserNode.frequencyBinCount)
+    const updateWave = () => {
+      if (audioState.value !== 'recording') return
+      analyserNode.getByteFrequencyData(dataArray)
+      waveHeights.value = Array.from({ length: 12 }, (_, i) => {
+        const idx = Math.floor((i * dataArray.length) / 12)
+        const val = dataArray[idx] || 0
+        return Math.max(3, Math.round((val / 255) * 32))
+      })
+      waveAnimFrame = requestAnimationFrame(updateWave)
+    }
+    updateWave()
     audioStopTimer = setTimeout(() => {
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop()
       }
     }, 60000)
+    pressing.value = true
   } catch (e) {
+    pressing.value = false
     message.warning('请允许麦克风权限后重试')
   }
 }
 
 function stopRecording() {
   if (audioState.value !== 'recording') return
+  pressing.value = false
   if (audioStopTimer) {
     clearTimeout(audioStopTimer)
     audioStopTimer = null
+  }
+  if (recordingTimer) {
+    clearInterval(recordingTimer)
+    recordingTimer = null
+  }
+  recordingSeconds.value = 0
+  waveHeights.value = Array(12).fill(3)
+  if (waveAnimFrame) {
+    cancelAnimationFrame(waveAnimFrame)
+    waveAnimFrame = null
+  }
+  analyserNode = null
+  if (audioContext) {
+    audioContext.close()
+    audioContext = null
   }
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop()
@@ -935,11 +1046,12 @@ async function scrollToMessageTop(messageId) {
   max-width: min(860px, 90vw);
   margin: 0 auto;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
 }
 .qa-textarea {
   flex: 1;
+  min-width: 0;
   border-radius: var(--radius) !important;
   font-family: inherit !important;
   font-size: 15px !important;
@@ -953,6 +1065,7 @@ async function scrollToMessageTop(messageId) {
   font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
+  align-self: flex-end;
 }
 .qa-mic-btn {
   background: none;
@@ -963,13 +1076,107 @@ async function scrollToMessageTop(messageId) {
   color: #bbb;
   transition: color 0.2s;
   flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 2px;
 }
 .qa-mic-btn:hover { color: #666; }
+.qa-mic-btn.active {
+  color: #ff4d4f;
+}
 .qa-mic-btn.recording {
   color: #ff4d4f;
   animation: mic-pulse 1s ease-in-out infinite;
 }
 .qa-mic-btn.processing { color: #bbb; cursor: default; }
+.qa-voice-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qa-press-btn {
+  width: 100%;
+  height: 40px;
+  border-radius: 20px;
+  border: 1.5px solid #d9d9d9;
+  background: #fafafa;
+  font-size: 15px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.qa-press-btn.pressing {
+  background: #fff1f0;
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+  transform: scale(0.98);
+}
+.qa-press-btn.processing {
+  background: #fafafa;
+  color: #aaa;
+  cursor: default;
+}
+.qa-press-btn:not(.pressing):not(.processing):hover {
+  border-color: #aaa;
+  background: #f0f0f0;
+}
+.qa-recording-panel {
+  background: #fff;
+  border: 1px solid #ffa39e;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: recording-fadein 0.2s ease;
+}
+@keyframes recording-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.qa-recording-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qa-recording-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  animation: mic-pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.qa-recording-label {
+  font-size: 14px;
+  color: #ff4d4f;
+  font-weight: 500;
+  flex: 1;
+}
+.qa-recording-timer {
+  font-size: 14px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+.qa-recording-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 36px;
+  padding: 0 2px;
+}
+.qa-wave-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: #ff4d4f;
+  transition: height 0.08s ease;
+  min-height: 3px;
+}
 @keyframes mic-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
