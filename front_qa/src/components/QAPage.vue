@@ -159,6 +159,45 @@
     <!-- 输入区 -->
     <footer class="qa-footer">
       <div class="qa-input-wrap">
+        <button
+          class="qa-mic-btn"
+          :class="{ active: voiceMode }"
+          :disabled="loading || audioState === 'processing'"
+          @click="clickMic"
+        >
+          <svg
+            v-if="!voiceMode"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
         <a-textarea
           v-if="!voiceMode"
           :key="textareaKey"
@@ -206,45 +245,6 @@
             <span v-else>按住 说话</span>
           </button>
         </div>
-        <button
-          class="qa-mic-btn"
-          :class="{ active: voiceMode }"
-          :disabled="loading || audioState === 'processing'"
-          @click="clickMic"
-        >
-          <svg
-            v-if="!voiceMode"
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-          </svg>
-          <svg
-            v-else
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
         <a-button
           type="primary"
           :loading="loading"
@@ -1046,8 +1046,9 @@ async function scrollToMessageTop(messageId) {
   max-width: min(860px, 90vw);
   margin: 0 auto;
   display: flex;
+  flex-direction: row;
   gap: 8px;
-  align-items: flex-end;
+  align-items: center;
 }
 .qa-textarea {
   flex: 1;
@@ -1065,25 +1066,35 @@ async function scrollToMessageTop(messageId) {
   font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
-  align-self: flex-end;
+  align-self: center;
+  margin-bottom: 0;
 }
 .qa-mic-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  color: #bbb;
-  transition: color 0.2s;
   flex-shrink: 0;
-  align-self: flex-end;
-  margin-bottom: 2px;
+  align-self: center;
+  margin-bottom: 0;
+  background: #fff1f0;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  color: #ff4d4f;
+  transition: background 0.2s;
 }
-.qa-mic-btn:hover { color: #666; }
+.qa-mic-btn:hover {
+  background: #ffd6d6;
+}
 .qa-mic-btn.active {
+  background: #ffd6d6;
   color: #ff4d4f;
 }
 .qa-mic-btn.recording {
+  background: #fff1f0;
   color: #ff4d4f;
   animation: mic-pulse 1s ease-in-out infinite;
 }
