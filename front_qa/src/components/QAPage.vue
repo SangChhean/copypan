@@ -217,6 +217,7 @@
               <span class="qa-recording-label">录音中...</span>
               <span class="qa-recording-timer">{{ recordingTimeStr }}</span>
             </div>
+            <div class="qa-recording-tip">请保持语速平缓，发音正确</div>
             <div class="qa-recording-wave">
               <span
                 v-for="(h, i) in waveHeights"
@@ -1174,6 +1175,11 @@ async function scrollToMessageTop(messageId) {
   color: #888;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
+}
+.qa-recording-tip {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
 }
 .qa-recording-wave {
   display: flex;
