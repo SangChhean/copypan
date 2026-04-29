@@ -139,11 +139,11 @@ const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
-const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "启示应用"];
+const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
-  specialNeeds: "一般性",
+  specialNeeds: "",
   audience: ""
 });
 const aiFormValid = computed(() => {
@@ -267,6 +267,31 @@ const conceptMode = ref("ai"); // 'ai' | 'manual'
 const manualRevelation = ref([]);
 const manualExperience = ref([]);
 const manualPractice = ref([]);
+const manualConceptOptions = reactive({
+  revelation: [],
+  experience: [],
+  practice: [],
+});
+const manualConceptLoading = reactive({
+  revelation: false,
+  experience: false,
+  practice: false,
+});
+const manualConceptSearchValue = reactive({
+  revelation: "",
+  experience: "",
+  practice: "",
+});
+const manualConceptTimers = {
+  revelation: null,
+  experience: null,
+  practice: null,
+};
+const conceptSearchKeyword = ref("");
+const conceptSearchOptions = ref([]);
+const conceptSearchLoading = ref(false);
+const conceptSearchOpen = ref(false);
+let conceptSearchTimer = null;
 
 function resetAiConceptState() {
   conceptStage.value = "idle";
@@ -279,6 +304,12 @@ function resetManualConceptState() {
   manualRevelation.value = [];
   manualExperience.value = [];
   manualPractice.value = [];
+  manualConceptSearchValue.revelation = "";
+  manualConceptSearchValue.experience = "";
+  manualConceptSearchValue.practice = "";
+  manualConceptOptions.revelation = [];
+  manualConceptOptions.experience = [];
+  manualConceptOptions.practice = [];
 }
 function setConceptMode(mode) {
   if (conceptMode.value === mode) return;
@@ -290,9 +321,118 @@ function setConceptMode(mode) {
   }
 }
 
-const outlineGenerateDisabled = computed(() => {
-  if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
-  return selectedRevelation.value.length === 0;
+function ensureAiConceptBuckets() {
+  if (!conceptCandidates.value) {
+    conceptCandidates.value = { revelation: [], experience: [], practice: [] };
+  }
+  if (!Array.isArray(conceptCandidates.value.revelation)) conceptCandidates.value.revelation = [];
+  if (!Array.isArray(conceptCandidates.value.experience)) conceptCandidates.value.experience = [];
+  if (!Array.isArray(conceptCandidates.value.practice)) conceptCandidates.value.practice = [];
+  if (conceptStage.value === "idle") {
+    conceptStage.value = "candidates_ready";
+  }
+}
+
+function onSelectConceptSearchOption(value) {
+  const word = String(value || "").trim();
+  if (!word) return;
+  conceptSearchKeyword.value = word;
+  conceptSearchOpen.value = false;
+  conceptSearchOptions.value = [];
+}
+
+async function fetchConceptSearchOptions(keyword) {
+  const key = String(keyword || "").trim();
+  if (!key) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+    return;
+  }
+  conceptSearchLoading.value = true;
+  try {
+    const res = await axios.get("/api/kg_rag/concepts/search", {
+      params: { q: key, limit: 20 },
+    });
+    const rows = Array.isArray(res.data?.results) ? res.data.results : [];
+    conceptSearchOptions.value = rows.map((item) => ({ value: String(item) }));
+    conceptSearchOpen.value = conceptSearchOptions.value.length > 0;
+  } catch (e) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+  } finally {
+    conceptSearchLoading.value = false;
+  }
+}
+
+async function fetchManualConceptOptions(layer, keyword) {
+  const key = String(keyword || "").trim();
+  if (!key) {
+    manualConceptOptions[layer] = [];
+    return;
+  }
+  manualConceptLoading[layer] = true;
+  try {
+    const res = await axios.get("/api/kg_rag/concepts/search", {
+      params: { q: key, limit: 20 },
+    });
+    const rows = Array.isArray(res.data?.results) ? res.data.results : [];
+    const selectedSet = new Set(
+      (layer === "revelation"
+        ? manualRevelation.value
+        : layer === "experience"
+          ? manualExperience.value
+          : manualPractice.value
+      ).map((x) => String(x).trim()).filter(Boolean)
+    );
+    manualConceptOptions[layer] = rows
+      .map((item) => String(item).trim())
+      .filter((item) => item && !selectedSet.has(item))
+      .map((item) => ({ value: item }));
+  } catch (e) {
+    manualConceptOptions[layer] = [];
+  } finally {
+    manualConceptLoading[layer] = false;
+  }
+}
+
+function onManualConceptSearch(layer, value) {
+  const key = String(value || "").trim();
+  manualConceptSearchValue[layer] = String(value || "");
+  if (manualConceptTimers[layer]) clearTimeout(manualConceptTimers[layer]);
+  if (!key) {
+    manualConceptOptions[layer] = [];
+    return;
+  }
+  manualConceptTimers[layer] = setTimeout(() => {
+    fetchManualConceptOptions(layer, key);
+  }, 300);
+}
+
+function onManualConceptSelect(layer) {
+  manualConceptSearchValue[layer] = "";
+  manualConceptOptions[layer] = [];
+}
+
+watch(
+  () => conceptMode.value,
+  () => {
+    conceptSearchKeyword.value = "";
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+  }
+);
+
+watch(conceptSearchKeyword, (val) => {
+  if (conceptSearchTimer) clearTimeout(conceptSearchTimer);
+  const key = String(val || "").trim();
+  if (!key) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+    return;
+  }
+  conceptSearchTimer = setTimeout(() => {
+    fetchConceptSearchOptions(key);
+  }, 300);
 });
 
 watch(
@@ -338,6 +478,12 @@ async function extractConcepts() {
     conceptLoading.value = false;
   }
 }
+
+const outlineGenerateDisabled = computed(() => {
+  if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
+  return selectedRevelation.value.length === 0;
+});
+
 
 function resetConceptState() {
   resetAiConceptState();
@@ -1210,6 +1356,20 @@ const onAISearch = async () => {
                 @click="setConceptMode('manual')"
               >输入重点</a-button>
             </div>
+            <div class="ai-concept-panel ai-concept-search-panel">
+              <div class="ai-concept-search">
+                <span class="ai-concept-label">搜索图谱中重点</span>
+                  <a-auto-complete
+                    v-model:value="conceptSearchKeyword"
+                    :options="conceptSearchOptions"
+                    :open="conceptSearchOpen"
+                    :not-found-content="conceptSearchLoading ? '搜索中…' : '暂无匹配'"
+                    placeholder=""
+                    allow-clear
+                    @select="onSelectConceptSearchOption"
+                  />
+              </div>
+            </div>
             <!-- AI：勾选候选（不可自由输入） -->
             <div
               v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
@@ -1233,7 +1393,7 @@ const onAISearch = async () => {
                 />
               </div>
               <div v-if="(conceptCandidates.practice || []).length" class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">启示应用</span>
+                <span class="ai-concept-label">应用实行</span>
                 <a-checkbox-group
                   v-model:value="selectedPractice"
                   :options="conceptCandidates.practice"
@@ -1243,15 +1403,20 @@ const onAISearch = async () => {
             </div>
             <!-- 人工：三层 tag -->
             <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
-              <div class="ai-concept-hint">直接输入重点。回车或逗号添加，× 删除。</div>
+              <div class="ai-concept-hint">直接输入重点，回车添加，× 删除。</div>
               <div class="ai-concept-section">
                 <span class="ai-concept-label">真理启示</span>
                 <a-select
                   v-model:value="manualRevelation"
-                  mode="tags"
+                  v-model:searchValue="manualConceptSearchValue.revelation"
+                  mode="multiple"
                   class="ai-concept-tags ai-concept-tags--revelation"
-                  :token-separators="[',', '，']"
+                  :options="manualConceptOptions.revelation"
+                  :loading="manualConceptLoading.revelation"
+                  :filter-option="false"
                   placeholder=""
+                  @search="(v) => onManualConceptSearch('revelation', v)"
+                  @select="() => onManualConceptSelect('revelation')"
                   allow-clear
                 />
               </div>
@@ -1259,21 +1424,31 @@ const onAISearch = async () => {
                 <span class="ai-concept-label">生命经历</span>
                 <a-select
                   v-model:value="manualExperience"
-                  mode="tags"
+                  v-model:searchValue="manualConceptSearchValue.experience"
+                  mode="multiple"
                   class="ai-concept-tags ai-concept-tags--experience"
-                  :token-separators="[',', '，']"
+                  :options="manualConceptOptions.experience"
+                  :loading="manualConceptLoading.experience"
+                  :filter-option="false"
                   placeholder=""
+                  @search="(v) => onManualConceptSearch('experience', v)"
+                  @select="() => onManualConceptSelect('experience')"
                   allow-clear
                 />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">启示应用</span>
+                <span class="ai-concept-label">应用实行</span>
                 <a-select
                   v-model:value="manualPractice"
-                  mode="tags"
+                  v-model:searchValue="manualConceptSearchValue.practice"
+                  mode="multiple"
                   class="ai-concept-tags ai-concept-tags--practice"
-                  :token-separators="[',', '，']"
+                  :options="manualConceptOptions.practice"
+                  :loading="manualConceptLoading.practice"
+                  :filter-option="false"
                   placeholder=""
+                  @search="(v) => onManualConceptSearch('practice', v)"
+                  @select="() => onManualConceptSelect('practice')"
                   allow-clear
                 />
               </div>
@@ -1873,6 +2048,15 @@ const onAISearch = async () => {
   border-radius: 8px;
   padding: 14px 16px;
 }
+.ai-concept-search-panel {
+  padding-bottom: 10px;
+}
+.ai-concept-search {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .ai-concept-hint {
   font-size: 12px;
   color: #888;
@@ -1890,6 +2074,13 @@ const onAISearch = async () => {
 }
 .ai-concept-tags :deep(.ant-select-selector) {
   min-height: 38px;
+}
+.ai-concept-tags :deep(.ant-select-selection-search-input) {
+  color: #222 !important;
+  -webkit-text-fill-color: #222 !important;
+}
+.ai-concept-tags :deep(.ant-select-selection-placeholder) {
+  color: #999 !important;
 }
 /* 人工输入概念：三层 tag 分色 */
 .ai-concept-manual .ai-concept-tags--revelation :deep(.ant-select-selection-item) {

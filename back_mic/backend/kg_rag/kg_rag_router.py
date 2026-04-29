@@ -227,6 +227,20 @@ async def graph_stats():
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+@router.get("/concepts/search", dependencies=[Depends(test_token)])
+async def search_concepts(
+    q: str = Query("", description="概念关键词"),
+    limit: int = Query(20, ge=1, le=100, description="返回数量上限"),
+):
+    """按关键词搜索图谱概念名称，已登录用户可用。"""
+    key = (q or "").strip()
+    if not key:
+        return {"results": []}
+    neo4j = get_neo4j()
+    results = neo4j.search_concepts_by_name(key, limit=limit)
+    return {"results": results}
+
+
 @router.post("/cache_translation", dependencies=[Depends(test_token)])
 async def cache_translation(req: CacheTranslationRequest):
     """追加/更新缓存中的英文或繁体纲目翻译。"""

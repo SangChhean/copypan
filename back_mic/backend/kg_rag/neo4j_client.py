@@ -89,6 +89,42 @@ class Neo4jClient:
         """返回 Concept name 列表副本，供 Step 1 Prompt 注入。"""
         return list(self._concept_names)
 
+    def search_concepts_by_name(self, keyword: str, limit: int = 20) -> list[str]:
+        """模糊搜索包含 keyword 的 Concept.name，返回名称列表。"""
+        if not self._available or self._driver is None:
+            return []
+        key = (keyword or "").strip()
+        if not key:
+            return []
+        n = max(1, min(int(limit or 20), 100))
+        try:
+            with self._driver.session() as session:
+                result = session.run(
+                    "WITH toLower($keyword) AS kw "
+                    "MATCH (c:Concept) "
+                    "WITH c, kw, toLower(c.name) AS lower_name "
+                    "WHERE kw <> '' AND lower_name CONTAINS kw "
+                    "WITH c.name AS name, kw, lower_name, "
+                    "CASE "
+                    "  WHEN lower_name = kw THEN 0 "
+                    "  WHEN lower_name STARTS WITH kw THEN 1 "
+                    "  ELSE 2 "
+                    "END AS match_rank "
+                    "RETURN name "
+                    "ORDER BY match_rank ASC, abs(size(name) - size($keyword)) ASC, size(name) ASC, name ASC "
+                    "LIMIT $limit",
+                    keyword=key,
+                    limit=n,
+                )
+                return [
+                    str(r.get("name")).strip()
+                    for r in result
+                    if r.get("name") is not None and str(r.get("name")).strip()
+                ]
+        except Exception as e:
+            print(f"[KG-RAG] search_concepts_by_name 失败: {e}")
+            return []
+
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
         """单概念 1 跳出边邻居（c → related），同一 neighbor 多条边时按类型合并。
         每条记录包含：

@@ -80,7 +80,7 @@ DEFAULT_PARAMS = {
     "step5_model": "",  # 空字符串则 Step5 用 FULL_QUERY_STEP5_MODEL（默认 Sonnet 4.6）
     "stop_after_step1": False,
     "stop_after_step2": False,  # True 时在 Step2 完成后返回（需与 stop_after_step1 互斥）
-    "outline_nature": "一般性",  # 一般性 / 真理启示 / 生命经历 / 启示应用
+    "outline_nature": "一般性",  # 一般性 / 真理启示 / 生命经历 / 应用实行
     "burden_description": "",  # 负担说明（可选）
     "audience": "",  # 面对对象（可选）
     "depth": "general",  # general / deep；deep 时可触发检索参数预设（见 full_query）
@@ -151,7 +151,7 @@ OUTLINE_NATURE_WEIGHTS: dict[str, list[tuple[Callable[[str, str], bool], float]]
     "生命经历": [
         (lambda idx, cid: idx in ("kg-rag_cwwn", "kg-rag_life"), 1.5),
     ],
-    "启示应用": [
+    "应用实行": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1985, 1993), 1.5),
     ],
 }
@@ -450,7 +450,7 @@ def _parse_step1_layers(
         max_rev, max_exp, max_prac = 6, 3, 3
     elif nature == "生命经历":
         max_rev, max_exp, max_prac = 3, 6, 3
-    elif nature == "启示应用":
+    elif nature == "应用实行":
         max_rev, max_exp, max_prac = 3, 3, 6
     else:
         max_rev, max_exp, max_prac = 4, 4, 4
