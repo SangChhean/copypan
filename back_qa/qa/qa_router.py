@@ -322,14 +322,17 @@ async def asr_transcribe(
 ):
     _require_user(request)
 
-    allowed_types = {
+    allowed_prefixes = (
         "audio/webm",
         "audio/wav",
         "audio/mp4",
         "audio/mpeg",
         "audio/ogg",
-    }
-    if (file.content_type or "").lower() not in allowed_types:
+        "audio/x-m4a",
+        "audio/m4a",
+    )
+    content_type = (file.content_type or "").lower().strip()
+    if not any(content_type.startswith(p) for p in allowed_prefixes):
         raise HTTPException(status_code=400, detail="不支持的音频格式")
 
     content = await file.read()
