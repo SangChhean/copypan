@@ -357,7 +357,7 @@ async function uploadAudio() {
   try {
     const token = localStorage.getItem('qa_token') || ''
     if (!token) throw new Error('no token')
-    const blob = new Blob(audioChunks, { type: 'audio/webm' })
+    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' })
     const formData = new FormData()
     formData.append('file', blob, 'recording.webm')
     const res = await fetch('/api/qa/asr', {
@@ -418,9 +418,21 @@ async function clickMic() {
 async function startRecording() {
   if (loading.value || audioState.value !== 'idle') return
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+    })
     audioChunks = []
-    mediaRecorder = new MediaRecorder(stream)
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : 'audio/webm'
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType,
+      audioBitsPerSecond: 128000,
+    })
     mediaRecorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) {
         audioChunks.push(event.data)

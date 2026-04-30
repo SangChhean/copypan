@@ -41,7 +41,7 @@ def _build_prompt() -> str:
     return prefix + "、".join(words) if words else prefix
 
 
-async def correct_transcript(text: str) -> str:
+async def correct_transcript(text: str, model: str = "claude-haiku-4-5-20251001") -> str:
     if not text.strip():
         return text
     prompt = f"""你是语音转写文本的保守校对助手。你的核心原则是：**不确定就不改**。
@@ -99,6 +99,10 @@ async def transcribe(audio_bytes: bytes, filename: str) -> str:
         prompt=prompt,
     )
     raw_text = (getattr(response, "text", "") or "").strip()
-    logging.info(f"[ASR] Whisper 转写成功：{raw_text[:50]}...")
+    logging.info(f"[ASR] Whisper 原文：{raw_text}")
     corrected_text = await correct_transcript(raw_text)
+    if corrected_text != raw_text:
+        logging.info(f"[ASR] Haiku 已修改：{corrected_text}")
+    else:
+        logging.info("[ASR] Haiku 未修改")
     return corrected_text

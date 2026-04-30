@@ -4,4 +4,6 @@ bcrypt
 python-jose[cryptography]
 sse-starlette>=1.6.5
 openai>=1.0.0
+anthropic>=0.18.0
+python-dotenv>=1.0.0
 python-multipart>=0.0.9
