@@ -8,10 +8,15 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 import time
 import unicodedata
 from pathlib import Path
 from datetime import datetime
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parents[1] / "back_mic" / "backend" / ".env")
 
 # ── 配置 ──────────────────────────────────────────────────────────────────────
 DASHSCOPE_API_KEY = "sk-b4cb71064b0a49a98f74f45f3d570a8d"
@@ -87,7 +92,7 @@ async def funasr_transcribe(audio_path: Path, semaphore: asyncio.Semaphore) -> s
             # 上传本地文件，使用 fun-asr 模型，传入热词
             response = Transcription.call(
                 model="fun-asr",
-                file_urls=[str(audio_path.resolve())],
+                file_urls=[f"https://qa.aipansearch.org/asr_audio/{audio_path.name}"],
                 language_hints=["zh"],
                 hotwords=" ".join(HOTWORDS),
             )
@@ -142,7 +147,7 @@ async def funasr_transcribe_simple(audio_path: Path, semaphore: asyncio.Semaphor
 
             response = Transcription.call(
                 model="fun-asr",
-                file_urls=[str(audio_path.resolve())],
+                file_urls=[f"https://qa.aipansearch.org/asr_audio/{audio_path.name}"],
                 language_hints=["zh"],
                 hotwords=" ".join(HOTWORDS),
             )
@@ -171,6 +176,9 @@ async def funasr_transcribe_simple(audio_path: Path, semaphore: asyncio.Semaphor
 
         try:
             text = await loop.run_in_executor(None, _transcribe)
+            if not text.startswith("[ERROR"):
+                from back_qa.qa.asr_service import correct_transcript
+                text = await correct_transcript(text)
             return text
         except Exception as e:
             return f"[ERROR: {e}]"
@@ -297,7 +305,7 @@ async def main():
     if avg_haiku is not None:
         print(f"{'Haiku校对（第二轮）':<19} {avg_haiku:>10.4f} {(1-avg_haiku)*100:>9.1f}%")
     if avg_funasr is not None:
-        print(f"{'Fun-ASR + 热词':<21} {avg_funasr:>10.4f} {(1-avg_funasr)*100:>9.1f}%")
+        print(f"{'Fun-ASR + Haiku':<21} {avg_funasr:>10.4f} {(1-avg_funasr)*100:>9.1f}%")
     print("-" * 45)
     print(f"Fun-ASR 优于 Haiku：{funasr_better} 题")
     print(f"Fun-ASR 劣于 Haiku：{funasr_worse} 题")
