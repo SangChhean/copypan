@@ -114,11 +114,12 @@ async def transcribe(audio_bytes: bytes, filename: str) -> str:
         language="zh",
         prompt=prompt,
     )
+    asr_model = "gpt-4o-transcribe"  # 与上方 create 调用的 model= 参数保持一致
     raw_text = (getattr(response, "text", "") or "").strip()
-    logging.info(f"[ASR] Whisper 原文：{raw_text}")
+    logging.info(f"[ASR] [{asr_model}] 原文：{raw_text}")
     corrected_text = await correct_transcript(raw_text)
     if corrected_text != raw_text:
-        logging.info(f"[ASR] Haiku 已修改：{corrected_text}")
+        logging.info(f"[ASR] [{asr_model}] Haiku 已修改：{corrected_text}")
     else:
-        logging.info("[ASR] Haiku 未修改")
+        logging.info(f"[ASR] [{asr_model}] Haiku 未修改")
     return corrected_text
