@@ -153,20 +153,6 @@
                   👎
                 </button>
 
-                <div v-if="msg.found" class="qa-lang-toggle">
-                  <button
-                    v-for="opt in langOptions"
-                    :key="opt.value"
-                    type="button"
-                    class="qa-lang-toggle-btn"
-                    :class="{ 'is-active': msg.currentLang === opt.value }"
-                    :disabled="msg.translating"
-                    @click="switchLang(msg, opt.value)"
-                  >
-                    <a-spin v-if="msg.translating && msg.currentLang !== opt.value" size="small" />
-                    <span v-else>{{ langShortLabel[opt.value] }}</span>
-                  </button>
-                </div>
               </div>
             </template>
 
@@ -188,14 +174,6 @@
 
     <!-- 输入区 -->
     <footer class="qa-footer">
-      <div class="qa-lang-row">
-        <a-segmented
-          v-model:value="selectedLang"
-          :options="langOptions"
-          size="small"
-          class="qa-lang-segmented"
-        />
-      </div>
       <div class="qa-input-wrap">
         <button
           class="qa-mic-btn"
