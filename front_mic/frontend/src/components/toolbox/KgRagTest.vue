@@ -1281,7 +1281,7 @@ onMounted(() => {
                       <a-col v-if="showBurdenPhasePanel" :span="24">
                         <div class="burden-phase-block param-item-stack">
                           <div class="burden-phase-head">
-                            <span class="burden-phase-title">负担说明的生成（120字）</span>
+                            <span class="burden-phase-title">负担说明的生成</span>
                             <a
                               class="burden-phase-skip"
                               :class="{ 'burden-phase-skip--locked': burdenPhaseReady }"

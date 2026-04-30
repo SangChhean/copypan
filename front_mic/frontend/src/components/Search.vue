@@ -1417,7 +1417,7 @@ const onAISearch = async () => {
             </div>
             <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
-                <span class="ai-burden-phase-title">负担说明的生成（120字）</span>
+                <span class="ai-burden-phase-title">负担说明的生成</span>
                 <a
                   href="#"
                   class="ai-burden-skip"

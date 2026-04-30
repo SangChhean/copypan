@@ -722,6 +722,7 @@ async def _step2_targeted(
             "chunk_id", "text", "book_title", "author",
             "source_zh", "message_number", "message_title",
             "section_title", "paragraph_type", "tokens",
+            "en", "source_en",
         ],
     }
 
@@ -862,6 +863,53 @@ def _step4_build_prompt(
     )
 
 
+def _step4_build_prompt_en(
+    question: str,
+    passages: list[dict],
+    greek_terms_context: str,
+    key_verses_context: str,
+    firewall_doc: dict | None,
+    history_context: str = "",
+) -> str:
+    """构建 Step4 英文版 user prompt。结构与中文版完全相同，仅替换 header / 模板。"""
+    from back_qa.qa.prompts import (
+        STEP4_ANSWER_GENERATION_EN,
+        FIREWALL_INSTRUCTION_EN,
+    )
+
+    passage_lines = []
+    for p in passages:
+        text = (p.get("text") or "").strip()
+        source_en_raw = (p.get("source_en") or p.get("source_zh") or "").strip()
+        # 与中文版同样的段号清理（去掉「，第X段/节...」尾巴和外层括号）
+        source_en_clean = re.sub(
+            r"，第[零一二三四五六七八九十百千]+[段节].*$",
+            "",
+            source_en_raw,
+        ).strip()
+        source_en_clean = source_en_clean.strip("（）()").strip()
+        header = f"[Source: {source_en_clean}]"
+        passage_lines.append(f"{header}\n{text}")
+    passages_text = "\n---\n".join(passage_lines)
+
+    firewall_instruction = ""
+    if firewall_doc:
+        firewall_instruction = FIREWALL_INSTRUCTION_EN.format(
+            fw_title=firewall_doc.get("title", ""),
+            fw_note=firewall_doc.get("note", ""),
+            fw_full_text=firewall_doc.get("full_text", ""),
+        )
+
+    return STEP4_ANSWER_GENERATION_EN.format(
+        history_context=history_context or "",
+        question=question,
+        passages=passages_text,
+        greek_context=greek_terms_context,
+        verse_context=key_verses_context,
+        firewall_instruction=firewall_instruction,
+    )
+
+
 def _extract_step4_sources(raw: str) -> list[str]:
     """从 Step4 原始输出中提取【引用书目】列表（保留编号；按书名去重）。"""
     sources: list[str] = []
@@ -885,6 +933,46 @@ def _extract_step4_sources(raw: str) -> list[str]:
             seen.add(key)
             sources.append(after)
     return sources
+
+
+def _extract_references(answer: str) -> list[str]:
+    """从英文 Step4 答案里提取 [References] 块。
+    返回 ["1 Life-Study of Samuel, msg. 34", ...] 样式，按书名去重保留编号。
+    """
+    sources: list[str] = []
+    if "[References]" not in answer:
+        return sources
+    bib_block = answer.split("[References]", 1)[1]
+    seen: set[str] = set()
+    for line in bib_block.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if not re.match(r"^\d+", line):
+            continue
+        key = re.sub(r"^\d+[\.\s]+", "", line).strip()
+        if key and key not in seen:
+            seen.add(key)
+            sources.append(line)
+    return sources
+
+
+def _translation_cache_key(zh_cache_key: str, lang: str) -> str:
+    """zh 缓存 key 加 lang 后缀，与 zh 缓存隔离。"""
+    return f"{zh_cache_key}:{lang}"
+
+
+async def _translate_question_to_english(question: str) -> str:
+    """用 Gemini 把用户问题翻译成英文，失败时返回原文。"""
+    q = (question or "").strip()
+    if not q:
+        return q
+    try:
+        from back_qa.qa.translation_service import _gemini_translate
+        return await asyncio.to_thread(_gemini_translate, q)
+    except Exception as e:
+        logger.warning("[QA] question 翻译失败，回退原文: %s", e)
+        return q
 
 
 async def _step4(
@@ -930,6 +1018,7 @@ async def _run_pipeline_until_step4(
     history: list[dict],
     debug: bool,
     debug_params: dict | None,
+    lang: str = "zh",
 ) -> tuple[dict | None, dict | None]:
     """
     缓存检查、定向/Step1-2-3、Firewall await，直到 Step4 之前。
@@ -1155,12 +1244,13 @@ async def run_pipeline(
     debug: bool = False,
     debug_params: dict | None = None,
     history: list[dict] | None = None,
+    lang: str = "zh",
 ) -> dict:
-    """四步流水线主入口。"""
+    """四步流水线主入口。lang 当前仅由 /stream 落地翻译；/query 非流式接受参数但不做翻译后处理。"""
     history = history or []
 
     early, ctx = await _run_pipeline_until_step4(
-        question, skip_cache, request_id, app, history, debug, debug_params
+        question, skip_cache, request_id, app, history, debug, debug_params, lang=lang
     )
     if early is not None:
         return early
@@ -1236,6 +1326,221 @@ async def run_pipeline(
     return result
 
 
+async def translate_answer(
+    text: str,
+    sources: list[str],
+    target_lang: str,
+    question: str = "",
+) -> dict[str, Any]:
+    """按需翻译已生成的简体答案（供 /api/qa/translate 兜底接口使用）。
+
+    与 stream_query 内的 _emit_translation_events 不同：
+    - 这里不重跑 Step 4，只做文本翻译（无 passages 可用）
+    - zh_tw 走 OpenCC + 术语表
+    - en 走 Gemini，并发翻译 body / 每条 source / question
+
+    返回 {"answer": str, "sources": list[str]}。任何环节失败抛异常由路由层转 500。
+    """
+    text = text or ""
+    sources = list(sources or [])
+    target_lang = (target_lang or "").strip().lower()
+    if target_lang not in ("zh_tw", "en"):
+        raise ValueError(f"unsupported target_lang: {target_lang}")
+
+    if target_lang == "zh_tw":
+        from back_qa.qa.translation_service import to_traditional
+        # 剥离 【引用书目】 及之后的书目块，仅转换正文；书目走 translated_sources 单独转换，
+        # 避免前端 renderAnswer 因 marker 被一起繁化而切分失败导致重复渲染。
+        body_text = text or ""
+        if "【引用书目】" in body_text:
+            body_text = body_text.split("【引用书目】", 1)[0].rstrip()
+        translated_answer = await asyncio.to_thread(to_traditional, body_text)
+        translated_sources = await asyncio.to_thread(
+            lambda src: [to_traditional(s) for s in src],
+            sources,
+        )
+        logger.info("[QA] /translate zh_tw 完成 chars=%d sources=%d",
+                    len(translated_answer), len(translated_sources))
+        return {"answer": translated_answer, "sources": translated_sources}
+
+    # ---- target_lang == "en" ----
+    from back_qa.qa.translation_service import _gemini_translate
+
+    # 1. 拆出正文（去掉 【引用书目】 / [References] 块），书目走单独翻译
+    body = text
+    if "【引用书目】" in body:
+        body = body.split("【引用书目】", 1)[0]
+    if "[References]" in body:
+        body = body.split("[References]", 1)[0]
+    body = body.strip()
+
+    # 2. 并发翻译：body / 每条 source / question
+    async def _translate_one(s: str) -> str:
+        if not (s or "").strip():
+            return s or ""
+        try:
+            return await asyncio.to_thread(_gemini_translate, s)
+        except Exception as e:
+            logger.warning("[QA] /translate source 翻译失败，保留中文: %s", e)
+            return s
+
+    body_task = asyncio.to_thread(_gemini_translate, body) if body else asyncio.sleep(0, result="")
+    sources_task = asyncio.gather(*[_translate_one(s) for s in sources])
+    question_task = _translate_question_to_english(question or "")
+
+    translated_body, translated_sources, translated_question = await asyncio.gather(
+        body_task, sources_task, question_task
+    )
+    translated_body = (translated_body or "").strip()
+    translated_sources = list(translated_sources or [])
+
+    # 3. 拼接答案：body + [References] block，与 stream_query en 路径输出格式保持一致
+    if translated_sources:
+        translated_answer = (
+            translated_body + "\n\n[References]\n" + "\n".join(translated_sources)
+        )
+    else:
+        translated_answer = translated_body
+
+    logger.info(
+        "[QA] /translate en 完成 body_chars=%d sources=%d question_en=%s",
+        len(translated_body), len(translated_sources),
+        (translated_question or "")[:80],
+    )
+    return {"answer": translated_answer, "sources": translated_sources}
+
+
+async def _emit_translation_events(
+    *,
+    lang: str,
+    zh_cache_key: str,
+    redis_client,
+    answer_zh: str,
+    sources_zh: list[str],
+    question_zh: str,
+    passages: list[dict] | None,
+    greek_terms_context: str,
+    key_verses_context: str,
+    firewall_doc: dict | None,
+    history_context: str,
+    skip_cache: bool,
+) -> AsyncGenerator[dict[str, Any], None]:
+    """根据 lang 生成 translation 事件流。命中 {zh_cache_key}:{lang} 缓存直接回放；
+    否则现场翻译/重生成并写入翻译缓存。失败时只记日志，不抛错。
+
+    - zh_tw：基于 answer_zh / sources_zh 直接做简繁转换，不依赖 passages。
+    - en：需要 passages（来自完整流水线）才能重跑英文版 Step4；缓存命中除外。
+    """
+    if lang not in ("zh_tw", "en"):
+        return
+
+    tr_key = _translation_cache_key(zh_cache_key, lang)
+
+    # 翻译缓存命中直接回放
+    if not skip_cache:
+        cached_tr = _read_cache(redis_client, tr_key)
+        if cached_tr and isinstance(cached_tr, dict):
+            yield {
+                "type": "translation",
+                "lang": lang,
+                "answer": cached_tr.get("answer", ""),
+                "sources": list(cached_tr.get("sources", []) or []),
+                "cache_hit": True,
+            }
+            return
+
+    if lang == "zh_tw":
+        try:
+            from back_qa.qa.translation_service import to_traditional
+            # 分离正文与书目块：避免转换后「【引用书目】→【引用書目】」让前端 renderAnswer
+            # 的简体 marker 切分失败，导致书目在 body 与 displaySources 中各渲染一份。
+            body_zh = answer_zh or ""
+            if "【引用书目】" in body_zh:
+                body_zh = body_zh.split("【引用书目】", 1)[0].rstrip()
+            translated_answer = await asyncio.to_thread(to_traditional, body_zh)
+            translated_sources = await asyncio.to_thread(
+                lambda src: [to_traditional(s) for s in src],
+                sources_zh,
+            )
+        except Exception as e:
+            logger.warning("[QA] zh_tw 翻译失败: %s", e)
+            return
+        payload = {"answer": translated_answer, "sources": translated_sources}
+        try:
+            _write_cache(redis_client, tr_key, payload)
+        except Exception as e:
+            logger.warning("[QA] 翻译缓存写入失败: %s", e)
+        yield {
+            "type": "translation",
+            "lang": "zh_tw",
+            "answer": translated_answer,
+            "sources": translated_sources,
+            "cache_hit": False,
+        }
+        return
+
+    # lang == "en"：需要 passages
+    if not passages:
+        logger.warning(
+            "[QA] en 翻译路径缺少 passages（疑似 zh 缓存命中无法重生成英文答案），跳过 translation 事件"
+        )
+        return
+
+    try:
+        from back_qa.qa.translation_service import prepare_english_chunks
+        english_passages, has_translation = await asyncio.to_thread(
+            prepare_english_chunks, passages
+        )
+        en_question = await _translate_question_to_english(question_zh)
+
+        en_prompt = _step4_build_prompt_en(
+            question=en_question,
+            passages=english_passages,
+            greek_terms_context=greek_terms_context,
+            key_verses_context=key_verses_context,
+            firewall_doc=firewall_doc,
+            history_context=history_context,
+        )
+
+        client = _get_async_claude_client()
+        kwargs: dict[str, Any] = dict(
+            model=STEP4_MODEL,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": en_prompt}],
+            system=(
+                "You are a ministry Q&A assistant. Answer strictly based on the provided "
+                "passages. Quote original text directly; do not fabricate or stitch."
+            ),
+        )
+        if not STEP4_MODEL.startswith("claude-opus-4-7"):
+            kwargs["temperature"] = 0.3
+        en_message = await client.messages.create(**kwargs)
+        en_answer = _claude_message_text(en_message).strip()
+        if not en_answer:
+            logger.warning("[QA] en 重生成返回空文本，跳过 translation 事件")
+            return
+        en_sources = _extract_references(en_answer)
+    except Exception as e:
+        logger.warning("[QA] en 翻译/重生成失败: %s", e, exc_info=True)
+        return
+
+    payload = {"answer": en_answer, "sources": en_sources}
+    try:
+        _write_cache(redis_client, tr_key, payload)
+    except Exception as e:
+        logger.warning("[QA] 翻译缓存写入失败: %s", e)
+    logger.info(
+        "[QA] en 翻译完成 has_translation=%s en_sources=%d", has_translation, len(en_sources)
+    )
+    yield {
+        "type": "translation",
+        "lang": "en",
+        "answer": en_answer,
+        "sources": en_sources,
+        "cache_hit": False,
+    }
+
+
 async def stream_query(
     question: str,
     skip_cache: bool,
@@ -1244,16 +1549,22 @@ async def stream_query(
     history: list[dict] | None = None,
     debug: bool = False,
     debug_params: dict | None = None,
+    lang: str = "zh",
 ) -> AsyncGenerator[dict[str, Any], None]:
     """
     流式问答：Steps 0-3 与 run_pipeline 相同；Step4 使用 Claude stream。
-    yield: step / token / done / error
+    yield: step / token / done / translation / error
+
+    lang != "zh" 时，主答案仍以简体生成并通过 done 事件返回；之后再追加一个 translation
+    事件，data 形如 {"lang": ..., "answer": ..., "sources": [...]}。
     """
     history = history or []
 
     early, ctx = await _run_pipeline_until_step4(
-        question, skip_cache, request_id, app, history, debug, debug_params
+        question, skip_cache, request_id, app, history, debug, debug_params, lang=lang
     )
+    zh_cache_key = _make_cache_key(question, history)
+
     if early is not None:
         yield {
             "type": "done",
@@ -1266,6 +1577,23 @@ async def stream_query(
             "cost": float(early.get("total_cost_usd", 0.0)),
             "request_id": early.get("request_id", request_id),
         }
+        if lang != "zh" and bool(early.get("found", False)):
+            from back_qa.qa.dependencies import get_redis_client
+            async for tr_event in _emit_translation_events(
+                lang=lang,
+                zh_cache_key=zh_cache_key,
+                redis_client=get_redis_client(),
+                answer_zh=early.get("answer", ""),
+                sources_zh=list(early.get("sources", []) or []),
+                question_zh=question,
+                passages=None,
+                greek_terms_context="",
+                key_verses_context="",
+                firewall_doc=None,
+                history_context="",
+                skip_cache=skip_cache,
+            ):
+                yield tr_event
         return
 
     assert ctx is not None
@@ -1378,3 +1706,20 @@ async def stream_query(
         "cost": round(total_cost, 4),
         "request_id": request_id,
     }
+
+    if lang != "zh":
+        async for tr_event in _emit_translation_events(
+            lang=lang,
+            zh_cache_key=cache_key,
+            redis_client=redis_client,
+            answer_zh=answer,
+            sources_zh=list(sources or []),
+            question_zh=q,
+            passages=passages,
+            greek_terms_context=greek_terms_context,
+            key_verses_context=key_verses_context,
+            firewall_doc=firewall_doc,
+            history_context=history_context,
+            skip_cache=skip_cache,
+        ):
+            yield tr_event

@@ -44,6 +44,8 @@ async def bm25_search(
             "section_title",
             "paragraph_type",
             "tokens",
+            "en",
+            "source_en",
         ],
     }
     try:
@@ -104,6 +106,8 @@ async def dense_search(
             "section_title",
             "paragraph_type",
             "tokens",
+            "en",
+            "source_en",
         ],
     }
     try:

@@ -1028,11 +1028,9 @@ class KgRagService:
             and isinstance(preset_practice, list)
             and preset_revelation
         ):
-            experience = [str(c) for c in preset_experience[:3]]
-            practice = [str(c) for c in preset_practice[:3]]
-            rev_raw = [str(c) for c in preset_revelation]
-            max_rev = 12 - len(experience) - len(practice)
-            revelation = rev_raw[: max(0, max_rev)]
+            revelation = [str(c).strip() for c in preset_revelation if str(c).strip()]
+            experience = [str(c).strip() for c in preset_experience if str(c).strip()]
+            practice = [str(c).strip() for c in preset_practice if str(c).strip()]
             concepts = list(dict.fromkeys(revelation + experience + practice))
             reasoning = "（人工指定概念，跳过 Step 1）"
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000

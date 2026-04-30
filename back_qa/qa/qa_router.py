@@ -40,6 +40,7 @@ class QueryRequest(BaseModel):
     debug: bool = False
     params: DebugParams = DebugParams()
     history: list[HistoryTurn] = Field(default_factory=list)
+    lang: str = "zh"  # "zh" | "zh_tw" | "en"
 
     @field_validator("question")
     @classmethod
@@ -49,6 +50,14 @@ class QueryRequest(BaseModel):
             raise ValueError("question 不能为空")
         if len(v) > 500:
             raise ValueError("question 不能超过 500 字")
+        return v
+
+    @field_validator("lang")
+    @classmethod
+    def validate_lang(cls, v: str) -> str:
+        v = (v or "").strip().lower()
+        if v not in ("zh", "zh_tw", "en"):
+            raise ValueError("lang 仅支持 zh / zh_tw / en")
         return v
 
 
@@ -69,6 +78,36 @@ class FeedbackRequest(BaseModel):
     question: str
     answer: str
     rating: int  # 1 或 -1
+
+
+class TranslateRequest(BaseModel):
+    text: str
+    sources: list[str] = Field(default_factory=list)
+    target_lang: str
+    question: str = ""
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        v = v or ""
+        if not v.strip():
+            raise ValueError("text 不能为空")
+        if len(v) > 20000:
+            raise ValueError("text 过长（超过 20000 字符）")
+        return v
+
+    @field_validator("target_lang")
+    @classmethod
+    def validate_target_lang(cls, v: str) -> str:
+        v = (v or "").strip().lower()
+        if v not in ("zh_tw", "en"):
+            raise ValueError("target_lang 仅支持 zh_tw / en")
+        return v
+
+
+class TranslateResponse(BaseModel):
+    answer: str
+    sources: list[str]
 
 
 # ---------- 工具函数 ----------
@@ -160,6 +199,7 @@ async def query(req: QueryRequest, request: Request):
         debug=req.debug,
         debug_params=req.params.model_dump(),
         history=history_payload,
+        lang=req.lang,
     )
     return QueryResponse(**result)
 
@@ -189,12 +229,41 @@ async def stream_answer(req: QueryRequest, request: Request):
                 history=history_payload,
                 debug=req.debug,
                 debug_params=req.params.model_dump(),
+                lang=req.lang,
             ):
                 yield {"data": json.dumps(chunk, ensure_ascii=False)}
         except Exception as e:
             yield {"data": json.dumps({"type": "error", "message": str(e)}, ensure_ascii=False)}
 
     return EventSourceResponse(event_generator())
+
+
+@router.post("/translate", response_model=TranslateResponse)
+async def translate(req: TranslateRequest, request: Request):
+    """按需翻译已生成的简体答案。
+    - zh_tw：OpenCC + 术语表本地转换，毫秒级
+    - en：Gemini 翻译正文与每条 sources（不重跑 Step 4）
+    主要用作前端"答案下方简/繁/EN 切换按钮"在 stream 流期间未拿到 translation 事件时的兜底。
+    """
+    from back_qa.qa.qa_service import translate_answer
+    from back_qa.qa.dependencies import get_redis_client
+
+    _require_user(request)
+    if not check_rate_limit(request, get_redis_client()):
+        raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
+
+    try:
+        result = await translate_answer(
+            text=req.text,
+            sources=req.sources,
+            target_lang=req.target_lang,
+            question=req.question,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="翻译失败，请稍后重试")
+    return result
 
 
 @router.post("/feedback")
