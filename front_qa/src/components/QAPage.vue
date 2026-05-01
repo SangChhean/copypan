@@ -170,6 +170,19 @@
                     <a-spin v-if="msg.translating && msg.currentLang !== opt.value" size="small" />
                     <span v-else>{{ opt.label }}</span>
                   </button>
+                  <!-- 朗读按钮，置右 -->
+                  <button
+                    type="button"
+                    class="qa-tts-btn"
+                    :disabled="ttsState(msg) === 'loading'"
+                    @click="toggleTTS(msg)"
+                    :title="ttsState(msg) === 'playing' ? '暂停' : ttsState(msg) === 'paused' ? '继续朗读' : '朗读'"
+                  >
+                    <span v-if="ttsState(msg) === 'loading'">…</span>
+                    <span v-else-if="ttsState(msg) === 'playing'">⏸</span>
+                    <span v-else-if="ttsState(msg) === 'paused'">▶</span>
+                    <span v-else>🔊</span>
+                  </button>
                 </div>
               </div>
             </template>
@@ -385,6 +398,133 @@ function displaySources(msg) {
   if (msg.currentLang === 'zh') return msg.sources || []
   const tr = msg.translatedAnswers?.[msg.currentLang]
   return tr ? (tr.sources || []) : (msg.sources || [])
+}
+
+// 朗读相关
+const ttsAudio = ref(null)      // 当前 Audio 实例
+const ttsMsgId = ref(null)      // 正在朗读的消息 id
+
+function stripMarkdown(text) {
+  return text
+    .replace(/<sup[^>]*>.*?<\/sup>/gi, '')  // 去掉 <sup> 上标标签
+    .replace(/\[\d+\]/g, '')         // 去掉 [1] [2] 引用编号
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 去掉 **bold**
+    .replace(/\*(.*?)\*/g, '$1')     // 去掉 *italic*
+    .replace(/#{1,6}\s/g, '')        // 去掉标题 #
+    .replace(/`{1,3}[^`]*`{1,3}/g, '') // 去掉代码块
+    .trim()
+}
+
+async function toggleTTS(msg) {
+  // 如果当前消息正在播放，暂停/继续
+  if (ttsMsgId.value === msg.id) {
+    if (ttsAudio.value && !ttsAudio.value.paused) {
+      ttsAudio.value.pause()
+      return
+    }
+    if (ttsAudio.value && ttsAudio.value.paused) {
+      ttsAudio.value.play()
+      return
+    }
+  }
+  // 停止之前的播放
+  if (ttsAudio.value) {
+    ttsAudio.value.pause()
+    ttsAudio.value.src = ''
+    ttsAudio.value = null
+  }
+  ttsMsgId.value = msg.id
+  const currentMsgId = msg.id
+
+  // 取当前显示语言的纯文本
+  const lang = msg.currentLang || 'zh'
+  let rawText
+  if (lang === 'zh') {
+    rawText = msg.answer || ''
+  } else if (lang === 'zh_tw') {
+    rawText = msg.translatedAnswers?.zh_tw?.answer || msg.answer || ''
+  } else {
+    rawText = msg.translatedAnswers?.en?.answer || msg.answer || ''
+  }
+  const plainText = stripMarkdown(rawText)
+  if (!plainText) return
+
+  // 分句：按句号/问号/感叹号切分，保留标点，过滤空句
+  const sentences = plainText
+    .split(/(?<=[。！？!?\.]{1})\s*/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+  if (sentences.length === 0) return
+
+  const token = localStorage.getItem('qa_token') || ''
+
+  async function fetchSentenceAudio(sentence) {
+    const response = await fetch('/api/qa/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text: sentence, lang }),
+    })
+    if (!response.ok) throw new Error('TTS 请求失败')
+    const chunks = []
+    const reader = response.body.getReader()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+    }
+    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0)
+    const merged = new Uint8Array(totalLength)
+    let offset = 0
+    for (const c of chunks) { merged.set(c, offset); offset += c.length }
+    const blob = new Blob([merged], { type: 'audio/ogg; codecs=opus' })
+    return URL.createObjectURL(blob)
+  }
+
+  // 串行播放所有句子
+  try {
+    for (let i = 0; i < sentences.length; i++) {
+      // 检查是否已被停止（用户点了新对话或切换消息）
+      if (ttsMsgId.value !== currentMsgId) break
+      const url = await fetchSentenceAudio(sentences[i])
+      if (ttsMsgId.value !== currentMsgId) {
+        URL.revokeObjectURL(url)
+        break
+      }
+      await new Promise((resolve, reject) => {
+        const audio = new Audio(url)
+        ttsAudio.value = audio
+        audio.onended = () => {
+          URL.revokeObjectURL(url)
+          ttsAudio.value = null
+          resolve()
+        }
+        audio.onerror = () => {
+          URL.revokeObjectURL(url)
+          ttsAudio.value = null
+          reject(new Error('音频播放失败'))
+        }
+        audio.play().catch(reject)
+      })
+    }
+  } catch (e) {
+    // 播放出错，静默处理
+  } finally {
+    if (ttsMsgId.value === currentMsgId) {
+      ttsMsgId.value = null
+      ttsAudio.value = null
+    }
+  }
+}
+
+// 计算当前消息的朗读状态
+function ttsState(msg) {
+  if (ttsMsgId.value !== msg.id) return 'idle'
+  if (!ttsAudio.value) return 'loading'
+  if (ttsAudio.value.paused) return 'paused'
+  return 'playing'
 }
 
 /** 答案下方语言切换。zh / 已缓存：直接切；未缓存：调用 /api/qa/translate（暂未实现，501 仅 console）。 */
@@ -880,16 +1020,6 @@ async function submitFeedback(msg, rating) {
   }
 }
 
-function stripMarkdown(text) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '$1')   // **粗体** -> 粗体
-    .replace(/\*(.*?)\*/g, '$1')        // *斜体* -> 斜体
-    .replace(/^---+$/gm, '——')          // --- 分隔线 -> ——
-    .replace(/^#{1,6}\s+/gm, '')        // ## 标题 -> 去掉#
-    .replace(/`(.*?)`/g, '$1')          // `代码` -> 代码
-    .trim()
-}
-
 async function copyAnswer(msg) {
   if (!msg || msg.copied) return
   try {
@@ -1217,11 +1347,30 @@ async function scrollToMessageTop(messageId) {
 .qa-lang-toggle {
   display: flex;
   align-items: center;
+  gap: 6px;
   border: 1px solid var(--color-border);
   border-radius: 20px;
   overflow: hidden;
   background: #fff;
   align-self: flex-start;
+}
+.qa-tts-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #d9d9d9;
+  border-radius: 16px;
+  padding: 2px 10px;
+  font-size: 15px;
+  cursor: pointer;
+  color: #666;
+  transition: background 0.15s;
+}
+.qa-tts-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+.qa-tts-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .qa-lang-toggle-btn {
   border: none;
