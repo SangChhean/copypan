@@ -369,11 +369,16 @@ function renderAnswer(text) {
     body = body.split('[References]')[0]
   }
   let html = marked.parse(body.trim())
-  // 把行内引用编号转为上标，匹配：右引号/句末 后面紧跟的纯数字
-  // 如：「...原文」1  →  「...原文」<sup>1</sup>
-  html = html.replace(/([」'"]|\d)(\d+)(?=\s|<|$)/g, (match, before, num) => {
-    if (/\d/.test(before)) return match // 避免把普通数字转掉
-    return `${before}<sup class="qa-cite-num">${num}</sup>`
+  // 匹配引用编号：右引号（中英文，含直引号与弯引号 \u201d\u2019）后可跟空白/逗号/句号，再跟 1～2 位数字
+  html = html.replace(
+    /([」"'"\u201d\u2019\u0022\u0027])([\s.,]*?)(\d{1,2})(?=\s|<|$)/g,
+    (match, quote, punct, num) => {
+      return `${quote}${punct}<sup class="qa-cite-num">${num}</sup>`
+    }
+  )
+  // 句末标点后紧跟数字（无引号）；(?<!\d) 降低 3.14 类小数误匹配
+  html = html.replace(/(?<!\d)([.!?])(\d{1,2})(?=\s|<|$)/g, (match, punct, num) => {
+    return `${punct}<sup class="qa-cite-num">${num}</sup>`
   })
   return html
 }

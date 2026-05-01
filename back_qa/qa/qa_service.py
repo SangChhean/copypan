@@ -1346,8 +1346,6 @@ async def translate_answer(
     if target_lang not in ("zh_tw", "en"):
         raise ValueError(f"unsupported target_lang: {target_lang}")
 
-    logger.info("[QA] translate_answer called: target_lang=%s cache_key=%s", target_lang, repr(cache_key))
-
     if target_lang == "zh_tw":
         from back_qa.qa.dependencies import get_redis_client
         from back_qa.qa.translation_service import to_traditional
@@ -1379,7 +1377,7 @@ async def translate_answer(
 
     # ---- target_lang == "en" ----
     from back_qa.qa.dependencies import get_redis_client
-    from back_qa.qa.translation_service import _gemini_translate
+    from back_qa.qa.translation_service import _gemini_translate, mask_en_citations_for_translation
 
     redis_client = get_redis_client()
     en_cache_key = f"{cache_key}:en" if cache_key else None
@@ -1404,13 +1402,20 @@ async def translate_answer(
 
     en_sources = _match_sources_to_english(sources, passages_data)
 
+    body_for_translation = body
+    body_masked, placeholders = mask_en_citations_for_translation(body_for_translation)
+
     translated_body = ""
-    if body:
+    if body_masked.strip():
         try:
-            translated_body = await asyncio.to_thread(_gemini_translate, body)
+            translated_body = await asyncio.to_thread(_gemini_translate, body_masked)
         except Exception as e:
             logger.warning("[QA] /translate en 正文翻译失败: %s", e)
-            translated_body = body
+            translated_body = body_for_translation
+
+    # 还原占位符
+    for ph, num in placeholders.items():
+        translated_body = translated_body.replace(ph, num)
 
     if en_sources:
         translated_answer = translated_body + "\n\n[References]\n" + "\n".join(en_sources)

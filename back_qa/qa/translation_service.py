@@ -28,8 +28,33 @@ _GEMINI_MODEL = os.environ.get("QA_TRANSLATION_GEMINI_MODEL", "gemini-2.5-flash"
 _GEMINI_TRANSLATION_SYSTEM = (
     "你是专业的职事信息中翻英助手。请将用户给出的中文准确翻译为英文。\n"
     "要求：直接输出译文，不加任何前缀或解释；保留原文语气和神学术语；\n"
-    "专有词参考：召会=church, 那灵=the Spirit, 职事=ministry, 三一神=the Triune God 等"
+    "专有词参考：召会=church, 那灵=the Spirit, 职事=ministry, 三一神=the Triune God 等\n"
+    "- 文中形如 [REF:0]、[REF:1] 等标记是引用编号占位符，必须原样保留在对应位置，不得删除、移动或翻译"
 )
+
+# 英译正文：引号后的引用编号；送入 Gemini 前占位保护（前瞻含换行、破折号、连字符等）
+citation_pattern = re.compile(
+    r'([」"\u201d\u2019\u0022\u0027])\s*(\d{1,2})(?=\s|<|$|\n|—|-)',
+    re.MULTILINE,
+)
+
+
+def mask_en_citations_for_translation(text: str) -> tuple[str, dict[str, str]]:
+    """将「右引号 + 可选空白 + 1～2 位编号」替换为 [REF:n]，返回 (masked, {token: 原文片段})。"""
+    src = text or ""
+    placeholders: dict[str, str] = {}
+    if not src.strip():
+        return src, placeholders
+    counter = [0]
+
+    def repl(m: re.Match) -> str:
+        ph = f"[REF:{counter[0]}]"
+        placeholders[ph] = m.group(0)
+        counter[0] += 1
+        return ph
+
+    return citation_pattern.sub(repl, src), placeholders
+
 
 # 恢复本圣经中文书卷缩写 → 英文书名
 _BIBLE_BOOK_MAP: dict[str, str] = {
