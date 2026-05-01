@@ -551,6 +551,8 @@ const pendingConfirmCount = computed(
 );
 
 function saveCurrentToHistory() {
+  const cand = conceptCandidates.value || {};
+  // 保存 AI 推荐的完整三层，而非仅勾选项（载入后可在手工重点里看到全部）
   const record = {
     id: Date.now(),
     createdAt: formatHistoryTime(Date.now()),
@@ -559,13 +561,13 @@ function saveCurrentToHistory() {
     outline_nature: aiForm.specialNeeds.trim(),
     audience: aiForm.audience.trim(),
     burden_description: aiForm.burdenDescription.trim(),
-    revelation: [...selectedRevelation.value],
-    experience: [...selectedExperience.value],
-    practice: [...selectedPractice.value],
+    revelation: Array.isArray(cand.revelation) ? [...cand.revelation] : [],
+    experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
+    practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
   };
   historyList.value = [record, ...historyList.value];
   persistHistory();
-  message.success("已保存到历史记录");
+  message.success("已保存全部推荐重点到历史记录");
 }
 
 function setHistoryStatus(id, status) {
