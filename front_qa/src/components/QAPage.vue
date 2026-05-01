@@ -1215,19 +1215,20 @@ async function scrollToMessageTop(messageId) {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   background: #fff;
 }
 .qa-lang-toggle-btn {
   border: none;
   background: transparent;
-  padding: 2px 10px;
-  font-size: 12px;
+  padding: 4px 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  line-height: 1.6;
-  min-width: 32px;
+  line-height: 1.8;
+  min-width: 40px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
