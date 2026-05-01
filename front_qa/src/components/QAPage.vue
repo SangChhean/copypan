@@ -824,8 +824,16 @@ async function submit() {
   } catch (e) {
     stopTypewriter()
     const r = assistantRow()
-    r.found = false
-    r.answer = '请求失败，请稍后重试。'
+    if (firstTokenReceived) {
+      // 已有内容输出，连接中断但答案部分可用，保留已有内容
+      r.found = r.found ?? true
+      r.loading = false
+      r.streaming = false
+    } else {
+      // 完全没收到任何内容，显示报错
+      r.found = false
+      r.answer = '请求失败，请稍后重试。'
+    }
   } finally {
     stopTypewriter()
     const r = assistantRow()
