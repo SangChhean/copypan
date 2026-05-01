@@ -344,8 +344,7 @@ function logout() {
 }
 
 function newConversation() {
-  messages.value = []
-  history.value = []
+  window.location.reload()
 }
 
 function renderAnswer(text) {
@@ -710,116 +709,118 @@ async function submit() {
     const sendTime = Date.now()
     let firstTokenReceived = false
 
-    const token = localStorage.getItem('qa_token') || ''
-    const response = await fetch('/api/qa/stream', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        question: finalQuestion,
-        skip_cache: false,
-        debug: false,
-        history: history.value.map((h) => ({
-          question: h.question,
-          answer: h.answer,
-        })),
-      }),
-    })
+    await navigator.locks.request('qa-stream', async () => {
+      const token = localStorage.getItem('qa_token') || ''
+      const response = await fetch('/api/qa/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          question: finalQuestion,
+          skip_cache: false,
+          debug: false,
+          history: history.value.map((h) => ({
+            question: h.question,
+            answer: h.answer,
+          })),
+        }),
+      })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      buffer = buffer.replace(/\r\n/g, '\n')
-      let sepIdx
-      while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
-        const rawEvent = buffer.slice(0, sepIdx)
-        buffer = buffer.slice(sepIdx + 2)
-        for (const line of rawEvent.split('\n')) {
-          if (!line.startsWith('data:')) continue
-          const raw = line.startsWith('data: ') ? line.slice(6).trim() : line.slice(5).trim()
-          if (!raw) continue
-          let chunk
-          try {
-            chunk = JSON.parse(raw)
-          } catch {
-            continue
-          }
-          if (chunk.type === 'token') {
-            if (!firstTokenReceived) {
-              firstTokenReceived = true
-              const row = assistantRow()
-              if (row) {
-                row.elapsed = ((Date.now() - sendTime) / 1000).toFixed(1)
-              }
-              await scrollToMessageTop(assistantMsg.id - 1)
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        buffer = buffer.replace(/\r\n/g, '\n')
+        let sepIdx
+        while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+          const rawEvent = buffer.slice(0, sepIdx)
+          buffer = buffer.slice(sepIdx + 2)
+          for (const line of rawEvent.split('\n')) {
+            if (!line.startsWith('data:')) continue
+            const raw = line.startsWith('data: ') ? line.slice(6).trim() : line.slice(5).trim()
+            if (!raw) continue
+            let chunk
+            try {
+              chunk = JSON.parse(raw)
+            } catch {
+              continue
             }
-            const idx = messages.value.findIndex((m) => m.id === assistantMsg.id)
-            if (idx !== -1) {
-              messages.value[idx].loading = false
-            }
-            const text = chunk.text || ''
-            const row = assistantRow()
-            if (row && row._bodyDone) {
-              // 已进入书目区，不再打字
-            } else {
-              let bodyText = text
-              if (text.includes('【引用书目】')) {
-                bodyText = text.split('【引用书目】')[0]
-                if (row) row._bodyDone = true
-              }
-              for (const char of bodyText) {
-                typewriterQueue.value.push(char)
-              }
-              startTypewriter(assistantMsg)
-            }
-          } else if (chunk.type === 'done') {
-            await new Promise((resolve) => {
-              const wait = setInterval(() => {
-                if (typewriterQueue.value.length === 0) {
-                  clearInterval(wait)
-                  resolve()
+            if (chunk.type === 'token') {
+              if (!firstTokenReceived) {
+                firstTokenReceived = true
+                const row = assistantRow()
+                if (row) {
+                  row.elapsed = ((Date.now() - sendTime) / 1000).toFixed(1)
                 }
-              }, 50)
-            })
-            stopTypewriter()
-            const row = assistantRow()
-            row.found = chunk.found ?? true
-            if (!row.answer) {
-              row.answer = chunk.answer || ''
+                await scrollToMessageTop(assistantMsg.id - 1)
+              }
+              const idx = messages.value.findIndex((m) => m.id === assistantMsg.id)
+              if (idx !== -1) {
+                messages.value[idx].loading = false
+              }
+              const text = chunk.text || ''
+              const row = assistantRow()
+              if (row && row._bodyDone) {
+                // 已进入书目区，不再打字
+              } else {
+                let bodyText = text
+                if (text.includes('【引用书目】')) {
+                  bodyText = text.split('【引用书目】')[0]
+                  if (row) row._bodyDone = true
+                }
+                for (const char of bodyText) {
+                  typewriterQueue.value.push(char)
+                }
+                startTypewriter(assistantMsg)
+              }
+            } else if (chunk.type === 'done') {
+              await new Promise((resolve) => {
+                const wait = setInterval(() => {
+                  if (typewriterQueue.value.length === 0) {
+                    clearInterval(wait)
+                    resolve()
+                  }
+                }, 50)
+              })
+              stopTypewriter()
+              const row = assistantRow()
+              row.found = chunk.found ?? true
+              if (!row.answer) {
+                row.answer = chunk.answer || ''
+              }
+              row.sources = chunk.sources || []
+              row.concepts = chunk.concepts || []
+              row.cache_hit = chunk.cache_hit ?? false
+              row.cache_key = chunk.cache_key || ''
+              row.request_id = chunk.request_id || ''
+              if (!firstTokenReceived) {
+                row.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
+              }
+              row.cost = chunk.cost || 0
+              row.loading = false
+              row.streaming = false
+            } else if (chunk.type === 'error') {
+              stopTypewriter()
+              const row = assistantRow()
+              row.answer = '请求失败，请稍后重试。'
+              row.found = false
+              row.loading = false
+              row.streaming = false
             }
-            row.sources = chunk.sources || []
-            row.concepts = chunk.concepts || []
-            row.cache_hit = chunk.cache_hit ?? false
-            row.cache_key = chunk.cache_key || ''
-            row.request_id = chunk.request_id || ''
-            if (!firstTokenReceived) {
-              row.elapsed = ((chunk.elapsed_ms || 0) / 1000).toFixed(1)
-            }
-            row.cost = chunk.cost || 0
-            row.loading = false
-            row.streaming = false
-          } else if (chunk.type === 'error') {
-            stopTypewriter()
-            const row = assistantRow()
-            row.answer = '请求失败，请稍后重试。'
-            row.found = false
-            row.loading = false
-            row.streaming = false
           }
         }
       }
-    }
+    })
   } catch (e) {
     stopTypewriter()
     const r = assistantRow()
