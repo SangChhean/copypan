@@ -14,7 +14,9 @@ tar -czf "$BACKUP_DIR/code_backup_$DATE.tar.gz" "$CODE_DIR" 2>/dev/null
 echo "✅ 备份完成"
 echo "[2/7] 拉取最新代码..."
 cd "$CODE_DIR"
+git stash
 git pull origin master
+git stash pop
 echo "✅ 代码更新完成"
 echo "[3/7] 安装 Python 依赖..."
 if [ -f "$CODE_DIR/back_mic/backend/requirements.txt" ]; then
