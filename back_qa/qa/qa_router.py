@@ -40,7 +40,6 @@ class QueryRequest(BaseModel):
     debug: bool = False
     params: DebugParams = DebugParams()
     history: list[HistoryTurn] = Field(default_factory=list)
-    lang: str = "zh"  # "zh" | "zh_tw" | "en"
 
     @field_validator("question")
     @classmethod
@@ -50,14 +49,6 @@ class QueryRequest(BaseModel):
             raise ValueError("question 不能为空")
         if len(v) > 500:
             raise ValueError("question 不能超过 500 字")
-        return v
-
-    @field_validator("lang")
-    @classmethod
-    def validate_lang(cls, v: str) -> str:
-        v = (v or "").strip().lower()
-        if v not in ("zh", "zh_tw", "en"):
-            raise ValueError("lang 仅支持 zh / zh_tw / en")
         return v
 
 
@@ -85,6 +76,7 @@ class TranslateRequest(BaseModel):
     sources: list[str] = Field(default_factory=list)
     target_lang: str
     question: str = ""
+    cache_key: str = ""
 
     @field_validator("text")
     @classmethod
@@ -199,7 +191,6 @@ async def query(req: QueryRequest, request: Request):
         debug=req.debug,
         debug_params=req.params.model_dump(),
         history=history_payload,
-        lang=req.lang,
     )
     return QueryResponse(**result)
 
@@ -229,7 +220,6 @@ async def stream_answer(req: QueryRequest, request: Request):
                 history=history_payload,
                 debug=req.debug,
                 debug_params=req.params.model_dump(),
-                lang=req.lang,
             ):
                 yield {"data": json.dumps(chunk, ensure_ascii=False)}
         except Exception as e:
@@ -242,8 +232,8 @@ async def stream_answer(req: QueryRequest, request: Request):
 async def translate(req: TranslateRequest, request: Request):
     """按需翻译已生成的简体答案。
     - zh_tw：OpenCC + 术语表本地转换，毫秒级
-    - en：Gemini 翻译正文与每条 sources（不重跑 Step 4）
-    主要用作前端"答案下方简/繁/EN 切换按钮"在 stream 流期间未拿到 translation 事件时的兜底。
+    - en：Gemini 翻译正文；书目从 Redis 缓存 passages 按 source_zh 匹配 source_en（需传 cache_key）
+    主要用作前端答案下方简/繁/EN 切换时的兜底。
     """
     from back_qa.qa.qa_service import translate_answer
     from back_qa.qa.dependencies import get_redis_client
@@ -258,6 +248,7 @@ async def translate(req: TranslateRequest, request: Request):
             sources=req.sources,
             target_lang=req.target_lang,
             question=req.question,
+            cache_key=req.cache_key,
         )
     except HTTPException:
         raise

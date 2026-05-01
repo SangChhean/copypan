@@ -473,17 +473,17 @@ def _parse_step1_layers(
     practice = [str(x).strip() for x in practice_raw if str(x).strip()] if isinstance(practice_raw, list) else []
     nature = (outline_nature or "一般性").strip()
     if nature == "真理启示":
-        max_rev, max_exp, max_prac = 6, 3, 3
+        max_rev, max_exp, max_prac = 8, 4, 4
     elif nature == "生命经历":
-        max_rev, max_exp, max_prac = 3, 6, 3
+        max_rev, max_exp, max_prac = 4, 8, 4
     elif nature == "应用实行":
-        max_rev, max_exp, max_prac = 3, 3, 6
+        max_rev, max_exp, max_prac = 4, 4, 8
     else:
-        max_rev, max_exp, max_prac = 4, 4, 4
+        max_rev, max_exp, max_prac = 6, 5, 5
 
     experience = experience[:max_exp]
     practice = practice[:max_prac]
-    max_revelation = min(max_rev, 12 - len(experience) - len(practice))
+    max_revelation = min(max_rev, 16 - len(experience) - len(practice))
     revelation = revelation[:max_revelation]
     return (revelation, experience, practice, reasoning)
 
