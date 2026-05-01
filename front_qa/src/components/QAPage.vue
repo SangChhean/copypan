@@ -90,102 +90,85 @@
                 <span class="qa-meta-cost">${{ Number(msg.cost || 0).toFixed(4) }}</span>
               </div>
 
-              <div
-                v-if="!msg.streaming"
-                class="qa-feedback"
-              >
-                <button
-                  class="qa-feedback-btn qa-copy-btn"
-                  :disabled="msg.copied"
-                  @click="copyAnswer(msg)"
-                >
-                  <svg
-                    v-if="msg.copied"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+              <!-- 操作区：两行布局 -->
+              <div v-if="!msg.streaming" class="qa-actions">
+                <!-- 第一行：复制 + 反馈 -->
+                <div class="qa-actions-row1">
+                  <button
+                    class="qa-feedback-btn qa-copy-btn"
+                    :disabled="msg.copied"
+                    @click="copyAnswer(msg)"
                   >
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  <span v-if="msg.copied">copied</span>
-                  <svg
-                    v-if="!msg.copied"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    <svg
+                      v-if="msg.copied"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span v-if="msg.copied">copied</span>
+                    <svg
+                      v-if="!msg.copied"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span v-if="!msg.copied">copy</span>
+                  </button>
+                  <button
+                    v-if="msg.found"
+                    class="qa-feedback-btn"
+                    :class="{
+                      'is-selected': msg.feedback === 1,
+                      'is-muted': msg.feedback === -1,
+                    }"
+                    :disabled="msg.feedback !== null || msg.feedbackSubmitting"
+                    @click="submitFeedback(msg, 1)"
                   >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  <span v-if="!msg.copied">copy</span>
-                </button>
-                <button
-                  v-if="msg.found"
-                  class="qa-feedback-btn"
-                  :class="{
-                    'is-selected': msg.feedback === 1,
-                    'is-muted': msg.feedback === -1,
-                  }"
-                  :disabled="msg.feedback !== null || msg.feedbackSubmitting"
-                  @click="submitFeedback(msg, 1)"
-                >
-                  👍
-                </button>
-                <button
-                  v-if="msg.found"
-                  class="qa-feedback-btn"
-                  :class="{
-                    'is-selected': msg.feedback === -1,
-                    'is-muted': msg.feedback === 1,
-                  }"
-                  :disabled="msg.feedback !== null || msg.feedbackSubmitting"
-                  @click="submitFeedback(msg, -1)"
-                >
-                  👎
-                </button>
-
+                    👍
+                  </button>
+                  <button
+                    v-if="msg.found"
+                    class="qa-feedback-btn"
+                    :class="{
+                      'is-selected': msg.feedback === -1,
+                      'is-muted': msg.feedback === 1,
+                    }"
+                    :disabled="msg.feedback !== null || msg.feedbackSubmitting"
+                    @click="submitFeedback(msg, -1)"
+                  >
+                    👎
+                  </button>
+                </div>
+                <!-- 第二行：语言切换 -->
                 <div v-if="msg.found" class="qa-lang-toggle">
                   <button
+                    v-for="opt in langOptions"
+                    :key="opt.value"
                     type="button"
                     class="qa-lang-toggle-btn"
-                    :class="{ 'is-active': msg.currentLang === 'zh' }"
+                    :class="{ 'is-active': msg.currentLang === opt.value }"
                     :disabled="msg.translating"
-                    @click="switchLang(msg, 'zh')"
+                    @click="switchLang(msg, opt.value)"
                   >
-                    <a-spin v-if="msg.translating && msg.currentLang !== 'zh'" size="small" />
-                    <span v-else>简</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="qa-lang-toggle-btn"
-                    :class="{ 'is-active': msg.currentLang === 'zh_tw' }"
-                    :disabled="msg.translating"
-                    @click="switchLang(msg, 'zh_tw')"
-                  >
-                    <a-spin v-if="msg.translating && msg.currentLang !== 'zh_tw'" size="small" />
-                    <span v-else>繁</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="qa-lang-toggle-btn"
-                    :class="{ 'is-active': msg.currentLang === 'en' }"
-                    :disabled="msg.translating"
-                    @click="switchLang(msg, 'en')"
-                  >
-                    <a-spin v-if="msg.translating && msg.currentLang !== 'en'" size="small" />
-                    <span v-else>EN</span>
+                    <a-spin v-if="msg.translating && msg.currentLang !== opt.value" size="small" />
+                    <span v-else>{{ opt.label }}</span>
                   </button>
                 </div>
               </div>
@@ -336,6 +319,12 @@ const examples = [
   '召会是基督的身体，如何理解？',
   '圣灵的膏抹是什么意思？',
   '创世记生命读经第三十篇的重点是什么？',
+]
+
+const langOptions = [
+  { label: '简体', value: 'zh' },
+  { label: '繁體', value: 'zh_tw' },
+  { label: 'English', value: 'en' },
 ]
 
 function fillExample(ex) {
@@ -1175,9 +1164,15 @@ async function scrollToMessageTop(messageId) {
   color: var(--color-text-secondary);
 }
 
-.qa-feedback {
-  margin-top: 8px;
+.qa-actions {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.qa-actions-row1 {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 .qa-feedback-btn {
@@ -1209,26 +1204,25 @@ async function scrollToMessageTop(messageId) {
   gap: 6px;
 }
 
-/* 答案下方简/繁/EN 切换按钮 */
+/* 答案下方简/繁/EN 切换（第二行） */
 .qa-lang-toggle {
-  margin-left: auto;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   background: #fff;
+  align-self: flex-start;
 }
 .qa-lang-toggle-btn {
   border: none;
   background: transparent;
-  padding: 4px 14px;
-  font-size: 13px;
+  padding: 6px 18px;
+  font-size: 14px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  line-height: 1.8;
-  min-width: 40px;
-  min-height: 32px;
+  line-height: 1.6;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
