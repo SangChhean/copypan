@@ -2,12 +2,14 @@
 """QA 路由：输入校验、request_id 处理、健康检查。"""
 import json
 import os
+import re
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 from sse_starlette.sse import EventSourceResponse
@@ -97,6 +99,28 @@ class TranslateRequest(BaseModel):
         return v
 
 
+class TTSRequest(BaseModel):
+    text: str
+    lang: str = "zh"
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        v = v or ""
+        if not v.strip():
+            raise ValueError("text 不能为空")
+        if len(v) > 10000:
+            raise ValueError("text 过长")
+        return v
+
+    @field_validator("lang")
+    @classmethod
+    def validate_lang(cls, v: str) -> str:
+        if v not in ("zh", "zh_tw", "en"):
+            raise ValueError("lang 仅支持 zh / zh_tw / en")
+        return v
+
+
 class TranslateResponse(BaseModel):
     answer: str
     sources: list[str]
@@ -111,6 +135,38 @@ def _resolve_request_id(request: Request) -> str:
         return str(uuid.UUID(raw))
     except (ValueError, AttributeError):
         return str(uuid.uuid4())
+
+
+def _keep_char(c: str) -> bool:
+    cat = unicodedata.category(c)
+    if cat.startswith('L'):
+        return True  # 字母
+    if cat.startswith('N'):
+        return True  # 数字
+    if c in '\n\r\t ':
+        return True  # 空白
+    if c in '…—～·':
+        return True  # 特殊标点
+    # 只保留常用标点，排除数学括号(Ps/Pe)和数学符号(Sm/So/Sk)
+    if cat in ('Po', 'Pd', 'Pi', 'Pf'):
+        return True  # 普通/连字/引号标点
+    if c in "，。！？、；：（）,.!?;:()'\"": 
+        return True  # 明确保留的中英文标点
+    return False
+
+
+# 强制断句：把超过100字的连续非句末标点文本在逗号处截断，防止 Google TTS 报句子过长
+def _force_break_long_sentences(text: str, max_len: int = 100) -> str:
+    result = []
+    for line in text.split('\n'):
+        if len(line) <= max_len:
+            result.append(line)
+            continue
+        # 在逗号、顿号、分号处插入换行
+        broken = re.sub(r'([，、；,;])', r'\1\n', line)
+        parts = [p for p in broken.split('\n') if p.strip()]
+        result.extend(parts)
+    return '\n'.join(result)
 
 
 # ---------- 接口 ----------
@@ -255,6 +311,87 @@ async def translate(req: TranslateRequest, request: Request):
     except Exception:
         raise HTTPException(status_code=500, detail="翻译失败，请稍后重试")
     return result
+
+
+@router.post("/tts")
+async def text_to_speech(req: TTSRequest, request: Request):
+    """流式 TTS。调用 Google Cloud Text-to-Speech，音频流直接 pipe 给前端。
+    - zh: zh-CN-Neural2-D（男）或 zh-CN-Neural2-F（女）
+    - zh_tw: zh-TW-Neural2-A
+    - en: en-US-Neural2-F
+    返回 MP3 音频流。
+    """
+    import httpx
+    import base64
+
+    _require_user(request)
+
+    # 语言和音色映射
+    lang_config = {
+        "zh": ("cmn-CN", "cmn-CN-Chirp3-HD-Aoede"),
+        "zh_tw": ("cmn-TW", "cmn-TW-Wavenet-A"),
+        "en": ("en-US", "en-US-Chirp3-HD-Aoede"),
+    }
+    language_code, voice_name = lang_config[req.lang]
+    api_key = os.environ.get("GOOGLE_TTS_API_KEY", "")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GOOGLE_TTS_API_KEY 未配置")
+
+    clean_text = req.text
+    # 先用 ASCII 码点直接删除 ⟪(U+27EA) ⟫(U+27EB) ⧸(U+29F8)
+    clean_text = req.text.replace('\u27ea', '').replace('\u27eb', '').replace('\u29f8', '')
+    clean_text = re.sub(r'⟪[^⟫]*⟫', '', clean_text)
+    # 去掉参考书目及其后所有内容
+    clean_text = re.sub(r'(参考书目|References|書目).*$', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
+    # 去掉 HTML 标签（含 <sup>）
+    clean_text = re.sub(r'<[^>]+>', '', clean_text)
+    # 去掉 Markdown 标题、分割线、粗体、斜体、代码
+    clean_text = re.sub(r'#{1,6}\s', '', clean_text)
+    clean_text = re.sub(r'^[-*_]{3,}\s*$', '', clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)
+    clean_text = re.sub(r'\*(.*?)\*', r'\1', clean_text)
+    clean_text = re.sub(r'`{1,3}[^`]*`{1,3}', '', clean_text)
+    # 去掉引用编号 [1] [2]
+    clean_text = re.sub(r'\[\d+\]', '', clean_text)
+    # 明确删除职事信息答案里的引用特殊符号
+    clean_text = re.sub(r'[⟪⟫⧸「」『』〔〕【】《》〈〉︻︼﹁﹂｢｣]', '', clean_text)
+    # 只保留中文、英文、数字、常用标点和换行，其余全部删除
+    clean_text = ''.join(c for c in clean_text if _keep_char(c))
+    # 合并多余空行
+    clean_text = re.sub(r'\n{2,}', '\n', clean_text)
+    clean_text = clean_text.strip()
+    clean_text = _force_break_long_sentences(clean_text)
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="清洗后文本为空")
+
+    payload = {
+        "input": {"text": clean_text},
+        "voice": {
+            "languageCode": language_code,
+            "name": voice_name,
+        },
+        "audioConfig": {
+            "audioEncoding": "MP3",
+            "speakingRate": 0.9 if req.lang == "en" else 1.0,
+        },
+    }
+
+    async def audio_stream():
+        url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={api_key}"
+        async with httpx.AsyncClient(timeout=60.0, http2=False) as client:
+            print(f"[TTS sending to Google]: {repr(payload['input']['text'][:200])}")
+            resp = await client.post(url, json=payload)
+            if resp.status_code != 200:
+                print(f"[TTS Google error full]: {repr(payload['input']['text'])}")
+                raise HTTPException(status_code=500, detail=f"Google TTS 失败：{resp.text}")
+            data = resp.json()
+            audio_bytes = base64.b64decode(data["audioContent"])
+            # 分块 yield，模拟流式
+            chunk_size = 4096
+            for i in range(0, len(audio_bytes), chunk_size):
+                yield audio_bytes[i:i + chunk_size]
+
+    return StreamingResponse(audio_stream(), media_type="audio/mpeg")
 
 
 @router.post("/feedback")

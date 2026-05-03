@@ -528,21 +528,21 @@ def _format_paths_text(paths: list[dict]) -> str:
             via_name = str(via).strip()
             if len(rel_parts) == 2 and via_name:
                 lines.append(
-                    f"{from_name} ──{rel_parts[0]}──► {via_name} ──{rel_parts[1]}──► {to_name}（{hops}跳）"
+                    f"{from_name} ──{rel_parts[0]}──► {via_name} ──{rel_parts[1]}──► {to_name}"
                 )
             else:
-                lines.append(f"{from_name} ──{relation}──► {to_name}（{hops}跳）")
+                lines.append(f"{from_name} ──{relation}──► {to_name}")
         elif via and int(hops or 0) == 3:
             rel_parts = [x.strip() for x in str(relation).split("→")]
             via_parts = [x.strip() for x in str(via).split("→")]
             if len(rel_parts) == 3 and len(via_parts) == 2:
                 lines.append(
-                    f"{from_name} ──{rel_parts[0]}──► {via_parts[0]} ──{rel_parts[1]}──► {via_parts[1]} ──{rel_parts[2]}──► {to_name}（{hops}跳）"
+                    f"{from_name} ──{rel_parts[0]}──► {via_parts[0]} ──{rel_parts[1]}──► {via_parts[1]} ──{rel_parts[2]}──► {to_name}"
                 )
             else:
-                lines.append(f"{from_name} ──{relation}──► {to_name}（{hops}跳）")
+                lines.append(f"{from_name} ──{relation}──► {to_name}")
         else:
-            lines.append(f"{from_name} ──{relation}──► {to_name}（{hops}跳）")
+            lines.append(f"{from_name} ──{relation}──► {to_name}")
     return "\n".join(lines)
 
 

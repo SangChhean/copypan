@@ -740,22 +740,27 @@ function formatStep2Path(p) {
   const to = p?.to || "";
   const via = p?.via || "";
   const hops = p?.hops;
-  const hopsText = hops != null ? `（${hops}跳）` : "";
   if (via && Number(hops) === 2) {
     const relParts = String(relation).split("→").map((s) => s.trim()).filter(Boolean);
     const viaName = String(via).trim();
     if (relParts.length === 2 && viaName) {
-      return `${from} ──${relParts[0]}──► ${viaName} ──${relParts[1]}──► ${to}${hopsText}`;
+      return `${from} ──${relParts[0]}──► ${viaName} ──${relParts[1]}──► ${to}`;
     }
   }
   if (via && Number(hops) === 3) {
     const relParts = String(relation).split("→").map((s) => s.trim()).filter(Boolean);
     const viaParts = String(via).split("→").map((s) => s.trim()).filter(Boolean);
     if (relParts.length === 3 && viaParts.length === 2) {
-      return `${from} ──${relParts[0]}──► ${viaParts[0]} ──${relParts[1]}──► ${viaParts[1]} ──${relParts[2]}──► ${to}${hopsText}`;
+      return `${from} ──${relParts[0]}──► ${viaParts[0]} ──${relParts[1]}──► ${viaParts[1]} ──${relParts[2]}──► ${to}`;
     }
   }
-  return `${from} ──${relation}──► ${to}${hopsText}`;
+  return `${from} ──${relation}──► ${to}`;
+}
+
+/** 骨架 path_evidence 展示：去掉末尾「（N跳）」（兼容旧缓存 / 旧模型输出） */
+function formatPathEvidenceDisplay(pe) {
+  if (pe == null || pe === "") return "";
+  return String(pe).replace(/（\d+跳）\s*$/u, "").trim();
 }
 
 /** 与 pack_llm_usage_response 中 calls[].step 及 step_elapsed_ms 键一致 */
@@ -996,7 +1001,10 @@ const step12SummaryText = computed(() => {
           const sk = s2?.skeleton?.length
             ? s2.skeleton.map((t, i) => {
                 const step = typeof t === "object" ? t.step || t : t;
-                const pe = typeof t === "object" && t.path_evidence ? `\n   ↳ ${t.path_evidence}` : "";
+                const pe =
+                  typeof t === "object" && t.path_evidence
+                    ? `\n   ↳ ${formatPathEvidenceDisplay(t.path_evidence)}`
+                    : "";
                 const sa = typeof t === "object" && t.scripture_anchor ? `\n   📖 ${t.scripture_anchor}` : "";
                 return `${i + 1}. ${step}${pe}${sa}`;
               }).join("\n")
@@ -1665,7 +1673,7 @@ onMounted(() => {
                         <ol class="step2-ol">
                           <li v-for="(s, i) in queryResult.steps.step2.skeleton" :key="`s-${i}`">
                             {{ typeof s === 'object' ? s.step : s }}
-                            <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                            <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
                             <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                           </li>
                         </ol>
@@ -2039,7 +2047,7 @@ onMounted(() => {
                 <ol class="step2-ol">
                   <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">
                     {{ typeof s === 'object' ? s.step : s }}
-                    <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                    <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
                     <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                   </li>
                 </ol>
@@ -2229,7 +2237,7 @@ onMounted(() => {
                                   <ol class="step2-ol">
                                     <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">
                                       {{ typeof s === 'object' ? s.step : s }}
-                                      <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ s.path_evidence }}</div>
+                                      <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
                                       <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
                                     </li>
                                   </ol>

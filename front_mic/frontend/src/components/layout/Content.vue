@@ -324,8 +324,8 @@ onMounted(() => {
       <a-alert v-if="hide_info && store.index.value == '0'">
         <ul>
           <li>A类：经文、注解、生命读经、倪文集、李文集、其他</li>
-          <li>B类：A类、诗歌、节期</li>
-          <li>C类：同B类</li>
+          <li>B类：A类、诗歌、节期纲目</li>
+          <li>C类：主恢复真理的词典、清明上河图</li>
         </ul>
       </a-alert>
     </a-col>

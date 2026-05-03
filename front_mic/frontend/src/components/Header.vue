@@ -15,7 +15,7 @@ const items = [
   { key: "4", label: "李文集" },
   { key: "5", label: "其他" },
   { key: "6", label: "诗歌" },
-  { key: "7", label: "节期" },
+  { key: "7", label: "节期纲目" },
 ];
 
 const items_mo = [
@@ -25,7 +25,7 @@ const items_mo = [
   { key: "4", label: "李文集" },
   { key: "5", label: "其他" },
   { key: "6", label: "诗歌" },
-  { key: "7", label: "节期" },
+  { key: "7", label: "节期纲目" },
   { key: "9", label: "工具箱" },
 ];
 

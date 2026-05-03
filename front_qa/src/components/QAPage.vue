@@ -156,21 +156,22 @@
                     👎
                   </button>
                 </div>
-                <!-- 第二行：语言切换 -->
-                <div v-if="msg.found" class="qa-lang-toggle">
-                  <button
-                    v-for="opt in langOptions"
-                    :key="opt.value"
-                    type="button"
-                    class="qa-lang-toggle-btn"
-                    :class="{ 'is-active': msg.currentLang === opt.value }"
-                    :disabled="msg.translating"
-                    @click="switchLang(msg, opt.value)"
-                  >
-                    <a-spin v-if="msg.translating && msg.currentLang !== opt.value" size="small" />
-                    <span v-else>{{ opt.label }}</span>
-                  </button>
-                  <!-- 朗读按钮，置右 -->
+                <!-- 第二行：语言切换 + 朗读（同排、视觉分离） -->
+                <div v-if="msg.found" class="qa-action-row2">
+                  <div class="qa-lang-toggle">
+                    <button
+                      v-for="opt in langOptions"
+                      :key="opt.value"
+                      type="button"
+                      class="qa-lang-toggle-btn"
+                      :class="{ 'is-active': msg.currentLang === opt.value }"
+                      :disabled="msg.translating"
+                      @click="switchLang(msg, opt.value)"
+                    >
+                      <a-spin v-if="msg.translating && msg.currentLang !== opt.value" size="small" />
+                      <span v-else>{{ opt.label }}</span>
+                    </button>
+                  </div>
                   <button
                     type="button"
                     class="qa-tts-btn"
@@ -179,8 +180,12 @@
                     :title="ttsState(msg) === 'playing' ? '暂停' : ttsState(msg) === 'paused' ? '继续朗读' : '朗读'"
                   >
                     <span v-if="ttsState(msg) === 'loading'">…</span>
-                    <span v-else-if="ttsState(msg) === 'playing'">⏸</span>
-                    <span v-else-if="ttsState(msg) === 'paused'">▶</span>
+                    <span v-else-if="ttsState(msg) === 'playing'">{{
+                      ttsProgress(msg) ? `⏸ ${ttsProgress(msg)}` : '⏸'
+                    }}</span>
+                    <span v-else-if="ttsState(msg) === 'paused'">{{
+                      ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
+                    }}</span>
                     <span v-else>🔊</span>
                   </button>
                 </div>
@@ -311,6 +316,296 @@ import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
 
+const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
+
+const BIBLE_BOOK_MAP = {
+  '创': '创世记',
+  '出': '出埃及记',
+  '利': '利未记',
+  '民': '民数记',
+  '申': '申命记',
+  '书': '约书亚记',
+  '士': '士师记',
+  '得': '路得记',
+  '撒上': '撒母耳记上',
+  '撒下': '撒母耳记下',
+  '王上': '列王纪上',
+  '王下': '列王纪下',
+  '代上': '历代志上',
+  '代下': '历代志下',
+  '拉': '以斯拉记',
+  '尼': '尼希米记',
+  '斯': '以斯帖记',
+  '伯': '约伯记',
+  '诗': '诗篇',
+  '箴': '箴言',
+  '传': '传道书',
+  '歌': '雅歌',
+  '赛': '以赛亚书',
+  '耶': '耶利米书',
+  '哀': '耶利米哀歌',
+  '结': '以西结书',
+  '但': '但以理书',
+  '何': '何西阿书',
+  '珥': '约珥书',
+  '摩': '阿摩司书',
+  '俄': '俄巴底亚书',
+  '拿': '约拿书',
+  '弥': '弥迦书',
+  '鸿': '那鸿书',
+  '哈': '哈巴谷书',
+  '番': '西番雅书',
+  '该': '哈该书',
+  '亚': '撒迦利亚书',
+  '玛': '玛拉基书',
+  '太': '马太福音',
+  '可': '马可福音',
+  '路': '路加福音',
+  '约': '约翰福音',
+  '徒': '使徒行传',
+  '罗': '罗马书',
+  '林前': '哥林多前书',
+  '林后': '哥林多后书',
+  '加': '加拉太书',
+  '弗': '以弗所书',
+  '腓': '腓立比书',
+  '西': '歌罗西书',
+  '帖前': '帖撒罗尼迦前书',
+  '帖后': '帖撒罗尼迦后书',
+  '提前': '提摩太前书',
+  '提后': '提摩太后书',
+  '多': '提多书',
+  '门': '腓利门书',
+  '来': '希伯来书',
+  '雅': '雅各书',
+  '彼前': '彼得前书',
+  '彼后': '彼得后书',
+  '约壹': '约翰一书',
+  '约贰': '约翰二书',
+  '约叁': '约翰三书',
+  '犹': '犹大书',
+  '启': '启示录',
+}
+
+const SIMPLIFIED_TO_STANDARD = {
+  '二一': '二十一',
+  '二二': '二十二',
+  '二三': '二十三',
+  '二四': '二十四',
+  '二五': '二十五',
+  '二六': '二十六',
+  '二七': '二十七',
+  '二八': '二十八',
+  '二九': '二十九',
+  '三一': '三十一',
+  '三二': '三十二',
+  '三三': '三十三',
+  '三四': '三十四',
+  '三五': '三十五',
+  '三六': '三十六',
+  '三七': '三十七',
+  '三八': '三十八',
+  '三九': '三十九',
+  '四一': '四十一',
+  '四二': '四十二',
+  '四三': '四十三',
+  '四四': '四十四',
+  '四五': '四十五',
+  '四六': '四十六',
+  '四七': '四十七',
+  '四八': '四十八',
+  '四九': '四十九',
+  '五一': '五十一',
+  '五二': '五十二',
+  '五三': '五十三',
+  '五四': '五十四',
+  '五五': '五十五',
+  '五六': '五十六',
+  '五七': '五十七',
+  '五八': '五十八',
+  '五九': '五十九',
+  '六一': '六十一',
+  '六二': '六十二',
+  '六三': '六十三',
+  '六四': '六十四',
+  '六五': '六十五',
+  '六六': '六十六',
+  '六七': '六十七',
+  '六八': '六十八',
+  '六九': '六十九',
+  '七一': '七十一',
+  '七二': '七十二',
+  '七三': '七十三',
+  '七四': '七十四',
+  '七五': '七十五',
+  '七六': '七十六',
+  '七七': '七十七',
+  '七八': '七十八',
+  '七九': '七十九',
+  '八一': '八十一',
+  '八二': '八十二',
+  '八三': '八十三',
+  '八四': '八十四',
+  '八五': '八十五',
+  '八六': '八十六',
+  '八七': '八十七',
+  '八八': '八十八',
+  '八九': '八十九',
+  '九一': '九十一',
+  '九二': '九十二',
+  '九三': '九十三',
+  '九四': '九十四',
+  '九五': '九十五',
+  '九六': '九十六',
+  '九七': '九十七',
+  '九八': '九十八',
+  '九九': '九十九',
+}
+
+let pollyReplacementMap = null
+async function loadPollyReplacementMap() {
+  if (pollyReplacementMap !== null) return pollyReplacementMap
+  try {
+    const res = await fetch('/polly_replacement_map.json')
+    pollyReplacementMap = res.ok ? await res.json() : {}
+  } catch {
+    pollyReplacementMap = {}
+  }
+  return pollyReplacementMap
+}
+
+function chineseToStandardReading(text) {
+  if (SIMPLIFIED_TO_STANDARD[text]) return SIMPLIFIED_TO_STANDARD[text]
+  if (/^\d+$/.test(text)) return String(Number(text))
+  return text
+}
+
+function expandBibleVerses(text) {
+  text = text.replace(/（[^）]*）|\([^)]*\)/g, '')
+  const bookPattern = Object.keys(BIBLE_BOOK_MAP)
+    .sort((a, b) => b.length - a.length)
+    .join('|')
+  const pattern = new RegExp(
+    `(${bookPattern})` +
+      `(?:([一二三四五六七八九十〇零]+)(\\d[\\d~\\-～,，；;]*)` +
+      '|(\\d+)章(\\d+)(?:节)?)',
+    'g'
+  )
+  return text.replace(pattern, (match, book, chCh, verse1, arCh, verse2) => {
+    const fullBook = BIBLE_BOOK_MAP[book] || book
+    if (chCh && verse1) {
+      const std = chineseToStandardReading(chCh)
+      const verseClean = verse1.replace(/[~\-～]/g, '至')
+      return `${fullBook}${std}章${verseClean}节`
+    }
+    if (arCh && verse2) return `${fullBook}${arCh}章${verse2}节`
+    return match
+  })
+}
+
+async function prepareTextForTTS(rawText, lang = 'zh') {
+  let text = rawText
+  // 1. 去掉参考书目及其后所有内容（简体、繁体、英文）
+  text = text.replace(/(参考书目|參考書目|References)[\s\S]*$/m, '')
+  // 2. 去掉 HTML 标签
+  text = text.replace(/<[^>]+>/g, '')
+  // 3. 去掉 ⟪...⟫ 原文引用块
+  text = text.replace(/\u27ea[^\u27eb]*\u27eb/g, '')
+  // 4. 去掉 Markdown 标题和分割线
+  text = text.replace(/^#{1,6}\s+/gm, '')
+  text = text.replace(/^[-*_]{3,}\s*$/gm, '')
+  // 5. 去掉粗体、斜体
+  text = text.replace(/\*\*(.*?)\*\*/g, '$1')
+  text = text.replace(/\*(.*?)\*/g, '$1')
+  // 6. 去掉引用编号上标（句末数字如 「...」1 或 。2）
+  text = text.replace(/([。！？」』])\d+/g, '$1')
+  text = text.replace(/^\d+\s*/gm, '')
+  // 7. 去掉行首孤立数字（如段落开头的 "1\n"）
+  text = text.replace(/^\d+$/gm, '')
+  // 8. 展开经节引用
+  text = expandBibleVerses(text)
+  // 9. 全角空格转句号
+  text = text.replace(/\u3000/g, '。')
+  // 10. 应用 Polly 替换规则
+  const replacementMap = await loadPollyReplacementMap()
+  const sortedKeys = Object.keys(replacementMap).sort((a, b) => b.length - a.length)
+  for (const key of sortedKeys) {
+    text = text.replaceAll(key, replacementMap[key])
+  }
+  // 中文停顿处理（仅简体和繁体）
+  if (lang !== 'en') {
+    text = text.replace(/——/g, '，')
+    text = text.replace(/：/g, '，')
+    text = text.replace(/；/g, '，')
+  }
+  // 11. 清理多余空行
+  text = text.replace(/\n{3,}/g, '\n\n').trim()
+  return text
+}
+
+function chunkTextForTTS(text, maxLen = 80) {
+  if (text.length <= maxLen) return [text]
+  const chunks = []
+  const paragraphs = text.split(/\n\n+/).filter((p) => p.trim())
+  for (const para of paragraphs) {
+    if (para.length <= maxLen) {
+      chunks.push(para.trim())
+      continue
+    }
+    const sentences = para.match(/[^。！？；\n]+[。！？；\n]*/g) || [para]
+    let cur = ''
+    for (const s of sentences) {
+      const t = s.trim()
+      if (!t) continue
+      if (cur.length + t.length <= maxLen) {
+        cur += t
+      } else {
+        if (cur) chunks.push(cur.trim())
+        if (t.length > maxLen) {
+          // 按空格截断，避免英文单词被切断
+          const words = t.split(' ')
+          let wordBuf = ''
+          for (const word of words) {
+            if ((wordBuf + ' ' + word).trim().length <= maxLen) {
+              wordBuf = wordBuf ? wordBuf + ' ' + word : word
+            } else {
+              if (wordBuf) chunks.push(wordBuf.trim())
+              wordBuf = word
+            }
+          }
+          if (wordBuf) chunks.push(wordBuf.trim())
+          cur = ''
+        } else {
+          cur = t
+        }
+      }
+    }
+    if (cur) chunks.push(cur.trim())
+  }
+  return chunks.filter((c) => c.length > 0)
+}
+
+/** 复制到剪贴板：同步清洗（不经 Polly JSON） */
+function stripAnswerPlain(text) {
+  if (!text) return ''
+  return text
+    .replace(/\u27ea[^\u27eb]*\u27eb/g, '')
+    .replace(/<sup[^>]*>.*?<\/sup>/gi, '')
+    .replace(/\[\d+\]/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/参考书目[\s\S]*$/m, '')
+    .replace(/References[\s\S]*$/mi, '')
+    .replace(/書目[\s\S]*$/m, '')
+    .replace(/[\u27ea\u27eb\u29f8]/g, '')
+    .replace(/【[^】]*】/g, '')
+    .replace(/\([a-zA-Z0-9\s,.-]+\)/g, '')
+    .trim()
+}
+
 const router = useRouter()
 const question = ref('')
 const textareaKey = ref(0)
@@ -400,136 +695,144 @@ function displaySources(msg) {
   return tr ? (tr.sources || []) : (msg.sources || [])
 }
 
-// 朗读相关
-const ttsAudio = ref(null)      // 当前 Audio 实例
-const ttsMsgId = ref(null)      // 正在朗读的消息 id
+// TTS（Polly Lambda）
+const ttsMsgId = ref(null)
+const ttsPlaying = ref(false)
+const ttsPaused = ref(false)
+const ttsAudioCtx = ref(null)
+const ttsActiveRequests = ref(new Set())
+const ttsDestroyed = ref(false)
+const ttsProgressPct = ref(0)
 
-function stripMarkdown(text) {
-  return text
-    .replace(/<sup[^>]*>.*?<\/sup>/gi, '')  // 去掉 <sup> 上标标签
-    .replace(/\[\d+\]/g, '')         // 去掉 [1] [2] 引用编号
-    .replace(/\*\*(.*?)\*\*/g, '$1') // 去掉 **bold**
-    .replace(/\*(.*?)\*/g, '$1')     // 去掉 *italic*
-    .replace(/#{1,6}\s/g, '')        // 去掉标题 #
-    .replace(/`{1,3}[^`]*`{1,3}/g, '') // 去掉代码块
-    .trim()
+function ttsProgress(msg) {
+  if (ttsMsgId.value !== msg.id) return ''
+  if (ttsProgressPct.value <= 0) return ''
+  return `${ttsProgressPct.value}%`
+}
+
+function ttsState(msg) {
+  if (ttsMsgId.value !== msg.id) return 'idle'
+  if (ttsPlaying.value && !ttsPaused.value) return 'playing'
+  if (ttsPaused.value) return 'paused'
+  return 'loading'
+}
+
+function stopTTS() {
+  ttsDestroyed.value = true
+  ttsActiveRequests.value.forEach((ctrl) => ctrl.abort())
+  ttsActiveRequests.value.clear()
+  if (ttsAudioCtx.value) {
+    ttsAudioCtx.value.close()
+    ttsAudioCtx.value = null
+  }
+  ttsPlaying.value = false
+  ttsPaused.value = false
+  ttsMsgId.value = null
+  ttsProgressPct.value = 0
 }
 
 async function toggleTTS(msg) {
-  // 如果当前消息正在播放，暂停/继续
   if (ttsMsgId.value === msg.id) {
-    if (ttsAudio.value && !ttsAudio.value.paused) {
-      ttsAudio.value.pause()
-      return
-    }
-    if (ttsAudio.value && ttsAudio.value.paused) {
-      ttsAudio.value.play()
+    if (ttsAudioCtx.value) {
+      if (ttsPaused.value) {
+        ttsAudioCtx.value.resume()
+        ttsPaused.value = false
+      } else {
+        ttsAudioCtx.value.suspend()
+        ttsPaused.value = true
+      }
       return
     }
   }
-  // 停止之前的播放
-  if (ttsAudio.value) {
-    ttsAudio.value.pause()
-    ttsAudio.value.src = ''
-    ttsAudio.value = null
-  }
+
+  stopTTS()
+  ttsDestroyed.value = false
   ttsMsgId.value = msg.id
   const currentMsgId = msg.id
 
-  // 取当前显示语言的纯文本
   const lang = msg.currentLang || 'zh'
-  let rawText
-  if (lang === 'zh') {
-    rawText = msg.answer || ''
-  } else if (lang === 'zh_tw') {
-    rawText = msg.translatedAnswers?.zh_tw?.answer || msg.answer || ''
-  } else {
-    rawText = msg.translatedAnswers?.en?.answer || msg.answer || ''
-  }
-  const plainText = stripMarkdown(rawText)
-  if (!plainText) return
+  let rawText = ''
+  if (lang === 'en') rawText = msg.translatedAnswers?.en?.answer || msg.answer || ''
+  else rawText = msg.answer || '' // 简体和繁体都读简体原文
+  console.log('[TTS] msg.id:', msg.id, 'currentLang:', msg.currentLang, 'answer前20:', (msg.answer || '').substring(0, 20), 'zh_tw:', msg.translatedAnswers?.zh_tw?.answer?.substring(0, 20))
 
-  // 分句：按句号/问号/感叹号切分，保留标点，过滤空句
-  const sentences = plainText
-    .split(/(?<=[。！？!?\.]{1})\s*/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0)
-  if (sentences.length === 0) return
-
-  const token = localStorage.getItem('qa_token') || ''
-
-  async function fetchSentenceAudio(sentence) {
-    const response = await fetch('/api/qa/tts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ text: sentence, lang }),
-    })
-    if (!response.ok) throw new Error('TTS 请求失败')
-    const chunks = []
-    const reader = response.body.getReader()
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-    }
-    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0)
-    const merged = new Uint8Array(totalLength)
-    let offset = 0
-    for (const c of chunks) { merged.set(c, offset); offset += c.length }
-    const blob = new Blob([merged], { type: 'audio/ogg; codecs=opus' })
-    return URL.createObjectURL(blob)
+  const plainText = await prepareTextForTTS(rawText, lang)
+  if (!plainText || ttsMsgId.value !== currentMsgId) {
+    if (ttsMsgId.value === currentMsgId) ttsMsgId.value = null
+    return
   }
 
-  // 串行播放所有句子
-  try {
-    for (let i = 0; i < sentences.length; i++) {
-      // 检查是否已被停止（用户点了新对话或切换消息）
-      if (ttsMsgId.value !== currentMsgId) break
-      const url = await fetchSentenceAudio(sentences[i])
-      if (ttsMsgId.value !== currentMsgId) {
-        URL.revokeObjectURL(url)
-        break
-      }
-      await new Promise((resolve, reject) => {
-        const audio = new Audio(url)
-        ttsAudio.value = audio
-        audio.onended = () => {
-          URL.revokeObjectURL(url)
-          ttsAudio.value = null
-          resolve()
-        }
-        audio.onerror = () => {
-          URL.revokeObjectURL(url)
-          ttsAudio.value = null
-          reject(new Error('音频播放失败'))
-        }
-        audio.play().catch(reject)
-      })
+  const chunks = chunkTextForTTS(plainText, lang === 'en' ? 400 : 80)
+  if (!chunks.length) {
+    if (ttsMsgId.value === currentMsgId) ttsMsgId.value = null
+    return
+  }
+
+  const ctx = new AudioContext()
+  ttsAudioCtx.value = ctx
+  ttsPlaying.value = true
+
+  const audioQueue = new Array(chunks.length).fill(null)
+  let playIndex = 0
+
+  async function fetchChunk(i) {
+    if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
+    const voice = lang === 'en' ? 'Joanna' : 'Zhiyu'
+    const params = new URLSearchParams({ text: chunks[i], voice })
+    const ctrl = new AbortController()
+    ttsActiveRequests.value.add(ctrl)
+    const timeoutId = setTimeout(() => ctrl.abort(), 30000)
+    try {
+      const res = await fetch(`${POLLY_API}/?${params}`, { signal: ctrl.signal })
+      clearTimeout(timeoutId)
+      ttsActiveRequests.value.delete(ctrl)
+      if (!res.ok || ttsDestroyed.value) return
+      const buf = await res.arrayBuffer()
+      if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
+      audioQueue[i] = await ctx.decodeAudioData(buf)
+      tryPlay()
+    } catch {
+      clearTimeout(timeoutId)
+      ttsActiveRequests.value.delete(ctrl)
     }
-  } catch (e) {
-    // 播放出错，静默处理
-  } finally {
-    if (ttsMsgId.value === currentMsgId) {
+  }
+
+  let isPlayingNow = false
+
+  function tryPlay() {
+    if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
+    if (isPlayingNow) return
+    if (playIndex >= chunks.length) {
+      ttsPlaying.value = false
       ttsMsgId.value = null
-      ttsAudio.value = null
+      ttsProgressPct.value = 0
+      return
     }
+    if (!audioQueue[playIndex]) return
+    isPlayingNow = true
+    const source = ctx.createBufferSource()
+    source.buffer = audioQueue[playIndex]
+    source.connect(ctx.destination)
+    source.onended = () => {
+      isPlayingNow = false
+      ttsProgressPct.value = Math.round(((playIndex + 1) / chunks.length) * 100)
+      if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
+      playIndex++
+      tryPlay()
+    }
+    source.start()
   }
-}
 
-// 计算当前消息的朗读状态
-function ttsState(msg) {
-  if (ttsMsgId.value !== msg.id) return 'idle'
-  if (!ttsAudio.value) return 'loading'
-  if (ttsAudio.value.paused) return 'paused'
-  return 'playing'
+  fetchChunk(0).then(() => tryPlay())
+  for (let i = 1; i < chunks.length; i++) {
+    setTimeout(() => fetchChunk(i), 100 * i)
+  }
 }
 
 /** 答案下方语言切换。zh / 已缓存：直接切；未缓存：调用 /api/qa/translate（暂未实现，501 仅 console）。 */
 async function switchLang(msg, lang) {
   if (!msg || msg.currentLang === lang) return
+  stopTTS()
   if (lang === 'zh') {
     msg.currentLang = 'zh'
     return
@@ -1025,7 +1328,7 @@ async function copyAnswer(msg) {
   try {
     const rawAnswer = displayAnswer(msg)
     const srcs = displaySources(msg)
-    const cleanAnswer = stripMarkdown(rawAnswer || '')
+    const cleanAnswer = stripAnswerPlain(rawAnswer || '')
     const sourcesHeader = msg.currentLang === 'en' ? 'References' : '【引用书目】'
     const sourcesText = srcs && srcs.length
       ? `\n\n${sourcesHeader}\n` + srcs.join('\n')
@@ -1343,7 +1646,13 @@ async function scrollToMessageTop(messageId) {
   gap: 6px;
 }
 
-/* 答案下方简/繁/EN 切换（第二行） */
+/* 答案下方：语言组 + 朗读按钮（同排、分组分离） */
+.qa-action-row2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
 .qa-lang-toggle {
   display: flex;
   align-items: center;
@@ -1355,7 +1664,7 @@ async function scrollToMessageTop(messageId) {
   align-self: flex-start;
 }
 .qa-tts-btn {
-  margin-left: auto;
+  flex-shrink: 0;
   background: none;
   border: 1px solid #d9d9d9;
   border-radius: 16px;

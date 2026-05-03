@@ -308,6 +308,12 @@ function updateIsMobileView() {
   isMobileView.value = window.innerWidth <= 768;
 }
 
+/** 骨架 path_evidence 展示：去掉末尾「（N跳）」（兼容旧缓存 / 旧模型输出） */
+function formatPathEvidenceDisplay(pe) {
+  if (pe == null || pe === "") return "";
+  return String(pe).replace(/（\d+跳）\s*$/u, "").trim();
+}
+
 function resetAiConceptState() {
   conceptStage.value = "idle";
   conceptCandidates.value = null;
@@ -1634,7 +1640,8 @@ const onAISearch = async () => {
   <div class="info" v-if="showInfo == 1">
     <div class="cat">
       <div>A类：经文、注解、生命读经、倪文集、李文集、其他</div>
-      <div>B类：A类、诗歌、节期</div>
+      <div>B类：A类、诗歌、节期纲目</div>
+      <div>C类：主恢复真理的词典、清明上河图</div>
     </div>
     <div class="paoma">
       <a-carousel autoplay>
@@ -1757,7 +1764,7 @@ const onAISearch = async () => {
         <div>🦴 骨架：</div>
         <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">
           {{ typeof item === 'object' ? item.step : item }}
-          <span v-if="item && typeof item === 'object' && item.path_evidence" class="kg-skeleton-evidence">↳ {{ item.path_evidence }}</span>
+          <span v-if="item && typeof item === 'object' && item.path_evidence" class="kg-skeleton-evidence">↳ {{ formatPathEvidenceDisplay(item.path_evidence) }}</span>
           <span v-if="item && typeof item === 'object' && item.scripture_anchor" class="kg-skeleton-evidence">📖 {{ item.scripture_anchor }}</span>
         </div>
       </div>

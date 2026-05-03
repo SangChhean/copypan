@@ -92,7 +92,7 @@ onMounted(() => {
         <a-menu-item key="3">李文集</a-menu-item>
         <a-menu-item key="7">其他</a-menu-item>
         <a-menu-item key="10">诗歌</a-menu-item>
-        <a-menu-item key="5">节期</a-menu-item>
+        <a-menu-item key="5">节期纲目</a-menu-item>
         <a-menu-item key="9" style="background-color: var(--color-neutral-4)" @click="jump('tools')" disabled>工具</a-menu-item>
       </a-menu>
     </a-col>
