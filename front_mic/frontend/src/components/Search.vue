@@ -1502,7 +1502,7 @@ const onAISearch = async () => {
               <span>负担说明60字（选填）</span>
               <a-textarea
                 v-model:value="aiForm.burdenDescription"
-                :rows="4"
+                :auto-size="{ minRows: 2, maxRows: 8 }"
                 placeholder="约60字概括纲目摘要，说明纲目负担"
                 :disabled="loadingAI"
               />

@@ -1267,7 +1267,7 @@ onMounted(() => {
                 <a-textarea
                   v-model:value="queryText"
                   placeholder="输入查询问题..."
-                  :rows="4"
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
                   class="query-input"
                 />
                 <a-collapse class="param-collapse outline-collapse" :default-active-key="['outline']">
@@ -1303,7 +1303,7 @@ onMounted(() => {
                           <span class="param-label">负担说明（选填）</span>
                           <a-textarea
                             v-model:value="burdenDescription"
-                            :rows="4"
+                            :auto-size="{ minRows: 2, maxRows: 8 }"
                             placeholder="约60字概括纲目摘要，说明纲目负担"
                           />
                         </div>
@@ -1324,7 +1324,7 @@ onMounted(() => {
                             <a-textarea
                               v-model:value="referenceExcerpt"
                               placeholder="有原稿直接生成负担说明，无原稿可生成三个负担说明以供选择"
-                              :rows="3"
+                              :auto-size="{ minRows: 2, maxRows: 6 }"
                               allow-clear
                               size="small"
                               class="param-control"
@@ -1361,7 +1361,7 @@ onMounted(() => {
                             <a-textarea
                               v-model:value="burdenDescription"
                               placeholder="在此输入或编辑负担说明，也可留空"
-                              :rows="4"
+                              :auto-size="{ minRows: 2, maxRows: 8 }"
                               allow-clear
                               size="small"
                               class="param-control"
@@ -1971,7 +1971,7 @@ onMounted(() => {
       <a-tab-pane key="prompt_preview" tab="Prompt 预览">
         <a-card class="tab-card">
           <div class="prompt-preview-input">
-            <a-textarea v-model:value="promptPreviewQuery" placeholder="输入查询问题..." :rows="3" class="query-input" />
+            <a-textarea v-model:value="promptPreviewQuery" placeholder="输入查询问题..." :auto-size="{ minRows: 2, maxRows: 6 }" class="query-input" />
             <p class="hint">
               纲目制作选项、检索与 LLM 参数均与「全流程查询」左侧共用。仅测 Step1 或 Step1+2 请用 Tab「Step1～2 测试」；本预览为完整 Step1～4。
             </p>
@@ -2105,7 +2105,7 @@ onMounted(() => {
                 <a-textarea
                   v-model:value="step12Query"
                   placeholder="输入查询问题…"
-                  :rows="4"
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
                   class="query-input"
                 />
                 <div class="step12-options">
