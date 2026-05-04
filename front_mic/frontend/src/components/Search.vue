@@ -1410,11 +1410,11 @@ const onAISearch = async () => {
           <div class="ai-meta-grid">
             <label class="ai-meta-field full">
               <span>纲目主题*（必填）</span>
-              <input
-                type="text"
-                v-model="aiForm.outlineTopic"
+              <a-textarea
+                v-model:value="aiForm.outlineTopic"
                 :disabled="loadingAI"
                 placeholder="纲目的题目"
+                :auto-size="{ minRows: 1, maxRows: 4 }"
               />
             </label>
             <div class="ai-meta-field full">
@@ -1483,13 +1483,13 @@ const onAISearch = async () => {
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
                 <span>生成的负担说明</span>
-                <textarea
+                <a-textarea
                   class="ai-burden-textarea"
-                  rows="4"
-                  v-model="aiForm.burdenDescription"
+                  v-model:value="aiForm.burdenDescription"
                   :disabled="loadingAI || burdenPhaseReady"
                   placeholder="在此输入或编辑负担说明，也可留空"
-                ></textarea>
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
+                />
               </label>
               <div class="ai-burden-btn-wrap">
                 <a-button block :disabled="loadingAI || burdenPhaseReady" @click="confirmBurdenPhase">确认，开始推荐重点</a-button>
