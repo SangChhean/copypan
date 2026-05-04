@@ -149,6 +149,12 @@ const translating = ref(false);
 /** Step5 纲目展示 Tab：zh | en | tw */
 const outlineResultTab = ref("zh");
 
+/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；4.0 全索引 */
+const aiMode = ref("3.0"); // "2.0" | "3.0" | "4.0"
+function setAiMode(m) {
+  aiMode.value = m;
+}
+
 function buildQueryParams() {
   return {
     ...params.value,
@@ -344,6 +350,7 @@ function onManualConceptInputKeydownKg(layer, event) {
 }
 
 const queryPrimaryDisabled = computed(() => {
+  if (aiMode.value === "2.0") return false;
   if (!burdenPhaseReady.value) return true;
   if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
   if (conceptStage.value === "candidates_ready") return selectedRevelation.value.length === 0;
@@ -351,6 +358,7 @@ const queryPrimaryDisabled = computed(() => {
 });
 
 const queryPrimaryLabel = computed(() => {
+  if (aiMode.value === "2.0") return "生成纲目";
   if (conceptMode.value === "manual") return "生成纲目";
   if (conceptStage.value === "candidates_ready") return "生成纲目";
   return "开始查询";
@@ -573,7 +581,7 @@ async function runFullQuery() {
     message.warning("请输入查询问题");
     return;
   }
-  if (!burdenPhaseReady.value) {
+  if (aiMode.value !== "2.0" && !burdenPhaseReady.value) {
     message.warning("请先完成负担说明阶段（跳过或确认）");
     return;
   }
@@ -607,7 +615,11 @@ async function runFullQuery() {
       qParams.preset_experience = [...selectedExperience.value];
       qParams.preset_practice = [...selectedPractice.value];
     }
-    const res = await axios.post(`${apiBase}/api/kg_rag/query`, { query: q, params: qParams }, { headers });
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/query`,
+      { query: q, params: qParams, mode: aiMode.value },
+      { headers }
+    );
     queryResult.value = res.data;
     if (compareOpus.value) {
       const step4Prompt = String(res.data?.steps?.step4?.prompt ?? "").trim();
@@ -1264,6 +1276,20 @@ onMounted(() => {
                   <a-collapse-panel key="outline" header="纲目制作选项">
                     <a-row :gutter="[12, 12]">
                       <a-col :span="24">
+                        <div class="ai-mode-switcher">
+                          <button
+                            v-for="m in ['2.0', '3.0', '4.0']"
+                            :key="m"
+                            type="button"
+                            :class="['ai-mode-btn', { active: aiMode === m }]"
+                            :disabled="queryLoading"
+                            @click="setAiMode(m)"
+                          >
+                            PanAI {{ m }}
+                          </button>
+                        </div>
+                      </a-col>
+                      <a-col :span="24">
                         <div class="param-item">
                           <span class="param-label">面对对象</span>
                           <a-input
@@ -1286,7 +1312,17 @@ onMounted(() => {
                           </a-radio-group>
                         </div>
                       </a-col>
-                      <a-col v-if="showBurdenPhasePanel" :span="24">
+                      <a-col v-if="aiMode === '2.0'" :span="24">
+                        <div class="param-item param-item-stack" style="margin-top: 12px">
+                          <span class="param-label">负担说明（选填）</span>
+                          <a-textarea
+                            v-model:value="burdenDescription"
+                            :rows="4"
+                            placeholder="约60字概括纲目摘要，说明纲目负担"
+                          />
+                        </div>
+                      </a-col>
+                      <a-col v-if="showBurdenPhasePanel && aiMode !== '2.0'" :span="24">
                         <div class="burden-phase-block param-item-stack">
                           <div class="burden-phase-head">
                             <span class="burden-phase-title">负担说明的生成</span>
@@ -1406,8 +1442,13 @@ onMounted(() => {
                     </a-row>
                   </a-collapse-panel>
                 </a-collapse>
-                <div v-if="outlineMetaValid && !burdenPhaseReady" class="burden-phase-hint">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
-                <template v-if="outlineMetaValid && burdenPhaseReady">
+                <div
+                  v-if="outlineMetaValid && !burdenPhaseReady && aiMode !== '2.0'"
+                  class="burden-phase-hint"
+                >
+                  请先完成负担说明步骤（跳过负担说明，或填写后点确认）
+                </div>
+                <template v-if="outlineMetaValid && burdenPhaseReady && aiMode !== '2.0'">
                   <div class="concept-mode-toggle">
                     <a-button
                       size="small"
@@ -1521,7 +1562,7 @@ onMounted(() => {
                 </template>
                 <div class="query-btn-row">
                   <a-button
-                    v-if="conceptMode === 'ai'"
+                    v-if="aiMode !== '2.0' && conceptMode === 'ai'"
                     :loading="conceptLoading"
                     :disabled="!burdenPhaseReady"
                     @click="extractConcepts"
@@ -1531,7 +1572,7 @@ onMounted(() => {
                     :loading="queryLoading"
                     class="query-btn"
                     @click="runFullQuery"
-                    :disabled="queryPrimaryDisabled"
+                    :disabled="queryLoading || queryPrimaryDisabled"
                   >
                     {{ queryPrimaryLabel }}
                   </a-button>
@@ -2333,6 +2374,40 @@ onMounted(() => {
 </template>
 
 <style scoped lang="less">
+/* PanAI 版本切换（与 Search.vue 一致） */
+.ai-mode-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.ai-mode-btn {
+  padding: 5px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #b39ddb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-style: italic;
+  color: #7c3aed;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+}
+.ai-mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: transparent;
+}
+.ai-mode-btn:hover:not(.active):not(:disabled) {
+  background: #f3f0ff;
+  border-color: #7c3aed;
+}
+.ai-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 页面标题区：与 ToolsHeader 风格一致，标题 + 健康指示器一行 */
 .kg-rag-header {
   padding: 10px 20px;

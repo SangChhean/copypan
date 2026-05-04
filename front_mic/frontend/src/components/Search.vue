@@ -140,6 +140,8 @@ const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
+/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；4.0 全索引 */
+const aiMode = ref("3.0"); // "2.0" | "3.0" | "4.0"
 const KG_RAG_HISTORY_KEY = "kg_rag_history";
 const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 const aiForm = reactive({
@@ -522,9 +524,14 @@ async function extractConcepts() {
 }
 
 const outlineGenerateDisabled = computed(() => {
+  if (aiMode.value === "2.0") return false;
   if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
   return selectedRevelation.value.length === 0;
 });
+
+function setAiMode(m) {
+  aiMode.value = m;
+}
 
 
 function resetConceptState() {
@@ -1248,7 +1255,7 @@ const onAISearch = async () => {
     tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
-  if (!burdenPhaseReady.value) {
+  if (aiMode.value !== "2.0" && !burdenPhaseReady.value) {
     tip("请先完成负担说明阶段（跳过或确认）");
     return;
   }
@@ -1286,7 +1293,7 @@ const onAISearch = async () => {
     }
     const res = await axios.post(
       "/api/kg_rag/query",
-      { query: question, params: qParams },
+      { query: question, params: qParams, mode: aiMode.value },
       { timeout: 300000 }
     );
     const data = res.data;
@@ -1388,7 +1395,18 @@ const onAISearch = async () => {
       </div>
       <transition name="ai-meta-panel">
         <div v-if="aiPanelVisible" class="ai-meta-panel">
-          <span class="ai-panel-brand">Pan AI 3.0</span>
+          <div class="ai-mode-switcher">
+            <button
+              v-for="m in ['2.0', '3.0', '4.0']"
+              :key="m"
+              type="button"
+              :class="['ai-mode-btn', { active: aiMode === m }]"
+              :disabled="loadingAI"
+              @click="setAiMode(m)"
+            >
+              PanAI {{ m }}
+            </button>
+          </div>
           <div class="ai-meta-grid">
             <label class="ai-meta-field">
               <span>纲目主题*（必填）</span>
@@ -1423,7 +1441,7 @@ const onAISearch = async () => {
                 </button>
               </div>
             </div>
-            <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
+            <div v-if="showBurdenPhasePanel && aiMode !== '2.0'" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
                 <span class="ai-burden-phase-title">负担说明的生成</span>
                 <a
@@ -1488,6 +1506,17 @@ const onAISearch = async () => {
             </div>
           </div>
             <div class="ai-panel-actions">
+            <!-- 2.0 模式：简单负担说明输入框 -->
+            <div v-if="aiMode === '2.0'" class="ai-meta-field full">
+              <span>负担说明60字（选填）</span>
+              <a-textarea
+                v-model:value="aiForm.burdenDescription"
+                :rows="4"
+                placeholder="约60字概括纲目摘要，说明纲目负担"
+                :disabled="loadingAI"
+              />
+            </div>
+            <template v-if="aiMode !== '2.0'">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
             <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（跳过负担说明，或填写后点确认）</div>
             <div v-else class="concept-mode-toggle">
@@ -1603,6 +1632,7 @@ const onAISearch = async () => {
                 />
               </div>
             </div>
+            </template>
             <div class="ai-panel-cta">
               <div class="ai-depth-inline">
                 <span>模式选择</span>
@@ -1614,7 +1644,7 @@ const onAISearch = async () => {
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
-                v-if="conceptMode === 'ai' && conceptStage === 'idle'"
+                v-if="aiMode !== '2.0' && conceptMode === 'ai' && conceptStage === 'idle'"
                 :loading="conceptLoading"
                 :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
                 @click="extractConcepts"
@@ -1622,10 +1652,18 @@ const onAISearch = async () => {
                 {{ conceptLoading ? "推荐中…" : "推荐重点" }}
               </a-button>
               <a-button
-                v-else-if="conceptMode === 'manual' || (conceptMode === 'ai' && conceptStage === 'candidates_ready')"
+                v-else-if="
+                  aiMode === '2.0' ||
+                  conceptMode === 'manual' ||
+                  (conceptMode === 'ai' && conceptStage === 'candidates_ready')
+                "
                 type="primary"
                 :loading="loadingAI"
-                :disabled="loadingAI || !burdenPhaseReady || outlineGenerateDisabled"
+                :disabled="
+                  loadingAI ||
+                  (aiMode !== '2.0' && !burdenPhaseReady) ||
+                  outlineGenerateDisabled
+                "
                 @click="onAISearch"
               >
                 {{ loadingAI ? "生成中…" : "生成纲目" }}
@@ -2030,19 +2068,37 @@ const onAISearch = async () => {
   align-items: center;
 }
 
-.ai-panel-brand {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 1px;
+.ai-mode-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.ai-mode-btn {
+  padding: 5px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #b39ddb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
   font-style: italic;
-  background: linear-gradient(135deg, #5b6af0 0%, #a855f7 50%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
-  pointer-events: none;
+  color: #7c3aed;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+}
+.ai-mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: transparent;
+}
+.ai-mode-btn:hover:not(.active):not(:disabled) {
+  background: #f3f0ff;
+  border-color: #7c3aed;
+}
+.ai-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ai-meta-panel {

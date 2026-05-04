@@ -59,6 +59,7 @@ class QueryRequest(BaseModel):
 
     query: str = Field(..., min_length=1, max_length=500, description="查询问题")
     params: Optional[dict] = Field(default=None, description="覆盖默认参数")
+    mode: str = "3.0"
 
 
 class CacheTranslationRequest(BaseModel):
@@ -96,7 +97,7 @@ async def full_query(req: QueryRequest):
     """模块1：全流程查询 Step 1→5。"""
     service = get_service()
     try:
-        result = await service.full_query(req.query, req.params or {})
+        result = await service.full_query(req.query, req.params or {}, mode=req.mode)
         return result
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -270,6 +271,7 @@ class ExtractConceptsRequest(BaseModel):
     outline_nature: str = Field(default="一般性", description="纲目性质")
     burden_description: str = Field(default="", description="负担说明")
     audience: str = Field(default="", description="面对对象")
+    mode: str = "3.0"
 
 
 @router.post("/extract_concepts", dependencies=[Depends(test_token)])
@@ -277,13 +279,17 @@ async def extract_concepts(req: ExtractConceptsRequest):
     """独立执行 Step 1 概念抽取，返回 revelation / experience / practice 候选列表，供人工筛选。"""
     service = get_service()
     try:
-        result = await service.full_query(req.query, {
-            "burden_description": req.burden_description,
-            "audience": req.audience,
-            "outline_nature": req.outline_nature,
-            "stop_after_step1": True,
-            "skip_cache": True,
-        })
+        result = await service.full_query(
+            req.query,
+            {
+                "burden_description": req.burden_description,
+                "audience": req.audience,
+                "outline_nature": req.outline_nature,
+                "stop_after_step1": True,
+                "skip_cache": True,
+            },
+            mode=req.mode,
+        )
         s1 = (result.get("steps") or {}).get("step1") or {}
         logger.info(
             "[KG-RAG DEBUG] extract_concepts step1 summary: revelation=%s experience=%s practice=%s reasoning_len=%s raw_response_len=%s error=%s",

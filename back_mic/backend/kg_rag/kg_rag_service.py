@@ -95,6 +95,13 @@ DEFAULT_PARAMS = {
 
 CACHE_TTL = 604800  # 7 天
 
+_INDICES_BASE = ",".join([
+    "kg-rag_life", "kg-rag_cwwl", "kg-rag_cwwn",
+    "kg-rag_others", "kg-rag_bib", "kg-rag_map_note",
+    "kg-rag_7feasts",
+])
+_INDICES_FULL = _INDICES_BASE + ",kg-rag_pano,kg-rag_dictionary"
+
 
 def _make_cache_key(
     query: str,
@@ -102,12 +109,13 @@ def _make_cache_key(
     burden_description: str,
     audience: str,
     depth: str,
+    mode: str,
     revelation_joined: str = "",
     experience_joined: str = "",
     practice_joined: str = "",
 ) -> str:
-    """query + outline_nature + burden_description + audience + depth + revelation_joined + experience_joined + practice_joined 拼接 SHA256，返回 Redis key。"""
-    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{revelation_joined}|{experience_joined}|{practice_joined}"
+    """query + outline_nature + burden_description + audience + depth + mode + revelation_joined + experience_joined + practice_joined 拼接 SHA256，返回 Redis key。"""
+    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}"
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"kg_rag:cache:{h}"
 
@@ -817,12 +825,7 @@ class KgRagService:
             self.redis = redis_client
         except Exception:
             self.redis = None
-        _DEFAULT_INDICES = ",".join([
-            "kg-rag_life", "kg-rag_cwwl", "kg-rag_cwwn",
-            "kg-rag_others", "kg-rag_bib", "kg-rag_map_note",
-            "kg-rag_7feasts", "kg-rag_pano", "kg-rag_dictionary",
-        ])
-        self.index = os.environ.get("KG_RAG_ES_INDEX", _DEFAULT_INDICES)
+        self.index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_FULL)
 
     async def _run_step2(
         self,
@@ -928,7 +931,7 @@ class KgRagService:
             "inner_reason": None,
         }
 
-    async def full_query(self, query: str, params: dict | None = None) -> dict:
+    async def full_query(self, query: str, params: dict | None = None, mode: str = "3.0") -> dict:
         """全流程：Step 1→2→3→4→5，返回最终回答与每步中间结果。"""
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}, "answer": None}
@@ -949,11 +952,20 @@ class KgRagService:
         outline_nature = str(p.get("outline_nature", "一般性") or "一般性").strip() or "一般性"
         burden_description = str(p.get("burden_description") or "").strip()
         audience = str(p.get("audience") or "").strip()
+
+        # ── Mode 选择（2.0 / 3.0 / 4.0）──
+        mode = str(mode or "3.0").strip()
+        if mode == "4.0":
+            active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_FULL)
+        else:
+            active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_BASE)
+
         result["params_used"] = {
             "outline_nature": outline_nature,
             "burden_description": burden_description,
             "audience": audience,
             "depth": depth,
+            "mode": mode,
         }
 
         # ── Redis 缓存读取 ──
@@ -981,6 +993,7 @@ class KgRagService:
             burden_description,
             audience,
             depth,
+            mode,
             revelation_joined,
             experience_joined,
             practice_joined,
@@ -1010,156 +1023,185 @@ class KgRagService:
             match_firewall(query, _call_kg_rag_llm, llm_calls=llm_calls)
         )
 
-        # Step 1: 概念抽取（skip_skeleton_route 时与 Step2 一并跳过，不走路3 骨架时无需图谱概念）
+        # ── 2.0 模式：跳过 Step1 / Step2 / 路3，直接进入检索 ──
+        skip_kg = (mode == "2.0")
+
+        # ── 2.0 模式：放大检索参数（无路3补偿）──
+        if skip_kg:
+            if depth == "deep":
+                p["bm25_top_k"] = 120
+                p["rerank_top_n"] = 100
+            else:
+                p["bm25_top_k"] = 60
+                p["rerank_top_n"] = 60
+
         concepts = []
         revelation: list[str] = []
         experience: list[str] = []
         practice: list[str] = []
         reasoning = ""
-        step1_start = asyncio.get_event_loop().time()
-        step1_elapsed_ms = 0.0
-        raw1 = ""
-        u1: dict[str, int] | None = None
-        m1 = _resolve_step1_model(p)
 
-        if (
-            isinstance(preset_revelation, list)
-            and isinstance(preset_experience, list)
-            and isinstance(preset_practice, list)
-            and preset_revelation
-        ):
-            revelation = [str(c).strip() for c in preset_revelation if str(c).strip()]
-            experience = [str(c).strip() for c in preset_experience if str(c).strip()]
-            practice = [str(c).strip() for c in preset_practice if str(c).strip()]
-            concepts = list(dict.fromkeys(revelation + experience + practice))
-            reasoning = "（人工指定概念，跳过 Step 1）"
-            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-            result["steps"]["step1"] = {
-                "concepts": concepts,
-                "revelation": revelation,
-                "experience": experience,
-                "practice": practice,
-                "reasoning": reasoning,
-                "elapsed_ms": round(step1_elapsed_ms, 1),
-                "raw_response": None,
-                "preset": True,
-            }
-            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-            logger.info(
-                "[KG-RAG] Step 1 skipped: using preset revelation=%s experience=%s practice=%s",
-                revelation,
-                experience,
-                practice,
-            )
-        elif p.get("skip_skeleton_route"):
-            logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
-            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-            result["steps"]["step1"] = {
-                "skipped": True,
-                "reason": "skip_skeleton_route",
-                "concepts": [],
-                "revelation": [],
-                "experience": [],
-                "practice": [],
-                "reasoning": "",
-                "elapsed_ms": round(step1_elapsed_ms, 1),
-                "raw_response": None,
-            }
-            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-        else:
-            try:
-                concept_names = self.neo4j.get_concept_names()
-                concept_list_text = "、".join(concept_names)
-                burden_line = (
-                    f"\n信息负担说明：{burden_description}"
-                    if (burden_description or "").strip()
-                    else ""
-                )
-                step1_prompt = STEP1_CONCEPT_EXTRACTION.format(
-                    query=query,
-                    outline_nature=outline_nature,
-                    burden_line=burden_line,
-                    concept_list=concept_list_text,
-                )
-                logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
-                step1_extract_start = asyncio.get_event_loop().time()
-                logger.info(
-                    f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
-                )
-                raw1, u1 = await _call_kg_rag_llm(
-                    step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
-                )
-                logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
-                if (m1 or "").strip().lower() == "gpt-5.4-thinking":
-                    logger.info(
-                        f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
-                        f"preview={(raw1 or '')[:300]}"
-                    )
-                revelation, experience, practice, reasoning = _parse_step1_layers(
-                    raw1, outline_nature=outline_nature
-                )
-                if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
-                    logger.info(
-                        "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
-                    )
-                    raw1_fallback, u1_fallback = await _call_kg_rag_llm(
-                        step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
-                    )
-                    r_fb, e_fb, p_fb, reason_fb = _parse_step1_layers(
-                        raw1_fallback, outline_nature=outline_nature
-                    )
-                    logger.info(
-                        f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
-                        f"preview={(raw1_fallback or '')[:300]}"
-                    )
-                    if r_fb or e_fb or p_fb:
-                        raw1, u1 = raw1_fallback, u1_fallback
-                        revelation, experience, practice, reasoning = r_fb, e_fb, p_fb, reason_fb
-                        m1 = "gpt-5.4"
-                        logger.info(
-                            f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
-                        )
-                step1_extract_elapsed_ms = (asyncio.get_event_loop().time() - step1_extract_start) * 1000
-                logger.info(
-                    f"[KG-RAG DEBUG] Step1 extraction_parse elapsed_ms={step1_extract_elapsed_ms:.1f}"
-                )
-                logger.info(
-                    f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, experience(校验前): {experience}, "
-                    f"practice(校验前): {practice}, reasoning: {reasoning[:200] if reasoning else ''}"
-                )
-                concepts = []
-                seen = set()
-                for c in revelation + experience + practice:
-                    if c not in seen:
-                        seen.add(c)
-                        concepts.append(c)
-            except Exception as e:
-                result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
-            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-            if "step1" not in result["steps"]:
-                s1: dict[str, Any] = {
+        if not skip_kg:
+            # Step 1: 概念抽取（skip_skeleton_route 时与 Step2 一并跳过，不走路3 骨架时无需图谱概念）
+            step1_start = asyncio.get_event_loop().time()
+            step1_elapsed_ms = 0.0
+            raw1 = ""
+            u1: dict[str, int] | None = None
+            m1 = _resolve_step1_model(p)
+
+            if (
+                isinstance(preset_revelation, list)
+                and isinstance(preset_experience, list)
+                and isinstance(preset_practice, list)
+                and preset_revelation
+            ):
+                revelation = [str(c).strip() for c in preset_revelation if str(c).strip()]
+                experience = [str(c).strip() for c in preset_experience if str(c).strip()]
+                practice = [str(c).strip() for c in preset_practice if str(c).strip()]
+                concepts = list(dict.fromkeys(revelation + experience + practice))
+                reasoning = "（人工指定概念，跳过 Step 1）"
+                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+                result["steps"]["step1"] = {
                     "concepts": concepts,
                     "revelation": revelation,
                     "experience": experience,
                     "practice": practice,
                     "reasoning": reasoning,
                     "elapsed_ms": round(step1_elapsed_ms, 1),
-                    "raw_response": raw1,
+                    "raw_response": None,
+                    "preset": True,
                 }
-                sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
-                if sn1:
-                    s1["llm_usage"] = sn1
-                    logger.info(
-                        f"[KG-RAG LLM] step1 model={m1} billing={sn1['billing_model']} "
-                        f"in={sn1['input_tokens']} out={sn1['output_tokens']} cost_usd≈{sn1['cost_usd']}"
+                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+                logger.info(
+                    "[KG-RAG] Step 1 skipped: using preset revelation=%s experience=%s practice=%s",
+                    revelation,
+                    experience,
+                    practice,
+                )
+            elif p.get("skip_skeleton_route"):
+                logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
+                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+                result["steps"]["step1"] = {
+                    "skipped": True,
+                    "reason": "skip_skeleton_route",
+                    "concepts": [],
+                    "revelation": [],
+                    "experience": [],
+                    "practice": [],
+                    "reasoning": "",
+                    "elapsed_ms": round(step1_elapsed_ms, 1),
+                    "raw_response": None,
+                }
+                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+            else:
+                try:
+                    concept_names = self.neo4j.get_concept_names()
+                    concept_list_text = "、".join(concept_names)
+                    burden_line = (
+                        f"\n信息负担说明：{burden_description}"
+                        if (burden_description or "").strip()
+                        else ""
                     )
-                result["steps"]["step1"] = s1
-            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+                    step1_prompt = STEP1_CONCEPT_EXTRACTION.format(
+                        query=query,
+                        outline_nature=outline_nature,
+                        burden_line=burden_line,
+                        concept_list=concept_list_text,
+                    )
+                    logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
+                    step1_extract_start = asyncio.get_event_loop().time()
+                    logger.info(
+                        f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
+                    )
+                    raw1, u1 = await _call_kg_rag_llm(
+                        step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
+                    )
+                    logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
+                    if (m1 or "").strip().lower() == "gpt-5.4-thinking":
+                        logger.info(
+                            f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
+                            f"preview={(raw1 or '')[:300]}"
+                        )
+                    revelation, experience, practice, reasoning = _parse_step1_layers(
+                        raw1, outline_nature=outline_nature
+                    )
+                    if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
+                        logger.info(
+                            "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
+                        )
+                        raw1_fallback, u1_fallback = await _call_kg_rag_llm(
+                            step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
+                        )
+                        r_fb, e_fb, p_fb, reason_fb = _parse_step1_layers(
+                            raw1_fallback, outline_nature=outline_nature
+                        )
+                        logger.info(
+                            f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
+                            f"preview={(raw1_fallback or '')[:300]}"
+                        )
+                        if r_fb or e_fb or p_fb:
+                            raw1, u1 = raw1_fallback, u1_fallback
+                            revelation, experience, practice, reasoning = r_fb, e_fb, p_fb, reason_fb
+                            m1 = "gpt-5.4"
+                            logger.info(
+                                f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
+                            )
+                    step1_extract_elapsed_ms = (asyncio.get_event_loop().time() - step1_extract_start) * 1000
+                    logger.info(
+                        f"[KG-RAG DEBUG] Step1 extraction_parse elapsed_ms={step1_extract_elapsed_ms:.1f}"
+                    )
+                    logger.info(
+                        f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, experience(校验前): {experience}, "
+                        f"practice(校验前): {practice}, reasoning: {reasoning[:200] if reasoning else ''}"
+                    )
+                    concepts = []
+                    seen = set()
+                    for c in revelation + experience + practice:
+                        if c not in seen:
+                            seen.add(c)
+                            concepts.append(c)
+                except Exception as e:
+                    result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
+                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+                if "step1" not in result["steps"]:
+                    s1: dict[str, Any] = {
+                        "concepts": concepts,
+                        "revelation": revelation,
+                        "experience": experience,
+                        "practice": practice,
+                        "reasoning": reasoning,
+                        "elapsed_ms": round(step1_elapsed_ms, 1),
+                        "raw_response": raw1,
+                    }
+                    sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
+                    if sn1:
+                        s1["llm_usage"] = sn1
+                        logger.info(
+                            f"[KG-RAG LLM] step1 model={m1} billing={sn1['billing_model']} "
+                            f"in={sn1['input_tokens']} out={sn1['output_tokens']} cost_usd≈{sn1['cost_usd']}"
+                        )
+                    result["steps"]["step1"] = s1
+                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+        else:
+            logger.info("[KG-RAG DEBUG] mode 2.0: skip Step1")
+            result["steps"]["step1"] = {
+                "skipped": True,
+                "reason": "mode_2.0",
+                "concepts": [],
+                "revelation": [],
+                "experience": [],
+                "practice": [],
+                "reasoning": "",
+                "elapsed_ms": 0.0,
+                "raw_response": None,
+            }
+            step_elapsed_ms["step1"] = 0.0
+
 
         normalized = concepts
 
-        if p.get("skip_skeleton_route"):
-            logger.info("[KG-RAG DEBUG] skip_skeleton_route: Step1/2 已跳过，进入 Step3")
+        if p.get("skip_skeleton_route") or skip_kg:
+            logger.info("[KG-RAG DEBUG] skip_skeleton_route or mode 2.0: Step1/2 已跳过，进入 Step3")
         else:
             logger.info("[KG-RAG DEBUG] Step 1 done: concepts go directly to Step2")
 
@@ -1254,12 +1296,12 @@ class KgRagService:
             return s2, dt_ms
 
         step2_start = asyncio.get_event_loop().time()
-        if p.get("skip_skeleton_route"):
-            logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step2")
+        if p.get("skip_skeleton_route") or skip_kg:
+            logger.info("[KG-RAG DEBUG] skip_skeleton_route or mode 2.0: 跳过 Step2")
             step2_end = asyncio.get_event_loop().time()
             paths = []
             skeleton = None
-            expanded_nodes = list(dict.fromkeys(revelation + experience + practice))
+            expanded_nodes = [] if skip_kg else list(dict.fromkeys(revelation + experience + practice))
             step2_body = {
                 "paths": [],
                 "paths_count": 0,
@@ -1267,10 +1309,10 @@ class KgRagService:
                 "expanded_nodes": expanded_nodes,
                 "elapsed_ms": round((step2_end - step2_start) * 1000, 1),
                 "skipped": True,
-                "reason": "skip_skeleton_route",
+                "reason": "mode_2.0" if skip_kg else "skip_skeleton_route",
             }
             result["steps"]["step2"] = step2_body
-            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route)")
+            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route or mode 2.0)")
             if not p.get("skip_query_rewrite"):
                 rewritten_queries, query_rewrite_parsed_ok, u_rw = await _run_query_rewrite()
         else:
@@ -1372,9 +1414,9 @@ class KgRagService:
 
         bm25_fetch_size = bm25_top_k * 3
         dense_fetch_size = dense_top_k * 3
-        bm25_task = bm25_search(self.es, query, self.index, bm25_fetch_size)
+        bm25_task = bm25_search(self.es, query, active_index, bm25_fetch_size)
         dense_tasks = [
-            dense_search(self.es, rq, self.index, dense_fetch_size, p["num_candidates"])
+            dense_search(self.es, rq, active_index, dense_fetch_size, p["num_candidates"])
             for rq in dense_query_list
         ]
         route3_tasks = []
@@ -1382,7 +1424,7 @@ class KgRagService:
         if expanded_nodes and not p.get("skip_skeleton_route"):
             route3_tasks = [
                 skeleton_route_search(
-                    self.es, node, query, self.index, sk_top_k, outline_nature
+                    self.es, node, query, active_index, sk_top_k, outline_nature
                 )
                 for node in expanded_nodes
             ]
@@ -1770,7 +1812,9 @@ class KgRagService:
 
     async def build_prompt_preview(self, query: str, params: dict | None = None) -> dict:
         """执行 Step 1→4，返回构建好的 Prompt，不执行 Step 5。"""
-        full = await self.full_query(query, {**(params or {}), "skip_generation": True})
+        full = await self.full_query(
+            query, {**(params or {}), "skip_generation": True}, mode="3.0"
+        )
         full["steps"].pop("step5", None)
         full["answer"] = None
         return full
