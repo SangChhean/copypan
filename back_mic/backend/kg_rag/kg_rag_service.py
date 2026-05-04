@@ -1666,7 +1666,10 @@ class KgRagService:
                     "practice": step1_data.get("practice", []),
                     "reasoning": step1_data.get("reasoning", ""),
                     "skeleton": (result["steps"].get("step2") or {}).get("skeleton"),
-                    "main_sources": _extract_main_sources(step3_data.get("main_results") or []),
+                    "main_sources": _extract_main_sources(
+                        (step3_data.get("main_results") or [])
+                        + (step3_data.get("expanded_results") or [])
+                    ),
                     "total_elapsed_ms": llm_usage.get("total_elapsed_ms"),
                     "total_cost_usd": (llm_usage.get("totals") or {}).get("cost_usd"),
                     "answer_en": None,

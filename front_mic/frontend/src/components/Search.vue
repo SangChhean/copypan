@@ -1231,7 +1231,8 @@ function parseKgRagResponse(data) {
     result.experience = s1.experience || [];
     result.practice = s1.practice || [];
     result.skeleton = s2.skeleton || null;
-    result.mainSources = (s3.main_results || []).map(r => ({
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || [])];
+    result.mainSources = allResults.map(r => ({
       chunk_id: r.chunk_id || "",
       book_title: r.book_title || "",
       source_zh: r.source_zh || "",
