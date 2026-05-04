@@ -1408,7 +1408,7 @@ const onAISearch = async () => {
             </button>
           </div>
           <div class="ai-meta-grid">
-            <label class="ai-meta-field">
+            <label class="ai-meta-field full">
               <span>纲目主题*（必填）</span>
               <input
                 type="text"
