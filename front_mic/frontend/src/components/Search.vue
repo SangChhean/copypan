@@ -98,7 +98,6 @@ const placeholder = ref("输入搜索内容");
 // AI 问答相关状态
 const loadingAI = ref(false);
 const aiResult = ref(null);
-const aiDepth = ref("general"); // 搜索深度：general(一般-50条) 或 deep(深度-200条)
 const showAISources = ref(false); // 是否显示引用来源
 const showAIAnswer = ref(false); // 是否显示AI答案
 const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
@@ -1063,8 +1062,8 @@ const toggleAiPanel = () => {
 const buildKgRagParams = () => ({
   outline_nature: aiForm.specialNeeds.trim(),
   burden_description: aiForm.burdenDescription.trim(),
-  audience: aiForm.audience.trim(),
-  depth: aiDepth.value,
+  audience: "",
+  depth: "general",
 });
 
 const onSearch = (inp) => {
@@ -1418,15 +1417,6 @@ const onAISearch = async () => {
                 placeholder="纲目的题目"
               />
             </label>
-            <label class="ai-meta-field">
-              <span>面对对象</span>
-              <input
-                type="text"
-                v-model="aiForm.audience"
-                :disabled="loadingAI"
-                placeholder="例如：一般性、初信者、大专学生..."
-              />
-            </label>
             <div class="ai-meta-field full">
               <span>纲目性质*（必选）</span>
               <div class="ai-nature-btns">
@@ -1635,13 +1625,6 @@ const onAISearch = async () => {
             </div>
             </template>
             <div class="ai-panel-cta">
-              <div class="ai-depth-inline">
-                <span>模式选择</span>
-                <a-radio-group v-model:value="aiDepth" button-style="solid">
-                  <a-radio-button value="general">普通</a-radio-button>
-                  <a-radio-button value="deep">深度</a-radio-button>
-                </a-radio-group>
-              </div>
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
@@ -1680,7 +1663,7 @@ const onAISearch = async () => {
     <div class="cat">
       <div>A类：经文、注解、生命读经、倪文集、李文集、其他</div>
       <div>B类：A类、诗歌、节期纲目</div>
-      <div>C类：主恢复真理的词典、清明上河图</div>
+      <div>C类：主恢复真理的词典、清明上河图、分级教育、海外开展手册、小百科</div>
     </div>
     <div class="paoma">
       <a-carousel autoplay>
@@ -1772,8 +1755,7 @@ const onAISearch = async () => {
           </a-spin>
           <div class="loading-text">{{ aiLoadingText }}</div>
           <div class="loading-tips">
-            <span v-if="aiDepth === 'general'">正在使用一般模式</span>
-            <span v-else>正在使用深度模式</span>
+            <span>正在使用一般模式</span>
           </div>
         </div>
       </div>
@@ -2435,15 +2417,6 @@ const onAISearch = async () => {
   min-height: 38px;
   min-width: 200px;
   padding: 0 32px;
-}
-
-.ai-depth-inline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: #555;
 }
 
 .ai-meta-panel-enter-active,

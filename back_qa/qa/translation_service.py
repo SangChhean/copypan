@@ -23,7 +23,8 @@ _TERMS_PATH = Path(__file__).resolve().parents[1] / "zh_tw_terms.json"
 
 # Gemini 客户端懒加载（参考 asr_service 中 _get_client 的写法）
 _gemini_client: Any = None
-_GEMINI_MODEL = os.environ.get("QA_TRANSLATION_GEMINI_MODEL", "gemini-2.5-flash")
+_GEMINI_MODEL = os.environ.get("QA_TRANSLATION_GEMINI_MODEL", "gemini-3-flash-preview")
+_GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"
 
 _GEMINI_TRANSLATION_SYSTEM = (
     "你是专业的职事信息中翻英助手。请将用户给出的中文准确翻译为英文。\n"
@@ -235,35 +236,33 @@ def translate_answer_to_traditional(answer: str) -> str:
     return to_traditional(answer)
 
 
-def _gemini_translate(text: str, max_retries: int = 3) -> str:
-    """同步：把单段中文翻译成英文。空输入返回空串；失败抛异常由调用方处理。
-
-    针对 Gemini 503 / UNAVAILABLE 高负载场景做指数退避重试（1s / 2s / 4s），
-    其他错误（4xx、配额、配置错误）立刻抛出由调用方处理。
-    """
-    if not (text or "").strip():
-        return ""
+def _call_gemini(model: str, text: str) -> str:
+    """单次调用 Gemini 生成译文；空响应抛 RuntimeError。"""
     client = _get_gemini_client()
     from google.genai import types
 
+    response = client.models.generate_content(
+        model=model,
+        contents=text,
+        config=types.GenerateContentConfig(
+            system_instruction=_GEMINI_TRANSLATION_SYSTEM,
+        ),
+    )
+    out = (getattr(response, "text", "") or "").strip()
+    if not out:
+        raise RuntimeError("Gemini 返回空响应")
+    return out
+
+
+def _generate_with_retries(model: str, text: str, max_retries: int = 3) -> str:
+    """针对 503 / UNAVAILABLE 做指数退避重试（1s / 2s / 4s），其余错误立即抛出。"""
     last_exc: Exception | None = None
     for attempt in range(max_retries):
         try:
-            response = client.models.generate_content(
-                model=_GEMINI_MODEL,
-                contents=text,
-                config=types.GenerateContentConfig(
-                    system_instruction=_GEMINI_TRANSLATION_SYSTEM,
-                ),
-            )
-            out = (getattr(response, "text", "") or "").strip()
-            if not out:
-                raise RuntimeError("Gemini 返回空响应")
-            return out
+            return _call_gemini(model, text)
         except Exception as e:
             last_exc = e
             err_str = str(e)
-            # 仅对 503 / UNAVAILABLE 重试，其他错误立刻抛出
             if "503" not in err_str and "UNAVAILABLE" not in err_str:
                 raise
             if attempt < max_retries - 1:
@@ -273,6 +272,26 @@ def _gemini_translate(text: str, max_retries: int = 3) -> str:
                     attempt + 1, wait, e,
                 )
                 time.sleep(wait)
-    # 所有重试都失败
     assert last_exc is not None
     raise last_exc
+
+
+def _gemini_translate(text: str, max_retries: int = 3) -> str:
+    """同步：把单段中文翻译成英文。空输入返回空串；失败抛异常由调用方处理。
+
+    主模型耗尽 503 重试或非 503 失败时，若主模型不是 fallback，则降级到
+    ``_GEMINI_FALLBACK_MODEL`` 再跑一轮相同重试逻辑。
+    """
+    if not (text or "").strip():
+        return ""
+    try:
+        return _generate_with_retries(_GEMINI_MODEL, text, max_retries)
+    except Exception:
+        if _GEMINI_MODEL == _GEMINI_FALLBACK_MODEL:
+            raise
+        logger.warning(
+            "Gemini 主模型 %s 失败，降级到 %s",
+            _GEMINI_MODEL,
+            _GEMINI_FALLBACK_MODEL,
+        )
+        return _generate_with_retries(_GEMINI_FALLBACK_MODEL, text, max_retries)

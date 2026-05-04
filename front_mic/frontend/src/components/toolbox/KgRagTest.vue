@@ -85,10 +85,8 @@ const params = ref({
 });
 
 /** 纲目制作（与后端 params 字段名一致；由 buildQueryParams 并入请求） */
-const audience = ref("");
 const burdenDescription = ref("");
 const outlineNature = ref("");
-const depth = ref("general");
 const referenceExcerpt = ref("");
 const burdenPhaseReady = ref(false);
 const burdenGenLoading = ref(false);
@@ -123,7 +121,7 @@ const outlineMetaValid = computed(() => {
 });
 
 watch(
-  () => [queryText.value, outlineNature.value, audience.value, referenceExcerpt.value],
+  () => [queryText.value, outlineNature.value, referenceExcerpt.value],
   () => {
     burdenPhaseReady.value = false;
     burdenGenScenario.value = null;
@@ -158,10 +156,10 @@ function setAiMode(m) {
 function buildQueryParams() {
   return {
     ...params.value,
-    audience: audience.value,
+    audience: "",
     burden_description: burdenDescription.value,
     outline_nature: outlineNature.value,
-    depth: depth.value,
+    depth: "general",
   };
 }
 
@@ -365,7 +363,7 @@ const queryPrimaryLabel = computed(() => {
 });
 
 watch(
-  [queryText, outlineNature, burdenDescription, audience, referenceExcerpt],
+  [queryText, outlineNature, burdenDescription, referenceExcerpt],
   () => {
     if (conceptStage.value !== "idle") {
       resetAiConceptStateKg();
@@ -425,7 +423,7 @@ async function onGenerateBurden() {
       {
         query: q,
         outline_nature: outlineNature.value.trim(),
-        audience: audience.value.trim(),
+        audience: "",
         reference_excerpt: referenceExcerpt.value.trim(),
       },
       { headers }
@@ -482,7 +480,7 @@ async function extractConcepts() {
         query: q,
         outline_nature: outlineNature.value,
         burden_description: burdenDescription.value,
-        audience: audience.value,
+        audience: "",
       },
       { headers }
     );
@@ -1290,18 +1288,6 @@ onMounted(() => {
                         </div>
                       </a-col>
                       <a-col :span="24">
-                        <div class="param-item">
-                          <span class="param-label">面对对象</span>
-                          <a-input
-                            v-model:value="audience"
-                            placeholder="例如：一般性、初信者、大专学生..."
-                            allow-clear
-                            size="small"
-                            class="param-control"
-                          />
-                        </div>
-                      </a-col>
-                      <a-col :span="24">
                         <div class="param-item param-item-stack">
                           <span class="param-label">纲目性质</span>
                           <a-radio-group v-model:value="outlineNature" button-style="solid" size="small" class="param-control">
@@ -1385,15 +1371,6 @@ onMounted(() => {
                           <div class="burden-btn-wrap">
                             <a-button block :disabled="burdenPhaseReady" @click="confirmBurdenPhase">确认，开始推荐重点</a-button>
                           </div>
-                        </div>
-                      </a-col>
-                      <a-col :span="24">
-                        <div class="param-item param-item-stack">
-                          <span class="param-label">模式</span>
-                          <a-radio-group v-model:value="depth" button-style="solid" size="small" class="param-control">
-                            <a-radio-button value="general">普通</a-radio-button>
-                            <a-radio-button value="deep">深度</a-radio-button>
-                          </a-radio-group>
                         </div>
                       </a-col>
                       <a-col :span="24">
