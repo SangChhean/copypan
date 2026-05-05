@@ -1,0 +1,4157 @@
+{
+  "book": 53,
+  "name_gb": "帖撒罗尼迦后书",
+  "name_big5": "帖撒羅尼迦後書",
+  "name_en": "2 Thessalonians",
+  "abbr_gb": "帖后",
+  "abbr_big5": "帖後",
+  "abbr_en": "2 Thes.",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "帖后一1",
+          "ref_big5": "帖後一1",
+          "ref_en": "2 Thes. 1:1",
+          "text_gb": "保[Cra]罗、西拉和提摩太，写信给在神我们的父并主耶稣基督里，帖[Fn1]撒罗尼迦人的召[Fn2]会：",
+          "text_big5": "保[Cra]羅、西拉和提摩太，寫信給在神我們的父並主耶穌基督裏，帖[Fn1]撒羅尼迦人的召[Fn2]會：",
+          "text_en": "Paul and Silvanus and Timothy to the church of the Thessalonians in God our Father and the Lord Jesus Christ:",
+          "text_gb_plain": "保罗、西拉和提摩太，写信给在神我们的父并主耶稣基督里，帖撒罗尼迦人的召会：",
+          "text_big5_plain": "保羅、西拉和提摩太，寫信給在神我們的父並主耶穌基督裏，帖撒羅尼迦人的召會：",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 28,
+              "zh": "见帖前一1注2。",
+              "zh_big5": "見帖前一1註2。",
+              "en": "1:1 1 church See note 1 Thes. 1:1 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 35,
+              "zh": "见帖前一1注3。",
+              "zh_big5": "見帖前一1註3。",
+              "en": "1:1 2 Thessalonians See note 1 Thes. 1:1 2 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "帖前一1",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "帖前一1",
+                  "ref_big5": "帖前一1",
+                  "ref_en": "1 Thes. 1:1",
+                  "text_gb": "保罗、西拉和提摩太，写信给在父神和主耶稣基督里，帖撒罗尼迦人的召会：愿恩典与平安归与你们。",
+                  "text_big5": "保羅、西拉和提摩太，寫信給在父神和主耶穌基督裏，帖撒羅尼迦人的召會：願恩典與平安歸與你們。",
+                  "text_en": "Paul and Silvanus and Timothy to the church of the Thessalonians in God the Father and the Lord Jesus Christ: Grace to you and peace."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "帖后一2",
+          "ref_big5": "帖後一2",
+          "ref_en": "2 Thes. 1:2",
+          "text_gb": "愿恩典与平安，从神我们的父，并主耶稣基督归与你们。",
+          "text_big5": "願恩典與平安，從神我們的父，並主耶穌基督歸與你們。",
+          "text_en": "Grace to you and peace from God our Father and the Lord Jesus Christ.",
+          "text_gb_plain": "愿恩典与平安，从神我们的父，并主耶稣基督归与你们。",
+          "text_big5_plain": "願恩典與平安，從神我們的父，並主耶穌基督歸與你們。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "帖后一3",
+          "ref_big5": "帖後一3",
+          "ref_en": "2 Thes. 1:3",
+          "text_gb": "弟兄们，我们应当常为你们感[Cra]谢神，这本是合宜的；因你们的信[Fn1][Crb]心格外增长，你们众人每一位彼此相爱的心也一直增加，",
+          "text_big5": "弟兄們，我們應當常為你們感[Cra]謝神，這本是合宜的；因你們的信[Fn1][Crb]心格外增長，你們眾人每一位彼此相愛的心也一直增加，",
+          "text_en": "We ought to thank God always concerning you, brothers, even as it is fitting, because your faith grows exceedingly and the love of each one of you all to one another is increasing,",
+          "text_gb_plain": "弟兄们，我们应当常为你们感谢神，这本是合宜的；因你们的信心格外增长，你们众人每一位彼此相爱的心也一直增加，",
+          "text_big5_plain": "弟兄們，我們應當常為你們感謝神，這本是合宜的；因你們的信心格外增長，你們眾人每一位彼此相愛的心也一直增加，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 28,
+              "zh": "见帖前一3注1。在前书，信心和爱心可视为信徒为着召会之生活的构成成分；在本书这里，信心和爱心在他们基督徒的生活里，一直增长并增加。",
+              "zh_big5": "見帖前一3註1。在前書，信心和愛心可視為信徒為著召會之生活的構成成分；在本書這裏，信心和愛心在他們基督徒的生活裏，一直增長並增加。",
+              "en": "1:3 1 faith See note 1 Thes. 1:3 2 . In the first Epistle to the Thessalonians, faith and love were considered constructing elements of the believers' life for the church. Here, in this Epistle, faith and love are growing and increasing in the Thessalonians' Christian life."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 13,
+              "raw": "帖前一2，帖后二13",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "帖前一2",
+                  "ref_big5": "帖前一2",
+                  "ref_en": "1 Thes. 1:2",
+                  "text_gb": "我们为你们众人常常感谢神，在祷告中常提到你们；",
+                  "text_big5": "我們為你們眾人常常感謝神，在禱告中常題到你們；",
+                  "text_en": "We thank God always concerning all of you, making mention of you in our prayers,"
+                },
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "帖后二13",
+                  "ref_big5": "帖後二13",
+                  "ref_en": "2 Thes. 2:13",
+                  "text_gb": "主所爱的弟兄们，我们应当常为你们感谢神，因为祂从起初拣选了你们，叫你们借着那灵的圣别，并你们对真理的信，可以得救。",
+                  "text_big5": "主所愛的弟兄們，我們應當常為你們感謝神，因為祂從起初揀選了你們，叫你們藉著那靈的聖別，並你們對真理的信，可以得救。",
+                  "text_en": "But we ought to thank God always concerning you, brothers beloved of the Lord, because God chose you from the beginning unto salvation in sanctification of the Spirit and belief of the truth,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 28,
+              "raw": "帖前一3，三6，五8",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "帖前一3",
+                  "ref_big5": "帖前一3",
+                  "ref_en": "1 Thes. 1:3",
+                  "text_gb": "在我们的神与父面前，不住地记念你们信心的工作，爱心的劳苦，并对我们主耶稣基督之盼望的忍耐；",
+                  "text_big5": "在我們的神與父面前，不住的記念你們信心的工作，愛心的勞苦，並對我們主耶穌基督之盼望的忍耐；",
+                  "text_en": "Remembering unceasingly your work of faith and labor of love and endurance of hope in our Lord Jesus Christ, before our God and Father;"
+                },
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "帖前三6",
+                  "ref_big5": "帖前三6",
+                  "ref_en": "1 Thes. 3:6",
+                  "text_gb": "但现在提摩太从你们那里来到我们这里，将你们信心和爱心的好消息报给我们，又说你们常常亲切的记念我们，渴慕见我们，如同我们渴慕见你们一样。",
+                  "text_big5": "但現在提摩太從你們那裏來到我們這裏，將你們信心和愛心的好消息報給我們，又說你們常常親切的記念我們，渴慕見我們，如同我們渴慕見你們一樣。",
+                  "text_en": "But Timothy, having just come to us from you and announcing the good news to us of your faith and love and that you have kind remembrance of us always and long to see us, just as we also you,"
+                },
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 8,
+                  "ref_gb": "帖前五8",
+                  "ref_big5": "帖前五8",
+                  "ref_en": "1 Thes. 5:8",
+                  "text_gb": "但我们既是属于白昼，就当谨慎自守，穿上信和爱的胸甲，并戴上救恩之望的头盔。",
+                  "text_big5": "但我們既是屬於白晝，就當謹慎自守，穿上信和愛的胸甲，並戴上救恩之望的頭盔。",
+                  "text_en": "But since we are of the day, let us be sober, putting on the breastplate of faith and love and a helmet, the hope of salvation."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "帖后一4",
+          "ref_big5": "帖後一4",
+          "ref_en": "2 Thes. 1:4",
+          "text_gb": "以致我们在神的众召会中，亲自以你们为夸[Cra]口，因为你们在所忍受的一切逼[Crb]迫与患难中，仍有忍[Fn1]耐和信心；",
+          "text_big5": "以致我們在神的眾召會中，親自以你們為誇[Cra]口，因為你們在所忍受的一切逼[Crb]迫與患難中，仍有忍[Fn1]耐和信心；",
+          "text_en": "So that we ourselves boast in you among the churches of God concerning your endurance and faith in all your persecutions and the afflictions which you bear,",
+          "text_gb_plain": "以致我们在神的众召会中，亲自以你们为夸口，因为你们在所忍受的一切逼迫与患难中，仍有忍耐和信心；",
+          "text_big5_plain": "以致我們在神的眾召會中，親自以你們為誇口，因為你們在所忍受的一切逼迫與患難中，仍有忍耐和信心；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 42,
+              "zh": "忍耐是由对主回来的盼望所产生并支持的(帖前一3)。这种因盼望而有的忍耐，总是伴随着信心。因此，这里说“忍耐和信心。”在逼迫与患难中，二者都是需要的。",
+              "zh_big5": "忍耐是由對主回來的盼望所產生並支持的。（帖前一3。）這種因盼望而有的忍耐，總是伴隨著信心。因此，這裏說“忍耐和信心。”在逼迫與患難中，二者都是需要的。",
+              "en": "1:4 1 endurance The endurance issued from and was supported by the hope of the Lord's coming back (1 Thes. 1:3). Such endurance resulting from hope is always accompanied by faith. Hence, the phrase endurance and faith is used here. Both endurance and faith are needed in persecutions and afflictions."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 19,
+              "raw": "林后七4，14，九2～3",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 7,
+                  "verse": 4,
+                  "ref_gb": "林后七4",
+                  "ref_big5": "林後七4",
+                  "ref_en": "2 Cor. 7:4",
+                  "text_gb": "我向你们大大地放胆，我为你们多多地夸口；我满得安慰，在我们一切的患难中，我格外的洋溢喜乐。",
+                  "text_big5": "我向你們大大的放膽，我為你們多多的誇口；我滿得安慰，在我們一切的患難中，我格外的洋溢喜樂。",
+                  "text_en": "Great is my boldness toward you, great is my boasting on your behalf; I am filled with comfort, I overflow with joy in all our affliction."
+                },
+                {
+                  "book": 47,
+                  "chapter": 7,
+                  "verse": 14,
+                  "ref_gb": "林后七14",
+                  "ref_big5": "林後七14",
+                  "ref_en": "2 Cor. 7:14",
+                  "text_gb": "因为我若对提多夸奖了你们什么，也不觉得羞愧。相反的，我们对你们所说的一切事，怎样是真实的，我们在提多面前所夸奖你们的，也怎样成了真实的。",
+                  "text_big5": "因為我若對提多誇獎了你們甚麼，也不覺得羞愧。相反的，我們對你們所說的一切事，怎樣是真實的，我們在提多面前所誇獎你們的，也怎樣成了真實的。",
+                  "text_en": "For if in anything I boasted to him on your behalf, I have not been put to shame; on the contrary, as we spoke all things in truth to you, so also our boasting before Titus turned out to be the truth."
+                },
+                {
+                  "book": 47,
+                  "chapter": 9,
+                  "verse": 2,
+                  "ref_gb": "林后九2",
+                  "ref_big5": "林後九2",
+                  "ref_en": "2 Cor. 9:2",
+                  "text_gb": "因为我知道你们的热切，就是我常对马其顿人所夸耀你们的，说亚该亚人在一年前就预备好了；你们的热心便激动了许多人。",
+                  "text_big5": "因為我知道你們的熱切，就是我常對馬其頓人所誇耀你們的，說亞該亞人在一年前就豫備好了；你們的熱心便激動了許多人。",
+                  "text_en": "For I know your eagerness, of which I boast on your behalf to the Macedonians, that Achaia has been prepared since last year; and your zeal has stirred up the greater number of them."
+                },
+                {
+                  "book": 47,
+                  "chapter": 9,
+                  "verse": 3,
+                  "ref_gb": "林后九3",
+                  "ref_big5": "林後九3",
+                  "ref_en": "2 Cor. 9:3",
+                  "text_gb": "但我打发那几位弟兄去，使我们在这方面为你们所夸耀的，不至于落空，好叫你们照我所说的预备好，",
+                  "text_big5": "但我打發那幾位弟兄去，使我們在這方面為你們所誇耀的，不至於落空，好叫你們照我所說的豫備好，",
+                  "text_en": "But I sent the brothers that our boasting on your behalf might not be made void in this respect, that, as I said, you might be prepared;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 33,
+              "raw": "可十30，林后十二10",
+              "refs": [
+                {
+                  "book": 41,
+                  "chapter": 10,
+                  "verse": 30,
+                  "ref_gb": "可十30",
+                  "ref_big5": "可十30",
+                  "ref_en": "Mark 10:30",
+                  "text_gb": "没有不在今世得百倍，就是房屋、弟兄、姊妹、母亲、儿女和田地，同各样的逼迫，且要在来世得永远生命的。",
+                  "text_big5": "沒有不在今世得百倍，就是房屋、弟兄、姊妹、母親、兒女和田地，同各樣的逼迫，且要在來世得永遠生命的。",
+                  "text_en": "But that he shall receive a hundred times as much now at this time, houses and brothers and sisters and mothers and children and fields, with persecutions, and in the coming age, eternal life."
+                },
+                {
+                  "book": 47,
+                  "chapter": 12,
+                  "verse": 10,
+                  "ref_gb": "林后十二10",
+                  "ref_big5": "林後十二10",
+                  "ref_en": "2 Cor. 12:10",
+                  "text_gb": "因此，我为基督的缘故，就以软弱、凌辱、贫困、逼迫、困苦为可喜悦的，因我什么时候软弱，什么时候就有能力了。",
+                  "text_big5": "因此，我為基督的緣故，就以軟弱、凌辱、貧困、逼迫、困苦為可喜悅的，因我甚麼時候軟弱，甚麼時候就有能力了。",
+                  "text_en": "Therefore I am well pleased in weaknesses, in insults, in necessities, in persecutions and distresses, on behalf of Christ; for when I am weak, then I am powerful."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "帖后一5",
+          "ref_big5": "帖後一5",
+          "ref_en": "2 Thes. 1:5",
+          "text_gb": "这正是神[Fn1]公义审判的明证[Cra]，叫你们可算配[Crb]得神[Fn2][Crc]的国，你们的确是为这国受苦；",
+          "text_big5": "這正是神[Fn1]公義審判的明證[Cra]，叫你們可算配[Crb]得神[Fn2][Crc]的國，你們的確是為這國受苦；",
+          "text_en": "A plain indication of the righteous judgment of God, that you may be accounted worthy of the kingdom of God, for which also you suffer;",
+          "text_gb_plain": "这正是神公义审判的明证，叫你们可算配得神的国，你们的确是为这国受苦；",
+          "text_big5_plain": "這正是神公義審判的明證，叫你們可算配得神的國，你們的確是為這國受苦；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "神的审判，在众人身上是公义且公平的，这审判要在将来完成(罗二5～9，启二十11～15)。神在今世如何对待不同的人，乃是祂在将来施行公义审判的指明、表征和证明。",
+              "zh_big5": "神的審判，在眾人身上是公義且公平的，這審判要在將來完成。（羅二5～9，啟二十11～15。）神在今世如何對待不同的人，乃是祂在將來施行公義審判的指明、表徵和證明。",
+              "en": "1:5 1 righteous God's judgment is righteous and just upon all men. It will be finalized in the future (Rom. 2:5-9; Rev. 20:11-15). The way God deals with different people in this age is an indication, a token, a proof, of the future execution of His righteous judgment."
+            },
+            {
+              "num": 2,
+              "loc": 20,
+              "zh": "信徒已经蒙召进入神的国和荣耀(帖前二12)。要进入这国，我们必须经历患难(徒十四22)。因此，逼迫与患难乃是神公义审判的明证，表明我们可算配得神的国。",
+              "zh_big5": "信徒已經蒙召進入神的國和榮耀。（帖前二12。）要進入這國，我們必須經歷患難。（徒十四22。）因此，逼迫與患難乃是神公義審判的明證，表明我們可算配得神的國。",
+              "en": "1:5 2 kingdom The believers have been called into God's kingdom and glory (1 Thes. 2:12). To enter into this kingdom, we need to pass through afflictions (Acts 14:22). Hence, the persecutions and afflictions are a plain indication of God's righteous judgment, showing that we may be accounted worthy of the kingdom of God."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "腓一28",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 1,
+                  "verse": 28,
+                  "ref_gb": "腓一28",
+                  "ref_big5": "腓一28",
+                  "ref_en": "Phil. 1:28",
+                  "text_gb": "凡事不为敌人所惊吓：这是证明他们灭亡，你们得救，而且这样的证明乃是从神而来的；",
+                  "text_big5": "凡事不為敵人所驚嚇：這是證明他們滅亡，你們得救，而且這樣的證明乃是從神而來的；",
+                  "text_en": "And in nothing being frightened by the opposers, which is to them a proof of their destruction, but of your salvation, and that from God;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "帖后一11，路二十35，启三4",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "帖后一11",
+                  "ref_big5": "帖後一11",
+                  "ref_en": "2 Thes. 1:11",
+                  "text_gb": "因此，我们也常为你们祷告，愿我们的神算你们配得过所蒙的召，又用大能成就你们所喜悦的一切良善，和信心的工作，",
+                  "text_big5": "因此，我們也常為你們禱告，願我們的神算你們配得過所蒙的召，又用大能成就你們所喜悅的一切良善，和信心的工作，",
+                  "text_en": "For which also we pray always concerning you, that our God may count you worthy of your calling and may fulfill in power your every good intention for goodness and your work of faith,"
+                },
+                {
+                  "book": 42,
+                  "chapter": 20,
+                  "verse": 35,
+                  "ref_gb": "路二○35",
+                  "ref_big5": "路二○35",
+                  "ref_en": "Luke 20:35",
+                  "text_gb": "唯有算为配得那时代，并配得从死人中复活的，也不娶也不嫁；",
+                  "text_big5": "惟有算為配得那時代，並配得從死人中復活的，也不娶也不嫁；",
+                  "text_en": "But those who are counted worthy to obtain that age and the resurrection from the dead neither marry nor are given in marriage;"
+                },
+                {
+                  "book": 66,
+                  "chapter": 3,
+                  "verse": 4,
+                  "ref_gb": "启三4",
+                  "ref_big5": "啟三4",
+                  "ref_en": "Rev. 3:4",
+                  "text_gb": "然而在撒狄，你还有几名是未曾玷污自己衣服的，他们要穿白衣与我同行，因为他们是配得过的。",
+                  "text_big5": "然而在撒狄，你還有幾名是未曾玷污自己衣服的，他們要穿白衣與我同行，因為他們是配得過的。",
+                  "text_en": "But you have a few names in Sardis who have not defiled their garments, and they will walk with Me in white because they are worthy."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 20,
+              "raw": "林前六9，10，雅二5",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 6,
+                  "verse": 9,
+                  "ref_gb": "林前六9",
+                  "ref_big5": "林前六9",
+                  "ref_en": "1 Cor. 6:9",
+                  "text_gb": "你们岂不知，不义的不能承受神的国么？不要受迷惑，无论是淫乱的、拜偶像的、奸淫的、作娈童的、同性恋的、",
+                  "text_big5": "你們豈不知，不義的不能承受神的國麼？不要受迷惑，無論是淫亂的、拜偶像的、姦淫的、作孌童的、同性戀的、",
+                  "text_en": "Or do you not know that the unrighteous will not inherit the kingdom of God? Do not be led astray; neither fornicators nor idolaters nor adulterers nor effeminate nor homosexuals"
+                },
+                {
+                  "book": 46,
+                  "chapter": 6,
+                  "verse": 10,
+                  "ref_gb": "林前六10",
+                  "ref_big5": "林前六10",
+                  "ref_en": "1 Cor. 6:10",
+                  "text_gb": "偷窃的、贪婪的、醉酒的、辱骂的、勒索的，都不能承受神的国。",
+                  "text_big5": "偷竊的、貪婪的、醉酒的、辱罵的、勒索的，都不能承受神的國。",
+                  "text_en": "Nor thieves nor the covetous, not drunkards, not revilers, not the rapacious will inherit the kingdom of God."
+                },
+                {
+                  "book": 59,
+                  "chapter": 2,
+                  "verse": 5,
+                  "ref_gb": "雅二5",
+                  "ref_big5": "雅二5",
+                  "ref_en": "James 2:5",
+                  "text_gb": "我亲爱的弟兄们，请听，神岂不是拣选了世上贫穷的人，叫他们在信上富足，并承受祂所应许给那些爱祂之人的国么？",
+                  "text_big5": "我親愛的弟兄們，請聽，神豈不是揀選了世上貧窮的人，叫他們在信上富足，並承受祂所應許給那些愛祂之人的國麼？",
+                  "text_en": "Listen, my beloved brothers: Did not God choose the poor in the world to be rich in faith and heirs of the kingdom, which He promised to those who love Him?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "帖后一6",
+          "ref_big5": "帖後一6",
+          "ref_en": "2 Thes. 1:6",
+          "text_gb": "因为在神这是公义的，就是在主耶稣从天[Cra]上，同祂有能力的天[Crb]使，在火[Crc]焰中显[Crd]现，要报应那不[Cre]认识神，和那不顺[Crf]从我们主耶稣基[Fn1]督福音之人的时候，",
+          "text_big5": "因為在神這是公義的，就是在主耶穌從天[Cra]上，同祂有能力的天[Crb]使，在火[Crc]焰中顯[Crd]現，要報應那不[Cre]認識神，和那不順[Crf]從我們主耶穌基[Fn1]督福音之人的時候，",
+          "text_en": "Since it is just with God to repay with affliction those afflicting you,",
+          "text_gb_plain": "因为在神这是公义的，就是在主耶稣从天上，同祂有能力的天使，在火焰中显现，要报应那不认识神，和那不顺从我们主耶稣基督福音之人的时候，",
+          "text_big5_plain": "因為在神這是公義的，就是在主耶穌從天上，同祂有能力的天使，在火焰中顯現，要報應那不認識神，和那不順從我們主耶穌基督福音之人的時候，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 56,
+              "zh": "有些古卷无，基督。",
+              "zh_big5": "有些古卷無，基督。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "帖前四16，徒一11",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 16,
+                  "ref_gb": "帖前四16",
+                  "ref_big5": "帖前四16",
+                  "ref_en": "1 Thes. 4:16",
+                  "text_gb": "因为主必亲自从天降临，有发令的呼叫，有天使长的声音，又有神的号声，那在基督里死了的人必先复活，",
+                  "text_big5": "因為主必親自從天降臨，有發令的呼叫，有天使長的聲音，又有神的號聲，那在基督裏死了的人必先復活，",
+                  "text_en": "Because the Lord Himself, with a shout of command, with the voice of the archangel and with the trumpet of God, will descend from heaven, and the dead in Christ will rise first."
+                },
+                {
+                  "book": 44,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "徒一11",
+                  "ref_big5": "徒一11",
+                  "ref_en": "Acts 1:11",
+                  "text_gb": "诸位，加利利人哪，你们为什么站着望天？这离开你们被接升天的耶稣，你们见祂怎样往天上去，祂还要怎样来。",
+                  "text_big5": "諸位，加利利人哪，你們為甚麼站著望天？這離開你們被接升天的耶穌，你們見祂怎樣往天上去，祂還要怎樣來。",
+                  "text_en": "Who also said, Men of Galilee, why do you stand looking into heaven? This Jesus, who has been taken up from you into heaven, will come in the same way as you beheld Him going into heaven."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 27,
+              "raw": "太十六27",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 16,
+                  "verse": 27,
+                  "ref_gb": "太十六27",
+                  "ref_big5": "太十六27",
+                  "ref_en": "Matt. 16:27",
+                  "text_gb": "因为人子要在祂父的荣耀里，同着众天使来临，那时祂要照各人的行为报应各人。",
+                  "text_big5": "因為人子要在祂父的榮耀裏，同著眾天使來臨，那時祂要照各人的行為報應各人。",
+                  "text_en": "For the Son of Man is to come in the glory of His Father with His angels, and then He will repay each man according to his doings."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 31,
+              "raw": "赛六六15，玛四1，启十1，林前三13，来十27，十二29",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 66,
+                  "verse": 15,
+                  "ref_gb": "赛六六15",
+                  "ref_big5": "賽六六15",
+                  "ref_en": "Isa. 66:15",
+                  "text_gb": "看哪，耶和华必在火中来临；祂的车辇像旋风，以烈怒施行报应，以火焰施行斥责；",
+                  "text_big5": "看哪，耶和華必在火中來臨；祂的車輦像旋風，以烈怒施行報應，以火焰施行斥責；",
+                  "text_en": "For behold, Jehovah will come with fire, / And His chariots will be like a whirlwind, / To render His anger with fury / And His rebuke with flames of fire."
+                },
+                {
+                  "book": 39,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "玛四1",
+                  "ref_big5": "瑪四1",
+                  "ref_en": "Mal. 4:1",
+                  "text_gb": "万军之耶和华说，那日子来到，如烧着的火炉；凡狂傲的和行恶的，必如碎秸；那要来之日必将他们烧尽，不给他们留下根和枝条。",
+                  "text_big5": "萬軍之耶和華說，那日子來到，如燒著的火爐；凡狂傲的和行惡的，必如碎秸；那要來之日必將他們燒盡，不給他們留下根和枝條。",
+                  "text_en": "For indeed the day comes, burning like a furnace, and all the proud ones and all the ones who act wickedly will be stubble; and the coming day will set them ablaze, says Jehovah of hosts, so that it will not leave them root or branch."
+                },
+                {
+                  "book": 66,
+                  "chapter": 10,
+                  "verse": 1,
+                  "ref_gb": "启十1",
+                  "ref_big5": "啟十1",
+                  "ref_en": "Rev. 10:1",
+                  "text_gb": "我又看见另一位大力的天使，从天降下，披着云彩，头上有虹，脸面像日头，两脚像火柱，",
+                  "text_big5": "我又看見另一位大力的天使，從天降下，披著雲彩，頭上有虹，臉面像日頭，兩腳像火柱，",
+                  "text_en": "And I saw another strong Angel coming down out of heaven, clothed with a cloud; and the rainbow was upon His head, and His face was like the sun, and His feet like pillars of fire;"
+                },
+                {
+                  "book": 46,
+                  "chapter": 3,
+                  "verse": 13,
+                  "ref_gb": "林前三13",
+                  "ref_big5": "林前三13",
+                  "ref_en": "1 Cor. 3:13",
+                  "text_gb": "各人的工程必然显露，因为那日子要将它指明出来；它要在火中被揭露，这火要试验各人的工程是哪一种的。",
+                  "text_big5": "各人的工程必然顯露，因為那日子要將它指明出來；它要在火中被揭露，這火要試驗各人的工程是那一種的。",
+                  "text_en": "The work of each will become manifest; for the day will declare it, because it is revealed by fire, and the fire itself will prove each one's work, of what sort it is."
+                },
+                {
+                  "book": 58,
+                  "chapter": 10,
+                  "verse": 27,
+                  "ref_gb": "来十27",
+                  "ref_big5": "來十27",
+                  "ref_en": "Heb. 10:27",
+                  "text_gb": "唯有恐惧等候审判、和那将要吞灭众敌人的烈火。",
+                  "text_big5": "惟有恐懼等候審判、和那將要吞滅眾敵人的烈火。",
+                  "text_en": "But a certain fearful expectation of judgment and fervor of fire, which is to consume the adversaries."
+                },
+                {
+                  "book": 58,
+                  "chapter": 12,
+                  "verse": 29,
+                  "ref_gb": "来十二29",
+                  "ref_big5": "來十二29",
+                  "ref_en": "Heb. 12:29",
+                  "text_gb": "因为我们的神乃是烈火。",
+                  "text_big5": "因為我們的神乃是烈火。",
+                  "text_en": "For our God is also a consuming fire."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 34,
+              "raw": "路十七30，彼前一7",
+              "refs": [
+                {
+                  "book": 42,
+                  "chapter": 17,
+                  "verse": 30,
+                  "ref_gb": "路十七30",
+                  "ref_big5": "路十七30",
+                  "ref_en": "Luke 17:30",
+                  "text_gb": "人子显现的日子，也要这样。",
+                  "text_big5": "人子顯現的日子，也要這樣。",
+                  "text_en": "It will be in the same way on the day in which the Son of Man is revealed."
+                },
+                {
+                  "book": 60,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "彼前一7",
+                  "ref_big5": "彼前一7",
+                  "ref_en": "1 Pet. 1:7",
+                  "text_gb": "叫你们信心所受的试验，比那经过火的试验仍会毁坏之金子的试验，更为宝贵，可以在耶稣基督显现的时候，显为可得称赞、荣耀和尊贵的；",
+                  "text_big5": "叫你們信心所受的試驗，比那經過火的試驗仍會毀壞之金子的試驗，更為寶貴，可以在耶穌基督顯現的時候，顯為可得稱讚、榮耀和尊貴的；",
+                  "text_en": "So that the proving of your faith, much more precious than of gold which perishes though it is proved by fire, may be found unto praise and glory and honor at the revelation of Jesus Christ;"
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 41,
+              "raw": "帖前四5",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 5,
+                  "ref_gb": "帖前四5",
+                  "ref_big5": "帖前四5",
+                  "ref_en": "1 Thes. 4:5",
+                  "text_gb": "不放纵私欲的邪情，像那不认识神的外邦人；",
+                  "text_big5": "不放縱私慾的邪情，像那不認識神的外邦人；",
+                  "text_en": "Not in the passion of lust, like the Gentiles who do not know God;"
+                }
+              ]
+            },
+            {
+              "label": "f",
+              "loc": 49,
+              "raw": "罗十六26",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 26,
+                  "ref_gb": "罗十六26",
+                  "ref_big5": "羅十六26",
+                  "ref_en": "Rom. 16:26",
+                  "text_gb": "这奥秘如今显明出来，且照永远之神的命令，借着众申言者所写的，指示万国，使他们顺从信仰。",
+                  "text_big5": "這奧祕如今顯明出來，且照永遠之神的命令，藉著眾申言者所寫的，指示萬國，使他們順從信仰。",
+                  "text_en": "But has now been manifested, and through the prophetic writings, according to the command of the eternal God, has been made known to all the Gentiles for the obedience of faith;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "帖后一7",
+          "ref_big5": "帖後一7",
+          "ref_en": "2 Thes. 1:7",
+          "text_gb": "将患难报应那加患难给你们的人，",
+          "text_big5": "將患難報應那加患難給你們的人，",
+          "text_en": "And to you who are being afflicted, rest with us at the revelation of the Lord Jesus from heaven with the angels of His power, in flaming fire,",
+          "text_gb_plain": "将患难报应那加患难给你们的人，",
+          "text_big5_plain": "將患難報應那加患難給你們的人，",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "帖后一8",
+          "ref_big5": "帖後一8",
+          "ref_en": "2 Thes. 1:8",
+          "text_gb": "又使你们这受患难的人，与我们同享安[Fn1]息；",
+          "text_big5": "又使你們這受患難的人，與我們同享安[Fn1]息；",
+          "text_en": "Rendering vengeance to those who do not know God and to those who do not obey the gospel of our Lord Jesus Christ.",
+          "text_gb_plain": "又使你们这受患难的人，与我们同享安息；",
+          "text_big5_plain": "又使你們這受患難的人，與我們同享安息；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 17,
+              "zh": "或，释放，舒适，安歇，自由。信徒在今世为主受逼迫和困扰，到主回来时就要从苦难得释放，进入主的安息，享受安息的自由。",
+              "zh_big5": "或，釋放，舒適，安歇，自由。信徒在今世為主受逼迫和困擾，到主回來時就要從苦難得釋放，進入主的安息，享受安息的自由。",
+              "en": "1:8 1 Christ Some MSS omit, Christ."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "帖后一9",
+          "ref_big5": "帖後一9",
+          "ref_en": "2 Thes. 1:9",
+          "text_gb": "在那[Cra]日，当主来[Crb]，在祂圣徒身上得[Fn1][Crc]荣耀，并在一切信的人身上显为希奇的时候，（你们也在其中，因为你们信了我们对你们所作的见[Crd]证，）",
+          "text_big5": "在那[Cra]日，當主來[Crb]，在祂聖徒身上得[Fn1][Crc]榮耀，並在一切信的人身上顯為希奇的時候，（你們也在其中，因為你們信了我們對你們所作的見[Crd]證，）",
+          "text_en": "They will pay the penalty of eternal destruction from the presence of the Lord and from the glory of His strength",
+          "text_gb_plain": "在那日，当主来，在祂圣徒身上得荣耀，并在一切信的人身上显为希奇的时候，（你们也在其中，因为你们信了我们对你们所作的见证，）",
+          "text_big5_plain": "在那日，當主來，在祂聖徒身上得榮耀，並在一切信的人身上顯為希奇的時候，（你們也在其中，因為你們信了我們對你們所作的見證，）",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 15,
+              "zh": "主是荣耀的主(林前二8)，祂已经在复活和升天里得着了荣耀(约十七1，路二四26，来二9)。现今祂在我们里面乃是荣耀的盼望(西一27)，好将我们带进荣耀(来二10)。祂回来时，一面要从诸天带着荣耀而来(启十1，太二五31)，另一面要在祂圣徒身上得着荣耀，就是祂的荣耀要从祂的肢体里面显明出来，使他们卑贱的身体改变形状，进入祂的荣耀，同形于祂荣耀的身体。因此，祂在我们信徒身上要为不信的人所希奇、赞叹、惊讶。",
+              "zh_big5": "主是榮耀的主，（林前二8，）祂已經在復活和升天裏得著了榮耀。（約十七1，路二四26，來二9。）現今祂在我們裏面乃是榮耀的盼望，（西一27，）好將我們帶進榮耀。（來二10。）祂回來時，一面要從諸天帶著榮耀而來，（啟十1，太二五31，）另一面要在祂聖徒身上得著榮耀，就是祂的榮耀要從祂的肢體裏面顯明出來，使他們卑賤的身體改變形狀，進入祂的榮耀，同形於祂榮耀的身體。因此，祂在我們信徒身上要為不信的人所希奇、讚歎、驚訝。",
+              "en": "1:9 1 presence Lit., face."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "提后一12，18，林前三13",
+              "refs": [
+                {
+                  "book": 55,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "提后一12",
+                  "ref_big5": "提後一12",
+                  "ref_en": "2 Tim. 1:12",
+                  "text_gb": "为这缘故，我也受这些苦难；然而我不以为耻，因为知道我所信的是谁，也深信祂能保守我所托付的，直到那日。",
+                  "text_big5": "為這緣故，我也受這些苦難；然而我不以為恥，因為知道我所信的是誰，也深信祂能保守我所託付的，直到那日。",
+                  "text_en": "For which cause also I suffer these things; but I am not ashamed, for I know whom I have believed, and I am persuaded that He is able to guard my deposit unto that day."
+                },
+                {
+                  "book": 55,
+                  "chapter": 1,
+                  "verse": 18,
+                  "ref_gb": "提后一18",
+                  "ref_big5": "提後一18",
+                  "ref_en": "2 Tim. 1:18",
+                  "text_gb": "愿主使他在那日从主得着怜悯。他在以弗所怎样多方的服事我，你知道得最清楚。",
+                  "text_big5": "願主使他在那日從主得著憐憫。他在以弗所怎樣多方的服事我，你知道得最清楚。",
+                  "text_en": "May the Lord grant him to find mercy from the Lord in that day. And in how many things he served me in Ephesus, you know best."
+                },
+                {
+                  "book": 46,
+                  "chapter": 3,
+                  "verse": 13,
+                  "ref_gb": "林前三13",
+                  "ref_big5": "林前三13",
+                  "ref_en": "1 Cor. 3:13",
+                  "text_gb": "各人的工程必然显露，因为那日子要将它指明出来；它要在火中被揭露，这火要试验各人的工程是哪一种的。",
+                  "text_big5": "各人的工程必然顯露，因為那日子要將它指明出來；它要在火中被揭露，這火要試驗各人的工程是那一種的。",
+                  "text_en": "The work of each will become manifest; for the day will declare it, because it is revealed by fire, and the fire itself will prove each one's work, of what sort it is."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 7,
+              "raw": "帖前一10",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 10,
+                  "ref_gb": "帖前一10",
+                  "ref_big5": "帖前一10",
+                  "ref_en": "1 Thes. 1:10",
+                  "text_gb": "并且等候祂的儿子从诸天降临，就是祂从死人中所复活，那拯救我们脱离要来忿怒的耶稣。",
+                  "text_big5": "並且等候祂的兒子從諸天降臨，就是祂從死人中所復活，那拯救我們脫離要來忿怒的耶穌。",
+                  "text_en": "And await His Son from the heavens, whom He raised from the dead, Jesus, who delivers us from the wrath which is coming."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 15,
+              "raw": "约十七10",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 17,
+                  "verse": 10,
+                  "ref_gb": "约十七10",
+                  "ref_big5": "約十七10",
+                  "ref_en": "John 17:10",
+                  "text_gb": "凡是我的都是你的，你的也是我的，并且我已经在他们身上得了荣耀。",
+                  "text_big5": "凡是我的都是你的，你的也是我的，並且我已經在他們身上得了榮耀。",
+                  "text_en": "And all that is Mine is Yours, and Yours Mine; and I have been glorified in them."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 58,
+              "raw": "林前一6",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "林前一6",
+                  "ref_big5": "林前一6",
+                  "ref_en": "1 Cor. 1:6",
+                  "text_gb": "正如我们为基督所作的见证，在你们里面得以坚固，",
+                  "text_big5": "正如我們為基督所作的見證，在你們裏面得以堅固，",
+                  "text_en": "Even as the testimony of Christ was confirmed in you,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "帖后一10",
+          "ref_big5": "帖後一10",
+          "ref_en": "2 Thes. 1:10",
+          "text_gb": "那些不顺从祂福音的人要受刑罚，就是永远沉[Cra]沦，离开主的面，并离开祂力量的荣[Crb]耀。",
+          "text_big5": "那些不順從祂福音的人要受刑罰，就是永遠沉[Cra]淪，離開主的面，並離開祂力量的榮[Crb]耀。",
+          "text_en": "When He comes to be glorified in His saints and to be marveled at in all those who have believed (because our testimony to you was believed) in that day.",
+          "text_gb_plain": "那些不顺从祂福音的人要受刑罚，就是永远沉沦，离开主的面，并离开祂力量的荣耀。",
+          "text_big5_plain": "那些不順從祂福音的人要受刑罰，就是永遠沉淪，離開主的面，並離開祂力量的榮耀。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 20,
+              "raw": "腓三19，彼后三7",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 3,
+                  "verse": 19,
+                  "ref_gb": "腓三19",
+                  "ref_big5": "腓三19",
+                  "ref_en": "Phil. 3:19",
+                  "text_gb": "他们的结局就是灭亡，他们的神就是自己的肚腹，他们以自己的羞辱为荣耀，是思念地上之事的人。",
+                  "text_big5": "他們的結局就是滅亡，他們的神就是自己的肚腹，他們以自己的羞辱為榮耀，是思念地上之事的人。",
+                  "text_en": "Whose end is destruction, whose god is their stomach, and whose glory is in their shame, who set their minds on earthly things."
+                },
+                {
+                  "book": 61,
+                  "chapter": 3,
+                  "verse": 7,
+                  "ref_gb": "彼后三7",
+                  "ref_big5": "彼後三7",
+                  "ref_en": "2 Pet. 3:7",
+                  "text_gb": "但现在的诸天和地，还是凭着同样的话保留着，直留到不敬虔的人受审判遭毁坏的日子，给火焚烧。",
+                  "text_big5": "但現在的諸天和地，還是憑著同樣的話保留著，直留到不敬虔的人受審判遭毀壞的日子，給火焚燒。",
+                  "text_en": "But the heavens and the earth now, by the same word, have been stored up for fire, being kept unto the day of judgment and destruction of ungodly men."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 36,
+              "raw": "太二五31",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 25,
+                  "verse": 31,
+                  "ref_gb": "太二五31",
+                  "ref_big5": "太二五31",
+                  "ref_en": "Matt. 25:31",
+                  "text_gb": "但是，当人子在祂的荣耀里，所有的天使同着祂来的时候，祂要坐在祂荣耀的宝座上；",
+                  "text_big5": "但是，當人子在祂的榮耀裏，所有的天使同著祂來的時候，祂要坐在祂榮耀的寶座上；",
+                  "text_en": "But when the Son of Man comes in His glory and all the angels with Him, at that time He will sit on the throne of His glory."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "帖后一11",
+          "ref_big5": "帖後一11",
+          "ref_en": "2 Thes. 1:11",
+          "text_gb": "因此，我们也常为你们祷[Cra]告，愿我们的神算你们配[Crb]得过所蒙的召，又用大[Crc]能成就你们所喜[Fn1]悦的一切良善，和信心的工[Crd]作，",
+          "text_big5": "因此，我們也常為你們禱[Cra]告，願我們的神算你們配[Crb]得過所蒙的召，又用大[Crc]能成就你們所喜[Fn1]悅的一切良善，和信心的工[Crd]作，",
+          "text_en": "For which also we pray always concerning you, that our God may count you worthy of your calling and may fulfill in power your every good intention for goodness and your work of faith,",
+          "text_gb_plain": "因此，我们也常为你们祷告，愿我们的神算你们配得过所蒙的召，又用大能成就你们所喜悦的一切良善，和信心的工作，",
+          "text_big5_plain": "因此，我們也常為你們禱告，願我們的神算你們配得過所蒙的召，又用大能成就你們所喜悅的一切良善，和信心的工作，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 39,
+              "zh": "或，喜欢。使徒祷告，愿神成就帖撒罗尼迦人所喜悦、喜欢的良善。",
+              "zh_big5": "或，喜歡。使徒禱告，願神成就帖撒羅尼迦人所喜悅、喜歡的良善。",
+              "en": "1:11 1 good Or, delight. The apostles prayed that God might fulfill the good intention, the delight, of the Thessalonians for goodness."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "西一9",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "西一9",
+                  "ref_big5": "西一9",
+                  "ref_en": "Col. 1:9",
+                  "text_gb": "所以，我们自从听见的日子，也就为你们不住地祷告祈求，愿你们在一切属灵的智慧和悟性上，充分认识神的旨意，",
+                  "text_big5": "所以，我們自從聽見的日子，也就為你們不住的禱告祈求，願你們在一切屬靈的智慧和悟性上，充分認識神的旨意，",
+                  "text_en": "Therefore we also, since the day we heard of it, do not cease praying and asking on your behalf that you may be filled with the full knowledge of His will in all spiritual wisdom and understanding,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 22,
+              "raw": "帖后一5",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 5,
+                  "ref_gb": "帖后一5",
+                  "ref_big5": "帖後一5",
+                  "ref_en": "2 Thes. 1:5",
+                  "text_gb": "这正是神公义审判的明证，叫你们可算配得神的国，你们的确是为这国受苦；",
+                  "text_big5": "這正是神公義審判的明證，叫你們可算配得神的國，你們的確是為這國受苦；",
+                  "text_en": "A plain indication of the righteous judgment of God, that you may be accounted worthy of the kingdom of God, for which also you suffer;"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 32,
+              "raw": "西一29",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 1,
+                  "verse": 29,
+                  "ref_gb": "西一29",
+                  "ref_big5": "西一29",
+                  "ref_en": "Col. 1:29",
+                  "text_gb": "我也为此劳苦，照着祂在我里面大能的运行，竭力奋斗。",
+                  "text_big5": "我也為此勞苦，照著祂在我裏面大能的運行，竭力奮鬥。",
+                  "text_en": "For which also I labor, struggling according to His operation which operates in me in power."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 51,
+              "raw": "帖前一3",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "帖前一3",
+                  "ref_big5": "帖前一3",
+                  "ref_en": "1 Thes. 1:3",
+                  "text_gb": "在我们的神与父面前，不住地记念你们信心的工作，爱心的劳苦，并对我们主耶稣基督之盼望的忍耐；",
+                  "text_big5": "在我們的神與父面前，不住的記念你們信心的工作，愛心的勞苦，並對我們主耶穌基督之盼望的忍耐；",
+                  "text_en": "Remembering unceasingly your work of faith and labor of love and endurance of hope in our Lord Jesus Christ, before our God and Father;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "帖后一12",
+          "ref_big5": "帖後一12",
+          "ref_en": "2 Thes. 1:12",
+          "text_gb": "照着我[Fn1]们的神并主耶稣基督的恩，使我们主耶稣的名[Cra]在你们身上得荣耀，你们也在祂里面得荣耀。",
+          "text_big5": "照著我[Fn1]們的神並主耶穌基督的恩，使我們主耶穌的名[Cra]在你們身上得榮耀，你們也在祂裏面得榮耀。",
+          "text_en": "So that the name of our Lord Jesus may be glorified in you, and you in Him, according to the grace of our God and the Lord Jesus Christ.",
+          "text_gb_plain": "照着我们的神并主耶稣基督的恩，使我们主耶稣的名在你们身上得荣耀，你们也在祂里面得荣耀。",
+          "text_big5_plain": "照著我們的神並主耶穌基督的恩，使我們主耶穌的名在你們身上得榮耀，你們也在祂裏面得榮耀。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "我们的神并主耶稣基督的恩，就是主自己在我们里面作生命和生命的供应，使我们过一种生活，叫主得荣耀，也叫我们在祂里面得荣耀。见约一17注1，林前十五10注1，林后十三14注1。",
+              "zh_big5": "我們的神並主耶穌基督的恩，就是主自己在我們裏面作生命和生命的供應，使我們過一種生活，叫主得榮耀，也叫我們在祂裏面得榮耀。見約一17註1，林前十五10註1，林後十三14註1。",
+              "en": "1:12 1 grace The grace of our God and the Lord Jesus Christ is the Lord Himself within us as our life and life supply that we may live a life that will glorify the Lord and cause us to be glorified in Him. See note John 1:17 1 , note 1 Cor. 15:10 1 , and note 2 Cor. 13:14 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 23,
+              "raw": "帖后三6",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "帖后三6",
+                  "ref_big5": "帖後三6",
+                  "ref_en": "2 Thes. 3:6",
+                  "text_gb": "弟兄们，我们在我们主耶稣基督的名里嘱咐你们，凡有弟兄不按规矩、且不照着你们从我们所受的传授而行，就当远离他。",
+                  "text_big5": "弟兄們，我們在我們主耶穌基督的名裏囑咐你們，凡有弟兄不按規矩、且不照著你們從我們所受的傳授而行，就當遠離他。",
+                  "text_en": "Now we charge you, brothers, in the name of our Lord Jesus Christ, that you keep away from every brother walking disorderly and not according to the things which were handed down to you and which you received from us."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "verses": [
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 1,
+          "ref_gb": "帖后二1",
+          "ref_big5": "帖後二1",
+          "ref_en": "2 Thes. 2:1",
+          "text_gb": "弟兄们，关[Fn1]于我们主耶稣基督的来[Fn2][Cra]临，和我们聚[Fn3][Crb]集到祂那里，",
+          "text_big5": "弟兄們，關[Fn1]於我們主耶穌基督的來[Fn2][Cra]臨，和我們聚[Fn3][Crb]集到祂那裏，",
+          "text_en": "Now we ask you, brothers, with regard to the coming of our Lord Jesus Christ and our gathering together to Him,",
+          "text_gb_plain": "弟兄们，关于我们主耶稣基督的来临，和我们聚集到祂那里，",
+          "text_big5_plain": "弟兄們，關於我們主耶穌基督的來臨，和我們聚集到祂那裏，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "或，为着。",
+              "zh_big5": "或，為著。",
+              "en": "2:1 1 with Or, on behalf of."
+            },
+            {
+              "num": 2,
+              "loc": 15,
+              "zh": "希腊文，parousia，巴路西亚，意同在。见帖前二19注1，太二四3注3。这里说到两件事：主的巴路西亚(同在)，和我们聚集到祂那里(被提)。主的巴路西亚要开始于得胜者被提到天上神宝座那里(启十二5～6)，在大灾难(就是这世代末了的三年半，也就是但九27的末七后半——太二四21与注，启十一2与注4)的末了要来到空中(启十1与注2)，持续一时，而后结束于“祂巴路西亚的显现。”(8，太二四30与注5。)在主巴路西亚停留于空中时，大体的信徒要被提，在空中与主相会(帖前四17)。照上下文，2节“主的日子，”就是指主巴路西亚(来临)的日子，在这日子大体的信徒要被提。3节确定的告诉我们，在这日子之前，敌基督要显露出来，在大灾难中扮演极重要的角色(4，启十三1～8，12～15)。这清楚且明确的启示，主到空中的来临(巴路西亚)和大体信徒的被提，不会发生在大灾难之前。",
+              "zh_big5": "希臘文，parousia，巴路西亞，意同在。見帖前二19註1，太二四3註3。這裏說到兩件事：主的巴路西亞（同在），和我們聚集到祂那裏（被提）。主的巴路西亞要開始於得勝者被提到天上神寶座那裏，（啟十二5～6，）在大災難（就是這世代末了的三年半，也就是但九27的末七後半─太二四21與註，啟十一2與註4）的末了要來到空中，（啟十1與註2，）持續一時，而後結束於“祂巴路西亞的顯現。”（8，太二四30與註5。）在主巴路西亞停留於空中時，大體的信徒要被提，在空中與主相會。（帖前四17。）照上下文，2節“主的日子，”就是指主巴路西亞（來臨）的日子，在這日子大體的信徒要被提。3節確定的告訴我們，在這日子之前，敵基督要顯露出來，在大災難中扮演極重要的角色。（4，啟十三1～8，12～15。）這清楚且明確的啟示，主到空中的來臨（巴路西亞）和大體信徒的被提，不會發生在大災難之前。",
+              "en": "2:1 2 coming Gk. parousia, meaning presence. See note 1 Thes. 2:19 1 and note Matt. 24:3 3 in . Two matters are covered here: the Lord's parousia (presence) and our gathering together (rapture) to Him. The Lord's parousia will begin with the rapture of the overcomers to the throne of God in heaven (Rev. 12:5-6); at the end of the great tribulation, which will occur in the last three and a half years of this age, the second half of the last week in Dan. 9:27 (Matt. 24:21 and note Matt. 24:21 1 ; Rev. 11:2 and note Rev. 11:2 4 ), it will come to the air (Rev. 10:1 and note Rev. 10:1 2 ) and last for a time; and it will end with its manifestation, \"the manifestation of His parousia\" (v. 8; Matt. 24:30 and note Matt. 24:30 4 ). During the time in which the Lord's parousia remains in the air, the majority of the believers will be raptured to meet the Lord there (1 Thes. 4:17). According to the context, the day of the Lord in v. 2 refers to the day of the Lord's parousia (coming), in which the rapture of the majority of the believers will occur. Verse 3 tells us affirmatively that before that day Antichrist will be revealed to play the major role in the great tribulation (v. 4; Rev. 13:1-8, 12-15). This reveals clearly and definitely that the Lord's coming (parousia) to the air and the rapture of the majority of the believers cannot take place before the great tribulation."
+            },
+            {
+              "num": 3,
+              "loc": 21,
+              "zh": "直译，向祂聚集一起。",
+              "zh_big5": "直譯，向祂聚集一起。",
+              "en": "2:1 3 to Lit., toward."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "帖后二8，帖前二19，三13，四15",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "帖后二8",
+                  "ref_big5": "帖後二8",
+                  "ref_en": "2 Thes. 2:8",
+                  "text_gb": "那时这不法者必显露出来，主耶稣要用祂口中的气除灭他，并用祂来临的显现废掉他。",
+                  "text_big5": "那時這不法者必顯露出來，主耶穌要用祂口中的氣除滅他，並用祂來臨的顯現廢掉他。",
+                  "text_en": "And then the lawless one will be revealed (whom the Lord Jesus will slay by the breath of His mouth and bring to nothing by the manifestation of His coming),"
+                },
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 19,
+                  "ref_gb": "帖前二19",
+                  "ref_big5": "帖前二19",
+                  "ref_en": "1 Thes. 2:19",
+                  "text_gb": "我们主耶稣来临的时候，我们在祂面前的盼望、喜乐、或所夸的冠冕是什么？不就是你们么？",
+                  "text_big5": "我們主耶穌來臨的時候，我們在祂面前的盼望、喜樂、或所誇的冠冕是甚麼？不就是你們麼？",
+                  "text_en": "For what is our hope or joy or crown of boasting before our Lord Jesus at His coming? Are not even you?"
+                },
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 13,
+                  "ref_gb": "帖前三13",
+                  "ref_big5": "帖前三13",
+                  "ref_en": "1 Thes. 3:13",
+                  "text_gb": "好使你们的心，当我们主耶稣同祂众圣徒来临的时候，在我们的神与父面前，得以坚固，在圣别上无可指摘。",
+                  "text_big5": "好使你們的心，當我們主耶穌同祂眾聖徒來臨的時候，在我們的神與父面前，得以堅固，在聖別上無可指摘。",
+                  "text_en": "So that He may establish your hearts blameless in holiness before our God and Father at the coming of our Lord Jesus with all His saints."
+                },
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 15,
+                  "ref_gb": "帖前四15",
+                  "ref_big5": "帖前四15",
+                  "ref_en": "1 Thes. 4:15",
+                  "text_gb": "我们现在凭着主的话，告诉你们这件事，就是我们这些活着还存留到主来临的人，绝不能在那已经睡了的人之先；",
+                  "text_big5": "我們現在憑著主的話，告訴你們這件事，就是我們這些活著還存留到主來臨的人，絕不能在那已經睡了的人之先；",
+                  "text_en": "For this we say to you by the word of the Lord, that we who are living, who are left remaining unto the coming of the Lord, shall by no means precede those who have fallen asleep;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "帖前四17",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 17,
+                  "ref_gb": "帖前四17",
+                  "ref_big5": "帖前四17",
+                  "ref_en": "1 Thes. 4:17",
+                  "text_gb": "然后我们这些活着还存留的人，必同时与他们一起被提到云里，在空中与主相会；这样，我们就要和主常常同在。",
+                  "text_big5": "然後我們這些活著還存留的人，必同時與他們一起被提到雲裏，在空中與主相會；這樣，我們就要和主常常同在。",
+                  "text_en": "Then we who are living, who are left remaining, will be caught up together with them in the clouds to meet the Lord in the air; and thus we will be always with the Lord."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 2,
+          "ref_gb": "帖后二2",
+          "ref_big5": "帖後二2",
+          "ref_en": "2 Thes. 2:2",
+          "text_gb": "我们求你们，无论有灵[Fn1][Cra]、或言语、或冒我们名的书信，说主[Fn2]的日子已经来到，你[Fn3]们的心思都不要贸然摇动，你们也不要惊慌。",
+          "text_big5": "我們求你們，無論有靈[Fn1][Cra]、或言語、或冒我們名的書信，說主[Fn2]的日子已經來到，你[Fn3]們的心思都不要貿然搖動，你們也不要驚慌。",
+          "text_en": "That you be not quickly shaken in mind nor alarmed, neither by a spirit nor by word nor by a letter as if by us, to the effect that the day of the Lord has come.",
+          "text_gb_plain": "我们求你们，无论有灵、或言语、或冒我们名的书信，说主的日子已经来到，你们的心思都不要贸然摇动，你们也不要惊慌。",
+          "text_big5_plain": "我們求你們，無論有靈、或言語、或冒我們名的書信，說主的日子已經來到，你們的心思都不要貿然搖動，你們也不要驚慌。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "指一种说话的灵，假冒并宣称有神圣启示的权柄。",
+              "zh_big5": "指一種說話的靈，假冒並宣稱有神聖啟示的權柄。",
+              "en": "2:2 1 in Lit., from the mind; i.e., \"from a steady and soberly judging mind\" (Darby)."
+            },
+            {
+              "num": 2,
+              "loc": 26,
+              "zh": "见帖前五2注1。",
+              "zh_big5": "見帖前五2註1。",
+              "en": "2:2 2 spirit Referring to a speaking spirit that pretends and claims to have the authority of divine revelation."
+            },
+            {
+              "num": 3,
+              "loc": 35,
+              "zh": "直译，你们都不要从心思贸然摇动。意“从稳定而判断清明的心思”(Darby，达秘)摇动。",
+              "zh_big5": "直譯，你們都不要從心思貿然搖動。意“從穩定而判斷清明的心思”（Darby，達祕）搖動。",
+              "en": "2:2 3 day See note 1 Thes. 5:2 2 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "林前十二10，约壹四1",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 12,
+                  "verse": 10,
+                  "ref_gb": "林前十二10",
+                  "ref_big5": "林前十二10",
+                  "ref_en": "1 Cor. 12:10",
+                  "text_gb": "另有一人能行异能，另有一人能申言，另有一人能辨别诸灵，另有别人能说各种方言，另有一人能翻方言。",
+                  "text_big5": "另有一人能行異能，另有一人能申言，另有一人能辨別諸靈，另有別人能說各種方言，另有一人能繙方言。",
+                  "text_en": "And to another operations of works of power, and to another prophecy, and to another discerning of spirits; to a different one various kinds of tongues, and to another interpretation of tongues."
+                },
+                {
+                  "book": 62,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "约壹四1",
+                  "ref_big5": "約壹四1",
+                  "ref_en": "1 John 4:1",
+                  "text_gb": "亲爱的，一切的灵，你们不可都信，总要试证那些灵是出于神的不是；因为有许多假申言者已经出来，进到世界里了。",
+                  "text_big5": "親愛的，一切的靈，你們不可都信，總要試證那些靈是出於神的不是；因為有許多假申言者已經出來，進到世界裏了。",
+                  "text_en": "Beloved, do not believe every spirit, but prove the spirits whether they are of God, because many false prophets have gone out into the world."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 3,
+          "ref_gb": "帖后二3",
+          "ref_big5": "帖後二3",
+          "ref_en": "2 Thes. 2:3",
+          "text_gb": "不要让任何人用任何方法诱[Fn1]骗你们；因为那日子以前，必有背[Fn2][Cra]道的事先来，并有那不[Fn3][Crb]法的人，就是灭[Crc]亡之子[Crd]，显露出来；",
+          "text_big5": "不要讓任何人用任何方法誘[Fn1]騙你們；因為那日子以前，必有背[Fn2][Cra]道的事先來，並有那不[Fn3][Crb]法的人，就是滅[Crc]亡之子[Crd]，顯露出來；",
+          "text_en": "Let no one deceive you in any way, because it will not come unless the apostasy comes first and the man of lawlessness is revealed, the son of perdition,",
+          "text_gb_plain": "不要让任何人用任何方法诱骗你们；因为那日子以前，必有背道的事先来，并有那不法的人，就是灭亡之子，显露出来；",
+          "text_big5_plain": "不要讓任何人用任何方法誘騙你們；因為那日子以前，必有背道的事先來，並有那不法的人，就是滅亡之子，顯露出來；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 12,
+              "zh": "或，迷惑。“不仅给人虚谎的印象，实际上更将人引入歧途。”(Vincent，文生。)",
+              "zh_big5": "或，迷惑。“不僅給人虛謊的印象，實際上更將人引入歧途。”（Vincent，文生。）",
+              "en": "2:3 1 deceive Or, beguile; \"not only making a false impression, but actually leading astray\" (Vincent)."
+            },
+            {
+              "num": 2,
+              "loc": 27,
+              "zh": "或，离经叛道。即(从圣经所启示神经纶的正路)背离。",
+              "zh_big5": "或，離經叛道。即（從聖經所啟示神經綸的正路）背離。",
+              "en": "2:3 2 apostasy I.e., falling away (from the straight way of God's economy as revealed in the Scriptures)."
+            },
+            {
+              "num": 3,
+              "loc": 37,
+              "zh": "指敌基督，如在但七20～21、24～26，九27，十一36～37，启十三1～8、12～18和十九19～20所预言的。他就是那不法的人，更改律法，异常的毁灭且败坏多人，亵渎神并诱骗人。因此，主要将他彻底毁灭，他就成了灭亡之子。",
+              "zh_big5": "指敵基督，如在但七20～21、24～26，九27，十一36～37，啟十三1～8、12～18和十九19～20所豫言的。他就是那不法的人，更改律法，異常的毀滅且敗壞多人，褻瀆神並誘騙人。因此，主要將他徹底毀滅，他就成了滅亡之子。",
+              "en": "2:3 3 man Antichrist, as prophesied in Dan. 7:20-21, 24-26; 9:27; 11:36-37; Rev. 13:1-8, 12-18; 19:19-20. He will be the man of lawlessness and will change laws, destroy and corrupt many to an extraordinary degree, blaspheme God, and deceive men. Hence, the Lord will utterly destroy him, and he will become the son of perdition."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 27,
+              "raw": "提前四1",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "提前四1",
+                  "ref_big5": "提前四1",
+                  "ref_en": "1 Tim. 4:1",
+                  "text_gb": "但那灵明说，在后来的时期，必有人离弃信仰，去注意迷惑人的灵和鬼的教训；",
+                  "text_big5": "但那靈明說，在後來的時期，必有人離棄信仰，去注意迷惑人的靈和鬼的教訓；",
+                  "text_en": "But the Spirit says expressly that in later times some will depart from the faith, giving heed to deceiving spirits and teachings of demons"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 37,
+              "raw": "帖后二7～8，太七23，罗六19",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 7,
+                  "ref_gb": "帖后二7",
+                  "ref_big5": "帖後二7",
+                  "ref_en": "2 Thes. 2:7",
+                  "text_gb": "因为那不法的奥秘已经发动，只等那现在的抑制者被除去；",
+                  "text_big5": "因為那不法的奧祕已經發動，只等那現在的抑制者被除去；",
+                  "text_en": "For it is the mystery of lawlessness that is now operating, but only until the one now restraining goes out of the way."
+                },
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "帖后二8",
+                  "ref_big5": "帖後二8",
+                  "ref_en": "2 Thes. 2:8",
+                  "text_gb": "那时这不法者必显露出来，主耶稣要用祂口中的气除灭他，并用祂来临的显现废掉他。",
+                  "text_big5": "那時這不法者必顯露出來，主耶穌要用祂口中的氣除滅他，並用祂來臨的顯現廢掉他。",
+                  "text_en": "And then the lawless one will be revealed (whom the Lord Jesus will slay by the breath of His mouth and bring to nothing by the manifestation of His coming),"
+                },
+                {
+                  "book": 40,
+                  "chapter": 7,
+                  "verse": 23,
+                  "ref_gb": "太七23",
+                  "ref_big5": "太七23",
+                  "ref_en": "Matt. 7:23",
+                  "text_gb": "那时，我要向他们宣告：我从来不认识你们，你们这些行不法的人，离开我去吧。",
+                  "text_big5": "那時，我要向他們宣告：我從來不認識你們，你們這些行不法的人，離開我去罷。",
+                  "text_en": "And then I will declare to them: I never knew you. Depart from Me, you workers of lawlessness."
+                },
+                {
+                  "book": 45,
+                  "chapter": 6,
+                  "verse": 19,
+                  "ref_gb": "罗六19",
+                  "ref_big5": "羅六19",
+                  "ref_en": "Rom. 6:19",
+                  "text_gb": "我因你们肉体的软弱，就照着人的常情说，你们从前怎样将肢体献给不洁不法作奴仆，以至于不法，现今也要照样将肢体献给义作奴仆，以至于圣别。",
+                  "text_big5": "我因你們肉體的軟弱，就照著人的常情說，你們從前怎樣將肢體獻給不潔不法作奴僕，以至於不法，現今也要照樣將肢體獻給義作奴僕，以至於聖別。",
+                  "text_en": "I speak in human terms because of the weakness of your flesh. For just as you presented your members as slaves to uncleanness and lawlessness unto lawlessness, so now present your members as slaves to righteousness unto sanctification."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 44,
+              "raw": "帖后二8，但七26，八25，启十九20",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "帖后二8",
+                  "ref_big5": "帖後二8",
+                  "ref_en": "2 Thes. 2:8",
+                  "text_gb": "那时这不法者必显露出来，主耶稣要用祂口中的气除灭他，并用祂来临的显现废掉他。",
+                  "text_big5": "那時這不法者必顯露出來，主耶穌要用祂口中的氣除滅他，並用祂來臨的顯現廢掉他。",
+                  "text_en": "And then the lawless one will be revealed (whom the Lord Jesus will slay by the breath of His mouth and bring to nothing by the manifestation of His coming),"
+                },
+                {
+                  "book": 27,
+                  "chapter": 7,
+                  "verse": 26,
+                  "ref_gb": "但七26",
+                  "ref_big5": "但七26",
+                  "ref_en": "Dan. 7:26",
+                  "text_gb": "然而审判者必坐庭，他的权柄必被夺去，以致毁坏、灭绝，一直到底。",
+                  "text_big5": "然而審判者必坐庭，他的權柄必被奪去，以致毀壞、滅絕，一直到底。",
+                  "text_en": "But the court of judgment will sit, and they will take away his dominion, so as to annihilate and destroy it unto the end."
+                },
+                {
+                  "book": 27,
+                  "chapter": 8,
+                  "verse": 25,
+                  "ref_gb": "但八25",
+                  "ref_big5": "但八25",
+                  "ref_en": "Dan. 8:25",
+                  "text_gb": "他用权术使手中的诡计亨通；他心里自高自大，在人坦然安定的时候，毁灭多人；又要站起来攻击万君之君，至终却非因人手而被灭。",
+                  "text_big5": "他用權術使手中的詭計亨通；他心裏自高自大，在人坦然安定的時候，毀滅多人；又要站起來攻擊萬君之君，至終卻非因人手而被滅。",
+                  "text_en": "Through his craftiness / He will also cause deceit to prosper in his hand; / And he will magnify himself in his heart; / And he will destroy many who are complacently secure. / And against the Prince of princes he will stand up; / But he will be broken, yet not by human hands."
+                },
+                {
+                  "book": 66,
+                  "chapter": 19,
+                  "verse": 20,
+                  "ref_gb": "启十九20",
+                  "ref_big5": "啟十九20",
+                  "ref_en": "Rev. 19:20",
+                  "text_gb": "那兽被擒拿，那在兽面前曾行奇事，借此迷惑受兽印记，并拜兽像之人的假申言者，也与兽同被擒拿。他们两个就活活地被扔在烧着硫磺的火湖里。",
+                  "text_big5": "那獸被擒拿，那在獸面前曾行奇事，藉此迷惑受獸印記，並拜獸像之人的假申言者，也與獸同被擒拿。他們兩個就活活的被扔在燒著硫磺的火湖裏。",
+                  "text_en": "And the beast was seized, and with him the false prophet, who in his presence had done the signs by which he deceived those who received the mark of the beast and those who worshipped his image. These two were cast alive into the lake of fire, which burns with brimstone."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 47,
+              "raw": "参约十七12",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 17,
+                  "verse": 12,
+                  "ref_gb": "约十七12",
+                  "ref_big5": "約十七12",
+                  "ref_en": "John 17:12",
+                  "text_gb": "我与他们同在的时候，我在你的名，就是你所赐给我的名里，保守了他们，也护卫了他们，其中除了那灭亡之子，没有一个灭亡的，好叫经书得着应验。",
+                  "text_big5": "我與他們同在的時候，我在你的名，就是你所賜給我的名裏，保守了他們，也護衛了他們，其中除了那滅亡之子，沒有一個滅亡的，好叫經書得著應驗。",
+                  "text_en": "When I was with them, I kept them in Your name, which You have given to Me, and I guarded them; and not one of them perished, except the son of perdition, that the Scripture might be fulfilled."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 4,
+          "ref_gb": "帖后二4",
+          "ref_big5": "帖後二4",
+          "ref_en": "2 Thes. 2:4",
+          "text_gb": "他是那敌对、且高[Fn1][Cra]抬自己超过一切称为神[Crb]，或受人敬拜者的，甚至坐[Crc]在神[Fn2][Crd]的殿里，展示自己，说他[Cre]就是神。",
+          "text_big5": "他是那敵對、且高[Fn1][Cra]抬自己超過一切稱為神[Crb]，或受人敬拜者的，甚至坐[Crc]在神[Fn2][Crd]的殿裏，展示自己，說他[Cre]就是神。",
+          "text_en": "Who opposes and exalts himself above all that is called God or an object of worship, so that he sits in the temple of God, setting himself forth, saying that he is God.",
+          "text_gb_plain": "他是那敌对、且高抬自己超过一切称为神，或受人敬拜者的，甚至坐在神的殿里，展示自己，说他就是神。",
+          "text_big5_plain": "他是那敵對、且高抬自己超過一切稱為神，或受人敬拜者的，甚至坐在神的殿裏，展示自己，說他就是神。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 8,
+              "zh": "这应验但十一36～37关于敌基督的预言。这要发生在但九27所预言的末七后半。见太二四15注1。",
+              "zh_big5": "這應驗但十一36～37關於敵基督的豫言。這要發生在但九27所豫言的末七後半。見太二四15註1。",
+              "en": "2:4 1 exalts This fulfills the prophecy concerning Antichrist in Dan. 11:36-37. This will take place in the second half of the last week, as prophesied in Dan. 9:27. See note Matt. 24:15 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 32,
+              "zh": "这就是太二四15的“圣地，”指明在主回来以前，神的殿要重建。",
+              "zh_big5": "這就是太二四15的“聖地，”指明在主回來以前，神的殿要重建。",
+              "en": "2:4 2 temple This is \"the holy place\" in Matt. 24:15, indicating that the temple of God will be rebuilt before the Lord comes back."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "参赛十四13",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 13,
+                  "ref_gb": "赛十四13",
+                  "ref_big5": "賽十四13",
+                  "ref_en": "Isa. 14:13",
+                  "text_gb": "你心里曾说，我要升到天上；我要高举我的宝座在神众星以上。我要坐在聚会的山上，在北方的极处。",
+                  "text_big5": "你心裏曾說，我要升到天上；我要高舉我的寶座在神眾星以上。我要坐在聚會的山上，在北方的極處。",
+                  "text_en": "But you, you said in your heart: / I will ascend to heaven; / Above the stars of God / I will exalt my throne. / And I will sit upon the mount of assembly / In the uttermost parts of the north."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "林前八5",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 8,
+                  "verse": 5,
+                  "ref_gb": "林前八5",
+                  "ref_big5": "林前八5",
+                  "ref_en": "1 Cor. 8:5",
+                  "text_gb": "纵然有称为神的，或在天，或在地，就如那许多的神，许多的主，",
+                  "text_big5": "縱然有稱為神的，或在天，或在地，就如那許多的神，許多的主，",
+                  "text_en": "For even if there are so-called gods, either in heaven or on earth, even as there are many gods and many lords,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 30,
+              "raw": "参赛十四13～14，结二八2",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 13,
+                  "ref_gb": "赛十四13",
+                  "ref_big5": "賽十四13",
+                  "ref_en": "Isa. 14:13",
+                  "text_gb": "你心里曾说，我要升到天上；我要高举我的宝座在神众星以上。我要坐在聚会的山上，在北方的极处。",
+                  "text_big5": "你心裏曾說，我要升到天上；我要高舉我的寶座在神眾星以上。我要坐在聚會的山上，在北方的極處。",
+                  "text_en": "But you, you said in your heart: / I will ascend to heaven; / Above the stars of God / I will exalt my throne. / And I will sit upon the mount of assembly / In the uttermost parts of the north."
+                },
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 14,
+                  "ref_gb": "赛十四14",
+                  "ref_big5": "賽十四14",
+                  "ref_en": "Isa. 14:14",
+                  "text_gb": "我要升到高云之上；我要使自己与至高者一样。",
+                  "text_big5": "我要升到高雲之上；我要使自己與至高者一樣。",
+                  "text_en": "I will ascend above the heights of the clouds; / I will make myself like the Most High."
+                },
+                {
+                  "book": 26,
+                  "chapter": 28,
+                  "verse": 2,
+                  "ref_gb": "结二八2",
+                  "ref_big5": "結二八2",
+                  "ref_en": "Ezek. 28:2",
+                  "text_gb": "人子啊，你对推罗的君王说，主耶和华如此说，因你心里高傲，说，我是神；我在海中心坐在神的位上。你虽然居心自比神，也不过是人，并不是神。",
+                  "text_big5": "人子阿，你對推羅的君王說，主耶和華如此說，因你心裏高傲，說，我是神；我在海中心坐在神的位上。你雖然居心自比神，也不過是人，並不是神。",
+                  "text_en": "Son of man, say to the prince of Tyre, Thus says the Lord Jehovah, Because your heart is lifted up, and you have said, I am a god-I sit in the seat of God in the midst of the seas; yet you are a man and not a god, although you set your heart as if it were the heart of God."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 32,
+              "raw": "参太二四15",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 24,
+                  "verse": 15,
+                  "ref_gb": "太二四15",
+                  "ref_big5": "太二四15",
+                  "ref_en": "Matt. 24:15",
+                  "text_gb": "你们看见那借着申言者但以理所说，行毁坏的可憎之物站在圣地，（读这经的人需要会意，）",
+                  "text_big5": "你們看見那藉著申言者但以理所說，行毀壞的可憎之物站在聖地，（讀這經的人需要會意，）",
+                  "text_en": "Therefore when you see the abomination of desolation, which was spoken of through Daniel the prophet, standing in the holy place (let him who reads understand),"
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 43,
+              "raw": "参启十三8，12",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 13,
+                  "verse": 8,
+                  "ref_gb": "启十三8",
+                  "ref_big5": "啟十三8",
+                  "ref_en": "Rev. 13:8",
+                  "text_gb": "凡住在地上，名字没有记在从创世以来被杀之羔羊生命册上的人，都要拜它。",
+                  "text_big5": "凡住在地上，名字沒有記在從創世以來被殺之羔羊生命冊上的人，都要拜牠。",
+                  "text_en": "And all those dwelling on the earth will worship him, everyone whose name is not written in the book of life of the Lamb who was slain from the foundation of the world."
+                },
+                {
+                  "book": 66,
+                  "chapter": 13,
+                  "verse": 12,
+                  "ref_gb": "启十三12",
+                  "ref_big5": "啟十三12",
+                  "ref_en": "Rev. 13:12",
+                  "text_gb": "它在头一个兽面前，施行头一个兽一切的权柄，并且叫地和住在地上的人，拜那死伤医好的头一个兽。",
+                  "text_big5": "牠在頭一個獸面前，施行頭一個獸一切的權柄，並且叫地和住在地上的人，拜那死傷醫好的頭一個獸。",
+                  "text_en": "And he exercises all the authority of the first beast in his sight, and he causes the earth and those who dwell in it to worship the first beast, whose death stroke was healed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 5,
+          "ref_gb": "帖后二5",
+          "ref_big5": "帖後二5",
+          "ref_en": "2 Thes. 2:5",
+          "text_gb": "我还在你们那里的时候，曾一再把这些事告诉你们，你们不记得么？",
+          "text_big5": "我還在你們那裏的時候，曾一再把這些事告訴你們，你們不記得麼？",
+          "text_en": "Do you not remember that while I was still with you, I said these things to you?",
+          "text_gb_plain": "我还在你们那里的时候，曾一再把这些事告诉你们，你们不记得么？",
+          "text_big5_plain": "我還在你們那裏的時候，曾一再把這些事告訴你們，你們不記得麼？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 6,
+          "ref_gb": "帖后二6",
+          "ref_big5": "帖後二6",
+          "ref_en": "2 Thes. 2:6",
+          "text_gb": "现在你们也知道，那抑[Fn1]制他，使他到了自己的时[Fn2]候，才可以显露出来的是什么。",
+          "text_big5": "現在你們也知道，那抑[Fn1]制他，使他到了自己的時[Fn2]候，纔可以顯露出來的是甚麼。",
+          "text_en": "And now you know that which restrains, so that he might be revealed in his own time.",
+          "text_gb_plain": "现在你们也知道，那抑制他，使他到了自己的时候，才可以显露出来的是什么。",
+          "text_big5_plain": "現在你們也知道，那抑制他，使他到了自己的時候，纔可以顯露出來的是甚麼。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "指某种能力，拦阻那不法之人——敌基督——的显露。",
+              "zh_big5": "指某種能力，攔阻那不法之人─敵基督─的顯露。",
+              "en": "2:6 1 restrains This refers to some power that hinders the revelation of the man of lawlessness, Antichrist."
+            },
+            {
+              "num": 2,
+              "loc": 21,
+              "zh": "指神所规定的时候，就是但九27，七24～26，启十三1～8所预言，七十个七的末七。",
+              "zh_big5": "指神所規定的時候，就是但九27，七24～26，啟十三1～8所豫言，七十個七的末七。",
+              "en": "2:6 2 time The time appointed by God, which will be the last of the seventy weeks, as prophesied in Dan. 9:27; 7:24-26; Rev. 13:1-8."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 7,
+          "ref_gb": "帖后二7",
+          "ref_big5": "帖後二7",
+          "ref_en": "2 Thes. 2:7",
+          "text_gb": "因为那不[Fn1][Cra]法的奥秘已经发动，只等那现在的抑制者被[Fn2]除去；",
+          "text_big5": "因為那不[Fn1][Cra]法的奧祕已經發動，只等那現在的抑制者被[Fn2]除去；",
+          "text_en": "For it is the mystery of lawlessness that is now operating, but only until the one now restraining goes out of the way.",
+          "text_gb_plain": "因为那不法的奥秘已经发动，只等那现在的抑制者被除去；",
+          "text_big5_plain": "因為那不法的奧祕已經發動，只等那現在的抑制者被除去；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "不法，标出敌基督的特征(3)。这不法在今世已经奥秘的发动。这就是今天在列国和人类社会中所运行之不法的奥秘。",
+              "zh_big5": "不法，標出敵基督的特徵。（3。）這不法在今世已經奧祕的發動。這就是今天在列國和人類社會中所運行之不法的奧祕。",
+              "en": "2:7 1 mystery The lawlessness that will characterize Antichrist (v. 3) is already operating in this age mysteriously. It is the mystery of lawlessness working today among the nations and in human society."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "这也许是指那抑制者被挪开。",
+              "zh_big5": "這也許是指那抑制者被挪開。",
+              "en": "2:7 2 goes This probably means that the restraining one is taken out of the way."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "帖后二3",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 3,
+                  "ref_gb": "帖后二3",
+                  "ref_big5": "帖後二3",
+                  "ref_en": "2 Thes. 2:3",
+                  "text_gb": "不要让任何人用任何方法诱骗你们；因为那日子以前，必有背道的事先来，并有那不法的人，就是灭亡之子，显露出来；",
+                  "text_big5": "不要讓任何人用任何方法誘騙你們；因為那日子以前，必有背道的事先來，並有那不法的人，就是滅亡之子，顯露出來；",
+                  "text_en": "Let no one deceive you in any way, because it will not come unless the apostasy comes first and the man of lawlessness is revealed, the son of perdition,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 8,
+          "ref_gb": "帖后二8",
+          "ref_big5": "帖後二8",
+          "ref_en": "2 Thes. 2:8",
+          "text_gb": "那时这不[Cra]法者必显露出来，主耶稣要用祂口[Crb]中的气[Fn1][Crc]除[Fn2]灭他，并用祂来[Fn3][Crd]临的显[Fn4]现废[Cre]掉他。",
+          "text_big5": "那時這不[Cra]法者必顯露出來，主耶穌要用祂口[Crb]中的氣[Fn1][Crc]除[Fn2]滅他，並用祂來[Fn3][Crd]臨的顯[Fn4]現廢[Cre]掉他。",
+          "text_en": "And then the lawless one will be revealed (whom the Lord Jesus will slay by the breath of His mouth and bring to nothing by the manifestation of His coming),",
+          "text_gb_plain": "那时这不法者必显露出来，主耶稣要用祂口中的气除灭他，并用祂来临的显现废掉他。",
+          "text_big5_plain": "那時這不法者必顯露出來，主耶穌要用祂口中的氣除滅他，並用祂來臨的顯現廢掉他。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 22,
+              "zh": "原文与灵同字。",
+              "zh_big5": "原文與靈同字。",
+              "en": "2:8 1 slay This will be fulfilled in Rev. 19:19-20."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "这要在启十九19～20得着应验。",
+              "zh_big5": "這要在啟十九19～20得著應驗。",
+              "en": "2:8 2 breath The same Greek word as for spirit."
+            },
+            {
+              "num": 3,
+              "loc": 30,
+              "zh": "见1注2。",
+              "zh_big5": "見1註2。",
+              "en": "2:8 3 manifestation Or, shining forth. This indicates that the Lord's coming (parousia) will be hidden before it is manifested openly (see note Matt. 24:27 1 ). This indicates also that the Lord's coming will last a period of time (see note 2 Thes. 2:1 2 ). First, it will be in secret, and then it will be manifested to the public."
+            },
+            {
+              "num": 4,
+              "loc": 33,
+              "zh": "或，显照。这指明主的来临(巴路西亚)，在公开显现以前是隐密的(见太二四27注1)。这也指明主的来临持续一段时间(见1注2)，先是隐密的，然后显与众人。",
+              "zh_big5": "或，顯照。這指明主的來臨（巴路西亞），在公開顯現以前是隱密的。（見太二四27註1。）這也指明主的來臨持續一段時間，（見1註2，）先是隱密的，然後顯與眾人。",
+              "en": "2:8 4 coming See note 2 Thes. 2:1 2 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "帖后二3",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 3,
+                  "ref_gb": "帖后二3",
+                  "ref_big5": "帖後二3",
+                  "ref_en": "2 Thes. 2:3",
+                  "text_gb": "不要让任何人用任何方法诱骗你们；因为那日子以前，必有背道的事先来，并有那不法的人，就是灭亡之子，显露出来；",
+                  "text_big5": "不要讓任何人用任何方法誘騙你們；因為那日子以前，必有背道的事先來，並有那不法的人，就是滅亡之子，顯露出來；",
+                  "text_en": "Let no one deceive you in any way, because it will not come unless the apostasy comes first and the man of lawlessness is revealed, the son of perdition,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 19,
+              "raw": "启二16，十九15，21",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 2,
+                  "verse": 16,
+                  "ref_gb": "启二16",
+                  "ref_big5": "啟二16",
+                  "ref_en": "Rev. 2:16",
+                  "text_gb": "所以你要悔改；不然，我就快临到你那里，用我口中的剑攻击他们。",
+                  "text_big5": "所以你要悔改；不然，我就快臨到你那裏，用我口中的劍攻擊他們。",
+                  "text_en": "Repent therefore; but if not, I am coming to you quickly, and I will make war with them with the sword of My mouth."
+                },
+                {
+                  "book": 66,
+                  "chapter": 19,
+                  "verse": 15,
+                  "ref_gb": "启十九15",
+                  "ref_big5": "啟十九15",
+                  "ref_en": "Rev. 19:15",
+                  "text_gb": "有利剑从祂口中出来，可以用以击杀列国；祂必用铁杖辖管他们，并要踹全能神烈怒的酒醡。",
+                  "text_big5": "有利劍從祂口中出來，可以用以擊殺列國；祂必用鐵杖轄管他們，並要踹全能神烈怒的酒醡。",
+                  "text_en": "And out of His mouth proceeds a sharp sword, that with it He might smite the nations; and He will shepherd them with an iron rod; and He treads the winepress of the fury of the wrath of God the Almighty."
+                },
+                {
+                  "book": 66,
+                  "chapter": 19,
+                  "verse": 21,
+                  "ref_gb": "启十九21",
+                  "ref_big5": "啟十九21",
+                  "ref_en": "Rev. 19:21",
+                  "text_gb": "其余的被骑白马者口中出来的剑杀了，所有的飞鸟都吃饱了他们的肉。",
+                  "text_big5": "其餘的被騎白馬者口中出來的劍殺了，所有的飛鳥都喫飽了他們的肉。",
+                  "text_en": "And the rest were killed with the sword which proceeds out of the mouth of Him who sits on the horse, and all the birds were filled with their flesh."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 22,
+              "raw": "伯四9，赛十一4",
+              "refs": [
+                {
+                  "book": 18,
+                  "chapter": 4,
+                  "verse": 9,
+                  "ref_gb": "伯四9",
+                  "ref_big5": "伯四9",
+                  "ref_en": "Job 4:9",
+                  "text_gb": "他们因神的气而灭亡，因神的怒气而消没。",
+                  "text_big5": "他們因神的氣而滅亡，因神的怒氣而消沒。",
+                  "text_en": "By the breath of God they perish, / And by the blast of His anger they are consumed."
+                },
+                {
+                  "book": 23,
+                  "chapter": 11,
+                  "verse": 4,
+                  "ref_gb": "赛十一4",
+                  "ref_big5": "賽十一4",
+                  "ref_en": "Isa. 11:4",
+                  "text_gb": "却要以公义审判贫穷人，以公正判断地上的困苦人；以口中的杖击打这地；以嘴里的气杀戮恶人。",
+                  "text_big5": "卻要以公義審判貧窮人，以公正判斷地上的困苦人；以口中的杖擊打這地；以嘴裏的氣殺戮惡人。",
+                  "text_en": "But He will judge the poor in righteousness, / And decide with equity for the afflicted of the land. / And He will strike the land with the rod of His mouth, / And with the breath of His lips He will slay the wicked."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 30,
+              "raw": "帖后二1",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 1,
+                  "ref_gb": "帖后二1",
+                  "ref_big5": "帖後二1",
+                  "ref_en": "2 Thes. 2:1",
+                  "text_gb": "弟兄们，关于我们主耶稣基督的来临，和我们聚集到祂那里，",
+                  "text_big5": "弟兄們，關於我們主耶穌基督的來臨，和我們聚集到祂那裏，",
+                  "text_en": "Now we ask you, brothers, with regard to the coming of our Lord Jesus Christ and our gathering together to Him,"
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 35,
+              "raw": "帖后二3",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 3,
+                  "ref_gb": "帖后二3",
+                  "ref_big5": "帖後二3",
+                  "ref_en": "2 Thes. 2:3",
+                  "text_gb": "不要让任何人用任何方法诱骗你们；因为那日子以前，必有背道的事先来，并有那不法的人，就是灭亡之子，显露出来；",
+                  "text_big5": "不要讓任何人用任何方法誘騙你們；因為那日子以前，必有背道的事先來，並有那不法的人，就是滅亡之子，顯露出來；",
+                  "text_en": "Let no one deceive you in any way, because it will not come unless the apostasy comes first and the man of lawlessness is revealed, the son of perdition,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 9,
+          "ref_gb": "帖后二9",
+          "ref_big5": "帖後二9",
+          "ref_en": "2 Thes. 2:9",
+          "text_gb": "这不法者的来临，是照[Fn1]着撒但的运行，行各样的异能[Cra]、神[Crb]迹、和虚[Fn2]谎的奇事，",
+          "text_big5": "這不法者的來臨，是照[Fn1]著撒但的運行，行各樣的異能[Cra]、神[Crb]蹟、和虛[Fn2]謊的奇事，",
+          "text_en": "The coming of whom is according to Satan's operation in all power and signs and wonders of a lie",
+          "text_gb_plain": "这不法者的来临，是照着撒但的运行，行各样的异能、神迹、和虚谎的奇事，",
+          "text_big5_plain": "這不法者的來臨，是照著撒但的運行，行各樣的異能、神蹟、和虛謊的奇事，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "如启十三2、4、7所预言的。",
+              "zh_big5": "如啟十三2、4、7所豫言的。",
+              "en": "2:9 1 according As prophesied in Rev. 13:2, 4, 7."
+            },
+            {
+              "num": 2,
+              "loc": 29,
+              "zh": "撒但诱骗人的运行，完全是虚谎的(10)，正如他是说谎的，也是说谎者的父(约八44)。",
+              "zh_big5": "撒但誘騙人的運行，完全是虛謊的，（10，）正如他是說謊的，也是說謊者的父。（約八44。）",
+              "en": "2:9 2 lie The entire operation of Satan to deceive people (v. 10) is in its totality a lie, just as he is a liar and the father of liars (John 8:44)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 23,
+              "raw": "启十三2，但八24",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 13,
+                  "verse": 2,
+                  "ref_gb": "启十三2",
+                  "ref_big5": "啟十三2",
+                  "ref_en": "Rev. 13:2",
+                  "text_gb": "我所看见的兽，形状像豹，脚像熊的脚，口像狮子的口；那龙将自己的能力、座位和大权柄，都给了它。",
+                  "text_big5": "我所看見的獸，形狀像豹，腳像熊的腳，口像獅子的口；那龍將自己的能力、座位和大權柄，都給了牠。",
+                  "text_en": "And the beast which I saw was like a leopard, and his feet like those of a bear, and his mouth like the mouth of a lion. And the dragon gave him his power and his throne and great authority."
+                },
+                {
+                  "book": 27,
+                  "chapter": 8,
+                  "verse": 24,
+                  "ref_gb": "但八24",
+                  "ref_big5": "但八24",
+                  "ref_en": "Dan. 8:24",
+                  "text_gb": "他的力量必强大，却不是因自己的力量，他必行非常的毁灭，并且行事顺利；又必毁灭有能力者和圣民。",
+                  "text_big5": "他的力量必強大，卻不是因自己的力量，他必行非常的毀滅，並且行事順利；又必毀滅有能力者和聖民。",
+                  "text_en": "And his power will be mighty, but not by his own power. / And he will destroy in an extraordinary manner / And will prosper and take action. / He will destroy mighty men / And the holy people."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 25,
+              "raw": "启十三13～14，太二四24",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 13,
+                  "verse": 13,
+                  "ref_gb": "启十三13",
+                  "ref_big5": "啟十三13",
+                  "ref_en": "Rev. 13:13",
+                  "text_gb": "又行大奇事，甚至在人面前，叫火从天降在地上。",
+                  "text_big5": "又行大奇事，甚至在人面前，叫火從天降在地上。",
+                  "text_en": "And he does great signs, so that he even makes fire come down out of heaven to the earth before men."
+                },
+                {
+                  "book": 66,
+                  "chapter": 13,
+                  "verse": 14,
+                  "ref_gb": "启十三14",
+                  "ref_big5": "啟十三14",
+                  "ref_en": "Rev. 13:14",
+                  "text_gb": "它因给它能力在兽面前所行的奇事，就迷惑住在地上的人，吩咐住在地上的人，给那受刀伤还活着的兽作个像。",
+                  "text_big5": "牠因給牠能力在獸面前所行的奇事，就迷惑住在地上的人，吩咐住在地上的人，給那受刀傷還活著的獸作個像。",
+                  "text_en": "And he deceives those who dwell on the earth on account of the signs which he was given power to do before the beast, commanding those who dwell on the earth to make an image to the beast, who had the stroke of the sword and revived."
+                },
+                {
+                  "book": 40,
+                  "chapter": 24,
+                  "verse": 24,
+                  "ref_gb": "太二四24",
+                  "ref_big5": "太二四24",
+                  "ref_en": "Matt. 24:24",
+                  "text_gb": "因为假基督和假申言者将要起来，显大神迹和大奇事；若是可能，连选民也要迷惑了。",
+                  "text_big5": "因為假基督和假申言者將要起來，顯大神蹟和大奇事；若是可能，連選民也要迷惑了。",
+                  "text_en": "For false Christs and false prophets will arise and will show great signs and wonders so as to lead astray, if possible, even the chosen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 10,
+          "ref_gb": "帖后二10",
+          "ref_big5": "帖後二10",
+          "ref_en": "2 Thes. 2:10",
+          "text_gb": "并且在那灭[Cra]亡的人身上，行各样不义的欺骗；因他们不领受对真理的爱，使他们得救。",
+          "text_big5": "並且在那滅[Cra]亡的人身上，行各樣不義的欺騙；因他們不領受對真理的愛，使他們得救。",
+          "text_en": "And in all deceit of unrighteousness among those who are perishing, because they did not receive the love of the truth that they might be saved.",
+          "text_gb_plain": "并且在那灭亡的人身上，行各样不义的欺骗；因他们不领受对真理的爱，使他们得救。",
+          "text_big5_plain": "並且在那滅亡的人身上，行各樣不義的欺騙；因他們不領受對真理的愛，使他們得救。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "林前一18，林后二15，四3",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 1,
+                  "verse": 18,
+                  "ref_gb": "林前一18",
+                  "ref_big5": "林前一18",
+                  "ref_en": "1 Cor. 1:18",
+                  "text_gb": "因为十字架的话，对那正在灭亡的人为愚拙，对我们正在得救的人却为神的大能。",
+                  "text_big5": "因為十字架的話，對那正在滅亡的人為愚拙，對我們正在得救的人卻為神的大能。",
+                  "text_en": "For the word of the cross is to those who are perishing foolishness, but to us who are being saved it is the power of God."
+                },
+                {
+                  "book": 47,
+                  "chapter": 2,
+                  "verse": 15,
+                  "ref_gb": "林后二15",
+                  "ref_big5": "林後二15",
+                  "ref_en": "2 Cor. 2:15",
+                  "text_gb": "因为无论在那些正在得救的人中，或是在那些正在灭亡的人中，我们都是献给神的基督馨香之气：",
+                  "text_big5": "因為無論在那些正在得救的人中，或是在那些正在滅亡的人中，我們都是獻給神的基督馨香之氣：",
+                  "text_en": "For we are a fragrance of Christ to God in those who are being saved and in those who are perishing:"
+                },
+                {
+                  "book": 47,
+                  "chapter": 4,
+                  "verse": 3,
+                  "ref_gb": "林后四3",
+                  "ref_big5": "林後四3",
+                  "ref_en": "2 Cor. 4:3",
+                  "text_gb": "如果我们的福音真的受蒙蔽，也是蒙蔽在灭亡的人身上；",
+                  "text_big5": "如果我們的福音真的受蒙蔽，也是蒙蔽在滅亡的人身上；",
+                  "text_en": "And even if our gospel is veiled, it is veiled in those who are perishing,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 11,
+          "ref_gb": "帖后二11",
+          "ref_big5": "帖後二11",
+          "ref_en": "2 Thes. 2:11",
+          "text_gb": "所[Fn1]以，神就使[Fn2][Cra]错谬运行在他们里面，叫他们信从虚[Crb]谎，",
+          "text_big5": "所[Fn1]以，神就使[Fn2][Cra]錯謬運行在他們裏面，叫他們信從虛[Crb]謊，",
+          "text_en": "And because of this God sends to them an operation of error that they might believe the lie,",
+          "text_gb_plain": "所以，神就使错谬运行在他们里面，叫他们信从虚谎，",
+          "text_big5_plain": "所以，神就使錯謬運行在他們裏面，叫他們信從虛謊，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "因为灭亡的人不领受对真理的爱，就是神要赐给他们，使他们得救的(10)，所以神就使那活动有力、迷惑人的错谬，运行在他们里面，叫他们信从虚谎。",
+              "zh_big5": "因為滅亡的人不領受對真理的愛，就是神要賜給他們，使他們得救的，（10，）所以神就使那活動有力、迷惑人的錯謬，運行在他們裏面，叫他們信從虛謊。",
+              "en": "2:11 1 because Because the perishing ones did not receive the love of the truth, which God intended to give them that they might be saved (v. 10), God sends to them an operation of error, an active power of misleading, that they might believe the lie."
+            },
+            {
+              "num": 2,
+              "loc": 6,
+              "zh": "使，直译，差遣。",
+              "zh_big5": "使，直譯，差遣。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "参罗一24，26，28",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 24,
+                  "ref_gb": "罗一24",
+                  "ref_big5": "羅一24",
+                  "ref_en": "Rom. 1:24",
+                  "text_gb": "所以神任凭他们逞着心里的情欲，陷入污秽中，以致彼此玷辱自己的身体。",
+                  "text_big5": "所以神任憑他們逞著心裏的情慾，陷入污穢中，以致彼此玷辱自己的身體。",
+                  "text_en": "Therefore God gave them up in the lusts of their hearts to uncleanness, so that they dishonor their bodies among themselves,"
+                },
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 26,
+                  "ref_gb": "罗一26",
+                  "ref_big5": "羅一26",
+                  "ref_en": "Rom. 1:26",
+                  "text_gb": "因此，神任凭他们陷入可耻的情欲：他们的女人把顺性的用处换为逆性的用处；",
+                  "text_big5": "因此，神任憑他們陷入可恥的情慾：他們的女人把順性的用處換為逆性的用處；",
+                  "text_en": "Therefore God gave them up to passions of dishonor; for their females exchanged the natural use for that which is contrary to nature;"
+                },
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 28,
+                  "ref_gb": "罗一28",
+                  "ref_big5": "羅一28",
+                  "ref_en": "Rom. 1:28",
+                  "text_gb": "他们既然不以认识神为美，神就任凭他们存可弃绝的心思，行那些不合宜的事，",
+                  "text_big5": "他們既然不以認識神為美，神就任憑他們存可棄絕的心思，行那些不合宜的事，",
+                  "text_en": "And even as they did not approve of holding God in their full knowledge, God gave them up to a disapproved mind, to do the things which are not fitting,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 22,
+              "raw": "提前四2，罗一25",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 4,
+                  "verse": 2,
+                  "ref_gb": "提前四2",
+                  "ref_big5": "提前四2",
+                  "ref_en": "1 Tim. 4:2",
+                  "text_gb": "这乃是借着说谎之人的假冒，他们自己的良心犹如给热铁烙过；",
+                  "text_big5": "這乃是藉著說謊之人的假冒，他們自己的良心猶如給熱鐵烙過；",
+                  "text_en": "By means of the hypocrisy of men who speak lies, of men who are branded in their own conscience as with a hot iron,"
+                },
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 25,
+                  "ref_gb": "罗一25",
+                  "ref_big5": "羅一25",
+                  "ref_en": "Rom. 1:25",
+                  "text_gb": "他们将神的真实换为虚谎，去敬拜事奉受造之物，不敬拜事奉那创造者；祂乃是当受颂赞的，直到永远。阿们。",
+                  "text_big5": "他們將神的真實換為虛謊，去敬拜事奉受造之物，不敬拜事奉那創造者；祂乃是當受頌讚的，直到永遠。阿們。",
+                  "text_en": "Who exchanged the truth of God for the lie, and worshipped and served the creation rather than the Creator, who is blessed forever. Amen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 12,
+          "ref_gb": "帖后二12",
+          "ref_big5": "帖後二12",
+          "ref_en": "2 Thes. 2:12",
+          "text_gb": "使一切不信真[Cra]理，倒喜[Fn1]悦不义的人，都被判罪。",
+          "text_big5": "使一切不信真[Cra]理，倒喜[Fn1]悅不義的人，都被判罪。",
+          "text_en": "So that all who have not believed the truth but have taken pleasure in unrighteousness might be judged.",
+          "text_gb_plain": "使一切不信真理，倒喜悦不义的人，都被判罪。",
+          "text_big5_plain": "使一切不信真理，倒喜悅不義的人，都被判罪。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "信徒喜悦良善(一11)；弃绝神真理，灭亡的人(10)，倒喜悦不义，犯罪是他们所喜欢的(罗一32)。",
+              "zh_big5": "信徒喜悅良善；（一11；）棄絕神真理，滅亡的人，（10，）倒喜悅不義，犯罪是他們所喜歡的。（羅一32。）",
+              "en": "2:12 1 pleasure The believers have a good intention for goodness (2 Thes. 1:11); the perishing ones (v. 10), who reject the truth of God, take pleasure in unrighteousness. To sin is a delight to them (Rom. 1:32)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "罗一18，二8",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 18,
+                  "ref_gb": "罗一18",
+                  "ref_big5": "羅一18",
+                  "ref_en": "Rom. 1:18",
+                  "text_gb": "原来神的忿怒，从天上显示在那些以不义抑制真理之人一切的不虔不义上。",
+                  "text_big5": "原來神的忿怒，從天上顯示在那些以不義抑制真理之人一切的不虔不義上。",
+                  "text_en": "For the wrath of God is revealed from heaven upon all ungodliness and unrighteousness of men who hold down the truth in unrighteousness,"
+                },
+                {
+                  "book": 45,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "罗二8",
+                  "ref_big5": "羅二8",
+                  "ref_en": "Rom. 2:8",
+                  "text_gb": "唯有私图好争，不信从真理，反信从不义的，就以忿怒、恼恨报应他们；",
+                  "text_big5": "惟有私圖好爭，不信從真理，反信從不義的，就以忿怒、惱恨報應他們；",
+                  "text_en": "But to those who are selfishly contentious and disobedient to the truth and obey unrighteousness, wrath and fury."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 13,
+          "ref_gb": "帖后二13",
+          "ref_big5": "帖後二13",
+          "ref_en": "2 Thes. 2:13",
+          "text_gb": "主所爱[Cra]的弟兄们，我们应当常为你们感[Crb]谢神，因为祂从[Fn1]起[Crc]初拣[Fn2][Crd]选了你们，叫你们借[Fn3]着那[Fn4]灵的圣[Cre]别，并你们对真[Crf]理的信[Fn5]，可以得[Crg]救。",
+          "text_big5": "主所愛[Cra]的弟兄們，我們應當常為你們感[Crb]謝神，因為祂從[Fn1]起[Crc]初揀[Fn2][Crd]選了你們，叫你們藉[Fn3]著那[Fn4]靈的聖[Cre]別，並你們對真[Crf]理的信[Fn5]，可以得[Crg]救。",
+          "text_en": "But we ought to thank God always concerning you, brothers beloved of the Lord, because God chose you from the beginning unto salvation in sanctification of the Spirit and belief of the truth,",
+          "text_gb_plain": "主所爱的弟兄们，我们应当常为你们感谢神，因为祂从起初拣选了你们，叫你们借着那灵的圣别，并你们对真理的信，可以得救。",
+          "text_big5_plain": "主所愛的弟兄們，我們應當常為你們感謝神，因為祂從起初揀選了你們，叫你們藉著那靈的聖別，並你們對真理的信，可以得救。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 24,
+              "zh": "从起初拣选了你们，有古卷作，拣选了你们作初熟的果子。从起初，指从已过的永远(参弗一4)。",
+              "zh_big5": "從起初揀選了你們，有古卷作，揀選了你們作初熟的果子。從起初，指從已過的永遠。（參弗一4。）",
+              "en": "2:13 1 chose God loved us (v. 16), chose us from the beginning, and called us through the gospel (v. 14). He chose us unto His salvation, which is by sanctification of the Spirit, and He called us to the obtaining of the Lord's glory. Now He is taking us on with eternal comfort and good hope in grace."
+            },
+            {
+              "num": 2,
+              "loc": 27,
+              "zh": "神爱我们(16)，从起初拣选了我们，又借着福音呼召了我们(14)。祂拣选我们，叫我们借着那灵的圣别可以得救；又呼召我们，叫我们得着主的荣耀。现今祂在恩典中，用永远的安慰和美好的盼望带我们往前。",
+              "zh_big5": "神愛我們，（16，）從起初揀選了我們，又藉著福音呼召了我們。（14。）祂揀選我們，叫我們藉著那靈的聖別可以得救；又呼召我們，叫我們得著主的榮耀。現今祂在恩典中，用永遠的安慰和美好的盼望帶我們往前。",
+              "en": "2:13 2 from I.e., from eternity past (cf. Eph. 1:4). Some ancient MSS read, as firstfruits."
+            },
+            {
+              "num": 3,
+              "loc": 36,
+              "zh": "直译，在那灵的圣别，并(你们)对真理的信上。",
+              "zh_big5": "直譯，在那靈的聖別，並（你們）對真理的信上。",
+              "en": ""
+            },
+            {
+              "num": 4,
+              "loc": 38,
+              "zh": "那灵的圣别有三步：(一)在使我们悔改相信时，寻找我们，并使我们自责(彼前一2，约十六8)；(二)在我们得救时，在地位上并性质上圣别我们(来十三12，林前六11)；(三)在我们追求生命长大时，在性质上圣化我们(罗六19，22)。神的救恩乃是借着那灵这三步的圣别，施行到我们身上，给我们完全得着并享受。那灵这三步的圣别，不只将我们从一切老旧、消极的事物中分别出来，归神为圣，且将我们圣化为新造，满有主的素质和成分，以得着主的荣耀。",
+              "zh_big5": "那靈的聖別有三步：(一)在使我們悔改相信時，尋找我們，並使我們自責；（彼前一2，約十六8；）(二)在我們得救時，在地位上並性質上聖別我們；（來十三12，林前六11；）(三)在我們追求生命長大時，在性質上聖化我們。（羅六19，22。）神的救恩乃是藉著那靈這三步的聖別，施行到我們身上，給我們完全得著並享受。那靈這三步的聖別，不只將我們從一切老舊、消極的事物中分別出來，歸神為聖，且將我們聖化為新造，滿有主的素質和成分，以得著主的榮耀。",
+              "en": "2:13 4 belief Or, faith. By the Spirit's sanctification God's salvation is revealed and brought to us; by our believing we receive all that is revealed and brought to us by the Spirit, so that we obtain God's salvation."
+            },
+            {
+              "num": 5,
+              "loc": 51,
+              "zh": "那灵的圣别是将神救恩的一切，启示并带给我们；我们的信是接受那灵所启示并带给我们的，以致得着神的救恩。",
+              "zh_big5": "那靈的聖別是將神救恩的一切，啟示並帶給我們；我們的信是接受那靈所啟示並帶給我們的，以致得著神的救恩。",
+              "en": "2:13 3 sanctification Sanctification of the Spirit consists of three steps: 1) the Spirit's seeking us and convicting us at the time that He caused us to repent and believe (1 Pet. 1:2; John 16:8); 2) His sanctifying us both positionally and dispositionally (Heb. 13:12; 1 Cor. 6:11) at the time we were saved; 3) His sanctifying us dispositionally as we pursue the growth in life (Rom. 6:19, 22). By these three steps of the Spirit's sanctification, God's salvation is applied to us that we may obtain and enjoy it fully. The three steps of the Spirit's sanctification not only separate us from all old and negative things, making us holy unto God, but also sanctify us, making us a new creation full of the Lord's essence and element, that we may obtain the Lord's glory."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "帖前一4",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "帖前一4",
+                  "ref_big5": "帖前一4",
+                  "ref_en": "1 Thes. 1:4",
+                  "text_gb": "蒙神所爱的弟兄们，我们知道你们是蒙拣选的，",
+                  "text_big5": "蒙神所愛的弟兄們，我們知道你們是蒙揀選的，",
+                  "text_en": "Knowing, brothers, beloved of God, your selection;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 17,
+              "raw": "帖后一3",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "帖后一3",
+                  "ref_big5": "帖後一3",
+                  "ref_en": "2 Thes. 1:3",
+                  "text_gb": "弟兄们，我们应当常为你们感谢神，这本是合宜的；因你们的信心格外增长，你们众人每一位彼此相爱的心也一直增加，",
+                  "text_big5": "弟兄們，我們應當常為你們感謝神，這本是合宜的；因你們的信心格外增長，你們眾人每一位彼此相愛的心也一直增加，",
+                  "text_en": "We ought to thank God always concerning you, brothers, even as it is fitting, because your faith grows exceedingly and the love of each one of you all to one another is increasing,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 25,
+              "raw": "约一1",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约一1",
+                  "ref_big5": "約一1",
+                  "ref_en": "John 1:1",
+                  "text_gb": "太初有话，话与神同在，话就是神。",
+                  "text_big5": "太初有話，話與神同在，話就是神。",
+                  "text_en": "In the beginning was the Word, and the Word was with God, and the Word was God."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 27,
+              "raw": "帖前一4",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "帖前一4",
+                  "ref_big5": "帖前一4",
+                  "ref_en": "1 Thes. 1:4",
+                  "text_gb": "蒙神所爱的弟兄们，我们知道你们是蒙拣选的，",
+                  "text_big5": "蒙神所愛的弟兄們，我們知道你們是蒙揀選的，",
+                  "text_en": "Knowing, brothers, beloved of God, your selection;"
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 41,
+              "raw": "帖前四3，罗十五16，彼前一2",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 3,
+                  "ref_gb": "帖前四3",
+                  "ref_big5": "帖前四3",
+                  "ref_en": "1 Thes. 4:3",
+                  "text_gb": "神的旨意就是要你们圣别，禁戒淫乱；",
+                  "text_big5": "神的旨意就是要你們聖別，禁戒淫亂；",
+                  "text_en": "For this is the will of God, your sanctification: that you abstain from fornication;"
+                },
+                {
+                  "book": 45,
+                  "chapter": 15,
+                  "verse": 16,
+                  "ref_gb": "罗十五16",
+                  "ref_big5": "羅十五16",
+                  "ref_en": "Rom. 15:16",
+                  "text_gb": "使我为外邦人作基督耶稣的仆役，作神福音勤奋的祭司，叫所献上的外邦人，在圣灵里得以圣别，可蒙悦纳。",
+                  "text_big5": "使我為外邦人作基督耶穌的僕役，作神福音勤奮的祭司，叫所獻上的外邦人，在聖靈裏得以聖別，可蒙悅納。",
+                  "text_en": "That I might be a minister of Christ Jesus to the Gentiles, a laboring priest of the gospel of God, in order that the offering of the Gentiles might be acceptable, having been sanctified in the Holy Spirit."
+                },
+                {
+                  "book": 60,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "彼前一2",
+                  "ref_big5": "彼前一2",
+                  "ref_en": "1 Pet. 1:2",
+                  "text_gb": "就是照着父神的先见被拣选，借着那灵得圣别，以致顺从耶稣基督，并蒙祂血所洒的人：愿恩典与平安，繁增的归与你们。",
+                  "text_big5": "就是照著父神的先見被揀選，藉著那靈得聖別，以致順從耶穌基督，並蒙祂血所灑的人：願恩典與平安，繁增的歸與你們。",
+                  "text_en": "Chosen according to the foreknowledge of God the Father in the sanctification of the Spirit unto obedience and the sprinkling of the blood of Jesus Christ: Grace to you and peace be multiplied."
+                }
+              ]
+            },
+            {
+              "label": "f",
+              "loc": 48,
+              "raw": "提前二4",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 2,
+                  "verse": 4,
+                  "ref_gb": "提前二4",
+                  "ref_big5": "提前二4",
+                  "ref_en": "1 Tim. 2:4",
+                  "text_gb": "祂愿意万人得救，并且完全认识真理；",
+                  "text_big5": "祂願意萬人得救，並且完全認識真理；",
+                  "text_en": "Who desires all men to be saved and to come to the full knowledge of the truth."
+                }
+              ]
+            },
+            {
+              "label": "g",
+              "loc": 55,
+              "raw": "帖前五9",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 9,
+                  "ref_gb": "帖前五9",
+                  "ref_big5": "帖前五9",
+                  "ref_en": "1 Thes. 5:9",
+                  "text_gb": "因为神没有派定我们受忿怒，乃是派定我们借着我们的主耶稣基督得着救恩。",
+                  "text_big5": "因為神沒有派定我們受忿怒，乃是派定我們藉著我們的主耶穌基督得著救恩。",
+                  "text_en": "For God did not appoint us to wrath but to the obtaining of salvation through our Lord Jesus Christ,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 14,
+          "ref_gb": "帖后二14",
+          "ref_big5": "帖後二14",
+          "ref_en": "2 Thes. 2:14",
+          "text_gb": "神借着我们所传的福[Cra]音，也呼[Crb]召你们到这[Fn1]地步，好得着我们主耶稣基督的荣[Fn2][Crc]耀。",
+          "text_big5": "神藉著我們所傳的福[Cra]音，也呼[Crb]召你們到這[Fn1]地步，好得著我們主耶穌基督的榮[Fn2][Crc]耀。",
+          "text_en": "To which also He called you through our gospel unto the obtaining of the glory of our Lord Jesus Christ.",
+          "text_gb_plain": "神借着我们所传的福音，也呼召你们到这地步，好得着我们主耶稣基督的荣耀。",
+          "text_big5_plain": "神藉著我們所傳的福音，也呼召你們到這地步，好得著我們主耶穌基督的榮耀。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 18,
+              "zh": "指前节“借着…圣别并…信…得救。”神在永远里拣选我们，叫我们可以得救，然后在时间里呼召我们，叫我们得着主的荣耀。借着那灵的圣别并我们对真理的信而得救是过程，得着我们主的荣耀是目标。",
+              "zh_big5": "指前節“藉著…聖別並…信…得救。”神在永遠裏揀選我們，叫我們可以得救，然後在時間裏呼召我們，叫我們得著主的榮耀。藉著那靈的聖別並我們對真理的信而得救是過程，得著我們主的榮耀是目標。",
+              "en": "2:14 1 which Referring to salvation in sanctification ...and belief...in the preceding verse. God chose us unto salvation in eternity, and then in time He called us unto the obtaining of the glory of our Lord. Salvation in sanctification of the Spirit and belief of the truth is the procedure; the obtaining of the glory of our Lord is the goal."
+            },
+            {
+              "num": 2,
+              "loc": 33,
+              "zh": "主的荣耀，指祂是父神的儿子，有父的生命和性情以彰显父。得着主的荣耀，指我们要在神的儿子同样的地位上彰显父(约十七22与注1)。",
+              "zh_big5": "主的榮耀，指祂是父神的兒子，有父的生命和性情以彰顯父。得著主的榮耀，指我們要在神的兒子同樣的地位上彰顯父。（約十七22與註1。）",
+              "en": "2:14 2 glory The glory of the Lord is that He, as the Son of God the Father, possesses the Father's life and nature that He may express the Father. To obtain the Lord's glory is to be in the same position as the Son of God that we may express the Father (John 17:22 and note John 17:22 1 )."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "帖前一5",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 5,
+                  "ref_gb": "帖前一5",
+                  "ref_big5": "帖前一5",
+                  "ref_en": "1 Thes. 1:5",
+                  "text_gb": "因为我们的福音传到你们那里，不仅在于言语，也在于能力和圣灵，并充足的确信，正如你们知道，我们在你们中间，为你们的缘故是怎样为人。",
+                  "text_big5": "因為我們的福音傳到你們那裏，不僅在於言語，也在於能力和聖靈，並充足的確信，正如你們知道，我們在你們中間，為你們的緣故是怎樣為人。",
+                  "text_en": "For our gospel did not come to you in word only, but also in power and in the Holy Spirit and in much assurance, even as you know what kind of men we were among you for your sake."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 13,
+              "raw": "帖前二12，彼前五10",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 12,
+                  "ref_gb": "帖前二12",
+                  "ref_big5": "帖前二12",
+                  "ref_en": "1 Thes. 2:12",
+                  "text_gb": "要叫你们行事为人，配得过那召你们进入祂自己的国和荣耀的神。",
+                  "text_big5": "要叫你們行事為人，配得過那召你們進入祂自己的國和榮耀的神。",
+                  "text_en": "So that you might walk in a manner worthy of God, who calls you into His own kingdom and glory."
+                },
+                {
+                  "book": 60,
+                  "chapter": 5,
+                  "verse": 10,
+                  "ref_gb": "彼前五10",
+                  "ref_big5": "彼前五10",
+                  "ref_en": "1 Pet. 5:10",
+                  "text_gb": "但那全般恩典的神，就是那曾在基督耶稣里召你们进入祂永远荣耀的，等你们暂受苦难之后，必要亲自成全你们，坚固你们，加强你们，给你们立定根基。",
+                  "text_big5": "但那全般恩典的神，就是那曾在基督耶穌裏召你們進入祂永遠榮耀的，等你們暫受苦難之後，必要親自成全你們，堅固你們，加強你們，給你們立定根基。",
+                  "text_en": "But the God of all grace, He who has called you into His eternal glory in Christ Jesus, after you have suffered a little while, will Himself perfect, establish, strengthen, and ground you."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 33,
+              "raw": "太二五31",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 25,
+                  "verse": 31,
+                  "ref_gb": "太二五31",
+                  "ref_big5": "太二五31",
+                  "ref_en": "Matt. 25:31",
+                  "text_gb": "但是，当人子在祂的荣耀里，所有的天使同着祂来的时候，祂要坐在祂荣耀的宝座上；",
+                  "text_big5": "但是，當人子在祂的榮耀裏，所有的天使同著祂來的時候，祂要坐在祂榮耀的寶座上；",
+                  "text_en": "But when the Son of Man comes in His glory and all the angels with Him, at that time He will sit on the throne of His glory."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 15,
+          "ref_gb": "帖后二15",
+          "ref_big5": "帖後二15",
+          "ref_en": "2 Thes. 2:15",
+          "text_gb": "所以弟兄们，要站[Cra]立得住，凡你们受教所得的传[Fn1][Crb]授，无论是口传的，或是我们信上写的，都要持守。",
+          "text_big5": "所以弟兄們，要站[Cra]立得住，凡你們受教所得的傳[Fn1][Crb]授，無論是口傳的，或是我們信上寫的，都要持守。",
+          "text_en": "So then, brothers, stand firm and hold to the things which were handed down to you and which you were taught, whether by word or by our letter.",
+          "text_gb_plain": "所以弟兄们，要站立得住，凡你们受教所得的传授，无论是口传的，或是我们信上写的，都要持守。",
+          "text_big5_plain": "所以弟兄們，要站立得住，凡你們受教所得的傳授，無論是口傳的，或是我們信上寫的，都要持守。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 21,
+              "zh": "见林前十一2注1。",
+              "zh_big5": "見林前十一2註1。",
+              "en": "2:15 1 things See note 1 Cor. 11:2 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "林前十六13，腓四1",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 13,
+                  "ref_gb": "林前十六13",
+                  "ref_big5": "林前十六13",
+                  "ref_en": "1 Cor. 16:13",
+                  "text_gb": "你们要儆醒，在信仰上站立得住，要作大丈夫，要刚强。",
+                  "text_big5": "你們要儆醒，在信仰上站立得住，要作大丈夫，要剛強。",
+                  "text_en": "Watch, stand firm in the faith, be full-grown men, be strong."
+                },
+                {
+                  "book": 50,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "腓四1",
+                  "ref_big5": "腓四1",
+                  "ref_en": "Phil. 4:1",
+                  "text_gb": "所以，我所亲爱所切慕的弟兄们，我的喜乐和冠冕─亲爱的，你们要这样在主里站立得住。",
+                  "text_big5": "所以，我所親愛所切慕的弟兄們，我的喜樂和冠冕─親愛的，你們要這樣在主裏站立得住。",
+                  "text_en": "So then, my brothers, beloved and longed for, my joy and crown, in the same way stand firm in the Lord, beloved."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "帖后三6，林前十一2",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "帖后三6",
+                  "ref_big5": "帖後三6",
+                  "ref_en": "2 Thes. 3:6",
+                  "text_gb": "弟兄们，我们在我们主耶稣基督的名里嘱咐你们，凡有弟兄不按规矩、且不照着你们从我们所受的传授而行，就当远离他。",
+                  "text_big5": "弟兄們，我們在我們主耶穌基督的名裏囑咐你們，凡有弟兄不按規矩、且不照著你們從我們所受的傳授而行，就當遠離他。",
+                  "text_en": "Now we charge you, brothers, in the name of our Lord Jesus Christ, that you keep away from every brother walking disorderly and not according to the things which were handed down to you and which you received from us."
+                },
+                {
+                  "book": 46,
+                  "chapter": 11,
+                  "verse": 2,
+                  "ref_gb": "林前十一2",
+                  "ref_big5": "林前十一2",
+                  "ref_en": "1 Cor. 11:2",
+                  "text_gb": "但我称赞你们，因你们凡事记念我，又照着所交付给你们的，坚守我所传授的。",
+                  "text_big5": "但我稱讚你們，因你們凡事記念我，又照著所交付給你們的，堅守我所傳授的。",
+                  "text_en": "But I praise you because in all things you have remembered me and hold fast the things that I have handed down even as I handed them down to you."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 16,
+          "ref_gb": "帖后二16",
+          "ref_big5": "帖後二16",
+          "ref_en": "2 Thes. 2:16",
+          "text_gb": "但愿我们的主[Fn1]耶稣基督自己，和神我们的父，就是那爱[Cra]我们，在恩[Fn2]典中将永[Fn3]远的安慰和美[Fn4]好的盼[Crb]望赐给我们的，",
+          "text_big5": "但願我們的主[Fn1]耶穌基督自己，和神我們的父，就是那愛[Cra]我們，在恩[Fn2]典中將永[Fn3]遠的安慰和美[Fn4]好的盼[Crb]望賜給我們的，",
+          "text_en": "Now our Lord Jesus Christ Himself and God our Father, who has loved us and given us eternal comfort and good hope in grace,",
+          "text_gb_plain": "但愿我们的主耶稣基督自己，和神我们的父，就是那爱我们，在恩典中将永远的安慰和美好的盼望赐给我们的，",
+          "text_big5_plain": "但願我們的主耶穌基督自己，和神我們的父，就是那愛我們，在恩典中將永遠的安慰和美好的盼望賜給我們的，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 6,
+              "zh": "我们主耶稣基督与父神一同作工，安慰并坚固信徒(17)。",
+              "zh_big5": "我們主耶穌基督與父神一同作工，安慰並堅固信徒。（17。）",
+              "en": "2:16 1 Lord Our Lord Jesus Christ and God the Father work together to comfort and establish the believers (v. 17)."
+            },
+            {
+              "num": 2,
+              "loc": 29,
+              "zh": "即神自己在基督里给我们享受(见约一17注1)，叫我们借着祂的灵得以圣别(13)，并借着永远的安慰和美好的盼望，得着安慰和坚固(17)。",
+              "zh_big5": "即神自己在基督裏給我們享受，（見約一17註1，）叫我們藉著祂的靈得以聖別，（13，）並藉著永遠的安慰和美好的盼望，得著安慰和堅固。（17。）",
+              "en": "2:16 2 eternal Not temporary and transitory comfort and strengthening but eternal comfort by the divine life. This comfort is sufficient for any kind of environment and situation; thus, it is with good hope."
+            },
+            {
+              "num": 3,
+              "loc": 33,
+              "zh": "不是短暂瞬时的安慰和加力，乃是借着神的生命而有永远的安慰。这安慰足以应付任何环境和景况，因此这安慰带着美好的盼望。",
+              "zh_big5": "不是短暫瞬時的安慰和加力，乃是藉著神的生命而有永遠的安慰。這安慰足以應付任何環境和景況，因此這安慰帶著美好的盼望。",
+              "en": "2:16 3 good The hope of glory (Col. 1:27), which is the hope of the Lord's coming (1 Thes. 1:3), when we will be either resurrected or transfigured into glory (1 Thes. 4:13-14; Phil. 3:21; Heb. 2:10)."
+            },
+            {
+              "num": 4,
+              "loc": 39,
+              "zh": "即荣耀的盼望(西一27)，就是对主回来的盼望(帖前一3)；那时，我们或要复活，或要改变形状，进入荣耀(帖前四13～14，腓三21，来二10)。",
+              "zh_big5": "即榮耀的盼望，（西一27，）就是對主回來的盼望；（帖前一3；）那時，我們或要復活，或要改變形狀，進入榮耀。（帖前四13～14，腓三21，來二10。）",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 24,
+              "raw": "约三16，约壹四10",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 3,
+                  "verse": 16,
+                  "ref_gb": "约三16",
+                  "ref_big5": "約三16",
+                  "ref_en": "John 3:16",
+                  "text_gb": "神爱世人，甚至将祂的独生子赐给他们，叫一切信入祂的，不至灭亡，反得永远的生命。",
+                  "text_big5": "神愛世人，甚至將祂的獨生子賜給他們，叫一切信入祂的，不至滅亡，反得永遠的生命。",
+                  "text_en": "For God so loved the world that He gave His only begotten Son, that everyone who believes into Him would not perish, but would have eternal life."
+                },
+                {
+                  "book": 62,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "约壹四10",
+                  "ref_big5": "約壹四10",
+                  "ref_en": "1 John 4:10",
+                  "text_gb": "不是我们爱神，乃是神爱我们，差祂的儿子，为我们的罪作了平息的祭物，在此就是爱了。",
+                  "text_big5": "不是我們愛神，乃是神愛我們，差祂的兒子，為我們的罪作了平息的祭物，在此就是愛了。",
+                  "text_en": "Herein is love, not that we have loved God but that He loved us and sent His Son as a propitiation for our sins."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 42,
+              "raw": "彼前一3，弗一18，四4",
+              "refs": [
+                {
+                  "book": 60,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "彼前一3",
+                  "ref_big5": "彼前一3",
+                  "ref_en": "1 Pet. 1:3",
+                  "text_gb": "我们主耶稣基督的神与父是当受颂赞的，祂曾照自己的大怜悯，借耶稣基督从死人中复活，重生了我们，使我们有活的盼望，",
+                  "text_big5": "我們主耶穌基督的神與父是當受頌讚的，祂曾照自己的大憐憫，藉耶穌基督從死人中復活，重生了我們，使我們有活的盼望，",
+                  "text_en": "Blessed be the God and Father of our Lord Jesus Christ, who according to His great mercy has regenerated us unto a living hope through the resurrection of Jesus Christ from the dead,"
+                },
+                {
+                  "book": 49,
+                  "chapter": 1,
+                  "verse": 18,
+                  "ref_gb": "弗一18",
+                  "ref_big5": "弗一18",
+                  "ref_en": "Eph. 1:18",
+                  "text_gb": "光照你们的心眼，使你们知道祂的呼召有何等盼望；祂在圣徒中之基业的荣耀，有何等丰富；",
+                  "text_big5": "光照你們的心眼，使你們知道祂的呼召有何等盼望；祂在聖徒中之基業的榮耀，有何等豐富；",
+                  "text_en": "The eyes of your heart having been enlightened, that you may know what is the hope of His calling, and what are the riches of the glory of His inheritance in the saints,"
+                },
+                {
+                  "book": 49,
+                  "chapter": 4,
+                  "verse": 4,
+                  "ref_gb": "弗四4",
+                  "ref_big5": "弗四4",
+                  "ref_en": "Eph. 4:4",
+                  "text_gb": "一个身体和一位灵，正如你们蒙召，也是在一个盼望中蒙召的；",
+                  "text_big5": "一個身體和一位靈，正如你們蒙召，也是在一個盼望中蒙召的；",
+                  "text_en": "One Body and one Spirit, even as also you were called in one hope of your calling;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 2,
+          "verse": 17,
+          "ref_gb": "帖后二17",
+          "ref_big5": "帖後二17",
+          "ref_en": "2 Thes. 2:17",
+          "text_gb": "安慰你们的心，并在一切善行善言上，坚[Cra]固你们。",
+          "text_big5": "安慰你們的心，並在一切善行善言上，堅[Cra]固你們。",
+          "text_en": "Comfort your hearts and establish you in every good work and word.",
+          "text_gb_plain": "安慰你们的心，并在一切善行善言上，坚固你们。",
+          "text_big5_plain": "安慰你們的心，並在一切善行善言上，堅固你們。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "帖后三3，帖前三2，13，彼前五10",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 3,
+                  "ref_gb": "帖后三3",
+                  "ref_big5": "帖後三3",
+                  "ref_en": "2 Thes. 3:3",
+                  "text_gb": "但主是信实的，祂要坚固你们，并保护你们脱离那恶者。",
+                  "text_big5": "但主是信實的，祂要堅固你們，並保護你們脫離那惡者。",
+                  "text_en": "But the Lord is faithful, who will establish you and guard you from the evil one."
+                },
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 2,
+                  "ref_gb": "帖前三2",
+                  "ref_big5": "帖前三2",
+                  "ref_en": "1 Thes. 3:2",
+                  "text_gb": "打发我们的弟兄，在基督福音上作神同工的提摩太去，为着你们的信心，坚固并鼓励你们，",
+                  "text_big5": "打發我們的弟兄，在基督福音上作神同工的提摩太去，為著你們的信心，堅固並鼓勵你們，",
+                  "text_en": "And we sent Timothy, our brother and God's fellow worker in the gospel of Christ, to establish and encourage you for the sake of your faith,"
+                },
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 13,
+                  "ref_gb": "帖前三13",
+                  "ref_big5": "帖前三13",
+                  "ref_en": "1 Thes. 3:13",
+                  "text_gb": "好使你们的心，当我们主耶稣同祂众圣徒来临的时候，在我们的神与父面前，得以坚固，在圣别上无可指摘。",
+                  "text_big5": "好使你們的心，當我們主耶穌同祂眾聖徒來臨的時候，在我們的神與父面前，得以堅固，在聖別上無可指摘。",
+                  "text_en": "So that He may establish your hearts blameless in holiness before our God and Father at the coming of our Lord Jesus with all His saints."
+                },
+                {
+                  "book": 60,
+                  "chapter": 5,
+                  "verse": 10,
+                  "ref_gb": "彼前五10",
+                  "ref_big5": "彼前五10",
+                  "ref_en": "1 Pet. 5:10",
+                  "text_gb": "但那全般恩典的神，就是那曾在基督耶稣里召你们进入祂永远荣耀的，等你们暂受苦难之后，必要亲自成全你们，坚固你们，加强你们，给你们立定根基。",
+                  "text_big5": "但那全般恩典的神，就是那曾在基督耶穌裏召你們進入祂永遠榮耀的，等你們暫受苦難之後，必要親自成全你們，堅固你們，加強你們，給你們立定根基。",
+                  "text_en": "But the God of all grace, He who has called you into His eternal glory in Christ Jesus, after you have suffered a little while, will Himself perfect, establish, strengthen, and ground you."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "verses": [
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 1,
+          "ref_gb": "帖后三1",
+          "ref_big5": "帖後三1",
+          "ref_en": "2 Thes. 3:1",
+          "text_gb": "末了的话，弟兄们，请你们为我们祷[Cra]告，好叫主的话快[Fn1][Crb]快传开，且得[Fn2]荣耀，正如在[Fn3]你们中间一样；",
+          "text_big5": "末了的話，弟兄們，請你們為我們禱[Cra]告，好叫主的話快[Fn1][Crb]快傳開，且得[Fn2]榮耀，正如在[Fn3]你們中間一樣；",
+          "text_en": "Finally, brothers, pray concerning us, that the word of the Lord may run and be glorified, even as it is also with you;",
+          "text_gb_plain": "末了的话，弟兄们，请你们为我们祷告，好叫主的话快快传开，且得荣耀，正如在你们中间一样；",
+          "text_big5_plain": "末了的話，弟兄們，請你們為我們禱告，好叫主的話快快傳開，且得榮耀，正如在你們中間一樣；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 24,
+              "zh": "快快传开，直译，奔跑。",
+              "zh_big5": "快快傳開，直譯，奔跑。",
+              "en": "3:1 1 glorified To have the divine riches contained in the word of the Lord released and expressed in the believers' living."
+            },
+            {
+              "num": 2,
+              "loc": 30,
+              "zh": "指主的话所包含神圣的丰富，在信徒的生活中得着释放并彰显。",
+              "zh_big5": "指主的話所包含神聖的豐富，在信徒的生活中得著釋放並彰顯。",
+              "en": "3:1 2 with Lit., toward."
+            },
+            {
+              "num": 3,
+              "loc": 36,
+              "zh": "在你们中间，直译，向着你们。",
+              "zh_big5": "在你們中間，直譯，向著你們。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "帖前五25，弗六18～19，西四3",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 25,
+                  "ref_gb": "帖前五25",
+                  "ref_big5": "帖前五25",
+                  "ref_en": "1 Thes. 5:25",
+                  "text_gb": "弟兄们，请为我们祷告。",
+                  "text_big5": "弟兄們，請為我們禱告。",
+                  "text_en": "Brothers, pray also for us."
+                },
+                {
+                  "book": 49,
+                  "chapter": 6,
+                  "verse": 18,
+                  "ref_gb": "弗六18",
+                  "ref_big5": "弗六18",
+                  "ref_en": "Eph. 6:18",
+                  "text_gb": "时时在灵里祷告，并尽力坚持，在这事上儆醒，且为众圣徒祈求，",
+                  "text_big5": "時時在靈裏禱告，並盡力堅持，在這事上儆醒，且為眾聖徒祈求，",
+                  "text_en": "By means of all prayer and petition, praying at every time in spirit and watching unto this in all perseverance and petition concerning all the saints,"
+                },
+                {
+                  "book": 49,
+                  "chapter": 6,
+                  "verse": 19,
+                  "ref_gb": "弗六19",
+                  "ref_big5": "弗六19",
+                  "ref_en": "Eph. 6:19",
+                  "text_gb": "也替我祈求，使我在开口的时候，有发表赐给我，好放胆讲明福音的奥秘，",
+                  "text_big5": "也替我祈求，使我在開口的時候，有發表賜給我，好放膽講明福音的奧祕，",
+                  "text_en": "And for me, that utterance may be given to me in the opening of my mouth, to make known in boldness the mystery of the gospel,"
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 3,
+                  "ref_gb": "西四3",
+                  "ref_big5": "西四3",
+                  "ref_en": "Col. 4:3",
+                  "text_gb": "同时也要为我们祷告，求神给我们开传道的门，能以讲说基督的奥秘，（我也为此被捆锁，）",
+                  "text_big5": "同時也要為我們禱告，求神給我們開傳道的門，能以講說基督的奧祕，（我也為此被捆鎖，）",
+                  "text_en": "Praying at the same time for us also, that God would open to us a door for the word, to speak the mystery of Christ (because of which also I am bound),"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 24,
+              "raw": "诗一四七15",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 147,
+                  "verse": 15,
+                  "ref_gb": "诗一四七15",
+                  "ref_big5": "詩一四七15",
+                  "ref_en": "Psa. 147:15",
+                  "text_gb": "祂向地发出命令；祂的话速速传开。",
+                  "text_big5": "祂向地發出命令；祂的話速速傳開。",
+                  "text_en": "He sends forth His command to the earth; / His word runs very swiftly."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 2,
+          "ref_gb": "帖后三2",
+          "ref_big5": "帖後三2",
+          "ref_en": "2 Thes. 3:2",
+          "text_gb": "并叫我们蒙拯[Cra]救，脱离不讲理的恶人，因为人不都有信[Crb]心。",
+          "text_big5": "並叫我們蒙拯[Cra]救，脫離不講理的惡人，因為人不都有信[Crb]心。",
+          "text_en": "And that we may be delivered from unreasonable and evil men, for the faith does not belong to all.",
+          "text_gb_plain": "并叫我们蒙拯救，脱离不讲理的恶人，因为人不都有信心。",
+          "text_big5_plain": "並叫我們蒙拯救，脫離不講理的惡人，因為人不都有信心。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "罗十五31",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 15,
+                  "verse": 31,
+                  "ref_gb": "罗十五31",
+                  "ref_big5": "羅十五31",
+                  "ref_en": "Rom. 15:31",
+                  "text_gb": "叫我可以得救，脱离犹太地不信从的人，也叫我对耶路撒冷的服事，可蒙圣徒悦纳，",
+                  "text_big5": "叫我可以得救，脫離猶太地不信從的人，也叫我對耶路撒冷的服事，可蒙聖徒悅納，",
+                  "text_en": "That I may be delivered from those who are disobedient in Judea, and that my service for Jerusalem may be acceptable to the saints,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 24,
+              "raw": "徒二八24",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 28,
+                  "verse": 24,
+                  "ref_gb": "徒二八24",
+                  "ref_big5": "徒二八24",
+                  "ref_en": "Acts 28:24",
+                  "text_gb": "他所说的，有的信服，有的不信。",
+                  "text_big5": "他所說的，有的信服，有的不信。",
+                  "text_en": "And some were persuaded by the things which were said, but others did not believe."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 3,
+          "ref_gb": "帖后三3",
+          "ref_big5": "帖後三3",
+          "ref_en": "2 Thes. 3:3",
+          "text_gb": "但主是信[Cra]实的，祂要坚[Fn1][Crb]固你们，并保[Fn2]护你们脱离那恶[Crc]者。",
+          "text_big5": "但主是信[Cra]實的，祂要堅[Fn1][Crb]固你們，並保[Fn2]護你們脫離那惡[Crc]者。",
+          "text_en": "But the Lord is faithful, who will establish you and guard you from the evil one.",
+          "text_gb_plain": "但主是信实的，祂要坚固你们，并保护你们脱离那恶者。",
+          "text_big5_plain": "但主是信實的，祂要堅固你們，並保護你們脫離那惡者。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "借着永远的安慰和美好的盼望(二16～17)。",
+              "zh_big5": "藉著永遠的安慰和美好的盼望。（二16～17。）",
+              "en": "3:3 1 establish By eternal comfort and good hope (2 Thes. 2:16-17)."
+            },
+            {
+              "num": 2,
+              "loc": 16,
+              "zh": "整个世界都卧在那恶者里面(约壹五19)，但我们从神而生所得神的生命，保守并保护我们脱离那恶者(约壹五18，4，三8～9)。",
+              "zh_big5": "整個世界都臥在那惡者裏面，（約壹五19，）但我們從神而生所得神的生命，保守並保護我們脫離那惡者。（約壹五18，4，三8～9。）",
+              "en": "3:3 2 guard The entire world lies in the evil one (1 John 5:19), but the divine life, which we have by being born of God, keeps and guards us from him (4, 1 John 5:18; 3:8-9)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "帖前五24，林前一9",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 24,
+                  "ref_gb": "帖前五24",
+                  "ref_big5": "帖前五24",
+                  "ref_en": "1 Thes. 5:24",
+                  "text_gb": "那召你们的是信实的，祂也必作成这事。",
+                  "text_big5": "那召你們的是信實的，祂也必作成這事。",
+                  "text_en": "Faithful is He who calls you, who also will do it."
+                },
+                {
+                  "book": 46,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "林前一9",
+                  "ref_big5": "林前一9",
+                  "ref_en": "1 Cor. 1:9",
+                  "text_gb": "神是信实的，你们乃是为祂所召，进入了祂儿子我们主耶稣基督的交通。",
+                  "text_big5": "神是信實的，你們乃是為祂所召，進入了祂兒子我們主耶穌基督的交通。",
+                  "text_en": "God is faithful, through whom you were called into the fellowship of His Son, Jesus Christ our Lord."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 10,
+              "raw": "帖后二17",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 17,
+                  "ref_gb": "帖后二17",
+                  "ref_big5": "帖後二17",
+                  "ref_en": "2 Thes. 2:17",
+                  "text_gb": "安慰你们的心，并在一切善行善言上，坚固你们。",
+                  "text_big5": "安慰你們的心，並在一切善行善言上，堅固你們。",
+                  "text_en": "Comfort your hearts and establish you in every good work and word."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 23,
+              "raw": "约十七15，太六13",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 17,
+                  "verse": 15,
+                  "ref_gb": "约十七15",
+                  "ref_big5": "約十七15",
+                  "ref_en": "John 17:15",
+                  "text_gb": "我不求你使他们离开世界，只求你保守他们脱离那恶者。",
+                  "text_big5": "我不求你使他們離開世界，只求你保守他們脫離那惡者。",
+                  "text_en": "I do not ask that You would take them out of the world, but that You would keep them out of the hands of the evil one."
+                },
+                {
+                  "book": 40,
+                  "chapter": 6,
+                  "verse": 13,
+                  "ref_gb": "太六13",
+                  "ref_big5": "太六13",
+                  "ref_en": "Matt. 6:13",
+                  "text_gb": "不叫我们陷入试诱，救我们脱离那恶者。因为国度、能力、荣耀，都是你的，直到永远。阿们。",
+                  "text_big5": "不叫我們陷入試誘，救我們脫離那惡者。因為國度、能力、榮耀，都是你的，直到永遠。阿們。",
+                  "text_en": "And do not bring us into temptation, but deliver us from the evil one. For Yours is the kingdom and the power and the glory forever. Amen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 4,
+          "ref_gb": "帖后三4",
+          "ref_big5": "帖後三4",
+          "ref_en": "2 Thes. 3:4",
+          "text_gb": "关于你们，我们在主里深[Cra]信，你们现在是遵行我们所[Fn1]嘱[Crb]咐的，将来也必要遵行。",
+          "text_big5": "關於你們，我們在主裏深[Cra]信，你們現在是遵行我們所[Fn1]囑[Crb]咐的，將來也必要遵行。",
+          "text_en": "And we have confidence in the Lord concerning you that what we charge, you both are doing and will do.",
+          "text_gb_plain": "关于你们，我们在主里深信，你们现在是遵行我们所嘱咐的，将来也必要遵行。",
+          "text_big5_plain": "關於你們，我們在主裏深信，你們現在是遵行我們所囑咐的，將來也必要遵行。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 23,
+              "zh": "如帖前四2～4、9～12，五11～22，帖后二2、15，三6、10、12～15的嘱咐。",
+              "zh_big5": "如帖前四2～4、9～12，五11～22，帖後二2、15，三6、10、12～15的囑咐。",
+              "en": "3:4 1 charge Such as the charges in 1 Thes. 4:2-4, 9-12; 5:11-22; 2 Thes. 2:2, 15; 3:6, 10, 12-15."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "加五10",
+              "refs": [
+                {
+                  "book": 48,
+                  "chapter": 5,
+                  "verse": 10,
+                  "ref_gb": "加五10",
+                  "ref_big5": "加五10",
+                  "ref_en": "Gal. 5:10",
+                  "text_gb": "我在主里深信，你们不会有别的念头；但那搅扰你们的，无论是谁，必担受处罚。",
+                  "text_big5": "我在主裏深信，你們不會有別的念頭；但那攪擾你們的，無論是誰，必擔受處罰。",
+                  "text_en": "I am confident in the Lord concerning you that you will be of no other mind; but he who is troubling you shall bear the judgment, whoever he may be."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 24,
+              "raw": "帖后三6，10，12，帖前四2，11",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "帖后三6",
+                  "ref_big5": "帖後三6",
+                  "ref_en": "2 Thes. 3:6",
+                  "text_gb": "弟兄们，我们在我们主耶稣基督的名里嘱咐你们，凡有弟兄不按规矩、且不照着你们从我们所受的传授而行，就当远离他。",
+                  "text_big5": "弟兄們，我們在我們主耶穌基督的名裏囑咐你們，凡有弟兄不按規矩、且不照著你們從我們所受的傳授而行，就當遠離他。",
+                  "text_en": "Now we charge you, brothers, in the name of our Lord Jesus Christ, that you keep away from every brother walking disorderly and not according to the things which were handed down to you and which you received from us."
+                },
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "帖后三10",
+                  "ref_big5": "帖後三10",
+                  "ref_en": "2 Thes. 3:10",
+                  "text_gb": "我们在你们那里的时候，也曾将这事嘱咐你们，若有人不愿作工，就不可吃饭。",
+                  "text_big5": "我們在你們那裏的時候，也曾將這事囑咐你們，若有人不願作工，就不可喫飯。",
+                  "text_en": "For even when we were with you, we gave you this charge, that if anyone does not want to work, neither should he eat."
+                },
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 12,
+                  "ref_gb": "帖后三12",
+                  "ref_big5": "帖後三12",
+                  "ref_en": "2 Thes. 3:12",
+                  "text_gb": "我们在主耶稣基督里，嘱咐并劝勉这样的人，要安静作工，吃自己的饭。",
+                  "text_big5": "我們在主耶穌基督裏，囑咐並勸勉這樣的人，要安靜作工，喫自己的飯。",
+                  "text_en": "Now such ones we charge and exhort in the Lord Jesus Christ to work with quietness and eat their own bread."
+                },
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 2,
+                  "ref_gb": "帖前四2",
+                  "ref_big5": "帖前四2",
+                  "ref_en": "1 Thes. 4:2",
+                  "text_gb": "你们原晓得，我们借着主耶稣给了你们什么嘱咐。",
+                  "text_big5": "你們原曉得，我們藉著主耶穌給了你們甚麼囑咐。",
+                  "text_en": "For you know what charges we gave you through the Lord Jesus."
+                },
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 11,
+                  "ref_gb": "帖前四11",
+                  "ref_big5": "帖前四11",
+                  "ref_en": "1 Thes. 4:11",
+                  "text_gb": "又要立定志向作安静人，办自己的事，亲手作工，正如我们曾嘱咐过你们的，",
+                  "text_big5": "又要立定志向作安靜人，辦自己的事，親手作工，正如我們曾囑咐過你們的，",
+                  "text_en": "And to aspire to be quiet and attend to your own affairs and work with your hands, even as we charged you,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 5,
+          "ref_gb": "帖后三5",
+          "ref_big5": "帖後三5",
+          "ref_en": "2 Thes. 3:5",
+          "text_gb": "愿主修[Cra]直你们心中的途径，引[Fn1]导你们的心[Crb]，进[Fn2]入神[Fn3]的爱[Crc]以爱神，并进[Fn4]入基[Fn5]督的忍耐以忍耐。",
+          "text_big5": "願主修[Cra]直你們心中的途徑，引[Fn1]導你們的心[Crb]，進[Fn2]入神[Fn3]的愛[Crc]以愛神，並進[Fn4]入基[Fn5]督的忍耐以忍耐。",
+          "text_en": "And the Lord direct your hearts into the love of God and into the endurance of Christ.",
+          "text_gb_plain": "愿主修直你们心中的途径，引导你们的心，进入神的爱以爱神，并进入基督的忍耐以忍耐。",
+          "text_big5_plain": "願主修直你們心中的途徑，引導你們的心，進入神的愛以愛神，並進入基督的忍耐以忍耐。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 13,
+              "zh": "这引导是借着那灵的引领；神的爱已经借着那灵浇灌在我们心里(罗八14，五5)。",
+              "zh_big5": "這引導是藉著那靈的引領；神的愛已經藉著那靈澆灌在我們心裏。（羅八14，五5。）",
+              "en": "3:5 1 direct By the leading of the Spirit, through whom the love of God has been poured out into our hearts (Rom. 8:14; 5:5)."
+            },
+            {
+              "num": 2,
+              "loc": 20,
+              "zh": "意即享受、经历神的爱，而以这爱爱神。",
+              "zh_big5": "意即享受、經歷神的愛，而以這愛愛神。",
+              "en": "3:5 2 into I.e., to love God with the love of God that we have enjoyed and experienced."
+            },
+            {
+              "num": 3,
+              "loc": 22,
+              "zh": "我们对神的爱，乃是出自那已经浇灌在我们心里之神的爱(约壹四19)。",
+              "zh_big5": "我們對神的愛，乃是出自那已經澆灌在我們心裏之神的愛。（約壹四19。）",
+              "en": "3:5 3 love Our love toward God, issuing from the love of God (1 John 4:19) that has been poured out into our hearts."
+            },
+            {
+              "num": 4,
+              "loc": 30,
+              "zh": "意享受、经历基督的忍耐，而以这忍耐来忍耐。",
+              "zh_big5": "意享受、經歷基督的忍耐，而以這忍耐來忍耐。",
+              "en": "3:5 4 into I.e., to endure with the endurance of Christ that we have enjoyed and experienced."
+            },
+            {
+              "num": 5,
+              "loc": 32,
+              "zh": "在积极一面，我们需要享受神的爱，使我们爱祂，为祂活着；在消极一面，我们需要有分于基督的忍耐，使我们像祂一样忍受苦难，抵挡神的仇敌撒但。爱神并忍受苦难，乃是基督徒生活中的优美特征。",
+              "zh_big5": "在積極一面，我們需要享受神的愛，使我們愛祂，為祂活著；在消極一面，我們需要有分於基督的忍耐，使我們像祂一樣忍受苦難，抵擋神的仇敵撒但。愛神並忍受苦難，乃是基督徒生活中的優美特徵。",
+              "en": "3:5 5 endurance On the positive side, we need to enjoy the love of God that we may love Him in order to live for Him, and on the negative side, we need to participate in the endurance of Christ that we may endure sufferings, as He did, to stand against Satan, the enemy of God. Loving God and enduring sufferings are excellent characteristics of a Christian living."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "帖前三11",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 11,
+                  "ref_gb": "帖前三11",
+                  "ref_big5": "帖前三11",
+                  "ref_en": "1 Thes. 3:11",
+                  "text_gb": "愿我们的神与父自己，和我们的主耶稣，修直我们到你们那里去的路。",
+                  "text_big5": "願我們的神與父自己，和我們的主耶穌，修直我們到你們那裏去的路。",
+                  "text_en": "Now may our God and Father Himself and our Lord Jesus make straight our path to you;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "代上二九18",
+              "refs": [
+                {
+                  "book": 13,
+                  "chapter": 29,
+                  "verse": 18,
+                  "ref_gb": "代上二九18",
+                  "ref_big5": "代上二九18",
+                  "ref_en": "1 Chron. 29:18",
+                  "text_gb": "耶和华我们列祖亚伯拉罕、以撒、以色列的神啊，求你使你的民心中常存这样的思想意念，坚定他们的心归向你。",
+                  "text_big5": "耶和華我們列祖亞伯拉罕、以撒、以色列的神阿，求你使你的民心中常存這樣的思想意念，堅定他們的心歸向你。",
+                  "text_en": "O Jehovah, the God of Abraham, Isaac, and Israel, our fathers, keep this forever in the imagination of the thoughts of Your people's heart and establish their heart toward You."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 24,
+              "raw": "可十二30",
+              "refs": [
+                {
+                  "book": 41,
+                  "chapter": 12,
+                  "verse": 30,
+                  "ref_gb": "可十二30",
+                  "ref_big5": "可十二30",
+                  "ref_en": "Mark 12:30",
+                  "text_gb": "你要全心、全魂、全心思并全力，爱主你的神。”",
+                  "text_big5": "你要全心、全魂、全心思並全力，愛主你的神。”",
+                  "text_en": "And you shall love the Lord your God from your whole heart and from your whole soul and from your whole mind and from your whole strength.\""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 6,
+          "ref_gb": "帖后三6",
+          "ref_big5": "帖後三6",
+          "ref_en": "2 Thes. 3:6",
+          "text_gb": "弟兄们，我们在我们主耶稣基督的名[Cra]里嘱咐你们，凡有弟兄不[Fn1][Crb]按规矩、且不照着你们从我们所受的传[Fn2][Crc]授而行，就当远[Crd]离他。",
+          "text_big5": "弟兄們，我們在我們主耶穌基督的名[Cra]裏囑咐你們，凡有弟兄不[Fn1][Crb]按規矩、且不照著你們從我們所受的傳[Fn2][Crc]授而行，就當遠[Crd]離他。",
+          "text_en": "Now we charge you, brothers, in the name of our Lord Jesus Christ, that you keep away from every brother walking disorderly and not according to the things which were handed down to you and which you received from us.",
+          "text_gb_plain": "弟兄们，我们在我们主耶稣基督的名里嘱咐你们，凡有弟兄不按规矩、且不照着你们从我们所受的传授而行，就当远离他。",
+          "text_big5_plain": "弟兄們，我們在我們主耶穌基督的名裏囑咐你們，凡有弟兄不按規矩、且不照著你們從我們所受的傳授而行，就當遠離他。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 27,
+              "zh": "见帖前五14注1。参7、11节。不按规矩而行，不仅是照着肉体(罗八4)，也是违反召会生活的建造(帖前五11，罗十四19，林前十23)。",
+              "zh_big5": "見帖前五14註1。參7、11節。不按規矩而行，不僅是照著肉體，（羅八4，）也是違反召會生活的建造。（帖前五11，羅十四19，林前十23。）",
+              "en": "3:6 1 walking See note 14 1 in 1 Thes. 5. Cf. vv. 7, 11. To walk disorderly not only is according to the flesh (Rom. 8:4) but also is against the building up of the church life (1 Thes. 5:11; Rom. 14:19; 1 Cor. 10:23)."
+            },
+            {
+              "num": 2,
+              "loc": 44,
+              "zh": "见林前十一2注1。",
+              "zh_big5": "見林前十一2註1。",
+              "en": "3:6 2 things See note 2 1 in 1 Cor. 11."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "帖后一12，林前五4",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "帖后一12",
+                  "ref_big5": "帖後一12",
+                  "ref_en": "2 Thes. 1:12",
+                  "text_gb": "照着我们的神并主耶稣基督的恩，使我们主耶稣的名在你们身上得荣耀，你们也在祂里面得荣耀。",
+                  "text_big5": "照著我們的神並主耶穌基督的恩，使我們主耶穌的名在你們身上得榮耀，你們也在祂裏面得榮耀。",
+                  "text_en": "So that the name of our Lord Jesus may be glorified in you, and you in Him, according to the grace of our God and the Lord Jesus Christ."
+                },
+                {
+                  "book": 46,
+                  "chapter": 5,
+                  "verse": 4,
+                  "ref_gb": "林前五4",
+                  "ref_big5": "林前五4",
+                  "ref_en": "1 Cor. 5:4",
+                  "text_gb": "就是当你们和我的灵聚集的时候，在我们主耶稣的名里，带同我们主耶稣的能力，",
+                  "text_big5": "就是當你們和我的靈聚集的時候，在我們主耶穌的名裏，帶同我們主耶穌的能力，",
+                  "text_en": "In the name of our Lord Jesus, when you and my spirit have been assembled, with the power of our Lord Jesus,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 27,
+              "raw": "帖后三11，帖前五14",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 11,
+                  "ref_gb": "帖后三11",
+                  "ref_big5": "帖後三11",
+                  "ref_en": "2 Thes. 3:11",
+                  "text_gb": "因我们听说，在你们中间有些人不按规矩而行，什么工都不作，反倒好管闲事。",
+                  "text_big5": "因我們聽說，在你們中間有些人不按規矩而行，甚麼工都不作，反倒好管閒事。",
+                  "text_en": "For we hear of some walking among you disorderly, doing no work at all, but being busybodies."
+                },
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 14,
+                  "ref_gb": "帖前五14",
+                  "ref_big5": "帖前五14",
+                  "ref_en": "1 Thes. 5:14",
+                  "text_gb": "弟兄们，我们劝你们，要劝戒不守规矩的人，抚慰灰心的人，扶持软弱的人，又要对众人恒忍。",
+                  "text_big5": "弟兄們，我們勸你們，要勸戒不守規矩的人，撫慰灰心的人，扶持軟弱的人，又要對眾人恆忍。",
+                  "text_en": "And we exhort you, brothers, Admonish the disorderly, console the fainthearted, sustain the weak, be long-suffering toward all."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 44,
+              "raw": "帖后二15",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 2,
+                  "verse": 15,
+                  "ref_gb": "帖后二15",
+                  "ref_big5": "帖後二15",
+                  "ref_en": "2 Thes. 2:15",
+                  "text_gb": "所以弟兄们，要站立得住，凡你们受教所得的传授，无论是口传的，或是我们信上写的，都要持守。",
+                  "text_big5": "所以弟兄們，要站立得住，凡你們受教所得的傳授，無論是口傳的，或是我們信上寫的，都要持守。",
+                  "text_en": "So then, brothers, stand firm and hold to the things which were handed down to you and which you were taught, whether by word or by our letter."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 51,
+              "raw": "帖后三14",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 14,
+                  "ref_gb": "帖后三14",
+                  "ref_big5": "帖後三14",
+                  "ref_en": "2 Thes. 3:14",
+                  "text_gb": "若有人不顺从我们这信上的话，要记下这人，不和他交往，叫他自觉羞愧；",
+                  "text_big5": "若有人不順從我們這信上的話，要記下這人，不和他交往，叫他自覺羞愧；",
+                  "text_en": "And if anyone does not obey our word through this letter, mark this one so as not to mingle with him, in order that he may be ashamed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 7,
+          "ref_gb": "帖后三7",
+          "ref_big5": "帖後三7",
+          "ref_en": "2 Thes. 3:7",
+          "text_gb": "你们自己原知道，应当怎样效[Cra]法我们；因为我们在你们中间，未[Fn1]尝不守规矩，",
+          "text_big5": "你們自己原知道，應當怎樣效[Cra]法我們；因為我們在你們中間，未[Fn1]嘗不守規矩，",
+          "text_en": "For you yourselves know how you ought to imitate us, because we were not disorderly among you;",
+          "text_gb_plain": "你们自己原知道，应当怎样效法我们；因为我们在你们中间，未尝不守规矩，",
+          "text_big5_plain": "你們自己原知道，應當怎樣效法我們；因為我們在你們中間，未嘗不守規矩，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 28,
+              "zh": "使徒在凡事上都是为着召会的建造(林后十二19)；他们在信徒中间绝不是不守规矩的，乃是作榜样给信徒效法(9)。",
+              "zh_big5": "使徒在凡事上都是為著召會的建造；（林後十二19；）他們在信徒中間絕不是不守規矩的，乃是作榜樣給信徒效法。（9。）",
+              "en": "3:7 1 not The apostles were for the building up of the church in all things (2 Cor. 12:19); they were absolutely not disorderly among the believers but were a pattern for the believers to imitate (v. 9)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 13,
+              "raw": "帖后三9，帖前一6，林前四16",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 9,
+                  "ref_gb": "帖后三9",
+                  "ref_big5": "帖後三9",
+                  "ref_en": "2 Thes. 3:9",
+                  "text_gb": "这并不是因我们没有权利，乃是要给你们作榜样，叫你们效法我们。",
+                  "text_big5": "這並不是因我們沒有權利，乃是要給你們作榜樣，叫你們效法我們。",
+                  "text_en": "Not because we do not have the right, but in order that we might give ourselves to you as a pattern that you might imitate us."
+                },
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "帖前一6",
+                  "ref_big5": "帖前一6",
+                  "ref_en": "1 Thes. 1:6",
+                  "text_gb": "并且你们在大患难之中，带着圣灵的喜乐，领受了主的话，就效法我们，也效法了主，",
+                  "text_big5": "並且你們在大患難之中，帶著聖靈的喜樂，領受了主的話，就效法我們，也效法了主，",
+                  "text_en": "And you became imitators of us and of the Lord, having received the word in much affliction with joy of the Holy Spirit,"
+                },
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 16,
+                  "ref_gb": "林前四16",
+                  "ref_big5": "林前四16",
+                  "ref_en": "1 Cor. 4:16",
+                  "text_gb": "所以我恳求你们要效法我。",
+                  "text_big5": "所以我懇求你們要效法我。",
+                  "text_en": "I exhort you therefore, Become imitators of me."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 8,
+          "ref_gb": "帖后三8",
+          "ref_big5": "帖後三8",
+          "ref_en": "2 Thes. 3:8",
+          "text_gb": "也未尝白吃任何人的饭[Fn1]，倒是劳[Cra]碌辛苦，昼夜作[Crb]工，免[Crc]得叫你们任何人受累。",
+          "text_big5": "也未嘗白喫任何人的飯[Fn1]，倒是勞[Cra]碌辛苦，晝夜作[Crb]工，免[Crc]得叫你們任何人受累。",
+          "text_en": "Nor did we eat bread as a gift from anyone, but in labor and hardship we worked night and day so that we would not be burdensome to any of you;",
+          "text_gb_plain": "也未尝白吃任何人的饭，倒是劳碌辛苦，昼夜作工，免得叫你们任何人受累。",
+          "text_big5_plain": "也未嘗白喫任何人的飯，倒是勞碌辛苦，晝夜作工，免得叫你們任何人受累。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "直译，饼。12节者同。",
+              "zh_big5": "直譯，餅。12節者同。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 14,
+              "raw": "徒二十35，弗四28",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 20,
+                  "verse": 35,
+                  "ref_gb": "徒二○35",
+                  "ref_big5": "徒二○35",
+                  "ref_en": "Acts 20:35",
+                  "text_gb": "我凡事给你们作了榜样，叫你们知道，必须这样劳苦，扶助软弱的人，并且记念主耶稣的话，祂自己说过，施比受更为有福。",
+                  "text_big5": "我凡事給你們作了榜樣，叫你們知道，必須這樣勞苦，扶助軟弱的人，並且記念主耶穌的話，祂自己說過，施比受更為有福。",
+                  "text_en": "In all things I have shown you by example that toiling in this way we ought to support the weak and to remember the words of the Lord Jesus, that He Himself said, It is more blessed to give than to receive."
+                },
+                {
+                  "book": 49,
+                  "chapter": 4,
+                  "verse": 28,
+                  "ref_gb": "弗四28",
+                  "ref_big5": "弗四28",
+                  "ref_en": "Eph. 4:28",
+                  "text_gb": "偷窃的不要再偷，倒要劳力，亲手作正经事，好有所分给需要的人。",
+                  "text_big5": "偷竊的不要再偷，倒要勞力，親手作正經事，好有所分給需要的人。",
+                  "text_en": "He who steals should steal no more, but rather should labor, working with his own hands in that which is respectable, that he may have something to share with him who has need."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "帖后三12，帖前二9，徒十八3",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 12,
+                  "ref_gb": "帖后三12",
+                  "ref_big5": "帖後三12",
+                  "ref_en": "2 Thes. 3:12",
+                  "text_gb": "我们在主耶稣基督里，嘱咐并劝勉这样的人，要安静作工，吃自己的饭。",
+                  "text_big5": "我們在主耶穌基督裏，囑咐並勸勉這樣的人，要安靜作工，喫自己的飯。",
+                  "text_en": "Now such ones we charge and exhort in the Lord Jesus Christ to work with quietness and eat their own bread."
+                },
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 9,
+                  "ref_gb": "帖前二9",
+                  "ref_big5": "帖前二9",
+                  "ref_en": "1 Thes. 2:9",
+                  "text_gb": "弟兄们，你们原记得我们的劳碌辛苦；我们是昼夜作工，把神的福音传扬给你们，免得叫你们任何人受累。",
+                  "text_big5": "弟兄們，你們原記得我們的勞碌辛苦；我們是晝夜作工，把神的福音傳揚給你們，免得叫你們任何人受累。",
+                  "text_en": "For you remember, brothers, our labor and travail: While working night and day so as not to be burdensome to any of you, we proclaimed to you the gospel of God."
+                },
+                {
+                  "book": 44,
+                  "chapter": 18,
+                  "verse": 3,
+                  "ref_gb": "徒十八3",
+                  "ref_big5": "徒十八3",
+                  "ref_en": "Acts 18:3",
+                  "text_gb": "他们本是以制造帐棚为业的，保罗因与他们同业，就和他们同住作工。",
+                  "text_big5": "他們本是以製造帳棚為業的，保羅因與他們同業，就和他們同住作工。",
+                  "text_en": "And because he was of the same trade, he remained with them and worked; for they were tentmakers by trade."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 24,
+              "raw": "林后十一7，9，十二13～14，16",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 11,
+                  "verse": 7,
+                  "ref_gb": "林后十一7",
+                  "ref_big5": "林後十一7",
+                  "ref_en": "2 Cor. 11:7",
+                  "text_gb": "我因为白白传神的福音给你们，就卑屈自己，为叫你们升高，这是我犯了罪么？",
+                  "text_big5": "我因為白白傳神的福音給你們，就卑屈自己，為叫你們升高，這是我犯了罪麼？",
+                  "text_en": "Or did I commit a sin, abasing myself that you might be exalted, because I announced the gospel of God to you free of charge?"
+                },
+                {
+                  "book": 47,
+                  "chapter": 11,
+                  "verse": 9,
+                  "ref_gb": "林后十一9",
+                  "ref_big5": "林後十一9",
+                  "ref_en": "2 Cor. 11:9",
+                  "text_gb": "我在你们那里缺乏的时候，并没有累着你们一个人，因我所缺乏的，那从马其顿来的弟兄们都补足了。我向来凡事自守，不累着你们，将来也必自守。",
+                  "text_big5": "我在你們那裏缺乏的時候，並沒有累著你們一個人，因我所缺乏的，那從馬其頓來的弟兄們都補足了。我向來凡事自守，不累著你們，將來也必自守。",
+                  "text_en": "And when I was present with you and lacked, I was not a burden to anyone; for the brothers who came from Macedonia filled up my lack, and in everything I kept myself from being burdensome to you, and will keep myself."
+                },
+                {
+                  "book": 47,
+                  "chapter": 12,
+                  "verse": 13,
+                  "ref_gb": "林后十二13",
+                  "ref_big5": "林後十二13",
+                  "ref_en": "2 Cor. 12:13",
+                  "text_gb": "因为除了我自己不累着你们以外，你们还有什么事不及其余的召会？这不公之处，你们饶恕我吧！",
+                  "text_big5": "因為除了我自己不累著你們以外，你們還有甚麼事不及其餘的召會？這不公之處，你們饒恕我罷！",
+                  "text_en": "For what is there in which you were treated in a manner inferior to the rest of the churches, except that I myself was not a burden to you? Graciously forgive me this injustice!"
+                },
+                {
+                  "book": 47,
+                  "chapter": 12,
+                  "verse": 14,
+                  "ref_gb": "林后十二14",
+                  "ref_big5": "林後十二14",
+                  "ref_en": "2 Cor. 12:14",
+                  "text_gb": "看哪，这是我第三次预备好，要到你们那里去，也必不累着你们，因我所寻求的不是你们的东西，乃是你们自己。因为儿女不该为父母积蓄，父母乃该为儿女积蓄。",
+                  "text_big5": "看哪，這是我第三次豫備好，要到你們那裏去，也必不累著你們，因我所尋求的不是你們的東西，乃是你們自己。因為兒女不該為父母積蓄，父母乃該為兒女積蓄。",
+                  "text_en": "Behold, this third time I am ready to come to you, and I will not be a burden; for I do not seek what is yours but you. For the children ought not to store up for the parents, but the parents for the children."
+                },
+                {
+                  "book": 47,
+                  "chapter": 12,
+                  "verse": 16,
+                  "ref_gb": "林后十二16",
+                  "ref_big5": "林後十二16",
+                  "ref_en": "2 Cor. 12:16",
+                  "text_gb": "罢了！我并没有加给你们担子，你们却有人说，我是狡猾诡诈，用诡计牢笼你们。",
+                  "text_big5": "罷了！我並沒有加給你們擔子，你們卻有人說，我是狡猾詭詐，用詭計牢籠你們。",
+                  "text_en": "But let it be so! I did not burden you; but, as some of you say, being crafty, I took you by guile."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 9,
+          "ref_gb": "帖后三9",
+          "ref_big5": "帖後三9",
+          "ref_en": "2 Thes. 3:9",
+          "text_gb": "这并不是因我们没有权[Cra]利，乃是要给你们作榜[Crb]样，叫你们效[Crc]法我们。",
+          "text_big5": "這並不是因我們沒有權[Cra]利，乃是要給你們作榜[Crb]樣，叫你們效[Crc]法我們。",
+          "text_en": "Not because we do not have the right, but in order that we might give ourselves to you as a pattern that you might imitate us.",
+          "text_gb_plain": "这并不是因我们没有权利，乃是要给你们作榜样，叫你们效法我们。",
+          "text_big5_plain": "這並不是因我們沒有權利，乃是要給你們作榜樣，叫你們效法我們。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "林前九4，6，12",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 9,
+                  "verse": 4,
+                  "ref_gb": "林前九4",
+                  "ref_big5": "林前九4",
+                  "ref_en": "1 Cor. 9:4",
+                  "text_gb": "难道我们没有权利吃喝么？",
+                  "text_big5": "難道我們沒有權利喫喝麼？",
+                  "text_en": "Do we not have a right to eat and to drink?"
+                },
+                {
+                  "book": 46,
+                  "chapter": 9,
+                  "verse": 6,
+                  "ref_gb": "林前九6",
+                  "ref_big5": "林前九6",
+                  "ref_en": "1 Cor. 9:6",
+                  "text_gb": "独有我与巴拿巴没有权利不作工么？",
+                  "text_big5": "獨有我與巴拿巴沒有權利不作工麼？",
+                  "text_en": "Or do only I and Barnabas not have the right not to work?"
+                },
+                {
+                  "book": 46,
+                  "chapter": 9,
+                  "verse": 12,
+                  "ref_gb": "林前九12",
+                  "ref_big5": "林前九12",
+                  "ref_en": "1 Cor. 9:12",
+                  "text_gb": "若别人在你们身上分享这权利，何况我们？然而我们没有用过这权利，倒凡事忍受，免得基督的福音受到任何拦阻。",
+                  "text_big5": "若別人在你們身上分享這權利，何況我們？然而我們沒有用過這權利，倒凡事忍受，免得基督的福音受到任何攔阻。",
+                  "text_en": "If others partake of this right over you, should not rather we? Yet we did not use this right, but we bear all things that we may not cause any hindrance to the gospel of Christ."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 20,
+              "raw": "腓三17，彼前五3，参帖前一7",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 3,
+                  "verse": 17,
+                  "ref_gb": "腓三17",
+                  "ref_big5": "腓三17",
+                  "ref_en": "Phil. 3:17",
+                  "text_gb": "弟兄们，你们要一同效法我，你们怎样以我们为榜样，也当留意那些这样行的人。",
+                  "text_big5": "弟兄們，你們要一同效法我，你們怎樣以我們為榜樣，也當留意那些這樣行的人。",
+                  "text_en": "Be imitators together of me, brothers, and observe those who thus walk even as you have us as a pattern."
+                },
+                {
+                  "book": 60,
+                  "chapter": 5,
+                  "verse": 3,
+                  "ref_gb": "彼前五3",
+                  "ref_big5": "彼前五3",
+                  "ref_en": "1 Pet. 5:3",
+                  "text_gb": "也不是作主辖管所委托你们的产业，乃是作群羊的榜样。",
+                  "text_big5": "也不是作主轄管所委託你們的產業，乃是作群羊的榜樣。",
+                  "text_en": "Nor as lording it over your allotments but by becoming patterns of the flock."
+                },
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "帖前一7",
+                  "ref_big5": "帖前一7",
+                  "ref_en": "1 Thes. 1:7",
+                  "text_gb": "以致你们成了马其顿和亚该亚所有信徒的榜样。",
+                  "text_big5": "以致你們成了馬其頓和亞該亞所有信徒的榜樣。",
+                  "text_en": "So that you became a pattern to all those who believe in Macedonia and in Achaia."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 26,
+              "raw": "帖后三7",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 7,
+                  "ref_gb": "帖后三7",
+                  "ref_big5": "帖後三7",
+                  "ref_en": "2 Thes. 3:7",
+                  "text_gb": "你们自己原知道，应当怎样效法我们；因为我们在你们中间，未尝不守规矩，",
+                  "text_big5": "你們自己原知道，應當怎樣效法我們；因為我們在你們中間，未嘗不守規矩，",
+                  "text_en": "For you yourselves know how you ought to imitate us, because we were not disorderly among you;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 10,
+          "ref_gb": "帖后三10",
+          "ref_big5": "帖後三10",
+          "ref_en": "2 Thes. 3:10",
+          "text_gb": "我们在你们那里的时候，也曾将这事嘱[Cra]咐你们，若有人不愿作工，就不可吃[Crb]饭。",
+          "text_big5": "我們在你們那裏的時候，也曾將這事囑[Cra]咐你們，若有人不願作工，就不可喫[Crb]飯。",
+          "text_en": "For even when we were with you, we gave you this charge, that if anyone does not want to work, neither should he eat.",
+          "text_gb_plain": "我们在你们那里的时候，也曾将这事嘱咐你们，若有人不愿作工，就不可吃饭。",
+          "text_big5_plain": "我們在你們那裏的時候，也曾將這事囑咐你們，若有人不願作工，就不可喫飯。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 17,
+              "raw": "帖后三4",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 4,
+                  "ref_gb": "帖后三4",
+                  "ref_big5": "帖後三4",
+                  "ref_en": "2 Thes. 3:4",
+                  "text_gb": "关于你们，我们在主里深信，你们现在是遵行我们所嘱咐的，将来也必要遵行。",
+                  "text_big5": "關於你們，我們在主裏深信，你們現在是遵行我們所囑咐的，將來也必要遵行。",
+                  "text_en": "And we have confidence in the Lord concerning you that what we charge, you both are doing and will do."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 33,
+              "raw": "创三19",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 3,
+                  "verse": 19,
+                  "ref_gb": "创三19",
+                  "ref_big5": "創三19",
+                  "ref_en": "Gen. 3:19",
+                  "text_gb": "你必汗流满面才得糊口，直到你归了土，因为你是从土取出的；你本是尘土，仍要归于尘土。",
+                  "text_big5": "你必汗流滿面纔得餬口，直到你歸了土，因為你是從土取出的；你本是塵土，仍要歸於塵土。",
+                  "text_en": "By the sweat of your face / You will eat bread / Until you return to the ground, / Because from it you were taken; / For dust you are, / And to dust you shall return."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 11,
+          "ref_gb": "帖后三11",
+          "ref_big5": "帖後三11",
+          "ref_en": "2 Thes. 3:11",
+          "text_gb": "因我们听说，在你们中间有些人不[Cra]按规矩而行，什么工都不作，反倒好[Fn1][Crb]管闲事。",
+          "text_big5": "因我們聽說，在你們中間有些人不[Cra]按規矩而行，甚麼工都不作，反倒好[Fn1][Crb]管閒事。",
+          "text_en": "For we hear of some walking among you disorderly, doing no work at all, but being busybodies.",
+          "text_gb_plain": "因我们听说，在你们中间有些人不按规矩而行，什么工都不作，反倒好管闲事。",
+          "text_big5_plain": "因我們聽說，在你們中間有些人不按規矩而行，甚麼工都不作，反倒好管閒事。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 31,
+              "zh": "他们很忙，却什么工都不作；他们忙的只是与自己无关的事。",
+              "zh_big5": "他們很忙，卻甚麼工都不作；他們忙的只是與自己無關的事。",
+              "en": "3:11 1 busybodies They were busy but were doing no work at all; i.e., they were busy with only what was not their own business."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "帖后三6",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "帖后三6",
+                  "ref_big5": "帖後三6",
+                  "ref_en": "2 Thes. 3:6",
+                  "text_gb": "弟兄们，我们在我们主耶稣基督的名里嘱咐你们，凡有弟兄不按规矩、且不照着你们从我们所受的传授而行，就当远离他。",
+                  "text_big5": "弟兄們，我們在我們主耶穌基督的名裏囑咐你們，凡有弟兄不按規矩、且不照著你們從我們所受的傳授而行，就當遠離他。",
+                  "text_en": "Now we charge you, brothers, in the name of our Lord Jesus Christ, that you keep away from every brother walking disorderly and not according to the things which were handed down to you and which you received from us."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 31,
+              "raw": "提前五13，彼前四15",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 5,
+                  "verse": 13,
+                  "ref_gb": "提前五13",
+                  "ref_big5": "提前五13",
+                  "ref_en": "1 Tim. 5:13",
+                  "text_gb": "同时她们又习惯懒惰，挨家闲游；不但懒惰，而且说长道短，好管闲事，说些不该说的话。",
+                  "text_big5": "同時她們又習慣懶惰，挨家閒遊；不但懶惰，而且說長道短，好管閒事，說些不該說的話。",
+                  "text_en": "And at the same time they also learn to be idle, going around from house to house; and they are not only idle but also gossips and busybodies, speaking things which they ought not."
+                },
+                {
+                  "book": 60,
+                  "chapter": 4,
+                  "verse": 15,
+                  "ref_gb": "彼前四15",
+                  "ref_big5": "彼前四15",
+                  "ref_en": "1 Pet. 4:15",
+                  "text_gb": "你们中间却不可有人因为是杀人的、或偷窃的、作恶的、或好管闲事的而受苦。",
+                  "text_big5": "你們中間卻不可有人因為是殺人的、或偷竊的、作惡的、或好管閒事的而受苦。",
+                  "text_en": "For let none of you suffer as a murderer or a thief or an evildoer or as a meddler into others' affairs;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 12,
+          "ref_gb": "帖后三12",
+          "ref_big5": "帖後三12",
+          "ref_en": "2 Thes. 3:12",
+          "text_gb": "我们在主耶稣基督里，嘱[Cra]咐并劝[Crb]勉这样的人，要安[Crc]静作[Crd]工，吃[Cre]自己的饭。",
+          "text_big5": "我們在主耶穌基督裏，囑[Cra]咐並勸[Crb]勉這樣的人，要安[Crc]靜作[Crd]工，喫[Cre]自己的飯。",
+          "text_en": "Now such ones we charge and exhort in the Lord Jesus Christ to work with quietness and eat their own bread.",
+          "text_gb_plain": "我们在主耶稣基督里，嘱咐并劝勉这样的人，要安静作工，吃自己的饭。",
+          "text_big5_plain": "我們在主耶穌基督裏，囑咐並勸勉這樣的人，要安靜作工，喫自己的飯。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "帖后三4",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 4,
+                  "ref_gb": "帖后三4",
+                  "ref_big5": "帖後三4",
+                  "ref_en": "2 Thes. 3:4",
+                  "text_gb": "关于你们，我们在主里深信，你们现在是遵行我们所嘱咐的，将来也必要遵行。",
+                  "text_big5": "關於你們，我們在主裏深信，你們現在是遵行我們所囑咐的，將來也必要遵行。",
+                  "text_en": "And we have confidence in the Lord concerning you that what we charge, you both are doing and will do."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 14,
+              "raw": "帖前二3，四1",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 3,
+                  "ref_gb": "帖前二3",
+                  "ref_big5": "帖前二3",
+                  "ref_en": "1 Thes. 2:3",
+                  "text_gb": "我们的劝勉不是出于错谬，不是出于污秽，也不是用诡诈；",
+                  "text_big5": "我們的勸勉不是出於錯謬，不是出於污穢，也不是用詭詐；",
+                  "text_en": "For our exhortation is not out of deception nor out of uncleanness nor in guile;"
+                },
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "帖前四1",
+                  "ref_big5": "帖前四1",
+                  "ref_en": "1 Thes. 4:1",
+                  "text_gb": "还有，弟兄们，我们在主耶稣里请求并劝勉你们，你们既然接受了我们的教训，知道当怎样行，并怎样讨神的喜悦，就要照你们现在所行的，更加充盈超越。",
+                  "text_big5": "還有，弟兄們，我們在主耶穌裏請求並勸勉你們，你們既然接受了我們的教訓，知道當怎樣行，並怎樣討神的喜悅，就要照你們現在所行的，更加充盈超越。",
+                  "text_en": "Furthermore, brothers, we ask and exhort you in the Lord Jesus that even as you received from us how you ought to walk and please God, even as indeed you do walk, that you abound still more."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 22,
+              "raw": "帖前四11",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 4,
+                  "verse": 11,
+                  "ref_gb": "帖前四11",
+                  "ref_big5": "帖前四11",
+                  "ref_en": "1 Thes. 4:11",
+                  "text_gb": "又要立定志向作安静人，办自己的事，亲手作工，正如我们曾嘱咐过你们的，",
+                  "text_big5": "又要立定志向作安靜人，辦自己的事，親手作工，正如我們曾囑咐過你們的，",
+                  "text_en": "And to aspire to be quiet and attend to your own affairs and work with your hands, even as we charged you,"
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 24,
+              "raw": "帖后三8",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 8,
+                  "ref_gb": "帖后三8",
+                  "ref_big5": "帖後三8",
+                  "ref_en": "2 Thes. 3:8",
+                  "text_gb": "也未尝白吃任何人的饭，倒是劳碌辛苦，昼夜作工，免得叫你们任何人受累。",
+                  "text_big5": "也未嘗白喫任何人的飯，倒是勞碌辛苦，晝夜作工，免得叫你們任何人受累。",
+                  "text_en": "Nor did we eat bread as a gift from anyone, but in labor and hardship we worked night and day so that we would not be burdensome to any of you;"
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 27,
+              "raw": "参帖后三8",
+              "refs": [
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 8,
+                  "ref_gb": "帖后三8",
+                  "ref_big5": "帖後三8",
+                  "ref_en": "2 Thes. 3:8",
+                  "text_gb": "也未尝白吃任何人的饭，倒是劳碌辛苦，昼夜作工，免得叫你们任何人受累。",
+                  "text_big5": "也未嘗白喫任何人的飯，倒是勞碌辛苦，晝夜作工，免得叫你們任何人受累。",
+                  "text_en": "Nor did we eat bread as a gift from anyone, but in labor and hardship we worked night and day so that we would not be burdensome to any of you;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 13,
+          "ref_gb": "帖后三13",
+          "ref_big5": "帖後三13",
+          "ref_en": "2 Thes. 3:13",
+          "text_gb": "弟兄们，你们行善不可丧[Cra]志。",
+          "text_big5": "弟兄們，你們行善不可喪[Cra]志。",
+          "text_en": "But you, brothers, do not lose heart in doing good.",
+          "text_gb_plain": "弟兄们，你们行善不可丧志。",
+          "text_big5_plain": "弟兄們，你們行善不可喪志。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "加六9",
+              "refs": [
+                {
+                  "book": 48,
+                  "chapter": 6,
+                  "verse": 9,
+                  "ref_gb": "加六9",
+                  "ref_big5": "加六9",
+                  "ref_en": "Gal. 6:9",
+                  "text_gb": "我们行善，不可丧志；因为若不灰心，到了适当的时候，就要收成。",
+                  "text_big5": "我們行善，不可喪志；因為若不灰心，到了適當的時候，就要收成。",
+                  "text_en": "And let us not lose heart in doing what is good, for in the proper season we will reap if we do not faint."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 14,
+          "ref_gb": "帖后三14",
+          "ref_big5": "帖後三14",
+          "ref_en": "2 Thes. 3:14",
+          "text_gb": "若有人不[Cra]顺从我们这信上的话，要记下这人，不[Fn1][Crb]和他交往，叫他自觉羞愧；",
+          "text_big5": "若有人不[Cra]順從我們這信上的話，要記下這人，不[Fn1][Crb]和他交往，叫他自覺羞愧；",
+          "text_en": "And if anyone does not obey our word through this letter, mark this one so as not to mingle with him, in order that he may be ashamed.",
+          "text_gb_plain": "若有人不顺从我们这信上的话，要记下这人，不和他交往，叫他自觉羞愧；",
+          "text_big5_plain": "若有人不順從我們這信上的話，要記下這人，不和他交往，叫他自覺羞愧；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 21,
+              "zh": "即不与他结交，不与他作伴。",
+              "zh_big5": "即不與他結交，不與他作伴。",
+              "en": "3:14 1 not I.e., not to have company, not to keep company."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "太十八17",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 18,
+                  "verse": 17,
+                  "ref_gb": "太十八17",
+                  "ref_big5": "太十八17",
+                  "ref_en": "Matt. 18:17",
+                  "text_gb": "他若不听他们，就告诉召会；他若连召会也不听，就把他当作外邦人和税吏。",
+                  "text_big5": "他若不聽他們，就告訴召會；他若連召會也不聽，就把他當作外邦人和稅吏。",
+                  "text_en": "And if he refuses to hear them, tell it to the church; and if he refuses to hear the church also, let him be to you just like the Gentile and the tax collector."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "林前五9，11",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 5,
+                  "verse": 9,
+                  "ref_gb": "林前五9",
+                  "ref_big5": "林前五9",
+                  "ref_en": "1 Cor. 5:9",
+                  "text_gb": "我曾写信给你们说，不可与淫乱的人交往，",
+                  "text_big5": "我曾寫信給你們說，不可與淫亂的人交往，",
+                  "text_en": "I wrote to you in my letter not to mingle with fornicators,"
+                },
+                {
+                  "book": 46,
+                  "chapter": 5,
+                  "verse": 11,
+                  "ref_gb": "林前五11",
+                  "ref_big5": "林前五11",
+                  "ref_en": "1 Cor. 5:11",
+                  "text_gb": "但如今我写给你们说，若有人称为弟兄，是行淫乱的、或贪婪的、或拜偶像的、或辱骂的、或醉酒的、或勒索的，这样的人不可与他交往，甚至与他一同吃饭都不可。",
+                  "text_big5": "但如今我寫給你們說，若有人稱為弟兄，是行淫亂的、或貪婪的、或拜偶像的、或辱罵的、或醉酒的、或勒索的，這樣的人不可與他交往，甚至與他一同喫飯都不可。",
+                  "text_en": "But now I have written to you not to mingle with anyone who is called a brother, if he is a fornicator or a covetous man or an idolater or a reviler or a drunkard or a rapacious man, with such a one not even to eat."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 15,
+          "ref_gb": "帖后三15",
+          "ref_big5": "帖後三15",
+          "ref_en": "2 Thes. 3:15",
+          "text_gb": "只是不要以他为仇敌，乃要劝[Cra]戒他如弟兄。",
+          "text_big5": "只是不要以他為仇敵，乃要勸[Cra]戒他如弟兄。",
+          "text_en": "Yet do not regard him as an enemy, but admonish him as a brother.",
+          "text_gb_plain": "只是不要以他为仇敌，乃要劝戒他如弟兄。",
+          "text_big5_plain": "只是不要以他為仇敵，乃要勸戒他如弟兄。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 13,
+              "raw": "帖前五12，14，参太十八15，利十九17",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 12,
+                  "ref_gb": "帖前五12",
+                  "ref_big5": "帖前五12",
+                  "ref_en": "1 Thes. 5:12",
+                  "text_gb": "弟兄们，我们还请求你们，要敬重那些在你们中间劳苦，并在主里带领你们，劝戒你们的人，",
+                  "text_big5": "弟兄們，我們還請求你們，要敬重那些在你們中間勞苦，並在主裏帶領你們，勸戒你們的人，",
+                  "text_en": "Furthermore we ask you, brothers, to acknowledge those who labor among you and take the lead among you in the Lord and admonish you,"
+                },
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 14,
+                  "ref_gb": "帖前五14",
+                  "ref_big5": "帖前五14",
+                  "ref_en": "1 Thes. 5:14",
+                  "text_gb": "弟兄们，我们劝你们，要劝戒不守规矩的人，抚慰灰心的人，扶持软弱的人，又要对众人恒忍。",
+                  "text_big5": "弟兄們，我們勸你們，要勸戒不守規矩的人，撫慰灰心的人，扶持軟弱的人，又要對眾人恆忍。",
+                  "text_en": "And we exhort you, brothers, Admonish the disorderly, console the fainthearted, sustain the weak, be long-suffering toward all."
+                },
+                {
+                  "book": 40,
+                  "chapter": 18,
+                  "verse": 15,
+                  "ref_gb": "太十八15",
+                  "ref_big5": "太十八15",
+                  "ref_en": "Matt. 18:15",
+                  "text_gb": "再者，若是你的弟兄犯罪得罪你，你要去，只在你和他之间指出他的过错。他若听你，你就得着了你的弟兄。",
+                  "text_big5": "再者，若是你的弟兄犯罪得罪你，你要去，只在你和他之間指出他的過錯。他若聽你，你就得著了你的弟兄。",
+                  "text_en": "Moreover if your brother sins against you, go, reprove him between you and him alone. If he hears you, you have gained your brother."
+                },
+                {
+                  "book": 3,
+                  "chapter": 19,
+                  "verse": 17,
+                  "ref_gb": "利十九17",
+                  "ref_big5": "利十九17",
+                  "ref_en": "Lev. 19:17",
+                  "text_gb": "不可心里恨你的弟兄；总要指责你的同伴，免得因他担罪。",
+                  "text_big5": "不可心裏恨你的弟兄；總要指責你的同伴，免得因他擔罪。",
+                  "text_en": "You shall not hate your brother in your heart; but you shall surely reprove your fellow countryman, so that you do not bring sin upon yourself because of him."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 16,
+          "ref_gb": "帖后三16",
+          "ref_big5": "帖後三16",
+          "ref_en": "2 Thes. 3:16",
+          "text_gb": "愿平[Cra]安的主，随时多方亲自赐你们平[Fn1][Crb]安；愿主与[Crc]你们众人同在。",
+          "text_big5": "願平[Cra]安的主，隨時多方親自賜你們平[Fn1][Crb]安；願主與[Crc]你們眾人同在。",
+          "text_en": "Now the Lord of peace Himself give you peace continually in every way. The Lord be with you all.",
+          "text_gb_plain": "愿平安的主，随时多方亲自赐你们平安；愿主与你们众人同在。",
+          "text_big5_plain": "願平安的主，隨時多方親自賜你們平安；願主與你們眾人同在。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 16,
+              "zh": "遵守12～15节的嘱咐，就随时多方都有从主来的平安。",
+              "zh_big5": "遵守12～15節的囑咐，就隨時多方都有從主來的平安。",
+              "en": "3:16 1 peace By keeping the charge in vv. 12-15, the believers receive peace from the Lord continually in every way."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "帖前五23，罗十五33",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 23,
+                  "ref_gb": "帖前五23",
+                  "ref_big5": "帖前五23",
+                  "ref_en": "1 Thes. 5:23",
+                  "text_gb": "且愿和平的神，亲自全然圣别你们，又愿你们的灵、与魂、与身子得蒙保守，在我们主耶稣基督来临的时候，得以完全，无可指摘。",
+                  "text_big5": "且願和平的神，親自全然聖別你們，又願你們的靈、與魂、與身子得蒙保守，在我們主耶穌基督來臨的時候，得以完全，無可指摘。",
+                  "text_en": "And the God of peace Himself sanctify you wholly, and may your spirit and soul and body be preserved complete, without blame, at the coming of our Lord Jesus Christ."
+                },
+                {
+                  "book": 45,
+                  "chapter": 15,
+                  "verse": 33,
+                  "ref_gb": "罗十五33",
+                  "ref_big5": "羅十五33",
+                  "ref_en": "Rom. 15:33",
+                  "text_gb": "愿平安的神与你们众人同在。阿们。",
+                  "text_big5": "願平安的神與你們眾人同在。阿們。",
+                  "text_en": "Now the God of peace be with you all. Amen."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 16,
+              "raw": "民六26",
+              "refs": [
+                {
+                  "book": 4,
+                  "chapter": 6,
+                  "verse": 26,
+                  "ref_gb": "民六26",
+                  "ref_big5": "民六26",
+                  "ref_en": "Num. 6:26",
+                  "text_gb": "愿耶和华向你仰脸，赐你平安。",
+                  "text_big5": "願耶和華向你仰臉，賜你平安。",
+                  "text_en": "Jehovah lift up His countenance upon you and give you peace."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 21,
+              "raw": "太二八20，得二4",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 28,
+                  "verse": 20,
+                  "ref_gb": "太二八20",
+                  "ref_big5": "太二八20",
+                  "ref_en": "Matt. 28:20",
+                  "text_gb": "凡我所吩咐你们的，无论是什么，都教训他们遵守；看哪，我天天与你们同在，直到这世代的终结。",
+                  "text_big5": "凡我所吩咐你們的，無論是甚麼，都教訓他們遵守；看哪，我天天與你們同在，直到這世代的終結。",
+                  "text_en": "Teaching them to observe all that I have commanded you. And behold, I am with you all the days until the consummation of the age."
+                },
+                {
+                  "book": 8,
+                  "chapter": 2,
+                  "verse": 4,
+                  "ref_gb": "得二4",
+                  "ref_big5": "得二4",
+                  "ref_en": "Ruth 2:4",
+                  "text_gb": "波阿斯正从伯利恒来，对收割的人说，愿耶和华与你们同在。他们回答说，愿耶和华赐福与你。",
+                  "text_big5": "波阿斯正從伯利恆來，對收割的人說，願耶和華與你們同在。他們回答說，願耶和華賜福與你。",
+                  "text_en": "And just then Boaz came from Bethlehem and said to the reapers, Jehovah be with you. And they said to him, Jehovah bless you."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 17,
+          "ref_gb": "帖后三17",
+          "ref_big5": "帖後三17",
+          "ref_en": "2 Thes. 3:17",
+          "text_gb": "我保罗亲[Cra]笔[Fn1]问安，这是我每封信的记号，我就是这样写的。",
+          "text_big5": "我保羅親[Cra]筆[Fn1]問安，這是我每封信的記號，我就是這樣寫的。",
+          "text_en": "The greeting in my own hand-Paul-which is the mark in every letter; so I write.",
+          "text_gb_plain": "我保罗亲笔问安，这是我每封信的记号，我就是这样写的。",
+          "text_big5_plain": "我保羅親筆問安，這是我每封信的記號，我就是這樣寫的。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "直译，手。",
+              "zh_big5": "直譯，手。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "林前十六21，西四18",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 21,
+                  "ref_gb": "林前十六21",
+                  "ref_big5": "林前十六21",
+                  "ref_en": "1 Cor. 16:21",
+                  "text_gb": "我保罗亲笔问安。",
+                  "text_big5": "我保羅親筆問安。",
+                  "text_en": "The greeting in my own hand-Paul."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 18,
+                  "ref_gb": "西四18",
+                  "ref_big5": "西四18",
+                  "ref_en": "Col. 4:18",
+                  "text_gb": "我保罗亲笔问安。你们要记念我的捆锁。愿恩典与你们同在。",
+                  "text_big5": "我保羅親筆問安。你們要記念我的捆鎖。願恩典與你們同在。",
+                  "text_en": "The greeting in my own hand-Paul. Remember my bonds. Grace be with you."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 53,
+          "chapter": 3,
+          "verse": 18,
+          "ref_gb": "帖后三18",
+          "ref_big5": "帖後三18",
+          "ref_en": "2 Thes. 3:18",
+          "text_gb": "愿我们主耶稣基督的恩[Fn1][Cra]与你们众人同在。",
+          "text_big5": "願我們主耶穌基督的恩[Fn1][Cra]與你們眾人同在。",
+          "text_en": "The grace of our Lord Jesus Christ be with you all.",
+          "text_gb_plain": "愿我们主耶稣基督的恩与你们众人同在。",
+          "text_big5_plain": "願我們主耶穌基督的恩與你們眾人同在。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "我们惟有享受主作恩典，才能保守召会生活不致误入任何歧途，且不致不按规矩而行。要过正确的召会生活，并保守召会生活有秩序，我们需要享受主作供应的恩典。见帖前五28注1。",
+              "zh_big5": "我們惟有享受主作恩典，纔能保守召會生活不致誤入任何歧途，且不致不按規矩而行。要過正確的召會生活，並保守召會生活有秩序，我們需要享受主作供應的恩典。見帖前五28註1。",
+              "en": "3:18 1 grace It is only when the Lord is enjoyed by us as grace that we can guard the church life from any kind of misleading and disorderliness. To live a proper church life and to keep the church life in order, we need to enjoy the Lord as the supplying grace. See note 1 Thes. 5:28 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "帖前五28",
+              "refs": [
+                {
+                  "book": 52,
+                  "chapter": 5,
+                  "verse": 28,
+                  "ref_gb": "帖前五28",
+                  "ref_big5": "帖前五28",
+                  "ref_en": "1 Thes. 5:28",
+                  "text_gb": "愿我们主耶稣基督的恩与你们同在。",
+                  "text_big5": "願我們主耶穌基督的恩與你們同在。",
+                  "text_en": "The grace of our Lord Jesus Christ be with you."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

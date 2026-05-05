@@ -1,0 +1,1098 @@
+{
+  "book": 31,
+  "name_gb": "俄巴底亚书",
+  "name_big5": "俄巴底亞書",
+  "name_en": "Obadiah",
+  "abbr_gb": "俄",
+  "abbr_big5": "俄",
+  "abbr_en": "Obad.",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "俄一1",
+          "ref_big5": "俄一1",
+          "ref_en": "Obad. 1:1",
+          "text_gb": "俄[Fn1]巴底亚的异象。主耶和华论以[Fn2][Cra]东说，我[Crb]们从耶和华那里听见信息，并有使者被差往列国去，说，起来吧，我们起来与以东争战。",
+          "text_big5": "俄[Fn1]巴底亞的異象。主耶和華論以[Fn2][Cra]東說，我[Crb]們從耶和華那裏聽見信息，並有使者被差往列國去，說，起來罷，我們起來與以東爭戰。",
+          "text_en": "The vision of Obadiah. Thus says the Lord Jehovah concerning Edom, / We have heard a report from Jehovah, / And an envoy has been sent among the nations: / Arise, and let us rise up against it for battle.",
+          "text_gb_plain": "俄巴底亚的异象。主耶和华论以东说，我们从耶和华那里听见信息，并有使者被差往列国去，说，起来吧，我们起来与以东争战。",
+          "text_big5_plain": "俄巴底亞的異象。主耶和華論以東說，我們從耶和華那裏聽見信息，並有使者被差往列國去，說，起來罷，我們起來與以東爭戰。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "意，耶和华的仆人。俄巴底亚书的中心思想是：耶和华对付以扫，结果带进雅各的胜利和产业，为着在复兴时代里神的国。",
+              "zh_big5": "意，耶和華的僕人。俄巴底亞書的中心思想是：耶和華對付以掃，結果帶進雅各的勝利和產業，為著在復興時代裏神的國。",
+              "en": "1:1 1 Obadiah Meaning the servant of Jah; Jah being a shortened form of Jehovah. The central thought of the book of Obadiah is that Jehovah's dealing with Esau issues in Jacob's victory and possession for the kingdom of God in the age of restoration."
+            },
+            {
+              "num": 2,
+              "loc": 6,
+              "zh": "指以扫(创三六1)。以扫是人名，是雅各的孪生哥哥，而以东是国名。",
+              "zh_big5": "指以掃。（創三六1。）以掃是人名，是雅各的孿生哥哥，而以東是國名。",
+              "en": "1:1 2 Edom Edom refers to Esau (Gen. 36:1). Whereas Esau is the name of a person, the twin brother of Jacob, Edom is the name of a country."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "耶四九7～22，结二五12～14，珥三19，摩一11，12",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 7,
+                  "ref_gb": "耶四九7",
+                  "ref_big5": "耶四九7",
+                  "ref_en": "Jer. 49:7",
+                  "text_gb": "论以东：万军之耶和华如此说，提幔中再没有智慧么？聪明人不再有谋略么？他们的智慧耗尽了么？",
+                  "text_big5": "論以東：萬軍之耶和華如此說，提幔中再沒有智慧麼？聰明人不再有謀略麼？他們的智慧耗盡了麼？",
+                  "text_en": "Concerning Edom: / Thus says Jehovah of hosts, / Is there no more wisdom in Teman? / Has counsel perished from those who understand? / Is their wisdom spent?"
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 8,
+                  "ref_gb": "耶四九8",
+                  "ref_big5": "耶四九8",
+                  "ref_en": "Jer. 49:8",
+                  "text_gb": "底但的居民哪，要转身逃跑，住在隐密处；因为我向以扫追讨的时候，必使灾祸临到他。",
+                  "text_big5": "底但的居民哪，要轉身逃跑，住在隱密處；因為我向以掃追討的時候，必使災禍臨到他。",
+                  "text_en": "Flee, turn back, dwell in hidden places, / O inhabitants of Dedan, / For I will bring the calamity of Esau upon him / At the time I punish him."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 9,
+                  "ref_gb": "耶四九9",
+                  "ref_big5": "耶四九9",
+                  "ref_en": "Jer. 49:9",
+                  "text_gb": "摘葡萄的若来到你这里，岂不剩下些葡萄么？盗贼若夜间来，岂不是只毁坏到够了么？",
+                  "text_big5": "摘葡萄的若來到你這裏，豈不剩下些葡萄麼？盜賊若夜間來，豈不是只毀壞到彀了麼？",
+                  "text_en": "If the grape gatherers came to you, / Would they not leave gleanings? / If thieves came by night, / Would they not destroy only enough for themselves?"
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 10,
+                  "ref_gb": "耶四九10",
+                  "ref_big5": "耶四九10",
+                  "ref_en": "Jer. 49:10",
+                  "text_gb": "我却剥光以扫，显出他的隐密处；他不能掩藏自己。他的后裔、弟兄、邻舍，尽都毁灭，他也归于无有。",
+                  "text_big5": "我卻剝光以掃，顯出他的隱密處；他不能掩藏自己。他的後裔、弟兄、鄰舍，盡都毀滅，他也歸於無有。",
+                  "text_en": "But I have stripped Esau bare; / I have exposed his secret places, / And he is not able to conceal himself. / His seed is destroyed, / and his brothers and his neighbors; / And he is no more."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 11,
+                  "ref_gb": "耶四九11",
+                  "ref_big5": "耶四九11",
+                  "ref_en": "Jer. 49:11",
+                  "text_gb": "你撇下孤儿，我必使他们存活；你的寡妇可以信靠我。",
+                  "text_big5": "你撇下孤兒，我必使他們存活；你的寡婦可以信靠我。",
+                  "text_en": "Leave your orphans behind; I will preserve them alive, / And let your widows trust in Me."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 12,
+                  "ref_gb": "耶四九12",
+                  "ref_big5": "耶四九12",
+                  "ref_en": "Jer. 49:12",
+                  "text_gb": "耶和华如此说，原来判定不该喝那杯的，一定要喝。你能尽免刑罚么？你不能免罚，一定要喝。",
+                  "text_big5": "耶和華如此說，原來判定不該喝那杯的，一定要喝。你能盡免刑罰麼？你不能免罰，一定要喝。",
+                  "text_en": "For thus says Jehovah, Those whose judgment was not to drink the cup will certainly drink it. And will you by any means be left unpunished? You will not be left unpunished, for you will certainly drink it."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 13,
+                  "ref_gb": "耶四九13",
+                  "ref_big5": "耶四九13",
+                  "ref_en": "Jer. 49:13",
+                  "text_gb": "耶和华说，我指着自己起誓，波斯拉必成为荒废、羞辱、咒诅，并且荒凉；她的一切城邑，必成为永远的荒场。",
+                  "text_big5": "耶和華說，我指著自己起誓，波斯拉必成為荒廢、羞辱、咒詛，並且荒涼；她的一切城邑，必成為永遠的荒場。",
+                  "text_en": "For I have sworn by Myself, declares Jehovah, that Bozrah will become a waste, a reproach, a ruin and a curse; and all her cities will become eternal desolations."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 14,
+                  "ref_gb": "耶四九14",
+                  "ref_big5": "耶四九14",
+                  "ref_en": "Jer. 49:14",
+                  "text_gb": "我从耶和华那里听见信息，并有使者被差往列国去，说，你们聚集来攻击以东，起来争战。",
+                  "text_big5": "我從耶和華那裏聽見信息，並有使者被差往列國去，說，你們聚集來攻擊以東，起來爭戰。",
+                  "text_en": "I have heard a report from Jehovah, / And an envoy is sent among the nations, saying, / Gather yourselves together, and come against her, / And arise for war."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 15,
+                  "ref_gb": "耶四九15",
+                  "ref_big5": "耶四九15",
+                  "ref_en": "Jer. 49:15",
+                  "text_gb": "因为我使你在列国中为最小，在人中间被藐视。",
+                  "text_big5": "因為我使你在列國中為最小，在人中間被藐視。",
+                  "text_en": "For, indeed, I have made you small among the nations, / Despised among men."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 16,
+                  "ref_gb": "耶四九16",
+                  "ref_big5": "耶四九16",
+                  "ref_en": "Jer. 49:16",
+                  "text_gb": "住在磐石穴中，据守高冈的啊，你的威吓，你心中的狂傲，欺骗了你。你虽如鹰高高搭窝，我必从那里拉下你来；这是耶和华说的。",
+                  "text_big5": "住在磐石穴中，據守高岡的阿，你的威嚇，你心中的狂傲，欺騙了你。你雖如鷹高高搭窩，我必從那裏拉下你來；這是耶和華說的。",
+                  "text_en": "Your terribleness, the pride of your heart, / Has beguiled you, / O you who dwell in the clefts of the rock, / Who grasp the height of the hill. / Though you make your nest as high as an eagle's, / I will bring you down from there, declares Jehovah."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 17,
+                  "ref_gb": "耶四九17",
+                  "ref_big5": "耶四九17",
+                  "ref_en": "Jer. 49:17",
+                  "text_gb": "以东必令人惊骇；凡经过的人都必惊骇，又嗤笑她一切的创伤。",
+                  "text_big5": "以東必令人驚駭；凡經過的人都必驚駭，又嗤笑她一切的創傷。",
+                  "text_en": "And Edom will become an astonishment; everyone who passes by her will be astonished and will hiss at all her wounds."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 18,
+                  "ref_gb": "耶四九18",
+                  "ref_big5": "耶四九18",
+                  "ref_en": "Jer. 49:18",
+                  "text_gb": "耶和华说，必无人住在那里，也无世人在其中寄居，就像所多玛、蛾摩拉、和邻近的城邑倾覆一样。",
+                  "text_big5": "耶和華說，必無人住在那裏，也無世人在其中寄居，就像所多瑪、蛾摩拉、和鄰近的城邑傾覆一樣。",
+                  "text_en": "As when Sodom and Gomorrah were overthrown with its neighbors, says Jehovah, no one will dwell there, nor will a son of man sojourn in her."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 19,
+                  "ref_gb": "耶四九19",
+                  "ref_big5": "耶四九19",
+                  "ref_en": "Jer. 49:19",
+                  "text_gb": "看哪，必有一人像狮子从约但河边的丛林上来，攻击坚固的居所；转眼之间，我要使以东人逃跑离开她；谁蒙拣选，我就派谁治理她。谁能像我呢？谁能给我定规日期呢？谁是那能在我面前站立的牧人呢？",
+                  "text_big5": "看哪，必有一人像獅子從約但河邊的叢林上來，攻擊堅固的居所；轉眼之間，我要使以東人逃跑離開她；誰蒙揀選，我就派誰治理她。誰能像我呢？誰能給我定規日期呢？誰是那能在我面前站立的牧人呢？",
+                  "text_en": "Indeed, one will come up like a lion from the majesty of the Jordan against a secure habitation, for I will suddenly make them run away from her; and whoever is chosen I will appoint over her. For who is like Me? And who can appoint Me a time? And who is that shepherd who can stand before Me?"
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 20,
+                  "ref_gb": "耶四九20",
+                  "ref_big5": "耶四九20",
+                  "ref_en": "Jer. 49:20",
+                  "text_gb": "所以你们要听耶和华攻击以东所设的谋略，和祂攻击提幔居民所定的意念：仇敌定要将他们羊群中微小的拉去；祂定要使他们的居所荒凉。",
+                  "text_big5": "所以你們要聽耶和華攻擊以東所設的謀略，和祂攻擊提幔居民所定的意念：仇敵定要將他們羊群中微小的拉去；祂定要使他們的居所荒涼。",
+                  "text_en": "Therefore hear the counsel of Jehovah, which He purposed against Edom, and His thoughts, which He has thought against the inhabitants of Teman: Surely they will drag them off, the little ones of the flock; surely He will make their habitation a desolation because of them."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 21,
+                  "ref_gb": "耶四九21",
+                  "ref_big5": "耶四九21",
+                  "ref_en": "Jer. 49:21",
+                  "text_gb": "因他们仆倒的声音，地就震动。人在红海那里，听见了呼喊的声音。",
+                  "text_big5": "因他們仆倒的聲音，地就震動。人在紅海那裏，聽見了呼喊的聲音。",
+                  "text_en": "The earth quaked at the sound of their fall. There is a cry; the sound of it has been heard in the Red Sea."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 22,
+                  "ref_gb": "耶四九22",
+                  "ref_big5": "耶四九22",
+                  "ref_en": "Jer. 49:22",
+                  "text_gb": "祂必如大鹰飞起扑下，展开翅膀攻击波斯拉；到那日，以东勇士的心必疼痛，如临产妇人的心一样。",
+                  "text_big5": "祂必如大鷹飛起撲下，展開翅膀攻擊波斯拉；到那日，以東勇士的心必疼痛，如臨產婦人的心一樣。",
+                  "text_en": "Indeed, He will mount up and swoop down like an eagle, and spread out His wings over Bozrah; and the heart of the mighty men of Edom in that day will be like the heart of a woman in labor."
+                },
+                {
+                  "book": 26,
+                  "chapter": 25,
+                  "verse": 12,
+                  "ref_gb": "结二五12",
+                  "ref_big5": "結二五12",
+                  "ref_en": "Ezek. 25:12",
+                  "text_gb": "主耶和华如此说，因为以东报仇雪恨，攻击犹大家，向他们报仇，大大有罪，",
+                  "text_big5": "主耶和華如此說，因為以東報仇雪恨，攻擊猶大家，向他們報仇，大大有罪，",
+                  "text_en": "Thus says the Lord Jehovah, Because Edom has acted full of vengeance against the house of Judah and has incurred serious guilt by taking vengeance on them, "
+                },
+                {
+                  "book": 26,
+                  "chapter": 25,
+                  "verse": 13,
+                  "ref_gb": "结二五13",
+                  "ref_big5": "結二五13",
+                  "ref_en": "Ezek. 25:13",
+                  "text_gb": "所以主耶和华如此说，我必伸手攻击以东，从其中剪除人与牲畜，使那地变为荒凉；从提幔直到底但，人必倒在刀下。",
+                  "text_big5": "所以主耶和華如此說，我必伸手攻擊以東，從其中剪除人與牲畜，使那地變為荒涼；從提幔直到底但，人必倒在刀下。",
+                  "text_en": "Therefore thus says the Lord Jehovah, I will also stretch out My hand against Edom and cut off from them man and beast and make it a desolation. From Teman even to Dedan they will fall by the sword."
+                },
+                {
+                  "book": 26,
+                  "chapter": 25,
+                  "verse": 14,
+                  "ref_gb": "结二五14",
+                  "ref_big5": "結二五14",
+                  "ref_en": "Ezek. 25:14",
+                  "text_gb": "我必将报复以东的事交在我民以色列的手中；以色列民必照我的怒气和我的忿怒，在以东施报，以东人就知道是我施报；这是主耶和华说的。",
+                  "text_big5": "我必將報復以東的事交在我民以色列的手中；以色列民必照我的怒氣和我的忿怒，在以東施報，以東人就知道是我施報；這是主耶和華說的。",
+                  "text_en": "And I will inflict My vengeance upon Edom by the hand of My people Israel, and they shall act in Edom according to My anger and My wrath. Then they will know My vengeance, declares the Lord Jehovah."
+                },
+                {
+                  "book": 29,
+                  "chapter": 3,
+                  "verse": 19,
+                  "ref_gb": "珥三19",
+                  "ref_big5": "珥三19",
+                  "ref_en": "Joel 3:19",
+                  "text_gb": "埃及必然荒凉，以东变为荒凉的旷野，都因向犹大人所行的强暴，因他们在本地流了无辜人的血。",
+                  "text_big5": "埃及必然荒涼，以東變為荒涼的曠野，都因向猶大人所行的強暴，因他們在本地流了無辜人的血。",
+                  "text_en": "Egypt will be a desolation, / And Edom will be a desolate wilderness, / Because of the violence against the children of Judah, / In that they have shed innocent blood in their land."
+                },
+                {
+                  "book": 30,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "摩一11",
+                  "ref_big5": "摩一11",
+                  "ref_en": "Amos 1:11",
+                  "text_gb": "耶和华如此说，因以东三番四次地犯罪，我必不免去他的刑罚；因为他拿刀追赶兄弟，塞住怜恤，时常发怒撕裂，长怀忿怒。",
+                  "text_big5": "耶和華如此說，因以東三番四次的犯罪，我必不免去他的刑罰；因為他拿刀追趕兄弟，塞住憐恤，時常發怒撕裂，長懷忿怒。",
+                  "text_en": "Thus says Jehovah, Because of three transgressions of Edom, / Indeed, because of four, I will not turn away the punishment; / Because he pursued his brother with the sword / And stifled his compassions; / And his anger raged continually, / And he kept his overflowing wrath perpetually."
+                },
+                {
+                  "book": 30,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "摩一12",
+                  "ref_big5": "摩一12",
+                  "ref_en": "Amos 1:12",
+                  "text_gb": "我却要降火在提幔，烧灭波斯拉的宫殿。",
+                  "text_big5": "我卻要降火在提幔，燒滅波斯拉的宮殿。",
+                  "text_en": "And I will send fire upon Teman, / And it will devour the palaces of Bozrah."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 10,
+              "raw": "1下～4：耶四九14～16",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 14,
+                  "ref_gb": "耶四九14",
+                  "ref_big5": "耶四九14",
+                  "ref_en": "Jer. 49:14",
+                  "text_gb": "我从耶和华那里听见信息，并有使者被差往列国去，说，你们聚集来攻击以东，起来争战。",
+                  "text_big5": "我從耶和華那裏聽見信息，並有使者被差往列國去，說，你們聚集來攻擊以東，起來爭戰。",
+                  "text_en": "I have heard a report from Jehovah, / And an envoy is sent among the nations, saying, / Gather yourselves together, and come against her, / And arise for war."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 15,
+                  "ref_gb": "耶四九15",
+                  "ref_big5": "耶四九15",
+                  "ref_en": "Jer. 49:15",
+                  "text_gb": "因为我使你在列国中为最小，在人中间被藐视。",
+                  "text_big5": "因為我使你在列國中為最小，在人中間被藐視。",
+                  "text_en": "For, indeed, I have made you small among the nations, / Despised among men."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 16,
+                  "ref_gb": "耶四九16",
+                  "ref_big5": "耶四九16",
+                  "ref_en": "Jer. 49:16",
+                  "text_gb": "住在磐石穴中，据守高冈的啊，你的威吓，你心中的狂傲，欺骗了你。你虽如鹰高高搭窝，我必从那里拉下你来；这是耶和华说的。",
+                  "text_big5": "住在磐石穴中，據守高岡的阿，你的威嚇，你心中的狂傲，欺騙了你。你雖如鷹高高搭窩，我必從那裏拉下你來；這是耶和華說的。",
+                  "text_en": "Your terribleness, the pride of your heart, / Has beguiled you, / O you who dwell in the clefts of the rock, / Who grasp the height of the hill. / Though you make your nest as high as an eagle's, / I will bring you down from there, declares Jehovah."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "俄一2",
+          "ref_big5": "俄一2",
+          "ref_en": "Obad. 1:2",
+          "text_gb": "我使你以东在列国中成为小的；你被人大大藐视。",
+          "text_big5": "我使你以東在列國中成為小的；你被人大大藐視。",
+          "text_en": "Indeed I have made you small among the nations; / You are very despised.",
+          "text_gb_plain": "我使你以东在列国中成为小的；你被人大大藐视。",
+          "text_big5_plain": "我使你以東在列國中成為小的；你被人大大藐視。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "俄一3",
+          "ref_big5": "俄一3",
+          "ref_en": "Obad. 1:3",
+          "text_gb": "你这住在磐石穴中，居所在高处的啊，你因心中狂傲自欺，心里说，谁能将我拉下地去呢？",
+          "text_big5": "你這住在磐石穴中，居所在高處的阿，你因心中狂傲自欺，心裏說，誰能將我拉下地去呢？",
+          "text_en": "The arrogance of your heart has beguiled you, / O you who dwell in the clefts of the rock, / Whose habitation is lofty, / Who says in his heart, / Who will bring me down to the ground?",
+          "text_gb_plain": "你这住在磐石穴中，居所在高处的啊，你因心中狂傲自欺，心里说，谁能将我拉下地去呢？",
+          "text_big5_plain": "你這住在磐石穴中，居所在高處的阿，你因心中狂傲自欺，心裏說，誰能將我拉下地去呢？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "俄一4",
+          "ref_big5": "俄一4",
+          "ref_en": "Obad. 1:4",
+          "text_gb": "你虽如大鹰高飞，在星宿之间搭窝，我必从那里拉[Cra]下你来；这是耶和华说的。",
+          "text_big5": "你雖如大鷹高飛，在星宿之間搭窩，我必從那裏拉[Cra]下你來；這是耶和華說的。",
+          "text_en": "Though you set yourself on high like the eagle / And though you make your nest among the stars, / I will bring you down from there, / Declares Jehovah.",
+          "text_gb_plain": "你虽如大鹰高飞，在星宿之间搭窝，我必从那里拉下你来；这是耶和华说的。",
+          "text_big5_plain": "你雖如大鷹高飛，在星宿之間搭窩，我必從那裏拉下你來；這是耶和華說的。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 22,
+              "raw": "赛十四13～15",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 13,
+                  "ref_gb": "赛十四13",
+                  "ref_big5": "賽十四13",
+                  "ref_en": "Isa. 14:13",
+                  "text_gb": "你心里曾说，我要升到天上；我要高举我的宝座在神众星以上。我要坐在聚会的山上，在北方的极处。",
+                  "text_big5": "你心裏曾說，我要升到天上；我要高舉我的寶座在神眾星以上。我要坐在聚會的山上，在北方的極處。",
+                  "text_en": "But you, you said in your heart: / I will ascend to heaven; / Above the stars of God / I will exalt my throne. / And I will sit upon the mount of assembly / In the uttermost parts of the north."
+                },
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 14,
+                  "ref_gb": "赛十四14",
+                  "ref_big5": "賽十四14",
+                  "ref_en": "Isa. 14:14",
+                  "text_gb": "我要升到高云之上；我要使自己与至高者一样。",
+                  "text_big5": "我要升到高雲之上；我要使自己與至高者一樣。",
+                  "text_en": "I will ascend above the heights of the clouds; / I will make myself like the Most High."
+                },
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 15,
+                  "ref_gb": "赛十四15",
+                  "ref_big5": "賽十四15",
+                  "ref_en": "Isa. 14:15",
+                  "text_gb": "然而你必坠落阴间，到坑中极深之处。",
+                  "text_big5": "然而你必墜落陰間，到坑中極深之處。",
+                  "text_en": "But you will be brought down to Sheol, / To the uttermost parts of the pit."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "俄一5",
+          "ref_big5": "俄一5",
+          "ref_en": "Obad. 1:5",
+          "text_gb": "盗[Cra]贼若来到你那里，强盗若夜间而来，（你何竟被剪除！）岂不偷窃只到够了么？摘葡萄的若来到你这里，岂不剩下些葡萄么？",
+          "text_big5": "盜[Cra]賊若來到你那裏，強盜若夜間而來，（你何竟被剪除！）豈不偷竊只到彀了麼？摘葡萄的若來到你這裏，豈不剩下些葡萄麼？",
+          "text_en": "If thieves came to you, / If spoilers in the night - / How you would be cut off! - / Would they not steal only their fill? / If grape gatherers came to you, / Would they not leave gleanings?",
+          "text_gb_plain": "盗贼若来到你那里，强盗若夜间而来，（你何竟被剪除！）岂不偷窃只到够了么？摘葡萄的若来到你这里，岂不剩下些葡萄么？",
+          "text_big5_plain": "盜賊若來到你那裏，強盜若夜間而來，（你何竟被剪除！）豈不偷竊只到彀了麼？摘葡萄的若來到你這裏，豈不剩下些葡萄麼？",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "5～6：耶四九9",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 9,
+                  "ref_gb": "耶四九9",
+                  "ref_big5": "耶四九9",
+                  "ref_en": "Jer. 49:9",
+                  "text_gb": "摘葡萄的若来到你这里，岂不剩下些葡萄么？盗贼若夜间来，岂不是只毁坏到够了么？",
+                  "text_big5": "摘葡萄的若來到你這裏，豈不剩下些葡萄麼？盜賊若夜間來，豈不是只毀壞到彀了麼？",
+                  "text_en": "If the grape gatherers came to you, / Would they not leave gleanings? / If thieves came by night, / Would they not destroy only enough for themselves?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "俄一6",
+          "ref_big5": "俄一6",
+          "ref_en": "Obad. 1:6",
+          "text_gb": "以扫何竟被彻底搜寻！他隐藏的宝物，何竟被查出！",
+          "text_big5": "以掃何竟被徹底搜尋！他隱藏的寶物，何竟被查出！",
+          "text_en": "How thoroughly searched Esau is! / How sought out his hidden treasures are!",
+          "text_gb_plain": "以扫何竟被彻底搜寻！他隐藏的宝物，何竟被查出！",
+          "text_big5_plain": "以掃何竟被徹底搜尋！他隱藏的寶物，何竟被查出！",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "俄一7",
+          "ref_big5": "俄一7",
+          "ref_en": "Obad. 1:7",
+          "text_gb": "与你结[Fn1]盟的，都打发你走，直到边界；与你和好的，欺骗你且胜过你。他们使你的食物成为你脚下的网罗；在你[Fn2]里面毫无聪明。",
+          "text_big5": "與你結[Fn1]盟的，都打發你走，直到邊界；與你和好的，欺騙你且勝過你。他們使你的食物成為你腳下的網羅；在你[Fn2]裏面毫無聰明。",
+          "text_en": "All the men of your confederacy / Have sent you away to the border; / The men who were at peace with you / Have deceived you; they have prevailed against you. / They make your bread / A snare under you. / There is no understanding in him.",
+          "text_gb_plain": "与你结盟的，都打发你走，直到边界；与你和好的，欺骗你且胜过你。他们使你的食物成为你脚下的网罗；在你里面毫无聪明。",
+          "text_big5_plain": "與你結盟的，都打發你走，直到邊界；與你和好的，欺騙你且勝過你。他們使你的食物成為你腳下的網羅；在你裏面毫無聰明。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "有些国与以东结盟，后来却对以东不忠信。",
+              "zh_big5": "有些國與以東結盟，後來卻對以東不忠信。",
+              "en": "1:7 1 confederacy Lit., covenant. Some nations formed a confederacy with Edom, but eventually they were unfaithful to Edom."
+            },
+            {
+              "num": 2,
+              "loc": 49,
+              "zh": "直译，他。",
+              "zh_big5": "直譯，他。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "俄一8",
+          "ref_big5": "俄一8",
+          "ref_en": "Obad. 1:8",
+          "text_gb": "耶和华说，到那日，我岂不从以东除灭智慧人，从以扫山除灭聪明么？",
+          "text_big5": "耶和華說，到那日，我豈不從以東除滅智慧人，從以掃山除滅聰明麼？",
+          "text_en": "Will I not in that day, / Declares Jehovah, / Destroy the wise men from Edom, / And understanding from the mountain of Esau?",
+          "text_gb_plain": "耶和华说，到那日，我岂不从以东除灭智慧人，从以扫山除灭聪明么？",
+          "text_big5_plain": "耶和華說，到那日，我豈不從以東除滅智慧人，從以掃山除滅聰明麼？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "俄一9",
+          "ref_big5": "俄一9",
+          "ref_en": "Obad. 1:9",
+          "text_gb": "提幔哪，你的勇士必惊惶，以致以扫山的人，都被杀戮剪除。",
+          "text_big5": "提幔哪，你的勇士必驚惶，以致以掃山的人，都被殺戮剪除。",
+          "text_en": "And your mighty men will be dismayed, O Teman, / So that each one is cut off from the mountain of Esau by slaughter.",
+          "text_gb_plain": "提幔哪，你的勇士必惊惶，以致以扫山的人，都被杀戮剪除。",
+          "text_big5_plain": "提幔哪，你的勇士必驚惶，以致以掃山的人，都被殺戮剪除。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "俄一10",
+          "ref_big5": "俄一10",
+          "ref_en": "Obad. 1:10",
+          "text_gb": "因你向兄[Fn1]弟雅各行强[Cra]暴，羞愧必遮盖你，你也必永[Crb]远被剪除。",
+          "text_big5": "因你向兄[Fn1]弟雅各行強[Cra]暴，羞愧必遮蓋你，你也必永[Crb]遠被剪除。",
+          "text_en": "Because of the violence against your brother Jacob, / Shame will cover you, and you will be cut off forever.",
+          "text_gb_plain": "因你向兄弟雅各行强暴，羞愧必遮盖你，你也必永远被剪除。",
+          "text_big5_plain": "因你向兄弟雅各行強暴，羞愧必遮蓋你，你也必永遠被剪除。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "雅各和以扫是兄弟(创二五25～26)。神报应以东恶待他的兄弟雅各(即以色列)，是很合乎人性的。神审判以东国，是与人的情感有关。",
+              "zh_big5": "雅各和以掃是兄弟。（創二五25～26。）神報應以東惡待他的兄弟雅各（即以色列，）是很合乎人性的。神審判以東國，是與人的情感有關。",
+              "en": "1:10 1 brother Jacob and Esau were brothers (Gen. 25:25-26). God's recompensing Edom for his ill-treatment of his brother Jacob (i.e., Israel) was very human. God judged the nation of Edom concerning a matter of human affection."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "创二七41，诗一三七7，结二五12",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 27,
+                  "verse": 41,
+                  "ref_gb": "创二七41",
+                  "ref_big5": "創二七41",
+                  "ref_en": "Gen. 27:41",
+                  "text_gb": "以扫因他父亲给雅各祝的福，就怨恨雅各，心里说，为我父亲居丧的日子近了，到那时候，我要杀我的弟弟雅各。",
+                  "text_big5": "以掃因他父親給雅各祝的福，就怨恨雅各，心裏說，為我父親居喪的日子近了，到那時候，我要殺我的弟弟雅各。",
+                  "text_en": "And Esau hated Jacob because of the blessing with which his father had blessed him; and Esau said in his heart, The days of mourning for my father are near; then I will slay my brother Jacob."
+                },
+                {
+                  "book": 19,
+                  "chapter": 137,
+                  "verse": 7,
+                  "ref_gb": "诗一三七7",
+                  "ref_big5": "詩一三七7",
+                  "ref_en": "Psa. 137:7",
+                  "text_gb": "耶和华啊，求你记念以东人在耶路撒冷遭难的日子所行的，他们说，拆毁！拆毁！直拆到根基！",
+                  "text_big5": "耶和華阿，求你記念以東人在耶路撒冷遭難的日子所行的，他們說，拆毀！拆毀！直拆到根基！",
+                  "text_en": "Remember, O Jehovah, / Against the children of Edom, / The day of Jerusalem, / Who said, Lay it bare! Lay it bare, / Down to its foundation!"
+                },
+                {
+                  "book": 26,
+                  "chapter": 25,
+                  "verse": 12,
+                  "ref_gb": "结二五12",
+                  "ref_big5": "結二五12",
+                  "ref_en": "Ezek. 25:12",
+                  "text_gb": "主耶和华如此说，因为以东报仇雪恨，攻击犹大家，向他们报仇，大大有罪，",
+                  "text_big5": "主耶和華如此說，因為以東報仇雪恨，攻擊猶大家，向他們報仇，大大有罪，",
+                  "text_en": "Thus says the Lord Jehovah, Because Edom has acted full of vengeance against the house of Judah and has incurred serious guilt by taking vengeance on them, "
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 22,
+              "raw": "结三五9，玛一4",
+              "refs": [
+                {
+                  "book": 26,
+                  "chapter": 35,
+                  "verse": 9,
+                  "ref_gb": "结三五9",
+                  "ref_big5": "結三五9",
+                  "ref_en": "Ezek. 35:9",
+                  "text_gb": "我必使你永远荒凉，你的城邑必无人居住，你们就知道我是耶和华。",
+                  "text_big5": "我必使你永遠荒涼，你的城邑必無人居住，你們就知道我是耶和華。",
+                  "text_en": "I will make you a perpetual desolation, and your cities will not be inhabited, and you will know that I am Jehovah."
+                },
+                {
+                  "book": 39,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "玛一4",
+                  "ref_big5": "瑪一4",
+                  "ref_en": "Mal. 1:4",
+                  "text_gb": "以东人说，我们现在虽被击倒，却要重建荒废之处；万军之耶和华如此说，任他们建造，我必拆毁；他们必称为罪恶之境，为耶和华永远恼怒之民。",
+                  "text_big5": "以東人說，我們現在雖被擊倒，卻要重建荒廢之處；萬軍之耶和華如此說，任他們建造，我必拆毀；他們必稱為罪惡之境，為耶和華永遠惱怒之民。",
+                  "text_en": "Though Edom says, We are beaten down, but we will return and build up the waste places; thus says Jehovah of hosts, They will build up, but I will throw down; and they will be called the territory of wickedness and the people with whom Jehovah is indignant forever."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "俄一11",
+          "ref_big5": "俄一11",
+          "ref_en": "Obad. 1:11",
+          "text_gb": "当外人掳掠雅各的财物，外邦人进入他的城门，为耶路撒冷拈[Cra]阄的日子，你竟站在一旁，像他们中间的一个。",
+          "text_big5": "當外人擄掠雅各的財物，外邦人進入他的城門，為耶路撒冷拈[Cra]鬮的日子，你竟站在一旁，像他們中間的一個。",
+          "text_en": "In the day that you stood on the side, / In the day that strangers took his substance captive / And foreigners entered into his gates / And cast lots over Jerusalem, / You also were like one of them.",
+          "text_gb_plain": "当外人掳掠雅各的财物，外邦人进入他的城门，为耶路撒冷拈阄的日子，你竟站在一旁，像他们中间的一个。",
+          "text_big5_plain": "當外人擄掠雅各的財物，外邦人進入他的城門，為耶路撒冷拈鬮的日子，你竟站在一旁，像他們中間的一個。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 27,
+              "raw": "珥三3，鸿三10",
+              "refs": [
+                {
+                  "book": 29,
+                  "chapter": 3,
+                  "verse": 3,
+                  "ref_gb": "珥三3",
+                  "ref_big5": "珥三3",
+                  "ref_en": "Joel 3:3",
+                  "text_gb": "且为我的百姓拈阄，将童男换妓女，卖童女买酒喝。",
+                  "text_big5": "且為我的百姓拈鬮，將童男換妓女，賣童女買酒喝。",
+                  "text_en": "And have cast lots for My people; / And they have given a boy for a prostitute / And sold a girl for wine to drink."
+                },
+                {
+                  "book": 34,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "鸿三10",
+                  "ref_big5": "鴻三10",
+                  "ref_en": "Nah. 3:10",
+                  "text_gb": "但她还是被迁徙，被掳去；她的婴孩在各街头也被摔死；人为她的尊贵人拈阄；她所有的尊大者都被链子锁着。",
+                  "text_big5": "但她還是被遷徙，被擄去；她的嬰孩在各街頭也被摔死；人為她的尊貴人拈鬮；她所有的尊大者都被鍊子鎖著。",
+                  "text_en": "She too was carried away; / She went into captivity; / Her little ones too were dashed to pieces / At the head of every street, / And for her nobles / They cast lots, / And all her great men / Were bound in chains."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "俄一12",
+          "ref_big5": "俄一12",
+          "ref_en": "Obad. 1:12",
+          "text_gb": "在你兄弟遭难的日子，你不当瞪眼看着；犹大人被灭的日子，你[Cra]不当因他们欢乐；他们遭难的日子，你不当张口说大话。",
+          "text_big5": "在你兄弟遭難的日子，你不當瞪眼看著；猶大人被滅的日子，你[Cra]不當因他們歡樂；他們遭難的日子，你不當張口說大話。",
+          "text_en": "But do not look to the day of your brother, / To the day of his misfortune; / Neither rejoice concerning the children of Judah / In the day of their destruction, / Nor boast / In the day of distress.",
+          "text_gb_plain": "在你兄弟遭难的日子，你不当瞪眼看着；犹大人被灭的日子，你不当因他们欢乐；他们遭难的日子，你不当张口说大话。",
+          "text_big5_plain": "在你兄弟遭難的日子，你不當瞪眼看著；猶大人被滅的日子，你不當因他們歡樂；他們遭難的日子，你不當張口說大話。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 28,
+              "raw": "弥七8",
+              "refs": [
+                {
+                  "book": 33,
+                  "chapter": 7,
+                  "verse": 8,
+                  "ref_gb": "弥七8",
+                  "ref_big5": "彌七8",
+                  "ref_en": "Mic. 7:8",
+                  "text_gb": "我的仇敌啊，不要向我夸耀；我虽跌倒，却要起来；我虽坐在黑暗里，耶和华却是我的光。",
+                  "text_big5": "我的仇敵阿，不要向我誇耀；我雖跌倒，卻要起來；我雖坐在黑暗裏，耶和華卻是我的光。",
+                  "text_en": "Do not rejoice against me, O my enemy; / When I fall, I will rise up; / When I sit in the darkness, / Jehovah will be a light to me."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "俄一13",
+          "ref_big5": "俄一13",
+          "ref_en": "Obad. 1:13",
+          "text_gb": "我民遭灾的日子，你不当进他们的城门；他们遭灾的日子，你不当瞪眼看着他们受灾难；他们遭灾的日子，你不当伸手抢他们的财物。",
+          "text_big5": "我民遭災的日子，你不當進他們的城門；他們遭災的日子，你不當瞪眼看著他們受災難；他們遭災的日子，你不當伸手搶他們的財物。",
+          "text_en": "Do not enter the gate of My people / In the day of their calamity; / Do not look, even you, on his affliction / In the day of his calamity, / Nor send forth your hands on his substance / In the day of his calamity.",
+          "text_gb_plain": "我民遭灾的日子，你不当进他们的城门；他们遭灾的日子，你不当瞪眼看着他们受灾难；他们遭灾的日子，你不当伸手抢他们的财物。",
+          "text_big5_plain": "我民遭災的日子，你不當進他們的城門；他們遭災的日子，你不當瞪眼看著他們受災難；他們遭災的日子，你不當伸手搶他們的財物。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "俄一14",
+          "ref_big5": "俄一14",
+          "ref_en": "Obad. 1:14",
+          "text_gb": "你不当站在岔路口，剪除他们中间逃脱的；他们遭难的日子，你不当将他们存留的人交付仇敌。",
+          "text_big5": "你不當站在岔路口，剪除他們中間逃脫的；他們遭難的日子，你不當將他們存留的人交付仇敵。",
+          "text_en": "And do not stand at the crossroads / To cut off those of his who escape, / Nor deliver those of his who survive / In the day of distress.",
+          "text_gb_plain": "你不当站在岔路口，剪除他们中间逃脱的；他们遭难的日子，你不当将他们存留的人交付仇敌。",
+          "text_big5_plain": "你不當站在岔路口，剪除他們中間逃脫的；他們遭難的日子，你不當將他們存留的人交付仇敵。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 15,
+          "ref_gb": "俄一15",
+          "ref_big5": "俄一15",
+          "ref_en": "Obad. 1:15",
+          "text_gb": "因为耶[Fn1]和华的日[Cra]子临近万国；你[Fn2]怎样行，也[Crb]必照样向你行；你的报应必归到你头上。",
+          "text_big5": "因為耶[Fn1]和華的日[Cra]子臨近萬國；你[Fn2]怎樣行，也[Crb]必照樣向你行；你的報應必歸到你頭上。",
+          "text_en": "For the day of Jehovah is near / Upon all the nations: / As you have done, it will be done to you; / Your recompense will return upon your head.",
+          "text_gb_plain": "因为耶和华的日子临近万国；你怎样行，也必照样向你行；你的报应必归到你头上。",
+          "text_big5_plain": "因為耶和華的日子臨近萬國；你怎樣行，也必照樣向你行；你的報應必歸到你頭上。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "耶和华的日子乃是神审判列国的日子。见珥一15注1。",
+              "zh_big5": "耶和華的日子乃是神審判列國的日子。見珥一15註1。",
+              "en": "1:15 1 day The day of Jehovah is a matter of God's judgment on all the nations. See note Joel 1:15 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 14,
+              "zh": "神审判以东的原则乃是：以东怎样向别人行，也必照样向他们行。审判列国的原则(16)乃是：列国使犹大人在神圣所的圣山上喝忿怒之杯，乃是对神亵渎的行为；因此，神要使列国也不断地喝同样的杯。神要如此报应那使犹大人在祂圣山上喝忿怒之杯的列国。",
+              "zh_big5": "神審判以東的原則乃是：以東怎樣向別人行，也必照樣向他們行。審判列國的原則（16）乃是：列國使猶大人在神聖所的聖山上喝忿怒之杯，乃是對神褻瀆的行為；因此，神要使列國也不斷的喝同樣的杯。神要如此報應那使猶大人在祂聖山上喝忿怒之杯的列國。",
+              "en": "1:15 2 As The principle of God's judgment on Edom is that as Edom has done to others, it will be done to them. The principle for judging the nations (v. 16) is that because of the profane action of the nations in enjoying themselves upon the holy mountain of God's sanctuary, God would cause the other nations to drink continually at the places of those nations who participated in that profane action. In this way God would recompense the nations who drank at His holy mountain."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "结三十3，珥三14",
+              "refs": [
+                {
+                  "book": 26,
+                  "chapter": 30,
+                  "verse": 3,
+                  "ref_gb": "结三○3",
+                  "ref_big5": "結三○3",
+                  "ref_en": "Ezek. 30:3",
+                  "text_gb": "因为日子临近，耶和华的日子临近；那将是密云之日，列国受罚之期。",
+                  "text_big5": "因為日子臨近，耶和華的日子臨近；那將是密雲之日，列國受罰之期。",
+                  "text_en": "For the day has drawn near, even the day of Jehovah has drawn near; / It will be a day of clouds, a time of doom for the nations."
+                },
+                {
+                  "book": 29,
+                  "chapter": 3,
+                  "verse": 14,
+                  "ref_gb": "珥三14",
+                  "ref_big5": "珥三14",
+                  "ref_en": "Joel 3:14",
+                  "text_gb": "许多许多的人在断定谷；因为耶和华的日子临近断定谷。",
+                  "text_big5": "許多許多的人在斷定谷；因為耶和華的日子臨近斷定谷。",
+                  "text_en": "Multitudes, multitudes, / In the valley of decision; / For the day of Jehovah has drawn near / In the valley of decision."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 19,
+              "raw": "结三五15，哈二8",
+              "refs": [
+                {
+                  "book": 26,
+                  "chapter": 35,
+                  "verse": 15,
+                  "ref_gb": "结三五15",
+                  "ref_big5": "結三五15",
+                  "ref_en": "Ezek. 35:15",
+                  "text_gb": "你怎样因以色列家的地业荒凉而喜乐，我必照样对待你。西珥山哪，你和以东全地必都荒凉。他们就知道我是耶和华。",
+                  "text_big5": "你怎樣因以色列家的地業荒涼而喜樂，我必照樣對待你。西珥山哪，你和以東全地必都荒涼。他們就知道我是耶和華。",
+                  "text_en": "As you rejoiced over the inheritance of the house of Israel because it was desolate, so I will do to you. You will be desolate, O Mount Seir and all Edom, the whole land. Then they will know that I am Jehovah. "
+                },
+                {
+                  "book": 35,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "哈二8",
+                  "ref_big5": "哈二8",
+                  "ref_en": "Hab. 2:8",
+                  "text_gb": "因你抢夺许多的国，杀人流血，向地上城邑，并其中一切居民施行强暴，所以各族余剩的人都必抢夺你。",
+                  "text_big5": "因你搶奪許多的國，殺人流血，向地上城邑，並其中一切居民施行強暴，所以各族餘剩的人都必搶奪你。",
+                  "text_en": "Because you have plundered many nations; / All the remnant of the peoples will plunder you, / Because of the bloodshed of men and the violence done to the land, / To the city, and to all the inhabitants in it."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 16,
+          "ref_gb": "俄一16",
+          "ref_big5": "俄一16",
+          "ref_en": "Obad. 1:16",
+          "text_gb": "你们犹大人在我圣山怎样喝[Cra]了忿怒之杯，万国也必照样常常地喝；他们要且喝且咽，就归于无有。",
+          "text_big5": "你們猶大人在我聖山怎樣喝[Cra]了忿怒之杯，萬國也必照樣常常的喝；他們要且喝且咽，就歸於無有。",
+          "text_en": "For as you, O people of Judah, have drunk the cup of wrath upon My holy mountain, / All the nations will drink the same continually; / Indeed they will drink and swallow down, / And they will be as though they had not been.",
+          "text_gb_plain": "你们犹大人在我圣山怎样喝了忿怒之杯，万国也必照样常常地喝；他们要且喝且咽，就归于无有。",
+          "text_big5_plain": "你們猶大人在我聖山怎樣喝了忿怒之杯，萬國也必照樣常常的喝；他們要且喝且咽，就歸於無有。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 12,
+              "raw": "赛五一22，耶二五28，29，四九12",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 51,
+                  "verse": 22,
+                  "ref_gb": "赛五一22",
+                  "ref_big5": "賽五一22",
+                  "ref_en": "Isa. 51:22",
+                  "text_gb": "你的主耶和华，并你的神，就是那为祂百姓辨屈的，如此说，看哪，我已将那使人东倒西歪的杯，从你手中取去；你必不至再喝我忿怒的杯爵。",
+                  "text_big5": "你的主耶和華，並你的神，就是那為祂百姓辨屈的，如此說，看哪，我已將那使人東倒西歪的杯，從你手中取去；你必不至再喝我忿怒的杯爵。",
+                  "text_en": "Thus says your Lord Jehovah and your God / Who pleads the cause of His people, / Indeed, I have taken from your hand / The cup of staggering; / You will no longer need to drink / The bowl of the cup of My wrath anymore;"
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 28,
+                  "ref_gb": "耶二五28",
+                  "ref_big5": "耶二五28",
+                  "ref_en": "Jer. 25:28",
+                  "text_gb": "他们若不肯从你的手接这杯喝，你就要对他们说，万军之耶和华如此说，你们一定要喝。",
+                  "text_big5": "他們若不肯從你的手接這杯喝，你就要對他們說，萬軍之耶和華如此說，你們一定要喝。",
+                  "text_en": "And if they refuse to take the cup from your hand to drink, then you shall say to them, Thus says Jehovah of hosts, You shall surely drink it."
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 29,
+                  "ref_gb": "耶二五29",
+                  "ref_big5": "耶二五29",
+                  "ref_en": "Jer. 25:29",
+                  "text_gb": "我既从称为我名下的城起首施行灾祸，你们能全然免受惩罚么？你们必不能免，因为我要呼唤刀剑临到地上一切的居民；这是万军之耶和华说的。",
+                  "text_big5": "我既從稱為我名下的城起首施行災禍，你們能全然免受懲罰麼？你們必不能免，因為我要呼喚刀劍臨到地上一切的居民；這是萬軍之耶和華說的。",
+                  "text_en": "For I am now beginning to bring evil on the city which is called by My name, and will you indeed go unpunished? You will not go unpunished, for I am calling for a sword against all the inhabitants of the earth, declares Jehovah of hosts."
+                },
+                {
+                  "book": 24,
+                  "chapter": 49,
+                  "verse": 12,
+                  "ref_gb": "耶四九12",
+                  "ref_big5": "耶四九12",
+                  "ref_en": "Jer. 49:12",
+                  "text_gb": "耶和华如此说，原来判定不该喝那杯的，一定要喝。你能尽免刑罚么？你不能免罚，一定要喝。",
+                  "text_big5": "耶和華如此說，原來判定不該喝那杯的，一定要喝。你能盡免刑罰麼？你不能免罰，一定要喝。",
+                  "text_en": "For thus says Jehovah, Those whose judgment was not to drink the cup will certainly drink it. And will you by any means be left unpunished? You will not be left unpunished, for you will certainly drink it."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 17,
+          "ref_gb": "俄一17",
+          "ref_big5": "俄一17",
+          "ref_en": "Obad. 1:17",
+          "text_gb": "但[Fn1]在锡[Cra]安山必有逃脱的人，那山也必成为圣别；雅各家必得自己的产业。",
+          "text_big5": "但[Fn1]在錫[Cra]安山必有逃脫的人，那山也必成為聖別；雅各家必得自己的產業。",
+          "text_en": "But in Mount Zion / There will be those who have escaped, / And it will be holy. / And the house of Jacob will possess / Their possessions.",
+          "text_gb_plain": "但在锡安山必有逃脱的人，那山也必成为圣别；雅各家必得自己的产业。",
+          "text_big5_plain": "但在錫安山必有逃脫的人，那山也必成為聖別；雅各家必得自己的產業。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "17～21节描述耶和华对付的结果：耶和华拯救雅各家并圣别他们(17上)；雅各家必胜过以东(18)并得着以东的产业(17下，19～20)；拯救者必上到锡安山，审判以扫山，国度就归耶和华了(21)。以上各项都在马克比的时候得着应验，并要在神的国复兴的时候，在荣耀中更多得着应验(太十九28，启十一15)。马克比族约在主前一六五年，以锡安山作为审判以东的根据地，胜过了安提阿克以比凡尼(但八9～14与注，亚九11～17与注)。马克比族的胜利，预表以色列在复兴时代开始之前所要得着的胜利。 小申言者书，包括俄巴底亚书，启示列国被神用来惩治罪恶的以色列，但列国作得太过分；因此，神就进来审判列国。这审判的结果乃是：以色列要得胜，并扩展他们的领土，为着神在地上的国，特别是为着神在复兴时期的国。参创十五18注1。",
+              "zh_big5": "17～21節描述耶和華對付的結果：耶和華拯救雅各家並聖別他們；（17上；）雅各家必勝過以東（18）並得著以東的產業；（17下，19～20；）拯救者必上到錫安山，審判以掃山，國度就歸耶和華了。（21。）以上各項都在馬克比的時候得著應驗，並要在神的國復興的時候，在榮耀中更多得著應驗。（太十九28，啟十一15。）馬克比族約在主前一六五年，以錫安山作為審判以東的根據地，勝過了安提阿克以比凡尼。（但八9～14與註，亞九11～17與註。）馬克比族的勝利，豫表以色列在復興時代開始之前所要得著的勝利。ˍ小申言者書，包括俄巴底亞書，啟示列國被神用來懲治罪惡的以色列，但列國作得太過分；因此，神就進來審判列國。這審判的結果乃是：以色列要得勝，並擴展他們的領土，為著神在地上的國，特別是為著神在復興時期的國。參創十五18註1。",
+              "en": "1:17 1 But Verses 17-21 portray the issue of Jehovah's dealing: Jehovah will save the house of Jacob and sanctify them (v. 17a); the house of Jacob will overcome Edom (v. 18) and will possess Edom's possessions (vv. 17, 19-20); and saviors will come up on Mount Zion to judge the mountain of Esau, and the kingdom will be Jehovah's (v. 21). All the aforementioned items were fulfilled at the time of the Maccabees, and they will be much more fulfilled in glory at the time of restoration for the kingdom of God (Matt. 19:28; Rev. 11:15). The Maccabees, taking Mount Zion as their ground to judge Edom, gained a victory over Antiochus Epiphanes in about 165 B.C. (Dan. 8:9-14 and notes; Zech. 9:11-17 and notes). The victory of the Maccabees was a type of the victory Israel will gain immediately before the age of restoration. The Minor Prophets, including Obadiah, reveal that the nations used by God to chastise sinful Israel do things in excess. Therefore, God will come in to judge the nations. This judgment will issue in Israel's gaining the victory and enlarging their territory for the kingdom of God on earth, especially for God's kingdom in the time of restoration. Cf. note Gen. 15:18 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "珥二32",
+              "refs": [
+                {
+                  "book": 29,
+                  "chapter": 2,
+                  "verse": 32,
+                  "ref_gb": "珥二32",
+                  "ref_big5": "珥二32",
+                  "ref_en": "Joel 2:32",
+                  "text_gb": "那时，凡呼求耶和华名的，就必得救；因为照耶和华所说的，在锡安山、在耶路撒冷，必有逃脱的人，在余剩的人中，必有耶和华所召的。",
+                  "text_big5": "那時，凡呼求耶和華名的，就必得救；因為照耶和華所說的，在錫安山、在耶路撒冷，必有逃脫的人，在餘剩的人中，必有耶和華所召的。",
+                  "text_en": "And everyone who calls on the name of Jehovah shall be saved; / For in Mount Zion and in Jerusalem will be an escape, / As Jehovah has said, / Even for the remnant / Whom Jehovah calls. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 18,
+          "ref_gb": "俄一18",
+          "ref_big5": "俄一18",
+          "ref_en": "Obad. 1:18",
+          "text_gb": "雅各家必为大火，约瑟家必为火焰；以扫家必如碎秸，火必将他烧着吞灭；以扫家必无存留的人，因为耶和华已经说了。",
+          "text_big5": "雅各家必為大火，約瑟家必為火焰；以掃家必如碎秸，火必將他燒著吞滅；以掃家必無存留的人，因為耶和華已經說了。",
+          "text_en": "And the house of Jacob will be a fire, / And the house of Joseph a flame; / And the house of Esau will be as stubble, / And they will burn among them and devour them; / And there will be no survivor / To the house of Esau, / For Jehovah has spoken.",
+          "text_gb_plain": "雅各家必为大火，约瑟家必为火焰；以扫家必如碎秸，火必将他烧着吞灭；以扫家必无存留的人，因为耶和华已经说了。",
+          "text_big5_plain": "雅各家必為大火，約瑟家必為火焰；以掃家必如碎秸，火必將他燒著吞滅；以掃家必無存留的人，因為耶和華已經說了。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 19,
+          "ref_gb": "俄一19",
+          "ref_big5": "俄一19",
+          "ref_en": "Obad. 1:19",
+          "text_gb": "南地的人必得以扫山为业，低陆的人必得非利士人的地为业，也得以法莲田地和撒玛利亚田地为业；便雅悯人必得基列为业。",
+          "text_big5": "南地的人必得以掃山為業，低陸的人必得非利士人的地為業，也得以法蓮田地和撒瑪利亞田地為業；便雅憫人必得基列為業。",
+          "text_en": "And those of the south will possess the mountain of Esau, / And those of the lowlands, the Philistines; / Indeed they will possess the field of Ephraim / And the field of Samaria, / And Benjamin will possess Gilead.",
+          "text_gb_plain": "南地的人必得以扫山为业，低陆的人必得非利士人的地为业，也得以法莲田地和撒玛利亚田地为业；便雅悯人必得基列为业。",
+          "text_big5_plain": "南地的人必得以掃山為業，低陸的人必得非利士人的地為業，也得以法蓮田地和撒瑪利亞田地為業；便雅憫人必得基列為業。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 20,
+          "ref_gb": "俄一20",
+          "ref_big5": "俄一20",
+          "ref_en": "Obad. 1:20",
+          "text_gb": "在迦南人中，被掳的以色列众人必得地为业，直到撒勒法；在西法拉，被掳的耶路撒冷人必得南地的城邑为业。",
+          "text_big5": "在迦南人中，被擄的以色列眾人必得地為業，直到撒勒法；在西法拉，被擄的耶路撒冷人必得南地的城邑為業。",
+          "text_en": "And the captivity of this host of the children of Israel, / Who are among the Canaanites, will possess as far as Zarephath; / And the captivity of Jerusalem, who are in Sepharad, / Will possess the cities of the south.",
+          "text_gb_plain": "在迦南人中，被掳的以色列众人必得地为业，直到撒勒法；在西法拉，被掳的耶路撒冷人必得南地的城邑为业。",
+          "text_big5_plain": "在迦南人中，被擄的以色列眾人必得地為業，直到撒勒法；在西法拉，被擄的耶路撒冷人必得南地的城邑為業。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 31,
+          "chapter": 1,
+          "verse": 21,
+          "ref_gb": "俄一21",
+          "ref_big5": "俄一21",
+          "ref_en": "Obad. 1:21",
+          "text_gb": "必有拯救者上到锡安山，审判以扫山；国[Cra]度就归耶和华了。",
+          "text_big5": "必有拯救者上到錫安山，審判以掃山；國[Cra]度就歸耶和華了。",
+          "text_en": "And saviors will come up on Mount Zion / To judge the mountain of Esau, / And the kingdom will be Jehovah's. ",
+          "text_gb_plain": "必有拯救者上到锡安山，审判以扫山；国度就归耶和华了。",
+          "text_big5_plain": "必有拯救者上到錫安山，審判以掃山；國度就歸耶和華了。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "诗二二28，但二44，七14，27，亚十四9，太六13，路一33，启十一15，十九6",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 22,
+                  "verse": 28,
+                  "ref_gb": "诗二二28",
+                  "ref_big5": "詩二二28",
+                  "ref_en": "Psa. 22:28",
+                  "text_gb": "因为国度是耶和华的，祂在列国中掌权。",
+                  "text_big5": "因為國度是耶和華的，祂在列國中掌權。",
+                  "text_en": "For the kingdom is Jehovah's, / And He rules among the nations."
+                },
+                {
+                  "book": 27,
+                  "chapter": 2,
+                  "verse": 44,
+                  "ref_gb": "但二44",
+                  "ref_big5": "但二44",
+                  "ref_en": "Dan. 2:44",
+                  "text_gb": "当那列王在位的日子，天上的神必兴起一国，永不败灭，国权也不留归别民，却要打碎灭绝那一切国；这国必存到永远。",
+                  "text_big5": "當那列王在位的日子，天上的神必興起一國，永不敗滅，國權也不留歸別民，卻要打碎滅絕那一切國；這國必存到永遠。",
+                  "text_en": "And in the days of those kings the God of the heavens will raise up a kingdom which will never be destroyed, and its reign will not be left to another people; it will crush and put an end to all these kingdoms; and it will stand forever."
+                },
+                {
+                  "book": 27,
+                  "chapter": 7,
+                  "verse": 14,
+                  "ref_gb": "但七14",
+                  "ref_big5": "但七14",
+                  "ref_en": "Dan. 7:14",
+                  "text_gb": "权柄、荣耀、国度都给了祂，使各族、各国、各方言的人都事奉祂。祂的权柄是永远的权柄，不能废去，祂的国必不毁坏。",
+                  "text_big5": "權柄、榮耀、國度都給了祂，使各族、各國、各方言的人都事奉祂。祂的權柄是永遠的權柄，不能廢去，祂的國必不毀壞。",
+                  "text_en": "And to Him was given dominion, glory, and a kingdom, / That all the peoples, nations, and languages might serve Him. / His dominion is an eternal dominion, which will not pass away; / And His kingdom is one that will not be destroyed."
+                },
+                {
+                  "book": 27,
+                  "chapter": 7,
+                  "verse": 27,
+                  "ref_gb": "但七27",
+                  "ref_big5": "但七27",
+                  "ref_en": "Dan. 7:27",
+                  "text_gb": "国度、权柄、和天下诸国的尊大，必赐给至高者的圣民；祂的国是永远的国，一切掌权的都必事奉祂，顺从祂。",
+                  "text_big5": "國度、權柄、和天下諸國的尊大，必賜給至高者的聖民；祂的國是永遠的國，一切掌權的都必事奉祂，順從祂。",
+                  "text_en": "And the kingdom and dominion and the greatness of the kingdoms under the whole heaven will be given to the people of the saints of the Most High; His kingdom is an eternal kingdom, and all the dominions will serve and obey Him."
+                },
+                {
+                  "book": 38,
+                  "chapter": 14,
+                  "verse": 9,
+                  "ref_gb": "亚十四9",
+                  "ref_big5": "亞十四9",
+                  "ref_en": "Zech. 14:9",
+                  "text_gb": "耶和华必作全地的王；那日，耶和华必为独一的神，祂的名也是独一的名。",
+                  "text_big5": "耶和華必作全地的王；那日，耶和華必為獨一的神，祂的名也是獨一的名。",
+                  "text_en": "And Jehovah will be King over all the earth; and in that day Jehovah will be the one God and His name the one name."
+                },
+                {
+                  "book": 40,
+                  "chapter": 6,
+                  "verse": 13,
+                  "ref_gb": "太六13",
+                  "ref_big5": "太六13",
+                  "ref_en": "Matt. 6:13",
+                  "text_gb": "不叫我们陷入试诱，救我们脱离那恶者。因为国度、能力、荣耀，都是你的，直到永远。阿们。",
+                  "text_big5": "不叫我們陷入試誘，救我們脫離那惡者。因為國度、能力、榮耀，都是你的，直到永遠。阿們。",
+                  "text_en": "And do not bring us into temptation, but deliver us from the evil one. For Yours is the kingdom and the power and the glory forever. Amen."
+                },
+                {
+                  "book": 42,
+                  "chapter": 1,
+                  "verse": 33,
+                  "ref_gb": "路一33",
+                  "ref_big5": "路一33",
+                  "ref_en": "Luke 1:33",
+                  "text_gb": "祂要作雅各家的王，直到永远，祂的国也没有穷尽。",
+                  "text_big5": "祂要作雅各家的王，直到永遠，祂的國也沒有窮盡。",
+                  "text_en": "And He will reign over the house of Jacob forever, and of His kingdom there will be no end."
+                },
+                {
+                  "book": 66,
+                  "chapter": 11,
+                  "verse": 15,
+                  "ref_gb": "启十一15",
+                  "ref_big5": "啟十一15",
+                  "ref_en": "Rev. 11:15",
+                  "text_gb": "第七位天使吹号，天上就有大声音说，世上的国，成了我主和祂基督的国，祂要作王，直到永永远远。",
+                  "text_big5": "第七位天使吹號，天上就有大聲音說，世上的國，成了我主和祂基督的國，祂要作王，直到永永遠遠。",
+                  "text_en": "And the seventh angel trumpeted; and there were loud voices in heaven, saying, The kingdom of the world has become the kingdom of our Lord and of His Christ, and He will reign forever and ever."
+                },
+                {
+                  "book": 66,
+                  "chapter": 19,
+                  "verse": 6,
+                  "ref_gb": "启十九6",
+                  "ref_big5": "啟十九6",
+                  "ref_en": "Rev. 19:6",
+                  "text_gb": "我听见好像大批群众的声音，又像众水的声音，也像大雷的声音，说，阿利路亚！因为主我们的神，全能者，作王了。",
+                  "text_big5": "我聽見好像大批群眾的聲音，又像眾水的聲音，也像大雷的聲音，說，阿利路亞！因為主我們的神，全能者，作王了。",
+                  "text_en": "And I heard as it were the voice of a great multitude and like the sound of many waters and like the sound of mighty thunders, saying, Hallelujah! For the Lord our God the Almighty reigns."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

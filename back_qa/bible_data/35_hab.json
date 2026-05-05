@@ -1,0 +1,2436 @@
+{
+  "book": 35,
+  "name_gb": "哈巴谷书",
+  "name_big5": "哈巴谷書",
+  "name_en": "Habakkuk",
+  "abbr_gb": "哈",
+  "abbr_big5": "哈",
+  "abbr_en": "Hab.",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "哈一1",
+          "ref_big5": "哈一1",
+          "ref_en": "Hab. 1:1",
+          "text_gb": "申言者哈[Fn1]巴谷所见的默[Fn2]示。",
+          "text_big5": "申言者哈[Fn1]巴谷所見的默[Fn2]示。",
+          "text_en": "The burden which Habakkuk the prophet saw.",
+          "text_gb_plain": "申言者哈巴谷所见的默示。",
+          "text_big5_plain": "申言者哈巴谷所見的默示。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "意，拥抱，或紧紧联于。申言者名字的意义指明，为使罪人接受神永远的救恩(二4)(这救恩实际上就是神自己—赛十二2，路二30)，神成了地上的一个人，使祂能拥抱罪人，也使罪人能紧紧联于祂(参路十九1～10)。见二4注2与何十一4注1。 哈巴谷书的中心思想乃是：公义的神要审判邪恶的以色列人和强暴的迦勒底人，惟有义人必本于信得生并活着(二4下)，好使全地认识耶和华的荣耀(二14)，并在耶和华面前静默无声，耶和华乃是在祂的圣殿中(二20)；且使寻求祂的人借着祷告、颂扬并对祂的信靠，向祂唱诗歌(三)。",
+              "zh_big5": "意，擁抱，或緊緊聯於。申言者名字的意義指明，為使罪人接受神永遠的救恩，（二4，）（這救恩實際上就是神自己—賽十二2，路二30，）神成了地上的一個人，使祂能擁抱罪人，也使罪人能緊緊聯於祂。（參路十九1～10。）見二4註2與何十一4註1。ˍ哈巴谷書的中心思想乃是：公義的神要審判邪惡的以色列人和強暴的迦勒底人，惟有義人必本於信得生並活著，（二4下，）好使全地認識耶和華的榮耀，（二14，）並在耶和華面前靜默無聲，耶和華乃是在祂的聖殿中；（二20；）且使尋求祂的人藉著禱告、頌揚、並對祂的信靠，向祂唱詩歌。（三。）",
+              "en": "1:1 1 Habakkuk Meaning embracing, or clinging to. The meaning of the prophet's name indicates that in order for sinners to receive God's eternal salvation (Hab. 2:4), which is actually God Himself (Isa. 12:2; Luke 2:30), God became a man on the earth that He might embrace sinners and sinners might cling to Him (cf. Luke 19:1-10). See note Hab. 2:4 1 and note Hosea 11:4 1 . The central thought of Habakkuk is that the righteous God will judge both the evil Israel and the violent Chaldeans, and only the righteous one will live by his faith (Hab. 2:4b), so that all the earth may know the glory of Jehovah (Hab. 2:14) and be silent before Jehovah, who is in His holy temple (Hab. 2:20), and so that His seeker may sing to Him in prayer, in lauding, and in trusting in Him (ch. 3)."
+            },
+            {
+              "num": 2,
+              "loc": 10,
+              "zh": "直译，负担。",
+              "zh_big5": "直譯，負擔。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "哈一2",
+          "ref_big5": "哈一2",
+          "ref_en": "Hab. 1:2",
+          "text_gb": "耶和华啊，我呼求你，你不[Cra]垂听，要到几时呢？我向你呼叫说，残暴！你并不拯救。",
+          "text_big5": "耶和華阿，我呼求你，你不[Cra]垂聽，要到幾時呢？我向你呼叫說，殘暴！你並不拯救。",
+          "text_en": "How long, O Jehovah, shall I cry / And You do not hear? / I cry out to You, Violence! / And You do not save.",
+          "text_gb_plain": "耶和华啊，我呼求你，你不垂听，要到几时呢？我向你呼叫说，残暴！你并不拯救。",
+          "text_big5_plain": "耶和華阿，我呼求你，你不垂聽，要到幾時呢？我向你呼叫說，殘暴！你並不拯救。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 12,
+              "raw": "诗二二1，2，哀三8",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 22,
+                  "verse": 1,
+                  "ref_gb": "诗二二1",
+                  "ref_big5": "詩二二1",
+                  "ref_en": "Psa. 22:1",
+                  "text_gb": "我的神，我的神，你为什么弃绝我？为什么远离不救我，不听我唉哼的言语？",
+                  "text_big5": "我的神，我的神，你為甚麼棄絕我？為甚麼遠離不救我，不聽我唉哼的言語？",
+                  "text_en": "My God, my God, why have You forsaken me? / Why are You so far from saving me, / From the words of my groaning?"
+                },
+                {
+                  "book": 19,
+                  "chapter": 22,
+                  "verse": 2,
+                  "ref_gb": "诗二二2",
+                  "ref_big5": "詩二二2",
+                  "ref_en": "Psa. 22:2",
+                  "text_gb": "我的神啊，我白日呼求，你不应允；夜间呼求，也得不着安宁。",
+                  "text_big5": "我的神阿，我白日呼求，你不應允；夜間呼求，也得不著安寧。",
+                  "text_en": "O my God, I call out in the day, but You do not answer; / And in the night, but there is no rest for me."
+                },
+                {
+                  "book": 25,
+                  "chapter": 3,
+                  "verse": 8,
+                  "ref_gb": "哀三8",
+                  "ref_big5": "哀三8",
+                  "ref_en": "Lam. 3:8",
+                  "text_gb": "我哀号求救时，祂塞闭不听我的祷告。",
+                  "text_big5": "我哀號求救時，祂塞閉不聽我的禱告。",
+                  "text_en": "Indeed, when I cry out and call for help, / He shuts out my prayer."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "哈一3",
+          "ref_big5": "哈一3",
+          "ref_en": "Hab. 1:3",
+          "text_gb": "你为何使我看见罪孽，为何使我见到奸恶呢？毁灭和强暴在我面前；又有争端，且起了争斗的事。",
+          "text_big5": "你為何使我看見罪孽，為何使我見到奸惡呢？毀滅和強暴在我面前；又有爭端，且起了爭鬥的事。",
+          "text_en": "Why do You cause me to see iniquity / And look upon wrong? / Indeed destruction and violence are before me; / And there is strife, and contention arises.",
+          "text_gb_plain": "你为何使我看见罪孽，为何使我见到奸恶呢？毁灭和强暴在我面前；又有争端，且起了争斗的事。",
+          "text_big5_plain": "你為何使我看見罪孽，為何使我見到奸惡呢？毀滅和強暴在我面前；又有爭端，且起了爭鬥的事。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "哈一4",
+          "ref_big5": "哈一4",
+          "ref_en": "Hab. 1:4",
+          "text_gb": "因此律法失效，公理也不显明；恶人围困义人，所以公理显然颠倒。",
+          "text_big5": "因此律法失效，公理也不顯明；惡人圍困義人，所以公理顯然顛倒。",
+          "text_en": "Therefore the law is ineffective, / And justice never goes forth; / For the wicked encompasses the righteous, / Therefore justice goes forth perverted.",
+          "text_gb_plain": "因此律法失效，公理也不显明；恶人围困义人，所以公理显然颠倒。",
+          "text_big5_plain": "因此律法失效，公理也不顯明；惡人圍困義人，所以公理顯然顛倒。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "哈一5",
+          "ref_big5": "哈一5",
+          "ref_en": "Hab. 1:5",
+          "text_gb": "你们向列国中观看注视，就必大大惊[Cra]奇；因为在你们的日子，我行一件事，即使有人详细地告诉你们，你们也总不相信。",
+          "text_big5": "你們向列國中觀看注視，就必大大驚[Cra]奇；因為在你們的日子，我行一件事，即使有人詳細的告訴你們，你們也總不相信。",
+          "text_en": "Look among the nations, and see, / And be amazed, utterly amazed. / For I am doing a work in your days / Which you would not believe if it were told you.",
+          "text_gb_plain": "你们向列国中观看注视，就必大大惊奇；因为在你们的日子，我行一件事，即使有人详细地告诉你们，你们也总不相信。",
+          "text_big5_plain": "你們向列國中觀看注視，就必大大驚奇；因為在你們的日子，我行一件事，即使有人詳細的告訴你們，你們也總不相信。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "赛二九14，徒十三41",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 29,
+                  "verse": 14,
+                  "ref_gb": "赛二九14",
+                  "ref_big5": "賽二九14",
+                  "ref_en": "Isa. 29:14",
+                  "text_gb": "所以我要向这百姓再行奇妙的事，就是奇妙又奇妙的事；他们智慧人的智慧必然消灭，聪明人的聪明必然隐藏。",
+                  "text_big5": "所以我要向這百姓再行奇妙的事，就是奇妙又奇妙的事；他們智慧人的智慧必然消滅，聰明人的聰明必然隱藏。",
+                  "text_en": "Therefore, indeed, I will once again / Do something wondrous with this people, something wondrously marvelous; / And the wisdom of their wise men will perish, / And the understanding of those who understand will be hidden."
+                },
+                {
+                  "book": 44,
+                  "chapter": 13,
+                  "verse": 41,
+                  "ref_gb": "徒十三41",
+                  "ref_big5": "徒十三41",
+                  "ref_en": "Acts 13:41",
+                  "text_gb": "“轻慢的人哪，你们要观看，要希奇，要灭亡；因为在你们的日子，我行一件事，就是有人详细地告诉你们，你们也绝不信。”",
+                  "text_big5": "“輕慢的人哪，你們要觀看，要希奇，要滅亡；因為在你們的日子，我行一件事，就是有人詳細的告訴你們，你們也絕不信。”",
+                  "text_en": "\"Look, you despisers, and marvel, and vanish away; for I am doing a work in your days, a work which you will by no means believe, though someone tells it to you in detail.\""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "哈一6",
+          "ref_big5": "哈一6",
+          "ref_en": "Hab. 1:6",
+          "text_gb": "因为我必兴起迦[Cra]勒底人，就是那苦毒急躁之民；他们遍行广阔之地，占据不属自己的住处。",
+          "text_big5": "因為我必興起迦[Cra]勒底人，就是那苦毒急躁之民；他們遍行廣闊之地，佔據不屬自己的住處。",
+          "text_en": "For I am about to raise up the Chaldeans, / That bitter and hasty nation / That marches through the breadth of the earth / To possess habitations that are not theirs.",
+          "text_gb_plain": "因为我必兴起迦勒底人，就是那苦毒急躁之民；他们遍行广阔之地，占据不属自己的住处。",
+          "text_big5_plain": "因為我必興起迦勒底人，就是那苦毒急躁之民；他們遍行廣闊之地，佔據不屬自己的住處。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "王下二四2，代下三六17",
+              "refs": [
+                {
+                  "book": 12,
+                  "chapter": 24,
+                  "verse": 2,
+                  "ref_gb": "王下二四2",
+                  "ref_big5": "王下二四2",
+                  "ref_en": "2 Kings 24:2",
+                  "text_gb": "耶和华打发迦勒底人、亚兰人、摩押人、和亚扪人，结队攻击约雅敬；祂打发他们攻击毁灭犹大，正如耶和华借祂仆人众申言者所说的话。",
+                  "text_big5": "耶和華打發迦勒底人、亞蘭人、摩押人、和亞捫人，結隊攻擊約雅敬；祂打發他們攻擊毀滅猶大，正如耶和華藉祂僕人眾申言者所說的話。",
+                  "text_en": "And Jehovah sent against him bands of the Chaldeans and bands of the Syrians and bands of the Moabites and bands of the children of Ammon; and He sent them against Judah to destroy it, according to the word of Jehovah, which He spoke through his servants the prophets."
+                },
+                {
+                  "book": 14,
+                  "chapter": 36,
+                  "verse": 17,
+                  "ref_gb": "代下三六17",
+                  "ref_big5": "代下三六17",
+                  "ref_en": "2 Chron. 36:17",
+                  "text_gb": "所以，耶和华使迦勒底人的王来攻击他们，在他们圣所的殿里用刀杀了他们的壮丁，不怜恤他们的少男和处女、老人和软弱的；耶和华将他们都交在迦勒底王手里。",
+                  "text_big5": "所以，耶和華使迦勒底人的王來攻擊他們，在他們聖所的殿裏用刀殺了他們的壯丁，不憐恤他們的少男和處女、老人和軟弱的；耶和華將他們都交在迦勒底王手裏。",
+                  "text_en": "Therefore He brought up against them the king of the Chaldeans, who slew their young men with the sword in the house of their sanctuary and had no compassion on young man or virgin, on old man or feeble; He delivered them all into his hand."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "哈一7",
+          "ref_big5": "哈一7",
+          "ref_en": "Hab. 1:7",
+          "text_gb": "他[Fn1]们威武可畏；判断和权柄，都任由他们发出。",
+          "text_big5": "他[Fn1]們威武可畏；判斷和權柄，都任由他們發出。",
+          "text_en": "They are terrible and dreadful; / Their judgment and their authority issue from themselves.",
+          "text_gb_plain": "他们威武可畏；判断和权柄，都任由他们发出。",
+          "text_big5_plain": "他們威武可畏；判斷和權柄，都任由他們發出。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "直译，他。本章后文同。",
+              "zh_big5": "直譯，他。本章後文同。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "哈一8",
+          "ref_big5": "哈一8",
+          "ref_en": "Hab. 1:8",
+          "text_gb": "他们的马比豹更快，比晚上的豺狼更猛；马兵奔驰，都从远[Cra]方而来；他们飞跑，如鹰[Crb]急速抓食。",
+          "text_big5": "他們的馬比豹更快，比晚上的豺狼更猛；馬兵奔馳，都從遠[Cra]方而來；他們飛跑，如鷹[Crb]急速抓食。",
+          "text_en": "And their horses are swifter than leopards / And more agile than the wolves of evening. / And their horsemen prance about; / Indeed their horsemen come from afar; / They fly like an eagle that hastens to devour. ",
+          "text_gb_plain": "他们的马比豹更快，比晚上的豺狼更猛；马兵奔驰，都从远方而来；他们飞跑，如鹰急速抓食。",
+          "text_big5_plain": "他們的馬比豹更快，比晚上的豺狼更猛；馬兵奔馳，都從遠方而來；他們飛跑，如鷹急速抓食。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 26,
+              "raw": "申二八49，50，耶五15",
+              "refs": [
+                {
+                  "book": 5,
+                  "chapter": 28,
+                  "verse": 49,
+                  "ref_gb": "申二八49",
+                  "ref_big5": "申二八49",
+                  "ref_en": "Deut. 28:49",
+                  "text_gb": "耶和华要从远方，从地极把一国的民带来，如鹰扑下攻击你。这民的言语，你不懂得。",
+                  "text_big5": "耶和華要從遠方，從地極把一國的民帶來，如鷹撲下攻擊你。這民的言語，你不懂得。",
+                  "text_en": "Jehovah will bring against you a nation from far away, from the end of the earth, like the eagle that swoops down, a nation whose tongue you will not understand, "
+                },
+                {
+                  "book": 5,
+                  "chapter": 28,
+                  "verse": 50,
+                  "ref_gb": "申二八50",
+                  "ref_big5": "申二八50",
+                  "ref_en": "Deut. 28:50",
+                  "text_gb": "这民的面貌凶恶，不顾老年人的情面，也不恩待少年人。",
+                  "text_big5": "這民的面貌兇惡，不顧老年人的情面，也不恩待少年人。",
+                  "text_en": "A nation of fierce countenance, who will not regard an old man's person nor show favor to the young man."
+                },
+                {
+                  "book": 24,
+                  "chapter": 5,
+                  "verse": 15,
+                  "ref_gb": "耶五15",
+                  "ref_big5": "耶五15",
+                  "ref_en": "Jer. 5:15",
+                  "text_gb": "耶和华说，以色列家啊，我必使一国从远方来攻击你，是强盛不衰的国，是从古而有的国；这国的言语你不晓得，他们说的话你不明白。",
+                  "text_big5": "耶和華說，以色列家阿，我必使一國從遠方來攻擊你，是強盛不衰的國，是從古而有的國；這國的言語你不曉得，他們說的話你不明白。",
+                  "text_en": "I am now bringing upon you / A nation from afar, / O house of Israel, declares Jehovah. / It is an enduring nation, / It is an ancient nation; / A nation whose language you do not know, / Nor can you understand what they say."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 37,
+              "raw": "耶四13",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 4,
+                  "verse": 13,
+                  "ref_gb": "耶四13",
+                  "ref_big5": "耶四13",
+                  "ref_en": "Jer. 4:13",
+                  "text_gb": "他必如云上来，他的战车如旋风，他的马比鹰更快。我们有祸了，我们遭殃了！",
+                  "text_big5": "他必如雲上來，他的戰車如旋風，他的馬比鷹更快。我們有禍了，我們遭殃了！",
+                  "text_en": "Here he is coming up like clouds, / And his chariots like the whirlwind; / His horses are swifter than eagles. / Woe to us for we are devastated!"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "哈一9",
+          "ref_big5": "哈一9",
+          "ref_en": "Hab. 1:9",
+          "text_gb": "他们都为行强暴而来；定住脸面向前，将掳掠的人聚集，多如尘沙。",
+          "text_big5": "他們都為行強暴而來；定住臉面向前，將擄掠的人聚集，多如塵沙。",
+          "text_en": "All of them come to do violence; / The set of their faces is forward, / And they gather captives like sand.",
+          "text_gb_plain": "他们都为行强暴而来；定住脸面向前，将掳掠的人聚集，多如尘沙。",
+          "text_big5_plain": "他們都為行強暴而來；定住臉面向前，將擄掠的人聚集，多如塵沙。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "哈一10",
+          "ref_big5": "哈一10",
+          "ref_en": "Hab. 1:10",
+          "text_gb": "他们嘲弄君王，笑话掌权者；他们嗤笑一切保障，堆筑土垒攻取。",
+          "text_big5": "他們嘲弄君王，笑話掌權者；他們嗤笑一切保障，堆築土壘攻取。",
+          "text_en": "Indeed they scoff at kings, / And potentates are a derision to them; / They deride every fortress, / For they heap up dirt and take it.",
+          "text_gb_plain": "他们嘲弄君王，笑话掌权者；他们嗤笑一切保障，堆筑土垒攻取。",
+          "text_big5_plain": "他們嘲弄君王，笑話掌權者；他們嗤笑一切保障，堆築土壘攻取。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "哈一11",
+          "ref_big5": "哈一11",
+          "ref_en": "Hab. 1:11",
+          "text_gb": "然后他们像风横扫而过，因此有了罪过；他们以自己的这力量为他们的神。",
+          "text_big5": "然後他們像風橫掃而過，因此有了罪過；他們以自己的這力量為他們的神。",
+          "text_en": "Then they will sweep through like the wind and pass over / And thus become guilty; this - their strength - is their god.",
+          "text_gb_plain": "然后他们像风横扫而过，因此有了罪过；他们以自己的这力量为他们的神。",
+          "text_big5_plain": "然後他們像風橫掃而過，因此有了罪過；他們以自己的這力量為他們的神。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "哈一12",
+          "ref_big5": "哈一12",
+          "ref_en": "Hab. 1:12",
+          "text_gb": "耶和华我的神，我的圣者啊，你不是从亘[Cra]古就有么？我们必不至死。耶和华啊，你派定他[Fn1]们行审[Crb]判；磐石啊，你设立他们施管教。",
+          "text_big5": "耶和華我的神，我的聖者阿，你不是從亙[Cra]古就有麼？我們必不至死。耶和華阿，你派定他[Fn1]們行審[Crb]判；磐石阿，你設立他們施管教。",
+          "text_en": "Are You not from everlasting, O Jehovah, / My God, my Holy One? We will not die. / O Jehovah, You have appointed them for judgment; / And You, O Rock, have established them for correction.",
+          "text_gb_plain": "耶和华我的神，我的圣者啊，你不是从亘古就有么？我们必不至死。耶和华啊，你派定他们行审判；磐石啊，你设立他们施管教。",
+          "text_big5_plain": "耶和華我的神，我的聖者阿，你不是從亙古就有麼？我們必不至死。耶和華阿，你派定他們行審判；磐石阿，你設立他們施管教。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 39,
+              "zh": "指迦勒底人。",
+              "zh_big5": "",
+              "en": "1:12 1 them Referring to the Chaldeans."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "诗九十2，九三2",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 90,
+                  "verse": 2,
+                  "ref_gb": "诗九○2",
+                  "ref_big5": "詩九○2",
+                  "ref_en": "Psa. 90:2",
+                  "text_gb": "诸山未曾生出，地与世界你未曾造成，从亘古到永远，你是神。",
+                  "text_big5": "諸山未曾生出，地與世界你未曾造成，從亙古到永遠，你是神。",
+                  "text_en": "Before the mountains were brought forth, / And before You gave birth to the earth and the world, / Indeed from eternity to eternity, You are God."
+                },
+                {
+                  "book": 19,
+                  "chapter": 93,
+                  "verse": 2,
+                  "ref_gb": "诗九三2",
+                  "ref_big5": "詩九三2",
+                  "ref_en": "Psa. 93:2",
+                  "text_gb": "你的宝座自古就立定；你从亘古就有。",
+                  "text_big5": "你的寶座自古就立定；你從亙古就有。",
+                  "text_en": "Your throne is established from of old; / You are from eternity."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 42,
+              "raw": "王下十九25，诗十七13，赛十5～7",
+              "refs": [
+                {
+                  "book": 12,
+                  "chapter": 19,
+                  "verse": 25,
+                  "ref_gb": "王下十九25",
+                  "ref_big5": "王下十九25",
+                  "ref_en": "2 Kings 19:25",
+                  "text_gb": "耶和华说，我早先所作的，古时所定的，你岂没有听见么？现在我将它实现，就是借你使坚固城荒废，变为乱堆。",
+                  "text_big5": "耶和華說，我早先所作的，古時所定的，你豈沒有聽見麼？現在我將它實現，就是藉你使堅固城荒廢，變為亂堆。",
+                  "text_en": "Have you not heard / That long ago I did it And that from the days of old I had formed it? / Now I have brought it to pass, / That you should destroy fortified cities / And make them into ruinous heaps."
+                },
+                {
+                  "book": 19,
+                  "chapter": 17,
+                  "verse": 13,
+                  "ref_gb": "诗十七13",
+                  "ref_big5": "詩十七13",
+                  "ref_en": "Psa. 17:13",
+                  "text_gb": "耶和华啊，求你起来，迎面抵挡他，将他打倒。求你用你的刀救护我的性命脱离恶人；",
+                  "text_big5": "耶和華阿，求你起來，迎面抵擋他，將他打倒。求你用你的刀救護我的性命脫離惡人；",
+                  "text_en": "Arise, O Jehovah, confront him; bring him down. / With Your sword rescue my soul from the wicked man, "
+                },
+                {
+                  "book": 23,
+                  "chapter": 10,
+                  "verse": 5,
+                  "ref_gb": "赛十5",
+                  "ref_big5": "賽十5",
+                  "ref_en": "Isa. 10:5",
+                  "text_gb": "祸哉，亚述，我怒气的棍！他们手中的杖就是我的恼恨。",
+                  "text_big5": "禍哉，亞述，我怒氣的棍！他們手中的杖就是我的惱恨。",
+                  "text_en": "Woe to Assyria, the rod of My anger! / The staff which is in their hand is My indignation."
+                },
+                {
+                  "book": 23,
+                  "chapter": 10,
+                  "verse": 6,
+                  "ref_gb": "赛十6",
+                  "ref_big5": "賽十6",
+                  "ref_en": "Isa. 10:6",
+                  "text_gb": "我打发他攻击不虔敬的国，吩咐他攻击我盛怒之下的百姓，抢掳来之财为掳物，夺掠来之货为掠物，将他们践踏，像街上的泥土一样。",
+                  "text_big5": "我打發他攻擊不虔敬的國，吩咐他攻擊我盛怒之下的百姓，搶擄來之財為擄物，奪掠來之貨為掠物，將他們踐踏，像街上的泥土一樣。",
+                  "text_en": "Against a profane nation I send them out, / And against the people of My overflowing wrath I command them, / To make spoil of the spoil and to make plunder of the plunder, / To make them a trampling ground, like street mire."
+                },
+                {
+                  "book": 23,
+                  "chapter": 10,
+                  "verse": 7,
+                  "ref_gb": "赛十7",
+                  "ref_big5": "賽十7",
+                  "ref_en": "Isa. 10:7",
+                  "text_gb": "然而他不这样想，他心也不这样打算；他心里倒想毁灭、剪除不少的国。",
+                  "text_big5": "然而他不這樣想，他心也不這樣打算；他心裏倒想毀滅、剪除不少的國。",
+                  "text_en": "But they do not think so, / And their heart does not conceive it so; / For destroying is in their heart, / And the cutting down of no few nations."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "哈一13",
+          "ref_big5": "哈一13",
+          "ref_en": "Hab. 1:13",
+          "text_gb": "你眼目清洁不看邪僻，不看奸恶；行诡诈的，你为何看[Cra]着不理呢？恶人吞灭比[Fn1]自己公义的，你为何静默不语呢？",
+          "text_big5": "你眼目清潔不看邪僻，不看奸惡；行詭詐的，你為何看[Cra]著不理呢？惡人吞滅比[Fn1]自己公義的，你為何靜默不語呢？",
+          "text_en": "You who are of purer eyes than to behold evil / And who cannot look upon wrong, / Why do You look upon them who deal treacherously / And keep silent when the wicked man swallows up him who is more / righteous than he?",
+          "text_gb_plain": "你眼目清洁不看邪僻，不看奸恶；行诡诈的，你为何看着不理呢？恶人吞灭比自己公义的，你为何静默不语呢？",
+          "text_big5_plain": "你眼目清潔不看邪僻，不看奸惡；行詭詐的，你為何看著不理呢？惡人吞滅比自己公義的，你為何靜默不語呢？",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 34,
+              "zh": "照哈巴谷的想法，以色列人比巴比伦人公义，却遭受巴比伦人所施的强暴。哈巴谷在这里的话，指明他在向神生气。",
+              "zh_big5": "照哈巴谷的想法，以色列人比巴比倫人公義，卻遭受巴比倫人所施的強暴。哈巴谷在這裏的話，指明他在向神生氣。",
+              "en": "1:13 1 more According to Habakkuk, the people of Israel were more righteous than the Babylonians, yet they were suffering the violence of the Babylonians. Habakkuk's word here indicates that he was angry with God."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 24,
+              "raw": "耶十二1",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 12,
+                  "verse": 1,
+                  "ref_gb": "耶十二1",
+                  "ref_big5": "耶十二1",
+                  "ref_en": "Jer. 12:1",
+                  "text_gb": "耶和华啊，我与你争辩的时候，你显为公义；但我还要与你理论你的判决：恶人的道路为何亨通呢？大行诡诈的为何得安逸呢？",
+                  "text_big5": "耶和華阿，我與你爭辯的時候，你顯為公義；但我還要與你理論你的判決：惡人的道路為何亨通呢？大行詭詐的為何得安逸呢？",
+                  "text_en": "You are righteous, O Jehovah, / When I plead my cause with You; / Yet I will speak with You of Your judgments: / Why does the way of the wicked prosper? / Why are all those who deal treacherously at ease?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "哈一14",
+          "ref_big5": "哈一14",
+          "ref_en": "Hab. 1:14",
+          "text_gb": "你使人如海中的鱼，如无人管辖的爬物。",
+          "text_big5": "你使人如海中的魚，如無人管轄的爬物。",
+          "text_en": "And You make man like the fish of the sea, / Like the creeping things, who have no one to rule for them.",
+          "text_gb_plain": "你使人如海中的鱼，如无人管辖的爬物。",
+          "text_big5_plain": "你使人如海中的魚，如無人管轄的爬物。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 15,
+          "ref_gb": "哈一15",
+          "ref_big5": "哈一15",
+          "ref_en": "Hab. 1:15",
+          "text_gb": "他们用钩[Cra]将众人钩上，用网拖走，用拉网聚集；因此，他们喜乐欢腾，",
+          "text_big5": "他們用鉤[Cra]將眾人鉤上，用網拖走，用拉網聚集；因此，他們喜樂歡騰，",
+          "text_en": "They take all of them up with a hook; / They drag them off in their net / And gather them into their seine; / So they rejoice and exult.",
+          "text_gb_plain": "他们用钩将众人钩上，用网拖走，用拉网聚集；因此，他们喜乐欢腾，",
+          "text_big5_plain": "他們用鉤將眾人鉤上，用網拖走，用拉網聚集；因此，他們喜樂歡騰，",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "耶十六16，摩四2",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 16,
+                  "verse": 16,
+                  "ref_gb": "耶十六16",
+                  "ref_big5": "耶十六16",
+                  "ref_en": "Jer. 16:16",
+                  "text_gb": "耶和华说，我要差遣许多打鱼的，把以色列人打上来；然后我要差遣许多打猎的，从各山上、各冈上、各石穴中，猎取他们。",
+                  "text_big5": "耶和華說，我要差遣許多打魚的，把以色列人打上來；然後我要差遣許多打獵的，從各山上、各岡上、各石穴中，獵取他們。",
+                  "text_en": "I am soon sending many fishermen, declares Jehovah, and they will catch them; and afterward I will send many hunters, and they will hunt for them from every mountain and from every hill and from the clefts of the rocks."
+                },
+                {
+                  "book": 30,
+                  "chapter": 4,
+                  "verse": 2,
+                  "ref_gb": "摩四2",
+                  "ref_big5": "摩四2",
+                  "ref_en": "Amos 4:2",
+                  "text_gb": "主耶和华指着自己的圣别起誓，说，日子快要临到你们，人必用钩子将你们钩去，用鱼钩将你们的后代钩去。",
+                  "text_big5": "主耶和華指著自己的聖別起誓，說，日子快要臨到你們，人必用鉤子將你們鉤去，用魚鉤將你們的後代鉤去。",
+                  "text_en": "The Lord Jehovah has sworn by His holiness / Indeed days are coming upon you / When one will take you away with hooks, / And your posterity, with fish hooks."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 16,
+          "ref_gb": "哈一16",
+          "ref_big5": "哈一16",
+          "ref_en": "Hab. 1:16",
+          "text_gb": "就向自己的网献祭[Cra]，向自己的拉网烧香，因他们由此得肥美的分，和充裕的食物。",
+          "text_big5": "就向自己的網獻祭[Cra]，向自己的拉網燒香，因他們由此得肥美的分，和充裕的食物。",
+          "text_en": "Therefore they offer sacrifices to their net / And burn incense to their seine, / For by them their portion is fat / And their food is plenteous.",
+          "text_gb_plain": "就向自己的网献祭，向自己的拉网烧香，因他们由此得肥美的分，和充裕的食物。",
+          "text_big5_plain": "就向自己的網獻祭，向自己的拉網燒香，因他們由此得肥美的分，和充裕的食物。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "参申八17，赛十13，三七24，25",
+              "refs": [
+                {
+                  "book": 5,
+                  "chapter": 8,
+                  "verse": 17,
+                  "ref_gb": "申八17",
+                  "ref_big5": "申八17",
+                  "ref_en": "Deut. 8:17",
+                  "text_gb": "恐怕你心里说，我这财富是我的力量和我手的能力得来的。",
+                  "text_big5": "恐怕你心裏說，我這財富是我的力量和我手的能力得來的。",
+                  "text_en": "And you say in your heart, My strength and the might of my hand have gotten me this wealth."
+                },
+                {
+                  "book": 23,
+                  "chapter": 10,
+                  "verse": 13,
+                  "ref_gb": "赛十13",
+                  "ref_big5": "賽十13",
+                  "ref_en": "Isa. 10:13",
+                  "text_gb": "因为他说，我所成就的事，是靠我手的能力和我的智慧；我本有聪明。我挪移众民的地界，抢夺他们所积蓄的财宝，并且我像勇士，使坐宝座的降为卑。",
+                  "text_big5": "因為他說，我所成就的事，是靠我手的能力和我的智慧；我本有聰明。我挪移眾民的地界，搶奪他們所積蓄的財寶，並且我像勇士，使坐寶座的降為卑。",
+                  "text_en": "For he has said, / By the strength of my own hand I have done it, / And by my own wisdom; for I have understanding. / And I have removed the boundaries of the peoples; / And their stored possessions I have plundered. / And like a bull, I brought down those who sit on thrones."
+                },
+                {
+                  "book": 23,
+                  "chapter": 37,
+                  "verse": 24,
+                  "ref_gb": "赛三七24",
+                  "ref_big5": "賽三七24",
+                  "ref_en": "Isa. 37:24",
+                  "text_gb": "你借你的臣仆辱骂主，你说，我率领许多战车上了山岭的高处，到了利巴嫩极深之处；我要砍伐其中高大的香柏树，和佳美的松树；我必进到其中极远的高处，和其中茂密的树林。",
+                  "text_big5": "你藉你的臣僕辱罵主，你說，我率領許多戰車上了山嶺的高處，到了利巴嫩極深之處；我要砍伐其中高大的香柏樹，和佳美的松樹；我必進到其中極遠的高處，和其中茂密的樹林。",
+                  "text_en": "By your servants you have reproached the Lord, / And you have said, In the multitude of my chariots, / I have come up to the heights of the mountains, / To the sides of Lebanon. / And I will cut down its tall cedars, / And the choicest of its cypresses: / I will enter into its farthest height / And its luxuriant forest."
+                },
+                {
+                  "book": 23,
+                  "chapter": 37,
+                  "verse": 25,
+                  "ref_gb": "赛三七25",
+                  "ref_big5": "賽三七25",
+                  "ref_en": "Isa. 37:25",
+                  "text_gb": "我已经挖井喝水；我必用脚掌踏干埃及一切的河。",
+                  "text_big5": "我已經挖井喝水；我必用腳掌踏乾埃及一切的河。",
+                  "text_en": "I have dug; / I have drunk water; / With the sole of my foot I have dried up / All the rivers of Egypt."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 1,
+          "verse": 17,
+          "ref_gb": "哈一17",
+          "ref_big5": "哈一17",
+          "ref_en": "Hab. 1:17",
+          "text_gb": "难道他们就这样倒空自己的网，不断杀戮列国的人，毫不顾惜么？",
+          "text_big5": "難道他們就這樣倒空自己的網，不斷殺戮列國的人，毫不顧惜麼？",
+          "text_en": "Will they then empty their net / And continually slay the nations without sparing? ",
+          "text_gb_plain": "难道他们就这样倒空自己的网，不断杀戮列国的人，毫不顾惜么？",
+          "text_big5_plain": "難道他們就這樣倒空自己的網，不斷殺戮列國的人，毫不顧惜麼？",
+          "footnotes": [],
+          "crossrefs": []
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "verses": [
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 1,
+          "ref_gb": "哈二1",
+          "ref_big5": "哈二1",
+          "ref_en": "Hab. 2:1",
+          "text_gb": "我要站在我的守[Cra]望所，立在堡垒上观望，看耶和华要对我说[Crb]什么，我要怎样为我的诉冤有所回应。",
+          "text_big5": "我要站在我的守[Cra]望所，立在堡壘上觀望，看耶和華要對我說[Crb]甚麼，我要怎樣為我的訴冤有所回應。",
+          "text_en": "I will stand at my watch / And station myself on the fortress, / And I will watch to see what He will speak to me / And what I will reply concerning my complaint.",
+          "text_gb_plain": "我要站在我的守望所，立在堡垒上观望，看耶和华要对我说什么，我要怎样为我的诉冤有所回应。",
+          "text_big5_plain": "我要站在我的守望所，立在堡壘上觀望，看耶和華要對我說甚麼，我要怎樣為我的訴冤有所回應。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "赛二一8",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 21,
+                  "verse": 8,
+                  "ref_gb": "赛二一8",
+                  "ref_big5": "賽二一8",
+                  "ref_en": "Isa. 21:8",
+                  "text_gb": "他像狮子吼叫，说，主啊，我白日不断站在望楼上，整夜立在我守望所。",
+                  "text_big5": "他像獅子吼叫，說，主阿，我白日不斷站在望樓上，整夜立在我守望所。",
+                  "text_en": "And he calls out like a lion: / On the watchtower, Lord, / I stand continually by day; / At my guardpost / I am stationed / Every night."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 26,
+              "raw": "诗八五8",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 85,
+                  "verse": 8,
+                  "ref_gb": "诗八五8",
+                  "ref_big5": "詩八五8",
+                  "ref_en": "Psa. 85:8",
+                  "text_gb": "我要听神耶和华所说的话，因为祂必向祂的百姓，祂的虔诚人，说平安的话；他们却不可再转向愚妄。",
+                  "text_big5": "我要聽神耶和華所說的話，因為祂必向祂的百姓，祂的虔誠人，說平安的話；他們卻不可再轉向愚妄。",
+                  "text_en": "I will hear what God Jehovah will speak, / For He will speak peace / To His people and to His faithful ones; / But let them not turn again unto folly."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 2,
+          "ref_gb": "哈二2",
+          "ref_big5": "哈二2",
+          "ref_en": "Hab. 2:2",
+          "text_gb": "耶和华回答我说，将这异[Fn1]象明明地写[Cra]在版上，使读的人容[Fn2]易读。",
+          "text_big5": "耶和華回答我說，將這異[Fn1]象明明的寫[Cra]在版上，使讀的人容[Fn2]易讀。",
+          "text_en": "Then Jehovah answered and said, Write the vision, and render it plainly upon tablets, / That even he who runs by may read it.",
+          "text_gb_plain": "耶和华回答我说，将这异象明明地写在版上，使读的人容易读。",
+          "text_big5_plain": "耶和華回答我說，將這異象明明的寫在版上，使讀的人容易讀。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 11,
+              "zh": "关于神对迦勒底人的审判。",
+              "zh_big5": "關於神對迦勒底人的審判。",
+              "en": "2:2 1 vision Concerning God's judgment on the Chaldeans."
+            },
+            {
+              "num": 2,
+              "loc": 25,
+              "zh": "或，随跑随读。",
+              "zh_big5": "或，隨跑隨讀。",
+              "en": "2:2 2 That Or, That he who reads it may run."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "赛八1，三十8",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 8,
+                  "verse": 1,
+                  "ref_gb": "赛八1",
+                  "ref_big5": "賽八1",
+                  "ref_en": "Isa. 8:1",
+                  "text_gb": "耶和华对我说，你取一面大牌，用人常用的字写上：为玛黑珥，沙拉勒，哈施，罢斯；",
+                  "text_big5": "耶和華對我說，你取一面大牌，用人常用的字寫上：為瑪黑珥，沙拉勒，哈施，罷斯；",
+                  "text_en": "Then Jehovah said to me, Take a large tablet and write on it in plain letters, For Maher-shalal-hash-baz;"
+                },
+                {
+                  "book": 23,
+                  "chapter": 30,
+                  "verse": 8,
+                  "ref_gb": "赛三○8",
+                  "ref_big5": "賽三○8",
+                  "ref_en": "Isa. 30:8",
+                  "text_gb": "现今你去，在他们面前将这话写在版上，记在书卷上，以便日后作证据到永远。",
+                  "text_big5": "現今你去，在他們面前將這話寫在版上，記在書卷上，以便日後作證據到永遠。",
+                  "text_en": "Go now; write it on a tablet before them, / And inscribe it on a scroll, / That it may be, for the time to come, / As a witness forever."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 3,
+          "ref_gb": "哈二3",
+          "ref_big5": "哈二3",
+          "ref_en": "Hab. 2:3",
+          "text_gb": "因为这异象有一[Cra]定的时期，快要达到终局，并非虚谎；虽然迟延，还要等候；因为必然临[Crb]到，不再耽延。",
+          "text_big5": "因為這異象有一[Cra]定的時期，快要達到終局，並非虛謊；雖然遲延，還要等候；因為必然臨[Crb]到，不再耽延。",
+          "text_en": "For the vision is yet for the appointed time, / And it hastens toward the end and will not lie. / Though it tarries, wait for it; / For it will surely come; it will not delay.",
+          "text_gb_plain": "因为这异象有一定的时期，快要达到终局，并非虚谎；虽然迟延，还要等候；因为必然临到，不再耽延。",
+          "text_big5_plain": "因為這異象有一定的時期，快要達到終局，並非虛謊；雖然遲延，還要等候；因為必然臨到，不再耽延。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "但十14，十一27，35",
+              "refs": [
+                {
+                  "book": 27,
+                  "chapter": 10,
+                  "verse": 14,
+                  "ref_gb": "但十14",
+                  "ref_big5": "但十14",
+                  "ref_en": "Dan. 10:14",
+                  "text_gb": "现在我来要使你明白你的民在末后日子必遭遇的事，而这异象是关于许多日子以后的事。",
+                  "text_big5": "現在我來要使你明白你的民在末後日子必遭遇的事，而這異象是關於許多日子以後的事。",
+                  "text_en": "Thus I have come to make you understand what will happen to your people in the last days, yet the vision pertains to something many days from now."
+                },
+                {
+                  "book": 27,
+                  "chapter": 11,
+                  "verse": 27,
+                  "ref_gb": "但十一27",
+                  "ref_big5": "但十一27",
+                  "ref_en": "Dan. 11:27",
+                  "text_gb": "至于这二王，他们心怀邪恶，同席说谎；但所行的必不成功，因为到了定期，结局才来到。",
+                  "text_big5": "至於這二王，他們心懷邪惡，同席說謊；但所行的必不成功，因為到了定期，結局纔來到。",
+                  "text_en": "And as for both of these kings, their hearts will be to do evil, and they will speak lies across one table; but what they do will not succeed, for the end is still at the appointed time."
+                },
+                {
+                  "book": 27,
+                  "chapter": 11,
+                  "verse": 35,
+                  "ref_gb": "但十一35",
+                  "ref_big5": "但十一35",
+                  "ref_en": "Dan. 11:35",
+                  "text_gb": "通达人中有些跌倒的，为要熬炼百姓，使他们纯净洁白，直到末时，因为到了定期，结局才来到。",
+                  "text_big5": "通達人中有些跌倒的，為要熬煉百姓，使他們純淨潔白，直到末時，因為到了定期，結局纔來到。",
+                  "text_en": "And some of those with insight will fall, in order to refine the people and to purify and cleanse them, until the time of the end, for the end is still at the appointed time."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 39,
+              "raw": "来十37，彼后三9",
+              "refs": [
+                {
+                  "book": 58,
+                  "chapter": 10,
+                  "verse": 37,
+                  "ref_gb": "来十37",
+                  "ref_big5": "來十37",
+                  "ref_en": "Heb. 10:37",
+                  "text_gb": "“因为还有一点点时候，那要来的就来，并不迟延。",
+                  "text_big5": "“因為還有一點點時候，那要來的就來，並不遲延。",
+                  "text_en": "\"For in yet a very little while the Coming One will come and will not delay."
+                },
+                {
+                  "book": 61,
+                  "chapter": 3,
+                  "verse": 9,
+                  "ref_gb": "彼后三9",
+                  "ref_big5": "彼後三9",
+                  "ref_en": "2 Pet. 3:9",
+                  "text_gb": "主所应许的，祂并不耽延，像有些人以为祂耽延一样；其实祂乃是宽容你们，不愿任何人遭毁坏，乃愿人人都趋前悔改。",
+                  "text_big5": "主所應許的，祂並不耽延，像有些人以為祂耽延一樣；其實祂乃是寬容你們，不願任何人遭毀壞，乃願人人都趨前悔改。",
+                  "text_en": "The Lord does not delay regarding the promise, as some count delay, but is long-suffering toward you, not intending that any perish but that all advance to repentance."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 4,
+          "ref_gb": "哈二4",
+          "ref_big5": "哈二4",
+          "ref_en": "Hab. 2:4",
+          "text_gb": "看哪，自高自大的人，心[Fn1]不正直；只[Fn2]是义[Cra]人必本于信得[Fn3]生。",
+          "text_big5": "看哪，自高自大的人，心[Fn1]不正直；只[Fn2]是義[Cra]人必本於信得[Fn3]生。",
+          "text_en": "See, he who is puffed up, his soul is not upright within him, / But the righteous one will live by his faith.",
+          "text_gb_plain": "看哪，自高自大的人，心不正直；只是义人必本于信得生。",
+          "text_big5_plain": "看哪，自高自大的人，心不正直；只是義人必本於信得生。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 11,
+              "zh": "直译，魂。",
+              "zh_big5": "直譯，魂。",
+              "en": "2:4 1 But This word, quoted three times in the New Testament by the apostle Paul (Rom. 1:17; Gal. 3:11; Heb. 10:38), unveils God's eternal salvation given to sinners. According to the background of this book, both Israel (God's elect) and the Chaldeans (the nations) were under God's judgment. Under God's judgment all sinners, whether Jews or Gentiles, are destined to die (Rom. 6:23). The unique way for sinners to escape God's judgment and obtain God's eternal salvation is to believe in God's embodiment, Christ, that they may become righteous and be justified in order to have life and live (John 3:16-18). God's eternal salvation is to save our entire being — spirit, soul, and body — for eternity (1 Thes. 5:23). The way for us to receive such a salvation is to believe in Christ so that we may be justified by God and thus be qualified to have the eternal, divine life, and live by that life (Rom. 3:24; 5:1-2, 10, 17; Eph. 2:8). This is the New Testament gospel in an Old Testament prophetic book. Christ is the factor that links the books of Micah, Jonah, and Habakkuk. According to Micah 5:2, Christ as the eternal One, whose origin is in eternity, has gone forth by being born as a man in Bethlehem (see note Micah 5:2 1 ). Then, the type in Jonah 1:17 reveals the continuation of Christ's going forth in His death and resurrection (see note Jonah 1:17 1 ). In the book of Jonah, Jehovah's salvation was brought to Nineveh, an evil city of the Gentiles, through the preaching of the prophet. Today, God's salvation, which was prepared, completed, and consummated by Christ's going forth, has come to us through the preaching of the gospel. The way to receive and apply this salvation is by faith, as mentioned in this verse."
+            },
+            {
+              "num": 2,
+              "loc": 16,
+              "zh": "这话，使徒保罗在新约曾引用过三次(罗一17，加三11，来十38)，揭示神给罪人的永远救恩。按照本书的背景，以色列(神的选民)和迦勒底人(列国)都在神的审判之下。所有的罪人，不论是犹太人或外邦人，在神的审判下，都命定要死(罗六23)。罪人脱离神的审判并得着神永远救恩惟一的路，乃是相信神的具体化身基督，使他们成为义的并得称义，以得生命并活着(约三16～18)。神永远的救恩乃是拯救我们的全人—灵、魂、体—直到永远(帖前五23)。我们接受这一救恩的路，乃是相信基督，使我们蒙神称义，因而够资格得着永远、神圣的生命，并凭这生命活着(罗三24，五1～2，10，17，弗二8)。这是在一卷旧约申言者书中所说新约的福音。 基督是弥迦书、约拿书和哈巴谷书联结的因素。按照弥五2，基督这永远的一位，祂的根源是在太初，祂已经借着在伯利恒生为一个人而出来(见弥五2注2)。然后，拿一17的预表启示基督在祂的死与复活里继续祂地出来(见拿一17注1)。在约拿书里，耶和华的救恩借着申言者的传扬，被带到邪恶的外邦城尼尼微。今天，借着基督地出来所预备、所成功并终极完成之神的救恩，已经借着福音的传扬临到我们。接受并应用这救恩的路，乃是借着信，正如本节所说的。",
+              "zh_big5": "這話，使徒保羅在新約曾引用過三次，（羅一17，加三11，來十38，）揭示神給罪人的永遠救恩。按照本書的背景，以色列（神的選民）和迦勒底人（列國）都在神的審判之下。所有的罪人，不論是猶太人或外邦人，在神的審判下，都命定要死。（羅六23。）罪人脫離神的審判並得著神永遠救恩惟一的路，乃是相信神的具體化身基督，使他們成為義的並得稱義，以得生命並活著。（約三16～18。）神永遠的救恩乃是拯救我們的全人—靈、魂、體—直到永遠。（帖前五23。）我們接受這一救恩的路，乃是相信基督，使我們蒙神稱義，因而彀資格得著永遠、神聖的生命，並憑這生命活著。（羅三24，五1～2，10，17，弗二8。）這是在一卷舊約申言者書中所說新約的福音。ˍ基督是彌迦書、約拿書、和哈巴谷書聯結的因素。按照彌五2，基督這永遠的一位，祂的根源是在太初，祂已經藉著在伯利恆生為一個人而出來。（見彌五2註2。）然後，拿一17的豫表啟示基督在祂的死與復活裏繼續祂的出來。（見拿一17註1。）在約拿書裏，耶和華的救恩藉著申言者的傳揚，被帶到邪惡的外邦城尼尼微。今天，藉著基督的出來所豫備、所成功、並終極完成之神的救恩，已經藉著福音的傳揚臨到我們。接受並應用這救恩的路，乃是藉著信，正如本節所說的。",
+              "en": "2:4 2 live Here, to live means to have life and live. See note Rom. 1:17 3 ."
+            },
+            {
+              "num": 3,
+              "loc": 24,
+              "zh": "得生，在这里的意思是得生命并活着。见罗一17注4。",
+              "zh_big5": "得生，在這裏的意思是得生命並活著。見羅一17註4。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "罗一17，加三11，来十38",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 17,
+                  "ref_gb": "罗一17",
+                  "ref_big5": "羅一17",
+                  "ref_en": "Rom. 1:17",
+                  "text_gb": "因为神的义在这福音上，本于信显示与信，如经上所记：“义人必本于信得生并活着。”",
+                  "text_big5": "因為神的義在這福音上，本於信顯示與信，如經上所記：“義人必本於信得生並活著。”",
+                  "text_en": "For the righteousness of God is revealed in it out of faith to faith, as it is written, \"But the righteous shall have life and live by faith.\""
+                },
+                {
+                  "book": 48,
+                  "chapter": 3,
+                  "verse": 11,
+                  "ref_gb": "加三11",
+                  "ref_big5": "加三11",
+                  "ref_en": "Gal. 3:11",
+                  "text_gb": "没有一个人凭着律法在神面前得称义，乃是明显的，因为“义人必本于信得生并活着；”",
+                  "text_big5": "沒有一個人憑著律法在神面前得稱義，乃是明顯的，因為“義人必本於信得生並活著；”",
+                  "text_en": "And that by law no one is justified before God is evident because, \"The righteous one shall have life and live by faith\";"
+                },
+                {
+                  "book": 58,
+                  "chapter": 10,
+                  "verse": 38,
+                  "ref_gb": "来十38",
+                  "ref_big5": "來十38",
+                  "ref_en": "Heb. 10:38",
+                  "text_gb": "只是我的义人必本于信活着；他若退缩，我的心就不喜悦他。”",
+                  "text_big5": "只是我的義人必本於信活著；他若退縮，我的心就不喜悅他。”",
+                  "text_en": "But My righteous one shall live by faith; and if he shrinks back, My soul does not delight in him.\""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 5,
+          "ref_gb": "哈二5",
+          "ref_big5": "哈二5",
+          "ref_en": "Hab. 2:5",
+          "text_gb": "然而，那因酒诡诈，狂傲之人，不住在家中，扩充欲望好像阴[Fn1]间，又像死亡不能知足，却聚集万国，堆积万民，都归自己。",
+          "text_big5": "然而，那因酒詭詐，狂傲之人，不住在家中，擴充慾望好像陰[Fn1]間，又像死亡不能知足，卻聚集萬國，堆積萬民，都歸自己。",
+          "text_en": "Furthermore his wine is treacherous: / A boasting man, he does not abide at home, / He who enlarges his appetite like Sheol, / And is like death and cannot be satisfied, / But gathers to himself all the nations / And collects for himself all the peoples.",
+          "text_gb_plain": "然而，那因酒诡诈，狂傲之人，不住在家中，扩充欲望好像阴间，又像死亡不能知足，却聚集万国，堆积万民，都归自己。",
+          "text_big5_plain": "然而，那因酒詭詐，狂傲之人，不住在家中，擴充慾望好像陰間，又像死亡不能知足，卻聚集萬國，堆積萬民，都歸自己。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 27,
+              "zh": "见太十一23注1。",
+              "zh_big5": "見太十一23註1。",
+              "en": "2:5 1 Sheol See note Matt. 11:23 1 ."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 6,
+          "ref_gb": "哈二6",
+          "ref_big5": "哈二6",
+          "ref_en": "Hab. 2:6",
+          "text_gb": "这些国的民岂不都要提起比喻，就是讥诮歌和谜语，指着他说，祸哉，那增添不属自己之财物，满载别人抵押品的；他这样作，要到几时呢？",
+          "text_big5": "這些國的民豈不都要題起比喻，就是譏誚歌和謎語，指著他說，禍哉，那增添不屬自己之財物，滿載別人抵押品的；他這樣作，要到幾時呢？",
+          "text_en": "Will not all of these take up a parable against him, / Indeed a mocking song and a riddle against him, and say, / Woe to him who increases what is not his (For how long?) / And who loads himself with the burden of pledges?",
+          "text_gb_plain": "这些国的民岂不都要提起比喻，就是讥诮歌和谜语，指着他说，祸哉，那增添不属自己之财物，满载别人抵押品的；他这样作，要到几时呢？",
+          "text_big5_plain": "這些國的民豈不都要題起比喻，就是譏誚歌和謎語，指著他說，禍哉，那增添不屬自己之財物，滿載別人抵押品的；他這樣作，要到幾時呢？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 7,
+          "ref_gb": "哈二7",
+          "ref_big5": "哈二7",
+          "ref_en": "Hab. 2:7",
+          "text_gb": "咬伤你的岂不忽然起来，搅扰你的岂不醒起，你就成了他们的掳物么？",
+          "text_big5": "咬傷你的豈不忽然起來，攪擾你的豈不醒起，你就成了他們的擄物麼？",
+          "text_en": "Will not those who bite you rise up suddenly, / And those who shake you awake, / And you will become booty to them?",
+          "text_gb_plain": "咬伤你的岂不忽然起来，搅扰你的岂不醒起，你就成了他们的掳物么？",
+          "text_big5_plain": "咬傷你的豈不忽然起來，攪擾你的豈不醒起，你就成了他們的擄物麼？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 8,
+          "ref_gb": "哈二8",
+          "ref_big5": "哈二8",
+          "ref_en": "Hab. 2:8",
+          "text_gb": "因你抢[Cra]夺许多的国，杀人流血，向地上城邑，并其中一切居民施行强暴，所以各族余剩的人都必抢[Fn1]夺你。",
+          "text_big5": "因你搶[Cra]奪許多的國，殺人流血，向地上城邑，並其中一切居民施行強暴，所以各族餘剩的人都必搶[Fn1]奪你。",
+          "text_en": "Because you have plundered many nations; / All the remnant of the peoples will plunder you, / Because of the bloodshed of men and the violence done to the land, / To the city, and to all the inhabitants in it.",
+          "text_gb_plain": "因你抢夺许多的国，杀人流血，向地上城邑，并其中一切居民施行强暴，所以各族余剩的人都必抢夺你。",
+          "text_big5_plain": "因你搶奪許多的國，殺人流血，向地上城邑，並其中一切居民施行強暴，所以各族餘剩的人都必搶奪你。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 43,
+              "zh": "巴比伦被多国抢夺，乃是神对巴比伦的报应；这件事在哈巴谷预言之后八十五年多就发生了(见但五)。",
+              "zh_big5": "巴比倫被多國搶奪，乃是神對巴比倫的報應；這件事在哈巴谷豫言之後八十五年多就發生了。（見但五。）",
+              "en": "2:8 1 plunder This plundering of Babylon by the nations, as God's recompense on Babylon, took place a little more than eighty-five years after Habakkuk's prophecy (see Dan. 5)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "赛三三1",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 33,
+                  "verse": 1,
+                  "ref_gb": "赛三三1",
+                  "ref_big5": "賽三三1",
+                  "ref_en": "Isa. 33:1",
+                  "text_gb": "祸哉，你这毁灭人、自己倒不被毁灭的，行事诡诈、人倒不以诡诈相待的！你毁灭罢休了，自己必被毁灭；你行完了诡诈，人必以诡诈相待。",
+                  "text_big5": "禍哉，你這毀滅人、自己倒不被毀滅的，行事詭詐、人倒不以詭詐相待的！你毀滅罷休了，自己必被毀滅；你行完了詭詐，人必以詭詐相待。",
+                  "text_en": "Woe to you who destroy and were not destroyed, / And to him who deals unfaithfully and was not dealt with unfaithfully! / When you have finished destroying, you will be destroyed; / And when you cease to deal unfaithfully, they will deal unfaithfully with you."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 9,
+          "ref_gb": "哈二9",
+          "ref_big5": "哈二9",
+          "ref_en": "Hab. 2:9",
+          "text_gb": "为自己的家强夺不义之财，在高处搭窝，为要脱离灾祸的有祸了！",
+          "text_big5": "為自己的家強奪不義之財，在高處搭窩，為要脫離災禍的有禍了！",
+          "text_en": "Woe to him who by violence takes evil gain for his house, / So as to place his nest on high / That he may be delivered from the hand of evil!",
+          "text_gb_plain": "为自己的家强夺不义之财，在高处搭窝，为要脱离灾祸的有祸了！",
+          "text_big5_plain": "為自己的家強奪不義之財，在高處搭窩，為要脫離災禍的有禍了！",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 10,
+          "ref_gb": "哈二10",
+          "ref_big5": "哈二10",
+          "ref_en": "Hab. 2:10",
+          "text_gb": "你剪除多族的人，正是图谋使自己的家蒙羞，犯罪自害己命。",
+          "text_big5": "你剪除多族的人，正是圖謀使自己的家蒙羞，犯罪自害己命。",
+          "text_en": "You have devised shame against your own house / By cutting off many peoples, / And have sinned against your own soul.",
+          "text_gb_plain": "你剪除多族的人，正是图谋使自己的家蒙羞，犯罪自害己命。",
+          "text_big5_plain": "你剪除多族的人，正是圖謀使自己的家蒙羞，犯罪自害己命。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 11,
+          "ref_gb": "哈二11",
+          "ref_big5": "哈二11",
+          "ref_en": "Hab. 2:11",
+          "text_gb": "墙里的石[Cra]头必呼叫，木料中的椽子必应声。",
+          "text_big5": "牆裏的石[Cra]頭必呼叫，木料中的椽子必應聲。",
+          "text_en": "For the stone will cry out from the wall, / And the rafter will answer from the timber.",
+          "text_gb_plain": "墙里的石头必呼叫，木料中的椽子必应声。",
+          "text_big5_plain": "牆裏的石頭必呼叫，木料中的椽子必應聲。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "参路十九40",
+              "refs": [
+                {
+                  "book": 42,
+                  "chapter": 19,
+                  "verse": 40,
+                  "ref_gb": "路十九40",
+                  "ref_big5": "路十九40",
+                  "ref_en": "Luke 19:40",
+                  "text_gb": "耶稣回答说，我告诉你们，若是他们默不作声，这些石头都要喊叫起来！",
+                  "text_big5": "耶穌回答說，我告訴你們，若是他們默不作聲，這些石頭都要喊叫起來！",
+                  "text_en": "And He answered and said, I tell you, If these shall be silent, the stones will cry out."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 12,
+          "ref_gb": "哈二12",
+          "ref_big5": "哈二12",
+          "ref_en": "Hab. 2:12",
+          "text_gb": "借[Cra]流人血建城，以罪孽立邑的有祸了！",
+          "text_big5": "藉[Cra]流人血建城，以罪孽立邑的有禍了！",
+          "text_en": "Woe to him who builds a city by bloodshed / And establishes a town by iniquity!",
+          "text_gb_plain": "借流人血建城，以罪孽立邑的有祸了！",
+          "text_big5_plain": "藉流人血建城，以罪孽立邑的有禍了！",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "耶二二13，结二四9，弥三10",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 22,
+                  "verse": 13,
+                  "ref_gb": "耶二二13",
+                  "ref_big5": "耶二二13",
+                  "ref_en": "Jer. 22:13",
+                  "text_gb": "那凭不义盖房，凭不公造楼，白白用他邻舍作工却不给工价的，有祸了。",
+                  "text_big5": "那憑不義蓋房，憑不公造樓，白白用他鄰舍作工卻不給工價的，有禍了。",
+                  "text_en": "Woe to him who builds his house by unrighteousness / And his upper rooms by injustice, / Who uses his neighbor's service without wages / And does not give him recompense for his work, "
+                },
+                {
+                  "book": 26,
+                  "chapter": 24,
+                  "verse": 9,
+                  "ref_gb": "结二四9",
+                  "ref_big5": "結二四9",
+                  "ref_en": "Ezek. 24:9",
+                  "text_gb": "所以主耶和华如此说，祸哉，这流人血的城！我也必大堆火柴，",
+                  "text_big5": "所以主耶和華如此說，禍哉，這流人血的城！我也必大堆火柴，",
+                  "text_en": "Therefore thus says the Lord Jehovah, Woe to the bloody city! I will also make the pile great."
+                },
+                {
+                  "book": 33,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "弥三10",
+                  "ref_big5": "彌三10",
+                  "ref_en": "Mic. 3:10",
+                  "text_gb": "借流人血建立锡安，以罪孽建造耶路撒冷。",
+                  "text_big5": "藉流人血建立錫安，以罪孽建造耶路撒冷。",
+                  "text_en": "Who build Zion by bloodshed / And Jerusalem by iniquity."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 13,
+          "ref_gb": "哈二13",
+          "ref_big5": "哈二13",
+          "ref_en": "Hab. 2:13",
+          "text_gb": "众民所劳碌得来的被火[Cra]焚烧，列国由劳乏而得的归于虚空，不都是出于万军之耶和华么？",
+          "text_big5": "眾民所勞碌得來的被火[Cra]焚燒，列國由勞乏而得的歸於虛空，不都是出於萬軍之耶和華麼？",
+          "text_en": "Indeed is it not of Jehovah of hosts / That the peoples toil for the fire / And the nations weary themselves for vanity?",
+          "text_gb_plain": "众民所劳碌得来的被火焚烧，列国由劳乏而得的归于虚空，不都是出于万军之耶和华么？",
+          "text_big5_plain": "眾民所勞碌得來的被火焚燒，列國由勞乏而得的歸於虛空，不都是出於萬軍之耶和華麼？",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "耶五一58",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 51,
+                  "verse": 58,
+                  "ref_gb": "耶五一58",
+                  "ref_big5": "耶五一58",
+                  "ref_en": "Jer. 51:58",
+                  "text_gb": "万军之耶和华如此说，巴比伦宽阔的城墙，必光秃赤露，她高大的城门必被火焚烧；众民必徒然劳碌，列国所劳碌的必被火焚烧；他们都必困乏。",
+                  "text_big5": "萬軍之耶和華如此說，巴比倫寬闊的城牆，必光禿赤露，她高大的城門必被火焚燒；眾民必徒然勞碌，列國所勞碌的必被火焚燒；他們都必困乏。",
+                  "text_en": "Thus says Jehovah of hosts, / The broad walls of Babylon will be utterly laid bare; / Her high gates will be burned with fire. / So the peoples will have labored in vain; / And the nations, only for fire; and they will have wearied themselves."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 14,
+          "ref_gb": "哈二14",
+          "ref_big5": "哈二14",
+          "ref_en": "Hab. 2:14",
+          "text_gb": "对耶和华之荣耀的认识，要充[Fn1]满遍[Cra]地，好像水充满洋海一般。",
+          "text_big5": "對耶和華之榮耀的認識，要充[Fn1]滿遍[Cra]地，好像水充滿洋海一般。",
+          "text_en": "For the earth will be filled / With the knowledge of the glory of Jehovah / As water covers the sea.",
+          "text_gb_plain": "对耶和华之荣耀的认识，要充满遍地，好像水充满洋海一般。",
+          "text_big5_plain": "對耶和華之榮耀的認識，要充滿遍地，好像水充滿洋海一般。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 13,
+              "zh": "当众民所劳碌得来的都归于虚空(13)，在地上有一件特别的事、奥秘的事要发生，就是对耶和华之荣耀的认识，要充满遍地，好像水充满洋海一般。",
+              "zh_big5": "當眾民所勞碌得來的都歸於虛空，（13，）在地上有一件特別的事、奧祕的事要發生，就是對耶和華之榮耀的認識，要充滿遍地，好像水充滿洋海一般。",
+              "en": "2:14 1 filled While the peoples were toiling for vanity (v. 13), something particular, something mysterious was happening on earth: the earth would be filled with the knowledge of the glory of Jehovah as water covers the sea."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "赛十一9",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 11,
+                  "verse": 9,
+                  "ref_gb": "赛十一9",
+                  "ref_big5": "賽十一9",
+                  "ref_en": "Isa. 11:9",
+                  "text_gb": "在我圣山的遍处，这些都不伤人，不害物，因为对耶和华的认识充满遍地，好像水充满洋海一般。",
+                  "text_big5": "在我聖山的遍處，這些都不傷人，不害物，因為對耶和華的認識充滿遍地，好像水充滿洋海一般。",
+                  "text_en": "They will not harm nor destroy / In all My holy mountain, / For the earth will be filled with the knowledge of Jehovah, / As water covers the sea."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 15,
+          "ref_gb": "哈二15",
+          "ref_big5": "哈二15",
+          "ref_en": "Hab. 2:15",
+          "text_gb": "给邻舍酒喝，又加上他[Fn1]的毒物，使邻舍喝醉，好看见他[Fn2]赤身的，有祸了！",
+          "text_big5": "給鄰舍酒喝，又加上他[Fn1]的毒物，使鄰舍喝醉，好看見他[Fn2]赤身的，有禍了！",
+          "text_en": "Woe to him who makes his neighbor drink, / Adding in his poison, / And also making him drunk / In order to look at their nakedness!",
+          "text_gb_plain": "给邻舍酒喝，又加上他的毒物，使邻舍喝醉，好看见他赤身的，有祸了！",
+          "text_big5_plain": "給鄰舍酒喝，又加上他的毒物，使鄰舍喝醉，好看見他赤身的，有禍了！",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "直译，你的。",
+              "zh_big5": "直譯，你的。",
+              "en": "2:15 1 his Lit., your."
+            },
+            {
+              "num": 2,
+              "loc": 24,
+              "zh": "直译，他们。",
+              "zh_big5": "直譯，他們。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 16,
+          "ref_gb": "哈二16",
+          "ref_big5": "哈二16",
+          "ref_en": "Hab. 2:16",
+          "text_gb": "你满受羞辱，不得荣耀。你也喝吧，显出是未受割礼的！耶和华右手的杯[Cra]必传到你那里，你的荣耀就变为极大的羞辱。",
+          "text_big5": "你滿受羞辱，不得榮耀。你也喝罷，顯出是未受割禮的！耶和華右手的杯[Cra]必傳到你那裏，你的榮耀就變為極大的羞辱。",
+          "text_en": "You are sated with shame, not glory. / You also, drink and be shown to be uncircumcised! / The cup of Jehovah's right hand will come around to you, / And disgrace will be upon your glory.",
+          "text_gb_plain": "你满受羞辱，不得荣耀。你也喝吧，显出是未受割礼的！耶和华右手的杯必传到你那里，你的荣耀就变为极大的羞辱。",
+          "text_big5_plain": "你滿受羞辱，不得榮耀。你也喝罷，顯出是未受割禮的！耶和華右手的杯必傳到你那裏，你的榮耀就變為極大的羞辱。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 32,
+              "raw": "诗七五8，耶二五26～29，五一57",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 75,
+                  "verse": 8,
+                  "ref_gb": "诗七五8",
+                  "ref_big5": "詩七五8",
+                  "ref_en": "Psa. 75:8",
+                  "text_gb": "耶和华手里有杯，其中的酒起沫；杯内满了搀杂之物，祂倒出来；地上的恶人必都喝这酒的渣滓，而且喝尽。",
+                  "text_big5": "耶和華手裏有杯，其中的酒起沫；杯內滿了攙雜之物，祂倒出來；地上的惡人必都喝這酒的渣滓，而且喝盡。",
+                  "text_en": "For there is a cup in the hand of Jehovah, / And the wine foams; it is full of mixture, / And He pours from it; indeed its dregs will all the wicked of the earth / Drain off and drink up."
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 26,
+                  "ref_gb": "耶二五26",
+                  "ref_big5": "耶二五26",
+                  "ref_en": "Jer. 25:26",
+                  "text_gb": "北方远近的诸王，以及地上的万国都喝了；以后示沙克王也要喝。",
+                  "text_big5": "北方遠近的諸王，以及地上的萬國都喝了；以後示沙克王也要喝。",
+                  "text_en": "And all the kings of the north, near and far, one with another, and all the kingdoms of the earth which are upon the surface of the ground and the king of Sheshach will drink it after them."
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 27,
+                  "ref_gb": "耶二五27",
+                  "ref_big5": "耶二五27",
+                  "ref_en": "Jer. 25:27",
+                  "text_gb": "你要对他们说，万军之耶和华以色列的神如此说，你们要喝且要喝醉，要呕吐且要跌倒，不得再起来，都因我使刀剑临到你们中间。",
+                  "text_big5": "你要對他們說，萬軍之耶和華以色列的神如此說，你們要喝且要喝醉，要嘔吐且要跌倒，不得再起來，都因我使刀劍臨到你們中間。",
+                  "text_en": "And you shall say to them, Thus says Jehovah of hosts, the God of Israel, Drink and be drunk, and vomit and fall, and rise no longer, because of the sword which I am sending among you."
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 28,
+                  "ref_gb": "耶二五28",
+                  "ref_big5": "耶二五28",
+                  "ref_en": "Jer. 25:28",
+                  "text_gb": "他们若不肯从你的手接这杯喝，你就要对他们说，万军之耶和华如此说，你们一定要喝。",
+                  "text_big5": "他們若不肯從你的手接這杯喝，你就要對他們說，萬軍之耶和華如此說，你們一定要喝。",
+                  "text_en": "And if they refuse to take the cup from your hand to drink, then you shall say to them, Thus says Jehovah of hosts, You shall surely drink it."
+                },
+                {
+                  "book": 24,
+                  "chapter": 25,
+                  "verse": 29,
+                  "ref_gb": "耶二五29",
+                  "ref_big5": "耶二五29",
+                  "ref_en": "Jer. 25:29",
+                  "text_gb": "我既从称为我名下的城起首施行灾祸，你们能全然免受惩罚么？你们必不能免，因为我要呼唤刀剑临到地上一切的居民；这是万军之耶和华说的。",
+                  "text_big5": "我既從稱為我名下的城起首施行災禍，你們能全然免受懲罰麼？你們必不能免，因為我要呼喚刀劍臨到地上一切的居民；這是萬軍之耶和華說的。",
+                  "text_en": "For I am now beginning to bring evil on the city which is called by My name, and will you indeed go unpunished? You will not go unpunished, for I am calling for a sword against all the inhabitants of the earth, declares Jehovah of hosts."
+                },
+                {
+                  "book": 24,
+                  "chapter": 51,
+                  "verse": 57,
+                  "ref_gb": "耶五一57",
+                  "ref_big5": "耶五一57",
+                  "ref_en": "Jer. 51:57",
+                  "text_gb": "名为万军之耶和华的王说，我必使巴比伦的首领、智慧人、省长、官长和勇士，都沉醉；他们必睡长觉，永不醒起。",
+                  "text_big5": "名為萬軍之耶和華的王說，我必使巴比倫的首領、智慧人、省長、官長和勇士，都沉醉；他們必睡長覺，永不醒起。",
+                  "text_en": "And I will make her princes and her wise men drunk, / Her governors and her officials and her mighty men; / And they will sleep an eternal sleep / And not wake up, declares the King, / Whose name is Jehovah of hosts."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 17,
+          "ref_gb": "哈二17",
+          "ref_big5": "哈二17",
+          "ref_en": "Hab. 2:17",
+          "text_gb": "你向利巴嫩所行的强暴，与残害惊吓野兽的事，必遮盖你，因你杀人流血，向地上城邑，并其中一切居民施行强暴。",
+          "text_big5": "你向利巴嫩所行的強暴，與殘害驚嚇野獸的事，必遮蓋你，因你殺人流血，向地上城邑，並其中一切居民施行強暴。",
+          "text_en": "For the violence done to Lebanon will cover you, / As well as the destruction of the beasts which frightened them, / Because of the bloodshed of men and the violence done to the land, / To the city, and to all the inhabitants in it.",
+          "text_gb_plain": "你向利巴嫩所行的强暴，与残害惊吓野兽的事，必遮盖你，因你杀人流血，向地上城邑，并其中一切居民施行强暴。",
+          "text_big5_plain": "你向利巴嫩所行的強暴，與殘害驚嚇野獸的事，必遮蓋你，因你殺人流血，向地上城邑，並其中一切居民施行強暴。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 18,
+          "ref_gb": "哈二18",
+          "ref_big5": "哈二18",
+          "ref_en": "Hab. 2:18",
+          "text_gb": "雕制的偶[Cra]像，人将它雕制出来，有什么益处呢？铸造的偶像，就是虚谎的师傅，制造者倚靠所造的，他制造哑巴偶像，有什么益处呢？",
+          "text_big5": "雕製的偶[Cra]像，人將它雕製出來，有甚麼益處呢？鑄造的偶像，就是虛謊的師傅，製造者倚靠所造的，他製造啞吧偶像，有甚麼益處呢？",
+          "text_en": "What profit is the graven idol that its maker should engrave it, / Or the molten idol, even the teacher of lies, / That he who forms its form depends on it / To make dumb idols?",
+          "text_gb_plain": "雕制的偶像，人将它雕制出来，有什么益处呢？铸造的偶像，就是虚谎的师傅，制造者倚靠所造的，他制造哑巴偶像，有什么益处呢？",
+          "text_big5_plain": "雕製的偶像，人將它雕製出來，有甚麼益處呢？鑄造的偶像，就是虛謊的師傅，製造者倚靠所造的，他製造啞吧偶像，有甚麼益處呢？",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "赛四四9，10，四六6，7，徒十七29，林前十二2",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 44,
+                  "verse": 9,
+                  "ref_gb": "赛四四9",
+                  "ref_big5": "賽四四9",
+                  "ref_en": "Isa. 44:9",
+                  "text_gb": "雕制偶像的，尽都虚空；他们所喜悦的，都无益处；他们的见证人无所看见，无所知晓，他们便觉羞愧。",
+                  "text_big5": "雕製偶像的，盡都虛空；他們所喜悅的，都無益處；他們的見證人無所看見，無所知曉，他們便覺羞愧。",
+                  "text_en": "All those who make idols are a waste. / And the things they delight in will not profit them. / And those who are witnesses for them do not see, / And they do not know, that they may be put to shame."
+                },
+                {
+                  "book": 23,
+                  "chapter": 44,
+                  "verse": 10,
+                  "ref_gb": "赛四四10",
+                  "ref_big5": "賽四四10",
+                  "ref_en": "Isa. 44:10",
+                  "text_gb": "谁制造神像，铸造无益的偶像？",
+                  "text_big5": "誰製造神像，鑄造無益的偶像？",
+                  "text_en": "Who has formed a god or cast an idol / That is of no profit?"
+                },
+                {
+                  "book": 23,
+                  "chapter": 46,
+                  "verse": 6,
+                  "ref_gb": "赛四六6",
+                  "ref_big5": "賽四六6",
+                  "ref_en": "Isa. 46:6",
+                  "text_gb": "那从囊中倒出金子，用天平称银子的人，雇金匠将金银制造成神像，他们又俯伏，又叩拜；",
+                  "text_big5": "那從囊中倒出金子，用天平稱銀子的人，雇金匠將金銀製造成神像，他們又俯伏，又叩拜；",
+                  "text_en": "Those who lavish gold from the purse / And weigh silver in scales / And hire a goldsmith, and he makes a god - / They bow down and even worship it;"
+                },
+                {
+                  "book": 23,
+                  "chapter": 46,
+                  "verse": 7,
+                  "ref_gb": "赛四六7",
+                  "ref_big5": "賽四六7",
+                  "ref_en": "Isa. 46:7",
+                  "text_gb": "他们将神像抬起，扛在肩上，安置在定处，使它站立，不离本位；即使有人呼求它，它也不能答应，也不能救人脱离急难。",
+                  "text_big5": "他們將神像抬起，扛在肩上，安置在定處，使它站立，不離本位；即使有人呼求它，它也不能答應，也不能救人脫離急難。",
+                  "text_en": "They lift it up on their shoulder; they carry it / And set it in its place, and it stands. / It will not move from its place; / Someone even cries out to it, and it does not answer, / Nor save him from his distress."
+                },
+                {
+                  "book": 44,
+                  "chapter": 17,
+                  "verse": 29,
+                  "ref_gb": "徒十七29",
+                  "ref_big5": "徒十七29",
+                  "ref_en": "Acts 17:29",
+                  "text_gb": "我们既是神的族类，就不当以为那神圣的，像人用手艺、心思所雕刻的金、银、石头一样。",
+                  "text_big5": "我們既是神的族類，就不當以為那神聖的，像人用手藝、心思所雕刻的金、銀、石頭一樣。",
+                  "text_en": "Being then the race of God, we ought not to suppose that what is divine is like gold or silver or stone, like an engraving of art and thought of man."
+                },
+                {
+                  "book": 46,
+                  "chapter": 12,
+                  "verse": 2,
+                  "ref_gb": "林前十二2",
+                  "ref_big5": "林前十二2",
+                  "ref_en": "1 Cor. 12:2",
+                  "text_gb": "你们作外邦人的时候，无论何时不论怎样受到带领，你们就被带走，去拜那不能出声的偶像，这是你们知道的。",
+                  "text_big5": "你們作外邦人的時候，無論何時不論怎樣受到帶領，你們就被帶走，去拜那不能出聲的偶像，這是你們知道的。",
+                  "text_en": "You know that when you were Gentiles, you were always being led away to dumb idols, whenever and however you were led."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 19,
+          "ref_gb": "哈二19",
+          "ref_big5": "哈二19",
+          "ref_en": "Hab. 2:19",
+          "text_gb": "对木头说，醒起，对哑巴石头说，起来，那人有祸了！这东西能教训人么？看哪，是包裹金银的，其中毫无气息。",
+          "text_big5": "對木頭說，醒起，對啞吧石頭說，起來，那人有禍了！這東西能教訓人麼？看哪，是包裹金銀的，其中毫無氣息。",
+          "text_en": "Woe to him who says to wood, Awake! / And, Arise! to silent stone. / Will it teach him? / Behold, it is set in gold and silver, / And there is no breath at all within it.",
+          "text_gb_plain": "对木头说，醒起，对哑巴石头说，起来，那人有祸了！这东西能教训人么？看哪，是包裹金银的，其中毫无气息。",
+          "text_big5_plain": "對木頭說，醒起，對啞吧石頭說，起來，那人有禍了！這東西能教訓人麼？看哪，是包裹金銀的，其中毫無氣息。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 2,
+          "verse": 20,
+          "ref_gb": "哈二20",
+          "ref_big5": "哈二20",
+          "ref_en": "Hab. 2:20",
+          "text_gb": "唯耶和华在祂的圣殿[Cra]中：全地都当在祂面前静[Crb]默无声！",
+          "text_big5": "惟耶和華在祂的聖殿[Cra]中：全地都當在祂面前靜[Crb]默無聲！",
+          "text_en": "But Jehovah is in His holy temple: / Be silent before Him, all the earth! ",
+          "text_gb_plain": "唯耶和华在祂的圣殿中：全地都当在祂面前静默无声！",
+          "text_big5_plain": "惟耶和華在祂的聖殿中：全地都當在祂面前靜默無聲！",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "诗十一4",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 11,
+                  "verse": 4,
+                  "ref_gb": "诗十一4",
+                  "ref_big5": "詩十一4",
+                  "ref_en": "Psa. 11:4",
+                  "text_gb": "耶和华在祂的圣殿里；耶和华的宝座在天上。祂的眼目察看；祂的目光察验世人。",
+                  "text_big5": "耶和華在祂的聖殿裏；耶和華的寶座在天上。祂的眼目察看；祂的目光察驗世人。",
+                  "text_en": "Jehovah is in His holy temple; / Jehovah-His throne is in heaven. / His eyes behold; / His eyelids try the sons of men."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 20,
+              "raw": "番一7，亚二13，启八1，参诗四六10，亚一11",
+              "refs": [
+                {
+                  "book": 36,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "番一7",
+                  "ref_big5": "番一7",
+                  "ref_en": "Zeph. 1:7",
+                  "text_gb": "你要在主耶和华面前静默无声，因为耶和华的日子近了；耶和华已经预备祭物，将祂所召的分别为圣。",
+                  "text_big5": "你要在主耶和華面前靜默無聲，因為耶和華的日子近了；耶和華已經豫備祭物，將祂所召的分別為聖。",
+                  "text_en": "Be silent before the Lord Jehovah, / For the day of Jehovah is near; / For Jehovah has prepared a sacrifice; / He has consecrated those whom He has called."
+                },
+                {
+                  "book": 38,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "亚二13",
+                  "ref_big5": "亞二13",
+                  "ref_en": "Zech. 2:13",
+                  "text_gb": "凡有血肉的，都当在耶和华面前静默无声！因为祂兴起，从祂圣别的居所出来了。",
+                  "text_big5": "凡有血肉的，都當在耶和華面前靜默無聲！因為祂興起，從祂聖別的居所出來了。",
+                  "text_en": "Hush, all flesh, before Jehovah! For He is roused up from His holy habitation. "
+                },
+                {
+                  "book": 66,
+                  "chapter": 8,
+                  "verse": 1,
+                  "ref_gb": "启八1",
+                  "ref_big5": "啟八1",
+                  "ref_en": "Rev. 8:1",
+                  "text_gb": "羔羊揭开第七印的时候，天上寂静约有半小时。",
+                  "text_big5": "羔羊揭開第七印的時候，天上寂靜約有半小時。",
+                  "text_en": "And when He opened the seventh seal, there was silence in heaven for about half an hour."
+                },
+                {
+                  "book": 19,
+                  "chapter": 46,
+                  "verse": 10,
+                  "ref_gb": "诗四六10",
+                  "ref_big5": "詩四六10",
+                  "ref_en": "Psa. 46:10",
+                  "text_gb": "你们要住手，要知道我是神。我必在列国中被高举；我必在遍地上被高举。",
+                  "text_big5": "你們要住手，要知道我是神。我必在列國中被高舉；我必在遍地上被高舉。",
+                  "text_en": "Be still and know that I am God. / I will be exalted among the nations; I will be exalted on earth."
+                },
+                {
+                  "book": 38,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "亚一11",
+                  "ref_big5": "亞一11",
+                  "ref_en": "Zech. 1:11",
+                  "text_gb": "那些骑马的，对站在番石榴树中间耶和华的使者回报说，我们已经巡行遍地，见全地的人都安居平静。",
+                  "text_big5": "那些騎馬的，對站在番石榴樹中間耶和華的使者回報說，我們已經巡行遍地，見全地的人都安居平靜。",
+                  "text_en": "And they answered the Angel of Jehovah, who was standing among the myrtle trees, and they said, We have gone to and fro on the earth, and indeed all the earth sits still and is quiet."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "verses": [
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 1,
+          "ref_gb": "哈三1",
+          "ref_big5": "哈三1",
+          "ref_en": "Hab. 3:1",
+          "text_gb": "申言者哈巴谷的祷告，调用流[Fn1]离歌。",
+          "text_big5": "申言者哈巴谷的禱告，調用流[Fn1]離歌。",
+          "text_en": "A prayer of Habakkuk the prophet in shigionoth.",
+          "text_gb_plain": "申言者哈巴谷的祷告，调用流离歌。",
+          "text_big5_plain": "申言者哈巴谷的禱告，調用流離歌。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 13,
+              "zh": "本辞意义不明确，但显然是指音乐的形式或节拍(参诗七标题)。",
+              "zh_big5": "本辭意義不明確，但顯然是指音樂的形式或節拍。（參詩七標題。）",
+              "en": "3:1 1 shigionoth The meaning of the term is obscure, but the term apparently denotes a musical form or tempo (cf. Psa. 7, title)."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 2,
+          "ref_gb": "哈三2",
+          "ref_big5": "哈三2",
+          "ref_en": "Hab. 3:2",
+          "text_gb": "耶和华啊，我听见你的名声，就惧怕。耶和华啊，求你在这些年间复[Fn1][Cra]兴你的工作，在这些年间使你的工作显明出来，在发怒的时候以怜恤为念。",
+          "text_big5": "耶和華阿，我聽見你的名聲，就懼怕。耶和華阿，求你在這些年間復[Fn1][Cra]興你的工作，在這些年間使你的工作顯明出來，在發怒的時候以憐恤為念。",
+          "text_en": "O Jehovah, I have heard the report concerning You and am afraid. / O Jehovah, revive Your work / In the midst of the years; / In the midst of the years make it known; / In wrath remember compassion.",
+          "text_gb_plain": "耶和华啊，我听见你的名声，就惧怕。耶和华啊，求你在这些年间复兴你的工作，在这些年间使你的工作显明出来，在发怒的时候以怜恤为念。",
+          "text_big5_plain": "耶和華阿，我聽見你的名聲，就懼怕。耶和華阿，求你在這些年間復興你的工作，在這些年間使你的工作顯明出來，在發怒的時候以憐恤為念。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 30,
+              "zh": "在为复兴祷告的事上，哈巴谷代表神历代所有的选民。在神的选民中间，一直有复兴的渴望。不仅如此，自从人堕落后，一切受造之物里面也都有复兴的渴望(罗八19～23)。亚当的堕落将败坏、奴役和死亡带进一切受造之物中(罗五12)；万物都在朽坏并在败坏的奴役之下。在这奴役下的万物，都渴望得着复兴。 这要得复兴的普遍需要，只有借着基督并在基督里才能满足。惟有这位在第三日复活的基督(林前十五4)，是更新的能力。对全宇宙和全人类来说，基督是第三日的实际(约十一25)。第三日的实际，乃是复活之基督的人位带着复兴的实际。因此，基督是一切受造之物所渴望之复兴的元素。败坏和荒凉只能被基督的复活所吞灭。经历复兴的路，乃是借着悔改以及承认我们的罪、失败和黑暗，而接触基督，因此得以进到祂这复活里面。参何六2与注。",
+              "zh_big5": "在為復興禱告的事上，哈巴谷代表神歷代所有的選民。在神的選民中間，一直有復興的渴望。不僅如此，自從人墮落後，一切受造之物裏面也都有復興的渴望。（羅八19～23。）亞當的墮落將敗壞、奴役、和死亡帶進一切受造之物中；（羅五12；）萬物都在朽壞並在敗壞的奴役之下。在這奴役下的萬物，都渴望得著復興。ˍ這要得復興的普遍需要，只有藉著基督並在基督裏纔能滿足。惟有這位在第三日復活的基督，（林前十五4，）是更新的能力。對全宇宙和全人類來說，基督是第三日的實際。（約十一25。）第三日的實際，乃是復活之基督的人位帶著復興的實際。因此，基督是一切受造之物所渴望之復興的元素。敗壞和荒涼只能被基督的復活所吞滅。經歷復興的路，乃是藉著悔改以及承認我們的罪、失敗和黑暗，而接觸基督，因此得以進到祂這復活裏面。參何六2與註。",
+              "en": "3:2 1 revive In his prayer for revival, Habakkuk represents all God's elect throughout the generations. Among God's elect there has always been an aspiration to be revived. Moreover, since the fall of man there has been in all creation an aspiration for revival (Rom. 8:19-23). Adam's fall brought corruption, slavery, and death into the whole creation (Rom. 5:12); everything is decaying and is under the slavery of corruption. All the things that are under this slavery aspire to be revived. The universal need for revival, for restoration, can be met only by Christ and in Christ. Only Christ, who was resurrected on the third day (1 Cor. 15:4), is the renewing power. For the whole universe and for all mankind, Christ is the reality of the third day (John 11:25). The reality of the third day is the person of the resurrected Christ with the reality of revival. Christ, therefore, is the element of the revival for which all creation aspires. The corruption and desolation can be swallowed up only by Christ's resurrection. The way to experience revival is to contact Christ by repenting and confessing our sins, failures, and darkness, thereby entering into Him as the resurrection. Cf. Hosea 6:2 and note Hosea 6:2 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 30,
+              "raw": "诗八十18，八五6",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 80,
+                  "verse": 18,
+                  "ref_gb": "诗八○18",
+                  "ref_big5": "詩八○18",
+                  "ref_en": "Psa. 80:18",
+                  "text_gb": "这样，我们便不退后离开你；求你救活我们，我们就要呼求你的名。",
+                  "text_big5": "這樣，我們便不退後離開你；求你救活我們，我們就要呼求你的名。",
+                  "text_en": "Then we will not turn back from You. / Revive us, and we will call upon Your name."
+                },
+                {
+                  "book": 19,
+                  "chapter": 85,
+                  "verse": 6,
+                  "ref_gb": "诗八五6",
+                  "ref_big5": "詩八五6",
+                  "ref_en": "Psa. 85:6",
+                  "text_gb": "你不再将我们救活，使你的百姓因你喜乐么？",
+                  "text_big5": "你不再將我們救活，使你的百姓因你喜樂麼？",
+                  "text_en": "Will You not again revive us, / That Your people may rejoice in You?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 3,
+          "ref_gb": "哈三3",
+          "ref_big5": "哈三3",
+          "ref_en": "Hab. 3:3",
+          "text_gb": "神从提幔而来，圣[Cra]者从巴兰山临到。〔细[Fn1]拉〕祂的荣美遮蔽诸天，地上充满对祂的赞美。",
+          "text_big5": "神從提幔而來，聖[Cra]者從巴蘭山臨到。〔細[Fn1]拉〕祂的榮美遮蔽諸天，地上充滿對祂的讚美。",
+          "text_en": "God comes from Teman, / Even the Holy One from Mount Paran. Selah. / His splendor covers the heavens, / And the earth is filled with His praise.",
+          "text_gb_plain": "神从提幔而来，圣者从巴兰山临到。〔细拉〕祂的荣美遮蔽诸天，地上充满对祂的赞美。",
+          "text_big5_plain": "神從提幔而來，聖者從巴蘭山臨到。〔細拉〕祂的榮美遮蔽諸天，地上充滿對祂的讚美。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 18,
+              "zh": "见诗三2注2。",
+              "zh_big5": "見詩三2註2。",
+              "en": "3:3 1 Selah See note Psa. 3:2 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "申三三2，士五4，诗六八7",
+              "refs": [
+                {
+                  "book": 5,
+                  "chapter": 33,
+                  "verse": 2,
+                  "ref_gb": "申三三2",
+                  "ref_big5": "申三三2",
+                  "ref_en": "Deut. 33:2",
+                  "text_gb": "他说，耶和华从西乃而来，从西珥向他们如晨光显现，从巴兰山发出光辉，从千万圣者中来临，从祂右手为百姓传出烈火的律法。",
+                  "text_big5": "他說，耶和華從西乃而來，從西珥向他們如晨光顯現，從巴蘭山發出光輝，從千萬聖者中來臨，從祂右手為百姓傳出烈火的律法。",
+                  "text_en": "And he said, Jehovah came from Sinai, / And He dawned upon them from Seir; / He shined forth from Mount Paran, / And He approached from the myriads of holy ones; / From His right hand a fiery law went out to them."
+                },
+                {
+                  "book": 7,
+                  "chapter": 5,
+                  "verse": 4,
+                  "ref_gb": "士五4",
+                  "ref_big5": "士五4",
+                  "ref_en": "Judg. 5:4",
+                  "text_gb": "耶和华啊，你从西珥出来，由以东田间行走；那时地震天漏，云也落雨。",
+                  "text_big5": "耶和華阿，你從西珥出來，由以東田間行走；那時地震天漏，雲也落雨。",
+                  "text_en": "O Jehovah, when You went forth from Seir, / When You marched from the field of Edom, / The earth trembled, the heavens also dripped, / Indeed the clouds dripped water."
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 7,
+                  "ref_gb": "诗六八7",
+                  "ref_big5": "詩六八7",
+                  "ref_en": "Psa. 68:7",
+                  "text_gb": "神啊，你曾在你百姓前头出来，在荒野行走，〔细拉〕",
+                  "text_big5": "神阿，你曾在你百姓前頭出來，在荒野行走，〔細拉〕",
+                  "text_en": "O God, when You went forth before Your people, / When You marched through the desert, Selah. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 4,
+          "ref_gb": "哈三4",
+          "ref_big5": "哈三4",
+          "ref_en": "Hab. 3:4",
+          "text_gb": "祂的辉煌如光：从祂手里射出光线，在其中藏着祂的能力。",
+          "text_big5": "祂的輝煌如光：從祂手裏射出光線，在其中藏著祂的能力。",
+          "text_en": "And His brightness is like the light: / Rays come forth from His hand, / And the hiding of His power is there.",
+          "text_gb_plain": "祂的辉煌如光：从祂手里射出光线，在其中藏着祂的能力。",
+          "text_big5_plain": "祂的輝煌如光：從祂手裏射出光線，在其中藏著祂的能力。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 5,
+          "ref_gb": "哈三5",
+          "ref_big5": "哈三5",
+          "ref_en": "Hab. 3:5",
+          "text_gb": "在祂前面有瘟疫流行，在祂脚下有电[Cra]光发出。",
+          "text_big5": "在祂前面有瘟疫流行，在祂腳下有電[Cra]光發出。",
+          "text_en": "Before Him goes pestilence, / And the fire bolt comes forth at His feet.",
+          "text_gb_plain": "在祂前面有瘟疫流行，在祂脚下有电光发出。",
+          "text_big5_plain": "在祂前面有瘟疫流行，在祂腳下有電光發出。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "诗十八8",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 18,
+                  "verse": 8,
+                  "ref_gb": "诗十八8",
+                  "ref_big5": "詩十八8",
+                  "ref_en": "Psa. 18:8",
+                  "text_gb": "从祂鼻孔冒烟上腾，从祂口中发火焚烧；连炭也烧着了。",
+                  "text_big5": "從祂鼻孔冒煙上騰，從祂口中發火焚燒；連炭也燒著了。",
+                  "text_en": "Smoke went up from His nostrils, / And fire from His mouth devoured; / Coals blazed forth from Him."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 6,
+          "ref_gb": "哈三6",
+          "ref_big5": "哈三6",
+          "ref_en": "Hab. 3:6",
+          "text_gb": "祂站立，量[Fn1]了大地；祂观看，惊散万民；永久的山岭崩[Cra]裂，长存的冈陵塌陷；祂所行的永远不变。",
+          "text_big5": "祂站立，量[Fn1]了大地；祂觀看，驚散萬民；永久的山嶺崩[Cra]裂，長存的岡陵塌陷；祂所行的永遠不變。",
+          "text_en": "He stands and measures the earth; / He looks and startles the nations; / And the ancient mountains are shattered into dust, / And the everlasting hills sink down; / His goings are eternal.",
+          "text_gb_plain": "祂站立，量了大地；祂观看，惊散万民；永久的山岭崩裂，长存的冈陵塌陷；祂所行的永远不变。",
+          "text_big5_plain": "祂站立，量了大地；祂觀看，驚散萬民；永久的山嶺崩裂，長存的岡陵塌陷；祂所行的永遠不變。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "或(如七十士希腊文译本者)，摇动。",
+              "zh_big5": "或（如七十士希臘文譯本者，）搖動。",
+              "en": "3:6 1 measures Or (as the Septuagint translates), shakes."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 24,
+              "raw": "鸿一5",
+              "refs": [
+                {
+                  "book": 34,
+                  "chapter": 1,
+                  "verse": 5,
+                  "ref_gb": "鸿一5",
+                  "ref_big5": "鴻一5",
+                  "ref_en": "Nah. 1:5",
+                  "text_gb": "大山因祂震动，小山也都熔化；大地在祂面前突起，世界和住在其间的也都如此。",
+                  "text_big5": "大山因祂震動，小山也都鎔化；大地在祂面前突起，世界和住在其間的也都如此。",
+                  "text_en": "The mountains quake because of Him, / And the hills melt, / And the earth is heaved up at His presence, / Indeed the world, and all that inhabit it."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 7,
+          "ref_gb": "哈三7",
+          "ref_big5": "哈三7",
+          "ref_en": "Hab. 3:7",
+          "text_gb": "我见古[Fn1]珊的帐棚遭难，米甸地的幔子战兢。",
+          "text_big5": "我見古[Fn1]珊的帳棚遭難，米甸地的幔子戰兢。",
+          "text_en": "I see the tents of Cushan / Under affliction; / The tent curtains of the land of Midian tremble.",
+          "text_gb_plain": "我见古珊的帐棚遭难，米甸地的幔子战兢。",
+          "text_big5_plain": "我見古珊的帳棚遭難，米甸地的幔子戰兢。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "即埃提阿伯(衣索匹亚。)",
+              "zh_big5": "即埃提阿伯（衣索匹亞。）",
+              "en": "3:7 1 Cushan I.e., Ethiopia."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 8,
+          "ref_gb": "哈三8",
+          "ref_big5": "哈三8",
+          "ref_en": "Hab. 3:8",
+          "text_gb": "耶和华啊，你乘[Cra]在马上，坐在拯救的战车上，岂是向江河，向江河发怒，向洋海泄愤么？",
+          "text_big5": "耶和華阿，你乘[Cra]在馬上，坐在拯救的戰車上，豈是向江河，向江河發怒，向洋海洩憤麼？",
+          "text_en": "Is it against the rivers, O Jehovah, / Against the rivers that Your anger is kindled? / Is Your overflowing wrath against the sea / That You ride upon Your horses, / Upon Your chariots of salvation?",
+          "text_gb_plain": "耶和华啊，你乘在马上，坐在拯救的战车上，岂是向江河，向江河发怒，向洋海泄愤么？",
+          "text_big5_plain": "耶和華阿，你乘在馬上，坐在拯救的戰車上，豈是向江河，向江河發怒，向洋海洩憤麼？",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "哈三15，申三三26，27，诗六八4，启六2",
+              "refs": [
+                {
+                  "book": 35,
+                  "chapter": 3,
+                  "verse": 15,
+                  "ref_gb": "哈三15",
+                  "ref_big5": "哈三15",
+                  "ref_en": "Hab. 3:15",
+                  "text_gb": "你乘马践踏海，践踏汹涌的大水。",
+                  "text_big5": "你乘馬踐踏海，踐踏洶湧的大水。",
+                  "text_en": "You tread the sea with Your horses, / The heap of mighty waters."
+                },
+                {
+                  "book": 5,
+                  "chapter": 33,
+                  "verse": 26,
+                  "ref_gb": "申三三26",
+                  "ref_big5": "申三三26",
+                  "ref_en": "Deut. 33:26",
+                  "text_gb": "没有谁像耶书仑的神，祂驾行诸天，作你的帮助；横越穹苍，显祂的威荣。",
+                  "text_big5": "沒有誰像耶書崙的神，祂駕行諸天，作你的幫助；橫越穹蒼，顯祂的威榮。",
+                  "text_en": "There is no one like the God of Jeshurun, / Who rides through the heavens as your help / And in His majesty through the skies."
+                },
+                {
+                  "book": 5,
+                  "chapter": 33,
+                  "verse": 27,
+                  "ref_gb": "申三三27",
+                  "ref_big5": "申三三27",
+                  "ref_en": "Deut. 33:27",
+                  "text_gb": "亘古的神是你的居所；祂永远的膀臂在你以下。祂在你前面撵出仇敌，说，毁灭吧！",
+                  "text_big5": "亙古的神是你的居所；祂永遠的膀臂在你以下。祂在你前面攆出仇敵，說，毀滅罷！",
+                  "text_en": "The God of old is your habitation, / And underneath are eternal arms. / And He drove out the enemy before you / And said, Destroy!"
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 4,
+                  "ref_gb": "诗六八4",
+                  "ref_big5": "詩六八4",
+                  "ref_en": "Psa. 68:4",
+                  "text_gb": "你们当向神唱诗，歌颂祂的名；要因那坐车行过荒野的人夸胜，祂的名是耶和华；要在祂面前欢乐。",
+                  "text_big5": "你們當向神唱詩，歌頌祂的名；要因那坐車行過荒野的人誇勝，祂的名是耶和華；要在祂面前歡樂。",
+                  "text_en": "Sing to God; sing psalms to His name; / Triumph in Him who rides through the deserts - / For Jah is His name - and exult before Him."
+                },
+                {
+                  "book": 66,
+                  "chapter": 6,
+                  "verse": 2,
+                  "ref_gb": "启六2",
+                  "ref_big5": "啟六2",
+                  "ref_en": "Rev. 6:2",
+                  "text_gb": "我就观看，看哪，有一匹白马，骑在马上的拿着弓，并有冠冕赐给他，他便出去，胜了又要胜。",
+                  "text_big5": "我就觀看，看哪，有一匹白馬，騎在馬上的拿著弓，並有冠冕賜給他，他便出去，勝了又要勝。",
+                  "text_en": "And I saw, and behold, a white horse, and he who sits on it had a bow; and a crown was given to him, and he went forth conquering and to conquer."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 9,
+          "ref_gb": "哈三9",
+          "ref_big5": "哈三9",
+          "ref_en": "Hab. 3:9",
+          "text_gb": "你的弓全然显露，你按你的话起誓，伸出管教的杖。〔细拉〕你以江河分开大地。",
+          "text_big5": "你的弓全然顯露，你按你的話起誓，伸出管教的杖。〔細拉〕你以江河分開大地。",
+          "text_en": "Your bow is bared utterly; / The rods of discipline are sworn according to Your word. Selah. / You cleave the earth with rivers.",
+          "text_gb_plain": "你的弓全然显露，你按你的话起誓，伸出管教的杖。〔细拉〕你以江河分开大地。",
+          "text_big5_plain": "你的弓全然顯露，你按你的話起誓，伸出管教的杖。〔細拉〕你以江河分開大地。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 10,
+          "ref_gb": "哈三10",
+          "ref_big5": "哈三10",
+          "ref_en": "Hab. 3:10",
+          "text_gb": "山岭见你，无[Cra]不战惧；大水泛滥过去，深渊发声，汹[Fn1]涌翻腾。",
+          "text_big5": "山嶺見你，無[Cra]不戰懼；大水氾濫過去，深淵發聲，洶[Fn1]湧翻騰。",
+          "text_en": "The mountains see You; they writhe; / The tempest of water passes by; / The deep utters its voice, / It lifts its hands high.",
+          "text_gb_plain": "山岭见你，无不战惧；大水泛滥过去，深渊发声，汹涌翻腾。",
+          "text_big5_plain": "山嶺見你，無不戰懼；大水氾濫過去，深淵發聲，洶湧翻騰。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 23,
+              "zh": "直译，高举其手。",
+              "zh_big5": "直譯，高舉其手。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "出十九16，18，士五4，5，诗六八8，七七18",
+              "refs": [
+                {
+                  "book": 2,
+                  "chapter": 19,
+                  "verse": 16,
+                  "ref_gb": "出十九16",
+                  "ref_big5": "出十九16",
+                  "ref_en": "Exo. 19:16",
+                  "text_gb": "到第三天早晨，在山上有雷轰、闪电和密云，并且角声甚大，营中的百姓尽都战抖。",
+                  "text_big5": "到第三天早晨，在山上有雷轟、閃電和密雲，並且角聲甚大，營中的百姓盡都戰抖。",
+                  "text_en": "And on the third day, when it was morning, there was thunder and lightning, and a thick cloud upon the mountain, and a very loud trumpet sound; and all the people who were in the camp trembled."
+                },
+                {
+                  "book": 2,
+                  "chapter": 19,
+                  "verse": 18,
+                  "ref_gb": "出十九18",
+                  "ref_big5": "出十九18",
+                  "ref_en": "Exo. 19:18",
+                  "text_gb": "西乃全山冒烟，因为耶和华在火中降在山上。山的烟气上腾，如同烧窑的烟气一般；遍山大大地震动。",
+                  "text_big5": "西乃全山冒煙，因為耶和華在火中降在山上。山的煙氣上騰，如同燒窯的煙氣一般；遍山大大的震動。",
+                  "text_en": "Now the whole of Mount Sinai smoked because Jehovah descended upon it in fire, and its smoke ascended like the smoke of a furnace; and the whole mountain shook greatly."
+                },
+                {
+                  "book": 7,
+                  "chapter": 5,
+                  "verse": 4,
+                  "ref_gb": "士五4",
+                  "ref_big5": "士五4",
+                  "ref_en": "Judg. 5:4",
+                  "text_gb": "耶和华啊，你从西珥出来，由以东田间行走；那时地震天漏，云也落雨。",
+                  "text_big5": "耶和華阿，你從西珥出來，由以東田間行走；那時地震天漏，雲也落雨。",
+                  "text_en": "O Jehovah, when You went forth from Seir, / When You marched from the field of Edom, / The earth trembled, the heavens also dripped, / Indeed the clouds dripped water."
+                },
+                {
+                  "book": 7,
+                  "chapter": 5,
+                  "verse": 5,
+                  "ref_gb": "士五5",
+                  "ref_big5": "士五5",
+                  "ref_en": "Judg. 5:5",
+                  "text_gb": "诸山见耶和华的面就震动，这西乃山见耶和华以色列神的面也是如此。",
+                  "text_big5": "諸山見耶和華的面就震動，這西乃山見耶和華以色列神的面也是如此。",
+                  "text_en": "The mountains quaked at the presence of Jehovah, / Sinai there, at the presence of Jehovah the God of Israel."
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 8,
+                  "ref_gb": "诗六八8",
+                  "ref_big5": "詩六八8",
+                  "ref_en": "Psa. 68:8",
+                  "text_gb": "那时地见神的面就震动，天也落雨；西乃山见了以色列神的面也震动。",
+                  "text_big5": "那時地見神的面就震動，天也落雨；西乃山見了以色列神的面也震動。",
+                  "text_en": "The earth trembled, the heavens also dripped, / At the presence of God; / Sinai there quaked / At the presence of God, the God of Israel."
+                },
+                {
+                  "book": 19,
+                  "chapter": 77,
+                  "verse": 18,
+                  "ref_gb": "诗七七18",
+                  "ref_big5": "詩七七18",
+                  "ref_en": "Psa. 77:18",
+                  "text_gb": "你的雷声在旋风中；闪电照亮世界；大地战抖震动。",
+                  "text_big5": "你的雷聲在旋風中；閃電照亮世界；大地戰抖震動。",
+                  "text_en": "The sound of Your thunder was in the whirlwind; / Lightning illuminated the world; / The earth trembled and quaked."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 11,
+          "ref_gb": "哈三11",
+          "ref_big5": "哈三11",
+          "ref_en": "Hab. 3:11",
+          "text_gb": "因你的箭射出发光，你的枪闪出光耀，日月都在居高的本位停[Cra]住。",
+          "text_big5": "因你的箭射出發光，你的槍閃出光耀，日月都在居高的本位停[Cra]住。",
+          "text_en": "The sun and the moon stand still in their high abode / At the light of Your arrows going forth, / At the brightness of Your glittering spear.",
+          "text_gb_plain": "因你的箭射出发光，你的枪闪出光耀，日月都在居高的本位停住。",
+          "text_big5_plain": "因你的箭射出發光，你的槍閃出光耀，日月都在居高的本位停住。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 27,
+              "raw": "书十12，13",
+              "refs": [
+                {
+                  "book": 6,
+                  "chapter": 10,
+                  "verse": 12,
+                  "ref_gb": "书十12",
+                  "ref_big5": "書十12",
+                  "ref_en": "Josh. 10:12",
+                  "text_gb": "当耶和华将亚摩利人交付以色列人的日子，约书亚向耶和华祷告，在以色列人眼前说，日头啊，你要停在基遍；月亮啊，你要止在亚雅仑谷。",
+                  "text_big5": "當耶和華將亞摩利人交付以色列人的日子，約書亞向耶和華禱告，在以色列人眼前說，日頭阿，你要停在基遍；月亮阿，你要止在亞雅崙谷。",
+                  "text_en": "Then Joshua spoke to Jehovah on the day when Jehovah delivered up the Amorites before the children of Israel; and he said in the sight of Israel, Sun, be still over Gibeon; / And you, Moon, over the valley of Aijalon!"
+                },
+                {
+                  "book": 6,
+                  "chapter": 10,
+                  "verse": 13,
+                  "ref_gb": "书十13",
+                  "ref_big5": "書十13",
+                  "ref_en": "Josh. 10:13",
+                  "text_gb": "于是日头停留，月亮止住，直等国民向敌人报了仇。这事岂不是写在雅煞珥书上么？日头在天当中停住，不急速下落，约有一整日。",
+                  "text_big5": "於是日頭停留，月亮止住，直等國民向敵人報了仇。這事豈不是寫在雅煞珥書上麼？日頭在天當中停住，不急速下落，約有一整日。",
+                  "text_en": "And the sun was still, / And the moon stayed, / Until the nation avenged themselves of their enemies. Is it not written in the book of Jashar? And the sun stayed in the middle of the heavens, and it did not hurry to set for about a whole day."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 12,
+          "ref_gb": "哈三12",
+          "ref_big5": "哈三12",
+          "ref_en": "Hab. 3:12",
+          "text_gb": "你在恼恨中通行大地，在怒气里踹[Cra]踏列国。",
+          "text_big5": "你在惱恨中通行大地，在怒氣裏踹[Cra]踏列國。",
+          "text_en": "In wrath You march through the earth, / In anger You thresh the nations.",
+          "text_gb_plain": "你在恼恨中通行大地，在怒气里踹踏列国。",
+          "text_big5_plain": "你在惱恨中通行大地，在怒氣裏踹踏列國。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "耶五一33，摩一3，弥四13",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 51,
+                  "verse": 33,
+                  "ref_gb": "耶五一33",
+                  "ref_big5": "耶五一33",
+                  "ref_en": "Jer. 51:33",
+                  "text_gb": "因为万军之耶和华以色列的神如此说，巴比伦的女子好像踹谷时的禾场，再过片时，她被收割的时候就到了。",
+                  "text_big5": "因為萬軍之耶和華以色列的神如此說，巴比倫的女子好像踹穀時的禾場，再過片時，她被收割的時候就到了。",
+                  "text_en": "For thus says Jehovah of hosts, the God of Israel, / The daughter of Babylon is like a threshing floor / At the time when it is trodden; / Yet a little while and the time of harvest will come to her."
+                },
+                {
+                  "book": 30,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "摩一3",
+                  "ref_big5": "摩一3",
+                  "ref_en": "Amos 1:3",
+                  "text_gb": "耶和华如此说，因大马色三番四次地犯罪，我必不免去他们的刑罚；因为他们以打粮食的尖利铁器打过基列。",
+                  "text_big5": "耶和華如此說，因大馬色三番四次的犯罪，我必不免去他們的刑罰；因為他們以打糧食的尖利鐵器打過基列。",
+                  "text_en": "Thus says Jehovah, Because of three transgressions of Damascus, / Indeed, because of four, I will not turn away the punishment; / Because they have threshed Gilead / With sharp threshing tools of iron."
+                },
+                {
+                  "book": 33,
+                  "chapter": 4,
+                  "verse": 13,
+                  "ref_gb": "弥四13",
+                  "ref_big5": "彌四13",
+                  "ref_en": "Mic. 4:13",
+                  "text_gb": "锡安的女子啊，起来踹谷吧；我必使你的角成为铁，使你的蹄成为铜。你必将多族打得粉碎；我必将他们的财利献与耶和华，将他们的赀财献与全地的主。",
+                  "text_big5": "錫安的女子阿，起來踹穀罷；我必使你的角成為鐵，使你的蹄成為銅。你必將多族打得粉碎；我必將他們的財利獻與耶和華，將他們的貲財獻與全地的主。",
+                  "text_en": "Arise and thresh, O daughter of Zion; / For I will make your horn iron, / And I will make your hooves bronze; / And you will crush many peoples to powder. / And I will devote their profit to Jehovah, / And their substance to the Lord of the whole earth. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 13,
+          "ref_gb": "哈三13",
+          "ref_big5": "哈三13",
+          "ref_en": "Hab. 3:13",
+          "text_gb": "你出来要拯[Cra]救你的百姓，拯救你的受膏者，打破恶人家长的头，露出他的脚[Fn1]，直到颈项。〔细拉〕",
+          "text_big5": "你出來要拯[Cra]救你的百姓，拯救你的受膏者，打破惡人家長的頭，露出他的腳[Fn1]，直到頸項。〔細拉〕",
+          "text_en": "You go forth for the salvation of Your people, / For the salvation of Your anointed one, / You strike the head from the house of the wicked one, / Laying bare the foundation, even to the neck. Selah.",
+          "text_gb_plain": "你出来要拯救你的百姓，拯救你的受膏者，打破恶人家长的头，露出他的脚，直到颈项。〔细拉〕",
+          "text_big5_plain": "你出來要拯救你的百姓，拯救你的受膏者，打破惡人家長的頭，露出他的腳，直到頸項。〔細拉〕",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 33,
+              "zh": "直译，根基。",
+              "zh_big5": "直譯，根基。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "诗六八19～22",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 19,
+                  "ref_gb": "诗六八19",
+                  "ref_big5": "詩六八19",
+                  "ref_en": "Psa. 68:19",
+                  "text_gb": "天天加给我们美福的主，就是拯救我们的神，是当受颂赞的。〔细拉〕",
+                  "text_big5": "天天加給我們美福的主，就是拯救我們的神，是當受頌讚的。〔細拉〕",
+                  "text_en": "Blessed be the Lord, who day by day loads us with good; / God is our salvation. Selah."
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 20,
+                  "ref_gb": "诗六八20",
+                  "ref_big5": "詩六八20",
+                  "ref_en": "Psa. 68:20",
+                  "text_gb": "神是为我们施行拯救的神；人能脱离死亡，是在于主耶和华。",
+                  "text_big5": "神是為我們施行拯救的神；人能脫離死亡，是在於主耶和華。",
+                  "text_en": "God is to us / A God of deliverance, / And with Jehovah the Lord / Are the goings forth even from death."
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 21,
+                  "ref_gb": "诗六八21",
+                  "ref_big5": "詩六八21",
+                  "ref_en": "Psa. 68:21",
+                  "text_gb": "神要打破祂仇敌的头，就是那在自己罪过中往来之人的发顶。",
+                  "text_big5": "神要打破祂仇敵的頭，就是那在自己罪過中往來之人的髮頂。",
+                  "text_en": "Indeed God will smash / The head of His enemies, / The hairy crown / Of him who goes about in his guiltiness."
+                },
+                {
+                  "book": 19,
+                  "chapter": 68,
+                  "verse": 22,
+                  "ref_gb": "诗六八22",
+                  "ref_big5": "詩六八22",
+                  "ref_en": "Psa. 68:22",
+                  "text_gb": "主说，我要使他们从巴珊归来，使他们从深海返回；",
+                  "text_big5": "主說，我要使他們從巴珊歸來，使他們從深海返回；",
+                  "text_en": "The Lord said, I will bring them again from Bashan; / I will bring them again from the depths of the sea, "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 14,
+          "ref_gb": "哈三14",
+          "ref_big5": "哈三14",
+          "ref_en": "Hab. 3:14",
+          "text_gb": "你用敌人的戈矛，刺透他战士的头。他们来如旋风，要将我们分散；他们因暗中吞吃贫民而欢乐。",
+          "text_big5": "你用敵人的戈矛，刺透他戰士的頭。他們來如旋風，要將我們分散；他們因暗中吞喫貧民而歡樂。",
+          "text_en": "You pierce, with his own staves, / The heads of his warriors. / They come out like a whirlwind to scatter me; / Their exultation is as if to devour the poor in secret.",
+          "text_gb_plain": "你用敌人的戈矛，刺透他战士的头。他们来如旋风，要将我们分散；他们因暗中吞吃贫民而欢乐。",
+          "text_big5_plain": "你用敵人的戈矛，刺透他戰士的頭。他們來如旋風，要將我們分散；他們因暗中吞喫貧民而歡樂。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 15,
+          "ref_gb": "哈三15",
+          "ref_big5": "哈三15",
+          "ref_en": "Hab. 3:15",
+          "text_gb": "你乘马践踏海，践踏汹[Fn1]涌的大水。",
+          "text_big5": "你乘馬踐踏海，踐踏洶[Fn1]湧的大水。",
+          "text_en": "You tread the sea with Your horses, / The heap of mighty waters.",
+          "text_gb_plain": "你乘马践踏海，践踏汹涌的大水。",
+          "text_big5_plain": "你乘馬踐踏海，踐踏洶湧的大水。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "直译，堆聚的。",
+              "zh_big5": "直譯，堆聚的。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 16,
+          "ref_gb": "哈三16",
+          "ref_big5": "哈三16",
+          "ref_en": "Hab. 3:16",
+          "text_gb": "我一听见，身体就战兢；因这声音，我的嘴唇发颤。我的骨中朽烂，我在所立之处战兢，因我必须安静等候急难的日子临到，进攻的人[Fn1]上来攻击百姓。",
+          "text_big5": "我一聽見，身體就戰兢；因這聲音，我的嘴脣發顫。我的骨中朽爛，我在所立之處戰兢，因我必須安靜等候急難的日子臨到，進攻的人[Fn1]上來攻擊百姓。",
+          "text_en": "I heard and my body trembled; / My lips quivered at the sound. / Rottenness entered my bones, / And I tremble in my place, / Because I must wait quietly for the day of distress, / When he who attacks comes up against the people.",
+          "text_gb_plain": "我一听见，身体就战兢；因这声音，我的嘴唇发颤。我的骨中朽烂，我在所立之处战兢，因我必须安静等候急难的日子临到，进攻的人上来攻击百姓。",
+          "text_big5_plain": "我一聽見，身體就戰兢；因這聲音，我的嘴脣發顫。我的骨中朽爛，我在所立之處戰兢，因我必須安靜等候急難的日子臨到，進攻的人上來攻擊百姓。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 59,
+              "zh": "指迦勒底人。",
+              "zh_big5": "指迦勒底人。",
+              "en": "3:16 1 he Referring to the Chaldeans."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 17,
+          "ref_gb": "哈三17",
+          "ref_big5": "哈三17",
+          "ref_en": "Hab. 3:17",
+          "text_gb": "虽然无花果树不发旺，葡萄树不结果，橄榄树也不效力，田地不出粮食，圈中绝了羊，棚内也没有牛；",
+          "text_big5": "雖然無花果樹不發旺，葡萄樹不結果，橄欖樹也不效力，田地不出糧食，圈中絕了羊，棚內也沒有牛；",
+          "text_en": "For the fig tree will not sprout, / And there will be no yield on the vines; / The labor on the olive tree will fail, / And the fields will make no food; / The flock will be cut off from the fold, / And there will be no herd in the stalls.",
+          "text_gb_plain": "虽然无花果树不发旺，葡萄树不结果，橄榄树也不效力，田地不出粮食，圈中绝了羊，棚内也没有牛；",
+          "text_big5_plain": "雖然無花果樹不發旺，葡萄樹不結果，橄欖樹也不效力，田地不出糧食，圈中絕了羊，棚內也沒有牛；",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 18,
+          "ref_gb": "哈三18",
+          "ref_big5": "哈三18",
+          "ref_en": "Hab. 3:18",
+          "text_gb": "然而我要因耶和华欢[Cra]欣，因救我的神喜乐。",
+          "text_big5": "然而我要因耶和華歡[Cra]欣，因救我的神喜樂。",
+          "text_en": "Yet I will exult in Jehovah; / I will rejoice in the God of my salvation.",
+          "text_gb_plain": "然而我要因耶和华欢欣，因救我的神喜乐。",
+          "text_big5_plain": "然而我要因耶和華歡欣，因救我的神喜樂。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "赛四一16，六一10，路一47",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 41,
+                  "verse": 16,
+                  "ref_gb": "赛四一16",
+                  "ref_big5": "賽四一16",
+                  "ref_en": "Isa. 41:16",
+                  "text_gb": "你要把这些簸扬，风要卷去，旋风要刮散。你倒要因耶和华欢乐，以以色列的圣者为夸耀。",
+                  "text_big5": "你要把這些簸揚，風要捲去，旋風要颳散。你倒要因耶和華歡樂，以以色列的聖者為誇耀。",
+                  "text_en": "You shall winnow them, and the wind will carry them away / And the storm wind will scatter them. / And you will rejoice in Jehovah, / You will glory in the Holy One of Israel."
+                },
+                {
+                  "book": 23,
+                  "chapter": 61,
+                  "verse": 10,
+                  "ref_gb": "赛六一10",
+                  "ref_big5": "賽六一10",
+                  "ref_en": "Isa. 61:10",
+                  "text_gb": "我必因耶和华大大欢喜，我的魂必因我的神欢腾；因祂以拯救为衣给我穿上，以公义为袍给我披上，好像新郎戴上祭司的华冠，又像新妇佩戴她的饰物。",
+                  "text_big5": "我必因耶和華大大歡喜，我的魂必因我的神歡騰；因祂以拯救為衣給我穿上，以公義為袍給我披上，好像新郎戴上祭司的華冠，又像新婦佩戴她的飾物。",
+                  "text_en": "I will rejoice greatly in Jehovah, / My soul will exult in my God; / For He has clothed me with the garments of salvation, / He has wrapped me with the robe of righteousness; / I am like a bridegroom who wears the headdress of the priest, / And like a bride who adorns herself with her jewels."
+                },
+                {
+                  "book": 42,
+                  "chapter": 1,
+                  "verse": 47,
+                  "ref_gb": "路一47",
+                  "ref_big5": "路一47",
+                  "ref_en": "Luke 1:47",
+                  "text_gb": "我灵曾以神我的救主为乐，",
+                  "text_big5": "我靈曾以神我的救主為樂，",
+                  "text_en": "And my spirit has exulted in God my Savior;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 35,
+          "chapter": 3,
+          "verse": 19,
+          "ref_gb": "哈三19",
+          "ref_big5": "哈三19",
+          "ref_en": "Hab. 3:19",
+          "text_gb": "主耶和华是我的力[Cra]量；祂使我的脚快如母[Crb]鹿的蹄，又使我稳行在高[Crc]处。这歌交与歌咏长，用丝[Fn1]弦的乐器。",
+          "text_big5": "主耶和華是我的力[Cra]量；祂使我的腳快如母[Crb]鹿的蹄，又使我穩行在高[Crc]處。這歌交與歌詠長，用絲[Fn1]絃的樂器。",
+          "text_en": "Jehovah the Lord is my strength; / And He makes my feet like hinds' feet / And will cause me to walk on my high places. / For the choir director, with my stringed instruments. ",
+          "text_gb_plain": "主耶和华是我的力量；祂使我的脚快如母鹿的蹄，又使我稳行在高处。这歌交与歌咏长，用丝弦的乐器。",
+          "text_big5_plain": "主耶和華是我的力量；祂使我的腳快如母鹿的蹄，又使我穩行在高處。這歌交與歌詠長，用絲絃的樂器。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 41,
+              "zh": "直译，我的丝弦乐器。这或许指明哈巴谷有资格参与殿中的音乐敬拜。他应该是祭司或利未人。",
+              "zh_big5": "直譯，我的絲絃樂器。這或許指明哈巴谷有資格參與殿中的音樂敬拜。他應該是祭司或利未人。",
+              "en": "3:19 1 my Perhaps indicating that Habakkuk was also qualified to participate in the musical temple worship. He might have been a priest or a Levite."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "诗二七1",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 27,
+                  "verse": 1,
+                  "ref_gb": "诗二七1",
+                  "ref_big5": "詩二七1",
+                  "ref_en": "Psa. 27:1",
+                  "text_gb": "耶和华是我的亮光，是我的拯救；我还怕谁呢？耶和华是我生命的力量；我还惧怕谁呢？",
+                  "text_big5": "耶和華是我的亮光，是我的拯救；我還怕誰呢？耶和華是我生命的力量；我還懼怕誰呢？",
+                  "text_en": "Jehovah is my light and my salvation; / Whom shall I fear? / Jehovah is the strength of my life; / Whom shall I dread?"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "撒下二二34，诗十八33，参创四九21",
+              "refs": [
+                {
+                  "book": 10,
+                  "chapter": 22,
+                  "verse": 34,
+                  "ref_gb": "撒下二二34",
+                  "ref_big5": "撒下二二34",
+                  "ref_en": "2 Sam. 22:34",
+                  "text_gb": "祂使我的脚快如母鹿的蹄，又使我在高处站稳；",
+                  "text_big5": "祂使我的腳快如母鹿的蹄，又使我在高處站穩；",
+                  "text_en": "He makes my feet like hinds' feet / And sets me on my high places;"
+                },
+                {
+                  "book": 19,
+                  "chapter": 18,
+                  "verse": 33,
+                  "ref_gb": "诗十八33",
+                  "ref_big5": "詩十八33",
+                  "ref_en": "Psa. 18:33",
+                  "text_gb": "祂使我的脚快如母鹿的蹄，又使我在高处站稳；",
+                  "text_big5": "祂使我的腳快如母鹿的蹄，又使我在高處站穩；",
+                  "text_en": "Who makes my feet like hinds' feet / And sets me on my high places, "
+                },
+                {
+                  "book": 1,
+                  "chapter": 49,
+                  "verse": 21,
+                  "ref_gb": "创四九21",
+                  "ref_big5": "創四九21",
+                  "ref_en": "Gen. 49:21",
+                  "text_gb": "拿弗他利是被释放的母鹿，他出嘉美的言语。",
+                  "text_big5": "拿弗他利是被釋放的母鹿，他出嘉美的言語。",
+                  "text_en": "Naphtali is a hind let loose; / He gives beautiful words."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 29,
+              "raw": "申三二13，三三29",
+              "refs": [
+                {
+                  "book": 5,
+                  "chapter": 32,
+                  "verse": 13,
+                  "ref_gb": "申三二13",
+                  "ref_big5": "申三二13",
+                  "ref_en": "Deut. 32:13",
+                  "text_gb": "耶和华使他乘驾地的高处，得吃田间的出产；又使他从磐石中咂蜜，从坚石中吸油；",
+                  "text_big5": "耶和華使他乘駕地的高處，得喫田間的出產；又使他從磐石中咂蜜，從堅石中吸油；",
+                  "text_en": "He made him ride on the high places of the earth, / And he ate the produce of the field; / And He made him suck honey out of a crag, / And oil out of flint rock:"
+                },
+                {
+                  "book": 5,
+                  "chapter": 33,
+                  "verse": 29,
+                  "ref_gb": "申三三29",
+                  "ref_big5": "申三三29",
+                  "ref_en": "Deut. 33:29",
+                  "text_gb": "以色列啊，你是有福的；谁像你这蒙耶和华拯救的百姓呢？祂是帮助你的盾牌，是使你得威荣的刀剑！你的仇敌必投降你；你必踏在他们的高处。",
+                  "text_big5": "以色列阿，你是有福的；誰像你這蒙耶和華拯救的百姓呢？祂是幫助你的盾牌，是使你得威榮的刀劍！你的仇敵必投降你；你必踏在他們的高處。",
+                  "text_en": "Happy are you, O Israel; who is like you? / A people saved by Jehovah, / The shield of your help / And He who is the sword of your majesty! / So your enemies shall come cringing to you, / And you shall tread upon their high places. "
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

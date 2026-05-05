@@ -1,0 +1,1232 @@
+{
+  "book": 63,
+  "name_gb": "约翰二书",
+  "name_big5": "約翰二書",
+  "name_en": "2 John",
+  "abbr_gb": "约贰",
+  "abbr_big5": "約貳",
+  "abbr_en": "2 John",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "约贰一1",
+          "ref_big5": "約貳一1",
+          "ref_en": "2 John 1:1",
+          "text_gb": "作长[Fn1][Cra]老的写信给蒙拣[Crb]选的夫[Fn2]人和她的儿女，就是我真[Fn3][Crc]实所爱[Crd]的；不单我爱，也是一切认[Fn4]识真[Fn5]理之人所爱的；",
+          "text_big5": "作長[Fn1][Cra]老的寫信給蒙揀[Crb]選的夫[Fn2]人和她的兒女，就是我真[Fn3][Crc]實所愛[Crd]的；不單我愛，也是一切認[Fn4]識真[Fn5]理之人所愛的；",
+          "text_en": "The elder to the chosen lady and to her children, whom I love in truthfulness, and not only I but also all those who know the truth,",
+          "text_gb_plain": "作长老的写信给蒙拣选的夫人和她的儿女，就是我真实所爱的；不单我爱，也是一切认识真理之人所爱的；",
+          "text_big5_plain": "作長老的寫信給蒙揀選的夫人和她的兒女，就是我真實所愛的；不單我愛，也是一切認識真理之人所愛的；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "使徒约翰和彼得一样，也是主后七十年耶路撒冷被毁以前，当地召会的长老(加二9，彼前五1注2)。根据历史，约翰自放逐回来以后，就留在以弗所照顾亚西亚的众召会。因此他也可能是在以弗所的召会的长老，本书信就是他在以弗所写的。",
+              "zh_big5": "使徒約翰和彼得一樣，也是主後七十年耶路撒冷被毀以前，當地召會的長老。（加二9，彼前五1註2。）根據歷史，約翰自放逐回來以後，就留在以弗所照顧亞西亞的眾召會。因此他也可能是在以弗所的召會的長老，本書信就是他在以弗所寫的。",
+              "en": "1:1 1 elder The apostle John, like Peter, was an elder in the church at Jerusalem before its destruction in A.D. 70 (Gal. 2:9, and note 1 Pet. 5:1 3 ). According to history, after returning from his exile, John stayed in Ephesus to care for the churches in Asia. Thus, he was probably also an elder in the church at Ephesus, where he wrote this Epistle."
+            },
+            {
+              "num": 2,
+              "loc": 12,
+              "zh": "希腊文，kuria，可利亚，是kurios，可利欧斯(主，主人)的阴性形式。这字在此有不同的解释，最可取的如下：指召会中一位相当特出的基督徒姊妹，就如彼前五13“同蒙拣选的”所指的。Kuria，可利亚，也许是她的名字，因为当时这是一个普通的名字。有些人说历史告诉我们，她住在以弗所附近，她的姊妹(13)住在以弗所，那里的召会就是由约翰照顾的。在她的所在地，有召会在她家里聚会。",
+              "zh_big5": "希臘文，kuria，可利亞，是kurios，可利歐斯（主，主人）的陰性形式。這字在此有不同的解釋，最可取的如下：指召會中一位相當特出的基督徒姊妹，就如彼前五13“同蒙揀選的”所指的。Kuria，可利亞，也許是她的名字，因為當時這是一個普通的名字。有些人說歷史告訴我們，她住在以弗所附近，她的姊妹（13）住在以弗所，那裏的召會就是由約翰照顧的。在她的所在地，有召會在她家裏聚會。",
+              "en": "1:1 2 lady Gk. kuria, the feminine form of kurios, which means lord, master. There are different interpretations of the word here. The most preferred is as follows: it refers to a Christian sister of some prominence in the church, as does co-chosen in 1 Pet. 5:13. Kuria might have been her name, since it was a common name at that time. Some mention that according to history she lived near Ephesus and that her sister (v. 13) lived in Ephesus, where the church was under John's care. There was a church in her locality, and it met in her home."
+            },
+            {
+              "num": 3,
+              "loc": 23,
+              "zh": "原文与真理同字。照约翰对这辞的用法，特别是照他在福音书里的用法，本辞在此是指启示出来的神圣实际─三一神在子耶稣基督里分赐到人里面─成为人的真实与真诚，使人过一种与神圣之光相符的生活(约三19～21)，并且按着神的所是，照神所寻找的敬拜神(约四23～24)。这就是神的美德(罗三7，十五8)成了我们的美德，借此我们能爱众信徒(见约壹一6注6第七点)。活在三一神圣实际里的使徒约翰，就是在这样的真实中，爱他的受信者。",
+              "zh_big5": "原文與真理同字。照約翰對這辭的用法，特別是照他在福音書裏的用法，本辭在此是指啟示出來的神聖實際─三一神在子耶穌基督裏分賜到人裏面─成為人的真實與真誠，使人過一種與神聖之光相符的生活，（約三19～21，）並且按著神的所是，照神所尋找的敬拜神。（約四23～24。）這就是神的美德（羅三7，十五8）成了我們的美德，藉此我們能愛眾信徒。（見約壹一6註6第七點。）活在三一神聖實際裏的使徒約翰，就是在這樣的真實中，愛他的受信者。",
+              "en": "1:1 3 truthfulness The same as the Greek word for truth. According to John's usage of this word, especially in his Gospel, here it denotes the revealed divine reality — the Triune God dispensed into man in the Son, Jesus Christ — becoming man's genuineness and sincerity, that man may live a life that corresponds with the divine light (John 3:19-21) and worship God, as God seeks, according to what He is (John 4:23-24). This is the virtue of God (Rom. 3:7; 15:8) becoming our virtue, by which we love the believers (see note 1 John 1:6 6 , point 7). In such genuineness the apostle John, who lived in the divine reality of the Trinity, loved the one to whom he wrote."
+            },
+            {
+              "num": 4,
+              "loc": 38,
+              "zh": "指那些不仅因信基督是神而人者接受祂，且认识关于基督身位之真理的人。",
+              "zh_big5": "指那些不僅因信基督是神而人者接受祂，且認識關於基督身位之真理的人。",
+              "en": "1:1 4 those Those who not only have received Christ by believing that He is both God and man but also fully know the truth concerning the person of Christ."
+            },
+            {
+              "num": 5,
+              "loc": 40,
+              "zh": "指福音的神圣实际(见约壹一6注6)，特别是约翰福音和约翰壹书所启示关于基督的身位，就是基督是神而人者，兼有神位和人格，有神圣的性情和人的性情，为要在为人生活中彰显神，并在人的肉体里，用神圣的能力，为堕落的人类完成救赎，使祂可以将神圣的生命分赐到他们里面，且把他们带进与神生机的联结里。约翰贰书与叁书都强调这真理。贰书警告忠信的信徒，不要接待那些不留于这真理(关于基督之教训)中的人。叁书鼓励信徒要接待并帮助那些为这真理作工的人。",
+              "zh_big5": "指福音的神聖實際，（見約壹一6註6，）特別是約翰福音和約翰一書所啟示關於基督的身位，就是基督是神而人者，兼有神位和人格，有神聖的性情和人的性情，為要在為人生活中彰顯神，並在人的肉體裏，用神聖的能力，為墮落的人類完成救贖，使祂可以將神聖的生命分賜到他們裏面，且把他們帶進與神生機的聯結裏。約翰二書與三書都強調這真理。二書警告忠信的信徒，不要接待那些不留於這真理（關於基督之教訓）中的人。三書鼓勵信徒要接待並幫助那些為這真理作工的人。",
+              "en": "1:1 5 truth Denoting the divine reality of the gospel (see note 1 John 1:6 6 ), especially concerning the person of Christ as revealed in John's Gospel and first Epistle, that is, that Christ is both God and man, having both deity and humanity, possessing both the divine nature and the human nature, to express God in human life and to accomplish redemption with divine power in human flesh for fallen human beings that He may impart the divine life into them and bring them into an organic union with God. The second and third Epistles of John stress this truth. The second warns the faithful believers against receiving those who do not abide in this truth — in the teaching concerning Christ. The third encourages the believers to receive and help those who work for this truth."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "约参1，徒十一30，十四23，二十17，28，提前五17",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约叁一1",
+                  "ref_big5": "約參一1",
+                  "ref_en": "3 John 1:1",
+                  "text_gb": "作长老的写信给亲爱的该犹，就是我真实所爱的。",
+                  "text_big5": "作長老的寫信給親愛的該猶，就是我真實所愛的。",
+                  "text_en": "The elder to Gaius the beloved, whom I love in truthfulness."
+                },
+                {
+                  "book": 44,
+                  "chapter": 11,
+                  "verse": 30,
+                  "ref_gb": "徒十一30",
+                  "ref_big5": "徒十一30",
+                  "ref_en": "Acts 11:30",
+                  "text_gb": "他们就这样行了，由巴拿巴和扫罗经手，送到众长老那里。",
+                  "text_big5": "他們就這樣行了，由巴拿巴和掃羅經手，送到眾長老那裏。",
+                  "text_en": "Which also they did, sending it to the elders through the hand of Barnabas and Saul."
+                },
+                {
+                  "book": 44,
+                  "chapter": 14,
+                  "verse": 23,
+                  "ref_gb": "徒十四23",
+                  "ref_big5": "徒十四23",
+                  "ref_en": "Acts 14:23",
+                  "text_gb": "二人在各召会中为他们选立了长老，又禁食祷告，就把他们交托所信入的主。",
+                  "text_big5": "二人在各召會中為他們選立了長老，又禁食禱告，就把他們交託所信入的主。",
+                  "text_en": "And when they had appointed elders for them in every church and had prayed with fastings, they committed them to the Lord into whom they had believed."
+                },
+                {
+                  "book": 44,
+                  "chapter": 20,
+                  "verse": 17,
+                  "ref_gb": "徒二○17",
+                  "ref_big5": "徒二○17",
+                  "ref_en": "Acts 20:17",
+                  "text_gb": "保罗从米利都打发人往以弗所去，请召会的长老来。",
+                  "text_big5": "保羅從米利都打發人往以弗所去，請召會的長老來。",
+                  "text_en": "And from Miletus he sent word to Ephesus and called for the elders of the church."
+                },
+                {
+                  "book": 44,
+                  "chapter": 20,
+                  "verse": 28,
+                  "ref_gb": "徒二○28",
+                  "ref_big5": "徒二○28",
+                  "ref_en": "Acts 20:28",
+                  "text_gb": "圣灵立你们作全群的监督，你们就当为自己谨慎，也为全群谨慎，牧养神的召会，就是祂用自己的血所买来的。",
+                  "text_big5": "聖靈立你們作全群的監督，你們就當為自己謹慎，也為全群謹慎，牧養神的召會，就是祂用自己的血所買來的。",
+                  "text_en": "Take heed to yourselves and to all the flock, among whom the Holy Spirit has placed you as overseers to shepherd the church of God, which He obtained through His own blood."
+                },
+                {
+                  "book": 54,
+                  "chapter": 5,
+                  "verse": 17,
+                  "ref_gb": "提前五17",
+                  "ref_big5": "提前五17",
+                  "ref_en": "1 Tim. 5:17",
+                  "text_gb": "那善于带领的长老，尤其是那在话语和教导上劳苦的，当被看为配受加倍的敬奉。",
+                  "text_big5": "那善於帶領的長老，尤其是那在話語和教導上勞苦的，當被看為配受加倍的敬奉。",
+                  "text_en": "Let the elders who take the lead well be counted worthy of double honor, especially those who labor in word and teaching."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 9,
+              "raw": "约贰13",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 13,
+                  "ref_gb": "约贰一13",
+                  "ref_big5": "約貳一13",
+                  "ref_en": "2 John 1:13",
+                  "text_gb": "你那蒙拣选之姊妹的儿女都问你安。",
+                  "text_big5": "你那蒙揀選之姊妹的兒女都問你安。",
+                  "text_en": "The children of your chosen sister greet you."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 23,
+              "raw": "约壹三18",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 3,
+                  "verse": 18,
+                  "ref_gb": "约壹三18",
+                  "ref_big5": "約壹三18",
+                  "ref_en": "1 John 3:18",
+                  "text_gb": "孩子们，我们相爱，不要只在言语和舌头上，总要在行为和真诚上。",
+                  "text_big5": "孩子們，我們相愛，不要只在言語和舌頭上，總要在行為和真誠上。",
+                  "text_en": "Little children, let us not love in word nor in tongue but in deed and truthfulness."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 26,
+              "raw": "约参1",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约叁一1",
+                  "ref_big5": "約參一1",
+                  "ref_en": "3 John 1:1",
+                  "text_gb": "作长老的写信给亲爱的该犹，就是我真实所爱的。",
+                  "text_big5": "作長老的寫信給親愛的該猶，就是我真實所愛的。",
+                  "text_en": "The elder to Gaius the beloved, whom I love in truthfulness."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "约贰一2",
+          "ref_big5": "約貳一2",
+          "ref_en": "2 John 1:2",
+          "text_gb": "爱你们是因[Fn1]真[Fn2]理的缘故，这真理存[Cra]在我们里面，也必永远与[Crb]我们同在。",
+          "text_big5": "愛你們是因[Fn1]真[Fn2]理的緣故，這真理存[Cra]在我們裏面，也必永遠與[Crb]我們同在。",
+          "text_en": "For the sake of the truth which abides in us and will be with us forever:",
+          "text_gb_plain": "爱你们是因真理的缘故，这真理存在我们里面，也必永远与我们同在。",
+          "text_big5_plain": "愛你們是因真理的緣故，這真理存在我們裏面，也必永遠與我們同在。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "使徒约翰在福音书和第一封书信里，用他关于基督身位之启示的修补职事，使信徒预防关于基督神性与人性的异端。因着这种预防的真理，他和一切认识这真理的人，都爱那些对这真理忠信的人(1)。",
+              "zh_big5": "使徒約翰在福音書和第一封書信裏，用他關於基督身位之啟示的修補職事，使信徒豫防關於基督神性與人性的異端。因著這種豫防的真理，他和一切認識這真理的人，都愛那些對這真理忠信的人。（1。）",
+              "en": "1:2 1 For With his mending ministry concerning the revelation of the person of Christ, the apostle John, in his Gospel and first Epistle, inoculated the believers against the heresies regarding Christ's divinity and humanity. Because of such an inoculating truth, he and all those who knew this truth loved those who were faithful to this truth (v. 1)."
+            },
+            {
+              "num": 2,
+              "loc": 6,
+              "zh": "指1注5所解说的神圣实际。这神圣的实际，实际上就是三一神，现今住在我们里面，也必永远与我们同在。",
+              "zh_big5": "指1註5所解說的神聖實際。這神聖的實際，實際上就是三一神，現今住在我們裏面，也必永遠與我們同在。",
+              "en": "1:2 2 truth The divine reality, defined in note 2 John 1:1 5 . This divine reality, which is actually the Triune God, abides in us now and will be with us for eternity."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "约壹二24，27",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 24,
+                  "ref_gb": "约壹二24",
+                  "ref_big5": "約壹二24",
+                  "ref_en": "1 John 2:24",
+                  "text_gb": "至于你们，务要让那从起初所听见的住在你们里面；那从起初所听见的若住在你们里面，你们也就住在子里面，并住在父里面。",
+                  "text_big5": "至於你們，務要讓那從起初所聽見的住在你們裏面；那從起初所聽見的若住在你們裏面，你們也就住在子裏面，並住在父裏面。",
+                  "text_en": "As for you, that which you heard from the beginning, let it abide in you. If that which you heard from the beginning abides in you, you also will abide in the Son and in the Father."
+                },
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 27,
+                  "ref_gb": "约壹二27",
+                  "ref_big5": "約壹二27",
+                  "ref_en": "1 John 2:27",
+                  "text_gb": "你们从祂所领受的膏油涂抹，住在你们里面，并不需要人教导你们，乃有祂的膏油涂抹，在凡事上教导你们；这膏油涂抹是真实的，不是虚谎的，你们要按这膏油涂抹所教导你们的，住在祂里面。",
+                  "text_big5": "你們從祂所領受的膏油塗抹，住在你們裏面，並不需要人教導你們，乃有祂的膏油塗抹，在凡事上教導你們；這膏油塗抹是真實的，不是虛謊的，你們要按這膏油塗抹所教導你們的，住在祂裏面。",
+                  "text_en": "And as for you, the anointing which you have received from Him abides in you, and you have no need that anyone teach you; but as His anointing teaches you concerning all things and is true and is not a lie, and even as it has taught you, abide in Him."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 26,
+              "raw": "约十四16，参太一23，二八20",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 14,
+                  "verse": 16,
+                  "ref_gb": "约十四16",
+                  "ref_big5": "約十四16",
+                  "ref_en": "John 14:16",
+                  "text_gb": "我要求父，祂必赐给你们另一位保惠师，叫祂永远与你们同在，",
+                  "text_big5": "我要求父，祂必賜給你們另一位保惠師，叫祂永遠與你們同在，",
+                  "text_en": "And I will ask the Father, and He will give you another Comforter, that He may be with you forever,"
+                },
+                {
+                  "book": 40,
+                  "chapter": 1,
+                  "verse": 23,
+                  "ref_gb": "太一23",
+                  "ref_big5": "太一23",
+                  "ref_en": "Matt. 1:23",
+                  "text_gb": "“看哪，必有童女怀孕生子，人要称祂的名为以马内利。”（以马内利翻出来，就是神与我们同在。）",
+                  "text_big5": "“看哪，必有童女懷孕生子，人要稱祂的名為以馬內利。”（以馬內利繙出來，就是神與我們同在。）",
+                  "text_en": "\"Behold, the virgin shall be with child and shall bear a son, and they shall call His name Emmanuel\" (which is translated, God with us)."
+                },
+                {
+                  "book": 40,
+                  "chapter": 28,
+                  "verse": 20,
+                  "ref_gb": "太二八20",
+                  "ref_big5": "太二八20",
+                  "ref_en": "Matt. 28:20",
+                  "text_gb": "凡我所吩咐你们的，无论是什么，都教训他们遵守；看哪，我天天与你们同在，直到这世代的终结。",
+                  "text_big5": "凡我所吩咐你們的，無論是甚麼，都教訓他們遵守；看哪，我天天與你們同在，直到這世代的終結。",
+                  "text_en": "Teaching them to observe all that I have commanded you. And behold, I am with you all the days until the consummation of the age."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "约贰一3",
+          "ref_big5": "約貳一3",
+          "ref_en": "2 John 1:3",
+          "text_gb": "恩[Cra]典、怜悯、平[Crb]安从父神，并从父的儿子耶稣基督，在真[Fn1]理和爱中，必与我[Fn2]们同在。",
+          "text_big5": "恩[Cra]典、憐憫、平[Crb]安從父神，並從父的兒子耶穌基督，在真[Fn1]理和愛中，必與我[Fn2]們同在。",
+          "text_en": "Grace, mercy, peace will be with us from God the Father and from Jesus Christ, the Son of the Father, in truth and love.",
+          "text_gb_plain": "恩典、怜悯、平安从父神，并从父的儿子耶稣基督，在真理和爱中，必与我们同在。",
+          "text_big5_plain": "恩典、憐憫、平安從父神，並從父的兒子耶穌基督，在真理和愛中，必與我們同在。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 25,
+              "zh": "有些古卷作，你们。",
+              "zh_big5": "真理是指福音的神聖實際（如1註5所解說的），特別是關於這位彰顯神，並完成神定旨之基督的身位；愛是指信徒藉著接受並認識真理，在彼此相愛裏的彰顯。這兩件事是本書信的基本結構。在真理和愛中，恩典、憐憫、平安必與我們同在。使徒基於信徒中間存有這兩件要緊的事，便用恩典、憐憫、平安問候並祝福他們。我們在真理中行事為人，（4，）並且彼此相愛，（5，）就必享受神聖的恩典、憐憫與平安。",
+              "en": ""
+            },
+            {
+              "num": 2,
+              "loc": 33,
+              "zh": "有些古卷作，你们。",
+              "zh_big5": "有些古卷作，你們。",
+              "en": "1:3 1 us Some MSS read, you."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "提前一2，提后一2，约一14，16，17，林后十三14",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提前一2",
+                  "ref_big5": "提前一2",
+                  "ref_en": "1 Tim. 1:2",
+                  "text_gb": "写信给那凭信作我真孩子的提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給那憑信作我真孩子的提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, genuine child in faith: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                },
+                {
+                  "book": 55,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提后一2",
+                  "ref_big5": "提後一2",
+                  "ref_en": "2 Tim. 1:2",
+                  "text_gb": "写信给我亲爱的孩子提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給我親愛的孩子提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, beloved child: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                },
+                {
+                  "book": 43,
+                  "chapter": 1,
+                  "verse": 14,
+                  "ref_gb": "约一14",
+                  "ref_big5": "約一14",
+                  "ref_en": "John 1:14",
+                  "text_gb": "话成了肉体，支搭帐幕在我们中间，丰丰满满地有恩典，有实际。我们也见过祂的荣耀，正是从父而来独生子的荣耀。",
+                  "text_big5": "話成了肉體，支搭帳幕在我們中間，豐豐滿滿的有恩典，有實際。我們也見過祂的榮耀，正是從父而來獨生子的榮耀。",
+                  "text_en": "And the Word became flesh and tabernacled among us (and we beheld His glory, glory as of the only Begotten from the Father), full of grace and reality."
+                },
+                {
+                  "book": 43,
+                  "chapter": 1,
+                  "verse": 16,
+                  "ref_gb": "约一16",
+                  "ref_big5": "約一16",
+                  "ref_en": "John 1:16",
+                  "text_gb": "从祂的丰满里我们都领受了，而且恩上加恩；",
+                  "text_big5": "從祂的豐滿裏我們都領受了，而且恩上加恩；",
+                  "text_en": "For of His fullness we have all received, and grace upon grace."
+                },
+                {
+                  "book": 43,
+                  "chapter": 1,
+                  "verse": 17,
+                  "ref_gb": "约一17",
+                  "ref_big5": "約一17",
+                  "ref_en": "John 1:17",
+                  "text_gb": "因为律法是借着摩西赐的，恩典和实际都是借着耶稣基督来的。",
+                  "text_big5": "因為律法是藉著摩西賜的，恩典和實際都是藉著耶穌基督來的。",
+                  "text_en": "For the law was given through Moses; grace and reality came through Jesus Christ."
+                },
+                {
+                  "book": 47,
+                  "chapter": 13,
+                  "verse": 14,
+                  "ref_gb": "林后十三14",
+                  "ref_big5": "林後十三14",
+                  "ref_en": "2 Cor. 13:14",
+                  "text_gb": "愿主耶稣基督的恩，神的爱，圣灵的交通，与你们众人同在。",
+                  "text_big5": "願主耶穌基督的恩，神的愛，聖靈的交通，與你們眾人同在。",
+                  "text_en": "The grace of the Lord Jesus Christ and the love of God and the fellowship of the Holy Spirit be with you all."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 7,
+              "raw": "彼前一2，犹2",
+              "refs": [
+                {
+                  "book": 60,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "彼前一2",
+                  "ref_big5": "彼前一2",
+                  "ref_en": "1 Pet. 1:2",
+                  "text_gb": "就是照着父神的先见被拣选，借着那灵得圣别，以致顺从耶稣基督，并蒙祂血所洒的人：愿恩典与平安，繁增的归与你们。",
+                  "text_big5": "就是照著父神的先見被揀選，藉著那靈得聖別，以致順從耶穌基督，並蒙祂血所灑的人：願恩典與平安，繁增的歸與你們。",
+                  "text_en": "Chosen according to the foreknowledge of God the Father in the sanctification of the Spirit unto obedience and the sprinkling of the blood of Jesus Christ: Grace to you and peace be multiplied."
+                },
+                {
+                  "book": 65,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "犹一2",
+                  "ref_big5": "猶一2",
+                  "ref_en": "Jude 1:2",
+                  "text_gb": "愿怜悯、平安与爱，繁增的归与你们。",
+                  "text_big5": "願憐憫、平安與愛，繁增的歸與你們。",
+                  "text_en": "Mercy to you and peace and love be multiplied."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "约贰一4",
+          "ref_big5": "約貳一4",
+          "ref_en": "2 John 1:4",
+          "text_gb": "我看到你的儿女，有照着我们从父所受的诫[Fn1][Cra]命，在真[Fn2]理中行[Crb]事为人的，就大[Fn3]大欢乐。",
+          "text_big5": "我看到你的兒女，有照著我們從父所受的誡[Fn1][Cra]命，在真[Fn2]理中行[Crb]事為人的，就大[Fn3]大歡樂。",
+          "text_en": "I rejoiced greatly that I have found some of your children walking in truth, even as we received commandment from the Father.",
+          "text_gb_plain": "我看到你的儿女，有照着我们从父所受的诫命，在真理中行事为人的，就大大欢乐。",
+          "text_big5_plain": "我看到你的兒女，有照著我們從父所受的誡命，在真理中行事為人的，就大大歡樂。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 19,
+              "zh": "见约十三34注1。后文同。",
+              "zh_big5": "見約十三34註1。後文同。",
+              "en": "1:4 1 rejoiced The truth concerning the person of Christ is the basic and central element of John's mending ministry. When he found the children of the faithful believer walking in truth, he rejoiced greatly (3 John 1:3-4)."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "指神圣的实际，特别是关于基督的身位，如1注5所解说的。父命令我们要在这实际中，就是在对耶稣基督是神的儿子(参太十七5)，这神圣事实的体认中行事为人，使我们照着父所愿望的尊敬子(约五23)。",
+              "zh_big5": "指神聖的實際，特別是關於基督的身位，如1註5所解說的。父命令我們要在這實際中，就是在對耶穌基督是神的兒子，（參太十七5，）這神聖事實的體認中行事為人，使我們照著父所願望的尊敬子。（約五23。）",
+              "en": "1:4 2 truth The divine reality, especially concerning the person of Christ, as defined in note 2 John 1:1 5 . The Father commands us to walk in this reality, that is, in the realization of the divine fact that Jesus Christ is the Son of God (cf. Matt. 17:5), that we may honor the Son as the Father desires (John 5:23)."
+            },
+            {
+              "num": 3,
+              "loc": 33,
+              "zh": "关于基督身位的真理，乃是约翰修补职事基本且中心的元素。他看到忠信信徒的儿女在真理中行事为人，就大大欢乐(约叁3～4)。",
+              "zh_big5": "關於基督身位的真理，乃是約翰修補職事基本且中心的元素。他看到忠信信徒的兒女在真理中行事為人，就大大歡樂。（約參3～4。）",
+              "en": "1:4 3 commandment See note John 13:34 1 . So in the succeeding verses."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 19,
+              "raw": "约贰6，约壹五2",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "约贰一6",
+                  "ref_big5": "約貳一6",
+                  "ref_en": "2 John 1:6",
+                  "text_gb": "我们要照祂的诫命行，这就是爱；你们要行在爱中，这就是诫命，正如你们从起初所听见的。",
+                  "text_big5": "我們要照祂的誡命行，這就是愛；你們要行在愛中，這就是誡命，正如你們從起初所聽見的。",
+                  "text_en": "And this is love, that we walk according to His commandments. This is the commandment, even as you heard from the beginning, that you walk in love."
+                },
+                {
+                  "book": 62,
+                  "chapter": 5,
+                  "verse": 2,
+                  "ref_gb": "约壹五2",
+                  "ref_big5": "約壹五2",
+                  "ref_en": "1 John 5:2",
+                  "text_gb": "我们若爱神，并行祂的诫命，在此就知道我们爱神的儿女。",
+                  "text_big5": "我們若愛神，並行祂的誡命，在此就知道我們愛神的兒女。",
+                  "text_en": "In this we know that we love the children of God, when we love God and do His commandments."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 26,
+              "raw": "约参3，4",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "约叁一3",
+                  "ref_big5": "約參一3",
+                  "ref_en": "3 John 1:3",
+                  "text_gb": "有弟兄来见证你持守真理，就是你在真理中行事为人，我就大大欢乐。",
+                  "text_big5": "有弟兄來見證你持守真理，就是你在真理中行事為人，我就大大歡樂。",
+                  "text_en": "For I rejoiced greatly at the brothers' coming and testifying to your steadfastness in the truth, even as you walk in truth."
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "约叁一4",
+                  "ref_big5": "約參一4",
+                  "ref_en": "3 John 1:4",
+                  "text_gb": "我听见我的儿女们在真理中行事为人，我的喜乐就没有比这个更大的。",
+                  "text_big5": "我聽見我的兒女們在真理中行事為人，我的喜樂就沒有比這個更大的。",
+                  "text_en": "I have no greater joy than these things, that I hear that my children are walking in the truth."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "约贰一5",
+          "ref_big5": "約貳一5",
+          "ref_en": "2 John 1:5",
+          "text_gb": "夫人啊，我现在请求你，我们要彼[Cra]此相爱；我写给你的并不是一条新[Crb]诫命，乃是我们从[Fn1]起初就[Fn2]有的诫命。",
+          "text_big5": "夫人阿，我現在請求你，我們要彼[Cra]此相愛；我寫給你的並不是一條新[Crb]誡命，乃是我們從[Fn1]起初就[Fn2]有的誡命。",
+          "text_en": "And now I ask you, lady, not as writing a new commandment to you but that which we have had from the beginning, that we love one another.",
+          "text_gb_plain": "夫人啊，我现在请求你，我们要彼此相爱；我写给你的并不是一条新诫命，乃是我们从起初就有的诫命。",
+          "text_big5_plain": "夫人阿，我現在請求你，我們要彼此相愛；我寫給你的並不是一條新誡命，乃是我們從起初就有的誡命。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 38,
+              "zh": "见约壹一1注2二段。",
+              "zh_big5": "見約壹一1註2二段。",
+              "en": "1:5 1 that The commandment given by the Son that we love one another (John 13:34). The Father commands us to walk in the truth that we may honor the Son, and the Son commands us to love one another that we may express Him."
+            },
+            {
+              "num": 2,
+              "loc": 41,
+              "zh": "指子所赐的诫命，要我们彼此相爱(约十三34)。父命令我们要在真理中行事为人，以尊敬子；子命令我们要彼此相爱，以彰显祂。",
+              "zh_big5": "指子所賜的誡命，要我們彼此相愛。（約十三34。）父命令我們要在真理中行事為人，以尊敬子；子命令我們要彼此相愛，以彰顯祂。",
+              "en": "1:5 2 from See note 1 John 1:1 2 , par. 2."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 15,
+              "raw": "约贰3，约壹三23",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "约贰一3",
+                  "ref_big5": "約貳一3",
+                  "ref_en": "2 John 1:3",
+                  "text_gb": "恩典、怜悯、平安从父神，并从父的儿子耶稣基督，在真理和爱中，必与我们同在。",
+                  "text_big5": "恩典、憐憫、平安從父神，並從父的兒子耶穌基督，在真理和愛中，必與我們同在。",
+                  "text_en": "Grace, mercy, peace will be with us from God the Father and from Jesus Christ, the Son of the Father, in truth and love."
+                },
+                {
+                  "book": 62,
+                  "chapter": 3,
+                  "verse": 23,
+                  "ref_gb": "约壹三23",
+                  "ref_big5": "約壹三23",
+                  "ref_en": "1 John 3:23",
+                  "text_gb": "神的诫命就是叫我们信祂儿子耶稣基督的名，并且照祂所赐给我们的诫命彼此相爱。",
+                  "text_big5": "神的誡命就是叫我們信祂兒子耶穌基督的名，並且照祂所賜給我們的誡命彼此相愛。",
+                  "text_en": "And this is His commandment, that we believe in the name of His Son Jesus Christ and love one another, even as He gave a commandment to us."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 30,
+              "raw": "约壹二7～8",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 7,
+                  "ref_gb": "约壹二7",
+                  "ref_big5": "約壹二7",
+                  "ref_en": "1 John 2:7",
+                  "text_gb": "亲爱的，我写给你们的，不是一条新诫命，乃是一条你们从起初就有的旧诫命，这旧诫命就是你们所听见的话。",
+                  "text_big5": "親愛的，我寫給你們的，不是一條新誡命，乃是一條你們從起初就有的舊誡命，這舊誡命就是你們所聽見的話。",
+                  "text_en": "Beloved, I am not writing a new commandment to you but an old commandment, which you have had from the beginning; the old commandment is the word which you heard."
+                },
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 8,
+                  "ref_gb": "约壹二8",
+                  "ref_big5": "約壹二8",
+                  "ref_en": "1 John 2:8",
+                  "text_gb": "再者，我写给你们的是一条新诫命，这在主并在你们都是真的；因为黑暗渐渐过去，真光已经照耀。",
+                  "text_big5": "再者，我寫給你們的是一條新誡命，這在主並在你們都是真的；因為黑暗漸漸過去，真光已經照耀。",
+                  "text_en": "Yet again a new commandment I am writing to you, which is true in Him and in you because the darkness is passing away and the true light is already shining."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "约贰一6",
+          "ref_big5": "約貳一6",
+          "ref_en": "2 John 1:6",
+          "text_gb": "我们要照祂的诫命行[Cra]，这就是爱[Crb]；你们要行在爱中，这就是诫命，正如你们从起初所听见的。",
+          "text_big5": "我們要照祂的誡命行[Cra]，這就是愛[Crb]；你們要行在愛中，這就是誡命，正如你們從起初所聽見的。",
+          "text_en": "And this is love, that we walk according to His commandments. This is the commandment, even as you heard from the beginning, that you walk in love.",
+          "text_gb_plain": "我们要照祂的诫命行，这就是爱；你们要行在爱中，这就是诫命，正如你们从起初所听见的。",
+          "text_big5_plain": "我們要照祂的誡命行，這就是愛；你們要行在愛中，這就是誡命，正如你們從起初所聽見的。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "约贰4",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "约贰一4",
+                  "ref_big5": "約貳一4",
+                  "ref_en": "2 John 1:4",
+                  "text_gb": "我看到你的儿女，有照着我们从父所受的诫命，在真理中行事为人的，就大大欢乐。",
+                  "text_big5": "我看到你的兒女，有照著我們從父所受的誡命，在真理中行事為人的，就大大歡樂。",
+                  "text_en": "I rejoiced greatly that I have found some of your children walking in truth, even as we received commandment from the Father."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 14,
+              "raw": "约壹五3",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 5,
+                  "verse": 3,
+                  "ref_gb": "约壹五3",
+                  "ref_big5": "約壹五3",
+                  "ref_en": "1 John 5:3",
+                  "text_gb": "我们遵守神的诫命，这就是爱祂了；并且祂的诫命不是难担的；",
+                  "text_big5": "我們遵守神的誡命，這就是愛祂了；並且祂的誡命不是難擔的；",
+                  "text_en": "For this is the love of God, that we keep His commandments; and His commandments are not burdensome."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "约贰一7",
+          "ref_big5": "約貳一7",
+          "ref_en": "2 John 1:7",
+          "text_gb": "因为有许多迷[Fn1]惑人的已经出[Cra]来，进到世界里，他们不[Fn2][Crb]承认耶稣基督是在[Fn3]肉体里来的。这就是那迷惑人的和敌[Fn4]基督的。",
+          "text_big5": "因為有許多迷[Fn1]惑人的已經出[Cra]來，進到世界裏，他們不[Fn2][Crb]承認耶穌基督是在[Fn3]肉體裏來的。這就是那迷惑人的和敵[Fn4]基督的。",
+          "text_en": "For many deceivers went out into the world, those who do not confess Jesus Christ coming in the flesh. This is the deceiver and the antichrist.",
+          "text_gb_plain": "因为有许多迷惑人的已经出来，进到世界里，他们不承认耶稣基督是在肉体里来的。这就是那迷惑人的和敌基督的。",
+          "text_big5_plain": "因為有許多迷惑人的已經出來，進到世界裏，他們不承認耶穌基督是在肉體裏來的。這就是那迷惑人的和敵基督的。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 6,
+              "zh": "指异端者，如塞林则派，假申言者(约壹四1)。",
+              "zh_big5": "指異端者，如塞林則派，假申言者。（約壹四1。）",
+              "en": "1:7 1 deceivers Heretics, such as the Cerinthians, the false prophets (1 John 4:1)."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "即不承认耶稣是神成肉体，因而否认了基督的神格。",
+              "zh_big5": "即不承認耶穌是神成肉體，因而否認了基督的神格。",
+              "en": "1:7 2 do That is, do not confess that Jesus is God incarnate, thus denying the deity of Christ."
+            },
+            {
+              "num": 3,
+              "loc": 31,
+              "zh": "见约壹四2注2。",
+              "zh_big5": "見約壹四2註2。",
+              "en": "1:7 3 in See note 1 John 4:2 2 ."
+            },
+            {
+              "num": 4,
+              "loc": 47,
+              "zh": "见约壹二18注2与22注2。",
+              "zh_big5": "見約壹二18註2與22註2。",
+              "en": "1:7 4 antichrist See note 1 John 2:18 2 and note 1 John 2:22 2 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 12,
+              "raw": "约壹二18，四1",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 18,
+                  "ref_gb": "约壹二18",
+                  "ref_big5": "約壹二18",
+                  "ref_en": "1 John 2:18",
+                  "text_gb": "小孩子们，如今是末时了；你们曾听见，那敌基督的要来，现在已经有好些敌基督的出来了，从此我们就知道如今是末时了。",
+                  "text_big5": "小孩子們，如今是末時了；你們曾聽見，那敵基督的要來，現在已經有好些敵基督的出來了，從此我們就知道如今是末時了。",
+                  "text_en": "Young children, it is the last hour; and even as you heard that antichrist is coming, even now many antichrists have come; whereby we know that it is the last hour."
+                },
+                {
+                  "book": 62,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "约壹四1",
+                  "ref_big5": "約壹四1",
+                  "ref_en": "1 John 4:1",
+                  "text_gb": "亲爱的，一切的灵，你们不可都信，总要试证那些灵是出于神的不是；因为有许多假申言者已经出来，进到世界里了。",
+                  "text_big5": "親愛的，一切的靈，你們不可都信，總要試證那些靈是出於神的不是；因為有許多假申言者已經出來，進到世界裏了。",
+                  "text_en": "Beloved, do not believe every spirit, but prove the spirits whether they are of God, because many false prophets have gone out into the world."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 23,
+              "raw": "约壹二22，四3",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 22,
+                  "ref_gb": "约壹二22",
+                  "ref_big5": "約壹二22",
+                  "ref_en": "1 John 2:22",
+                  "text_gb": "谁是说谎的？不是那否认耶稣是基督的么？否认父与子的，这就是敌基督的。",
+                  "text_big5": "誰是說謊的？不是那否認耶穌是基督的麼？否認父與子的，這就是敵基督的。",
+                  "text_en": "Who is the liar if not he who denies that Jesus is the Christ? This is the antichrist, the one who denies the Father and the Son."
+                },
+                {
+                  "book": 62,
+                  "chapter": 4,
+                  "verse": 3,
+                  "ref_gb": "约壹四3",
+                  "ref_big5": "約壹四3",
+                  "ref_en": "1 John 4:3",
+                  "text_gb": "凡灵不承认耶稣，就不是出于神的，这是那敌基督者的灵；你们从前听见这灵要来，现在已经在世界上了。",
+                  "text_big5": "凡靈不承認耶穌，就不是出於神的，這是那敵基督者的靈；你們從前聽見這靈要來，現在已經在世界上了。",
+                  "text_en": "And every spirit which does not confess Jesus is not of God; and this is the spirit of the antichrist, of which you have heard that it is coming and now is already in the world."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "约贰一8",
+          "ref_big5": "約貳一8",
+          "ref_en": "2 John 1:8",
+          "text_gb": "你们要小[Fn1][Cra]心，不要失[Fn2]去我[Fn3]们所已经作成的，乃要得着满[Fn4]足的赏赐。",
+          "text_big5": "你們要小[Fn1][Cra]心，不要失[Fn2]去我[Fn3]們所已經作成的，乃要得著滿[Fn4]足的賞賜。",
+          "text_en": "Look to yourselves that you do not lose the things which we wrought, but that you may receive a full reward.",
+          "text_gb_plain": "你们要小心，不要失去我们所已经作成的，乃要得着满足的赏赐。",
+          "text_big5_plain": "你們要小心，不要失去我們所已經作成的，乃要得著滿足的賞賜。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "即自己儆醒，为自己儆醒。",
+              "zh_big5": "即自己儆醒，為自己儆醒。",
+              "en": "1:8 1 Look I.e., watch yourselves, watch for yourselves."
+            },
+            {
+              "num": 2,
+              "loc": 9,
+              "zh": "或，毁坏，破坏。",
+              "zh_big5": "或，毀壞，破壞。",
+              "en": "1:8 2 lose Or, destroy, ruin."
+            },
+            {
+              "num": 3,
+              "loc": 11,
+              "zh": "使徒所已经作成的，就是使徒所供应并分赐给信徒关于基督之真理的事。受到关于基督身位之异端的影响，就是失去、毁坏、破坏了使徒所已经作到信徒里面，关于基督身位宝贵的事。使徒警告信徒，要为自己儆醒，免得受到异端的影响，失去真理的事。",
+              "zh_big5": "使徒所已經作成的，就是使徒所供應並分賜給信徒關於基督之真理的事。受到關於基督身位之異端的影響，就是失去、毀壞、破壞了使徒所已經作到信徒裏面，關於基督身位寶貴的事。使徒警告信徒，要為自己儆醒，免得受到異端的影響，失去真理的事。",
+              "en": "1:8 3 things The things that the apostles wrought were the things of the truth concerning Christ, which the apostles ministered and imparted to the believers. To be influenced by the heresies regarding the person of Christ was to lose, destroy, and ruin the precious things concerning the person of Christ that the apostles had wrought into the believers. The apostle warned the believers to watch for themselves lest they be influenced by the heresies and lose the things of the truth."
+            },
+            {
+              "num": 4,
+              "loc": 24,
+              "zh": "根据上下文，特别是9节，满足的赏赐必定是父与子作了那些留在关于基督身位的真理中，不受关于基督的异端影响而偏离的忠信信徒完满的享受。这样的解释是正确的，因为这里并未指明这赏赐要在将来赐给人，如太五12，十六27，林前三8、13～14，来十35～36，启十一18，二二12所提的赏赐。倘若我们不被异端引入歧途，反倒忠信的留在关于奇妙且包罗万有之基督(祂是神而人，是我们的创造者和救赎者)的真理中，我们就要在祂里面尽享三一神，作为我们满足的赏赐，甚至今天在地上就能如此。",
+              "zh_big5": "根據上下文，特別是9節，滿足的賞賜必定是父與子作了那些留在關於基督身位的真理中，不受關於基督的異端影響而偏離的忠信信徒完滿的享受。這樣的解釋是正確的，因為這裏並未指明這賞賜要在將來賜給人，如太五12，十六27，林前三8、13～14，來十35～36，啟十一18，二二12所題的賞賜。倘若我們不被異端引入歧途，反倒忠信的留在關於奇妙且包羅萬有之基督（祂是神而人，是我們的創造者和救贖者）的真理中，我們就要在祂裏面盡享三一神，作為我們滿足的賞賜，甚至今天在地上就能如此。",
+              "en": "1:8 4 reward According to the context, especially v. 9, the full reward must be the Father and the Son as the full enjoyment to the faithful believers, who abide in the truth concerning the person of Christ and do not deviate from it under the influence of the heresies regarding Christ. This interpretation is justified by the fact that there is no indication that this reward will be given in the future, as will the rewards mentioned in Matt. 5:12; 16:27; 1 Cor. 3:8, 13-14; Heb. 10:35-36 and Rev. 11:18; 22:12. If we would not be led astray by the heresies but would abide faithfully in the truth concerning the wonderful and all-inclusive Christ, who is both God and man, both our Creator and our Redeemer, we will enjoy in Him the Triune God to the fullest extent as our full reward, even today on earth."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "可十三9",
+              "refs": [
+                {
+                  "book": 41,
+                  "chapter": 13,
+                  "verse": 9,
+                  "ref_gb": "可十三9",
+                  "ref_big5": "可十三9",
+                  "ref_en": "Mark 13:9",
+                  "text_gb": "但你们要自己谨慎。人要把你们交给议会，并且你们要在会堂里受鞭打，又要为我的缘故，站在官长和君王面前，对他们作见证。",
+                  "text_big5": "但你們要自己謹慎。人要把你們交給議會，並且你們要在會堂裏受鞭打，又要為我的緣故，站在官長和君王面前，對他們作見證。",
+                  "text_en": "But you, take heed to yourselves. They will deliver you to sanhedrins, and in the synagogues you will be beaten, and before governors and kings you will stand for My sake, for a testimony to them."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "约贰一9",
+          "ref_big5": "約貳一9",
+          "ref_en": "2 John 1:9",
+          "text_gb": "凡越[Fn1]过基[Fn2]督的教训，不留于其中的，就没[Cra]有神；留于这教训中的，这人就有[Fn3]父又有子。",
+          "text_big5": "凡越[Fn1]過基[Fn2]督的教訓，不留於其中的，就沒[Cra]有神；留於這教訓中的，這人就有[Fn3]父又有子。",
+          "text_en": "Everyone who goes beyond and does not abide in the teaching of Christ does not have God; he who abides in the teaching, he has both the Father and the Son.",
+          "text_gb_plain": "凡越过基督的教训，不留于其中的，就没有神；留于这教训中的，这人就有父又有子。",
+          "text_big5_plain": "凡越過基督的教訓，不留於其中的，就沒有神；留於這教訓中的，這人就有父又有子。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "直译，(在反面的意义上)带领向前。也就是说，越过了正确的事，超过了关于基督之正统教训的界限。这与留于基督的教训中相对。那些夸耀他们对基督教训有进步思想的塞林则智慧派，就是这样行。他们越过了基督神圣成孕的教训，因而否认了基督的神格，结果就无法在救恩和生命里得着神。",
+              "zh_big5": "直譯，（在反面的意義上）帶領向前。也就是說，越過了正確的事，超過了關於基督之正統教訓的界限。這與留於基督的教訓中相對。那些誇耀他們對基督教訓有進步思想的塞林則智慧派，就是這樣行。他們越過了基督神聖成孕的教訓，因而否認了基督的神格，結果就無法在救恩和生命裏得著神。",
+              "en": "1:9 1 goes Lit., leads forward (in a negative sense); i.e., goes further than what is right, advances beyond the limit of orthodox teaching concerning Christ. This is in contrast to abiding in the teaching of Christ. The Cerinthian Gnostics, who boasted of their advanced thinking concerning the teaching of Christ, practiced this. They went beyond the teaching of the divine conception of Christ, thus denying the deity of Christ. Consequently, they could not have God in salvation and in life."
+            },
+            {
+              "num": 2,
+              "loc": 4,
+              "zh": "不是指基督所教导的教训，乃指关于基督的教训，也就是关于基督神格的真理，特别是关于祂借着神圣成孕成为肉体的真理。",
+              "zh_big5": "不是指基督所教導的教訓，乃指關於基督的教訓，也就是關於基督神格的真理，特別是關於祂藉著神聖成孕成為肉體的真理。",
+              "en": "1:9 2 teaching Not the teaching by Christ but the teaching concerning Christ, that is, the truth concerning the deity of Christ, especially regarding His incarnation by divine conception."
+            },
+            {
+              "num": 3,
+              "loc": 33,
+              "zh": "有神就是有父又有子。借着成为肉体的过程，神已在子里带着父(约壹二23)分赐到我们里面，作我们的享受与实际(约一1，14)。我们在成为肉体的神里面，有子在祂的救赎里，和父在祂的生命里。因此我们蒙了救赎和重生，在生机上与神成为一，使我们能在救恩和生命里有分于并享受神。所以否认神成为肉体，就是弃绝这种神圣的享受；留于神成为肉体的真理中，就有那是父又是子的神，在永远的救恩和神圣的生命里作我们的福分。",
+              "zh_big5": "有神就是有父又有子。藉著成為肉體的過程，神已在子裏帶著父（約壹二23）分賜到我們裏面，作我們的享受與實際。（約一1，14。）我們在成為肉體的神裏面，有子在祂的救贖裏，和父在祂的生命裏。因此我們蒙了救贖和重生，在生機上與神成為一，使我們能在救恩和生命裏有分於並享受神。所以否認神成為肉體，就是棄絕這種神聖的享受；留於神成為肉體的真理中，就有那是父又是子的神，在永遠的救恩和神聖的生命裏作我們的福分。",
+              "en": "1:9 3 has To have God is to have both the Father and the Son. It is through the process of incarnation that God has been dispensed to us in the Son with the Father (1 John 2:23) to be our enjoyment and reality (John 1:1, 14). In the incarnated God we have the Son in His redemption and the Father in His life. We are thus redeemed and regenerated to be one with God organically that we may partake of and enjoy Him in salvation and in life. Hence, to deny the incarnation is to reject this divine enjoyment; but to abide in the truth of incarnation is to have God, as the Father and the Son, for our portion in the eternal salvation and in the divine life."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "约壹二23",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 2,
+                  "verse": 23,
+                  "ref_gb": "约壹二23",
+                  "ref_big5": "約壹二23",
+                  "ref_en": "1 John 2:23",
+                  "text_gb": "凡否认子的就没有父，承认子的连父也有了。",
+                  "text_big5": "凡否認子的就沒有父，承認子的連父也有了。",
+                  "text_en": "Everyone who denies the Son does not have the Father either; he who confesses the Son has the Father also."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "约贰一10",
+          "ref_big5": "約貳一10",
+          "ref_en": "2 John 1:10",
+          "text_gb": "若有人到你们那里，不[Cra]是传[Fn1]讲这教训，不[Crb]要接他[Fn2]到家里，也不要对他说，愿[Fn3]你喜乐；",
+          "text_big5": "若有人到你們那裏，不[Cra]是傳[Fn1]講這教訓，不[Crb]要接他[Fn2]到家裏，也不要對他說，願[Fn3]你喜樂；",
+          "text_en": "If anyone comes to you and does not bring this teaching, do not receive him into your house, and do not say to him, Rejoice!",
+          "text_gb_plain": "若有人到你们那里，不是传讲这教训，不要接他到家里，也不要对他说，愿你喜乐；",
+          "text_big5_plain": "若有人到你們那裏，不是傳講這教訓，不要接他到家裏，也不要對他說，願你喜樂；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 12,
+              "zh": "直译，带着。指不仅将这教训当作理论教导，更将这教训当作实际带着。",
+              "zh_big5": "直譯，帶著。指不僅將這教訓當作理論教導，更將這教訓當作實際帶著。",
+              "en": "1:10 1 bring Not only teach it as a theory but bring it as a reality."
+            },
+            {
+              "num": 2,
+              "loc": 21,
+              "zh": "指异端者，敌基督的(7，约壹二22)，假申言者(约壹四1)。这样的人否认神圣的成孕和基督的神格，如同今天的摩登派。这样的人我们必须弃绝，不要接他到家里，也不要问他的安。这样我们就不会与他有接触，也不会有分于他的异端；这种异端对神是亵渎的，并且像麻风一样传染人。",
+              "zh_big5": "指異端者，敵基督的，（7，約壹二22，）假申言者。（約壹四1。）這樣的人否認神聖的成孕和基督的神格，如同今天的摩登派。這樣的人我們必須棄絕，不要接他到家裏，也不要問他的安。這樣我們就不會與他有接觸，也不會有分於他的異端；這種異端對神是褻瀆的，並且像痲瘋一樣傳染人。",
+              "en": "1:10 2 him A heretic, an antichrist (v. 7; 1 John 2:22), a false prophet (1 John 4:1), one who denies the divine conception and deity of Christ, as today's modernists do. Such a one we must reject, not receiving him into our house nor greeting him. Thus we will not have any contact with him or any share in his heresy, heresy that is blasphemous to God and contagious like leprosy."
+            },
+            {
+              "num": 3,
+              "loc": 33,
+              "zh": "愿你喜乐，原文意要快乐、欢喜、欢呼，用于问安或告别。",
+              "zh_big5": "願你喜樂，原文意要快樂、歡喜、歡呼，用於問安或告別。",
+              "en": "1:10 3 Rejoice The Greek word means be happy, rejoice, hail; it is used for greeting or bidding farewell."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "加一8～9",
+              "refs": [
+                {
+                  "book": 48,
+                  "chapter": 1,
+                  "verse": 8,
+                  "ref_gb": "加一8",
+                  "ref_big5": "加一8",
+                  "ref_en": "Gal. 1:8",
+                  "text_gb": "但即使是我们，或是从天上来的使者，若在我们所传给你们的福音之外，另传一个福音给你们，他就该受咒诅。",
+                  "text_big5": "但即使是我們，或是從天上來的使者，若在我們所傳給你們的福音之外，另傳一個福音給你們，他就該受咒詛。",
+                  "text_en": "But if even we or an angel out of heaven should announce to you a gospel beyond that which we have announced to you, let him be accursed."
+                },
+                {
+                  "book": 48,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "加一9",
+                  "ref_big5": "加一9",
+                  "ref_en": "Gal. 1:9",
+                  "text_gb": "我们先前说过，现在我再说，若有人在你们所领受的之外，另传一个福音给你们，他就该受咒诅。",
+                  "text_big5": "我們先前說過，現在我再說，若有人在你們所領受的之外，另傳一個福音給你們，他就該受咒詛。",
+                  "text_en": "As we have said before, now also I say again, If anyone announces to you a gospel beyond that which you have received, let him be accursed."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "参罗十六17，帖后三14，多三10，林前五11",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 17,
+                  "ref_gb": "罗十六17",
+                  "ref_big5": "羅十六17",
+                  "ref_en": "Rom. 16:17",
+                  "text_gb": "弟兄们，那些造成分立和绊跌之事，违反你们所学之教训的人，我恳求你们要留意，并要避开他们。",
+                  "text_big5": "弟兄們，那些造成分立和絆跌之事，違反你們所學之教訓的人，我懇求你們要留意，並要避開他們。",
+                  "text_en": "Now I exhort you, brothers, to mark those who make divisions and causes of stumbling contrary to the teaching which you have learned, and turn away from them."
+                },
+                {
+                  "book": 53,
+                  "chapter": 3,
+                  "verse": 14,
+                  "ref_gb": "帖后三14",
+                  "ref_big5": "帖後三14",
+                  "ref_en": "2 Thes. 3:14",
+                  "text_gb": "若有人不顺从我们这信上的话，要记下这人，不和他交往，叫他自觉羞愧；",
+                  "text_big5": "若有人不順從我們這信上的話，要記下這人，不和他交往，叫他自覺羞愧；",
+                  "text_en": "And if anyone does not obey our word through this letter, mark this one so as not to mingle with him, in order that he may be ashamed."
+                },
+                {
+                  "book": 56,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "多三10",
+                  "ref_big5": "多三10",
+                  "ref_en": "Titus 3:10",
+                  "text_gb": "分门结党的人，警戒过一两次，就要拒绝；",
+                  "text_big5": "分門結黨的人，警戒過一兩次，就要拒絕；",
+                  "text_en": "A factious man, after a first and second admonition, refuse,"
+                },
+                {
+                  "book": 46,
+                  "chapter": 5,
+                  "verse": 11,
+                  "ref_gb": "林前五11",
+                  "ref_big5": "林前五11",
+                  "ref_en": "1 Cor. 5:11",
+                  "text_gb": "但如今我写给你们说，若有人称为弟兄，是行淫乱的、或贪婪的、或拜偶像的、或辱骂的、或醉酒的、或勒索的，这样的人不可与他交往，甚至与他一同吃饭都不可。",
+                  "text_big5": "但如今我寫給你們說，若有人稱為弟兄，是行淫亂的、或貪婪的、或拜偶像的、或辱罵的、或醉酒的、或勒索的，這樣的人不可與他交往，甚至與他一同喫飯都不可。",
+                  "text_en": "But now I have written to you not to mingle with anyone who is called a brother, if he is a fornicator or a covetous man or an idolater or a reviler or a drunkard or a rapacious man, with such a one not even to eat."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "约贰一11",
+          "ref_big5": "約貳一11",
+          "ref_en": "2 John 1:11",
+          "text_gb": "因为对他说，愿你喜乐的，就在他的恶[Fn1]行上有[Cra]分。",
+          "text_big5": "因為對他說，願你喜樂的，就在他的惡[Fn1]行上有[Cra]分。",
+          "text_en": "For he who says to him, Rejoice, shares in his evil works.",
+          "text_gb_plain": "因为对他说，愿你喜乐的，就在他的恶行上有分。",
+          "text_big5_plain": "因為對他說，願你喜樂的，就在他的惡行上有分。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 17,
+              "zh": "将奇妙基督的神圣真理带给人，怎样是优越的佳行(罗十15)，散布那玷污基督荣耀神格之撒但的异端，也照样是可憎的恶行。这对神是亵渎和可憎，对人也是损毁和咒诅。凡在基督里的信徒和神的儿女，都不该有分于这恶！甚至向这样的恶人问安也不可！我们当与这恶保持严格且清楚的分别！",
+              "zh_big5": "將奇妙基督的神聖真理帶給人，怎樣是優越的佳行，（羅十15，）散佈那玷污基督榮耀神格之撒但的異端，也照樣是可憎的惡行。這對神是褻瀆和可憎，對人也是損毀和咒詛。凡在基督裏的信徒和神的兒女，都不該有分於這惡！甚至向這樣的惡人問安也不可！我們當與這惡保持嚴格且清楚的分別！",
+              "en": "1:11 1 evil Just as bringing to others the divine truth of the wonderful Christ is an excellent deed (Rom. 10:15), so spreading the satanic heresy, which defiles the glorious deity of Christ, is an evil work. It is a blasphemy and abomination to God. It is also a damage and curse to men. No one who is a believer in Christ and a child of God should have any share in this evil! Even to greet such an evil one is prohibited! A severe and clear separation from this evil should be maintained!"
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 20,
+              "raw": "参提前五22，林前五6，利十三45～46",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 5,
+                  "verse": 22,
+                  "ref_gb": "提前五22",
+                  "ref_big5": "提前五22",
+                  "ref_en": "1 Tim. 5:22",
+                  "text_gb": "给人按手不可急促，不要在别人的罪上有分，要保守自己纯洁。",
+                  "text_big5": "給人按手不可急促，不要在別人的罪上有分，要保守自己純潔。",
+                  "text_en": "Lay hands quickly on no man, nor participate in others' sins; keep yourself pure."
+                },
+                {
+                  "book": 46,
+                  "chapter": 5,
+                  "verse": 6,
+                  "ref_gb": "林前五6",
+                  "ref_big5": "林前五6",
+                  "ref_en": "1 Cor. 5:6",
+                  "text_gb": "你们夸口是不好的。岂不知一点面酵能使全团发起来么？",
+                  "text_big5": "你們誇口是不好的。豈不知一點麵酵能使全團發起來麼？",
+                  "text_en": "Your boasting is not good. Do you not know that a little leaven leavens the whole lump?"
+                },
+                {
+                  "book": 3,
+                  "chapter": 13,
+                  "verse": 45,
+                  "ref_gb": "利十三45",
+                  "ref_big5": "利十三45",
+                  "ref_en": "Lev. 13:45",
+                  "text_gb": "患麻风灾病的人，他的衣服要撕裂，也要蓬头散发，蒙着上唇，喊叫说，不洁净！不洁净！",
+                  "text_big5": "患痲瘋災病的人，他的衣服要撕裂，也要蓬頭散髮，蒙著上脣，喊叫說，不潔淨！不潔淨！",
+                  "text_en": "And as for the leper in whom the infection is, his clothes shall be torn, and the hair of his head shall be let loose, and he shall cover his upper lip and cry, Unclean, unclean!"
+                },
+                {
+                  "book": 3,
+                  "chapter": 13,
+                  "verse": 46,
+                  "ref_gb": "利十三46",
+                  "ref_big5": "利十三46",
+                  "ref_en": "Lev. 13:46",
+                  "text_gb": "灾病在他身上的日子，他就是不洁净的；他既是不洁净，就要独居营外。",
+                  "text_big5": "災病在他身上的日子，他就是不潔淨的；他既是不潔淨，就要獨居營外。",
+                  "text_en": "He shall be unclean all the days during which the infection is in him; he is unclean. He shall live alone; his dwelling shall be outside the camp."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "约贰一12",
+          "ref_big5": "約貳一12",
+          "ref_en": "2 John 1:12",
+          "text_gb": "我还有许[Cra]多事要写给你们，却不愿意用纸墨写出来；但盼[Fn1][Crb]望到你们那里，与你们当[Fn2]面交谈，使我[Fn3]们的喜[Crc]乐得以满足。",
+          "text_big5": "我還有許[Cra]多事要寫給你們，卻不願意用紙墨寫出來；但盼[Fn1][Crb]望到你們那裏，與你們當[Fn2]面交談，使我[Fn3]們的喜[Crc]樂得以滿足。",
+          "text_en": "Though I have many things to write to you, I do not want to do so with paper and ink, but I am hoping to be with you and to speak face to face that our joy may be made full.",
+          "text_gb_plain": "我还有许多事要写给你们，却不愿意用纸墨写出来；但盼望到你们那里，与你们当面交谈，使我们的喜乐得以满足。",
+          "text_big5_plain": "我還有許多事要寫給你們，卻不願意用紙墨寫出來；但盼望到你們那裏，與你們當面交談，使我們的喜樂得以滿足。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 25,
+              "zh": "使徒表达他渴望与召会的肢体有更深、更丰富的交通，使他们在神圣生命的享受里，有满足的喜乐(约壹一2～4)。",
+              "zh_big5": "使徒表達他渴望與召會的肢體有更深、更豐富的交通，使他們在神聖生命的享受裏，有滿足的喜樂。（約壹一2～4。）",
+              "en": "1:12 1 hoping The apostle expressed his desire for a deeper and richer fellowship with the church member for fullness of joy in the enjoyment of the divine life (1 John 1:2-4)."
+            },
+            {
+              "num": 2,
+              "loc": 36,
+              "zh": "直译，口对口。",
+              "zh_big5": "直譯，口對口。",
+              "en": "1:12 2 face Lit., mouth to mouth."
+            },
+            {
+              "num": 3,
+              "loc": 42,
+              "zh": "有些古卷作，你们的。",
+              "zh_big5": "有些古卷作，你們的。",
+              "en": "1:12 3 our Some MSS read, your."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "约参13",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 13,
+                  "ref_gb": "约叁一13",
+                  "ref_big5": "約參一13",
+                  "ref_en": "3 John 1:13",
+                  "text_gb": "我原有许多事要写给你，却不愿意用笔墨写给你；",
+                  "text_big5": "我原有許多事要寫給你，卻不願意用筆墨寫給你；",
+                  "text_en": "I had many things to write to you, but I do not want to write to you with ink and pen;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 25,
+              "raw": "约参14",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 14,
+                  "ref_gb": "约叁一14",
+                  "ref_big5": "約參一14",
+                  "ref_en": "3 John 1:14",
+                  "text_gb": "但盼望快快地见你，我们当面交谈。愿你平安。朋友们都问你安。请你替我按着姓名问朋友们安。",
+                  "text_big5": "但盼望快快的見你，我們當面交談。願你平安。朋友們都問你安。請你替我按著姓名問朋友們安。",
+                  "text_en": "But I hope to see you shortly, and we will speak face to face. Peace to you. The friends greet you. Greet the friends by name."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 45,
+              "raw": "约壹一4",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "约壹一4",
+                  "ref_big5": "約壹一4",
+                  "ref_en": "1 John 1:4",
+                  "text_gb": "我们写这些事，是要叫我们的喜乐得以满足。",
+                  "text_big5": "我們寫這些事，是要叫我們的喜樂得以滿足。",
+                  "text_en": "And these things we write that our joy may be made full."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 63,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "约贰一13",
+          "ref_big5": "約貳一13",
+          "ref_en": "2 John 1:13",
+          "text_gb": "你那蒙拣[Cra]选之姊[Fn1]妹的儿[Fn2]女都问你安。",
+          "text_big5": "你那蒙揀[Cra]選之姊[Fn1]妹的兒[Fn2]女都問你安。",
+          "text_en": "The children of your chosen sister greet you.",
+          "text_gb_plain": "你那蒙拣选之姊妹的儿女都问你安。",
+          "text_big5_plain": "你那蒙揀選之姊妹的兒女都問你安。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 7,
+              "zh": "这位姊妹没有一同问安，也许指明她已经过世。",
+              "zh_big5": "這位姊妹沒有一同問安，也許指明她已經過世。",
+              "en": ""
+            },
+            {
+              "num": 2,
+              "loc": 10,
+              "zh": "这指明年老的长老与召会众肢体有何等亲密的交通，对他们有何等爱的关切。 年迈的使徒约翰，用三一神的神圣生命，尽他修补的职事，对信徒之爱的关切，就是信徒要在神的真理中行事为人。神的真理，乃是三一神成为肉体，来作那神而人者，兼有神人二性的基督，借着钉死完成了永远的救赎，又借着复活化身为那包罗万有赐生命的灵，作经过种种过程之三一神的终极表现，给悔改相信祂的人得着，作他们的生命，和他们的一切。年迈的使徒愿意信徒在这个真理中，凭着三一神神圣的爱，彼此相爱以彰显祂。这个真理，这个实际，成了他生活为人的真实，成了约翰在他蒙救赎之人性中显出的神性美德。他是在这神性美德的真实中，爱他所关切的信徒。他这对信徒的爱，是将三一神的实际(真理)，和三一神的爱联在一起，成为他的生活。基于这爱，他也切望他所关切的信徒能像他一样，彼此相爱，与那越过这三一之真理的异端者无分无关。年迈的使徒，愿望他所关切的信徒一直留于这神圣的真理中，凭着那灵享受父与子，一直到永远。",
+              "zh_big5": "這指明年老的長老與召會眾肢體有何等親密的交通，對他們有何等愛的關切。ˍ年邁的使徒約翰，用三一神的神聖生命，盡他修補的職事，對信徒之愛的關切，就是信徒要在神的真理中行事為人。神的真理，乃是三一神成為肉體，來作那神而人者，兼有神人二性的基督，藉著釘死完成了永遠的救贖，又藉著復活化身為那包羅萬有賜生命的靈，作經過種種過程之三一神的終極表現，給悔改相信祂的人得著，作他們的生命，和他們的一切。年邁的使徒願意信徒在這個真理中，憑著三一神神聖的愛，彼此相愛以彰顯祂。這個真理，這個實際，成了他生活為人的真實，成了約翰在他蒙救贖之人性中顯出的神性美德。他是在這神性美德的真實中，愛他所關切的信徒。他這對信徒的愛，是將三一神的實際（真理），和三一神的愛聯在一起，成為他的生活。基於這愛，他也切望他所關切的信徒能像他一樣，彼此相愛，與那越過這三一之真理的異端者無分無關。年邁的使徒，願望他所關切的信徒一直留於這神聖的真理中，憑著那靈享受父與子，一直到永遠。",
+              "en": "1:13 1 children This indicates what an intimate fellowship with the church members and what an endearing care for them the aged elder had. In carrying out his mending ministry with the divine life of the Triune God, the aged apostle John's endearing care for the believers was that the believers would walk in God's truth. God's truth is that the Triune God was incarnated to be the God-man, Christ, who had both divinity and humanity, who through crucifixion accomplished eternal redemption and through resurrection became the all-inclusive life-giving Spirit as the ultimate expression of the processed Triune God, to be received by those who repent and believe in Him, as their life and as their everything. The aged apostle's desire was that the believers would love one another in this truth by the divine love of the Triune God to express Him. This truth, this reality, became the genuineness in the apostle's walk, the divine virtue expressed in his redeemed humanity. He loved the believers whom he cared for, in the genuineness of the divine virtue. His love toward the believers was his living, in which the reality, the truth, of the Triune God was joined to the love of the Triune God. Based on this love, he also earnestly hoped that the believers whom he cared for would be the same as he, that they would love one another and have nothing to do with the heretics, those who went beyond the truth concerning the Trinity. The aged apostle's desire was that the believers whom he cared for would remain continually in the divine truth to enjoy the Father and the Son by the Spirit unto eternity."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "约贰1，彼前五13",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约贰一1",
+                  "ref_big5": "約貳一1",
+                  "ref_en": "2 John 1:1",
+                  "text_gb": "作长老的写信给蒙拣选的夫人和她的儿女，就是我真实所爱的；不单我爱，也是一切认识真理之人所爱的；",
+                  "text_big5": "作長老的寫信給蒙揀選的夫人和她的兒女，就是我真實所愛的；不單我愛，也是一切認識真理之人所愛的；",
+                  "text_en": "The elder to the chosen lady and to her children, whom I love in truthfulness, and not only I but also all those who know the truth,"
+                },
+                {
+                  "book": 60,
+                  "chapter": 5,
+                  "verse": 13,
+                  "ref_gb": "彼前五13",
+                  "ref_big5": "彼前五13",
+                  "ref_en": "1 Pet. 5:13",
+                  "text_gb": "在巴比伦同蒙拣选的问你们安，我儿子马可也问你们安。",
+                  "text_big5": "在巴比倫同蒙揀選的問你們安，我兒子馬可也問你們安。",
+                  "text_en": "The co-chosen in Babylon and Mark my son greet you."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

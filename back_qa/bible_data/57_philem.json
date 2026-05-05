@@ -1,0 +1,1957 @@
+{
+  "book": 57,
+  "name_gb": "腓利门书",
+  "name_big5": "腓利門書",
+  "name_en": "Philemon",
+  "abbr_gb": "门",
+  "abbr_big5": "門",
+  "abbr_en": "Philem.",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "门一1",
+          "ref_big5": "門一1",
+          "ref_en": "Philem. 1:1",
+          "text_gb": "基督耶稣的囚[Cra]犯保罗，和弟兄提[Crb]摩太，写信给所爱的并我们的同[Crc]工腓利门，",
+          "text_big5": "基督耶穌的囚[Cra]犯保羅，和弟兄提[Crb]摩太，寫信給所愛的並我們的同[Crc]工腓利門，",
+          "text_en": "Paul, a prisoner of Christ Jesus, and Timothy the brother, to Philemon our beloved and fellow worker",
+          "text_gb_plain": "基督耶稣的囚犯保罗，和弟兄提摩太，写信给所爱的并我们的同工腓利门，",
+          "text_big5_plain": "基督耶穌的囚犯保羅，和弟兄提摩太，寫信給所愛的並我們的同工腓利門，",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "门9，弗三1",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "门一9",
+                  "ref_big5": "門一9",
+                  "ref_en": "Philem. 1:9",
+                  "text_gb": "然而像我这有年纪的保罗，现在又是基督耶稣的囚犯，宁可因着爱恳求你，",
+                  "text_big5": "然而像我這有年紀的保羅，現在又是基督耶穌的囚犯，寧可因著愛懇求你，",
+                  "text_en": "Because of love I rather entreat, being such a one as Paul the aged and now also a prisoner of Christ Jesus."
+                },
+                {
+                  "book": 49,
+                  "chapter": 3,
+                  "verse": 1,
+                  "ref_gb": "弗三1",
+                  "ref_big5": "弗三1",
+                  "ref_en": "Eph. 3:1",
+                  "text_gb": "因这缘故，我这为你们外邦人作基督耶稣囚犯的保罗，为你们祈求─",
+                  "text_big5": "因這緣故，我這為你們外邦人作基督耶穌囚犯的保羅，為你們祈求─",
+                  "text_en": "For this cause I Paul, the prisoner of Christ Jesus on behalf of you, the Gentiles-"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 14,
+              "raw": "提前一2，帖前一1，三2",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提前一2",
+                  "ref_big5": "提前一2",
+                  "ref_en": "1 Tim. 1:2",
+                  "text_gb": "写信给那凭信作我真孩子的提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給那憑信作我真孩子的提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, genuine child in faith: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                },
+                {
+                  "book": 52,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "帖前一1",
+                  "ref_big5": "帖前一1",
+                  "ref_en": "1 Thes. 1:1",
+                  "text_gb": "保罗、西拉和提摩太，写信给在父神和主耶稣基督里，帖撒罗尼迦人的召会：愿恩典与平安归与你们。",
+                  "text_big5": "保羅、西拉和提摩太，寫信給在父神和主耶穌基督裏，帖撒羅尼迦人的召會：願恩典與平安歸與你們。",
+                  "text_en": "Paul and Silvanus and Timothy to the church of the Thessalonians in God the Father and the Lord Jesus Christ: Grace to you and peace."
+                },
+                {
+                  "book": 52,
+                  "chapter": 3,
+                  "verse": 2,
+                  "ref_gb": "帖前三2",
+                  "ref_big5": "帖前三2",
+                  "ref_en": "1 Thes. 3:2",
+                  "text_gb": "打发我们的弟兄，在基督福音上作神同工的提摩太去，为着你们的信心，坚固并鼓励你们，",
+                  "text_big5": "打發我們的弟兄，在基督福音上作神同工的提摩太去，為著你們的信心，堅固並鼓勵你們，",
+                  "text_en": "And we sent Timothy, our brother and God's fellow worker in the gospel of Christ, to establish and encourage you for the sake of your faith,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 28,
+              "raw": "门24，罗十六3，21",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 24,
+                  "ref_gb": "门一24",
+                  "ref_big5": "門一24",
+                  "ref_en": "Philem. 1:24",
+                  "text_gb": "我的同工马可、亚里达古、底马、路加，也都问你安。",
+                  "text_big5": "我的同工馬可、亞里達古、底馬、路加，也都問你安。",
+                  "text_en": "As do Mark, Aristarchus, Demas, Luke, my fellow workers."
+                },
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 3,
+                  "ref_gb": "罗十六3",
+                  "ref_big5": "羅十六3",
+                  "ref_en": "Rom. 16:3",
+                  "text_gb": "问我在基督耶稣里的同工，百基拉和亚居拉安；",
+                  "text_big5": "問我在基督耶穌裏的同工，百基拉和亞居拉安；",
+                  "text_en": "Greet Prisca and Aquila, my fellow workers in Christ Jesus,"
+                },
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 21,
+                  "ref_gb": "罗十六21",
+                  "ref_big5": "羅十六21",
+                  "ref_en": "Rom. 16:21",
+                  "text_gb": "我的同工提摩太，并我的亲属路求，耶孙和所西巴德，问你们安。",
+                  "text_big5": "我的同工提摩太，並我的親屬路求，耶孫和所西巴德，問你們安。",
+                  "text_en": "Timothy, my fellow worker, greets you, as well as Lucius and Jason and Sosipater, my kinsmen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "门一2",
+          "ref_big5": "門一2",
+          "ref_en": "Philem. 1:2",
+          "text_gb": "和姊[Cra]妹亚[Fn1]腓亚，并与我们一[Crb]同当兵的亚[Crc]基布，以及在[Fn2]你家中的召[Crd]会：",
+          "text_big5": "和姊[Cra]妹亞[Fn1]腓亞，並與我們一[Crb]同當兵的亞[Crc]基布，以及在[Fn2]你家中的召[Crd]會：",
+          "text_en": "And to Apphia the sister and to Archippus our fellow soldier and to the church, which is in your house:",
+          "text_gb_plain": "和姊妹亚腓亚，并与我们一同当兵的亚基布，以及在你家中的召会：",
+          "text_big5_plain": "和姊妹亞腓亞，並與我們一同當兵的亞基布，以及在你家中的召會：",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "照本书信家庭的性质看，亚腓亚必是腓利门的妻子，亚基布必是他的儿子。",
+              "zh_big5": "",
+              "en": "1:2 1 Archippus According to the familial nature of this Epistle, Apphia must have been Philemon's wife, and Archippus, his son."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "腓利门住在歌罗西(2比西四17；10比西一2，四9)。根据历史，他是当地召会的长老。在歌罗西的召会必是在他家里聚会，因此是在他家中的召会。",
+              "zh_big5": "腓利門住在歌羅西。（2比西四17；門一10比西一2，四9。）根據歷史，他是當地召會的長老。在歌羅西的召會必是在他家裏聚會，因此是在他家中的召會。",
+              "en": "1:2 2 church Philemon lived in Colossae (v. 2; cf. Col. 4:17; v. 10; cf. Col. 1:2; 4:9) and according to history was an elder of the church there. It must have been that the church in Colossae met in his house. Hence, it was the church in his house."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "罗十六1",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 1,
+                  "ref_gb": "罗十六1",
+                  "ref_big5": "羅十六1",
+                  "ref_en": "Rom. 16:1",
+                  "text_gb": "我向你们推荐我们的姊妹非比，她是在坚革哩的召会的女执事，",
+                  "text_big5": "我向你們推薦我們的姊妹非比，她是在堅革哩的召會的女執事，",
+                  "text_en": "I commend to you Phoebe our sister, who is a deaconess of the church which is in Cenchrea,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 12,
+              "raw": "腓二25",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 2,
+                  "verse": 25,
+                  "ref_gb": "腓二25",
+                  "ref_big5": "腓二25",
+                  "ref_en": "Phil. 2:25",
+                  "text_gb": "然而，我认为必须打发以巴弗提到你们那里去，他是我的弟兄、同工、并一同当兵的，也是你们的使徒，和供应我需用的供奉者。",
+                  "text_big5": "然而，我認為必須打發以巴弗提到你們那裏去，他是我的弟兄、同工、並一同當兵的，也是你們的使徒，和供應我需用的供奉者。",
+                  "text_en": "But I considered it necessary to send to you Epaphroditus, my brother and fellow worker and fellow soldier, and your apostle and minister to my need,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 17,
+              "raw": "西四17",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 17,
+                  "ref_gb": "西四17",
+                  "ref_big5": "西四17",
+                  "ref_en": "Col. 4:17",
+                  "text_gb": "要告诉亚基布：务要留心你在主里所领受的职事，好尽这职事。",
+                  "text_big5": "要告訴亞基布：務要留心你在主裏所領受的職事，好盡這職事。",
+                  "text_en": "And say to Archippus, Take heed to the ministry which you have received in the Lord, that you fulfill it."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 28,
+              "raw": "罗十六5，林前十六19，西四15",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 5,
+                  "ref_gb": "罗十六5",
+                  "ref_big5": "羅十六5",
+                  "ref_en": "Rom. 16:5",
+                  "text_gb": "又问在他们家中的召会安。问我所亲爱的以拜尼土安，他是亚西亚归基督初结的果子。",
+                  "text_big5": "又問在他們家中的召會安。問我所親愛的以拜尼土安，他是亞西亞歸基督初結的果子。",
+                  "text_en": "And greet the church, which is in their house. Greet Epaenetus, my beloved, who is the firstfruits of Asia unto Christ."
+                },
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 19,
+                  "ref_gb": "林前十六19",
+                  "ref_big5": "林前十六19",
+                  "ref_en": "1 Cor. 16:19",
+                  "text_gb": "亚西亚的众召会问你们安。亚居拉和百基拉，并在他们家中的召会，在主里多多地问你们安。",
+                  "text_big5": "亞西亞的眾召會問你們安。亞居拉和百基拉，並在他們家中的召會，在主裏多多的問你們安。",
+                  "text_en": "The churches of Asia greet you. Aquila and Prisca greet you much in the Lord, with the church, which is in their house."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 15,
+                  "ref_gb": "西四15",
+                  "ref_big5": "西四15",
+                  "ref_en": "Col. 4:15",
+                  "text_gb": "请问在老底嘉的弟兄和宁法，并他家里的召会安。",
+                  "text_big5": "請問在老底嘉的弟兄和寧法，並他家裏的召會安。",
+                  "text_en": "Greet the brothers in Laodicea, as well as Nymphas and the church, which is in his house."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "门一3",
+          "ref_big5": "門一3",
+          "ref_en": "Philem. 1:3",
+          "text_gb": "愿恩典与平安，从神我们的父，并主耶稣基督归与你们。",
+          "text_big5": "願恩典與平安，從神我們的父，並主耶穌基督歸與你們。",
+          "text_en": "Grace to you and peace from God our Father and the Lord Jesus Christ.",
+          "text_gb_plain": "愿恩典与平安，从神我们的父，并主耶稣基督归与你们。",
+          "text_big5_plain": "願恩典與平安，從神我們的父，並主耶穌基督歸與你們。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "门一4",
+          "ref_big5": "門一4",
+          "ref_en": "Philem. 1:4",
+          "text_gb": "我祷告的时候提[Cra]到你，常常感[Crb]谢我的神，",
+          "text_big5": "我禱告的時候題[Cra]到你，常常感[Crb]謝我的神，",
+          "text_en": "I thank my God always, making mention of you in my prayers,",
+          "text_gb_plain": "我祷告的时候提到你，常常感谢我的神，",
+          "text_big5_plain": "我禱告的時候題到你，常常感謝我的神，",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "弗一16",
+              "refs": [
+                {
+                  "book": 49,
+                  "chapter": 1,
+                  "verse": 16,
+                  "ref_gb": "弗一16",
+                  "ref_big5": "弗一16",
+                  "ref_en": "Eph. 1:16",
+                  "text_gb": "也就为你们不住地感谢，在我的祷告中常提到你们；",
+                  "text_big5": "也就為你們不住的感謝，在我的禱告中常題到你們；",
+                  "text_en": "Do not cease giving thanks for you, making mention of you in my prayers,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 13,
+              "raw": "罗一8",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 1,
+                  "verse": 8,
+                  "ref_gb": "罗一8",
+                  "ref_big5": "羅一8",
+                  "ref_en": "Rom. 1:8",
+                  "text_gb": "首先，我借着耶稣基督，为你们众人感谢我的神，因你们的信心传遍了全世界。",
+                  "text_big5": "首先，我藉著耶穌基督，為你們眾人感謝我的神，因你們的信心傳遍了全世界。",
+                  "text_en": "First, I thank my God through Jesus Christ for you all because your faith is proclaimed throughout the whole world."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "门一5",
+          "ref_big5": "門一5",
+          "ref_en": "Philem. 1:5",
+          "text_gb": "因听见你对主耶稣，并对众圣徒的爱[Fn1]与信；",
+          "text_big5": "因聽見你對主耶穌，並對眾聖徒的愛[Fn1]與信；",
+          "text_en": "Hearing of your love and the faith which you have toward the Lord Jesus and to all the saints,",
+          "text_gb_plain": "因听见你对主耶稣，并对众圣徒的爱与信；",
+          "text_big5_plain": "因聽見你對主耶穌，並對眾聖徒的愛與信；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 16,
+              "zh": "信徒的生活，开始先有信，然后由信产生爱(加五6，弗一15，西一4，见提前一14注2，弗六23注2)。但这里先提爱，再提信，因为本书信所论关于信徒身分的平等，乃是一件爱的事，这爱是从信来的。在新人里，众肢体因信彼此相爱(多三15)。他们的关系是出于爱、借着信的。使徒珍赏腓利门信的交通(6)，并因他的爱得到鼓励(7)，因此恳求他因这爱(9)接纳欧尼西母。使徒把爱与信这两种美德提在一起；腓利门兼有这二者，不仅向着主，也向着众圣徒。",
+              "zh_big5": "信徒的生活，開始先有信，然後由信產生愛。（加五6，弗一15，西一4，見提前一14註2，弗六23註2。）但這裏先題愛，再題信，因為本書信所論關於信徒身分的平等，乃是一件愛的事，這愛是從信來的。在新人裏，眾肢體因信彼此相愛。（多三15。）他們的關係是出於愛、藉著信的。使徒珍賞腓利門信的交通，（6，）並因他的愛得到鼓勵，（7，）因此懇求他因這愛（9）接納歐尼西母。使徒把愛與信這兩種美德題在一起；腓利門兼有這二者，不僅向著主，也向著眾聖徒。",
+              "en": "1:5 1 love In the initial stage of the life of a believer, faith comes first, and then, out of faith, love is produced (Gal. 5:6; Eph. 1:15; Col. 1:4 see note 1 Tim. 1:14 2 and note Eph. 6:23 2 ). But here love is mentioned first and then faith, because the matter of the equal status of the believers, dealt with in this Epistle, is a matter of love, which comes out of faith. In the new man the members love one another in faith (Titus 3:15). Their relationship is of love through faith. The apostle appreciated the fellowship of Philemon's faith (v. 6) and was encouraged by his love (v. 7); thus, he entreated Philemon to receive Onesimus because of this love (v. 9). These two virtues are referred to in combination here; Philemon had both of them, not only toward the Lord but also to all the saints."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "门一6",
+          "ref_big5": "門一6",
+          "ref_en": "Philem. 1:6",
+          "text_gb": "愿你信的交通显出功效，使人充[Fn1]分认[Cra]识你[Fn2]们里面为[Fn3]着基督的各[Fn4]样善事。",
+          "text_big5": "願你信的交通顯出功效，使人充[Fn1]分認[Cra]識你[Fn2]們裏面為[Fn3]著基督的各[Fn4]樣善事。",
+          "text_en": "That the fellowship of your faith may become effective in the full knowledge of every good thing which is in you for Christ.",
+          "text_gb_plain": "愿你信的交通显出功效，使人充分认识你们里面为着基督的各样善事。",
+          "text_big5_plain": "願你信的交通顯出功效，使人充分認識你們裏面為著基督的各樣善事。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 14,
+              "zh": "即充分承认、珍赏并经历上的体认。",
+              "zh_big5": "即充分承認、珍賞並經歷上的體認。",
+              "en": "1:6 1 full I.e., full acknowledgment, full appreciation, and full recognition through experience."
+            },
+            {
+              "num": 2,
+              "loc": 18,
+              "zh": "有古卷作，我们。",
+              "zh_big5": "有古卷作，我們。",
+              "en": "1:6 2 every Not natural things (cf. Rom. 7:18) but spiritual and divinely good things, such as the love and the faith that Philemon had toward the Lord Jesus. These good things are in us, the regenerated believers, but are not in natural men."
+            },
+            {
+              "num": 3,
+              "loc": 22,
+              "zh": "直译，归于，向着。我们里面一切属灵、神圣的善事，都是归于基督，向着基督，为着基督的。使徒祷告，愿腓利门向着众圣徒之信的交通、往来、分享，在对我们信徒里面一切为着基督善事之充分认识、充分领悟的元素和范围里，能在他们里面显出功效，使他们承认、珍赏并体认信徒里面为着基督的各样属灵、神圣的善事。",
+              "zh_big5": "直譯，歸於，向著。我們裏面一切屬靈、神聖的善事，都是歸於基督，向著基督，為著基督的。使徒禱告，願腓利門向著眾聖徒之信的交通、往來、分享，在對我們信徒裏面一切為著基督善事之充分認識、充分領悟的元素和範圍裏，能在他們裏面顯出功效，使他們承認、珍賞並體認信徒裏面為著基督的各樣屬靈、神聖的善事。",
+              "en": "1:6 3 you Some ancient MSS read, us."
+            },
+            {
+              "num": 4,
+              "loc": 27,
+              "zh": "不是指天然的事(参罗七18)，乃是指属灵、神圣的善事，就如腓利门里面对主耶稣的爱与信等，这些都是在我们重生的信徒里面，不是在天然的人里面。",
+              "zh_big5": "不是指天然的事，（參羅七18，）乃是指屬靈、神聖的善事，就如腓利門裏面對主耶穌的愛與信等，這些都是在我們重生的信徒裏面，不是在天然的人裏面。",
+              "en": "1:6 4 for Lit., unto, toward. All the spiritual and divinely good things in us are unto Christ, toward Christ, for Christ. The apostle prayed that the fellowship, the communication, the sharing of Philemon's faith toward all the saints might become effective in them in the element and sphere of the full knowledge, the full realization, of all the good things in us for Christ, causing them to acknowledge, appreciate, and recognize all the spiritual and divinely good things that are in the believers for Christ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "腓一9，西一9，三10",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "腓一9",
+                  "ref_big5": "腓一9",
+                  "ref_en": "Phil. 1:9",
+                  "text_gb": "我所祷告的，就是要你们的爱，在充足的知识并一切的辨识上，多而又多的洋溢，",
+                  "text_big5": "我所禱告的，就是要你們的愛，在充足的知識並一切的辨識上，多而又多的洋溢，",
+                  "text_en": "And this I pray, that your love may abound yet more and more in full knowledge and all discernment,"
+                },
+                {
+                  "book": 51,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "西一9",
+                  "ref_big5": "西一9",
+                  "ref_en": "Col. 1:9",
+                  "text_gb": "所以，我们自从听见的日子，也就为你们不住地祷告祈求，愿你们在一切属灵的智慧和悟性上，充分认识神的旨意，",
+                  "text_big5": "所以，我們自從聽見的日子，也就為你們不住的禱告祈求，願你們在一切屬靈的智慧和悟性上，充分認識神的旨意，",
+                  "text_en": "Therefore we also, since the day we heard of it, do not cease praying and asking on your behalf that you may be filled with the full knowledge of His will in all spiritual wisdom and understanding,"
+                },
+                {
+                  "book": 51,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "西三10",
+                  "ref_big5": "西三10",
+                  "ref_en": "Col. 3:10",
+                  "text_gb": "并且穿上了新人；这新人照着创造他者的形像渐渐更新，以致有充足的知识；",
+                  "text_big5": "並且穿上了新人；這新人照著創造他者的形像漸漸更新，以致有充足的知識；",
+                  "text_en": "And have put on the new man, which is being renewed unto full knowledge according to the image of Him who created him,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "门一7",
+          "ref_big5": "門一7",
+          "ref_en": "Philem. 1:7",
+          "text_gb": "因[Fn1]为弟[Cra]兄啊，我因你的爱，大大喜[Crb]乐，满受鼓[Crc]励，因为众圣徒的心[Crd]肠借着你得[Fn2]了舒[Cre]畅。",
+          "text_big5": "因[Fn1]為弟[Cra]兄阿，我因你的愛，大大喜[Crb]樂，滿受鼓[Crc]勵，因為眾聖徒的心[Crd]腸藉著你得[Fn2]了舒[Cre]暢。",
+          "text_en": "For I had much joy and encouragement over your love, because the inward parts of the saints have been refreshed through you, brother.",
+          "text_gb_plain": "因为弟兄啊，我因你的爱，大大喜乐，满受鼓励，因为众圣徒的心肠借着你得了舒畅。",
+          "text_big5_plain": "因為弟兄阿，我因你的愛，大大喜樂，滿受鼓勵，因為眾聖徒的心腸藉著你得了舒暢。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "“因为”引出使徒为着腓利门的信，能在众圣徒里面显出功效而祷告的原因(6)。这是因为腓利门的爱，使众圣徒的心肠得了舒畅，因此叫使徒大大喜乐，满受鼓励。",
+              "zh_big5": "“因為”引出使徒為著腓利門的信，能在眾聖徒裏面顯出功效而禱告的原因。（6。）這是因為腓利門的愛，使眾聖徒的心腸得了舒暢，因此叫使徒大大喜樂，滿受鼓勵。",
+              "en": "1:7 1 For For introduces the reason that the apostle prayed for Philemon's faith to become effective in the saints (v. 6), the reason being that Philemon's love had refreshed the inward parts of the saints and, hence, had rendered the apostle much joy and encouragement."
+            },
+            {
+              "num": 2,
+              "loc": 34,
+              "zh": "即得了抚慰、感到畅快。",
+              "zh_big5": "即得了撫慰、感到暢快。",
+              "en": "1:7 2 inward Lit., bowels."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "门20，16，太二三8，路二二32，约二一23，加六18，启一9",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 20,
+                  "ref_gb": "门一20",
+                  "ref_big5": "門一20",
+                  "ref_en": "Philem. 1:20",
+                  "text_gb": "弟兄啊，是的，愿我在主里从你得着益处，愿你使我的心肠在基督里得舒畅。",
+                  "text_big5": "弟兄阿，是的，願我在主裏從你得著益處，願你使我的心腸在基督裏得舒暢。",
+                  "text_en": "Yes, brother, may I have profit from you in the Lord; refresh my inward parts in Christ."
+                },
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 16,
+                  "ref_gb": "门一16",
+                  "ref_big5": "門一16",
+                  "ref_en": "Philem. 1:16",
+                  "text_gb": "不再是奴仆，乃是高过奴仆，是亲爱的弟兄，对我固然是如此，对你，不拘在肉身上，或在主里，岂不都更是这样。",
+                  "text_big5": "不再是奴僕，乃是高過奴僕，是親愛的弟兄，對我固然是如此，對你，不拘在肉身上，或在主裏，豈不都更是這樣。",
+                  "text_en": "No longer as a slave, but above a slave, a beloved brother, especially to me, but how much more to you, both in the flesh and in the Lord."
+                },
+                {
+                  "book": 40,
+                  "chapter": 23,
+                  "verse": 8,
+                  "ref_gb": "太二三8",
+                  "ref_big5": "太二三8",
+                  "ref_en": "Matt. 23:8",
+                  "text_gb": "但你们不要受拉比的称呼，因为只有一位是你们的夫子，你们都是弟兄；",
+                  "text_big5": "但你們不要受拉比的稱呼，因為只有一位是你們的夫子，你們都是弟兄；",
+                  "text_en": "But you, do not be called Rabbi, for One is your Teacher, and you are all brothers."
+                },
+                {
+                  "book": 42,
+                  "chapter": 22,
+                  "verse": 32,
+                  "ref_gb": "路二二32",
+                  "ref_big5": "路二二32",
+                  "ref_en": "Luke 22:32",
+                  "text_gb": "但我已经为你祈求，叫你不至于失了信心，你回转过来，要坚固你的弟兄。",
+                  "text_big5": "但我已經為你祈求，叫你不至於失了信心，你回轉過來，要堅固你的弟兄。",
+                  "text_en": "But I have made petition concerning you that your faith would not fail; and you, once you have turned again, establish your brothers."
+                },
+                {
+                  "book": 43,
+                  "chapter": 21,
+                  "verse": 23,
+                  "ref_gb": "约二一23",
+                  "ref_big5": "約二一23",
+                  "ref_en": "John 21:23",
+                  "text_gb": "于是这话传在弟兄中间，说那门徒不死。其实耶稣不是说他不死，乃是说，我若要留他直到我来的时候，与你何干。",
+                  "text_big5": "於是這話傳在弟兄中間，說那門徒不死。其實耶穌不是說他不死，乃是說，我若要留他直到我來的時候，與你何干。",
+                  "text_en": "This word therefore went out among the brothers, that that disciple would not die, yet Jesus did not say to him that he would not die, but, If I want him to remain until I come, what is that to you?"
+                },
+                {
+                  "book": 48,
+                  "chapter": 6,
+                  "verse": 18,
+                  "ref_gb": "加六18",
+                  "ref_big5": "加六18",
+                  "ref_en": "Gal. 6:18",
+                  "text_gb": "弟兄们，愿我们主耶稣基督的恩与你们的灵同在。阿们。",
+                  "text_big5": "弟兄們，願我們主耶穌基督的恩與你們的靈同在。阿們。",
+                  "text_en": "The grace of our Lord Jesus Christ be with your spirit, brothers. Amen."
+                },
+                {
+                  "book": 66,
+                  "chapter": 1,
+                  "verse": 9,
+                  "ref_gb": "启一9",
+                  "ref_big5": "啟一9",
+                  "ref_en": "Rev. 1:9",
+                  "text_gb": "我约翰，就是你们的弟兄，和你们在耶稣的患难、国度、忍耐里一同有分的，为神的话和耶稣的见证，曾在那名叫拔摩的海岛上。",
+                  "text_big5": "我約翰，就是你們的弟兄，和你們在耶穌的患難、國度、忍耐裏一同有分的，為神的話和耶穌的見證，曾在那名叫拔摩的海島上。",
+                  "text_en": "I John, your brother and fellow partaker in the tribulation and kingdom and endurance in Jesus, was on the island called Patmos because of the word of God and the testimony of Jesus."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 15,
+              "raw": "腓二2",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 2,
+                  "verse": 2,
+                  "ref_gb": "腓二2",
+                  "ref_big5": "腓二2",
+                  "ref_en": "Phil. 2:2",
+                  "text_gb": "你们就要使我的喜乐满足，就是要思念相同的事，有相同的爱，魂里联结，思念同一件事，",
+                  "text_big5": "你們就要使我的喜樂滿足，就是要思念相同的事，有相同的愛，魂裏聯結，思念同一件事，",
+                  "text_en": "Make my joy full, that you think the same thing, having the same love, joined in soul, thinking the one thing,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 20,
+              "raw": "林后七4，13，西四11",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 7,
+                  "verse": 4,
+                  "ref_gb": "林后七4",
+                  "ref_big5": "林後七4",
+                  "ref_en": "2 Cor. 7:4",
+                  "text_gb": "我向你们大大地放胆，我为你们多多地夸口；我满得安慰，在我们一切的患难中，我格外的洋溢喜乐。",
+                  "text_big5": "我向你們大大的放膽，我為你們多多的誇口；我滿得安慰，在我們一切的患難中，我格外的洋溢喜樂。",
+                  "text_en": "Great is my boldness toward you, great is my boasting on your behalf; I am filled with comfort, I overflow with joy in all our affliction."
+                },
+                {
+                  "book": 47,
+                  "chapter": 7,
+                  "verse": 13,
+                  "ref_gb": "林后七13",
+                  "ref_big5": "林後七13",
+                  "ref_en": "2 Cor. 7:13",
+                  "text_gb": "所以我们得了安慰，并且在这安慰之外，我们因提多的喜乐，就越发更加喜乐，因他的灵从你们众人得了畅快。",
+                  "text_big5": "所以我們得了安慰，並且在這安慰之外，我們因提多的喜樂，就越發更加喜樂，因他的靈從你們眾人得了暢快。",
+                  "text_en": "Because of this we have been comforted. And in addition to our comfort, we rejoiced more abundantly over the joy of Titus, because his spirit has been refreshed by all of you."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 11,
+                  "ref_gb": "西四11",
+                  "ref_big5": "西四11",
+                  "ref_en": "Col. 4:11",
+                  "text_gb": "那称为犹士都的耶数，也问你们安；奉割礼的人中，只有这些人是为神的国作我的同工，他们也成了我的安慰。",
+                  "text_big5": "那稱為猶士都的耶數，也問你們安；奉割禮的人中，只有這些人是為神的國作我的同工，他們也成了我的安慰。",
+                  "text_en": "And Jesus, who is called Justus; these alone of the circumcision are my fellow workers for the kingdom of God, ones who have become a consolation to me."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 29,
+              "raw": "门12，20",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "门一12",
+                  "ref_big5": "門一12",
+                  "ref_en": "Philem. 1:12",
+                  "text_gb": "我现在打发他回你那里去，他乃是我心上的人。",
+                  "text_big5": "我現在打發他回你那裏去，他乃是我心上的人。",
+                  "text_en": "Him I have sent back to you-him, that is, my very heart-"
+                },
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 20,
+                  "ref_gb": "门一20",
+                  "ref_big5": "門一20",
+                  "ref_en": "Philem. 1:20",
+                  "text_gb": "弟兄啊，是的，愿我在主里从你得着益处，愿你使我的心肠在基督里得舒畅。",
+                  "text_big5": "弟兄阿，是的，願我在主裏從你得著益處，願你使我的心腸在基督裏得舒暢。",
+                  "text_en": "Yes, brother, may I have profit from you in the Lord; refresh my inward parts in Christ."
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 36,
+              "raw": "门20，提后一16",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 20,
+                  "ref_gb": "门一20",
+                  "ref_big5": "門一20",
+                  "ref_en": "Philem. 1:20",
+                  "text_gb": "弟兄啊，是的，愿我在主里从你得着益处，愿你使我的心肠在基督里得舒畅。",
+                  "text_big5": "弟兄阿，是的，願我在主裏從你得著益處，願你使我的心腸在基督裏得舒暢。",
+                  "text_en": "Yes, brother, may I have profit from you in the Lord; refresh my inward parts in Christ."
+                },
+                {
+                  "book": 55,
+                  "chapter": 1,
+                  "verse": 16,
+                  "ref_gb": "提后一16",
+                  "ref_big5": "提後一16",
+                  "ref_en": "2 Tim. 1:16",
+                  "text_gb": "愿主怜悯阿尼色弗一家，因他屡次使我舒爽，且不以我的锁链为耻；",
+                  "text_big5": "願主憐憫阿尼色弗一家，因他屢次使我舒爽，且不以我的鎖鍊為恥；",
+                  "text_en": "May the Lord grant mercy to the house of Onesiphorus, for he often refreshed me and was not ashamed of my chain;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "门一8",
+          "ref_big5": "門一8",
+          "ref_en": "Philem. 1:8",
+          "text_gb": "为此，我虽然在基督里能大有胆[Cra]量吩[Crb]咐你合[Crc]宜的事，",
+          "text_big5": "為此，我雖然在基督裏能大有膽[Cra]量吩[Crb]咐你合[Crc]宜的事，",
+          "text_en": "Therefore though I have much boldness in Christ to charge you what is fitting,",
+          "text_gb_plain": "为此，我虽然在基督里能大有胆量吩咐你合宜的事，",
+          "text_big5_plain": "為此，我雖然在基督裏能大有膽量吩咐你合宜的事，",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 14,
+              "raw": "林后三12",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 3,
+                  "verse": 12,
+                  "ref_gb": "林后三12",
+                  "ref_big5": "林後三12",
+                  "ref_en": "2 Cor. 3:12",
+                  "text_gb": "所以，我们既有这样的盼望，就大大放胆，",
+                  "text_big5": "所以，我們既有這樣的盼望，就大大放膽，",
+                  "text_en": "Therefore since we have such hope, we use much boldness,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 16,
+              "raw": "提前一18",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 1,
+                  "verse": 18,
+                  "ref_gb": "提前一18",
+                  "ref_big5": "提前一18",
+                  "ref_en": "1 Tim. 1:18",
+                  "text_gb": "孩子提摩太，我照从前指着你所说的预言，将这嘱咐交托你，叫你凭这些预言，可以打那美好的仗，",
+                  "text_big5": "孩子提摩太，我照從前指著你所說的豫言，將這囑咐交託你，叫你憑這些豫言，可以打那美好的仗，",
+                  "text_en": "This charge I commit to you, my child Timothy, according to the prophecies previously made concerning you, that by them you might war the good warfare,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 19,
+              "raw": "弗五4",
+              "refs": [
+                {
+                  "book": 49,
+                  "chapter": 5,
+                  "verse": 4,
+                  "ref_gb": "弗五4",
+                  "ref_big5": "弗五4",
+                  "ref_en": "Eph. 5:4",
+                  "text_gb": "还有淫辞、妄语、或是粗鄙的戏言，都不相宜，宁可说感谢的话。",
+                  "text_big5": "還有淫辭、妄語、或是粗鄙的戲言，都不相宜，寧可說感謝的話。",
+                  "text_en": "And obscenity and foolish talking or sly, filthy jesting, which are not becoming, but rather the giving of thanks."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "门一9",
+          "ref_big5": "門一9",
+          "ref_en": "Philem. 1:9",
+          "text_gb": "然而像我这有[Fn1]年纪的保罗，现在又是基督耶稣的囚[Fn2][Cra]犯，宁可因着爱恳[Crb]求你，",
+          "text_big5": "然而像我這有[Fn1]年紀的保羅，現在又是基督耶穌的囚[Fn2][Cra]犯，寧可因著愛懇[Crb]求你，",
+          "text_en": "Because of love I rather entreat, being such a one as Paul the aged and now also a prisoner of Christ Jesus.",
+          "text_gb_plain": "然而像我这有年纪的保罗，现在又是基督耶稣的囚犯，宁可因着爱恳求你，",
+          "text_big5_plain": "然而像我這有年紀的保羅，現在又是基督耶穌的囚犯，寧可因著愛懇求你，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 6,
+              "zh": "或，作大使的(弗六20)。",
+              "zh_big5": "或，作大使的。（弗六20。）",
+              "en": "1:9 1 the Or, an ambassador (Eph. 6:20)."
+            },
+            {
+              "num": 2,
+              "loc": 22,
+              "zh": "这里的“囚犯”与23节“坐监的，”以及13节的“捆锁，”指明本书信是使徒第一次被囚于罗马时写的。见提后四6注2。",
+              "zh_big5": "這裏的“囚犯”與23節“坐監的，”以及13節的“捆鎖，”指明本書信是使徒第一次被囚於羅馬時寫的。見提後四6註2。",
+              "en": "1:9 2 prisoner Prisoner here, fellow prisoner in v. 23, and bonds in v. 13 indicate that this Epistle was written during the apostle's first imprisonment in Rome. See note 2 Tim. 4:6 2 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 22,
+              "raw": "门1",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "门一1",
+                  "ref_big5": "門一1",
+                  "ref_en": "Philem. 1:1",
+                  "text_gb": "基督耶稣的囚犯保罗，和弟兄提摩太，写信给所爱的并我们的同工腓利门，",
+                  "text_big5": "基督耶穌的囚犯保羅，和弟兄提摩太，寫信給所愛的並我們的同工腓利門，",
+                  "text_en": "Paul, a prisoner of Christ Jesus, and Timothy the brother, to Philemon our beloved and fellow worker"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 30,
+              "raw": "罗十二1",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 12,
+                  "verse": 1,
+                  "ref_gb": "罗十二1",
+                  "ref_big5": "羅十二1",
+                  "ref_en": "Rom. 12:1",
+                  "text_gb": "所以弟兄们，我借着神的怜恤劝你们，将身体献上，当作圣别并讨神喜悦的活祭，这是你们合理的事奉。",
+                  "text_big5": "所以弟兄們，我藉著神的憐恤勸你們，將身體獻上，當作聖別並討神喜悅的活祭，這是你們合理的事奉。",
+                  "text_en": "I exhort you therefore, brothers, through the compassions of God to present your bodies a living sacrifice, holy, well pleasing to God, which is your reasonable service."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "门一10",
+          "ref_big5": "門一10",
+          "ref_en": "Philem. 1:10",
+          "text_gb": "就是为我在捆[Cra]锁中所生[Fn1][Crb]的孩[Crc]子欧[Fn2][Crd]尼西母恳求你；",
+          "text_big5": "就是為我在捆[Cra]鎖中所生[Fn1][Crb]的孩[Crc]子歐[Fn2][Crd]尼西母懇求你；",
+          "text_en": "I entreat you concerning my child, whom I have begotten in my bonds, Onesimus,",
+          "text_gb_plain": "就是为我在捆锁中所生的孩子欧尼西母恳求你；",
+          "text_big5_plain": "就是為我在捆鎖中所生的孩子歐尼西母懇求你；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "指借着那灵用神永远的生命所生的(约三3，一13)。",
+              "zh_big5": "指藉著那靈用神永遠的生命所生的。（約三3，一13。）",
+              "en": "1:10 1 begotten Through the Spirit with the eternal life of God (John 3:3; 1:13)."
+            },
+            {
+              "num": 2,
+              "loc": 14,
+              "zh": "这名，原文意有益处的、有用的、有帮助的，是奴仆常用的名字。他是腓利门所买来的奴仆，根据罗马律法，是没有人权的。他从主人那里逃走，犯了该死的罪。当他与使徒同在罗马监狱时，借着使徒得救了。现今使徒打发他带着这封书信，回到他主人那里。",
+              "zh_big5": "這名，原文意有益處的、有用的、有幫助的，是奴僕常用的名字。他是腓利門所買來的奴僕，根據羅馬律法，是沒有人權的。他從主人那裏逃走，犯了該死的罪。當他與使徒同在羅馬監獄時，藉著使徒得救了。現今使徒打發他帶著這封書信，回到他主人那裏。",
+              "en": "1:10 2 Onesimus The name in Greek means profitable, useful, helpful; it was a common name for slaves. He was Philemon's purchased bondslave, who, according to Roman law, had no human rights. He ran away from his master, thus committing a crime punishable by death. While he was in prison at Rome with the apostle, he was saved through him. Now the apostle sent him back with this Epistle to his master."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "门13，腓一7",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 13,
+                  "ref_gb": "门一13",
+                  "ref_big5": "門一13",
+                  "ref_en": "Philem. 1:13",
+                  "text_gb": "我本有意将他留在身边，使他在我为福音所受的捆锁中，替你服事我。",
+                  "text_big5": "我本有意將他留在身邊，使他在我為福音所受的捆鎖中，替你服事我。",
+                  "text_en": "Whom I intended to keep with myself that on your behalf he might minister to me in the bonds of the gospel."
+                },
+                {
+                  "book": 50,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "腓一7",
+                  "ref_big5": "腓一7",
+                  "ref_en": "Phil. 1:7",
+                  "text_gb": "我为你们众人有这样的想法，原是应当的，因为你们有我在你们心里，无论我在捆锁之中，或在辩护、证实福音的时候，你们众人都与我同享恩典。",
+                  "text_big5": "我為你們眾人有這樣的想法，原是應當的，因為你們有我在你們心裏，無論我在捆鎖之中，或在辯護、證實福音的時候，你們眾人都與我同享恩典。",
+                  "text_en": "Even as it is right for me to think this concerning you all because you have me in your heart, since both in my bonds and in the defense and confirmation of the gospel you are all fellow partakers with me of grace."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 10,
+              "raw": "林前四14～15，加四19",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 14,
+                  "ref_gb": "林前四14",
+                  "ref_big5": "林前四14",
+                  "ref_en": "1 Cor. 4:14",
+                  "text_gb": "我写这些话，不是羞辱你们，乃像劝戒我亲爱的儿女一样。",
+                  "text_big5": "我寫這些話，不是羞辱你們，乃像勸戒我親愛的兒女一樣。",
+                  "text_en": "It is not to shame you that I write these things but to admonish you as my beloved children."
+                },
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 15,
+                  "ref_gb": "林前四15",
+                  "ref_big5": "林前四15",
+                  "ref_en": "1 Cor. 4:15",
+                  "text_gb": "你们在基督里，纵有上万的导师，父亲却不多，因为是我在基督耶稣里借着福音生了你们。",
+                  "text_big5": "你們在基督裏，縱有上萬的導師，父親卻不多，因為是我在基督耶穌裏藉著福音生了你們。",
+                  "text_en": "For though you have ten thousand guides in Christ, yet you do not have many fathers; for in Christ Jesus I have begotten you through the gospel."
+                },
+                {
+                  "book": 48,
+                  "chapter": 4,
+                  "verse": 19,
+                  "ref_gb": "加四19",
+                  "ref_big5": "加四19",
+                  "ref_en": "Gal. 4:19",
+                  "text_gb": "我的孩子们，我为你们再受生产之苦，直等到基督成形在你们里面。",
+                  "text_big5": "我的孩子們，我為你們再受生產之苦，直等到基督成形在你們裏面。",
+                  "text_en": "My children, with whom I travail again in birth until Christ is formed in you,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 12,
+              "raw": "提前一2",
+              "refs": [
+                {
+                  "book": 54,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提前一2",
+                  "ref_big5": "提前一2",
+                  "ref_en": "1 Tim. 1:2",
+                  "text_gb": "写信给那凭信作我真孩子的提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給那憑信作我真孩子的提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, genuine child in faith: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 14,
+              "raw": "西四9",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 9,
+                  "ref_gb": "西四9",
+                  "ref_big5": "西四9",
+                  "ref_en": "Col. 4:9",
+                  "text_gb": "还有忠信亲爱的弟兄欧尼西母同去，他是你们那里的人。他们要把这里一切的事都告诉你们。",
+                  "text_big5": "還有忠信親愛的弟兄歐尼西母同去，他是你們那裏的人。他們要把這裏一切的事都告訴你們。",
+                  "text_en": "With Onesimus, the faithful and beloved brother, who is one of you. They will make known to you all the things here."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "门一11",
+          "ref_big5": "門一11",
+          "ref_en": "Philem. 1:11",
+          "text_gb": "他从前对你没[Fn1]有益处，但如今对你我都有[Fn2]益处。",
+          "text_big5": "他從前對你沒[Fn1]有益處，但如今對你我都有[Fn2]益處。",
+          "text_en": "Who formerly was useless to you but now is useful both to you and to me.",
+          "text_gb_plain": "他从前对你没有益处，但如今对你我都有益处。",
+          "text_big5_plain": "他從前對你沒有益處，但如今對你我都有益處。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 6,
+              "zh": "或，没有用处。这是指欧尼西母从腓利门那里逃走。",
+              "zh_big5": "或，沒有用處。這是指歐尼西母從腓利門那裏逃走。",
+              "en": "1:11 1 useless Or, unserviceable. Referring to Onesimus's running away from Philemon."
+            },
+            {
+              "num": 2,
+              "loc": 18,
+              "zh": "或，有用处。这是因为欧尼西母已经悔改信主，并且愿意回到腓利门那里。",
+              "zh_big5": "或，有用處。這是因為歐尼西母已經悔改信主，並且願意回到腓利門那裏。",
+              "en": "1:11 2 useful Or, serviceable. Because Onesimus had been converted and was willing to return to Philemon."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "门一12",
+          "ref_big5": "門一12",
+          "ref_en": "Philem. 1:12",
+          "text_gb": "我现在打发他回你那里去，他乃是我心[Fn1]上的人。",
+          "text_big5": "我現在打發他回你那裏去，他乃是我心[Fn1]上的人。",
+          "text_en": "Him I have sent back to you-him, that is, my very heart-",
+          "text_gb_plain": "我现在打发他回你那里去，他乃是我心上的人。",
+          "text_big5_plain": "我現在打發他回你那裏去，他乃是我心上的人。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 17,
+              "zh": "直译，心肠。如在7、20，腓一8，二1(慈心)，西三12者，表征内在的情爱、慈心、怜恤。保罗内在的情爱和怜恤，随同欧尼西母到腓利门那里去。",
+              "zh_big5": "直譯，心腸。如在7、20，腓一8，二1（慈心），西三12者，表徵內在的情愛、慈心、憐恤。保羅內在的情愛和憐恤，隨同歐尼西母到腓利門那裏去。",
+              "en": "1:12 1 very Lit., bowels; as in vv. 7, 20 (inward parts), Phil. 1:8 (inward parts), Phil. 2:1 (tenderheartedness), and Col. 3:12 (inward parts), signifying inward affection, tenderheartedness, compassions. Paul's inward affection and compassions went with Onesimus to Philemon."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "门一13",
+          "ref_big5": "門一13",
+          "ref_en": "Philem. 1:13",
+          "text_gb": "我本有意将他留在身边，使他在我为福音所受的捆[Cra]锁中，替你服事我。",
+          "text_big5": "我本有意將他留在身邊，使他在我為福音所受的捆[Cra]鎖中，替你服事我。",
+          "text_en": "Whom I intended to keep with myself that on your behalf he might minister to me in the bonds of the gospel.",
+          "text_gb_plain": "我本有意将他留在身边，使他在我为福音所受的捆锁中，替你服事我。",
+          "text_big5_plain": "我本有意將他留在身邊，使他在我為福音所受的捆鎖中，替你服事我。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 22,
+              "raw": "门10",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 10,
+                  "ref_gb": "门一10",
+                  "ref_big5": "門一10",
+                  "ref_en": "Philem. 1:10",
+                  "text_gb": "就是为我在捆锁中所生的孩子欧尼西母恳求你；",
+                  "text_big5": "就是為我在捆鎖中所生的孩子歐尼西母懇求你；",
+                  "text_en": "I entreat you concerning my child, whom I have begotten in my bonds, Onesimus,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "门一14",
+          "ref_big5": "門一14",
+          "ref_en": "Philem. 1:14",
+          "text_gb": "但未[Fn1]得知你的意见，我就不愿作什么，好叫你的善行不[Cra]像是出于勉强，乃是出于甘[Crb]心。",
+          "text_big5": "但未[Fn1]得知你的意見，我就不願作甚麼，好叫你的善行不[Cra]像是出於勉強，乃是出於甘[Crb]心。",
+          "text_en": "But without your mind I did not want to do anything, that your goodness would not be as of necessity, but voluntary.",
+          "text_gb_plain": "但未得知你的意见，我就不愿作什么，好叫你的善行不像是出于勉强，乃是出于甘心。",
+          "text_big5_plain": "但未得知你的意見，我就不願作甚麼，好叫你的善行不像是出於勉強，乃是出於甘心。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "直译，没有。正如主没有我们的同意，就不愿作什么。",
+              "zh_big5": "直譯，沒有。正如主沒有我們的同意，就不願作甚麼。",
+              "en": "1:14 1 without Just as the Lord would not do anything without our consent."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 24,
+              "raw": "林后九7，彼前五2",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 9,
+                  "verse": 7,
+                  "ref_gb": "林后九7",
+                  "ref_big5": "林後九7",
+                  "ref_en": "2 Cor. 9:7",
+                  "text_gb": "各人要照心里所酌定的，不要作难，不要勉强，因为神喜爱乐意施与的人。",
+                  "text_big5": "各人要照心裏所酌定的，不要作難，不要勉強，因為神喜愛樂意施與的人。",
+                  "text_en": "Each one as he has purposed in his heart, not out of sorrow or out of necessity, for God loves a cheerful giver."
+                },
+                {
+                  "book": 60,
+                  "chapter": 5,
+                  "verse": 2,
+                  "ref_gb": "彼前五2",
+                  "ref_big5": "彼前五2",
+                  "ref_en": "1 Pet. 5:2",
+                  "text_gb": "务要牧养你们中间神的群羊，按着神监督他们，不是出于勉强，乃是出于甘心；不是为着卑鄙的利益，乃是出于热切；",
+                  "text_big5": "務要牧養你們中間神的群羊，按著神監督他們，不是出於勉強，乃是出於甘心；不是為著卑鄙的利益，乃是出於熱切；",
+                  "text_en": "Shepherd the flock of God among you, overseeing not under compulsion but willingly, according to God; not by seeking gain through base means but eagerly;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 36,
+              "raw": "参罗十二8",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 12,
+                  "verse": 8,
+                  "ref_gb": "罗十二8",
+                  "ref_big5": "羅十二8",
+                  "ref_en": "Rom. 12:8",
+                  "text_gb": "或作劝勉的，就当忠于劝勉；分授的，就当单纯；带领的，就当殷勤；怜悯人的，就当甘心乐意。",
+                  "text_big5": "或作勸勉的，就當忠於勸勉；分授的，就當單純；帶領的，就當殷勤；憐憫人的，就當甘心樂意。",
+                  "text_en": "Or he who exhorts, in that exhortation; he who gives, in simplicity; he who leads, in diligence; he who shows mercy, in cheerfulness."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 15,
+          "ref_gb": "门一15",
+          "ref_big5": "門一15",
+          "ref_en": "Philem. 1:15",
+          "text_gb": "因[Fn1]为他暂时离开你，或[Fn2]者是叫你可以永远完[Fn3]全得着他，",
+          "text_big5": "因[Fn1]為他暫時離開你，或[Fn2]者是叫你可以永遠完[Fn3]全得著他，",
+          "text_en": "For perhaps for this reason he was separated from you for but an hour, that you might fully have him forever,",
+          "text_gb_plain": "因为他暂时离开你，或者是叫你可以永远完全得着他，",
+          "text_big5_plain": "因為他暫時離開你，或者是叫你可以永遠完全得著他，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "“因为”引出12节打发他回去的原因。",
+              "zh_big5": "“因為”引出12節打發他回去的原因。",
+              "en": "1:15 1 For For introduces the reason for the sending in v. 12."
+            },
+            {
+              "num": 2,
+              "loc": 10,
+              "zh": "“或者，”不仅显示谦卑，也显示没有成见。",
+              "zh_big5": "“或者，”不僅顯示謙卑，也顯示沒有成見。",
+              "en": "1:15 2 perhaps Perhaps is not only an expression of humility but also an expression that shows no prejudice."
+            },
+            {
+              "num": 3,
+              "loc": 19,
+              "zh": "即整个据有。",
+              "zh_big5": "即整個據有。",
+              "en": "1:15 3 fully Possess him entirely."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 16,
+          "ref_gb": "门一16",
+          "ref_big5": "門一16",
+          "ref_en": "Philem. 1:16",
+          "text_gb": "不[Fn1]再是奴[Cra]仆，乃是高[Fn2]过奴仆，是亲[Fn3]爱的弟[Crb]兄，对我固[Fn4]然是如此，对你，不拘在[Fn5][Crc]肉身上，或在主里，岂不都更是这样。",
+          "text_big5": "不[Fn1]再是奴[Cra]僕，乃是高[Fn2]過奴僕，是親[Fn3]愛的弟[Crb]兄，對我固[Fn4]然是如此，對你，不拘在[Fn5][Crc]肉身上，或在主裏，豈不都更是這樣。",
+          "text_en": "No longer as a slave, but above a slave, a beloved brother, especially to me, but how much more to you, both in the flesh and in the Lord.",
+          "text_gb_plain": "不再是奴仆，乃是高过奴仆，是亲爱的弟兄，对我固然是如此，对你，不拘在肉身上，或在主里，岂不都更是这样。",
+          "text_big5_plain": "不再是奴僕，乃是高過奴僕，是親愛的弟兄，對我固然是如此，對你，不拘在肉身上，或在主裏，豈不都更是這樣。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "这封简短书信专一的目的，是要给我们看见，基督身体所有的肢体，在神永远的生命和神圣的爱里都是平等的。在保罗那半野蛮的时代，基督的生命在信徒中间废除了牢固的奴隶制度。在基督徒的交通里，爱的情操既是这样有力且得胜，就自然忽视堕落人类中间邪恶的社会等次，也无需任何制度上的解放。因着神圣的出生，以及凭着神圣生命而有的生活，所有在基督里的信徒，在召会中都有平等的身分；召会乃是在基督里的新人，没有为奴和自主的区别(西三10～11)。这是根据三个事实：(一)基督在十字架上的死已经废掉不同生活方式的规条，为着创造一个新人(弗二15)；(二)我们已经浸入基督，在祂里面成为一，不再有任何差异(加三27～28)；(三)在新人里，基督是一切，又在一切之内(西三11)。这样的生命，同着这样在平等交通里的爱，足能在召会中维持良好的秩序(提多)，完成神对召会的经纶(提前)，并对抗召会败落的潮流(提后)。本书在新约的排列上，位于前三卷之后，乃是出于神主宰的权柄。",
+              "zh_big5": "這封簡短書信專一的目的，是要給我們看見，基督身體所有的肢體，在神永遠的生命和神聖的愛裏都是平等的。在保羅那半野蠻的時代，基督的生命在信徒中間廢除了牢固的奴隸制度。在基督徒的交通裏，愛的情操既是這樣有力且得勝，就自然忽視墮落人類中間邪惡的社會等次，也無需任何制度上的解放。因著神聖的出生，以及憑著神聖生命而有的生活，所有在基督裏的信徒，在召會中都有平等的身分；召會乃是在基督裏的新人，沒有為奴和自主的區別。（西三10～11。）這是根據三個事實：(一)基督在十字架上的死已經廢掉不同生活方式的規條，為著創造一個新人；（弗二15；）(二)我們已經浸入基督，在祂裏面成為一，不再有任何差異；（加三27～28；）(三)在新人裏，基督是一切，又在一切之內。（西三11。）這樣的生命，同著這樣在平等交通裏的愛，足能在召會中維持良好的秩序（提多），完成神對召會的經綸（提前），並對抗召會敗落的潮流（提後）。本書在新約的排列上，位於前三卷之後，乃是出於神主宰的權柄。",
+              "en": "1:16 1 No This short Epistle serves the special purpose of showing us the equality, in God's eternal life and divine love, of all the members in the Body of Christ. In the semisavage age of Paul, the life of Christ had annulled, among the believers, the strong institution of slavery. Since the sentiment of the love of the Christian fellowship was so powerful and prevailing that the evil social order among fallen mankind was spontaneously ignored, any need for institutional emancipation was obviated. Because of the divine birth and because they were living by the divine life, all the believers in Christ had equal status in the church, which was the new man in Christ and in which there was no discrimination between free and bond (Col. 3:10-11). This was based on three facts: 1) Christ's death on the cross abolished the ordinances of the different ways of life, for the creating of the one new man (Eph. 2:15); 2) we all were baptized into Christ and were made one in Him without any differences (Gal. 3:27-28); 3) in the new man Christ is all and in all (Col. 3:11). Such a life with such a love in equal fellowship is well able to maintain good order in the church (in Titus), carry out God's economy concerning the church (in 1 Timothy), and stand against the tide of the church's decline (in 2 Timothy). It is of the Lord's sovereignty that in the arrangement of the New Testament this Epistle was positioned after the three preceding books."
+            },
+            {
+              "num": 2,
+              "loc": 9,
+              "zh": "或，超过奴仆。他甚至超过自由的人，他乃是亲爱的弟兄。",
+              "zh_big5": "或，超過奴僕。他甚至超過自由的人，他乃是親愛的弟兄。",
+              "en": "1:16 2 above Or, more than a slave. Onesimus was even more than a free man — he was a beloved brother."
+            },
+            {
+              "num": 3,
+              "loc": 15,
+              "zh": "亲爱的弟兄、姊妹(2)、所爱的并我们的同工(1)、与我们一同当兵的(2)、我的同工(24)、与我一同坐监的(23)以及同伙(17)，这些都是亲密的称呼，指明使徒论到他与在新人里众肢体的关系时，里面亲密的情操。",
+              "zh_big5": "親愛的弟兄、姊妹、（2、）所愛的並我們的同工、（1、）與我們一同當兵的、（2、）我的同工、（24、）與我一同坐監的（23）以及同夥，（17，）這些都是親密的稱呼，指明使徒論到他與在新人裏眾肢體的關係時，裏面親密的情操。",
+              "en": "1:16 3 beloved A beloved brother here, the sister (v. 2), our beloved and fellow worker (v. 1), our fellow soldier (v. 2), my fellow workers (v. 24), my fellow prisoner (v. 23), and a partner (v. 17) are all intimate terms, indicating the apostle's intimate sentiment concerning his relationship with the members in the new man."
+            },
+            {
+              "num": 4,
+              "loc": 23,
+              "zh": "直译，特别。",
+              "zh_big5": "直譯，特別。",
+              "en": "1:16 4 both I.e., in the flesh as a slave and in the Lord as a brother. In the flesh Onesimus was a brother as a slave, and in the Lord he was a slave as a brother."
+            },
+            {
+              "num": 5,
+              "loc": 34,
+              "zh": "即在肉身上是奴仆，在主里是弟兄。在肉身上，是弟兄作了奴仆；在主里，是奴仆作了弟兄。",
+              "zh_big5": "即在肉身上是奴僕，在主裏是弟兄。在肉身上，是弟兄作了奴僕；在主裏，是奴僕作了弟兄。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "林前七22",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 7,
+                  "verse": 22,
+                  "ref_gb": "林前七22",
+                  "ref_big5": "林前七22",
+                  "ref_en": "1 Cor. 7:22",
+                  "text_gb": "因为一个奴仆在主里蒙召，就是属于主得自由的人；照样，一个自由的人蒙召，就是基督的奴仆。",
+                  "text_big5": "因為一個奴僕在主裏蒙召，就是屬於主得自由的人；照樣，一個自由的人蒙召，就是基督的奴僕。",
+                  "text_en": "For the slave who has been called in the Lord is the Lord's freedman; likewise the free man who has been called is Christ's slave."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 18,
+              "raw": "门7，西四9，提前六2",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "门一7",
+                  "ref_big5": "門一7",
+                  "ref_en": "Philem. 1:7",
+                  "text_gb": "因为弟兄啊，我因你的爱，大大喜乐，满受鼓励，因为众圣徒的心肠借着你得了舒畅。",
+                  "text_big5": "因為弟兄阿，我因你的愛，大大喜樂，滿受鼓勵，因為眾聖徒的心腸藉著你得了舒暢。",
+                  "text_en": "For I had much joy and encouragement over your love, because the inward parts of the saints have been refreshed through you, brother."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 9,
+                  "ref_gb": "西四9",
+                  "ref_big5": "西四9",
+                  "ref_en": "Col. 4:9",
+                  "text_gb": "还有忠信亲爱的弟兄欧尼西母同去，他是你们那里的人。他们要把这里一切的事都告诉你们。",
+                  "text_big5": "還有忠信親愛的弟兄歐尼西母同去，他是你們那裏的人。他們要把這裏一切的事都告訴你們。",
+                  "text_en": "With Onesimus, the faithful and beloved brother, who is one of you. They will make known to you all the things here."
+                },
+                {
+                  "book": 54,
+                  "chapter": 6,
+                  "verse": 2,
+                  "ref_gb": "提前六2",
+                  "ref_big5": "提前六2",
+                  "ref_en": "1 Tim. 6:2",
+                  "text_gb": "奴仆若有信主的主人，不可因他们是弟兄就轻看他们，倒要越发服事他们，因为受到你们善良事工之益，而要还报你们的，是相信并蒙爱的。这些事你要教导人，并劝勉人。",
+                  "text_big5": "奴僕若有信主的主人，不可因他們是弟兄就輕看他們，倒要越發服事他們，因為受到你們善良事工之益，而要還報你們的，是相信並蒙愛的。這些事你要教導人，並勸勉人。",
+                  "text_en": "And those who have believing masters should not despise them, because they are brothers; but rather they should serve them, because those who recompense them for the kindly service received are believers and beloved. These things teach and exhort."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 34,
+              "raw": "弗六5，西三22",
+              "refs": [
+                {
+                  "book": 49,
+                  "chapter": 6,
+                  "verse": 5,
+                  "ref_gb": "弗六5",
+                  "ref_big5": "弗六5",
+                  "ref_en": "Eph. 6:5",
+                  "text_gb": "作奴仆的，要恐惧战兢地，凭心中的单纯，顺从肉身的主人，如同顺从基督一样。",
+                  "text_big5": "作奴僕的，要恐懼戰兢的，憑心中的單純，順從肉身的主人，如同順從基督一樣。",
+                  "text_en": "Slaves, be obedient to those who are your masters according to the flesh with fear and trembling, in singleness of your heart, as to Christ;"
+                },
+                {
+                  "book": 51,
+                  "chapter": 3,
+                  "verse": 22,
+                  "ref_gb": "西三22",
+                  "ref_big5": "西三22",
+                  "ref_en": "Col. 3:22",
+                  "text_gb": "作奴仆的，要凡事顺从肉身的主人，不要只在眼前事奉，像是讨人喜欢的，乃要凭心中的单纯敬畏主。",
+                  "text_big5": "作奴僕的，要凡事順從肉身的主人，不要只在眼前事奉，像是討人喜歡的，乃要憑心中的單純敬畏主。",
+                  "text_en": "Slaves, obey in all things those who are your masters according to the flesh, not with eye-service as men-pleasers, but in singleness of heart fearing the Lord."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 17,
+          "ref_gb": "门一17",
+          "ref_big5": "門一17",
+          "ref_en": "Philem. 1:17",
+          "text_gb": "所以，你[Fn1]若以我为同[Fn2][Cra]伙，就接纳他，如同接纳我一样。",
+          "text_big5": "所以，你[Fn1]若以我為同[Fn2][Cra]夥，就接納他，如同接納我一樣。",
+          "text_en": "If then you hold me as a partner, receive him as myself.",
+          "text_gb_plain": "所以，你若以我为同伙，就接纳他，如同接纳我一样。",
+          "text_big5_plain": "所以，你若以我為同夥，就接納他，如同接納我一樣。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "正如地方召会同其长老乃是主的同伙，主将新得救的人交托他们，就像那个好撒玛利亚人对得医治的人所行的(路十33～35)。",
+              "zh_big5": "正如地方召會同其長老乃是主的同夥，主將新得救的人交託他們，就像那個好撒瑪利亞人對得醫治的人所行的。（路十33～35。）",
+              "en": "1:17 1 you Just as a local church with its elders is in partnership with the Lord, and the Lord entrusts to them the newly saved ones, as the good Samaritan did with the healed one (Luke 10:33-35)."
+            },
+            {
+              "num": 2,
+              "loc": 9,
+              "zh": "这指明在主里交通的深切关系。",
+              "zh_big5": "這指明在主裏交通的深切關係。",
+              "en": "1:17 2 partner This indicates the deep relationship of fellowship in the Lord."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "林后八23",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 8,
+                  "verse": 23,
+                  "ref_gb": "林后八23",
+                  "ref_big5": "林後八23",
+                  "ref_en": "2 Cor. 8:23",
+                  "text_gb": "论到提多，他是我的同伙和为着你们的同工；至于我们的弟兄们，他们是众召会的使徒，是基督的荣耀。",
+                  "text_big5": "論到提多，他是我的同夥和為著你們的同工；至於我們的弟兄們，他們是眾召會的使徒，是基督的榮耀。",
+                  "text_en": "Whether concerning Titus, he is my partner and fellow worker for you; or our brothers, they are apostles of the churches, they are Christ's glory."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 18,
+          "ref_gb": "门一18",
+          "ref_big5": "門一18",
+          "ref_en": "Philem. 1:18",
+          "text_gb": "他若亏[Fn1]负你，或欠你什么，这都归在我[Fn2]的账上；",
+          "text_big5": "他若虧[Fn1]負你，或欠你甚麼，這都歸在我[Fn2]的賬上；",
+          "text_en": "And if he has wronged you in anything or owes anything, charge that to my account.",
+          "text_gb_plain": "他若亏负你，或欠你什么，这都归在我的账上；",
+          "text_big5_plain": "他若虧負你，或欠你甚麼，這都歸在我的賬上；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "这指明欧尼西母欺诈了他的主人。",
+              "zh_big5": "這指明歐尼西母欺詐了他的主人。",
+              "en": "1:18 1 wronged This indicates that Onesimus had defrauded his master."
+            },
+            {
+              "num": 2,
+              "loc": 17,
+              "zh": "保罗在照顾欧尼西母的事上，正是作了主为我们所作的。",
+              "zh_big5": "保羅在照顧歐尼西母的事上，正是作了主為我們所作的。",
+              "en": "1:18 2 my In caring for Onesimus, Paul did exactly what the Lord does for us."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 19,
+          "ref_gb": "门一19",
+          "ref_big5": "門一19",
+          "ref_en": "Philem. 1:19",
+          "text_gb": "我必偿[Fn1]还，这是我保罗亲[Cra]笔[Fn2]写的。我并不用对你说，连你[Fn3]自己也是亏欠于我。",
+          "text_big5": "我必償[Fn1]還，這是我保羅親[Cra]筆[Fn2]寫的。我並不用對你說，連你[Fn3]自己也是虧欠於我。",
+          "text_en": "I, Paul, have written with my own hand: I will repay; not to say to you that you owe me even your own self besides.",
+          "text_gb_plain": "我必偿还，这是我保罗亲笔写的。我并不用对你说，连你自己也是亏欠于我。",
+          "text_big5_plain": "我必償還，這是我保羅親筆寫的。我並不用對你說，連你自己也是虧欠於我。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "正如主为祂所救赎的人付了一切。",
+              "zh_big5": "正如主為祂所救贖的人付了一切。",
+              "en": "1:19 1 repay Just as the Lord pays everything for His redeemed."
+            },
+            {
+              "num": 2,
+              "loc": 12,
+              "zh": "直译，手。",
+              "zh_big5": "直譯，手。",
+              "en": "1:19 2 your This indicates that Philemon had been saved through Paul himself."
+            },
+            {
+              "num": 3,
+              "loc": 25,
+              "zh": "这指明腓利门乃是保罗亲自带领得救的。",
+              "zh_big5": "這指明腓利門乃是保羅親自帶領得救的。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "林前十六21，加六11",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 21,
+                  "ref_gb": "林前十六21",
+                  "ref_big5": "林前十六21",
+                  "ref_en": "1 Cor. 16:21",
+                  "text_gb": "我保罗亲笔问安。",
+                  "text_big5": "我保羅親筆問安。",
+                  "text_en": "The greeting in my own hand-Paul."
+                },
+                {
+                  "book": 48,
+                  "chapter": 6,
+                  "verse": 11,
+                  "ref_gb": "加六11",
+                  "ref_big5": "加六11",
+                  "ref_en": "Gal. 6:11",
+                  "text_gb": "你们看，我亲手写给你们的字是何等的大。",
+                  "text_big5": "你們看，我親手寫給你們的字是何等的大。",
+                  "text_en": "See with what large letters I have written to you with my own hand."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 20,
+          "ref_gb": "门一20",
+          "ref_big5": "門一20",
+          "ref_en": "Philem. 1:20",
+          "text_gb": "弟[Cra]兄啊，是的，愿我在主里从你得着益[Fn1]处，愿你使我的心[Fn2]肠在基督里得[Fn3]舒[Crb]畅。",
+          "text_big5": "弟[Cra]兄阿，是的，願我在主裏從你得著益[Fn1]處，願你使我的心[Fn2]腸在基督裏得[Fn3]舒[Crb]暢。",
+          "text_en": "Yes, brother, may I have profit from you in the Lord; refresh my inward parts in Christ.",
+          "text_gb_plain": "弟兄啊，是的，愿我在主里从你得着益处，愿你使我的心肠在基督里得舒畅。",
+          "text_big5_plain": "弟兄阿，是的，願我在主裏從你得著益處，願你使我的心腸在基督裏得舒暢。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 17,
+              "zh": "希腊文，onaimen，欧奈门，音近欧尼西母，二字在原文均指有益，暗指欧尼西母；这是玩弄文字，含示既然“连你自己也是亏欠于我，”对我而言，你就是欧尼西母。因此，你应当于我有益，让我在主里从你得着益处。",
+              "zh_big5": "希臘文，onaimen，歐奈門，音近歐尼西母，二字在原文均指有益，暗指歐尼西母；這是玩弄文字，含示既然“連你自己也是虧欠於我，”對我而言，你就是歐尼西母。因此，你應當於我有益，讓我在主裏從你得著益處。",
+              "en": "1:20 1 profit Gk. onaimen, similar in sound to Onesimus (both words meaning profitable). Here, this word is an allusion to the name Onesimus. This is a play on words, implying that since \"you owe me even your own self, you are an Onesimus to me — hence, you should be profitable to me, i.e., should let me have profit from you in the Lord.\""
+            },
+            {
+              "num": 2,
+              "loc": 25,
+              "zh": "与7节者同。腓利门既然使众圣徒的心肠得了舒畅，现今他的同伙要求他在主里也这样待他。",
+              "zh_big5": "與7節者同。腓利門既然使眾聖徒的心腸得了舒暢，現今他的同夥要求他在主裏也這樣待他。",
+              "en": "1:20 2 refresh Soothe, cheer."
+            },
+            {
+              "num": 3,
+              "loc": 31,
+              "zh": "即得抚慰、感畅快。",
+              "zh_big5": "即得撫慰、感暢快。",
+              "en": "1:20 3 inward Lit., bowels, as in v. 7. Since Philemon had refreshed the inward parts of the saints, his partner now asked him to do the same for him in the Lord."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "门7",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "门一7",
+                  "ref_big5": "門一7",
+                  "ref_en": "Philem. 1:7",
+                  "text_gb": "因为弟兄啊，我因你的爱，大大喜乐，满受鼓励，因为众圣徒的心肠借着你得了舒畅。",
+                  "text_big5": "因為弟兄阿，我因你的愛，大大喜樂，滿受鼓勵，因為眾聖徒的心腸藉著你得了舒暢。",
+                  "text_en": "For I had much joy and encouragement over your love, because the inward parts of the saints have been refreshed through you, brother."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 32,
+              "raw": "门7",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "门一7",
+                  "ref_big5": "門一7",
+                  "ref_en": "Philem. 1:7",
+                  "text_gb": "因为弟兄啊，我因你的爱，大大喜乐，满受鼓励，因为众圣徒的心肠借着你得了舒畅。",
+                  "text_big5": "因為弟兄阿，我因你的愛，大大喜樂，滿受鼓勵，因為眾聖徒的心腸藉著你得了舒暢。",
+                  "text_en": "For I had much joy and encouragement over your love, because the inward parts of the saints have been refreshed through you, brother."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 21,
+          "ref_gb": "门一21",
+          "ref_big5": "門一21",
+          "ref_en": "Philem. 1:21",
+          "text_gb": "我写信给你，深[Cra]信你必顺从，知道你所要行的，甚至必过于我所说的。",
+          "text_big5": "我寫信給你，深[Cra]信你必順從，知道你所要行的，甚至必過於我所說的。",
+          "text_en": "Having confidence in your obedience, I have written to you, knowing that you will do even beyond the things that I say.",
+          "text_gb_plain": "我写信给你，深信你必顺从，知道你所要行的，甚至必过于我所说的。",
+          "text_big5_plain": "我寫信給你，深信你必順從，知道你所要行的，甚至必過於我所說的。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "林后二3",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 2,
+                  "verse": 3,
+                  "ref_gb": "林后二3",
+                  "ref_big5": "林後二3",
+                  "ref_en": "2 Cor. 2:3",
+                  "text_gb": "我曾把这事写给你们，免得我来的时候，那些应该叫我喜乐的人，反倒叫我忧愁；我深信你们众人，都以我的喜乐为你们众人的喜乐。",
+                  "text_big5": "我曾把這事寫給你們，免得我來的時候，那些應該叫我喜樂的人，反倒叫我憂愁；我深信你們眾人，都以我的喜樂為你們眾人的喜樂。",
+                  "text_en": "And I wrote this very thing to you that when I come I would not have sorrow from those who ought to make me rejoice, having confidence in you all that my joy is the joy of you all."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 22,
+          "ref_gb": "门一22",
+          "ref_big5": "門一22",
+          "ref_en": "Philem. 1:22",
+          "text_gb": "同时，你还要给我预备住[Cra]所，因为我盼[Fn1]望借着你们的祷[Crb]告，我可当作恩[Fn2]典赐[Crc]给你们。",
+          "text_big5": "同時，你還要給我豫備住[Cra]所，因為我盼[Fn1]望藉著你們的禱[Crb]告，我可當作恩[Fn2]典賜[Crc]給你們。",
+          "text_en": "And at the same time also prepare me a lodging, for I hope that through your prayers I will be graciously given to you.",
+          "text_gb_plain": "同时，你还要给我预备住所，因为我盼望借着你们的祷告，我可当作恩典赐给你们。",
+          "text_big5_plain": "同時，你還要給我豫備住所，因為我盼望藉著你們的禱告，我可當作恩典賜給你們。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 17,
+              "zh": "指盼望获释出狱，能再访问众召会；这盼望也曾在腓一25，二24表示过。",
+              "zh_big5": "指盼望獲釋出獄，能再訪問眾召會；這盼望也曾在腓一25，二24表示過。",
+              "en": "1:22 1 hope This expectation, that he would be liberated from his imprisonment and visit the churches again, is expressed also in Phil. 1:25 and Phil. 2:24."
+            },
+            {
+              "num": 2,
+              "loc": 31,
+              "zh": "保罗认为自己的访问对召会乃是一种恩典的赐与。",
+              "zh_big5": "保羅認為自己的訪問對召會乃是一種恩典的賜與。",
+              "en": "1:22 2 graciously Paul considered that his visit would be a gracious gift to the church."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 11,
+              "raw": "徒二八23",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 28,
+                  "verse": 23,
+                  "ref_gb": "徒二八23",
+                  "ref_big5": "徒二八23",
+                  "ref_en": "Acts 28:23",
+                  "text_gb": "他们和保罗约定了日子，就有更多的人到他的住所来，保罗从早到晚对他们讲解，郑重见证神的国，引摩西的律法和众申言者的书，以耶稣的事劝服他们。",
+                  "text_big5": "他們和保羅約定了日子，就有更多的人到他的住所來，保羅從早到晚對他們講解，鄭重見證神的國，引摩西的律法和眾申言者的書，以耶穌的事勸服他們。",
+                  "text_en": "And once they had appointed a day for him, many came to him at his lodging, to whom he expounded these matters, solemnly testifying of the kingdom of God and persuading them concerning Jesus from both the Law of Moses and the Prophets, from morning until evening."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 24,
+              "raw": "林后一11，腓一19",
+              "refs": [
+                {
+                  "book": 47,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "林后一11",
+                  "ref_big5": "林後一11",
+                  "ref_en": "2 Cor. 1:11",
+                  "text_gb": "只要你们也为着我们以祈求配合帮助，好叫许多人因我们借着许多人所得的恩赐，为我们献上感谢。",
+                  "text_big5": "只要你們也為著我們以祈求配合幫助，好叫許多人因我們藉著許多人所得的恩賜，為我們獻上感謝。",
+                  "text_en": "If you also help in this by petition on our behalf, that for the gift to us through many, thanks may be given by many persons on our behalf."
+                },
+                {
+                  "book": 50,
+                  "chapter": 1,
+                  "verse": 19,
+                  "ref_gb": "腓一19",
+                  "ref_big5": "腓一19",
+                  "ref_en": "Phil. 1:19",
+                  "text_gb": "因为我知道，这事借着你们的祈求，和耶稣基督之灵全备的供应，终必叫我得救。",
+                  "text_big5": "因為我知道，這事藉著你們的祈求，和耶穌基督之靈全備的供應，終必叫我得救。",
+                  "text_en": "For I know that for me this will turn out to salvation through your petition and the bountiful supply of the Spirit of Jesus Christ,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 33,
+              "raw": "来十三19",
+              "refs": [
+                {
+                  "book": 58,
+                  "chapter": 13,
+                  "verse": 19,
+                  "ref_gb": "来十三19",
+                  "ref_big5": "來十三19",
+                  "ref_en": "Heb. 13:19",
+                  "text_gb": "我更加求你们为我祷告，使我能快些回到你们那里去。",
+                  "text_big5": "我更加求你們為我禱告，使我能快些回到你們那裏去。",
+                  "text_en": "And I exhort you much more to do this that I may be restored to you more quickly."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 23,
+          "ref_gb": "门一23",
+          "ref_big5": "門一23",
+          "ref_en": "Philem. 1:23",
+          "text_gb": "在基督耶稣里与我一[Cra]同坐监的以[Fn1][Crb]巴弗问你安。",
+          "text_big5": "在基督耶穌裏與我一[Cra]同坐監的以[Fn1][Crb]巴弗問你安。",
+          "text_en": "Epaphras, my fellow prisoner in Christ Jesus, greets you;",
+          "text_gb_plain": "在基督耶稣里与我一同坐监的以巴弗问你安。",
+          "text_big5_plain": "在基督耶穌裏與我一同坐監的以巴弗問你安。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 14,
+              "zh": "以巴弗提的缩写(腓二25，四18)。",
+              "zh_big5": "以巴弗提的縮寫。（腓二25，四18。）",
+              "en": "1:23 1 Epaphras A contraction of Epaphroditus (Phil. 2:25; 4:18)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "罗十六7，西四10",
+              "refs": [
+                {
+                  "book": 45,
+                  "chapter": 16,
+                  "verse": 7,
+                  "ref_gb": "罗十六7",
+                  "ref_big5": "羅十六7",
+                  "ref_en": "Rom. 16:7",
+                  "text_gb": "问我亲属与我一同坐监的安多尼古和犹尼亚安，他们是使徒中著名的，且比我先在基督里。",
+                  "text_big5": "問我親屬與我一同坐監的安多尼古和猶尼亞安，他們是使徒中著名的，且比我先在基督裏。",
+                  "text_en": "Greet Andronicus and Junia, my kinsmen and my fellow prisoners, who are of note among the apostles, who also were in Christ before me."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "西四10",
+                  "ref_big5": "西四10",
+                  "ref_en": "Col. 4:10",
+                  "text_gb": "与我一同坐监的亚里达古问你们安。巴拿巴的表弟马可也问你们安。（说到这马可，你们已经受了吩咐，他若到了你们那里，你们就接待他。）",
+                  "text_big5": "與我一同坐監的亞里達古問你們安。巴拿巴的表弟馬可也問你們安。（說到這馬可，你們已經受了吩咐，他若到了你們那裏，你們就接待他。）",
+                  "text_en": "Aristarchus, my fellow prisoner, greets you, as well as Mark, the cousin of Barnabas, (concerning whom you received commandments, If he comes to you, receive him),"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 14,
+              "raw": "西一7，四12",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "西一7",
+                  "ref_big5": "西一7",
+                  "ref_en": "Col. 1:7",
+                  "text_gb": "正如你们从我们所亲爱，一同作奴仆的以巴弗所学的，他为你们作了基督忠信的执事，",
+                  "text_big5": "正如你們從我們所親愛，一同作奴僕的以巴弗所學的，他為你們作了基督忠信的執事，",
+                  "text_en": "Even as you learned from Epaphras, our beloved fellow slave, who is a faithful minister of Christ on your behalf,"
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 12,
+                  "ref_gb": "西四12",
+                  "ref_big5": "西四12",
+                  "ref_en": "Col. 4:12",
+                  "text_gb": "有你们那里的人，作基督耶稣奴仆的以巴弗问你们安；他在祷告中常为你们竭力奋斗，要你们得以成熟，站立得住，在神一切的旨意上满有确信。",
+                  "text_big5": "有你們那裏的人，作基督耶穌奴僕的以巴弗問你們安；他在禱告中常為你們竭力奮鬥，要你們得以成熟，站立得住，在神一切的旨意上滿有確信。",
+                  "text_en": "Epaphras, who is one of you, a slave of Christ Jesus, greets you, always struggling on your behalf in his prayers that you may stand mature and fully assured in all the will of God."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 24,
+          "ref_gb": "门一24",
+          "ref_big5": "門一24",
+          "ref_en": "Philem. 1:24",
+          "text_gb": "我的同[Cra]工马[Crb]可、亚[Crc]里达古、底[Crd]马、路[Cre]加，也都问你安。",
+          "text_big5": "我的同[Cra]工馬[Crb]可、亞[Crc]里達古、底[Crd]馬、路[Cre]加，也都問你安。",
+          "text_en": "As do Mark, Aristarchus, Demas, Luke, my fellow workers.",
+          "text_gb_plain": "我的同工马可、亚里达古、底马、路加，也都问你安。",
+          "text_big5_plain": "我的同工馬可、亞里達古、底馬、路加，也都問你安。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "门1",
+              "refs": [
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "门一1",
+                  "ref_big5": "門一1",
+                  "ref_en": "Philem. 1:1",
+                  "text_gb": "基督耶稣的囚犯保罗，和弟兄提摩太，写信给所爱的并我们的同工腓利门，",
+                  "text_big5": "基督耶穌的囚犯保羅，和弟兄提摩太，寫信給所愛的並我們的同工腓利門，",
+                  "text_en": "Paul, a prisoner of Christ Jesus, and Timothy the brother, to Philemon our beloved and fellow worker"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 5,
+              "raw": "徒十二12，25，西四10",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 12,
+                  "verse": 12,
+                  "ref_gb": "徒十二12",
+                  "ref_big5": "徒十二12",
+                  "ref_en": "Acts 12:12",
+                  "text_gb": "他既明白过来，就往那称呼马可的约翰他母亲马利亚家去，在那里有好些人聚集祷告。",
+                  "text_big5": "他既明白過來，就往那稱呼馬可的約翰他母親馬利亞家去，在那裏有好些人聚集禱告。",
+                  "text_en": "And when he became aware of this, he went to the house of Mary, the mother of John, who was surnamed Mark, where there was a considerable number assembled together and praying."
+                },
+                {
+                  "book": 44,
+                  "chapter": 12,
+                  "verse": 25,
+                  "ref_gb": "徒十二25",
+                  "ref_big5": "徒十二25",
+                  "ref_en": "Acts 12:25",
+                  "text_gb": "巴拿巴和扫罗办完了供给的事，就从耶路撒冷回去，带着称呼马可的约翰同去。",
+                  "text_big5": "巴拿巴和掃羅辦完了供給的事，就從耶路撒冷回去，帶著稱呼馬可的約翰同去。",
+                  "text_en": "And Barnabas and Saul returned from Jerusalem, having completed the dispensing; and they took along with them John, who was surnamed Mark."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "西四10",
+                  "ref_big5": "西四10",
+                  "ref_en": "Col. 4:10",
+                  "text_gb": "与我一同坐监的亚里达古问你们安。巴拿巴的表弟马可也问你们安。（说到这马可，你们已经受了吩咐，他若到了你们那里，你们就接待他。）",
+                  "text_big5": "與我一同坐監的亞里達古問你們安。巴拿巴的表弟馬可也問你們安。（說到這馬可，你們已經受了吩咐，他若到了你們那裏，你們就接待他。）",
+                  "text_en": "Aristarchus, my fellow prisoner, greets you, as well as Mark, the cousin of Barnabas, (concerning whom you received commandments, If he comes to you, receive him),"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 8,
+              "raw": "徒十九29，西四10",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 19,
+                  "verse": 29,
+                  "ref_gb": "徒十九29",
+                  "ref_big5": "徒十九29",
+                  "ref_en": "Acts 19:29",
+                  "text_gb": "满城都混乱起来，众人抓住与保罗同行的马其顿人该犹和亚里达古，同心合意冲进剧场里去。",
+                  "text_big5": "滿城都混亂起來，眾人抓住與保羅同行的馬其頓人該猶和亞里達古，同心合意衝進劇場裏去。",
+                  "text_en": "And the city was filled with confusion; and they rushed with one accord into the theater, seizing Gaius and Aristarchus of Macedonia, Paul's traveling companions."
+                },
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "西四10",
+                  "ref_big5": "西四10",
+                  "ref_en": "Col. 4:10",
+                  "text_gb": "与我一同坐监的亚里达古问你们安。巴拿巴的表弟马可也问你们安。（说到这马可，你们已经受了吩咐，他若到了你们那里，你们就接待他。）",
+                  "text_big5": "與我一同坐監的亞里達古問你們安。巴拿巴的表弟馬可也問你們安。（說到這馬可，你們已經受了吩咐，他若到了你們那裏，你們就接待他。）",
+                  "text_en": "Aristarchus, my fellow prisoner, greets you, as well as Mark, the cousin of Barnabas, (concerning whom you received commandments, If he comes to you, receive him),"
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 13,
+              "raw": "西四14，提后四10",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 14,
+                  "ref_gb": "西四14",
+                  "ref_big5": "西四14",
+                  "ref_en": "Col. 4:14",
+                  "text_gb": "亲爱的医生路加，和底马问你们安。",
+                  "text_big5": "親愛的醫生路加，和底馬問你們安。",
+                  "text_en": "Luke, the beloved physician, greets you, as well as Demas."
+                },
+                {
+                  "book": 55,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "提后四10",
+                  "ref_big5": "提後四10",
+                  "ref_en": "2 Tim. 4:10",
+                  "text_gb": "因为底马爱了现今的世代，就离弃我往帖撒罗尼迦去了；革勒士往加拉太去，提多往挞马太去。",
+                  "text_big5": "因為底馬愛了現今的世代，就離棄我往帖撒羅尼迦去了；革勒士往加拉太去，提多往撻馬太去。",
+                  "text_en": "For Demas has abandoned me, having loved the present age, and has gone to Thessalonica; Crescens to Galatia; Titus to Dalmatia."
+                }
+              ]
+            },
+            {
+              "label": "e",
+              "loc": 16,
+              "raw": "西四14，提后四11",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 4,
+                  "verse": 14,
+                  "ref_gb": "西四14",
+                  "ref_big5": "西四14",
+                  "ref_en": "Col. 4:14",
+                  "text_gb": "亲爱的医生路加，和底马问你们安。",
+                  "text_big5": "親愛的醫生路加，和底馬問你們安。",
+                  "text_en": "Luke, the beloved physician, greets you, as well as Demas."
+                },
+                {
+                  "book": 55,
+                  "chapter": 4,
+                  "verse": 11,
+                  "ref_gb": "提后四11",
+                  "ref_big5": "提後四11",
+                  "ref_en": "2 Tim. 4:11",
+                  "text_gb": "独有路加同我在一起。你要接得马可，带他同来，因为他在服事上对我有用处。",
+                  "text_big5": "獨有路加同我在一起。你要接得馬可，帶他同來，因為他在服事上對我有用處。",
+                  "text_en": "Luke alone is with me. Take Mark and bring him with you, for he is useful to me for the ministry."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 57,
+          "chapter": 1,
+          "verse": 25,
+          "ref_gb": "门一25",
+          "ref_big5": "門一25",
+          "ref_en": "Philem. 1:25",
+          "text_gb": "愿主耶稣基督的恩[Fn1][Cra]与你们的灵[Fn2][Crb]同在[Fn3]。",
+          "text_big5": "願主耶穌基督的恩[Fn1][Cra]與你們的靈[Fn2][Crb]同在[Fn3]。",
+          "text_en": "The grace of the Lord Jesus Christ be with your spirit.",
+          "text_gb_plain": "愿主耶稣基督的恩与你们的灵同在。",
+          "text_big5_plain": "願主耶穌基督的恩與你們的靈同在。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 8,
+              "zh": "使徒在他书信的开头和结语中，总是用主的恩典问受信者安。这表明他信靠主的恩典，能叫他们，也叫他自己(林前十五10)，成就他所写给他们的。要成就像使徒保罗所完成这样高超的启示，人的努力是无济于事的，必须主的恩典。",
+              "zh_big5": "使徒在他書信的開頭和結語中，總是用主的恩典問受信者安。這表明他信靠主的恩典，能叫他們，也叫他自己，（林前十五10，）成就他所寫給他們的。要成就像使徒保羅所完成這樣高超的啟示，人的努力是無濟於事的，必須主的恩典。",
+              "en": "1:25 1 grace The apostle always greeted the recipients of his Epistles, in both the opening and the conclusion, with the grace of the Lord. This shows that he trusted in the Lord's grace, being confident that this grace would enable them, as well as himself (1 Cor. 15:10), to accomplish what he wrote to them. No human effort avails for the accomplishing of a revelation as high as the completing revelation of the apostle Paul — for this the Lord's grace is needed."
+            },
+            {
+              "num": 2,
+              "loc": 13,
+              "zh": "见加六18注3。",
+              "zh_big5": "見加六18註3。",
+              "en": "1:25 2 spirit See note Gal. 6:18 2 ."
+            },
+            {
+              "num": 3,
+              "loc": 15,
+              "zh": "有古卷下加，阿们。",
+              "zh_big5": "有古卷下加，阿們。",
+              "en": "1:25 3 Some ancient MSS add, Amen."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "加六18，腓四23",
+              "refs": [
+                {
+                  "book": 48,
+                  "chapter": 6,
+                  "verse": 18,
+                  "ref_gb": "加六18",
+                  "ref_big5": "加六18",
+                  "ref_en": "Gal. 6:18",
+                  "text_gb": "弟兄们，愿我们主耶稣基督的恩与你们的灵同在。阿们。",
+                  "text_big5": "弟兄們，願我們主耶穌基督的恩與你們的靈同在。阿們。",
+                  "text_en": "The grace of our Lord Jesus Christ be with your spirit, brothers. Amen."
+                },
+                {
+                  "book": 50,
+                  "chapter": 4,
+                  "verse": 23,
+                  "ref_gb": "腓四23",
+                  "ref_big5": "腓四23",
+                  "ref_en": "Phil. 4:23",
+                  "text_gb": "愿主耶稣基督的恩与你们的灵同在。",
+                  "text_big5": "願主耶穌基督的恩與你們的靈同在。",
+                  "text_en": "The grace of the Lord Jesus Christ be with your spirit."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 13,
+              "raw": "提后四22",
+              "refs": [
+                {
+                  "book": 55,
+                  "chapter": 4,
+                  "verse": 22,
+                  "ref_gb": "提后四22",
+                  "ref_big5": "提後四22",
+                  "ref_en": "2 Tim. 4:22",
+                  "text_gb": "愿主与你的灵同在。愿恩典与你们同在。",
+                  "text_big5": "願主與你的靈同在。願恩典與你們同在。",
+                  "text_en": "The Lord be with your spirit. Grace be with you."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

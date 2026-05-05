@@ -1,0 +1,2125 @@
+{
+  "book": 32,
+  "name_gb": "约拿书",
+  "name_big5": "約拿書",
+  "name_en": "Jonah",
+  "abbr_gb": "拿",
+  "abbr_big5": "拿",
+  "abbr_en": "Jonah",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "拿一1",
+          "ref_big5": "拿一1",
+          "ref_en": "Jonah 1:1",
+          "text_gb": "耶和华的话临到亚米太的儿子约[Fn1][Cra]拿，说，",
+          "text_big5": "耶和華的話臨到亞米太的兒子約[Fn1][Cra]拿，說，",
+          "text_en": "Now the word of Jehovah came to Jonah the son of Amittai, saying, ",
+          "text_gb_plain": "耶和华的话临到亚米太的儿子约拿，说，",
+          "text_big5_plain": "耶和華的話臨到亞米太的兒子約拿，說，",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 14,
+              "zh": "意，鸽子。这指明神要约拿像鸽子出去，传和平为福音(参弗二17)。",
+              "zh_big5": "意，鴿子。這指明神要約拿像鴿子出去，傳和平為福音。（參弗二17。）",
+              "en": "1:1 1 Jonah Meaning dove. This indicates that God wanted Jonah to go out like a dove to preach the gospel of peace (cf. Eph. 2:17)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 14,
+              "raw": "王下十四25",
+              "refs": [
+                {
+                  "book": 12,
+                  "chapter": 14,
+                  "verse": 25,
+                  "ref_gb": "王下十四25",
+                  "ref_big5": "王下十四25",
+                  "ref_en": "2 Kings 14:25",
+                  "text_gb": "他收回以色列边界之地，从哈马口直到亚拉巴海，正如耶和华以色列的神借祂的仆人，迦特希弗人亚米太的儿子申言者约拿所说的。",
+                  "text_big5": "他收回以色列邊界之地，從哈馬口直到亞拉巴海，正如耶和華以色列的神藉祂的僕人，迦特希弗人亞米太的兒子申言者約拿所說的。",
+                  "text_en": "He restored the border of Israel from the entrance of Hamath to the sea of the Arabah, according to the word of Jehovah the God of Israel, which He spoke through His servant Jonah the son of Amittai, the prophet who was of Gath-hepher."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "拿一2",
+          "ref_big5": "拿一2",
+          "ref_en": "Jonah 1:2",
+          "text_gb": "你起来往尼[Fn1][Cra]尼微大城去，向那城的居民呼喊，因为他们的恶已经达到我面前。",
+          "text_big5": "你起來往尼[Fn1][Cra]尼微大城去，向那城的居民呼喊，因為他們的惡已經達到我面前。",
+          "text_en": "Arise, go to Nineveh, the great city, and cry out against it, for their evil has come up before Me.",
+          "text_gb_plain": "你起来往尼尼微大城去，向那城的居民呼喊，因为他们的恶已经达到我面前。",
+          "text_big5_plain": "你起來往尼尼微大城去，向那城的居民呼喊，因為他們的惡已經達到我面前。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "亚述京城，位于底格里斯河东岸，最初由宁录建造(创十11，见该章8注1)。神要审判尼尼微，但祂也要将祂爱的救恩延伸到这邪恶的外邦城。因这缘故，祂任命约拿到尼尼微去向这城呼喊。 在受神差遣去尼尼微的事上，约拿预表那受神差遣，向外邦人传和平福音的基督(太十二41)。约拿是从以色列转向外邦人的申言者。在这事上，他是基督的预表，因基督也从以色列转向外邦人(太二一43，路四25～27)。",
+              "zh_big5": "亞述京城，位於底格里斯河東岸，最初由寧錄建造。（創十11，見創十8註1。）神要審判尼尼微，但祂也要將祂愛的救恩延伸到這邪惡的外邦城。因這緣故，祂任命約拿到尼尼微去向這城呼喊。ˍ在受神差遣去尼尼微的事上，約拿豫表那受神差遣，向外邦人傳和平福音的基督。（太十二41。）約拿是從以色列轉向外邦人的申言者。在這事上，他是基督的豫表，因基督也從以色列轉向外邦人。（太二一43，路四25～27。）",
+              "en": "1:2 1 Nineveh The capital of Assyria, located on the east bank of the Tigris River, first built by Nimrod (Gen. 10:11 see note Gen. 10:8 1 ). God intended to judge Nineveh, but He also intended to extend His salvation of love to that evil Gentile city. For this reason He commissioned Jonah to go to Nineveh to cry out against the city. In his being sent by God to Nineveh, Jonah typifies Christ, who was sent by God to preach the gospel of peace to the Gentiles (Matt. 12:41). Jonah was a prophet who turned from Israel to the Gentiles. In this he was a type of Christ, who turned from Israel to the Gentiles (Matt. 21:43; Luke 4:25-27)."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "创十11，12，拿三2，3，四11，鸿一1，番二13，太十二41，路十一32",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 10,
+                  "verse": 11,
+                  "ref_gb": "创十11",
+                  "ref_big5": "創十11",
+                  "ref_en": "Gen. 10:11",
+                  "text_gb": "他从那地出来往亚述去，建造尼尼微、利河伯、迦拉，",
+                  "text_big5": "他從那地出來往亞述去，建造尼尼微、利河伯、迦拉，",
+                  "text_en": "From that land he went into Assyria and built Nineveh and Rehoboth-ir and Calah"
+                },
+                {
+                  "book": 1,
+                  "chapter": 10,
+                  "verse": 12,
+                  "ref_gb": "创十12",
+                  "ref_big5": "創十12",
+                  "ref_en": "Gen. 10:12",
+                  "text_gb": "和尼尼微、迦拉中间的利鲜，就是那大城。",
+                  "text_big5": "和尼尼微、迦拉中間的利鮮，就是那大城。",
+                  "text_en": "And Resen between Nineveh and Calah, that is, the great city."
+                },
+                {
+                  "book": 32,
+                  "chapter": 3,
+                  "verse": 2,
+                  "ref_gb": "拿三2",
+                  "ref_big5": "拿三2",
+                  "ref_en": "Jonah 3:2",
+                  "text_gb": "起来，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的话。",
+                  "text_big5": "起來，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的話。",
+                  "text_en": "Arise, go to Nineveh, the great city; and proclaim to it the proclamation that I will speak to you."
+                },
+                {
+                  "book": 32,
+                  "chapter": 3,
+                  "verse": 3,
+                  "ref_gb": "拿三3",
+                  "ref_big5": "拿三3",
+                  "ref_en": "Jonah 3:3",
+                  "text_gb": "约拿便照耶和华的话起来，往尼尼微去。这尼尼微是极大的城，要三日才能走完。",
+                  "text_big5": "約拿便照耶和華的話起來，往尼尼微去。這尼尼微是極大的城，要三日纔能走完。",
+                  "text_en": "So Jonah arose and went to Nineveh according to the word of Jehovah. Now Nineveh was an exceedingly great city, a three days' journey in size."
+                },
+                {
+                  "book": 32,
+                  "chapter": 4,
+                  "verse": 11,
+                  "ref_gb": "拿四11",
+                  "ref_big5": "拿四11",
+                  "ref_en": "Jonah 4:11",
+                  "text_gb": "何况这尼尼微大城，其中不能分辨右手和左手的有十二万多人，并有许多牲畜，我岂能不怜惜呢？",
+                  "text_big5": "何況這尼尼微大城，其中不能分辨右手和左手的有十二萬多人，並有許多牲畜，我豈能不憐惜呢？",
+                  "text_en": "And I, should I not have pity on Nineveh, the great city, in which are more than a hundred and twenty thousand people who cannot discern between their right hand and their left, and many cattle? "
+                },
+                {
+                  "book": 34,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "鸿一1",
+                  "ref_big5": "鴻一1",
+                  "ref_en": "Nah. 1:1",
+                  "text_gb": "关于尼尼微的默示，就是伊勒歌斯人那鸿的异象书。",
+                  "text_big5": "關於尼尼微的默示，就是伊勒歌斯人那鴻的異象書。",
+                  "text_en": "The burden concerning Nineveh. The book of the vision of Nahum the Elkoshite."
+                },
+                {
+                  "book": 36,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "番二13",
+                  "ref_big5": "番二13",
+                  "ref_en": "Zeph. 2:13",
+                  "text_gb": "祂必伸手攻击北方，毁灭亚述，使尼尼微荒凉，干旱如同旷野。",
+                  "text_big5": "祂必伸手攻擊北方，毀滅亞述，使尼尼微荒涼，乾旱如同曠野。",
+                  "text_en": "And He will stretch out His hand against the north / And will destroy Assyria, / And will make Nineveh a desolation / And a desert, like the wilderness."
+                },
+                {
+                  "book": 40,
+                  "chapter": 12,
+                  "verse": 41,
+                  "ref_gb": "太十二41",
+                  "ref_big5": "太十二41",
+                  "ref_en": "Matt. 12:41",
+                  "text_gb": "在审判的时候，尼尼微人要同这世代站起来，并要定这世代的罪，因为他们听了约拿所传扬的，就悔改了。看哪，在这里有比约拿更大的。",
+                  "text_big5": "在審判的時候，尼尼微人要同這世代站起來，並要定這世代的罪，因為他們聽了約拿所傳揚的，就悔改了。看哪，在這裏有比約拿更大的。",
+                  "text_en": "Ninevite men will stand up in the judgment with this generation and will condemn it, because they repented at the preaching of Jonah, and behold, something more than Jonah is here."
+                },
+                {
+                  "book": 42,
+                  "chapter": 11,
+                  "verse": 32,
+                  "ref_gb": "路十一32",
+                  "ref_big5": "路十一32",
+                  "ref_en": "Luke 11:32",
+                  "text_gb": "在审判的时候，尼尼微人要同这世代站起来，并要定这世代的罪，因为他们听了约拿所传扬的，就悔改了。看哪，在这里有比约拿更大的。",
+                  "text_big5": "在審判的時候，尼尼微人要同這世代站起來，並要定這世代的罪，因為他們聽了約拿所傳揚的，就悔改了。看哪，在這裏有比約拿更大的。",
+                  "text_en": "Ninevite men will stand up in the judgment with this generation and will condemn it, because they repented at the preaching of Jonah, and behold, something more than Jonah is here."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "拿一3",
+          "ref_big5": "拿一3",
+          "ref_en": "Jonah 1:3",
+          "text_gb": "约拿却起来，逃往他[Fn1]施去躲避耶和华的面；他下到约[Cra]帕，遇见一只船，要往他施去。他就给了船价，下到船里，要与船上的人同往他施去，躲[Crb]避耶和华的面。",
+          "text_big5": "約拿卻起來，逃往他[Fn1]施去躲避耶和華的面；他下到約[Cra]帕，遇見一隻船，要往他施去。他就給了船價，下到船裏，要與船上的人同往他施去，躲[Crb]避耶和華的面。",
+          "text_en": "But Jonah rose up to flee to Tarshish from the presence of Jehovah, and he went down to Joppa and found a ship going to Tarshish. So he paid the fare for it and went down into it to go with them to Tarshish from the presence of Jehovah.",
+          "text_gb_plain": "约拿却起来，逃往他施去躲避耶和华的面；他下到约帕，遇见一只船，要往他施去。他就给了船价，下到船里，要与船上的人同往他施去，躲避耶和华的面。",
+          "text_big5_plain": "約拿卻起來，逃往他施去躲避耶和華的面；他下到約帕，遇見一隻船，要往他施去。他就給了船價，下到船裏，要與船上的人同往他施去，躲避耶和華的面。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 9,
+              "zh": "也许是腓尼基人在地中海的一个港口，位于今日的西班牙。约拿知道神是‘有恩典、有怜恤的神，不轻易发怒，有丰盛的慈爱，并且后悔不降所说的灾；’(四2)；他也知道尼尼微若悔改，神就会改变主意，不审判那城。约拿预料事情会是这样，他不同意神，就逃往他施去，躲避耶和华的面。",
+              "zh_big5": "也許是腓尼基人在地中海的一個港口，位於今日的西班牙。約拿知道神是“有恩典、有憐恤的神，不輕易發怒，有豐盛的慈愛，並且後悔不降所說的災；”（四2；）他也知道尼尼微若悔改，神就會改變主意，不審判那城。約拿豫料事情會是這樣，他不同意神，就逃往他施去，躲避耶和華的面。",
+              "en": "1:3 1 Tarshish Probably a Phoenician port on the Mediterranean Sea in present-day Spain. Jonah knew that God was \"a gracious and compassionate God, long-suffering and abundant in lovingkindness and repentant of evil\" (Jonah 4:2) and that God would change His mind and not judge Nineveh if the city repented. Anticipating this and not agreeing with God, Jonah fled from God's presence to Tarshish."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 23,
+              "raw": "代下二16，徒九36",
+              "refs": [
+                {
+                  "book": 14,
+                  "chapter": 2,
+                  "verse": 16,
+                  "ref_gb": "代下二16",
+                  "ref_big5": "代下二16",
+                  "ref_en": "2 Chron. 2:16",
+                  "text_gb": "我们必照你一切所需的，从利巴嫩砍伐树木，扎成筏子，浮海运到约帕。你可以从那里运上耶路撒冷去。",
+                  "text_big5": "我們必照你一切所需的，從利巴嫩砍伐樹木，紮成筏子，浮海運到約帕。你可以從那裏運上耶路撒冷去。",
+                  "text_en": "And we will cut whatever timber you need from Lebanon and bring it to you on rafts by sea to Joppa, and you can bring it up to Jerusalem."
+                },
+                {
+                  "book": 44,
+                  "chapter": 9,
+                  "verse": 36,
+                  "ref_gb": "徒九36",
+                  "ref_big5": "徒九36",
+                  "ref_en": "Acts 9:36",
+                  "text_gb": "在约帕有一个女徒，名叫大比大，翻成希利尼话就是多加；她广行善事，多施周济。",
+                  "text_big5": "在約帕有一個女徒，名叫大比大，繙成希利尼話就是多加；她廣行善事，多施賙濟。",
+                  "text_en": "Now in Joppa there was a certain disciple named Tabitha (which, when translated, is Dorcas); this woman was full of good works and alms which she did."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 62,
+              "raw": "创四16，伯一12，二7，诗一三九7",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 4,
+                  "verse": 16,
+                  "ref_gb": "创四16",
+                  "ref_big5": "創四16",
+                  "ref_en": "Gen. 4:16",
+                  "text_gb": "于是该隐离开耶和华的面，去住在伊甸东边挪得之地。",
+                  "text_big5": "於是該隱離開耶和華的面，去住在伊甸東邊挪得之地。",
+                  "text_en": "And Cain went forth from the presence of Jehovah and dwelt in the land of Nod, east of Eden."
+                },
+                {
+                  "book": 18,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "伯一12",
+                  "ref_big5": "伯一12",
+                  "ref_en": "Job 1:12",
+                  "text_gb": "耶和华对撒但说，看哪，凡他所有的，都在你手中；只是不可伸手加害于他。于是撒但从耶和华面前退去。",
+                  "text_big5": "耶和華對撒但說，看哪，凡他所有的，都在你手中；只是不可伸手加害於他。於是撒但從耶和華面前退去。",
+                  "text_en": "And Jehovah said to Satan, Here is all that he has, in your hand; only do not stretch forth your hand against him. And Satan went forth from Jehovah's presence."
+                },
+                {
+                  "book": 18,
+                  "chapter": 2,
+                  "verse": 7,
+                  "ref_gb": "伯二7",
+                  "ref_big5": "伯二7",
+                  "ref_en": "Job 2:7",
+                  "text_gb": "于是撒但从耶和华面前退去，击打约伯，使他从脚掌到头顶都长了毒疮。",
+                  "text_big5": "於是撒但從耶和華面前退去，擊打約伯，使他從腳掌到頭頂都長了毒瘡。",
+                  "text_en": "And Satan went forth from Jehovah's presence and struck Job with severe boils from the sole of his foot to the crown of his head."
+                },
+                {
+                  "book": 19,
+                  "chapter": 139,
+                  "verse": 7,
+                  "ref_gb": "诗一三九7",
+                  "ref_big5": "詩一三九7",
+                  "ref_en": "Psa. 139:7",
+                  "text_gb": "我往哪里去躲避你的灵？我往哪里逃躲避你的面？",
+                  "text_big5": "我往那裏去躲避你的靈？我往那裏逃躲避你的面？",
+                  "text_en": "Where shall I go, away from Your Spirit, / And where shall I flee from Your presence?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "拿一4",
+          "ref_big5": "拿一4",
+          "ref_en": "Jonah 1:4",
+          "text_gb": "然而耶和华使海中刮起大风[Cra]，海就风浪大作，船几乎破坏。",
+          "text_big5": "然而耶和華使海中颳起大風[Cra]，海就風浪大作，船幾乎破壞。",
+          "text_en": "But Jehovah hurled a great wind toward the sea, and there was a great tempest on the sea, and the ship seemed to be about to break up.",
+          "text_gb_plain": "然而耶和华使海中刮起大风，海就风浪大作，船几乎破坏。",
+          "text_big5_plain": "然而耶和華使海中颳起大風，海就風浪大作，船幾乎破壞。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 12,
+              "raw": "诗一○七25",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 107,
+                  "verse": 25,
+                  "ref_gb": "诗一○七25",
+                  "ref_big5": "詩一○七25",
+                  "ref_en": "Psa. 107:25",
+                  "text_gb": "因祂一吩咐，就兴起狂风，扬起海中的波浪。",
+                  "text_big5": "因祂一吩咐，就興起狂風，揚起海中的波浪。",
+                  "text_en": "For He commanded and raised up a storm wind, / And it lifted up the waves of the sea."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "拿一5",
+          "ref_big5": "拿一5",
+          "ref_en": "Jonah 1:5",
+          "text_gb": "水手便惧怕，各人哀求自己的神。他们将船上的物件抛[Cra]在海中，为要使船[Fn1]轻些。约拿却已下到底舱，躺卧沉[Crb]睡。",
+          "text_big5": "水手便懼怕，各人哀求自己的神。他們將船上的物件拋[Cra]在海中，為要使船[Fn1]輕些。約拿卻已下到底艙，躺臥沉[Crb]睡。",
+          "text_en": "Then the mariners became afraid, and each called out to his god. And they cast out the equipment that was on the ship into the sea to lighten themselves of it. But Jonah had gone down into the innermost part of the vessel and lain down and fallen fast asleep.",
+          "text_gb_plain": "水手便惧怕，各人哀求自己的神。他们将船上的物件抛在海中，为要使船轻些。约拿却已下到底舱，躺卧沉睡。",
+          "text_big5_plain": "水手便懼怕，各人哀求自己的神。他們將船上的物件拋在海中，為要使船輕些。約拿卻已下到底艙，躺臥沉睡。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 32,
+              "zh": "直译，他们。",
+              "zh_big5": "直譯，他們。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 24,
+              "raw": "徒二七18，19，38",
+              "refs": [
+                {
+                  "book": 44,
+                  "chapter": 27,
+                  "verse": 18,
+                  "ref_gb": "徒二七18",
+                  "ref_big5": "徒二七18",
+                  "ref_en": "Acts 27:18",
+                  "text_gb": "我们被风浪颠簸得很厉害，第二天众人就把货物抛出去，",
+                  "text_big5": "我們被風浪顛簸得很厲害，第二天眾人就把貨物拋出去，",
+                  "text_en": "The next day, as we were being violently storm-tossed, they began to jettison the cargo;"
+                },
+                {
+                  "book": 44,
+                  "chapter": 27,
+                  "verse": 19,
+                  "ref_gb": "徒二七19",
+                  "ref_big5": "徒二七19",
+                  "ref_en": "Acts 27:19",
+                  "text_gb": "到第三天，他们又亲手把船上的用具抛弃了。",
+                  "text_big5": "到第三天，他們又親手把船上的用具拋棄了。",
+                  "text_en": "And on the third day they threw the ship's gear overboard, even with their own hands."
+                },
+                {
+                  "book": 44,
+                  "chapter": 27,
+                  "verse": 38,
+                  "ref_gb": "徒二七38",
+                  "ref_big5": "徒二七38",
+                  "ref_en": "Acts 27:38",
+                  "text_gb": "他们吃饱了，就把麦子抛在海里，叫船轻一点。",
+                  "text_big5": "他們喫飽了，就把麥子拋在海裏，叫船輕一點。",
+                  "text_en": "And when they were satisfied with food, they began to lighten the ship, throwing out the wheat into the sea."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 47,
+              "raw": "可四38",
+              "refs": [
+                {
+                  "book": 41,
+                  "chapter": 4,
+                  "verse": 38,
+                  "ref_gb": "可四38",
+                  "ref_big5": "可四38",
+                  "ref_en": "Mark 4:38",
+                  "text_gb": "耶稣竟在船尾靠着枕头睡着。门徒叫醒了祂，对祂说，夫子，我们丧命，你不顾么？",
+                  "text_big5": "耶穌竟在船尾靠著枕頭睡著。門徒叫醒了祂，對祂說，夫子，我們喪命，你不顧麼？",
+                  "text_en": "And He was in the stern, sleeping on the cushion. And they woke Him and said to Him, Teacher, does it not matter to You that we are perishing?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "拿一6",
+          "ref_big5": "拿一6",
+          "ref_en": "Jonah 1:6",
+          "text_gb": "船长到他那里对他说，你怎么还这样沉睡呢？起来，呼求你的神。或者神顾念我们，使我们不至灭亡。",
+          "text_big5": "船長到他那裏對他說，你怎麼還這樣沉睡呢？起來，呼求你的神。或者神顧念我們，使我們不至滅亡。",
+          "text_en": "So the ship captain approached him and said to him, How can you be fast asleep? Arise, call on your God. Perhaps God will give thought to us, and we will not perish.",
+          "text_gb_plain": "船长到他那里对他说，你怎么还这样沉睡呢？起来，呼求你的神。或者神顾念我们，使我们不至灭亡。",
+          "text_big5_plain": "船長到他那裏對他說，你怎麼還這樣沉睡呢？起來，呼求你的神。或者神顧念我們，使我們不至滅亡。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "拿一7",
+          "ref_big5": "拿一7",
+          "ref_en": "Jonah 1:7",
+          "text_gb": "船上的人彼此说，来吧，我们掣[Cra]签，好知道这灾临到我们是因谁的缘故；于是他们掣签，掣出约拿来。",
+          "text_big5": "船上的人彼此說，來罷，我們掣[Cra]籤，好知道這災臨到我們是因誰的緣故；於是他們掣籤，掣出約拿來。",
+          "text_en": "And each man said to his companion, Come, let us cast lots that we may know on whose account this misfortune has befallen us. So they cast lots, and the lot fell on Jonah.",
+          "text_gb_plain": "船上的人彼此说，来吧，我们掣签，好知道这灾临到我们是因谁的缘故；于是他们掣签，掣出约拿来。",
+          "text_big5_plain": "船上的人彼此說，來罷，我們掣籤，好知道這災臨到我們是因誰的緣故；於是他們掣籤，掣出約拿來。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 14,
+              "raw": "书七14，16，撒上十20，21，十四41，42，箴十六33",
+              "refs": [
+                {
+                  "book": 6,
+                  "chapter": 7,
+                  "verse": 14,
+                  "ref_gb": "书七14",
+                  "ref_big5": "書七14",
+                  "ref_en": "Josh. 7:14",
+                  "text_gb": "到了早晨，你们要按着支派近前来；耶和华所取的支派，要按着家族近前来；耶和华所取的家族，要按着家室近前来；耶和华所取的家室，要按着男丁，一个一个地近前来。",
+                  "text_big5": "到了早晨，你們要按著支派近前來；耶和華所取的支派，要按著家族近前來；耶和華所取的家族，要按著家室近前來；耶和華所取的家室，要按著男丁，一個一個的近前來。",
+                  "text_en": "Therefore in the morning you shall be brought near by your tribes; and the tribe which Jehovah takes shall draw near family by family; and the family which Jehovah takes shall draw near house by house; and the house which Jehovah takes shall draw near warrior by warrior."
+                },
+                {
+                  "book": 6,
+                  "chapter": 7,
+                  "verse": 16,
+                  "ref_gb": "书七16",
+                  "ref_big5": "書七16",
+                  "ref_en": "Josh. 7:16",
+                  "text_gb": "于是约书亚清早起来，使以色列人按着支派近前来，取出来的是犹大支派；",
+                  "text_big5": "於是約書亞清早起來，使以色列人按著支派近前來，取出來的是猶大支派；",
+                  "text_en": "So Joshua rose early in the morning and brought Israel near by their tribes, and the tribe of Judah was taken."
+                },
+                {
+                  "book": 9,
+                  "chapter": 10,
+                  "verse": 20,
+                  "ref_gb": "撒上十20",
+                  "ref_big5": "撒上十20",
+                  "ref_en": "1 Sam. 10:20",
+                  "text_gb": "于是，撒母耳使以色列众支派近前来掣签，就掣出便雅悯支派来；",
+                  "text_big5": "於是，撒母耳使以色列眾支派近前來掣籤，就掣出便雅憫支派來；",
+                  "text_en": "So Samuel brought all the tribes of Israel near, and the tribe of Benjamin was taken."
+                },
+                {
+                  "book": 9,
+                  "chapter": 10,
+                  "verse": 21,
+                  "ref_gb": "撒上十21",
+                  "ref_big5": "撒上十21",
+                  "ref_en": "1 Sam. 10:21",
+                  "text_gb": "又使便雅悯支派按着家族近前来，就掣出玛特利家族，从其中又掣出基士的儿子扫罗。众人寻找他，却寻不着；",
+                  "text_big5": "又使便雅憫支派按著家族近前來，就掣出瑪特利家族，從其中又掣出基士的兒子掃羅。眾人尋找他，卻尋不著；",
+                  "text_en": "And he brought the tribe of Benjamin near according to its families, and the family of Matri was taken. And Saul the son of Kish was taken. But when they sought him, he could not be found."
+                },
+                {
+                  "book": 9,
+                  "chapter": 14,
+                  "verse": 41,
+                  "ref_gb": "撒上十四41",
+                  "ref_big5": "撒上十四41",
+                  "ref_en": "1 Sam. 14:41",
+                  "text_gb": "扫罗对耶和华以色列的神说，求你给我们完全的指示。于是拈阄拈出约拿单和扫罗来；百姓尽都无事。",
+                  "text_big5": "掃羅對耶和華以色列的神說，求你給我們完全的指示。於是拈鬮拈出約拿單和掃羅來；百姓盡都無事。",
+                  "text_en": "Then Saul said to Jehovah the God of Israel, Show perfectly. And Jonathan and Saul were taken by lot, but the people escaped."
+                },
+                {
+                  "book": 9,
+                  "chapter": 14,
+                  "verse": 42,
+                  "ref_gb": "撒上十四42",
+                  "ref_big5": "撒上十四42",
+                  "ref_en": "1 Sam. 14:42",
+                  "text_gb": "扫罗说，你们再拈阄，看是我，或是我儿子约拿单；就拈出约拿单来。",
+                  "text_big5": "掃羅說，你們再拈鬮，看是我，或是我兒子約拿單；就拈出約拿單來。",
+                  "text_en": "And Saul said, Cast the lot between me and Jonathan my son. And Jonathan was taken."
+                },
+                {
+                  "book": 20,
+                  "chapter": 16,
+                  "verse": 33,
+                  "ref_gb": "箴十六33",
+                  "ref_big5": "箴十六33",
+                  "ref_en": "Prov. 16:33",
+                  "text_gb": "签尽可投在怀里，一切决断却在于耶和华。",
+                  "text_big5": "籤儘可投在懷裏，一切決斷卻在於耶和華。",
+                  "text_en": "The lot is cast into the lap, / But everything it decides is from Jehovah. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "拿一8",
+          "ref_big5": "拿一8",
+          "ref_en": "Jonah 1:8",
+          "text_gb": "众人对他说，请你告诉我们，这灾临到我们是因谁的缘故？你以何事为业？你从哪里来？你是哪一国，属哪一族的人？",
+          "text_big5": "眾人對他說，請你告訴我們，這災臨到我們是因誰的緣故？你以何事為業？你從那裏來？你是那一國，屬那一族的人？",
+          "text_en": "Then they said to him, Tell us now, On whose account has this misfortune befallen us? What is your occupation? And where do you come from? What is your country? And of what people are you?",
+          "text_gb_plain": "众人对他说，请你告诉我们，这灾临到我们是因谁的缘故？你以何事为业？你从哪里来？你是哪一国，属哪一族的人？",
+          "text_big5_plain": "眾人對他說，請你告訴我們，這災臨到我們是因誰的緣故？你以何事為業？你從那裏來？你是那一國，屬那一族的人？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "拿一9",
+          "ref_big5": "拿一9",
+          "ref_en": "Jonah 1:9",
+          "text_gb": "他说，我是希[Cra]伯来人；我敬畏耶和华，那造[Crb]沧海和旱地之天上的神。",
+          "text_big5": "他說，我是希[Cra]伯來人；我敬畏耶和華，那造[Crb]滄海和旱地之天上的神。",
+          "text_en": "And he said to them, I am a Hebrew, and I fear Jehovah, the God of the heavens, who made the sea and the dry land.",
+          "text_gb_plain": "他说，我是希伯来人；我敬畏耶和华，那造沧海和旱地之天上的神。",
+          "text_big5_plain": "他說，我是希伯來人；我敬畏耶和華，那造滄海和旱地之天上的神。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "创十四13，三九14",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 14,
+                  "verse": 13,
+                  "ref_gb": "创十四13",
+                  "ref_big5": "創十四13",
+                  "ref_en": "Gen. 14:13",
+                  "text_gb": "有一个逃出来的人，来告诉希伯来人亚伯兰；亚伯兰正住在亚摩利人幔利的橡树那里。幔利和以实各并亚乃都是弟兄，曾与亚伯兰联盟。",
+                  "text_big5": "有一個逃出來的人，來告訴希伯來人亞伯蘭；亞伯蘭正住在亞摩利人幔利的橡樹那裏。幔利和以實各並亞乃都是弟兄，曾與亞伯蘭聯盟。",
+                  "text_en": "And one who had escaped came and told Abram the Hebrew. Now he was dwelling by the oaks of Mamre the Amorite, the brother of Eshcol and the brother of Aner; and these were allies of Abram."
+                },
+                {
+                  "book": 1,
+                  "chapter": 39,
+                  "verse": 14,
+                  "ref_gb": "创三九14",
+                  "ref_big5": "創三九14",
+                  "ref_en": "Gen. 39:14",
+                  "text_gb": "就叫了家里的人来，对他们说，你们看，他带了一个希伯来人到我们这里，要戏弄我们。他到我这里来，要与我同寝，我就大声喊叫。",
+                  "text_big5": "就叫了家裏的人來，對他們說，你們看，他帶了一個希伯來人到我們這裏，要戲弄我們。他到我這裏來，要與我同寢，我就大聲喊叫。",
+                  "text_en": "She called to the men of her house and spoke to them, saying, See, he has brought in a Hebrew man to us to mock us. He came in to me to lie with me, and I called out with a loud voice; "
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 19,
+              "raw": "诗九五5，一四六6，尼九6，徒十七24",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 95,
+                  "verse": 5,
+                  "ref_gb": "诗九五5",
+                  "ref_big5": "詩九五5",
+                  "ref_en": "Psa. 95:5",
+                  "text_gb": "海洋属祂，是祂造的；旱地也是祂手造成的。",
+                  "text_big5": "海洋屬祂，是祂造的；旱地也是祂手造成的。",
+                  "text_en": "The sea is His, and He made it; / And His hands formed the dry land."
+                },
+                {
+                  "book": 19,
+                  "chapter": 146,
+                  "verse": 6,
+                  "ref_gb": "诗一四六6",
+                  "ref_big5": "詩一四六6",
+                  "ref_en": "Psa. 146:6",
+                  "text_gb": "耶和华造天、地、海、和其中的万物；祂守信实，直到永远；",
+                  "text_big5": "耶和華造天、地、海、和其中的萬物；祂守信實，直到永遠；",
+                  "text_en": "Who made heaven and earth / And the sea, and all that is in them; / Who keeps faith forever;"
+                },
+                {
+                  "book": 16,
+                  "chapter": 9,
+                  "verse": 6,
+                  "ref_gb": "尼九6",
+                  "ref_big5": "尼九6",
+                  "ref_en": "Neh. 9:6",
+                  "text_gb": "你，唯独你是耶和华；你造了天和天上的天，并天上的万象，地和地上的万物，海和海中所有的；这一切都是你所保存的；天军也都敬拜你。",
+                  "text_big5": "你，惟獨你是耶和華；你造了天和天上的天，並天上的萬象，地和地上的萬物，海和海中所有的；這一切都是你所保存的；天軍也都敬拜你。",
+                  "text_en": "You are Jehovah, / You alone; / You have made heaven, / The heaven of heavens with all its host, / The earth and all that is on it, / The seas and all that is in them; / And You give life to all of them; / And the host of heaven worships You."
+                },
+                {
+                  "book": 44,
+                  "chapter": 17,
+                  "verse": 24,
+                  "ref_gb": "徒十七24",
+                  "ref_big5": "徒十七24",
+                  "ref_en": "Acts 17:24",
+                  "text_gb": "创造宇宙和其中万物的神，既是天地的主，就不住人手所造的殿，",
+                  "text_big5": "創造宇宙和其中萬物的神，既是天地的主，就不住人手所造的殿，",
+                  "text_en": "The God who made the world and all things in it, this One, being Lord of heaven and earth, does not dwell in temples made with hands;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "拿一10",
+          "ref_big5": "拿一10",
+          "ref_en": "Jonah 1:10",
+          "text_gb": "那些人就大大惧怕，对他说，你作的是什么事呢？原来那些人已经知道他躲避耶和华的面，因为他告诉了他们。",
+          "text_big5": "那些人就大大懼怕，對他說，你作的是甚麼事呢？原來那些人已經知道他躲避耶和華的面，因為他告訴了他們。",
+          "text_en": "And the men became greatly afraid and said to him, What is this that you have done? For the men knew that he was fleeing from the presence of Jehovah, because he had told them so.",
+          "text_gb_plain": "那些人就大大惧怕，对他说，你作的是什么事呢？原来那些人已经知道他躲避耶和华的面，因为他告诉了他们。",
+          "text_big5_plain": "那些人就大大懼怕，對他說，你作的是甚麼事呢？原來那些人已經知道他躲避耶和華的面，因為他告訴了他們。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "拿一11",
+          "ref_big5": "拿一11",
+          "ref_en": "Jonah 1:11",
+          "text_gb": "他们问他说，我们当向你怎样行，使海为我们平静下来呢？这是因为海越发翻腾。",
+          "text_big5": "他們問他說，我們當向你怎樣行，使海為我們平靜下來呢？這是因為海越發翻騰。",
+          "text_en": "And they said to him, What shall we do with you that the sea may be quiet for us? For the sea grew more and more tempestuous.",
+          "text_gb_plain": "他们问他说，我们当向你怎样行，使海为我们平静下来呢？这是因为海越发翻腾。",
+          "text_big5_plain": "他們問他說，我們當向你怎樣行，使海為我們平靜下來呢？這是因為海越發翻騰。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "拿一12",
+          "ref_big5": "拿一12",
+          "ref_en": "Jonah 1:12",
+          "text_gb": "他对他们说，你们将我抬起来，抛进海里，海就会为你们平静下来；我知道你们遭这大风浪，是因我的缘故。",
+          "text_big5": "他對他們說，你們將我抬起來，拋進海裏，海就會為你們平靜下來；我知道你們遭這大風浪，是因我的緣故。",
+          "text_en": "Then he said to them, Lift me up and cast me into the sea, and the sea will be quiet for you. For I know that it is on my account that this great tempest has come upon you.",
+          "text_gb_plain": "他对他们说，你们将我抬起来，抛进海里，海就会为你们平静下来；我知道你们遭这大风浪，是因我的缘故。",
+          "text_big5_plain": "他對他們說，你們將我抬起來，拋進海裏，海就會為你們平靜下來；我知道你們遭這大風浪，是因我的緣故。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "拿一13",
+          "ref_big5": "拿一13",
+          "ref_en": "Jonah 1:13",
+          "text_gb": "然而那些人竭力摇桨，要回到旱地，却是不能，因为海越发向他们翻腾。",
+          "text_big5": "然而那些人竭力搖槳，要回到旱地，卻是不能，因為海越發向他們翻騰。",
+          "text_en": "Nevertheless the men rowed hard to get back to the dry land, but they could not, because the sea grew more and more tempestuous against them.",
+          "text_gb_plain": "然而那些人竭力摇桨，要回到旱地，却是不能，因为海越发向他们翻腾。",
+          "text_big5_plain": "然而那些人竭力搖槳，要回到旱地，卻是不能，因為海越發向他們翻騰。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "拿一14",
+          "ref_big5": "拿一14",
+          "ref_en": "Jonah 1:14",
+          "text_gb": "他们便呼求耶和华说，耶和华啊，我们恳求你，不要因这人的性命使我们灭亡；不要使流无辜血的罪归与我们；因为你耶和华是照自己所喜悦的行事。",
+          "text_big5": "他們便呼求耶和華說，耶和華阿，我們懇求你，不要因這人的性命使我們滅亡；不要使流無辜血的罪歸與我們；因為你耶和華是照自己所喜悅的行事。",
+          "text_en": "And they cried out to Jehovah and said, Ah, Jehovah, let us not perish, we pray, for this man's life, and do not put innocent blood upon us; for You, Jehovah, have done as You pleased.",
+          "text_gb_plain": "他们便呼求耶和华说，耶和华啊，我们恳求你，不要因这人的性命使我们灭亡；不要使流无辜血的罪归与我们；因为你耶和华是照自己所喜悦的行事。",
+          "text_big5_plain": "他們便呼求耶和華說，耶和華阿，我們懇求你，不要因這人的性命使我們滅亡；不要使流無辜血的罪歸與我們；因為你耶和華是照自己所喜悅的行事。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 15,
+          "ref_gb": "拿一15",
+          "ref_big5": "拿一15",
+          "ref_en": "Jonah 1:15",
+          "text_gb": "他们遂将约拿抬起，抛进海里，海的怒涛就止[Cra]息了。",
+          "text_big5": "他們遂將約拿抬起，拋進海裏，海的怒濤就止[Cra]息了。",
+          "text_en": "Then they lifted Jonah up and cast him into the sea, and the sea ceased its raging.",
+          "text_gb_plain": "他们遂将约拿抬起，抛进海里，海的怒涛就止息了。",
+          "text_big5_plain": "他們遂將約拿抬起，拋進海裏，海的怒濤就止息了。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 20,
+              "raw": "诗八九9，路八24",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 89,
+                  "verse": 9,
+                  "ref_gb": "诗八九9",
+                  "ref_big5": "詩八九9",
+                  "ref_en": "Psa. 89:9",
+                  "text_gb": "你管辖海的狂涛：波浪翻腾，你使它平静。",
+                  "text_big5": "你管轄海的狂濤：波浪翻騰，你使它平靜。",
+                  "text_en": "You rule the swelling of the sea: / When its waves rise up, You still them."
+                },
+                {
+                  "book": 42,
+                  "chapter": 8,
+                  "verse": 24,
+                  "ref_gb": "路八24",
+                  "ref_big5": "路八24",
+                  "ref_en": "Luke 8:24",
+                  "text_gb": "门徒进前来，叫醒了祂，说，夫子，夫子，我们丧命啦！耶稣醒来，斥责风和水上的大浪，风浪就止住，平静了。",
+                  "text_big5": "門徒進前來，叫醒了祂，說，夫子，夫子，我們喪命啦！耶穌醒來，斥責風和水上的大浪，風浪就止住，平靜了。",
+                  "text_en": "And they came to Him and woke Him, saying, Master, Master, we are perishing! And being awakened, He rebuked the wind and the surging of the water, and they ceased, and there was a calm."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 16,
+          "ref_gb": "拿一16",
+          "ref_big5": "拿一16",
+          "ref_en": "Jonah 1:16",
+          "text_gb": "那些人便大大敬畏耶和华，向耶和华献祭，并且许愿。",
+          "text_big5": "那些人便大大敬畏耶和華，向耶和華獻祭，並且許願。",
+          "text_en": "And the men were greatly afraid of Jehovah, and they offered a sacrifice to Jehovah and vowed vows.",
+          "text_gb_plain": "那些人便大大敬畏耶和华，向耶和华献祭，并且许愿。",
+          "text_big5_plain": "那些人便大大敬畏耶和華，向耶和華獻祭，並且許願。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 1,
+          "verse": 17,
+          "ref_gb": "拿一17",
+          "ref_big5": "拿一17",
+          "ref_en": "Jonah 1:17",
+          "text_gb": "耶和华安排一条大鱼吞了约拿，约拿在鱼[Cra]腹中三[Fn1]日三夜。",
+          "text_big5": "耶和華安排一條大魚吞了約拿，約拿在魚[Cra]腹中三[Fn1]日三夜。",
+          "text_en": "And Jehovah prepared a great fish to swallow Jonah up, and Jonah was in the stomach of the fish for three days and three nights. ",
+          "text_gb_plain": "耶和华安排一条大鱼吞了约拿，约拿在鱼腹中三日三夜。",
+          "text_big5_plain": "耶和華安排一條大魚吞了約拿，約拿在魚腹中三日三夜。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 21,
+              "zh": "约拿被大鱼所吞，又被吐出(二10)，为着将神的救恩传给外邦尼尼微人。约拿预表基督在祂的死与复活里，使神的救恩得以传给罪人，甚至传给外邦人(太十二39～41)。约拿留在大鱼里面三日三夜，预表基督留在地心三日三夜(太十二40与注)。基督死了，并进入地低下之处的阴间(徒二27上，弗四9)。祂在复活里从那里出来(徒二31～32)；并且在复活里成了赐生命的灵(林前十五45下)，为使福音能传扬、开展到外邦列国，如在使徒行传所看到的。",
+              "zh_big5": "約拿被大魚所吞，又被吐出，（二10，）為著將神的救恩傳給外邦尼尼微人。約拿豫表基督在祂的死與復活裏，使神的救恩得以傳給罪人，甚至傳給外邦人。（太十二39～41。）約拿留在大魚裏面三日三夜，豫表基督留在地心三日三夜。（太十二40與註。）基督死了，並進入地低下之處的陰間。（徒二27上，弗四9。）祂在復活裏從那裏出來；（徒二31～32；）並且在復活裏成了賜生命的靈，（林前十五45下，）為使福音能傳揚、開展到外邦列國，如在使徒行傳所看到的。",
+              "en": "1:17 1 three Jonah was swallowed by a great fish and was vomited out of it (Jonah 2:10) for the spreading of God's salvation to the Gentile Ninevites. Jonah is a type of Christ in His death and resurrection for the spreading of God's salvation to sinners, even to the Gentiles (Matt. 12:39-41). Jonah's staying in the great fish three days and three nights typifies Christ's staying in the heart of the earth three days and three nights (Matt. 12:40 and note Matt. 12:40 1 ). Christ died and entered into Hades in the lower parts of the earth (Acts 2:27a; Eph. 4:9). He came forth from there in resurrection (Acts 2:31-32), and in resurrection He became the life-giving Spirit (1 Cor. 15:45b) for the preaching, the spreading, of the gospel to all the Gentile nations, as seen in the book of Acts."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 18,
+              "raw": "太十二40，十六4，路十一30",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 12,
+                  "verse": 40,
+                  "ref_gb": "太十二40",
+                  "ref_big5": "太十二40",
+                  "ref_en": "Matt. 12:40",
+                  "text_gb": "因为约拿怎样三日三夜在大鱼腹中，人子也必照样三日三夜在地心里。",
+                  "text_big5": "因為約拿怎樣三日三夜在大魚腹中，人子也必照樣三日三夜在地心裏。",
+                  "text_en": "For just as Jonah was in the belly of the great fish three days and three nights, so will the Son of Man be in the heart of the earth three days and three nights."
+                },
+                {
+                  "book": 40,
+                  "chapter": 16,
+                  "verse": 4,
+                  "ref_gb": "太十六4",
+                  "ref_big5": "太十六4",
+                  "ref_en": "Matt. 16:4",
+                  "text_gb": "邪恶淫乱的世代寻求神迹，除了约拿的神迹以外，再没有神迹给它。耶稣就撇开他们走了。",
+                  "text_big5": "邪惡淫亂的世代尋求神蹟，除了約拿的神蹟以外，再沒有神蹟給它。耶穌就撇開他們走了。",
+                  "text_en": "An evil and adulterous generation seeks after a sign, and a sign shall not be given to it, except the sign of Jonah. And He left them and went away."
+                },
+                {
+                  "book": 42,
+                  "chapter": 11,
+                  "verse": 30,
+                  "ref_gb": "路十一30",
+                  "ref_big5": "路十一30",
+                  "ref_en": "Luke 11:30",
+                  "text_gb": "约拿怎样成了给尼尼微人的神迹，人子也要照样成了给这世代的神迹。",
+                  "text_big5": "約拿怎樣成了給尼尼微人的神蹟，人子也要照樣成了給這世代的神蹟。",
+                  "text_en": "For even as Jonah became a sign to the Ninevites, so also will the Son of Man be to this generation."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "verses": [
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 1,
+          "ref_gb": "拿二1",
+          "ref_big5": "拿二1",
+          "ref_en": "Jonah 2:1",
+          "text_gb": "约拿从鱼腹中祷告耶和华他的神，",
+          "text_big5": "約拿從魚腹中禱告耶和華他的神，",
+          "text_en": "Then Jonah prayed to Jehovah his God from the stomach of the fish, ",
+          "text_gb_plain": "约拿从鱼腹中祷告耶和华他的神，",
+          "text_big5_plain": "約拿從魚腹中禱告耶和華他的神，",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 2,
+          "ref_gb": "拿二2",
+          "ref_big5": "拿二2",
+          "ref_en": "Jonah 2:2",
+          "text_gb": "说，我因急难呼[Cra]求耶和华，祂就应允我；我从阴[Fn1][Crb]间的深处呼救，你就听了我的声音。",
+          "text_big5": "說，我因急難呼[Cra]求耶和華，祂就應允我；我從陰[Fn1][Crb]間的深處呼救，你就聽了我的聲音。",
+          "text_en": "And he said, I called out because of my distress / To Jehovah, and He answered me; / From the belly of Sheol I cried out for help; / You heard my voice.",
+          "text_gb_plain": "说，我因急难呼求耶和华，祂就应允我；我从阴间的深处呼救，你就听了我的声音。",
+          "text_big5_plain": "說，我因急難呼求耶和華，祂就應允我；我從陰間的深處呼救，你就聽了我的聲音。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 21,
+              "zh": "见太十一23注1。",
+              "zh_big5": "見太十一23註1。",
+              "en": "2:2 1 Sheol See note Matt. 11:23 1 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "诗一二○1，一三○1，一四二1，哀三55，56",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 120,
+                  "verse": 1,
+                  "ref_gb": "诗一二○1",
+                  "ref_big5": "詩一二○1",
+                  "ref_en": "Psa. 120:1",
+                  "text_gb": "我在急难中呼求耶和华，祂就应允我。",
+                  "text_big5": "我在急難中呼求耶和華，祂就應允我。",
+                  "text_en": "In my distress I called out to Jehovah, / And He answered me."
+                },
+                {
+                  "book": 19,
+                  "chapter": 130,
+                  "verse": 1,
+                  "ref_gb": "诗一三○1",
+                  "ref_big5": "詩一三○1",
+                  "ref_en": "Psa. 130:1",
+                  "text_gb": "耶和华啊，我从深处向你呼求。",
+                  "text_big5": "耶和華阿，我從深處向你呼求。",
+                  "text_en": "Out of the depths I have called upon You, O Jehovah."
+                },
+                {
+                  "book": 19,
+                  "chapter": 142,
+                  "verse": 1,
+                  "ref_gb": "诗一四二1",
+                  "ref_big5": "詩一四二1",
+                  "ref_en": "Psa. 142:1",
+                  "text_gb": "我发声哀求耶和华，发声恳求耶和华。",
+                  "text_big5": "我發聲哀求耶和華，發聲懇求耶和華。",
+                  "text_en": "With my voice I cry to Jehovah; / With my voice I make my supplication to Jehovah."
+                },
+                {
+                  "book": 25,
+                  "chapter": 3,
+                  "verse": 55,
+                  "ref_gb": "哀三55",
+                  "ref_big5": "哀三55",
+                  "ref_en": "Lam. 3:55",
+                  "text_gb": "耶和华啊，我从极深的坑里呼求你的名。",
+                  "text_big5": "耶和華阿，我從極深的坑裏呼求你的名。",
+                  "text_en": "I called upon Your name, O Jehovah, / From the lowest pit."
+                },
+                {
+                  "book": 25,
+                  "chapter": 3,
+                  "verse": 56,
+                  "ref_gb": "哀三56",
+                  "ref_big5": "哀三56",
+                  "ref_en": "Lam. 3:56",
+                  "text_gb": "你曾听见我的声音；求你不要掩耳不听我的呼吸，我的呼吁。",
+                  "text_big5": "你曾聽見我的聲音；求你不要掩耳不聽我的呼吸，我的呼籲。",
+                  "text_en": "You have heard my voice; do not hide / Your ear at my breathing, at my cry."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "诗十六10",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 16,
+                  "verse": 10,
+                  "ref_gb": "诗十六10",
+                  "ref_big5": "詩十六10",
+                  "ref_en": "Psa. 16:10",
+                  "text_gb": "因为你必不将我的魂撇在阴间，也不叫你的圣者见朽坏。",
+                  "text_big5": "因為你必不將我的魂撇在陰間，也不叫你的聖者見朽壞。",
+                  "text_en": "For You will not abandon my soul to Sheol, / Nor let Your Holy One see the pit."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 3,
+          "ref_gb": "拿二3",
+          "ref_big5": "拿二3",
+          "ref_en": "Jonah 2:3",
+          "text_gb": "你将我投下深[Cra]渊，到了海心；洪流环绕我；你[Crb]的波浪洪涛，都漫过我身。",
+          "text_big5": "你將我投下深[Cra]淵，到了海心；洪流環繞我；你[Crb]的波浪洪濤，都漫過我身。",
+          "text_en": "You flung me into the depths, into the heart of the sea, / And the flood surrounded me; / All Your breakers and Your billows / Passed over me.",
+          "text_gb_plain": "你将我投下深渊，到了海心；洪流环绕我；你的波浪洪涛，都漫过我身。",
+          "text_big5_plain": "你將我投下深淵，到了海心；洪流環繞我；你的波浪洪濤，都漫過我身。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "诗六九2，八八6，7，哀三54",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 69,
+                  "verse": 2,
+                  "ref_gb": "诗六九2",
+                  "ref_big5": "詩六九2",
+                  "ref_en": "Psa. 69:2",
+                  "text_gb": "我陷在深淤泥中，没有立脚之地；我到了深水中，洪水漫过我身。",
+                  "text_big5": "我陷在深淤泥中，沒有立腳之地；我到了深水中，洪水漫過我身。",
+                  "text_en": "I sink in deep mire, / And there is no place to stand; / I have come to the depths of water, / And the flood flows over me."
+                },
+                {
+                  "book": 19,
+                  "chapter": 88,
+                  "verse": 6,
+                  "ref_gb": "诗八八6",
+                  "ref_big5": "詩八八6",
+                  "ref_en": "Psa. 88:6",
+                  "text_gb": "你把我放在极深的坑里，在黑暗的地方，在深处。",
+                  "text_big5": "你把我放在極深的坑裏，在黑暗的地方，在深處。",
+                  "text_en": "You have put me in the lowest pit, / In the dark places, in the depths."
+                },
+                {
+                  "book": 19,
+                  "chapter": 88,
+                  "verse": 7,
+                  "ref_gb": "诗八八7",
+                  "ref_big5": "詩八八7",
+                  "ref_en": "Psa. 88:7",
+                  "text_gb": "你的忿怒重压着我，你用你一切的波浪使我受苦。〔细拉〕",
+                  "text_big5": "你的忿怒重壓著我，你用你一切的波浪使我受苦。〔細拉〕",
+                  "text_en": "Your wrath lies heavily upon me, / And You have afflicted me with all Your waves. Selah."
+                },
+                {
+                  "book": 25,
+                  "chapter": 3,
+                  "verse": 54,
+                  "ref_gb": "哀三54",
+                  "ref_big5": "哀三54",
+                  "ref_en": "Lam. 3:54",
+                  "text_gb": "水流过我的头；我说，我被剪除了。",
+                  "text_big5": "水流過我的頭；我說，我被剪除了。",
+                  "text_en": "Water streamed over my head; / I said, I have been cut off."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 20,
+              "raw": "诗四二7",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 42,
+                  "verse": 7,
+                  "ref_gb": "诗四二7",
+                  "ref_big5": "詩四二7",
+                  "ref_en": "Psa. 42:7",
+                  "text_gb": "你的瀑布发声，深渊就与深渊响应；你的波浪洪涛，都漫过我身。",
+                  "text_big5": "你的瀑布發聲，深淵就與深淵響應；你的波浪洪濤，都漫過我身。",
+                  "text_en": "Deep calls unto deep / At the sound of Your water spouts; / All Your waves and Your billows / Pass over me."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 4,
+          "ref_gb": "拿二4",
+          "ref_big5": "拿二4",
+          "ref_en": "Jonah 2:4",
+          "text_gb": "我说，我从你眼前虽被[Cra]驱逐，我仍要仰[Crb]望你的圣殿。",
+          "text_big5": "我說，我從你眼前雖被[Cra]驅逐，我仍要仰[Crb]望你的聖殿。",
+          "text_en": "Therefore I said, I have been driven out / From before Your eyes; / Yet I will look again / Toward Your holy temple.",
+          "text_gb_plain": "我说，我从你眼前虽被驱逐，我仍要仰望你的圣殿。",
+          "text_big5_plain": "我說，我從你眼前雖被驅逐，我仍要仰望你的聖殿。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "诗三一22",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 31,
+                  "verse": 22,
+                  "ref_gb": "诗三一22",
+                  "ref_big5": "詩三一22",
+                  "ref_en": "Psa. 31:22",
+                  "text_gb": "至于我，我曾惊惶地说，我从你眼前被隔绝；然而，我呼求你的时候，你仍听我恳求的声音。",
+                  "text_big5": "至於我，我曾驚惶的說，我從你眼前被隔絕；然而，我呼求你的時候，你仍聽我懇求的聲音。",
+                  "text_en": "I, on my part, had said in my alarm, / I am cut off before Your eyes; / But instead You heard / The voice of my supplications / When I cried out to You."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 17,
+              "raw": "王上八38",
+              "refs": [
+                {
+                  "book": 11,
+                  "chapter": 8,
+                  "verse": 38,
+                  "ref_gb": "王上八38",
+                  "ref_big5": "王上八38",
+                  "ref_en": "1 Kings 8:38",
+                  "text_gb": "你的民以色列众人中，若有任何一人，自觉心中有罪疚，向这殿伸开双手，无论祷告什么，恳求什么，",
+                  "text_big5": "你的民以色列眾人中，若有任何一人，自覺心中有罪疚，向這殿伸開雙手，無論禱告甚麼，懇求甚麼，",
+                  "text_en": "Whatever prayer, whatever supplication, which will be made by any man of all Your people Israel, each knowing the plague of his own heart, when he spreads out his hands toward this house;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 5,
+          "ref_gb": "拿二5",
+          "ref_big5": "拿二5",
+          "ref_en": "Jonah 2:5",
+          "text_gb": "诸水环绕我，几[Fn1]乎淹没我；深渊围住我，海草缠绕我的头。",
+          "text_big5": "諸水環繞我，幾[Fn1]乎淹沒我；深淵圍住我，海草纏繞我的頭。",
+          "text_en": "Water encompassed me, even to my soul; / The deep surrounded me; / Seaweed was wrapped about my head.",
+          "text_gb_plain": "诸水环绕我，几乎淹没我；深渊围住我，海草缠绕我的头。",
+          "text_big5_plain": "諸水環繞我，幾乎淹沒我；深淵圍住我，海草纏繞我的頭。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 7,
+              "zh": "直译，达到我的魂。",
+              "zh_big5": "直譯，達到我的魂。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 6,
+          "ref_gb": "拿二6",
+          "ref_big5": "拿二6",
+          "ref_en": "Jonah 2:6",
+          "text_gb": "我下到海中的山根；地的门闩将我永远拦住。耶和华我的神啊，你却将[Cra]我的性命从坑[Fn1]中救上来。",
+          "text_big5": "我下到海中的山根；地的門閂將我永遠攔住。耶和華我的神阿，你卻將[Cra]我的性命從坑[Fn1]中救上來。",
+          "text_en": "To the bottom of the sea mountains I went down; / The earth with its bars was around me forever. / Then You have brought up my life from the pit, / O Jehovah my God.",
+          "text_gb_plain": "我下到海中的山根；地的门闩将我永远拦住。耶和华我的神啊，你却将我的性命从坑中救上来。",
+          "text_big5_plain": "我下到海中的山根；地的門閂將我永遠攔住。耶和華我的神阿，你卻將我的性命從坑中救上來。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 37,
+              "zh": "或，朽坏。",
+              "zh_big5": "或，朽壞。",
+              "en": "2:6 1 pit Or, corruption."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 31,
+              "raw": "诗十六10，赛三八17",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 16,
+                  "verse": 10,
+                  "ref_gb": "诗十六10",
+                  "ref_big5": "詩十六10",
+                  "ref_en": "Psa. 16:10",
+                  "text_gb": "因为你必不将我的魂撇在阴间，也不叫你的圣者见朽坏。",
+                  "text_big5": "因為你必不將我的魂撇在陰間，也不叫你的聖者見朽壞。",
+                  "text_en": "For You will not abandon my soul to Sheol, / Nor let Your Holy One see the pit."
+                },
+                {
+                  "book": 23,
+                  "chapter": 38,
+                  "verse": 17,
+                  "ref_gb": "赛三八17",
+                  "ref_big5": "賽三八17",
+                  "ref_en": "Isa. 38:17",
+                  "text_gb": "看哪，我受大苦，本为使我得平安；你因爱拯救了我的魂脱离毁灭的坑，因为你已将我一切的罪扔在你的背后。",
+                  "text_big5": "看哪，我受大苦，本為使我得平安；你因愛拯救了我的魂脫離毀滅的坑，因為你已將我一切的罪扔在你的背後。",
+                  "text_en": "Indeed for peace I had bitterness, yes, bitterness; / But You have lovingly delivered my soul from the pit of destruction, / Because You have cast behind Your back / All my sins."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 7,
+          "ref_gb": "拿二7",
+          "ref_big5": "拿二7",
+          "ref_en": "Jonah 2:7",
+          "text_gb": "我的魂在我里面发昏的时候，我就想念耶和华；我的祷告进[Cra]入你的圣殿，达到你面前。",
+          "text_big5": "我的魂在我裏面發昏的時候，我就想念耶和華；我的禱告進[Cra]入你的聖殿，達到你面前。",
+          "text_en": "When my soul fainted within me, / I remembered Jehovah, / And my prayer came to You / In Your holy temple.",
+          "text_gb_plain": "我的魂在我里面发昏的时候，我就想念耶和华；我的祷告进入你的圣殿，达到你面前。",
+          "text_big5_plain": "我的魂在我裏面發昏的時候，我就想念耶和華；我的禱告進入你的聖殿，達到你面前。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 26,
+              "raw": "诗十八6",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 18,
+                  "verse": 6,
+                  "ref_gb": "诗十八6",
+                  "ref_big5": "詩十八6",
+                  "ref_en": "Psa. 18:6",
+                  "text_gb": "我在急难中呼求耶和华，向我的神呼救。祂从殿中听了我的声音，我在祂面前的呼救入了祂的耳中。",
+                  "text_big5": "我在急難中呼求耶和華，向我的神呼救。祂從殿中聽了我的聲音，我在祂面前的呼救入了祂的耳中。",
+                  "text_en": "In my distress I called upon Jehovah / And cried out to my God. / He heard my voice from His temple, / And my cry before Him came to His ears."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 8,
+          "ref_gb": "拿二8",
+          "ref_big5": "拿二8",
+          "ref_en": "Jonah 2:8",
+          "text_gb": "那些尊奉虚无不实之神的人，离弃主对他们的慈爱；",
+          "text_big5": "那些尊奉虛無不實之神的人，離棄主對他們的慈愛；",
+          "text_en": "Those who regard empty vanities / Forsake the lovingkindness to them;",
+          "text_gb_plain": "那些尊奉虚无不实之神的人，离弃主对他们的慈爱；",
+          "text_big5_plain": "那些尊奉虛無不實之神的人，離棄主對他們的慈愛；",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 9,
+          "ref_gb": "拿二9",
+          "ref_big5": "拿二9",
+          "ref_en": "Jonah 2:9",
+          "text_gb": "但我必用感谢的声音献[Cra]祭与你；我所许的愿，我必偿还。拯[Crb]救属于耶和华。",
+          "text_big5": "但我必用感謝的聲音獻[Cra]祭與你；我所許的願，我必償還。拯[Crb]救屬於耶和華。",
+          "text_en": "But I will sacrifice to You / With the voice of thanksgiving; / That which I have vowed I will fully pay. / Salvation is of Jehovah.",
+          "text_gb_plain": "但我必用感谢的声音献祭与你；我所许的愿，我必偿还。拯救属于耶和华。",
+          "text_big5_plain": "但我必用感謝的聲音獻祭與你；我所許的願，我必償還。拯救屬於耶和華。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "诗五十14，23，一一六17，18，何十四2，来十三15",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 50,
+                  "verse": 14,
+                  "ref_gb": "诗五○14",
+                  "ref_big5": "詩五○14",
+                  "ref_en": "Psa. 50:14",
+                  "text_gb": "你要向神献上感谢祭；又要向至高者还你的愿；",
+                  "text_big5": "你要向神獻上感謝祭；又要向至高者還你的願；",
+                  "text_en": "Offer to God a sacrifice of thanksgiving, / And repay your vows to the Most High;"
+                },
+                {
+                  "book": 19,
+                  "chapter": 50,
+                  "verse": 23,
+                  "ref_gb": "诗五○23",
+                  "ref_big5": "詩五○23",
+                  "ref_en": "Psa. 50:23",
+                  "text_gb": "凡献上感谢祭的，便是荣耀我；那使自己道路正直的，我必使他看见神的救恩。",
+                  "text_big5": "凡獻上感謝祭的，便是榮耀我；那使自己道路正直的，我必使他看見神的救恩。",
+                  "text_en": "Whoever offers a sacrifice of thanksgiving glorifies Me; / And to him who sets his way right I will show the salvation of God. "
+                },
+                {
+                  "book": 19,
+                  "chapter": 116,
+                  "verse": 17,
+                  "ref_gb": "诗一一六17",
+                  "ref_big5": "詩一一六17",
+                  "ref_en": "Psa. 116:17",
+                  "text_gb": "我要将感谢祭献给你，又要呼求耶和华的名。",
+                  "text_big5": "我要將感謝祭獻給你，又要呼求耶和華的名。",
+                  "text_en": "To You I will offer a sacrifice of thanksgiving, / And I will call upon the name of Jehovah."
+                },
+                {
+                  "book": 19,
+                  "chapter": 116,
+                  "verse": 18,
+                  "ref_gb": "诗一一六18",
+                  "ref_big5": "詩一一六18",
+                  "ref_en": "Psa. 116:18",
+                  "text_gb": "哦，我要在祂众民面前，向耶和华还我的愿；",
+                  "text_big5": "哦，我要在祂眾民面前，向耶和華還我的願；",
+                  "text_en": "I will pay my vows to Jehovah, / Oh, in the presence of all His people, "
+                },
+                {
+                  "book": 28,
+                  "chapter": 14,
+                  "verse": 2,
+                  "ref_gb": "何十四2",
+                  "ref_big5": "何十四2",
+                  "ref_en": "Hos. 14:2",
+                  "text_gb": "当带着祷告的话归向耶和华，对祂说，求你赦免一切罪孽，恩慈的收纳我们；这样，我们就把嘴唇的祭，如同牛犊献上。",
+                  "text_big5": "當帶著禱告的話歸向耶和華，對祂說，求你赦免一切罪孽，恩慈的收納我們；這樣，我們就把嘴脣的祭，如同牛犢獻上。",
+                  "text_en": "Take words with you, / And return to Jehovah; / Say to Him, / Forgive all iniquity, / And take us graciously; / Thus we will render our lips as bulls."
+                },
+                {
+                  "book": 58,
+                  "chapter": 13,
+                  "verse": 15,
+                  "ref_gb": "来十三15",
+                  "ref_big5": "來十三15",
+                  "ref_en": "Heb. 13:15",
+                  "text_gb": "所以我们应当借着耶稣，常常向神献上赞美的祭，这就是承认主名之嘴唇的果子。",
+                  "text_big5": "所以我們應當藉著耶穌，常常向神獻上讚美的祭，這就是承認主名之嘴脣的果子。",
+                  "text_en": "Through Him then let us offer up a sacrifice of praise continually to God, that is, the fruit of lips confessing His name."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 26,
+              "raw": "诗三8",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 3,
+                  "verse": 8,
+                  "ref_gb": "诗三8",
+                  "ref_big5": "詩三8",
+                  "ref_en": "Psa. 3:8",
+                  "text_gb": "拯救属于耶和华；愿你赐福给你的民。〔细拉〕",
+                  "text_big5": "拯救屬於耶和華；願你賜福給你的民。〔細拉〕",
+                  "text_en": "Salvation is of Jehovah: / Your blessing be upon Your people. Selah."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 2,
+          "verse": 10,
+          "ref_gb": "拿二10",
+          "ref_big5": "拿二10",
+          "ref_en": "Jonah 2:10",
+          "text_gb": "耶和华吩咐鱼，鱼就把约拿吐在旱地上。",
+          "text_big5": "耶和華吩咐魚，魚就把約拿吐在旱地上。",
+          "text_en": "And Jehovah spoke to the fish, and it vomited Jonah out onto the dry land. ",
+          "text_gb_plain": "耶和华吩咐鱼，鱼就把约拿吐在旱地上。",
+          "text_big5_plain": "耶和華吩咐魚，魚就把約拿吐在旱地上。",
+          "footnotes": [],
+          "crossrefs": []
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "verses": [
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 1,
+          "ref_gb": "拿三1",
+          "ref_big5": "拿三1",
+          "ref_en": "Jonah 3:1",
+          "text_gb": "耶和华的话第二次临到约拿，说，",
+          "text_big5": "耶和華的話第二次臨到約拿，說，",
+          "text_en": "Then the word of Jehovah came to Jonah a second time, saying, ",
+          "text_gb_plain": "耶和华的话第二次临到约拿，说，",
+          "text_big5_plain": "耶和華的話第二次臨到約拿，說，",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 2,
+          "ref_gb": "拿三2",
+          "ref_big5": "拿三2",
+          "ref_en": "Jonah 3:2",
+          "text_gb": "起来，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的话。",
+          "text_big5": "起來，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的話。",
+          "text_en": "Arise, go to Nineveh, the great city; and proclaim to it the proclamation that I will speak to you.",
+          "text_gb_plain": "起来，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的话。",
+          "text_big5_plain": "起來，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的話。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 3,
+          "ref_gb": "拿三3",
+          "ref_big5": "拿三3",
+          "ref_en": "Jonah 3:3",
+          "text_gb": "约拿便照耶和华的话起[Fn1]来，往尼尼微去。这尼尼微是[Fn2]极大的城，要三日才能走完。",
+          "text_big5": "約拿便照耶和華的話起[Fn1]來，往尼尼微去。這尼尼微是[Fn2]極大的城，要三日纔能走完。",
+          "text_en": "So Jonah arose and went to Nineveh according to the word of Jehovah. Now Nineveh was an exceedingly great city, a three days' journey in size.",
+          "text_gb_plain": "约拿便照耶和华的话起来，往尼尼微去。这尼尼微是极大的城，要三日才能走完。",
+          "text_big5_plain": "約拿便照耶和華的話起來，往尼尼微去。這尼尼微是極大的城，要三日纔能走完。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "约拿被调整、改正并征服后，愿意顺从神，接受祂的任命。",
+              "zh_big5": "約拿被調整、改正並征服後，願意順從神，接受祂的任命。",
+              "en": "3:3 1 arose After Jonah was adjusted, corrected, and subdued, he was willing to go along with God and receive His commission."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "直译，向着神是大城。",
+              "zh_big5": "直譯，向著神是大城。",
+              "en": "3:3 2 exceedingly Lit., great to God."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 4,
+          "ref_gb": "拿三4",
+          "ref_big5": "拿三4",
+          "ref_en": "Jonah 3:4",
+          "text_gb": "约拿进城走了一日，宣告说，再等四[Cra]十日，尼尼微必倾覆了！",
+          "text_big5": "約拿進城走了一日，宣告說，再等四[Cra]十日，尼尼微必傾覆了！",
+          "text_en": "And Jonah began to go through the city a day's journey and cried out and said, Yet forty days and Nineveh will be overturned!",
+          "text_gb_plain": "约拿进城走了一日，宣告说，再等四十日，尼尼微必倾覆了！",
+          "text_big5_plain": "約拿進城走了一日，宣告說，再等四十日，尼尼微必傾覆了！",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 16,
+              "raw": "创七4，八6，出二四18，民十三25，十四34，撒上十七16，王上十九8，结四6，太四2",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 7,
+                  "verse": 4,
+                  "ref_gb": "创七4",
+                  "ref_big5": "創七4",
+                  "ref_en": "Gen. 7:4",
+                  "text_gb": "因为再过七天，我要降雨在地上四十昼四十夜，把我所造的各种活物都从地上除灭。",
+                  "text_big5": "因為再過七天，我要降雨在地上四十晝四十夜，把我所造的各種活物都從地上除滅。",
+                  "text_en": "For in seven more days I will cause it to rain on the earth forty days and forty nights, and every living being that I have made I will blot out from the surface of the ground."
+                },
+                {
+                  "book": 1,
+                  "chapter": 8,
+                  "verse": 6,
+                  "ref_gb": "创八6",
+                  "ref_big5": "創八6",
+                  "ref_en": "Gen. 8:6",
+                  "text_gb": "过了四十天，挪亚开了他所造方舟的窗户，",
+                  "text_big5": "過了四十天，挪亞開了他所造方舟的窗戶，",
+                  "text_en": "And at the end of forty days Noah opened the window of the ark which he had made."
+                },
+                {
+                  "book": 2,
+                  "chapter": 24,
+                  "verse": 18,
+                  "ref_gb": "出二四18",
+                  "ref_big5": "出二四18",
+                  "ref_en": "Exo. 24:18",
+                  "text_gb": "摩西进入云中上了山，在山上四十昼四十夜。",
+                  "text_big5": "摩西進入雲中上了山，在山上四十晝四十夜。",
+                  "text_en": "And Moses entered into the midst of the cloud and went up on the mountain; and Moses was on the mountain forty days and forty nights. "
+                },
+                {
+                  "book": 4,
+                  "chapter": 13,
+                  "verse": 25,
+                  "ref_gb": "民十三25",
+                  "ref_big5": "民十三25",
+                  "ref_en": "Num. 13:25",
+                  "text_gb": "过了四十天，他们窥探那地回来，",
+                  "text_big5": "過了四十天，他們窺探那地回來，",
+                  "text_en": "And they returned from spying out the land at the end of forty days."
+                },
+                {
+                  "book": 4,
+                  "chapter": 14,
+                  "verse": 34,
+                  "ref_gb": "民十四34",
+                  "ref_big5": "民十四34",
+                  "ref_en": "Num. 14:34",
+                  "text_gb": "按你们窥探那地的日数共四十日，一年顶一日，你们要担当罪孽四十年，就知道我不喜悦你们了。",
+                  "text_big5": "按你們窺探那地的日數共四十日，一年頂一日，你們要擔當罪孽四十年，就知道我不喜悅你們了。",
+                  "text_en": "According to the number of the days which you spied out the land, forty days, a year for every day, you shall bear your iniquities, forty years; and you shall know My displeasure."
+                },
+                {
+                  "book": 9,
+                  "chapter": 17,
+                  "verse": 16,
+                  "ref_gb": "撒上十七16",
+                  "ref_big5": "撒上十七16",
+                  "ref_en": "1 Sam. 17:16",
+                  "text_gb": "那非利士人早晚都近前来站着，如此四十日。",
+                  "text_big5": "那非利士人早晚都近前來站著，如此四十日。",
+                  "text_en": "And the Philistine approached morning and evening, and he presented himself forty days."
+                },
+                {
+                  "book": 11,
+                  "chapter": 19,
+                  "verse": 8,
+                  "ref_gb": "王上十九8",
+                  "ref_big5": "王上十九8",
+                  "ref_en": "1 Kings 19:8",
+                  "text_gb": "他就起来吃了喝了，仗着这饮食的力，走了四十昼四十夜，到了神的山，就是何烈山。",
+                  "text_big5": "他就起來喫了喝了，仗著這飲食的力，走了四十晝四十夜，到了神的山，就是何烈山。",
+                  "text_en": "And he rose up and ate and drank, and he went in the strength of that food forty days and forty nights to Horeb the mount of God."
+                },
+                {
+                  "book": 26,
+                  "chapter": 4,
+                  "verse": 6,
+                  "ref_gb": "结四6",
+                  "ref_big5": "結四6",
+                  "ref_en": "Ezek. 4:6",
+                  "text_gb": "你满了这些日子，还要向右侧卧，担当犹大家的罪孽四十日；我给你定规一日顶一年。",
+                  "text_big5": "你滿了這些日子，還要向右側臥，擔當猶大家的罪孽四十日；我給你定規一日頂一年。",
+                  "text_en": "And when you have completed them, lie down again, on your right side; and you shall bear the iniquity of the house of Judah for forty days; I have appointed to you a day for each year."
+                },
+                {
+                  "book": 40,
+                  "chapter": 4,
+                  "verse": 2,
+                  "ref_gb": "太四2",
+                  "ref_big5": "太四2",
+                  "ref_en": "Matt. 4:2",
+                  "text_gb": "祂禁食了四十昼四十夜，后来就饿了。",
+                  "text_big5": "祂禁食了四十晝四十夜，後來就餓了。",
+                  "text_en": "And when He had fasted forty days and forty nights, afterward He became hungry."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 5,
+          "ref_gb": "拿三5",
+          "ref_big5": "拿三5",
+          "ref_en": "Jonah 3:5",
+          "text_gb": "尼[Cra]尼微人信服神，便宣告禁食，从最大的到至小的都穿上麻衣。",
+          "text_big5": "尼[Cra]尼微人信服神，便宣告禁食，從最大的到至小的都穿上麻衣。",
+          "text_en": "And the men of Nineveh believed God, and they proclaimed a fast and put on sackcloth, from the greatest of them even to the least of them.",
+          "text_gb_plain": "尼尼微人信服神，便宣告禁食，从最大的到至小的都穿上麻衣。",
+          "text_big5_plain": "尼尼微人信服神，便宣告禁食，從最大的到至小的都穿上麻衣。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "太十二41，路十一32",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 12,
+                  "verse": 41,
+                  "ref_gb": "太十二41",
+                  "ref_big5": "太十二41",
+                  "ref_en": "Matt. 12:41",
+                  "text_gb": "在审判的时候，尼尼微人要同这世代站起来，并要定这世代的罪，因为他们听了约拿所传扬的，就悔改了。看哪，在这里有比约拿更大的。",
+                  "text_big5": "在審判的時候，尼尼微人要同這世代站起來，並要定這世代的罪，因為他們聽了約拿所傳揚的，就悔改了。看哪，在這裏有比約拿更大的。",
+                  "text_en": "Ninevite men will stand up in the judgment with this generation and will condemn it, because they repented at the preaching of Jonah, and behold, something more than Jonah is here."
+                },
+                {
+                  "book": 42,
+                  "chapter": 11,
+                  "verse": 32,
+                  "ref_gb": "路十一32",
+                  "ref_big5": "路十一32",
+                  "ref_en": "Luke 11:32",
+                  "text_gb": "在审判的时候，尼尼微人要同这世代站起来，并要定这世代的罪，因为他们听了约拿所传扬的，就悔改了。看哪，在这里有比约拿更大的。",
+                  "text_big5": "在審判的時候，尼尼微人要同這世代站起來，並要定這世代的罪，因為他們聽了約拿所傳揚的，就悔改了。看哪，在這裏有比約拿更大的。",
+                  "text_en": "Ninevite men will stand up in the judgment with this generation and will condemn it, because they repented at the preaching of Jonah, and behold, something more than Jonah is here."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 6,
+          "ref_gb": "拿三6",
+          "ref_big5": "拿三6",
+          "ref_en": "Jonah 3:6",
+          "text_gb": "这话传到尼尼微王那里，他就从宝座上起来，脱下朝服，披上麻[Cra]布，坐在炉灰中。",
+          "text_big5": "這話傳到尼尼微王那裏，他就從寶座上起來，脫下朝服，披上麻[Cra]布，坐在爐灰中。",
+          "text_en": "And the word reached the king of Nineveh, and he arose from his throne and put away his majestic clothes from him and covered himself with sackcloth and sat in ashes.",
+          "text_gb_plain": "这话传到尼尼微王那里，他就从宝座上起来，脱下朝服，披上麻布，坐在炉灰中。",
+          "text_big5_plain": "這話傳到尼尼微王那裏，他就從寶座上起來，脫下朝服，披上麻布，坐在爐灰中。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 28,
+              "raw": "斯四1，耶六26，但九3，太十一21，路十13",
+              "refs": [
+                {
+                  "book": 17,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "斯四1",
+                  "ref_big5": "斯四1",
+                  "ref_en": "Esther 4:1",
+                  "text_gb": "末底改知道所发生的这一切事，就撕裂衣服，穿麻衣，蒙灰尘，在城中行走，大声哀号。",
+                  "text_big5": "末底改知道所發生的這一切事，就撕裂衣服，穿麻衣，蒙灰塵，在城中行走，大聲哀號。",
+                  "text_en": "Now when Mordecai learned about all that had been done, Mordecai rent his clothes and put on sackcloth and ashes; and he went out into the midst of the city and wailed loudly and bitterly."
+                },
+                {
+                  "book": 24,
+                  "chapter": 6,
+                  "verse": 26,
+                  "ref_gb": "耶六26",
+                  "ref_big5": "耶六26",
+                  "ref_en": "Jer. 6:26",
+                  "text_gb": "我的百姓啊，应当腰束麻布，辊在灰中。你要悲伤如丧独生子，痛痛哭号；因为灭命的要忽然临到我们。",
+                  "text_big5": "我的百姓阿，應當腰束麻布，輥在灰中。你要悲傷如喪獨生子，痛痛哭號；因為滅命的要忽然臨到我們。",
+                  "text_en": "O daughter of my people, gird yourself in sackcloth / And roll in ashes; / Mourn as for an only son, / A most bitter wailing; / For suddenly the destroyer / Will come upon us."
+                },
+                {
+                  "book": 27,
+                  "chapter": 9,
+                  "verse": 3,
+                  "ref_gb": "但九3",
+                  "ref_big5": "但九3",
+                  "ref_en": "Dan. 9:3",
+                  "text_gb": "我便禁食，披麻蒙灰，面向主神寻求，祷告、恳求。",
+                  "text_big5": "我便禁食，披麻蒙灰，面向主神尋求，禱告、懇求。",
+                  "text_en": "So I set my face toward the Lord God to seek Him in prayer and supplications with fasting and sackcloth and ashes."
+                },
+                {
+                  "book": 40,
+                  "chapter": 11,
+                  "verse": 21,
+                  "ref_gb": "太十一21",
+                  "ref_big5": "太十一21",
+                  "ref_en": "Matt. 11:21",
+                  "text_gb": "哥拉汛哪，你有祸了！伯赛大啊，你有祸了！因为在你们中间所行的异能，若行在推罗、西顿，她们早已披麻蒙灰悔改了。",
+                  "text_big5": "哥拉汛哪，你有禍了！伯賽大阿，你有禍了！因為在你們中間所行的異能，若行在推羅、西頓，她們早已披麻蒙灰悔改了。",
+                  "text_en": "Woe to you, Chorazin! Woe to you, Bethsaida! For if the works of power which took place in you had taken place in Tyre and Sidon, they would have repented long ago in sackcloth and ashes."
+                },
+                {
+                  "book": 42,
+                  "chapter": 10,
+                  "verse": 13,
+                  "ref_gb": "路十13",
+                  "ref_big5": "路十13",
+                  "ref_en": "Luke 10:13",
+                  "text_gb": "哥拉汛哪，你有祸了！伯赛大啊，你有祸了！因为在你们中间所行的异能，若行在推罗、西顿，她们早已披麻蒙灰，坐在地上悔改了。",
+                  "text_big5": "哥拉汛哪，你有禍了！伯賽大阿，你有禍了！因為在你們中間所行的異能，若行在推羅、西頓，她們早已披麻蒙灰，坐在地上悔改了。",
+                  "text_en": "Woe to you, Chorazin! Woe to you, Bethsaida! For if the works of power which took place in you had taken place in Tyre and Sidon, they would have repented long ago, sitting in sackcloth and ashes."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 7,
+          "ref_gb": "拿三7",
+          "ref_big5": "拿三7",
+          "ref_en": "Jonah 3:7",
+          "text_gb": "他又发出通告，使人在尼尼微城，凭王和大臣之令宣告说，人和牲畜、牛羊，都不可尝什么；不可吃什么，也不可喝水。",
+          "text_big5": "他又發出通告，使人在尼尼微城，憑王和大臣之令宣告說，人和牲畜、牛羊，都不可嘗甚麼；不可喫甚麼，也不可喝水。",
+          "text_en": "And he issued a proclamation and declared in Nineveh by the decree of the king and his great men, saying, Let neither man nor beast nor herd nor flock taste anything; let them not feed, nor let them drink water.",
+          "text_gb_plain": "他又发出通告，使人在尼尼微城，凭王和大臣之令宣告说，人和牲畜、牛羊，都不可尝什么；不可吃什么，也不可喝水。",
+          "text_big5_plain": "他又發出通告，使人在尼尼微城，憑王和大臣之令宣告說，人和牲畜、牛羊，都不可嘗甚麼；不可喫甚麼，也不可喝水。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 8,
+          "ref_gb": "拿三8",
+          "ref_big5": "拿三8",
+          "ref_en": "Jonah 3:8",
+          "text_gb": "人与牲畜都当披上麻布，人要切切呼求神。各人要回转，离开恶的行径，丢弃手中的强暴。",
+          "text_big5": "人與牲畜都當披上麻布，人要切切呼求神。各人要回轉，離開惡的行徑，丟棄手中的強暴。",
+          "text_en": "And let man and beast be covered in sackcloth, and let them call to God strongly. And let each turn from his evil way and from the violence that is in his hands.",
+          "text_gb_plain": "人与牲畜都当披上麻布，人要切切呼求神。各人要回转，离开恶的行径，丢弃手中的强暴。",
+          "text_big5_plain": "人與牲畜都當披上麻布，人要切切呼求神。各人要回轉，離開惡的行徑，丟棄手中的強暴。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 9,
+          "ref_gb": "拿三9",
+          "ref_big5": "拿三9",
+          "ref_en": "Jonah 3:9",
+          "text_gb": "或[Cra]者神转意后悔，不发烈怒，使我们不至灭亡，也未可知。",
+          "text_big5": "或[Cra]者神轉意後悔，不發烈怒，使我們不至滅亡，也未可知。",
+          "text_en": "Who knows whether God will turn and repent, and will turn from His burning anger so that we do not perish?",
+          "text_gb_plain": "或者神转意后悔，不发烈怒，使我们不至灭亡，也未可知。",
+          "text_big5_plain": "或者神轉意後悔，不發烈怒，使我們不至滅亡，也未可知。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "撒上十二22，珥二14",
+              "refs": [
+                {
+                  "book": 9,
+                  "chapter": 12,
+                  "verse": 22,
+                  "ref_gb": "撒上十二22",
+                  "ref_big5": "撒上十二22",
+                  "ref_en": "1 Sam. 12:22",
+                  "text_gb": "耶和华既喜悦把你们作成祂的子民，就必因祂的大名不撇弃祂的子民。",
+                  "text_big5": "耶和華既喜悅把你們作成祂的子民，就必因祂的大名不撇棄祂的子民。",
+                  "text_en": "For because of His great name Jehovah will not forsake His people, for Jehovah has been pleased to make you a people for Himself."
+                },
+                {
+                  "book": 29,
+                  "chapter": 2,
+                  "verse": 14,
+                  "ref_gb": "珥二14",
+                  "ref_big5": "珥二14",
+                  "ref_en": "Joel 2:14",
+                  "text_gb": "或者祂转意后悔，留下祝福，就是留下献给耶和华你们神的素祭和奠祭，也未可知。",
+                  "text_big5": "或者祂轉意後悔，留下祝福，就是留下獻給耶和華你們神的素祭和奠祭，也未可知。",
+                  "text_en": "Who knows whether He will turn and repent / And leave a blessing behind Him, / A meal offering and a drink offering / To Jehovah your God?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 3,
+          "verse": 10,
+          "ref_gb": "拿三10",
+          "ref_big5": "拿三10",
+          "ref_en": "Jonah 3:10",
+          "text_gb": "于是神察看他们所作的，见他们回转，离开恶的行径，祂就后[Cra]悔，不把所说的灾祸降与他们了。",
+          "text_big5": "於是神察看他們所作的，見他們回轉，離開惡的行徑，祂就後[Cra]悔，不把所說的災禍降與他們了。",
+          "text_en": "And God saw their deeds, that they turned from their evil way, and God repented for the evil that He said He would do to them; and He did not do it. ",
+          "text_gb_plain": "于是神察看他们所作的，见他们回转，离开恶的行径，祂就后悔，不把所说的灾祸降与他们了。",
+          "text_big5_plain": "於是神察看他們所作的，見他們回轉，離開惡的行徑，祂就後悔，不把所說的災禍降與他們了。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 27,
+              "raw": "耶十八8，珥二13，摩七3，6",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 18,
+                  "verse": 8,
+                  "ref_gb": "耶十八8",
+                  "ref_big5": "耶十八8",
+                  "ref_en": "Jer. 18:8",
+                  "text_gb": "我所说的那一邦，若是回转离开他们的恶，我就必后悔，不将我要行的灾祸降与他们。",
+                  "text_big5": "我所說的那一邦，若是回轉離開他們的惡，我就必後悔，不將我要行的災禍降與他們。",
+                  "text_en": "And if that nation concerning which I have spoken turns from its evil, I will repent of the evil that I intended to do to it."
+                },
+                {
+                  "book": 29,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "珥二13",
+                  "ref_big5": "珥二13",
+                  "ref_en": "Joel 2:13",
+                  "text_gb": "你们要撕裂心肠，不要撕裂衣服，并要归向耶和华你们的神，因为祂有恩典，有怜恤，不轻易发怒，有丰盛的慈爱，并且后悔，不降所说的灾。",
+                  "text_big5": "你們要撕裂心腸，不要撕裂衣服，並要歸向耶和華你們的神，因為祂有恩典，有憐恤，不輕易發怒，有豐盛的慈愛，並且後悔，不降所說的災。",
+                  "text_en": "And rend your hearts, / And not your garments, / And turn to Jehovah your God, / For He is gracious and compassionate, / Long-suffering and abundant in lovingkindness / And repentant of evil. "
+                },
+                {
+                  "book": 30,
+                  "chapter": 7,
+                  "verse": 3,
+                  "ref_gb": "摩七3",
+                  "ref_big5": "摩七3",
+                  "ref_en": "Amos 7:3",
+                  "text_gb": "耶和华就为此后悔：耶和华说，这灾必不发生。",
+                  "text_big5": "耶和華就為此後悔：耶和華說，這災必不發生。",
+                  "text_en": "Jehovah repented concerning this: It shall not be, says Jehovah."
+                },
+                {
+                  "book": 30,
+                  "chapter": 7,
+                  "verse": 6,
+                  "ref_gb": "摩七6",
+                  "ref_big5": "摩七6",
+                  "ref_en": "Amos 7:6",
+                  "text_gb": "耶和华就为此后悔：主耶和华说，这灾也必不发生。",
+                  "text_big5": "耶和華就為此後悔：主耶和華說，這災也必不發生。",
+                  "text_en": "Jehovah repented concerning this: This also shall not be, says the Lord Jehovah."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 4,
+      "verses": [
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 1,
+          "ref_gb": "拿四1",
+          "ref_big5": "拿四1",
+          "ref_en": "Jonah 4:1",
+          "text_gb": "约拿对这事大大不悦，并且发怒。",
+          "text_big5": "約拿對這事大大不悅，並且發怒。",
+          "text_en": "But it displeased Jonah greatly, and he was angry.",
+          "text_gb_plain": "约拿对这事大大不悦，并且发怒。",
+          "text_big5_plain": "約拿對這事大大不悅，並且發怒。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 2,
+          "ref_gb": "拿四2",
+          "ref_big5": "拿四2",
+          "ref_en": "Jonah 4:2",
+          "text_gb": "他就祷告耶和华说，耶和华啊，我在本地的时候，岂不是这样说么？我知道你是有[Cra]恩典、有怜恤的神，不轻易发怒，有丰盛的慈爱，并且后悔不降所说的灾，所以我急速逃往他施去。",
+          "text_big5": "他就禱告耶和華說，耶和華阿，我在本地的時候，豈不是這樣說麼？我知道你是有[Cra]恩典、有憐恤的神，不輕易發怒，有豐盛的慈愛，並且後悔不降所說的災，所以我急速逃往他施去。",
+          "text_en": "And he prayed to Jehovah and said, Ah, Jehovah, was this not what I said when I was still in my land? Therefore I anticipated it by fleeing to Tarshish, for I know that You are a gracious and compassionate God, long-suffering and abundant in lovingkindness and repentant of evil.",
+          "text_gb_plain": "他就祷告耶和华说，耶和华啊，我在本地的时候，岂不是这样说么？我知道你是有恩典、有怜恤的神，不轻易发怒，有丰盛的慈爱，并且后悔不降所说的灾，所以我急速逃往他施去。",
+          "text_big5_plain": "他就禱告耶和華說，耶和華阿，我在本地的時候，豈不是這樣說麼？我知道你是有恩典、有憐恤的神，不輕易發怒，有豐盛的慈愛，並且後悔不降所說的災，所以我急速逃往他施去。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 36,
+              "raw": "出三四6，诗八六15，一四五8，珥二13",
+              "refs": [
+                {
+                  "book": 2,
+                  "chapter": 34,
+                  "verse": 6,
+                  "ref_gb": "出三四6",
+                  "ref_big5": "出三四6",
+                  "ref_en": "Exo. 34:6",
+                  "text_gb": "耶和华在他面前经过，宣告说，耶和华，耶和华，是有怜恤、有恩典的神，不轻易发怒，并有丰盛的慈爱和信实；",
+                  "text_big5": "耶和華在他面前經過，宣告說，耶和華，耶和華，是有憐恤、有恩典的神，不輕易發怒，並有豐盛的慈愛和信實；",
+                  "text_en": "Then Jehovah passed by before him and proclaimed, Jehovah, Jehovah, God compassionate and gracious, long-suffering, and abundant in lovingkindness and truth, "
+                },
+                {
+                  "book": 19,
+                  "chapter": 86,
+                  "verse": 15,
+                  "ref_gb": "诗八六15",
+                  "ref_big5": "詩八六15",
+                  "ref_en": "Psa. 86:15",
+                  "text_gb": "但主啊，你是有怜恤有恩典的神，不轻易发怒，并有丰盛的慈爱和真实。",
+                  "text_big5": "但主阿，你是有憐恤有恩典的神，不輕易發怒，並有豐盛的慈愛和真實。",
+                  "text_en": "But You, O Lord, are a compassionate and gracious God, / Long-suffering and abundant in lovingkindness and truth."
+                },
+                {
+                  "book": 19,
+                  "chapter": 145,
+                  "verse": 8,
+                  "ref_gb": "诗一四五8",
+                  "ref_big5": "詩一四五8",
+                  "ref_en": "Psa. 145:8",
+                  "text_gb": "耶和华有恩典，有怜恤，不轻易发怒，大有慈爱。",
+                  "text_big5": "耶和華有恩典，有憐恤，不輕易發怒，大有慈愛。",
+                  "text_en": "Jehovah is gracious and compassionate, / Long-suffering and great in lovingkindness."
+                },
+                {
+                  "book": 29,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "珥二13",
+                  "ref_big5": "珥二13",
+                  "ref_en": "Joel 2:13",
+                  "text_gb": "你们要撕裂心肠，不要撕裂衣服，并要归向耶和华你们的神，因为祂有恩典，有怜恤，不轻易发怒，有丰盛的慈爱，并且后悔，不降所说的灾。",
+                  "text_big5": "你們要撕裂心腸，不要撕裂衣服，並要歸向耶和華你們的神，因為祂有恩典，有憐恤，不輕易發怒，有豐盛的慈愛，並且後悔，不降所說的災。",
+                  "text_en": "And rend your hearts, / And not your garments, / And turn to Jehovah your God, / For He is gracious and compassionate, / Long-suffering and abundant in lovingkindness / And repentant of evil. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 3,
+          "ref_gb": "拿四3",
+          "ref_big5": "拿四3",
+          "ref_en": "Jonah 4:3",
+          "text_gb": "耶和华啊，现在求你取[Cra]我的命吧，因为我死了比活着还好。",
+          "text_big5": "耶和華阿，現在求你取[Cra]我的命罷，因為我死了比活著還好。",
+          "text_en": "And now, Jehovah, take my life, I pray, from me, for it is better for me to die than to live.",
+          "text_gb_plain": "耶和华啊，现在求你取我的命吧，因为我死了比活着还好。",
+          "text_big5_plain": "耶和華阿，現在求你取我的命罷，因為我死了比活著還好。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 10,
+              "raw": "王上十九4，民十一15",
+              "refs": [
+                {
+                  "book": 11,
+                  "chapter": 19,
+                  "verse": 4,
+                  "ref_gb": "王上十九4",
+                  "ref_big5": "王上十九4",
+                  "ref_en": "1 Kings 19:4",
+                  "text_gb": "自己在旷野走了一日的路程，来到一棵罗腾树下，就坐在那里求死，说，耶和华啊，罢了；求你现在取我的性命，因为我不比我的列祖好。",
+                  "text_big5": "自己在曠野走了一日的路程，來到一棵羅騰樹下，就坐在那裏求死，說，耶和華阿，罷了；求你現在取我的性命，因為我不比我的列祖好。",
+                  "text_en": "And he himself went a day's journey into the wilderness and came and sat down under a certain broom shrub; and he requested for himself that he might die and said, It is enough; now, O Jehovah, take my life, for I am no better than my fathers."
+                },
+                {
+                  "book": 4,
+                  "chapter": 11,
+                  "verse": 15,
+                  "ref_gb": "民十一15",
+                  "ref_big5": "民十一15",
+                  "ref_en": "Num. 11:15",
+                  "text_gb": "你这样待我，我若在你眼前蒙恩，求你立时将我杀了，不叫我看见自己的苦楚。",
+                  "text_big5": "你這樣待我，我若在你眼前蒙恩，求你立時將我殺了，不叫我看見自己的苦楚。",
+                  "text_en": "And if this is the way You deal with me, please kill me at once-if I have found favor in Your sight-and do not let me see my wretchedness."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 4,
+          "ref_gb": "拿四4",
+          "ref_big5": "拿四4",
+          "ref_en": "Jonah 4:4",
+          "text_gb": "耶和华说，你这样发怒合理么？",
+          "text_big5": "耶和華說，你這樣發怒合理麼？",
+          "text_en": "And Jehovah said, Do you do well to be angry?",
+          "text_gb_plain": "耶和华说，你这样发怒合理么？",
+          "text_big5_plain": "耶和華說，你這樣發怒合理麼？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 5,
+          "ref_gb": "拿四5",
+          "ref_big5": "拿四5",
+          "ref_en": "Jonah 4:5",
+          "text_gb": "于是约拿出城，坐在城的东边。他在那里为自己搭了一座棚，坐在棚的荫下，要看看那城究竟如何。",
+          "text_big5": "於是約拿出城，坐在城的東邊。他在那裏為自己搭了一座棚，坐在棚的蔭下，要看看那城究竟如何。",
+          "text_en": "Then Jonah went out from the city and sat to the east of the city. And he made a booth for himself there and sat underneath it in the shade until he could see what would happen to the city.",
+          "text_gb_plain": "于是约拿出城，坐在城的东边。他在那里为自己搭了一座棚，坐在棚的荫下，要看看那城究竟如何。",
+          "text_big5_plain": "於是約拿出城，坐在城的東邊。他在那裏為自己搭了一座棚，坐在棚的蔭下，要看看那城究竟如何。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 6,
+          "ref_gb": "拿四6",
+          "ref_big5": "拿四6",
+          "ref_en": "Jonah 4:6",
+          "text_gb": "耶和华神安排一棵蓖[Fn1]麻，使其长起来高过约拿，影儿遮盖他的头，救他脱离苦楚。约拿因这棵蓖麻大大喜乐。",
+          "text_big5": "耶和華神安排一棵蓖[Fn1]麻，使其長起來高過約拿，影兒遮蓋他的頭，救他脫離苦楚。約拿因這棵蓖麻大大喜樂。",
+          "text_en": "And Jehovah God prepared a castor-oil tree; and it came up over Jonah to be a shade over his head, that it might deliver him from his misfortune. And Jonah was exceedingly glad because of the tree. ",
+          "text_gb_plain": "耶和华神安排一棵蓖麻，使其长起来高过约拿，影儿遮盖他的头，救他脱离苦楚。约拿因这棵蓖麻大大喜乐。",
+          "text_big5_plain": "耶和華神安排一棵蓖麻，使其長起來高過約拿，影兒遮蓋他的頭，救他脫離苦楚。約拿因這棵蓖麻大大喜樂。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 9,
+              "zh": "一种以阔叶闻名的树。",
+              "zh_big5": "一種以闊葉聞名的樹。",
+              "en": "4:6 1 castor-oil A tree known for its broad leaves. So throughout this chapter where tree is used."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 7,
+          "ref_gb": "拿四7",
+          "ref_big5": "拿四7",
+          "ref_en": "Jonah 4:7",
+          "text_gb": "次日黎明，神却安排一条虫子，咬[Fn1]这蓖麻，以致枯槁。",
+          "text_big5": "次日黎明，神卻安排一條蟲子，咬[Fn1]這蓖麻，以致枯槁。",
+          "text_en": "But God prepared a worm when the dawn came up the next day, and it struck the tree, and the tree withered.",
+          "text_gb_plain": "次日黎明，神却安排一条虫子，咬这蓖麻，以致枯槁。",
+          "text_big5_plain": "次日黎明，神卻安排一條蟲子，咬這蓖麻，以致枯槁。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 15,
+              "zh": "直译，击打。",
+              "zh_big5": "直譯，擊打。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 8,
+          "ref_gb": "拿四8",
+          "ref_big5": "拿四8",
+          "ref_en": "Jonah 4:8",
+          "text_gb": "日头出来的时候，神安排炎热的东风。日头曝[Fn1]晒约拿的头，他就发昏。他为自己求死，说，我死了比活着还好。",
+          "text_big5": "日頭出來的時候，神安排炎熱的東風。日頭曝[Fn1]曬約拿的頭，他就發昏。他為自己求死，說，我死了比活著還好。",
+          "text_en": "And when the sun rose, God prepared a sultry east wind. And the sun beat down on Jonah's head, and he fainted. And he requested for himself that he might die, and said, It is better for me to die than to live.",
+          "text_gb_plain": "日头出来的时候，神安排炎热的东风。日头曝晒约拿的头，他就发昏。他为自己求死，说，我死了比活着还好。",
+          "text_big5_plain": "日頭出來的時候，神安排炎熱的東風。日頭曝曬約拿的頭，他就發昏。他為自己求死，說，我死了比活著還好。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 20,
+              "zh": "直译，击打。",
+              "zh_big5": "直譯，擊打。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 9,
+          "ref_gb": "拿四9",
+          "ref_big5": "拿四9",
+          "ref_en": "Jonah 4:9",
+          "text_gb": "神对约拿说，你因这棵蓖麻发怒合理么？他说，我发怒以至于死，都是合理的。",
+          "text_big5": "神對約拿說，你因這棵蓖麻發怒合理麼？他說，我發怒以至於死，都是合理的。",
+          "text_en": "And God said to Jonah, Do you do well to be angry about the tree? And he said, I do well to be angry unto death.",
+          "text_gb_plain": "神对约拿说，你因这棵蓖麻发怒合理么？他说，我发怒以至于死，都是合理的。",
+          "text_big5_plain": "神對約拿說，你因這棵蓖麻發怒合理麼？他說，我發怒以至於死，都是合理的。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 10,
+          "ref_gb": "拿四10",
+          "ref_big5": "拿四10",
+          "ref_en": "Jonah 4:10",
+          "text_gb": "耶和华说，这蓖麻不是你劳苦栽种的，也不是你使它长大的；一夜生长，一夜枯死，你尚且怜惜；",
+          "text_big5": "耶和華說，這蓖麻不是你勞苦栽種的，也不是你使它長大的；一夜生長，一夜枯死，你尚且憐惜；",
+          "text_en": "And Jehovah said, You had pity on the tree that you did not labor for nor cause to grow, which came into being overnight and perished overnight;",
+          "text_gb_plain": "耶和华说，这蓖麻不是你劳苦栽种的，也不是你使它长大的；一夜生长，一夜枯死，你尚且怜惜；",
+          "text_big5_plain": "耶和華說，這蓖麻不是你勞苦栽種的，也不是你使它長大的；一夜生長，一夜枯死，你尚且憐惜；",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 32,
+          "chapter": 4,
+          "verse": 11,
+          "ref_gb": "拿四11",
+          "ref_big5": "拿四11",
+          "ref_en": "Jonah 4:11",
+          "text_gb": "何况这尼[Cra]尼微大城，其中不能分辨右手和左手的有十二万多人，并有许多牲[Fn1]畜，我岂能不怜[Fn2]惜呢？",
+          "text_big5": "何況這尼[Cra]尼微大城，其中不能分辨右手和左手的有十二萬多人，並有許多牲[Fn1]畜，我豈能不憐[Fn2]惜呢？",
+          "text_en": "And I, should I not have pity on Nineveh, the great city, in which are more than a hundred and twenty thousand people who cannot discern between their right hand and their left, and many cattle? ",
+          "text_gb_plain": "何况这尼尼微大城，其中不能分辨右手和左手的有十二万多人，并有许多牲畜，我岂能不怜惜呢？",
+          "text_big5_plain": "何況這尼尼微大城，其中不能分辨右手和左手的有十二萬多人，並有許多牲畜，我豈能不憐惜呢？",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 33,
+              "zh": "神怜惜邪恶的外邦城尼尼微，甚至顾到他们的牲畜。",
+              "zh_big5": "神憐惜邪惡的外邦城尼尼微，甚至顧到他們的牲畜。",
+              "en": "4:11 1 pity This book indicates particularly that God is not the God only of a certain people; He is the God of all peoples (Rom. 3:29). The Jews thought that they were the unique people of God. They considered themselves the firstborn son with the right to be the first to enjoy all that is of God (Exo. 4:22; Luke 15:11-32). But because the Jews responded to God wrongly, the Gentiles, not the Jews, became the first to enjoy God in His salvation (Matt. 21:28-32; Acts 13:45-48; Rom. 11:11, 17, 25). The book of Jonah indicates that while God was angry with Assyria, He would still be gracious and compassionate toward a great and sinful city such as Nineveh. This indicates that God's economy is to do things through Israel, His suffering people, and the nations, the consuming “locusts” (Joel 1:4 and note Joel 1:4 1 ), to extend His salvation to all the peoples on earth (Matt. 28:19; Acts 1:8)."
+            },
+            {
+              "num": 2,
+              "loc": 40,
+              "zh": "本书特别指明，神不是仅属某一班人的神；祂乃是所有人的神(罗三29)。犹太人认为自己是神惟一的子民；他们认为自己是长子，有权利先享受神所有的一切(出四22，路十五11～32)。但因着犹太人对神错误的反应，反而是外邦人，而不是犹太人，成了首先在神救恩中享受神的人(太二一28～32，徒十三45～48，罗十一11，17，25)。 约拿书指明，当神向亚述发怒时，祂向尼尼微这样一座邪恶的大城，仍然有恩典，有怜恤。这指明神的经纶就是要借着以色列(祂受苦的子民)和列国(销毁的蝗虫—珥一4与注)来作事，好将祂的救恩延伸到地上所有的人(太二八19，徒一8)。",
+              "zh_big5": "本書特別指明，神不是僅屬某一班人的神；祂乃是所有人的神。（羅三29。）猶太人認為自己是神惟一的子民；他們認為自己是長子，有權利先享受神所有的一切。（出四22，路十五11～32。）但因著猶太人對神錯誤的反應，反而是外邦人，而不是猶太人，成了首先在神救恩中享受神的人。（太二一28～32，徒十三45～48，羅十一11，17，25。）ˍ約拿書指明，當神向亞述發怒時，祂向尼尼微這樣一座邪惡的大城，仍然有恩典，有憐恤。這指明神的經綸就是要藉著以色列（祂受苦的子民）和列國（銷毀的蝗蟲—珥一4與註）來作事，好將祂的救恩延伸到地上所有的人。（太二八19，徒一8。）",
+              "en": "4:11 2 cattle In having pity on the evil Gentile city of Nineveh, God cared even for their cattle."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "拿一2，三2，3",
+              "refs": [
+                {
+                  "book": 32,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "拿一2",
+                  "ref_big5": "拿一2",
+                  "ref_en": "Jonah 1:2",
+                  "text_gb": "你起来往尼尼微大城去，向那城的居民呼喊，因为他们的恶已经达到我面前。",
+                  "text_big5": "你起來往尼尼微大城去，向那城的居民呼喊，因為他們的惡已經達到我面前。",
+                  "text_en": "Arise, go to Nineveh, the great city, and cry out against it, for their evil has come up before Me."
+                },
+                {
+                  "book": 32,
+                  "chapter": 3,
+                  "verse": 2,
+                  "ref_gb": "拿三2",
+                  "ref_big5": "拿三2",
+                  "ref_en": "Jonah 3:2",
+                  "text_gb": "起来，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的话。",
+                  "text_big5": "起來，往尼尼微大城去，向那城的居民宣告我所要吩咐你宣告的話。",
+                  "text_en": "Arise, go to Nineveh, the great city; and proclaim to it the proclamation that I will speak to you."
+                },
+                {
+                  "book": 32,
+                  "chapter": 3,
+                  "verse": 3,
+                  "ref_gb": "拿三3",
+                  "ref_big5": "拿三3",
+                  "ref_en": "Jonah 3:3",
+                  "text_gb": "约拿便照耶和华的话起来，往尼尼微去。这尼尼微是极大的城，要三日才能走完。",
+                  "text_big5": "約拿便照耶和華的話起來，往尼尼微去。這尼尼微是極大的城，要三日纔能走完。",
+                  "text_en": "So Jonah arose and went to Nineveh according to the word of Jehovah. Now Nineveh was an exceedingly great city, a three days' journey in size."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

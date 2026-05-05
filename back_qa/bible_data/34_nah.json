@@ -1,0 +1,1768 @@
+{
+  "book": 34,
+  "name_gb": "那鸿书",
+  "name_big5": "那鴻書",
+  "name_en": "Nahum",
+  "abbr_gb": "鸿",
+  "abbr_big5": "鴻",
+  "abbr_en": "Nah.",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "鸿一1",
+          "ref_big5": "鴻一1",
+          "ref_en": "Nah. 1:1",
+          "text_gb": "关于尼[Fn1][Cra]尼微的默[Fn2]示，就是伊勒歌斯人那[Fn3]鸿的异象书。",
+          "text_big5": "關於尼[Fn1][Cra]尼微的默[Fn2]示，就是伊勒歌斯人那[Fn3]鴻的異象書。",
+          "text_en": "The burden concerning Nineveh. The book of the vision of Nahum the Elkoshite.",
+          "text_gb_plain": "关于尼尼微的默示，就是伊勒歌斯人那鸿的异象书。",
+          "text_big5_plain": "關於尼尼微的默示，就是伊勒歌斯人那鴻的異象書。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 3,
+              "zh": "见拿一2注1。约拿和那鸿的预言都是关于尼尼微城；约拿将神的救恩带到或延伸到那座罪恶的城，那鸿却把神的审判带到那城。约拿书启示神在祂的救恩里乃是地上万民的神，不只是犹太人的神，也是外邦人的神(见拿四11注2)。那鸿书启示神也是在祂的审判上作万民的神。因此，在审判上并在救恩里，神都是万民的神。 虽然神将祂的救恩延伸到尼尼微，但祂审判尼尼微，因为尼尼微是罪恶的，并且侵略以色列(王下十五19～20，29，十七3～6，十八9～十九37)。亚述是头一个残害以色列的国家，它入侵以色列，比尼布甲尼撒带领巴比伦人入侵(王下二四1～二五21)早一百多年。",
+              "zh_big5": "見拿一2註1。約拿和那鴻的豫言都是關於尼尼微城；約拿將神的救恩帶到或延伸到那座罪惡的城，那鴻卻把神的審判帶到那城。約拿書啟示神在祂的救恩裏乃是地上萬民的神，不只是猶太人的神，也是外邦人的神。（見拿四11註2。）那鴻書啟示神也是在祂的審判上作萬民的神。因此，在審判上並在救恩裏，神都是萬民的神。ˍ雖然神將祂的救恩延伸到尼尼微，但祂審判尼尼微，因為尼尼微是罪惡的，並且侵略以色列。（王下十五19～20，29，十七3～6，十八9～十九37。）亞述是頭一個殘害以色列的國家，它入侵以色列，比尼布甲尼撒帶領巴比倫人入侵（王下二四1～二五21）早一百多年。",
+              "en": "1:1 1 Nineveh See note Jonah 1:2 1 . The prophecies of both Jonah and Nahum relate to the city of Nineveh. Whereas Jonah brought, or extended, God's salvation to that sinful city, Nahum brought God's judgment upon it. Jonah reveals that God in His salvation is the God of all the peoples of the earth, not only of the Jews but also of the Gentiles (see note Jonah 4:11 1 ). Nahum reveals that God is also the God of all peoples in His judgment. Thus, God is the God of all peoples both in judgment and in salvation. Although He extended His salvation to Nineveh, God judged Nineveh because Nineveh was sinful and invaded Israel (2 Kings 15:19-20, 29; 17:3-6; 18:9-37; 19:1-37). Assyria was the first nation to devastate Israel, invading Israel more than one hundred years before the Babylonian invasion under Nebuchadnezzar (2 Kings 24:1-20; 25:1-21)."
+            },
+            {
+              "num": 2,
+              "loc": 7,
+              "zh": "直译，负担。",
+              "zh_big5": "直譯，負擔。",
+              "en": "1:1 2 Nahum Meaning comfort, and similar in sound to the word for avenge. This name signifies that Jehovah God comforts His elect, Israel, and avenges Israel of her enemy, Nineveh, by judging Assyria."
+            },
+            {
+              "num": 3,
+              "loc": 17,
+              "zh": "意，安慰；原文发音近似‘报复’一辞。这名表征耶和华神安慰祂的选民以色列，并借着审判亚述，向以色列的仇敌尼尼微报复。",
+              "zh_big5": "意，安慰；原文發音近似“報復”一辭。這名表徵耶和華神安慰祂的選民以色列，並藉著審判亞述，向以色列的仇敵尼尼微報復。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 3,
+              "raw": "创十11，拿三3，番二13",
+              "refs": [
+                {
+                  "book": 1,
+                  "chapter": 10,
+                  "verse": 11,
+                  "ref_gb": "创十11",
+                  "ref_big5": "創十11",
+                  "ref_en": "Gen. 10:11",
+                  "text_gb": "他从那地出来往亚述去，建造尼尼微、利河伯、迦拉，",
+                  "text_big5": "他從那地出來往亞述去，建造尼尼微、利河伯、迦拉，",
+                  "text_en": "From that land he went into Assyria and built Nineveh and Rehoboth-ir and Calah"
+                },
+                {
+                  "book": 32,
+                  "chapter": 3,
+                  "verse": 3,
+                  "ref_gb": "拿三3",
+                  "ref_big5": "拿三3",
+                  "ref_en": "Jonah 3:3",
+                  "text_gb": "约拿便照耶和华的话起来，往尼尼微去。这尼尼微是极大的城，要三日才能走完。",
+                  "text_big5": "約拿便照耶和華的話起來，往尼尼微去。這尼尼微是極大的城，要三日纔能走完。",
+                  "text_en": "So Jonah arose and went to Nineveh according to the word of Jehovah. Now Nineveh was an exceedingly great city, a three days' journey in size."
+                },
+                {
+                  "book": 36,
+                  "chapter": 2,
+                  "verse": 13,
+                  "ref_gb": "番二13",
+                  "ref_big5": "番二13",
+                  "ref_en": "Zeph. 2:13",
+                  "text_gb": "祂必伸手攻击北方，毁灭亚述，使尼尼微荒凉，干旱如同旷野。",
+                  "text_big5": "祂必伸手攻擊北方，毀滅亞述，使尼尼微荒涼，乾旱如同曠野。",
+                  "text_en": "And He will stretch out His hand against the north / And will destroy Assyria, / And will make Nineveh a desolation / And a desert, like the wilderness."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "鸿一2",
+          "ref_big5": "鴻一2",
+          "ref_en": "Nah. 1:2",
+          "text_gb": "耶和华是忌[Cra]邪施报的神；耶和华施报，且满有忿怒；耶和华向祂的敌人施报，向祂的仇敌怀怒。",
+          "text_big5": "耶和華是忌[Cra]邪施報的神；耶和華施報，且滿有忿怒；耶和華向祂的敵人施報，向祂的仇敵懷怒。",
+          "text_en": "Jehovah is a jealous God and One who avenges; / Jehovah avenges and is full of wrath; / Jehovah takes vengeance on His adversaries, / And reserves wrath for His enemies.",
+          "text_gb_plain": "耶和华是忌邪施报的神；耶和华施报，且满有忿怒；耶和华向祂的敌人施报，向祂的仇敌怀怒。",
+          "text_big5_plain": "耶和華是忌邪施報的神；耶和華施報，且滿有忿怒；耶和華向祂的敵人施報，向祂的仇敵懷怒。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "出二十5，三四14，申四24，书二四19",
+              "refs": [
+                {
+                  "book": 2,
+                  "chapter": 20,
+                  "verse": 5,
+                  "ref_gb": "出二○5",
+                  "ref_big5": "出二○5",
+                  "ref_en": "Exo. 20:5",
+                  "text_gb": "不可跪拜那些像，也不可事奉它们；因为我耶和华你的神是忌邪的神；恨我的，我必追讨他们的罪孽，自父及子，直到三四代；",
+                  "text_big5": "不可跪拜那些像，也不可事奉它們；因為我耶和華你的神是忌邪的神；恨我的，我必追討他們的罪孽，自父及子，直到三四代；",
+                  "text_en": "You shall not bow down to them, and you shall not serve them; for I, Jehovah your God, am a jealous God, visiting the iniquity of the fathers upon the children, to the third and fourth generations of those who hate Me, "
+                },
+                {
+                  "book": 2,
+                  "chapter": 34,
+                  "verse": 14,
+                  "ref_gb": "出三四14",
+                  "ref_big5": "出三四14",
+                  "ref_en": "Exo. 34:14",
+                  "text_gb": "（你不可敬拜别神；因为耶和华是忌邪的神，名为忌邪者，）",
+                  "text_big5": "（你不可敬拜別神；因為耶和華是忌邪的神，名為忌邪者，）",
+                  "text_en": "(For you shall not worship any other god; for Jehovah, whose name is Jealous, is a jealous God)"
+                },
+                {
+                  "book": 5,
+                  "chapter": 4,
+                  "verse": 24,
+                  "ref_gb": "申四24",
+                  "ref_big5": "申四24",
+                  "ref_en": "Deut. 4:24",
+                  "text_gb": "因为耶和华你的神乃是烈火，是忌邪的神。",
+                  "text_big5": "因為耶和華你的神乃是烈火，是忌邪的神。",
+                  "text_en": "For Jehovah your God is a consuming fire, a jealous God."
+                },
+                {
+                  "book": 6,
+                  "chapter": 24,
+                  "verse": 19,
+                  "ref_gb": "书二四19",
+                  "ref_big5": "書二四19",
+                  "ref_en": "Josh. 24:19",
+                  "text_gb": "约书亚对百姓说，你们不能事奉耶和华，因为祂是圣别的神，是忌邪的神，必不赦免你们的过犯和你们的罪。",
+                  "text_big5": "約書亞對百姓說，你們不能事奉耶和華，因為祂是聖別的神，是忌邪的神，必不赦免你們的過犯和你們的罪。",
+                  "text_en": "Then Joshua said to the people, You are not able to serve Jehovah, for He is a holy God. He is a jealous God; He will not forgive your transgression or your sins."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "鸿一3",
+          "ref_big5": "鴻一3",
+          "ref_en": "Nah. 1:3",
+          "text_gb": "耶和华不[Cra]轻易发怒，大有能力，绝不以有罪的为无罪；耶和华的道路在旋风和暴风中，云[Crb]彩是祂脚下的尘土。",
+          "text_big5": "耶和華不[Cra]輕易發怒，大有能力，絕不以有罪的為無罪；耶和華的道路在旋風和暴風中，雲[Crb]彩是祂腳下的塵土。",
+          "text_en": "Jehovah is long-suffering and great in power / And will by no means clear the guilty. / Jehovah - His way is in the whirlwind and in the storm, / And the clouds are the dust of His feet.",
+          "text_gb_plain": "耶和华不轻易发怒，大有能力，绝不以有罪的为无罪；耶和华的道路在旋风和暴风中，云彩是祂脚下的尘土。",
+          "text_big5_plain": "耶和華不輕易發怒，大有能力，絕不以有罪的為無罪；耶和華的道路在旋風和暴風中，雲彩是祂腳下的塵土。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "出三四6，7，尼九17，诗一○三8",
+              "refs": [
+                {
+                  "book": 2,
+                  "chapter": 34,
+                  "verse": 6,
+                  "ref_gb": "出三四6",
+                  "ref_big5": "出三四6",
+                  "ref_en": "Exo. 34:6",
+                  "text_gb": "耶和华在他面前经过，宣告说，耶和华，耶和华，是有怜恤、有恩典的神，不轻易发怒，并有丰盛的慈爱和信实；",
+                  "text_big5": "耶和華在他面前經過，宣告說，耶和華，耶和華，是有憐恤、有恩典的神，不輕易發怒，並有豐盛的慈愛和信實；",
+                  "text_en": "Then Jehovah passed by before him and proclaimed, Jehovah, Jehovah, God compassionate and gracious, long-suffering, and abundant in lovingkindness and truth, "
+                },
+                {
+                  "book": 2,
+                  "chapter": 34,
+                  "verse": 7,
+                  "ref_gb": "出三四7",
+                  "ref_big5": "出三四7",
+                  "ref_en": "Exo. 34:7",
+                  "text_gb": "为千万代存留慈爱，赦免罪孽、过犯和罪；但祂绝不以有罪的为无罪，必追讨他的罪孽，自父及子及孙，直到三四代。",
+                  "text_big5": "為千萬代存留慈愛，赦免罪孽、過犯和罪；但祂絕不以有罪的為無罪，必追討他的罪孽，自父及子及孫，直到三四代。",
+                  "text_en": "Keeping lovingkindness with thousands of generations, forgiving iniquity and transgression and sin; but He will by no means clear the guilty, but visits the iniquity of the fathers upon the children and upon the grandchildren, to the third and fourth generations."
+                },
+                {
+                  "book": 16,
+                  "chapter": 9,
+                  "verse": 17,
+                  "ref_gb": "尼九17",
+                  "ref_big5": "尼九17",
+                  "ref_en": "Neh. 9:17",
+                  "text_gb": "不肯听从，也不记念你在他们中间所行的奇事，竟硬着颈项，自立首领，要回埃及去受奴役。但你是乐意饶恕人的神，有恩典，有怜恤，不轻易发怒，有丰盛的慈爱，所以你没有丢弃他们。",
+                  "text_big5": "不肯聽從，也不記念你在他們中間所行的奇事，竟硬著頸項，自立首領，要回埃及去受奴役。但你是樂意饒恕人的神，有恩典，有憐恤，不輕易發怒，有豐盛的慈愛，所以你沒有丟棄他們。",
+                  "text_en": "And they refused to listen / And would not remember Your wondrous acts, / Which You had done among them. / And they stiffened their neck and appointed a leader / To return to their slavery in Egypt. / But You are a God of forgiveness, / Gracious and compassionate, / Long-suffering and abounding in lovingkindness; / So You did not forsake them."
+                },
+                {
+                  "book": 19,
+                  "chapter": 103,
+                  "verse": 8,
+                  "ref_gb": "诗一○三8",
+                  "ref_big5": "詩一○三8",
+                  "ref_en": "Psa. 103:8",
+                  "text_gb": "耶和华有怜恤，有恩典，不轻易发怒，且有丰盛的慈爱。",
+                  "text_big5": "耶和華有憐恤，有恩典，不輕易發怒，且有豐盛的慈愛。",
+                  "text_en": "Jehovah is compassionate and gracious, / Long-suffering and abundant in lovingkindness."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 39,
+              "raw": "撒下二二12，伯二二14，诗一○四3，但七13，太二四30，启一7",
+              "refs": [
+                {
+                  "book": 10,
+                  "chapter": 22,
+                  "verse": 12,
+                  "ref_gb": "撒下二二12",
+                  "ref_big5": "撒下二二12",
+                  "ref_en": "2 Sam. 22:12",
+                  "text_gb": "祂以黑暗和乌黑的水云、天空的厚云为祂四围的帷幕。",
+                  "text_big5": "祂以黑暗和烏黑的水雲、天空的厚雲為祂四圍的帷幕。",
+                  "text_en": "And He made darkness pavilions around Him: / Dark waterclouds, thick clouds of the skies."
+                },
+                {
+                  "book": 18,
+                  "chapter": 22,
+                  "verse": 14,
+                  "ref_gb": "伯二二14",
+                  "ref_big5": "伯二二14",
+                  "ref_en": "Job 22:14",
+                  "text_gb": "密云将祂遮盖，使祂不能看见；祂在天的大圈上行走。",
+                  "text_big5": "密雲將祂遮蓋，使祂不能看見；祂在天的大圈上行走。",
+                  "text_en": "Thick clouds are a covering to Him, so He cannot see; / And He walks upon the circle of the heavens."
+                },
+                {
+                  "book": 19,
+                  "chapter": 104,
+                  "verse": 3,
+                  "ref_gb": "诗一○四3",
+                  "ref_big5": "詩一○四3",
+                  "ref_en": "Psa. 104:3",
+                  "text_gb": "耶和华在诸水中立楼阁的栋梁，用云彩为车辇，借着风的翅膀而行。",
+                  "text_big5": "耶和華在諸水中立樓閣的棟梁，用雲彩為車輦，藉著風的翅膀而行。",
+                  "text_en": "He lays the beams of His upper chambers in the waters; / He makes the clouds His chariot; / He walks upon the wings of the wind."
+                },
+                {
+                  "book": 27,
+                  "chapter": 7,
+                  "verse": 13,
+                  "ref_gb": "但七13",
+                  "ref_big5": "但七13",
+                  "ref_en": "Dan. 7:13",
+                  "text_gb": "我在夜间的异象中观看，见有一位像人子的，驾着天云而来；祂来到亘古常在者那里，被领近祂面前。",
+                  "text_big5": "我在夜間的異象中觀看，見有一位像人子的，駕著天雲而來；祂來到亙古常在者那裏，被領近祂面前。",
+                  "text_en": "I watched in the night visions, / And there with the clouds of heaven / One like a Son of Man was coming; / And He came to the Ancient of Days, / And they brought Him near before Him."
+                },
+                {
+                  "book": 40,
+                  "chapter": 24,
+                  "verse": 30,
+                  "ref_gb": "太二四30",
+                  "ref_big5": "太二四30",
+                  "ref_en": "Matt. 24:30",
+                  "text_gb": "那时，人子的兆头要显在天上，这地的各族都要哀哭；他们要看见人子，带着能力和大荣耀，驾着天上的云而来。",
+                  "text_big5": "那時，人子的兆頭要顯在天上，這地的各族都要哀哭；他們要看見人子，帶著能力和大榮耀，駕著天上的雲而來。",
+                  "text_en": "And at that time the sign of the Son of Man will appear in heaven, and then all the tribes of the land will mourn, and they will see the Son of Man coming on the clouds of heaven with power and great glory."
+                },
+                {
+                  "book": 66,
+                  "chapter": 1,
+                  "verse": 7,
+                  "ref_gb": "启一7",
+                  "ref_big5": "啟一7",
+                  "ref_en": "Rev. 1:7",
+                  "text_gb": "看哪，祂驾云降临，众目要看见祂，连刺祂的人也要看见祂；地上的众支派都要因祂捶胸哀哭。是的，阿们。",
+                  "text_big5": "看哪，祂駕雲降臨，眾目要看見祂，連刺祂的人也要看見祂；地上的眾支派都要因祂捶胸哀哭。是的，阿們。",
+                  "text_en": "Behold, He comes with the clouds, and every eye will see Him, even those who pierced Him; and all the tribes of the land will mourn over Him. Yes, amen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "鸿一4",
+          "ref_big5": "鴻一4",
+          "ref_en": "Nah. 1:4",
+          "text_gb": "祂斥[Cra]责海，使海干了，使一切江河干涸。巴珊和迦密的树林衰残，利巴嫩的花草也衰残了。",
+          "text_big5": "祂斥[Cra]責海，使海乾了，使一切江河乾涸。巴珊和迦密的樹林衰殘，利巴嫩的花草也衰殘了。",
+          "text_en": "He rebukes the sea and makes it dry, / And He dries up all the rivers. / Bashan and Carmel languish, / And the sprout of Lebanon languishes.",
+          "text_gb_plain": "祂斥责海，使海干了，使一切江河干涸。巴珊和迦密的树林衰残，利巴嫩的花草也衰残了。",
+          "text_big5_plain": "祂斥責海，使海乾了，使一切江河乾涸。巴珊和迦密的樹林衰殘，利巴嫩的花草也衰殘了。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "诗一○六9，赛四四27，五十2，太八26",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 106,
+                  "verse": 9,
+                  "ref_gb": "诗一○六9",
+                  "ref_big5": "詩一○六9",
+                  "ref_en": "Psa. 106:9",
+                  "text_gb": "祂斥责红海，海便干了；祂带领他们经过深处，如同经过旷野。",
+                  "text_big5": "祂斥責紅海，海便乾了；祂帶領他們經過深處，如同經過曠野。",
+                  "text_en": "Thus He rebuked the Red Sea, and it dried up; / And He led them through the depths as through the wilderness."
+                },
+                {
+                  "book": 23,
+                  "chapter": 44,
+                  "verse": 27,
+                  "ref_gb": "赛四四27",
+                  "ref_big5": "賽四四27",
+                  "ref_en": "Isa. 44:27",
+                  "text_gb": "对深渊说，你干了吧，我也要使你的江河干涸；",
+                  "text_big5": "對深淵說，你乾了罷，我也要使你的江河乾涸；",
+                  "text_en": "Who says to the depths, Be dried up, / And I will dry up your rivers;"
+                },
+                {
+                  "book": 23,
+                  "chapter": 50,
+                  "verse": 2,
+                  "ref_gb": "赛五○2",
+                  "ref_big5": "賽五○2",
+                  "ref_en": "Isa. 50:2",
+                  "text_gb": "我来的时候，为何无人等候？我呼唤的时候，为何无人答应？我的手臂岂是缩短，不能救赎么？我岂无拯救之力么？看哪，我一斥责，海就干了；我使江河变为旷野；其中的鱼因无水腥臭，干渴而死。",
+                  "text_big5": "我來的時候，為何無人等候？我呼喚的時候，為何無人答應？我的手臂豈是縮短，不能救贖麼？我豈無拯救之力麼？看哪，我一斥責，海就乾了；我使江河變為曠野；其中的魚因無水腥臭，乾渴而死。",
+                  "text_en": "Why when I came was there no man? / And when I called why was there no one to answer? / Is My hand so short that it cannot redeem? / Or do I have no power to deliver? / Indeed, at My rebuke I dry up the sea; / I make the rivers a wilderness; / Their fish stink because there is no water, / And die of thirst."
+                },
+                {
+                  "book": 40,
+                  "chapter": 8,
+                  "verse": 26,
+                  "ref_gb": "太八26",
+                  "ref_big5": "太八26",
+                  "ref_en": "Matt. 8:26",
+                  "text_gb": "祂对他们说，小信的人哪，你们为什么胆怯？于是起来，斥责风和海，风和海就大大地平静了。",
+                  "text_big5": "祂對他們說，小信的人哪，你們為甚麼膽怯？於是起來，斥責風和海，風和海就大大的平靜了。",
+                  "text_en": "And He said to them, Why are you cowardly, you of little faith? Then He arose and rebuked the winds and the sea, and there was a great calm."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "鸿一5",
+          "ref_big5": "鴻一5",
+          "ref_en": "Nah. 1:5",
+          "text_gb": "大山因祂震[Cra]动，小山也都熔[Crb]化；大地在祂面前突起，世界和住在其间的也都如此。",
+          "text_big5": "大山因祂震[Cra]動，小山也都鎔[Crb]化；大地在祂面前突起，世界和住在其間的也都如此。",
+          "text_en": "The mountains quake because of Him, / And the hills melt, / And the earth is heaved up at His presence, / Indeed the world, and all that inhabit it.",
+          "text_gb_plain": "大山因祂震动，小山也都熔化；大地在祂面前突起，世界和住在其间的也都如此。",
+          "text_big5_plain": "大山因祂震動，小山也都鎔化；大地在祂面前突起，世界和住在其間的也都如此。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "诗九七5，弥一4",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 97,
+                  "verse": 5,
+                  "ref_gb": "诗九七5",
+                  "ref_big5": "詩九七5",
+                  "ref_en": "Psa. 97:5",
+                  "text_gb": "诸山见耶和华的面，就是全地之主的面，便熔化如蜡。",
+                  "text_big5": "諸山見耶和華的面，就是全地之主的面，便鎔化如蠟。",
+                  "text_en": "The mountains melt like wax at the presence of Jehovah, / At the presence of the Lord of the whole earth."
+                },
+                {
+                  "book": 33,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "弥一4",
+                  "ref_big5": "彌一4",
+                  "ref_en": "Mic. 1:4",
+                  "text_gb": "众山在祂以下必熔化，诸谷必崩裂，如蜡化在火前，如水冲下山坡。",
+                  "text_big5": "眾山在祂以下必鎔化，諸谷必崩裂，如蠟化在火前，如水沖下山坡。",
+                  "text_en": "And the mountains will be melted under Him, / And the valleys will be cleft, / Like wax before fire, / Like water poured down a slope."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 12,
+              "raw": "参彼后三10",
+              "refs": [
+                {
+                  "book": 61,
+                  "chapter": 3,
+                  "verse": 10,
+                  "ref_gb": "彼后三10",
+                  "ref_big5": "彼後三10",
+                  "ref_en": "2 Pet. 3:10",
+                  "text_gb": "只是主的日子要像贼一样来到；在那日，诸天必轰然一声的过去，所有的元素都要被焚烧而销化，地和其上的工程也都要烧尽了。",
+                  "text_big5": "只是主的日子要像賊一樣來到；在那日，諸天必轟然一聲的過去，所有的元素都要被焚燒而銷化，地和其上的工程也都要燒盡了。",
+                  "text_en": "But the day of the Lord will come as a thief, in which the heavens will pass away with a roar, and the elements, burning with intense heat, will be dissolved, and the earth and the works in it will be burned up."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "鸿一6",
+          "ref_big5": "鴻一6",
+          "ref_en": "Nah. 1:6",
+          "text_gb": "在祂的恼怒前，谁[Cra]能站得住呢？祂发烈怒，谁能当得起呢？祂的忿怒如火倾倒，磐石因祂崩裂。",
+          "text_big5": "在祂的惱怒前，誰[Cra]能站得住呢？祂發烈怒，誰能當得起呢？祂的忿怒如火傾倒，磐石因祂崩裂。",
+          "text_en": "Who can stand before His indignation, / And who can maintain himself in the fierceness of His anger? / His wrath is poured out like fire, / And the rocks are broken down by Him.",
+          "text_gb_plain": "在祂的恼怒前，谁能站得住呢？祂发烈怒，谁能当得起呢？祂的忿怒如火倾倒，磐石因祂崩裂。",
+          "text_big5_plain": "在祂的惱怒前，誰能站得住呢？祂發烈怒，誰能當得起呢？祂的忿怒如火傾倒，磐石因祂崩裂。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "诗七六7，启六17",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 76,
+                  "verse": 7,
+                  "ref_gb": "诗七六7",
+                  "ref_big5": "詩七六7",
+                  "ref_en": "Psa. 76:7",
+                  "text_gb": "唯独你是可畏的；你的怒气一发，谁能在你面前站得住呢？",
+                  "text_big5": "惟獨你是可畏的；你的怒氣一發，誰能在你面前站得住呢？",
+                  "text_en": "You, indeed You, are to be feared; / And who may stand before You once You are angry?"
+                },
+                {
+                  "book": 66,
+                  "chapter": 6,
+                  "verse": 17,
+                  "ref_gb": "启六17",
+                  "ref_big5": "啟六17",
+                  "ref_en": "Rev. 6:17",
+                  "text_gb": "因为祂们忿怒的大日到了，谁能站得住？",
+                  "text_big5": "因為祂們忿怒的大日到了，誰能站得住？",
+                  "text_en": "For the great day of Their wrath has come, and who is able to stand?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "鸿一7",
+          "ref_big5": "鴻一7",
+          "ref_en": "Nah. 1:7",
+          "text_gb": "耶和华本为善，在急难的日子作人的保障；祂认[Cra]得那些投[Crb]奔于祂的人。",
+          "text_big5": "耶和華本為善，在急難的日子作人的保障；祂認[Cra]得那些投[Crb]奔於祂的人。",
+          "text_en": "Jehovah is good, / A stronghold in a day of distress; / And He knows those who take refuge in Him.",
+          "text_gb_plain": "耶和华本为善，在急难的日子作人的保障；祂认得那些投奔于祂的人。",
+          "text_big5_plain": "耶和華本為善，在急難的日子作人的保障；祂認得那些投奔於祂的人。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 21,
+              "raw": "林前八3，提后二19，诗一6",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 8,
+                  "verse": 3,
+                  "ref_gb": "林前八3",
+                  "ref_big5": "林前八3",
+                  "ref_en": "1 Cor. 8:3",
+                  "text_gb": "但若有人爱神，这人乃是神所知道的。",
+                  "text_big5": "但若有人愛神，這人乃是神所知道的。",
+                  "text_en": "But if anyone loves God, this one is known by Him."
+                },
+                {
+                  "book": 55,
+                  "chapter": 2,
+                  "verse": 19,
+                  "ref_gb": "提后二19",
+                  "ref_big5": "提後二19",
+                  "ref_en": "2 Tim. 2:19",
+                  "text_gb": "然而，神坚固的根基立住了，上面有这印记说，主认识属于祂的人。又说，凡称呼主名的人，总要离开不义。",
+                  "text_big5": "然而，神堅固的根基立住了，上面有這印記說，主認識屬於祂的人。又說，凡稱呼主名的人，總要離開不義。",
+                  "text_en": "However the firm foundation of God stands, having this seal, The Lord knows those who are His, and, Let everyone who names the name of the Lord depart from unrighteousness."
+                },
+                {
+                  "book": 19,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "诗一6",
+                  "ref_big5": "詩一6",
+                  "ref_en": "Psa. 1:6",
+                  "text_gb": "因为耶和华知道义人的道路；恶人的道路，却必灭亡。",
+                  "text_big5": "因為耶和華知道義人的道路；惡人的道路，卻必滅亡。",
+                  "text_en": "For Jehovah knows the way of the righteous, / But the way of the wicked will perish. "
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 25,
+              "raw": "诗二12",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 2,
+                  "verse": 12,
+                  "ref_gb": "诗二12",
+                  "ref_big5": "詩二12",
+                  "ref_en": "Psa. 2:12",
+                  "text_gb": "当以嘴亲子，恐怕祂发怒，你们便在路中灭亡，因为祂的怒气快要发作。凡投奔于祂的，都是有福的。",
+                  "text_big5": "當以嘴親子，恐怕祂發怒，你們便在路中滅亡，因為祂的怒氣快要發作。凡投奔於祂的，都是有福的。",
+                  "text_en": "Kiss the Son / Lest He be angry and you perish from the way; / For His anger may suddenly be kindled. / Blessed are all those who take refuge in Him. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "鸿一8",
+          "ref_big5": "鴻一8",
+          "ref_en": "Nah. 1:8",
+          "text_gb": "但祂必以泛滥的洪[Fn1][Cra]水将尼[Fn2]尼微灭绝净尽，又将祂的仇敌赶入黑暗。",
+          "text_big5": "但祂必以氾濫的洪[Fn1][Cra]水將尼[Fn2]尼微滅絕淨盡，又將祂的仇敵趕入黑暗。",
+          "text_en": "But with an overflowing flood / He will make a full end of her place, / And He will pursue His enemies into darkness.",
+          "text_gb_plain": "但祂必以泛滥的洪水将尼尼微灭绝净尽，又将祂的仇敌赶入黑暗。",
+          "text_big5_plain": "但祂必以氾濫的洪水將尼尼微滅絕淨盡，又將祂的仇敵趕入黑暗。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 8,
+              "zh": "在8～12节上和14节，威严的审判者耶和华，宣布关于尼尼微遭毁灭的判决，这城于主前六一二年被玛代人和巴比伦人所毁。本书其余部分，详尽描绘出耶和华对这邪恶之城的审判。见二6注1。",
+              "zh_big5": "在8～12節上和14節，威嚴的審判者耶和華，宣佈關於尼尼微遭毀滅的判決，這城於主前六一二年被瑪代人和巴比倫人所毀。本書其餘部分，詳盡描繪出耶和華對這邪惡之城的審判。見二6註1。",
+              "en": "1:8 1 flood In vv. 8-12, 14a Jehovah, the majestic Judge, pronounces His verdict concerning the destruction of Nineveh by the Medes and the Babylonians in 612 B.C. The remainder of the book gives a full portrait of Jehovah's judgment on this evil city. See note Nahum 2:6 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 11,
+              "zh": "直译，她的地方。",
+              "zh_big5": "直譯，她的地方。",
+              "en": "1:8 2 her I.e., Nineveh."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "但九26，十一10，22，40",
+              "refs": [
+                {
+                  "book": 27,
+                  "chapter": 9,
+                  "verse": 26,
+                  "ref_gb": "但九26",
+                  "ref_big5": "但九26",
+                  "ref_en": "Dan. 9:26",
+                  "text_gb": "过了六十二个七，弥赛亚必被剪除，一无所有；必有一王的民来毁灭这城和圣所；结局必有洪水，并一直到底的争战；荒凉的事已经定了。",
+                  "text_big5": "過了六十二個七，彌賽亞必被剪除，一無所有；必有一王的民來毀滅這城和聖所；結局必有洪水，並一直到底的爭戰；荒涼的事已經定了。",
+                  "text_en": "And after the sixty-two weeks Messiah will be cut off and will have nothing; and the people of the prince who will come will destroy the city and the sanctuary; and the end of it will be with a flood, and even to the end there will be war; desolations are determined."
+                },
+                {
+                  "book": 27,
+                  "chapter": 11,
+                  "verse": 10,
+                  "ref_gb": "但十一10",
+                  "ref_big5": "但十一10",
+                  "ref_en": "Dan. 11:10",
+                  "text_gb": "他的二子必动干戈，招聚许多军兵；这一军兵必凶猛前来，如洪水冲没泛滥，又必再去争战，直到南方王的保障。",
+                  "text_big5": "他的二子必動干戈，招聚許多軍兵；這一軍兵必兇猛前來，如洪水沖沒氾濫，又必再去爭戰，直到南方王的保障。",
+                  "text_en": "But his sons will stir themselves up to war and will gather a multitude of great forces; and one will come unrelentingly and will overflow and pass through and will return and wage war, even up to the fortress of the king of the south."
+                },
+                {
+                  "book": 27,
+                  "chapter": 11,
+                  "verse": 22,
+                  "ref_gb": "但十一22",
+                  "ref_big5": "但十一22",
+                  "ref_en": "Dan. 11:22",
+                  "text_gb": "势如洪水泛滥的军兵，必在他面前被冲没、败坏，连与他同盟的君也必如此。",
+                  "text_big5": "勢如洪水氾濫的軍兵，必在他面前被沖沒、敗壞，連與他同盟的君也必如此。",
+                  "text_en": "And the overflowing forces will be flooded over before him and broken, even also the prince of the covenant."
+                },
+                {
+                  "book": 27,
+                  "chapter": 11,
+                  "verse": 40,
+                  "ref_gb": "但十一40",
+                  "ref_big5": "但十一40",
+                  "ref_en": "Dan. 11:40",
+                  "text_gb": "到了末时，南方王要与他交战，北方王必用战车、马兵、和许多战船，势如暴风来攻击他，也必进入列国，如洪水冲没泛滥；",
+                  "text_big5": "到了末時，南方王要與他交戰，北方王必用戰車、馬兵、和許多戰船，勢如暴風來攻擊他，也必進入列國，如洪水沖沒氾濫；",
+                  "text_en": "And at the time of the end the king of the south will push against him, and the king of the north will storm back at him with chariots and horsemen and many ships; and he will enter the countries and overflow and pass through."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "鸿一9",
+          "ref_big5": "鴻一9",
+          "ref_en": "Nah. 1:9",
+          "text_gb": "尼尼微人哪，你们设[Cra]何谋攻击耶和华呢？祂必将你们灭绝净尽；灾难必不再次兴起。",
+          "text_big5": "尼尼微人哪，你們設[Cra]何謀攻擊耶和華呢？祂必將你們滅絕淨盡；災難必不再次興起。",
+          "text_en": "What do you devise against Jehovah? / He will make a full end; / Distress will not arise a second time.",
+          "text_gb_plain": "尼尼微人哪，你们设何谋攻击耶和华呢？祂必将你们灭绝净尽；灾难必不再次兴起。",
+          "text_big5_plain": "尼尼微人哪，你們設何謀攻擊耶和華呢？祂必將你們滅絕淨盡；災難必不再次興起。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "诗二1",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 2,
+                  "verse": 1,
+                  "ref_gb": "诗二1",
+                  "ref_big5": "詩二1",
+                  "ref_en": "Psa. 2:1",
+                  "text_gb": "外邦为什么吼闹，万民为什么谋算虚妄的事？",
+                  "text_big5": "外邦為甚麼吼鬧，萬民為甚麼謀算虛妄的事？",
+                  "text_en": "Why are the nations in an uproar, / And why do the peoples contemplate a vain thing?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "鸿一10",
+          "ref_big5": "鴻一10",
+          "ref_en": "Nah. 1:10",
+          "text_gb": "他们虽像缠结的荆棘，像喝醉了的人，却必如枯干的碎秸全然烧灭。",
+          "text_big5": "他們雖像纏結的荊棘，像喝醉了的人，卻必如枯乾的碎秸全然燒滅。",
+          "text_en": "For though they are entangled like thorns / And like those drunken with their drink, / They will be consumed as fully as dry stubble.",
+          "text_gb_plain": "他们虽像缠结的荆棘，像喝醉了的人，却必如枯干的碎秸全然烧灭。",
+          "text_big5_plain": "他們雖像纏結的荊棘，像喝醉了的人，卻必如枯乾的碎秸全然燒滅。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "鸿一11",
+          "ref_big5": "鴻一11",
+          "ref_en": "Nah. 1:11",
+          "text_gb": "有一人从你那里出来，图谋邪恶，设恶计攻击耶和华。",
+          "text_big5": "有一人從你那裏出來，圖謀邪惡，設惡計攻擊耶和華。",
+          "text_en": "One went forth from you / Who devises evil against Jehovah, / Who counsels wickedness.",
+          "text_gb_plain": "有一人从你那里出来，图谋邪恶，设恶计攻击耶和华。",
+          "text_big5_plain": "有一人從你那裏出來，圖謀邪惡，設惡計攻擊耶和華。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "鸿一12",
+          "ref_big5": "鴻一12",
+          "ref_en": "Nah. 1:12",
+          "text_gb": "耶和华如此说，他们虽然人数充足繁多，也必被剪除消逝。犹大啊，我虽然使你受苦，却不[Cra]再使你受苦。",
+          "text_big5": "耶和華如此說，他們雖然人數充足繁多，也必被剪除消逝。猶大阿，我雖然使你受苦，卻不[Cra]再使你受苦。",
+          "text_en": "Thus says Jehovah, / Though they are complete in number and even numerous, / Even so they will be cut down; and they will pass away. / And though I have afflicted you, / I will afflict you no more.",
+          "text_gb_plain": "耶和华如此说，他们虽然人数充足繁多，也必被剪除消逝。犹大啊，我虽然使你受苦，却不再使你受苦。",
+          "text_big5_plain": "耶和華如此說，他們雖然人數充足繁多，也必被剪除消逝。猶大阿，我雖然使你受苦，卻不再使你受苦。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 40,
+              "raw": "赛三十19，五一22，六十18～20，启七16",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 30,
+                  "verse": 19,
+                  "ref_gb": "赛三○19",
+                  "ref_big5": "賽三○19",
+                  "ref_en": "Isa. 30:19",
+                  "text_gb": "必有百姓在锡安在耶路撒冷居住；你必不再哭泣；主必因你哀求的声音多多施恩给你；祂听见的时候，就必应允你。",
+                  "text_big5": "必有百姓在錫安在耶路撒冷居住；你必不再哭泣；主必因你哀求的聲音多多施恩給你；祂聽見的時候，就必應允你。",
+                  "text_en": "For a people will dwell in Zion at Jerusalem - / You will weep no more; / He will be most gracious to you at the sound of your cry; / When He hears it, He will answer you."
+                },
+                {
+                  "book": 23,
+                  "chapter": 51,
+                  "verse": 22,
+                  "ref_gb": "赛五一22",
+                  "ref_big5": "賽五一22",
+                  "ref_en": "Isa. 51:22",
+                  "text_gb": "你的主耶和华，并你的神，就是那为祂百姓辨屈的，如此说，看哪，我已将那使人东倒西歪的杯，从你手中取去；你必不至再喝我忿怒的杯爵。",
+                  "text_big5": "你的主耶和華，並你的神，就是那為祂百姓辨屈的，如此說，看哪，我已將那使人東倒西歪的杯，從你手中取去；你必不至再喝我忿怒的杯爵。",
+                  "text_en": "Thus says your Lord Jehovah and your God / Who pleads the cause of His people, / Indeed, I have taken from your hand / The cup of staggering; / You will no longer need to drink / The bowl of the cup of My wrath anymore;"
+                },
+                {
+                  "book": 23,
+                  "chapter": 60,
+                  "verse": 18,
+                  "ref_gb": "赛六○18",
+                  "ref_big5": "賽六○18",
+                  "ref_en": "Isa. 60:18",
+                  "text_gb": "你的地上不再听见强暴的事，境内不再听见荒凉和毁灭的事；你必称你的墙为拯救，称你的门为赞美。",
+                  "text_big5": "你的地上不再聽見強暴的事，境內不再聽見荒涼和毀滅的事；你必稱你的牆為拯救，稱你的門為讚美。",
+                  "text_en": "Violence will no longer be heard in your land, / Nor desolation and destruction within your borders; / But you will call your walls Salvation, / And your gates Praise."
+                },
+                {
+                  "book": 23,
+                  "chapter": 60,
+                  "verse": 19,
+                  "ref_gb": "赛六○19",
+                  "ref_big5": "賽六○19",
+                  "ref_en": "Isa. 60:19",
+                  "text_gb": "日头不再作你白昼的光，月亮也不再发光照耀你；耶和华却要作你永远的光，你的神要作你的荣美。",
+                  "text_big5": "日頭不再作你白晝的光，月亮也不再發光照耀你；耶和華卻要作你永遠的光，你的神要作你的榮美。",
+                  "text_en": "You will no longer have the sun for your light by day, / Nor for brightness will the moon give you light; / But Jehovah will be an eternal light to you, / And your God your beauty."
+                },
+                {
+                  "book": 23,
+                  "chapter": 60,
+                  "verse": 20,
+                  "ref_gb": "赛六○20",
+                  "ref_big5": "賽六○20",
+                  "ref_en": "Isa. 60:20",
+                  "text_gb": "你的日头不再下落，你的月亮也不退缩；因为耶和华必作你永远的光，你悲哀的日子也要完毕。",
+                  "text_big5": "你的日頭不再下落，你的月亮也不退縮；因為耶和華必作你永遠的光，你悲哀的日子也要完畢。",
+                  "text_en": "Your sun will no longer go down, / Nor will your moon withdraw; / For Jehovah will be an eternal light to you, / And the days of your mourning will be ended."
+                },
+                {
+                  "book": 66,
+                  "chapter": 7,
+                  "verse": 16,
+                  "ref_gb": "启七16",
+                  "ref_big5": "啟七16",
+                  "ref_en": "Rev. 7:16",
+                  "text_gb": "他们不再饥、不再渴，日头和一切炎热也必不伤害他们，",
+                  "text_big5": "他們不再飢、不再渴，日頭和一切炎熱也必不傷害他們，",
+                  "text_en": "They will not hunger anymore, neither will they thirst anymore, neither will the sun beat upon them, nor any heat;"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "鸿一13",
+          "ref_big5": "鴻一13",
+          "ref_en": "Nah. 1:13",
+          "text_gb": "现在我必从你颈项上折断他[Fn1]的轭[Cra]，扭开你的绳索。",
+          "text_big5": "現在我必從你頸項上折斷他[Fn1]的軛[Cra]，扭開你的繩索。",
+          "text_en": "And now I will break his yoke from off you / And will snap your bonds asunder.",
+          "text_gb_plain": "现在我必从你颈项上折断他的轭，扭开你的绳索。",
+          "text_big5_plain": "現在我必從你頸項上折斷他的軛，扭開你的繩索。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 12,
+              "zh": "即亚述王西拿基立加在以色列身上的轭。首先，亚述人来蹂躏以色列；然后神使用巴比伦在尼布甲尼撒带领下击败亚述人，这成了对以色列的拯救。",
+              "zh_big5": "即亞述王西拿基立加在以色列身上的軛。首先，亞述人來蹂躪以色列；然後神使用巴比倫在尼布甲尼撒帶領下擊敗亞述人，這成了對以色列的拯救。",
+              "en": "1:13 1 his I.e., the yoke that Sennacherib, the king of Assyria, had placed on Israel. First, the Assyrians came to devastate Israel. Then God used Babylon under Nebuchadnezzar to defeat the Assyrians, and this became a deliverance to Israel."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 14,
+              "raw": "赛九4，十27，十四25，诗一○七14",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 9,
+                  "verse": 4,
+                  "ref_gb": "赛九4",
+                  "ref_big5": "賽九4",
+                  "ref_en": "Isa. 9:4",
+                  "text_gb": "因为他们所负的重轭和肩头上的杖，就是欺压他们之人的棍，你已经折断，好像在米甸的日子一样。",
+                  "text_big5": "因為他們所負的重軛和肩頭上的杖，就是欺壓他們之人的棍，你已經折斷，好像在米甸的日子一樣。",
+                  "text_en": "For You break the yoke of their burden / And the staff on their shoulder, / The rod of their oppressor, / As in the day of Midian."
+                },
+                {
+                  "book": 23,
+                  "chapter": 10,
+                  "verse": 27,
+                  "ref_gb": "赛十27",
+                  "ref_big5": "賽十27",
+                  "ref_en": "Isa. 10:27",
+                  "text_gb": "到那日，亚述的重担必离开你的肩头，他的轭必离开你的颈项；那轭也必因肥壮的缘故撑断。",
+                  "text_big5": "到那日，亞述的重擔必離開你的肩頭，他的軛必離開你的頸項；那軛也必因肥壯的緣故撐斷。",
+                  "text_en": "And in that day their burden will be removed from your shoulders, and their yoke from off your neck; and the yoke will be broken due to the fatness."
+                },
+                {
+                  "book": 23,
+                  "chapter": 14,
+                  "verse": 25,
+                  "ref_gb": "赛十四25",
+                  "ref_big5": "賽十四25",
+                  "ref_en": "Isa. 14:25",
+                  "text_gb": "就是在我的地上击破亚述，在我的山上将他践踏。他加的轭必离开以色列人，他加的重担必离开他们的肩头。",
+                  "text_big5": "就是在我的地上擊破亞述，在我的山上將他踐踏。他加的軛必離開以色列人，他加的重擔必離開他們的肩頭。",
+                  "text_en": "That I will break Assyria in My land, / And upon My mountains I will trample him. / Then his yoke will be taken off of them, / And his burden will be removed from off their shoulders."
+                },
+                {
+                  "book": 19,
+                  "chapter": 107,
+                  "verse": 14,
+                  "ref_gb": "诗一○七14",
+                  "ref_big5": "詩一○七14",
+                  "ref_en": "Psa. 107:14",
+                  "text_gb": "祂从黑暗和死荫里，领他们出来，折断他们的绑索。",
+                  "text_big5": "祂從黑暗和死蔭裏，領他們出來，折斷他們的綁索。",
+                  "text_en": "He brought them out of darkness and the shadow of death, / And He broke apart their bonds."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "鸿一14",
+          "ref_big5": "鴻一14",
+          "ref_en": "Nah. 1:14",
+          "text_gb": "尼尼微啊，耶和华已经出令，指着你说，你的名必不再散播；我必从你神的庙中，除灭雕制的偶像，和铸造的偶像；我必因你的卑劣，为你预备坟墓。",
+          "text_big5": "尼尼微阿，耶和華已經出令，指著你說，你的名必不再散播；我必從你神的廟中，除滅雕製的偶像，和鑄造的偶像；我必因你的卑劣，為你豫備墳墓。",
+          "text_en": "And Jehovah has commanded concerning you: / No more of your name will be sown; / Out of the house of your gods I will cut off / The graven idol and the molten idol; / I will make your grave, for you are worthless.",
+          "text_gb_plain": "尼尼微啊，耶和华已经出令，指着你说，你的名必不再散播；我必从你神的庙中，除灭雕制的偶像，和铸造的偶像；我必因你的卑劣，为你预备坟墓。",
+          "text_big5_plain": "尼尼微阿，耶和華已經出令，指著你說，你的名必不再散播；我必從你神的廟中，除滅雕製的偶像，和鑄造的偶像；我必因你的卑劣，為你豫備墳墓。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 1,
+          "verse": 15,
+          "ref_gb": "鸿一15",
+          "ref_big5": "鴻一15",
+          "ref_en": "Nah. 1:15",
+          "text_gb": "看[Cra]哪，报好[Fn1]信传平安之人的脚登山，说，犹大啊，当守你的节期，还你所许的愿；因为那恶人必不再从你中间经过；他已全然被剪除了。",
+          "text_big5": "看[Cra]哪，報好[Fn1]信傳平安之人的腳登山，說，猶大阿，當守你的節期，還你所許的願；因為那惡人必不再從你中間經過；他已全然被剪除了。",
+          "text_en": "See, upon the mountains / The feet of him who bears the glad news, / Who announces peace! / Keep your feasts, O Judah; / Complete your vows; / For the wicked one will never again / Pass through you; / He will be completely cut off. ",
+          "text_gb_plain": "看哪，报好信传平安之人的脚登山，说，犹大啊，当守你的节期，还你所许的愿；因为那恶人必不再从你中间经过；他已全然被剪除了。",
+          "text_big5_plain": "看哪，報好信傳平安之人的腳登山，說，猶大阿，當守你的節期，還你所許的願；因為那惡人必不再從你中間經過；他已全然被剪除了。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "这是指关于亚述被巴比伦人击败的宣告，也是对以色列安慰的话。",
+              "zh_big5": "這是指關於亞述被巴比倫人擊敗的宣告，也是對以色列安慰的話。",
+              "en": "1:15 1 glad This refers to the announcement of Assyria's defeat by the Babylonians and was a word of comfort to Israel."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "赛五二7，罗十15",
+              "refs": [
+                {
+                  "book": 23,
+                  "chapter": 52,
+                  "verse": 7,
+                  "ref_gb": "赛五二7",
+                  "ref_big5": "賽五二7",
+                  "ref_en": "Isa. 52:7",
+                  "text_gb": "那报佳音、传平安、报好信、传救恩的，对锡安说，你的神作王了！这人的脚踪在山上何等佳美。",
+                  "text_big5": "那報佳音、傳平安、報好信、傳救恩的，對錫安說，你的神作王了！這人的腳蹤在山上何等佳美。",
+                  "text_en": "How beautiful on the mountains / Are the feet of him who brings good news, / Of him who announces peace, who brings news of good things, / Who announces salvation; / Of him who says to Zion, Your God reigns!"
+                },
+                {
+                  "book": 45,
+                  "chapter": 10,
+                  "verse": 15,
+                  "ref_gb": "罗十15",
+                  "ref_big5": "羅十15",
+                  "ref_en": "Rom. 10:15",
+                  "text_gb": "若非奉差遣，怎能传道？如经上所记：“传福音报喜信的人，他们的脚踪何等佳美！”",
+                  "text_big5": "若非奉差遣，怎能傳道？如經上所記：“傳福音報喜信的人，他們的腳蹤何等佳美！”",
+                  "text_en": "And how shall they proclaim Him unless they are sent? As it is written, \"How beautiful are the feet of those who announce the news of good things!\""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "verses": [
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 1,
+          "ref_gb": "鸿二1",
+          "ref_big5": "鴻二1",
+          "ref_en": "Nah. 2:1",
+          "text_gb": "尼[Fn1]尼微啊，那打[Cra]散邦国的上到你面前；你要看守保障，谨防道路，使腰强壮，大大勉力。",
+          "text_big5": "尼[Fn1]尼微阿，那打[Cra]散邦國的上到你面前；你要看守保障，謹防道路，使腰強壯，大大勉力。",
+          "text_en": "He who scatters has come up before you: / Keep the fortress, / Watch the way, / Strengthen the loins, / Fortify the power greatly.",
+          "text_gb_plain": "尼尼微啊，那打散邦国的上到你面前；你要看守保障，谨防道路，使腰强壮，大大勉力。",
+          "text_big5_plain": "尼尼微阿，那打散邦國的上到你面前；你要看守保障，謹防道路，使腰強壯，大大勉力。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "1～4节描述巴比伦军队毁灭尼尼微的快速行动。神用巴比伦人和玛代人侵略亚述，借此拯救以色列人脱离亚述人的暴政。",
+              "zh_big5": "1～4節描述巴比倫軍隊毀滅尼尼微的快速行動。神用巴比倫人和瑪代人侵略亞述，藉此拯救以色列人脫離亞述人的暴政。",
+              "en": "2:1 1 He Verses 1-4 describe the swift activity of the Babylonian armies in destroying Nineveh. God used the Babylonians with the Medes to invade Assyria and thereby to save Israel from the tyranny of the Assyrians."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "耶五十23",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 50,
+                  "verse": 23,
+                  "ref_gb": "耶五○23",
+                  "ref_big5": "耶五○23",
+                  "ref_en": "Jer. 50:23",
+                  "text_gb": "全地的大锤，何竟砍断破毁！巴比伦在列国中，何竟令人惊骇！",
+                  "text_big5": "全地的大錘，何竟砍斷破毀！巴比倫在列國中，何竟令人驚駭！",
+                  "text_en": "How the hammer of the whole earth / Is cut down and broken! / How Babylon has become an astonishment / Among the nations!"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 2,
+          "ref_gb": "鸿二2",
+          "ref_big5": "鴻二2",
+          "ref_en": "Nah. 2:2",
+          "text_gb": "因为耶和华复兴雅各所夸耀的，好像以色列所夸耀的一样；因为劫掠者已经把他们劫掠一空，将他们的葡[Cra]萄枝毁坏了。",
+          "text_big5": "因為耶和華復興雅各所誇耀的，好像以色列所誇耀的一樣；因為劫掠者已經把他們劫掠一空，將他們的葡[Cra]萄枝毀壞了。",
+          "text_en": "For Jehovah restores / The excellency of Jacob / As the excellency of Israel; / For the emptiers have emptied them out / And destroyed their vine branches.",
+          "text_gb_plain": "因为耶和华复兴雅各所夸耀的，好像以色列所夸耀的一样；因为劫掠者已经把他们劫掠一空，将他们的葡萄枝毁坏了。",
+          "text_big5_plain": "因為耶和華復興雅各所誇耀的，好像以色列所誇耀的一樣；因為劫掠者已經把他們劫掠一空，將他們的葡萄枝毀壞了。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 46,
+              "raw": "诗八十8，12，何十1",
+              "refs": [
+                {
+                  "book": 19,
+                  "chapter": 80,
+                  "verse": 8,
+                  "ref_gb": "诗八○8",
+                  "ref_big5": "詩八○8",
+                  "ref_en": "Psa. 80:8",
+                  "text_gb": "你从埃及挪出一棵葡萄树，赶出外邦人，把这树栽上。",
+                  "text_big5": "你從埃及挪出一棵葡萄樹，趕出外邦人，把這樹栽上。",
+                  "text_en": "You brought a vine out of Egypt; / You drove out nations and planted it;"
+                },
+                {
+                  "book": 19,
+                  "chapter": 80,
+                  "verse": 12,
+                  "ref_gb": "诗八○12",
+                  "ref_big5": "詩八○12",
+                  "ref_en": "Psa. 80:12",
+                  "text_gb": "你为何拆毁这树的篱笆，任凭一切过路的人摘取？",
+                  "text_big5": "你為何拆毀這樹的籬笆，任憑一切過路的人摘取？",
+                  "text_en": "Why have You broken down its hedges, / So that all who pass by on the way pluck it?"
+                },
+                {
+                  "book": 28,
+                  "chapter": 10,
+                  "verse": 1,
+                  "ref_gb": "何十1",
+                  "ref_big5": "何十1",
+                  "ref_en": "Hos. 10:1",
+                  "text_gb": "以色列是茂盛的葡萄树，结果繁多。他的果子越多，就越增添祭坛；地土越肥美，就越造美好的柱像。",
+                  "text_big5": "以色列是茂盛的葡萄樹，結果繁多。他的果子越多，就越增添祭壇；地土越肥美，就越造美好的柱像。",
+                  "text_en": "Israel is a luxuriant vine; / He brings forth fruit for himself. / According to the abundance of his fruit / He has multiplied altars; / According to the goodness of their land / They have made pillars well."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 3,
+          "ref_gb": "鸿二3",
+          "ref_big5": "鴻二3",
+          "ref_en": "Nah. 2:3",
+          "text_gb": "祂勇士的盾牌是红的，精兵都穿朱红衣服；在祂预备争战的日子，战车上的钢铁闪烁如火，枪矛也抡起来了；",
+          "text_big5": "祂勇士的盾牌是紅的，精兵都穿朱紅衣服；在祂豫備爭戰的日子，戰車上的鋼鐵閃爍如火，槍矛也掄起來了；",
+          "text_en": "The shield of His mighty men is red; / The valiant men are clad in scarlet; / The chariots flash with the shining of steel / In the day of His preparation, / And the spears are brandished.",
+          "text_gb_plain": "祂勇士的盾牌是红的，精兵都穿朱红衣服；在祂预备争战的日子，战车上的钢铁闪烁如火，枪矛也抡起来了；",
+          "text_big5_plain": "祂勇士的盾牌是紅的，精兵都穿朱紅衣服；在祂豫備爭戰的日子，戰車上的鋼鐵閃爍如火，槍矛也掄起來了；",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 4,
+          "ref_gb": "鸿二4",
+          "ref_big5": "鴻二4",
+          "ref_en": "Nah. 2:4",
+          "text_gb": "战车在街上急行，在宽阔处奔来奔去，形状如火把，飞跑如闪电。",
+          "text_big5": "戰車在街上急行，在寬闊處奔來奔去，形狀如火把，飛跑如閃電。",
+          "text_en": "In the streets the chariots rush madly; / They dash to and fro in the open squares; / Their appearance is like that of torches; / They dart like lightning.",
+          "text_gb_plain": "战车在街上急行，在宽阔处奔来奔去，形状如火把，飞跑如闪电。",
+          "text_big5_plain": "戰車在街上急行，在寬闊處奔來奔去，形狀如火把，飛跑如閃電。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 5,
+          "ref_gb": "鸿二5",
+          "ref_big5": "鴻二5",
+          "ref_en": "Nah. 2:5",
+          "text_gb": "亚[Fn1]述王招[Fn2]聚他的贵胄：他们颠踬而行，奔上城[Fn3]墙，但攻城者的防障已经备妥。",
+          "text_big5": "亞[Fn1]述王招[Fn2]聚他的貴胄：他們顛躓而行，奔上城[Fn3]牆，但攻城者的防障已經備妥。",
+          "text_en": "The Assyrian king remembers his glorious ones: / They stumble in their march; / They hasten to the wall of the city, / But the besiegers' shelter is prepared.",
+          "text_gb_plain": "亚述王招聚他的贵胄：他们颠踬而行，奔上城墙，但攻城者的防障已经备妥。",
+          "text_big5_plain": "亞述王招聚他的貴胄：他們顛躓而行，奔上城牆，但攻城者的防障已經備妥。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "直译，他。",
+              "zh_big5": "直譯，他。",
+              "en": "2:5 1 The Lit., He."
+            },
+            {
+              "num": 2,
+              "loc": 4,
+              "zh": "直译，想起。",
+              "zh_big5": "直譯，想起。",
+              "en": "2:5 2 of Lit., of it."
+            },
+            {
+              "num": 3,
+              "loc": 20,
+              "zh": "城墙，直译，它的墙。",
+              "zh_big5": "城牆，直譯，它的牆。",
+              "en": ""
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 6,
+          "ref_gb": "鸿二6",
+          "ref_big5": "鴻二6",
+          "ref_en": "Nah. 2:6",
+          "text_gb": "河[Fn1]闸开放，宫殿摧毁。",
+          "text_big5": "河[Fn1]閘開放，宮殿摧毀。",
+          "text_en": "The gates of the rivers are opened, / And the palace is dissolved.",
+          "text_gb_plain": "河闸开放，宫殿摧毁。",
+          "text_big5_plain": "河閘開放，宮殿摧毀。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "这与一8所提到泛滥的洪水有关。尼尼微建造在底格里斯河旁，这是尼尼微城的保护。主前六一二年，玛代人和巴比伦人一同来攻击尼尼微；他们找到方法把河闸打开，就用洪水冲没全城。",
+              "zh_big5": "這與一8所題到氾濫的洪水有關。尼尼微建造在底格里斯河旁，這是尼尼微城的保護。主前六一二年，瑪代人和巴比倫人一同來攻擊尼尼微；他們找到方法把河閘打開，就用洪水沖沒全城。",
+              "en": "2:6 1 gates This is a reference to the overflowing flood mentioned in 1:8. Nineveh was built on the Tigris River. This was a protection to Nineveh. In 612 B.C. the Medes and the Babylonians came together to attack Nineveh; they found a way to open the gates of the river, and they flooded the city."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 7,
+          "ref_gb": "鸿二7",
+          "ref_big5": "鴻二7",
+          "ref_en": "Nah. 2:7",
+          "text_gb": "王[Fn1]后赤身，被人掳去；宫女捶胸，哀鸣如鸽；此乃命定之事。",
+          "text_big5": "王[Fn1]后赤身，被人擄去；宮女捶胸，哀鳴如鴿；此乃命定之事。",
+          "text_en": "And it is determined: She is uncovered; she is carried away; / And her maidens moan, / As with the sound of doves, / Beating their breasts.",
+          "text_gb_plain": "王后赤身，被人掳去；宫女捶胸，哀鸣如鸽；此乃命定之事。",
+          "text_big5_plain": "王后赤身，被人擄去；宮女捶胸，哀鳴如鴿；此乃命定之事。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "王后，直译，她。宫女，直译，她的使女。",
+              "zh_big5": "",
+              "en": "2:7 1 She She refers to the queen, and her maidens refers to the young women in the palace."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 8,
+          "ref_gb": "鸿二8",
+          "ref_big5": "鴻二8",
+          "ref_en": "Nah. 2:8",
+          "text_gb": "尼尼微自古以来充满人民，如同聚水的池子；现在他们却都逃跑；虽有人呼喊说，站住！站住！却无人回顾。",
+          "text_big5": "尼尼微自古以來充滿人民，如同聚水的池子；現在他們卻都逃跑；雖有人呼喊說，站住！站住！卻無人回顧。",
+          "text_en": "Though Nineveh has been like a pool of water all her days, / Now they are fleeing. / Stand! Stand! But no one turns back.",
+          "text_gb_plain": "尼尼微自古以来充满人民，如同聚水的池子；现在他们却都逃跑；虽有人呼喊说，站住！站住！却无人回顾。",
+          "text_big5_plain": "尼尼微自古以來充滿人民，如同聚水的池子；現在他們卻都逃跑；雖有人呼喊說，站住！站住！卻無人回顧。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 9,
+          "ref_gb": "鸿二9",
+          "ref_big5": "鴻二9",
+          "ref_en": "Nah. 2:9",
+          "text_gb": "你们抢掠银子，抢掠金子吧！因为所储备的无穷，一切的宝器何等荣耀！",
+          "text_big5": "你們搶掠銀子，搶掠金子罷！因為所儲備的無窮，一切的寶器何等榮耀！",
+          "text_en": "Plunder the silver! Plunder the gold! / And there is no end to what has been prepared. / Oh, the glory of all the desirable vessels!",
+          "text_gb_plain": "你们抢掠银子，抢掠金子吧！因为所储备的无穷，一切的宝器何等荣耀！",
+          "text_big5_plain": "你們搶掠銀子，搶掠金子罷！因為所儲備的無窮，一切的寶器何等榮耀！",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 10,
+          "ref_gb": "鸿二10",
+          "ref_big5": "鴻二10",
+          "ref_en": "Nah. 2:10",
+          "text_gb": "现在却空虚、荒凉、旷废！人心融化，双膝相碰，腰都疼[Cra]痛，脸都变暗。",
+          "text_big5": "現在卻空虛、荒涼、曠廢！人心融化，雙膝相碰，腰都疼[Cra]痛，臉都變暗。",
+          "text_en": "Emptiness and void and waste! / And the heart melts, and the knees knock, / And anguish is in all the loins, / And the faces of all of them become pale.",
+          "text_gb_plain": "现在却空虚、荒凉、旷废！人心融化，双膝相碰，腰都疼痛，脸都变暗。",
+          "text_big5_plain": "現在卻空虛、荒涼、曠廢！人心融化，雙膝相碰，腰都疼痛，臉都變暗。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 25,
+              "raw": "耶三十6，珥二6",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 30,
+                  "verse": 6,
+                  "ref_gb": "耶三○6",
+                  "ref_big5": "耶三○6",
+                  "ref_en": "Jer. 30:6",
+                  "text_gb": "你们且访问看看，男人能生产么？我怎么看见每个男人都用手掐腰，像临产的妇人，脸面都变苍白了呢？",
+                  "text_big5": "你們且訪問看看，男人能生產麼？我怎麼看見每個男人都用手掐腰，像臨產的婦人，臉面都變蒼白了呢？",
+                  "text_en": "Ask now and see / Whether a man can give birth. / Why do I see every man / With his hands on his loins like a woman about to give birth / And every face turned pale?"
+                },
+                {
+                  "book": 29,
+                  "chapter": 2,
+                  "verse": 6,
+                  "ref_gb": "珥二6",
+                  "ref_big5": "珥二6",
+                  "ref_en": "Joel 2:6",
+                  "text_gb": "他们一出现，众民翻绞痛苦，脸都变暗。",
+                  "text_big5": "他們一出現，眾民翻絞痛苦，臉都變暗。",
+                  "text_en": "At their presence the peoples writhed in anguish; / All faces became pale."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 11,
+          "ref_gb": "鸿二11",
+          "ref_big5": "鴻二11",
+          "ref_en": "Nah. 2:11",
+          "text_gb": "狮子的洞和少壮狮子喂养之处在哪里呢？公狮、母狮、小狮游行，无人惊吓之处在哪里呢？",
+          "text_big5": "獅子的洞和少壯獅子餧養之處在那裏呢？公獅、母獅、小獅遊行，無人驚嚇之處在那裏呢？",
+          "text_en": "Where is the den of lions / And the feeding place of young lions, / Where the lion and the lioness walked, / And the lion's whelp; and no one frightened them?",
+          "text_gb_plain": "狮子的洞和少壮狮子喂养之处在哪里呢？公狮、母狮、小狮游行，无人惊吓之处在哪里呢？",
+          "text_big5_plain": "獅子的洞和少壯獅子餧養之處在那裏呢？公獅、母獅、小獅遊行，無人驚嚇之處在那裏呢？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 12,
+          "ref_gb": "鸿二12",
+          "ref_big5": "鴻二12",
+          "ref_en": "Nah. 2:12",
+          "text_gb": "公狮为小狮撕碎足够的食物，为母狮掐死活物，把猎物充满它的洞，把撕碎的充满它的穴。",
+          "text_big5": "公獅為小獅撕碎足彀的食物，為母獅掐死活物，把獵物充滿牠的洞，把撕碎的充滿牠的穴。",
+          "text_en": "The lion tore in pieces, enough for his whelps, / And strangled for his lioness / And filled his caves with torn prey / And his dens with torn animals.",
+          "text_gb_plain": "公狮为小狮撕碎足够的食物，为母狮掐死活物，把猎物充满它的洞，把撕碎的充满它的穴。",
+          "text_big5_plain": "公獅為小獅撕碎足彀的食物，為母獅掐死活物，把獵物充滿牠的洞，把撕碎的充滿牠的穴。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 2,
+          "verse": 13,
+          "ref_gb": "鸿二13",
+          "ref_big5": "鴻二13",
+          "ref_en": "Nah. 2:13",
+          "text_gb": "万军之耶和华说，看哪，我与你为敌，必将你[Fn1]的战车焚烧成烟，刀剑也必吞灭你的少壮狮子；我必从地上除灭你的猎物；你使者的声音，必不再听见。",
+          "text_big5": "萬軍之耶和華說，看哪，我與你為敵，必將你[Fn1]的戰車焚燒成煙，刀劍也必吞滅你的少壯獅子；我必從地上除滅你的獵物；你使者的聲音，必不再聽見。",
+          "text_en": "Indeed I am against you, / Declares Jehovah of hosts; / And I will burn your chariots in smoke, / And the sword will devour your young lions; / And I will cut off your prey from the earth; / And the voice of your messengers will no longer be heard. ",
+          "text_gb_plain": "万军之耶和华说，看哪，我与你为敌，必将你的战车焚烧成烟，刀剑也必吞灭你的少壮狮子；我必从地上除灭你的猎物；你使者的声音，必不再听见。",
+          "text_big5_plain": "萬軍之耶和華說，看哪，我與你為敵，必將你的戰車焚燒成煙，刀劍也必吞滅你的少壯獅子；我必從地上除滅你的獵物；你使者的聲音，必不再聽見。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 20,
+              "zh": "直译，她。",
+              "zh_big5": "直譯，她。",
+              "en": "2:13 1 your Lit., her."
+            }
+          ],
+          "crossrefs": []
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "verses": [
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 1,
+          "ref_gb": "鸿三1",
+          "ref_big5": "鴻三1",
+          "ref_en": "Nah. 3:1",
+          "text_gb": "祸哉，这流人血的城！充满谎诈和强暴，抢夺的事总不止息。",
+          "text_big5": "禍哉，這流人血的城！充滿謊詐和強暴，搶奪的事總不止息。",
+          "text_en": "Woe to the bloody city! / She is all full of lies and pillage; / The prey does not depart.",
+          "text_gb_plain": "祸哉，这流人血的城！充满谎诈和强暴，抢夺的事总不止息。",
+          "text_big5_plain": "禍哉，這流人血的城！充滿謊詐和強暴，搶奪的事總不止息。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 2,
+          "ref_gb": "鸿三2",
+          "ref_big5": "鴻三2",
+          "ref_en": "Nah. 3:2",
+          "text_gb": "鞭声响亮，车轮轰轰；马匹快跑，车辆奔腾，",
+          "text_big5": "鞭聲響亮，車輪轟轟；馬匹快跑，車輛奔騰，",
+          "text_en": "The sound of the whip, / And the sound of the rattling wheel; / And the horse galloping, / And the chariot jolting by, ",
+          "text_gb_plain": "鞭声响亮，车轮轰轰；马匹快跑，车辆奔腾，",
+          "text_big5_plain": "鞭聲響亮，車輪轟轟；馬匹快跑，車輛奔騰，",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 3,
+          "ref_gb": "鸿三3",
+          "ref_big5": "鴻三3",
+          "ref_en": "Nah. 3:3",
+          "text_gb": "骑兵跃马，刀剑发光，枪矛闪烁；被杀的甚多，尸首成堆，尸骸无数，人碰着而跌倒。",
+          "text_big5": "騎兵躍馬，刀劍發光，槍矛閃爍；被殺的甚多，屍首成堆，屍骸無數，人碰著而跌倒。",
+          "text_en": "The horseman making the horse to rear up, / And the sword flashing, / And the spear glittering; / And a multitude of the slain, / And a mass of corpses, / And no end to the bodies - / They stumble among their bodies.",
+          "text_gb_plain": "骑兵跃马，刀剑发光，枪矛闪烁；被杀的甚多，尸首成堆，尸骸无数，人碰着而跌倒。",
+          "text_big5_plain": "騎兵躍馬，刀劍發光，槍矛閃爍；被殺的甚多，屍首成堆，屍骸無數，人碰著而跌倒。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 4,
+          "ref_gb": "鸿三4",
+          "ref_big5": "鴻三4",
+          "ref_en": "Nah. 3:4",
+          "text_gb": "都因那美貌的妓女，行邪术的主母，多有淫行，借淫行出卖列国，用邪术出卖多族。",
+          "text_big5": "都因那美貌的妓女，行邪術的主母，多有淫行，藉淫行出賣列國，用邪術出賣多族。",
+          "text_en": "This because of the multitude of harlotries / Of the well-favored harlot, / The mistress of sorceries, / Who sells nations by her harlotries / And families by her sorceries.",
+          "text_gb_plain": "都因那美貌的妓女，行邪术的主母，多有淫行，借淫行出卖列国，用邪术出卖多族。",
+          "text_big5_plain": "都因那美貌的妓女，行邪術的主母，多有淫行，藉淫行出賣列國，用邪術出賣多族。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 5,
+          "ref_gb": "鸿三5",
+          "ref_big5": "鴻三5",
+          "ref_en": "Nah. 3:5",
+          "text_gb": "万军之耶和华说，我与你为敌；我必揭起你的衣襟，蒙在你脸上，使列邦看见你的赤体，使列国看见你的羞耻。",
+          "text_big5": "萬軍之耶和華說，我與你為敵；我必揭起你的衣襟，蒙在你臉上，使列邦看見你的赤體，使列國看見你的羞恥。",
+          "text_en": "Indeed I am against you, declares Jehovah of hosts; / And I will throw open your skirts upon your face, / And I will show the nations your nakedness, / And the kingdoms your shame.",
+          "text_gb_plain": "万军之耶和华说，我与你为敌；我必揭起你的衣襟，蒙在你脸上，使列邦看见你的赤体，使列国看见你的羞耻。",
+          "text_big5_plain": "萬軍之耶和華說，我與你為敵；我必揭起你的衣襟，蒙在你臉上，使列邦看見你的赤體，使列國看見你的羞恥。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 6,
+          "ref_gb": "鸿三6",
+          "ref_big5": "鴻三6",
+          "ref_en": "Nah. 3:6",
+          "text_gb": "我必将可憎污秽之物抛在你身上，使你显为愚昧，为众目所观。",
+          "text_big5": "我必將可憎污穢之物拋在你身上，使你顯為愚昧，為眾目所觀。",
+          "text_en": "And I will cast abominable filth upon you / And make you appear foolish and make you like a spectacle.",
+          "text_gb_plain": "我必将可憎污秽之物抛在你身上，使你显为愚昧，为众目所观。",
+          "text_big5_plain": "我必將可憎污穢之物拋在你身上，使你顯為愚昧，為眾目所觀。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 7,
+          "ref_gb": "鸿三7",
+          "ref_big5": "鴻三7",
+          "ref_en": "Nah. 3:7",
+          "text_gb": "凡看见你的，都必逃跑离开你，说，尼尼微成了荒场。有谁为她悲伤呢？我何处寻得安慰你的人呢？",
+          "text_big5": "凡看見你的，都必逃跑離開你，說，尼尼微成了荒場。有誰為她悲傷呢？我何處尋得安慰你的人呢？",
+          "text_en": "And everyone who sees you / Will flee from you and say, / Nineveh is laid waste. / Who will lament for her? / Where will I seek / Some to comfort you?",
+          "text_gb_plain": "凡看见你的，都必逃跑离开你，说，尼尼微成了荒场。有谁为她悲伤呢？我何处寻得安慰你的人呢？",
+          "text_big5_plain": "凡看見你的，都必逃跑離開你，說，尼尼微成了荒場。有誰為她悲傷呢？我何處尋得安慰你的人呢？",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 8,
+          "ref_gb": "鸿三8",
+          "ref_big5": "鴻三8",
+          "ref_en": "Nah. 3:8",
+          "text_gb": "你岂比挪[Fn1]亚们强么？挪亚们坐落在众河渠之间，周围有水；海[Fn2]作她的屏障，水作她的城墙。",
+          "text_big5": "你豈比挪[Fn1]亞們強麼？挪亞們坐落在眾河渠之間，周圍有水；海[Fn2]作她的屏障，水作她的城牆。",
+          "text_en": "Are you better than No-amon, / Who sat beside the canals / With waters all around her, / Whose bulwark was the sea / And water was her wall?",
+          "text_gb_plain": "你岂比挪亚们强么？挪亚们坐落在众河渠之间，周围有水；海作她的屏障，水作她的城墙。",
+          "text_big5_plain": "你豈比挪亞們強麼？挪亞們坐落在眾河渠之間，周圍有水；海作她的屏障，水作她的城牆。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "埃及内陆城市，曾是法老居住之地；希腊人称之为提比斯。",
+              "zh_big5": "埃及內陸城市，曾是法老居住之地；希臘人稱之為提比斯。",
+              "en": "3:8 1 No-amon A city in upper Egypt, once the residence of the Pharaohs; called Thebes by the Greeks."
+            },
+            {
+              "num": 2,
+              "loc": 27,
+              "zh": "即尼罗河。",
+              "zh_big5": "即尼羅河。",
+              "en": "3:8 2 sea I.e., the Nile River."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 9,
+          "ref_gb": "鸿三9",
+          "ref_big5": "鴻三9",
+          "ref_en": "Nah. 3:9",
+          "text_gb": "古[Fn1]实和埃及是她的力量，无穷无尽；弗[Fn2]人和路比族是她[Fn3]的帮手。",
+          "text_big5": "古[Fn1]實和埃及是她的力量，無窮無盡；弗[Fn2]人和路比族是她[Fn3]的幫手。",
+          "text_en": "Cush was her strength, / As well as Egypt, and it was without end; / Put and the Libyans / Were among her helpers.",
+          "text_gb_plain": "古实和埃及是她的力量，无穷无尽；弗人和路比族是她的帮手。",
+          "text_big5_plain": "古實和埃及是她的力量，無窮無盡；弗人和路比族是她的幫手。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 1,
+              "zh": "即埃提阿伯(衣索匹亚。)",
+              "zh_big5": "即埃提阿伯（衣索匹亞。）",
+              "en": "3:9 1 Cush I.e., Ethiopia."
+            },
+            {
+              "num": 2,
+              "loc": 17,
+              "zh": "广意而言，弗是指路比(利比亚)，包括北非大部分。",
+              "zh_big5": "廣意而言，弗是指路比（利比亞，）包括北非大部分。",
+              "en": "3:9 2 Put Put refers to Libya in the broader sense, encompassing much of north Africa."
+            },
+            {
+              "num": 3,
+              "loc": 24,
+              "zh": "直译，你。",
+              "zh_big5": "直譯，你。",
+              "en": "3:9 3 her Lit., your."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 10,
+          "ref_gb": "鸿三10",
+          "ref_big5": "鴻三10",
+          "ref_en": "Nah. 3:10",
+          "text_gb": "但她还是被迁徙，被掳去；她的婴孩在各街头也被摔死；人为她的尊贵人拈阄；她所有的尊大者都被链子锁着。",
+          "text_big5": "但她還是被遷徙，被擄去；她的嬰孩在各街頭也被摔死；人為她的尊貴人拈鬮；她所有的尊大者都被鍊子鎖著。",
+          "text_en": "She too was carried away; / She went into captivity; / Her little ones too were dashed to pieces / At the head of every street, / And for her nobles / They cast lots, / And all her great men / Were bound in chains.",
+          "text_gb_plain": "但她还是被迁徙，被掳去；她的婴孩在各街头也被摔死；人为她的尊贵人拈阄；她所有的尊大者都被链子锁着。",
+          "text_big5_plain": "但她還是被遷徙，被擄去；她的嬰孩在各街頭也被摔死；人為她的尊貴人拈鬮；她所有的尊大者都被鍊子鎖著。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 11,
+          "ref_gb": "鸿三11",
+          "ref_big5": "鴻三11",
+          "ref_en": "Nah. 3:11",
+          "text_gb": "你也必喝醉，必被隐藏；并因仇敌的缘故寻求保障。",
+          "text_big5": "你也必喝醉，必被隱藏；並因仇敵的緣故尋求保障。",
+          "text_en": "You too will be drunken; / You will be hidden. / You too will seek / A stronghold from the enemy.",
+          "text_gb_plain": "你也必喝醉，必被隐藏；并因仇敌的缘故寻求保障。",
+          "text_big5_plain": "你也必喝醉，必被隱藏；並因仇敵的緣故尋求保障。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 12,
+          "ref_gb": "鸿三12",
+          "ref_big5": "鴻三12",
+          "ref_en": "Nah. 3:12",
+          "text_gb": "你一切保障必像无[Cra]花果树上初熟的无花果；若一摇撼，就落在想吃之人的口中。",
+          "text_big5": "你一切保障必像無[Cra]花果樹上初熟的無花果；若一搖撼，就落在想喫之人的口中。",
+          "text_en": "All your fortresses will be like fig trees / With first ripe figs: / If they are shaken, they will fall / Into the mouth of the eater.",
+          "text_gb_plain": "你一切保障必像无花果树上初熟的无花果；若一摇撼，就落在想吃之人的口中。",
+          "text_big5_plain": "你一切保障必像無花果樹上初熟的無花果；若一搖撼，就落在想喫之人的口中。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "启六13",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 6,
+                  "verse": 13,
+                  "ref_gb": "启六13",
+                  "ref_big5": "啟六13",
+                  "ref_en": "Rev. 6:13",
+                  "text_gb": "天上的星辰坠落于地，如同无花果树被大风摇动，落下未熟的果子一样。",
+                  "text_big5": "天上的星辰墜落於地，如同無花果樹被大風搖動，落下未熟的果子一樣。",
+                  "text_en": "And the stars of heaven fell to the earth as a fig tree casts its unripe figs when shaken by a great wind."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 13,
+          "ref_gb": "鸿三13",
+          "ref_big5": "鴻三13",
+          "ref_en": "Nah. 3:13",
+          "text_gb": "看哪，在你中间的人民，如同妇女；你国土的关口，向仇敌敞开；你的门闩，被火焚烧。",
+          "text_big5": "看哪，在你中間的人民，如同婦女；你國土的關口，向仇敵敞開；你的門閂，被火焚燒。",
+          "text_en": "Indeed your people are like women / In the midst of you; / Unto your enemies the gates of your land / Are wide open; / Fire devours your bars.",
+          "text_gb_plain": "看哪，在你中间的人民，如同妇女；你国土的关口，向仇敌敞开；你的门闩，被火焚烧。",
+          "text_big5_plain": "看哪，在你中間的人民，如同婦女；你國土的關口，向仇敵敞開；你的門閂，被火焚燒。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 14,
+          "ref_gb": "鸿三14",
+          "ref_big5": "鴻三14",
+          "ref_en": "Nah. 3:14",
+          "text_gb": "你要为自己打水，预备受困！巩固你的保障！踹土和泥！预[Fn1]备砖窑！",
+          "text_big5": "你要為自己打水，豫備受困！鞏固你的保障！踹土和泥！豫[Fn1]備磚窯！",
+          "text_en": "Draw for yourself water for the siege! / Strengthen your fortresses! / Go into the clay, / And tread in the mortar! / Make the brick kiln ready!",
+          "text_gb_plain": "你要为自己打水，预备受困！巩固你的保障！踹土和泥！预备砖窑！",
+          "text_big5_plain": "你要為自己打水，豫備受困！鞏固你的保障！踹土和泥！豫備磚窯！",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 26,
+              "zh": "或，加强。",
+              "zh_big5": "或，加強。",
+              "en": "3:14 1 ready Or, strong."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 15,
+          "ref_gb": "鸿三15",
+          "ref_big5": "鴻三15",
+          "ref_en": "Nah. 3:15",
+          "text_gb": "在那里火必烧灭你；刀必除灭你，吞吃你如同蝗[Cra]虫。任你加增人数如蝗虫，加增人数多如蝗虫吧。",
+          "text_big5": "在那裏火必燒滅你；刀必除滅你，吞喫你如同蝗[Cra]蟲。任你加增人數如蝗蟲，加增人數多如蝗蟲罷。",
+          "text_en": "There will the fire devour you; / The sword will cut you off; / It will devour you like the locust. / Enlarge yourself like the locust; / Enlarge yourself like the locust swarm.",
+          "text_gb_plain": "在那里火必烧灭你；刀必除灭你，吞吃你如同蝗虫。任你加增人数如蝗虫，加增人数多如蝗虫吧。",
+          "text_big5_plain": "在那裏火必燒滅你；刀必除滅你，吞喫你如同蝗蟲。任你加增人數如蝗蟲，加增人數多如蝗蟲罷。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 21,
+              "raw": "珥一4",
+              "refs": [
+                {
+                  "book": 29,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "珥一4",
+                  "ref_big5": "珥一4",
+                  "ref_en": "Joel 1:4",
+                  "text_gb": "剪蝗剩下的，群蝗来吃；群蝗剩下的，舔蝗来吃；舔蝗剩下的，毁蝗来吃。",
+                  "text_big5": "剪蝗剩下的，群蝗來喫；群蝗剩下的，舔蝗來喫；舔蝗剩下的，毀蝗來喫。",
+                  "text_en": "What the cutting locust has left, the swarming locust has eaten; / And what the swarming locust has left, the licking locust has eaten; / And what the licking locust has left, the consuming locust has eaten."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 16,
+          "ref_gb": "鸿三16",
+          "ref_big5": "鴻三16",
+          "ref_en": "Nah. 3:16",
+          "text_gb": "你增添商贾，多过天上的星；蝗虫吃尽就飞去。",
+          "text_big5": "你增添商賈，多過天上的星；蝗蟲喫盡就飛去。",
+          "text_en": "You have multiplied your merchants / Like the stars of heaven; / The locust strips everything and flies away.",
+          "text_gb_plain": "你增添商贾，多过天上的星；蝗虫吃尽就飞去。",
+          "text_big5_plain": "你增添商賈，多過天上的星；蝗蟲喫盡就飛去。",
+          "footnotes": [],
+          "crossrefs": []
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 17,
+          "ref_gb": "鸿三17",
+          "ref_big5": "鴻三17",
+          "ref_en": "Nah. 3:17",
+          "text_gb": "你的首领多如蝗[Cra]虫，你的军长仿佛成群的蝗[Fn1]虫，天凉的时候，齐落在篱笆上，日头一出便都飞去，不知道落在何处。",
+          "text_big5": "你的首領多如蝗[Cra]蟲，你的軍長彷彿成群的蝗[Fn1]蟲，天涼的時候，齊落在籬笆上，日頭一出便都飛去，不知道落在何處。",
+          "text_en": "Your princes are like the locust swarm, / And your officials are like hordes of locusts, / Which camp in the hedges / On a cold day, / But when the sun arises, they flee away, / And the place where they are is unknown.",
+          "text_gb_plain": "你的首领多如蝗虫，你的军长仿佛成群的蝗虫，天凉的时候，齐落在篱笆上，日头一出便都飞去，不知道落在何处。",
+          "text_big5_plain": "你的首領多如蝗蟲，你的軍長彷彿成群的蝗蟲，天涼的時候，齊落在籬笆上，日頭一出便都飛去，不知道落在何處。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 19,
+              "zh": "这里提到蝗虫是很有意义的，指明亚述人也是蹂躏以色列的‘蝗虫。’(珥一4与注。)亚述蝗虫最后被巴比伦蝗虫击败。 按照小申言者书，神惩治以色列并惩罚列国，乃是为着基督的显现。那鸿书主要的点乃是：当神惩治以色列并惩罚列国时，祂总是尽所能的保守以色列，为使基督得显现。神用一种蝗虫对付另一种蝗虫，为要保守以色列，使基督能借由蒙保守而存留的以色列作管道，得以被带进来。",
+              "zh_big5": "這裏題到蝗蟲是很有意義的，指明亞述人也是蹂躪以色列的“蝗蟲。”（珥一4與註。）亞述蝗蟲最後被巴比倫蝗蟲擊敗。ˍ按照小申言者書，神懲治以色列並懲罰列國，乃是為著基督的顯現。那鴻書主要的點乃是：當神懲治以色列並懲罰列國時，祂總是盡所能的保守以色列，為使基督得顯現。神用一種蝗蟲對付另一種蝗蟲，為要保守以色列，使基督能藉由蒙保守而存留的以色列作管道，得以被帶進來。",
+              "en": "3:17 1 locusts The mentioning of locusts here is significant, indicating that the Assyrians also were “locusts” that devastated Israel (Joel 1:4 and note Joel 1:4 1 ). The Assyrian locusts were eventually defeated by the Babylonian locusts. According to the Minor Prophets, God's chastising of Israel and His punishing of the nations are for the manifestation of Christ. The main point of Nahum is that while God was chastising Israel and punishing the nations, He always did what was necessary to preserve Israel for the purpose of manifesting Christ. God used one kind of locust to deal with another kind of locust in order to preserve Israel that Christ might have a channel — the reserved and preserved Israel — through which to be brought forth."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "启九7",
+              "refs": [
+                {
+                  "book": 66,
+                  "chapter": 9,
+                  "verse": 7,
+                  "ref_gb": "启九7",
+                  "ref_big5": "啟九7",
+                  "ref_en": "Rev. 9:7",
+                  "text_gb": "蝗虫的样子好像预备出战的马，头上好像戴着冠冕，仿佛是金的，脸面像人的脸面，",
+                  "text_big5": "蝗蟲的樣子好像豫備出戰的馬，頭上好像戴著冠冕，彷彿是金的，臉面像人的臉面，",
+                  "text_en": "And the locusts were like horses prepared for war, and on their heads there were as it were crowns like gold, and their faces were like faces of men."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 18,
+          "ref_gb": "鸿三18",
+          "ref_big5": "鴻三18",
+          "ref_en": "Nah. 3:18",
+          "text_gb": "亚[Cra]述王啊，你的牧人打盹，你的贵胄安歇；你的人民散在山间，无人招聚。",
+          "text_big5": "亞[Cra]述王阿，你的牧人打盹，你的貴胄安歇；你的人民散在山間，無人招聚。",
+          "text_en": "Your shepherds slumber, / O king of Assyria; / Your nobles sleep. / Your people are scattered upon the mountains, / And there is no one to gather them.",
+          "text_gb_plain": "亚述王啊，你的牧人打盹，你的贵胄安歇；你的人民散在山间，无人招聚。",
+          "text_big5_plain": "亞述王阿，你的牧人打盹，你的貴胄安歇；你的人民散在山間，無人招聚。",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "耶五十18，结三一3，12～17",
+              "refs": [
+                {
+                  "book": 24,
+                  "chapter": 50,
+                  "verse": 18,
+                  "ref_gb": "耶五○18",
+                  "ref_big5": "耶五○18",
+                  "ref_en": "Jer. 50:18",
+                  "text_gb": "所以万军之耶和华以色列的神如此说，我必惩罚巴比伦王和他的地，像我从前惩罚亚述王一样。",
+                  "text_big5": "所以萬軍之耶和華以色列的神如此說，我必懲罰巴比倫王和他的地，像我從前懲罰亞述王一樣。",
+                  "text_en": "Therefore thus says Jehovah of hosts, the God of Israel: I will punish the king of Babylon and his land, as I punished the king of Assyria."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 3,
+                  "ref_gb": "结三一3",
+                  "ref_big5": "結三一3",
+                  "ref_en": "Ezek. 31:3",
+                  "text_gb": "亚述曾是利巴嫩中的香柏树，枝条荣美，影密如林，极其高大，树梢立于茂密枝叶中。",
+                  "text_big5": "亞述曾是利巴嫩中的香柏樹，枝條榮美，影密如林，極其高大，樹梢立於茂密枝葉中。",
+                  "text_en": "Indeed Assyria was a cedar in Lebanon / With beautiful branches and forest shade / And great height, / And its top shoots were among the thick boughs."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 12,
+                  "ref_gb": "结三一12",
+                  "ref_big5": "結三一12",
+                  "ref_en": "Ezek. 31:12",
+                  "text_gb": "外人，就是列邦中最凶残的，将它砍断弃于山上，它的枝条落在一切山谷中，它的枝子折断，落在地的一切深谷旁；地上的众民已经离开它的荫下，丢弃了它。",
+                  "text_big5": "外人，就是列邦中最兇殘的，將它砍斷棄於山上，它的枝條落在一切山谷中，它的枝子折斷，落在地的一切深谷旁；地上的眾民已經離開它的蔭下，丟棄了它。",
+                  "text_en": "And strangers, the most ruthless of the nations, have cut it down and left it on the mountains, and its branches have fallen into all the valleys, and its boughs lie broken by all the ravines of the land; and all the peoples of the earth have abandoned its shade and left it."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 13,
+                  "ref_gb": "结三一13",
+                  "ref_big5": "結三一13",
+                  "ref_en": "Ezek. 31:13",
+                  "text_gb": "空中的飞鸟都要宿在这倾倒的树上，田野的走兽都要来到它的枝条上，",
+                  "text_big5": "空中的飛鳥都要宿在這傾倒的樹上，田野的走獸都要來到它的枝條上，",
+                  "text_en": "Upon its fallen trunk / All the birds of the sky will dwell, / And upon its branches / All the beasts of the field will be."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 14,
+                  "ref_gb": "结三一14",
+                  "ref_big5": "結三一14",
+                  "ref_en": "Ezek. 31:14",
+                  "text_gb": "好使水旁的诸树不因高大而自高，也不将树梢立于茂密枝叶中，并且那些得水滋润的树木，都不得高大自立；因为它们都被交与死亡，到地的深处，到那些下坑的世人中去了。",
+                  "text_big5": "好使水旁的諸樹不因高大而自高，也不將樹梢立於茂密枝葉中，並且那些得水滋潤的樹木，都不得高大自立；因為它們都被交與死亡，到地的深處，到那些下坑的世人中去了。",
+                  "text_en": "This is so that none of the well-watered trees will exalt themselves in their height by setting their top shoots among the thick boughs, and none of the well-watered trees will stand next to them in their height; for all of them have been delivered to death, to the lowest parts of the earth among the children of men who descend into the pit."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 15,
+                  "ref_gb": "结三一15",
+                  "ref_big5": "結三一15",
+                  "ref_en": "Ezek. 31:15",
+                  "text_gb": "主耶和华如此说，它下阴间的那日，我便使人悲哀；我为它遮盖深处的泉源，使江河受阻，大水停流；我也使利巴嫩为它悲伤，田野的诸树都因它发昏。",
+                  "text_big5": "主耶和華如此說，它下陰間的那日，我便使人悲哀；我為它遮蓋深處的泉源，使江河受阻，大水停流；我也使利巴嫩為它悲傷，田野的諸樹都因它發昏。",
+                  "text_en": "Thus says the Lord Jehovah, On the day it descended to Sheol I caused a mourning; I covered the deep springs for it, and I restrained its rivers, and the great waters were shut up. I also made Lebanon mourn for it, and all the trees of the field wilted on account of it."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 16,
+                  "ref_gb": "结三一16",
+                  "ref_big5": "結三一16",
+                  "ref_en": "Ezek. 31:16",
+                  "text_gb": "我将它扔到阴间，与下坑的人一同下去；那时，列国听见它坠落的响声就都震动。伊甸的一切树，就是利巴嫩得水滋润、最佳最美的树，都在地的最低下之处受了安慰。",
+                  "text_big5": "我將它扔到陰間，與下坑的人一同下去；那時，列國聽見它墜落的響聲就都震動。伊甸的一切樹，就是利巴嫩得水滋潤、最佳最美的樹，都在地的最低下之處受了安慰。",
+                  "text_en": "I made the nations quake at the sound of its fall when I cast it down to Sheol with those who descend into the pit. And all the trees of Eden, the choice and best of Lebanon, all who drink water, were comforted in the lowest parts of the earth."
+                },
+                {
+                  "book": 26,
+                  "chapter": 31,
+                  "verse": 17,
+                  "ref_gb": "结三一17",
+                  "ref_big5": "結三一17",
+                  "ref_en": "Ezek. 31:17",
+                  "text_gb": "它们也与它同下阴间，到被刀杀的人那里；它们曾作它的膀臂，在列国中居住在它的荫下。",
+                  "text_big5": "它們也與它同下陰間，到被刀殺的人那裏；它們曾作它的膀臂，在列國中居住在它的蔭下。",
+                  "text_en": "They also descended with it into Sheol to those who were slain by the sword; indeed to those who were its arm, who dwelt under its shade among the nations."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 34,
+          "chapter": 3,
+          "verse": 19,
+          "ref_gb": "鸿三19",
+          "ref_big5": "鴻三19",
+          "ref_en": "Nah. 3:19",
+          "text_gb": "你的损伤无法医治，你的创伤极其严重。凡听见你消息的，必都向你拍掌；因为你所行的恶，谁没有时常遭遇呢？",
+          "text_big5": "你的損傷無法醫治，你的創傷極其嚴重。凡聽見你消息的，必都向你拍掌；因為你所行的惡，誰沒有時常遭遇呢？",
+          "text_en": "There is no alleviating of your injury; / Your wound is grievous. / All who hear the report of you / Clap their hands over you; / For upon whom has your wickedness / Not passed continually? ",
+          "text_gb_plain": "你的损伤无法医治，你的创伤极其严重。凡听见你消息的，必都向你拍掌；因为你所行的恶，谁没有时常遭遇呢？",
+          "text_big5_plain": "你的損傷無法醫治，你的創傷極其嚴重。凡聽見你消息的，必都向你拍掌；因為你所行的惡，誰沒有時常遭遇呢？",
+          "footnotes": [],
+          "crossrefs": []
+        }
+      ]
+    }
+  ]
+}

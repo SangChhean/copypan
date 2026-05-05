@@ -1,0 +1,1366 @@
+{
+  "book": 64,
+  "name_gb": "约翰三书",
+  "name_big5": "約翰三書",
+  "name_en": "3 John",
+  "abbr_gb": "约叁",
+  "abbr_big5": "約參",
+  "abbr_en": "3 John",
+  "chapters": [
+    {
+      "chapter": 1,
+      "verses": [
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 1,
+          "ref_gb": "约叁一1",
+          "ref_big5": "約參一1",
+          "ref_en": "3 John 1:1",
+          "text_gb": "作长[Fn1]老的写信给亲[Cra]爱的该[Fn2]犹，就是我真[Fn3][Crb]实所爱[Crc]的。",
+          "text_big5": "作長[Fn1]老的寫信給親[Cra]愛的該[Fn2]猶，就是我真[Fn3][Crb]實所愛[Crc]的。",
+          "text_en": "The elder to Gaius the beloved, whom I love in truthfulness.",
+          "text_gb_plain": "作长老的写信给亲爱的该犹，就是我真实所爱的。",
+          "text_big5_plain": "作長老的寫信給親愛的該猶，就是我真實所愛的。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "见约贰1注1。",
+              "zh_big5": "見約貳1註1。",
+              "en": "1:1 1 elder See note 2 John 1:1 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 11,
+              "zh": "不是徒十九29的马其顿人该犹，不是徒二十4的特庇人该犹，也不是林前一14与罗十六23哥林多的该犹，乃是另一个名叫该犹的；当时该犹是一个非常普通的名字。照本书信的内容看，他必定是召会中一位特出的弟兄。",
+              "zh_big5": "不是徒十九29的馬其頓人該猶，不是徒二十4的特庇人該猶，也不是林前一14與羅十六23哥林多的該猶，乃是另一個名叫該猶的；當時該猶是一個非常普通的名字。照本書信的內容看，他必定是召會中一位特出的弟兄。",
+              "en": "1:1 2 Gaius Not the Gaius of Macedonia in Acts 19:29, nor the Gaius of Derbe in Acts 20:4, nor the Gaius of Corinth in 1 Cor. 1:14 and Rom. 16:23, but another named Gaius (the name was very common at that time). According to the contents of this Epistle, he must have been an outstanding brother in the church."
+            },
+            {
+              "num": 3,
+              "loc": 17,
+              "zh": "见约贰1注3。",
+              "zh_big5": "見約貳1註3。",
+              "en": "1:1 3 truthfulness See note 2 John 1:1 3 ."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "约参2，5，11",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "约叁一2",
+                  "ref_big5": "約參一2",
+                  "ref_en": "3 John 1:2",
+                  "text_gb": "亲爱的，我愿你凡事兴盛，身体健康，正如你的魂兴盛一样。",
+                  "text_big5": "親愛的，我願你凡事興盛，身體健康，正如你的魂興盛一樣。",
+                  "text_en": "Beloved, concerning all things I wish that you may prosper and be in health, even as your soul prospers."
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 5,
+                  "ref_gb": "约叁一5",
+                  "ref_big5": "約參一5",
+                  "ref_en": "3 John 1:5",
+                  "text_gb": "亲爱的，凡你向作客旅之弟兄所行的，都是忠信的；",
+                  "text_big5": "親愛的，凡你向作客旅之弟兄所行的，都是忠信的；",
+                  "text_en": "Beloved, you do faithfully in whatever you have wrought for the brothers, and this for strangers,"
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "约叁一11",
+                  "ref_big5": "約參一11",
+                  "ref_en": "3 John 1:11",
+                  "text_gb": "亲爱的，不要效法恶，只要效法善。行善的是出于神，行恶的未曾见过神。",
+                  "text_big5": "親愛的，不要效法惡，只要效法善。行善的是出於神，行惡的未曾見過神。",
+                  "text_en": "Beloved, do not imitate the evil, but the good. He who does good is of God; he who does evil has not seen God."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 17,
+              "raw": "约壹三18",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 3,
+                  "verse": 18,
+                  "ref_gb": "约壹三18",
+                  "ref_big5": "約壹三18",
+                  "ref_en": "1 John 3:18",
+                  "text_gb": "孩子们，我们相爱，不要只在言语和舌头上，总要在行为和真诚上。",
+                  "text_big5": "孩子們，我們相愛，不要只在言語和舌頭上，總要在行為和真誠上。",
+                  "text_en": "Little children, let us not love in word nor in tongue but in deed and truthfulness."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 20,
+              "raw": "约贰1",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约贰一1",
+                  "ref_big5": "約貳一1",
+                  "ref_en": "2 John 1:1",
+                  "text_gb": "作长老的写信给蒙拣选的夫人和她的儿女，就是我真实所爱的；不单我爱，也是一切认识真理之人所爱的；",
+                  "text_big5": "作長老的寫信給蒙揀選的夫人和她的兒女，就是我真實所愛的；不單我愛，也是一切認識真理之人所愛的；",
+                  "text_en": "The elder to the chosen lady and to her children, whom I love in truthfulness, and not only I but also all those who know the truth,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 2,
+          "ref_gb": "约叁一2",
+          "ref_big5": "約參一2",
+          "ref_en": "3 John 1:2",
+          "text_gb": "亲爱的，我愿[Fn1]你凡[Fn2]事兴[Fn3]盛，身体健[Fn4]康，正如你的魂[Fn5]兴盛一样。",
+          "text_big5": "親愛的，我願[Fn1]你凡[Fn2]事興[Fn3]盛，身體健[Fn4]康，正如你的魂[Fn5]興盛一樣。",
+          "text_en": "Beloved, concerning all things I wish that you may prosper and be in health, even as your soul prospers.",
+          "text_gb_plain": "亲爱的，我愿你凡事兴盛，身体健康，正如你的魂兴盛一样。",
+          "text_big5_plain": "親愛的，我願你凡事興盛，身體健康，正如你的魂興盛一樣。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 6,
+              "zh": "也许有祷告的意思。",
+              "zh_big5": "也許有禱告的意思。",
+              "en": "1:2 1 all According to the context of the verse, this refers to external and material things."
+            },
+            {
+              "num": 2,
+              "loc": 8,
+              "zh": "照本节上下文看，这是指外面和物质的事物。",
+              "zh_big5": "照本節上下文看，這是指外面和物質的事物。",
+              "en": "1:2 2 wish Probably in the sense of prayer."
+            },
+            {
+              "num": 3,
+              "loc": 10,
+              "zh": "原文意顺利(如旅程上之顺利─罗一10)，即顺利达到所想望的目的，因此是兴盛。",
+              "zh_big5": "",
+              "en": "1:2 3 prospers The Greek word means to go on well, as in a journey (Rom. 1:10). I.e., to succeed in reaching a desired end; thus, to prosper."
+            },
+            {
+              "num": 4,
+              "loc": 15,
+              "zh": "指身体的健康，如在路五31，七10，十五27者。",
+              "zh_big5": "指身體的健康，如在路五31，七10，十五27者。",
+              "en": "1:2 4 health Bodily health, as in Luke 5:31; 7:10; 15:27."
+            },
+            {
+              "num": 5,
+              "loc": 22,
+              "zh": "人有三部分：灵、魂、体(帖前五23与注5)。魂是介于体与灵之间的器官，有自觉，使人有其个格。魂包含在体里，且是盛装灵的器皿。对信徒而言，是灵的神居住在他重生的灵里(罗八9，16)，并从他的灵里扩展，浸透他的魂，使魂得着变化，以彰显神(罗十二2，林后三18)。这就是信徒的魂兴盛。当我们的魂借着我们的灵被神的灵占有并支配，好为着神的定旨支配并使用我们的体时，魂就兴盛。使徒盼望他的受信者，这位魂格外兴盛的亲爱弟兄，能凡事兴盛，身体健康，正如他的魂在神的生命里兴盛一样。",
+              "zh_big5": "人有三部分：靈、魂、體。（帖前五23與註5。）魂是介於體與靈之間的器官，有自覺，使人有其個格。魂包含在體裏，且是盛裝靈的器皿。對信徒而言，是靈的神居住在他重生的靈裏，（羅八9，16，）並從他的靈裏擴展，浸透他的魂，使魂得著變化，以彰顯神。（羅十二2，林後三18。）這就是信徒的魂興盛。當我們的魂藉著我們的靈被神的靈佔有並支配，好為著神的定旨支配並使用我們的體時，魂就興盛。使徒盼望他的受信者，這位魂格外興盛的親愛弟兄，能凡事興盛，身體健康，正如他的魂在神的生命裏興盛一樣。",
+              "en": "1:2 5 soul Man is of three parts: spirit, soul, and body (1 Thes. 5:23 and note 1 Thes. 5:23 5 ). The soul is the organ that mediates between the body and the spirit; it possesses self-consciousness, that man may have his personality. It is contained in the body and is the vessel to contain the spirit. As to the believer, God as the Spirit dwells in his regenerated spirit (Rom. 8:9, 16) and spreads from his spirit to saturate his soul that it may be transformed to express Him (Rom. 12:2; 2 Cor. 3:18). This is the prosperity of the believer's soul. When our soul is occupied and directed by the Spirit of God through our spirit so that it directs and uses our body for God's purposes, it prospers. The apostle wished that the recipient, who was a beloved brother, outstanding in such a prosperity of his soul, might prosper in all things and in bodily health, just as his soul prospered in the divine life."
+            }
+          ],
+          "crossrefs": []
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 3,
+          "ref_gb": "约叁一3",
+          "ref_big5": "約參一3",
+          "ref_en": "3 John 1:3",
+          "text_gb": "有弟兄来见[Cra]证你[Fn1]持守真理，就是你在真[Fn2]理中行[Fn3]事为人，我就大[Fn4]大欢乐。",
+          "text_big5": "有弟兄來見[Cra]證你[Fn1]持守真理，就是你在真[Fn2]理中行[Fn3]事為人，我就大[Fn4]大歡樂。",
+          "text_en": "For I rejoiced greatly at the brothers' coming and testifying to your steadfastness in the truth, even as you walk in truth.",
+          "text_gb_plain": "有弟兄来见证你持守真理，就是你在真理中行事为人，我就大大欢乐。",
+          "text_big5_plain": "有弟兄來見證你持守真理，就是你在真理中行事為人，我就大大歡樂。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 7,
+              "zh": "你持守真理，直译，你的真理。这是关于基督，特别是关于祂神格的真理(见约贰1注5)，这真理的启示定规受信者的生活方式，并成为受信者持守的基本信仰。这乃是客观的真理，在受信者日常行事为人中，成了主观的真理。",
+              "zh_big5": "你持守真理，直譯，你的真理。這是關於基督，特別是關於祂神格的真理，（見約貳1註5，）這真理的啟示定規受信者的生活方式，並成為受信者持守的基本信仰。這乃是客觀的真理，在受信者日常行事為人中，成了主觀的真理。",
+              "en": "1:3 1 rejoiced See note 2 John 1:4 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 17,
+              "zh": "见约贰4注2。",
+              "zh_big5": "見約貳4註2。",
+              "en": "1:3 2 your Lit., your truth. This is the truth concerning Christ, especially His deity (see note 2 John 1:1 5 ). By the revelation of this truth the recipient's way of life was determined, and the recipient held to this truth as his fundamental belief. It is the objective truth that had become subjective in the recipient's daily walk."
+            },
+            {
+              "num": 3,
+              "loc": 20,
+              "zh": "受信者不仅持守真理，也在真理中行事为人。关于基督身位的真理不仅该是我们的信仰，也该是我们的生活，就是一种见证我们信仰的生活。",
+              "zh_big5": "受信者不僅持守真理，也在真理中行事為人。關於基督身位的真理不僅該是我們的信仰，也該是我們的生活，就是一種見證我們信仰的生活。",
+              "en": "1:3 3 walk The recipient not only held to the truth but also walked and lived in the truth. The truth concerning the person of Christ should be not only our belief but also our living, a living that testifies to our belief."
+            },
+            {
+              "num": 4,
+              "loc": 27,
+              "zh": "见约贰4注3。",
+              "zh_big5": "見約貳4註3。",
+              "en": "1:3 4 truth See note 2 John 1:4 2 . So also in v. 4."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 5,
+              "raw": "约参6，12",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "约叁一6",
+                  "ref_big5": "約參一6",
+                  "ref_en": "3 John 1:6",
+                  "text_gb": "他们在召会面前见证了你的爱；你照着与神相配的，送他们往前行，就作得好；",
+                  "text_big5": "他們在召會面前見證了你的愛；你照著與神相配的，送他們往前行，就作得好；",
+                  "text_en": "Who testified to your love before the church; whom you will do well to send forward in a manner worthy of God;"
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "约叁一12",
+                  "ref_big5": "約參一12",
+                  "ref_en": "3 John 1:12",
+                  "text_gb": "有众人给低米丢作见证，又有真理本身给他作见证，就是我们也给他作见证，你也知道我们的见证是真的。",
+                  "text_big5": "有眾人給低米丟作見證，又有真理本身給他作見證，就是我們也給他作見證，你也知道我們的見證是真的。",
+                  "text_en": "To Demetrius testimony has been borne by all and by the truth itself; and we also testify, and you know that our testimony is true."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 4,
+          "ref_gb": "约叁一4",
+          "ref_big5": "約參一4",
+          "ref_en": "3 John 1:4",
+          "text_gb": "我听见我的儿[Cra]女们在真[Fn1][Crb]理中行事为人，我的喜乐就没有比这个更大的。",
+          "text_big5": "我聽見我的兒[Cra]女們在真[Fn1][Crb]理中行事為人，我的喜樂就沒有比這個更大的。",
+          "text_en": "I have no greater joy than these things, that I hear that my children are walking in the truth.",
+          "text_gb_plain": "我听见我的儿女们在真理中行事为人，我的喜乐就没有比这个更大的。",
+          "text_big5_plain": "我聽見我的兒女們在真理中行事為人，我的喜樂就沒有比這個更大的。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 10,
+              "zh": "见约贰4注2。",
+              "zh_big5": "見約貳4註2。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 6,
+              "raw": "林前四14～15，帖前二11，提前一2，提后一2，多一4，门10",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 14,
+                  "ref_gb": "林前四14",
+                  "ref_big5": "林前四14",
+                  "ref_en": "1 Cor. 4:14",
+                  "text_gb": "我写这些话，不是羞辱你们，乃像劝戒我亲爱的儿女一样。",
+                  "text_big5": "我寫這些話，不是羞辱你們，乃像勸戒我親愛的兒女一樣。",
+                  "text_en": "It is not to shame you that I write these things but to admonish you as my beloved children."
+                },
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 15,
+                  "ref_gb": "林前四15",
+                  "ref_big5": "林前四15",
+                  "ref_en": "1 Cor. 4:15",
+                  "text_gb": "你们在基督里，纵有上万的导师，父亲却不多，因为是我在基督耶稣里借着福音生了你们。",
+                  "text_big5": "你們在基督裏，縱有上萬的導師，父親卻不多，因為是我在基督耶穌裏藉著福音生了你們。",
+                  "text_en": "For though you have ten thousand guides in Christ, yet you do not have many fathers; for in Christ Jesus I have begotten you through the gospel."
+                },
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 11,
+                  "ref_gb": "帖前二11",
+                  "ref_big5": "帖前二11",
+                  "ref_en": "1 Thes. 2:11",
+                  "text_gb": "正如你们所知道的，我们怎样劝勉你们，抚慰你们，向你们作见证，待你们每一个人，好像父亲待自己的孩子一样；",
+                  "text_big5": "正如你們所知道的，我們怎樣勸勉你們，撫慰你們，向你們作見證，待你們每一個人，好像父親待自己的孩子一樣；",
+                  "text_en": "Just as you know how we were to each one of you, as a father to his own children, exhorting you and consoling you and testifying,"
+                },
+                {
+                  "book": 54,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提前一2",
+                  "ref_big5": "提前一2",
+                  "ref_en": "1 Tim. 1:2",
+                  "text_gb": "写信给那凭信作我真孩子的提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給那憑信作我真孩子的提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, genuine child in faith: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                },
+                {
+                  "book": 55,
+                  "chapter": 1,
+                  "verse": 2,
+                  "ref_gb": "提后一2",
+                  "ref_big5": "提後一2",
+                  "ref_en": "2 Tim. 1:2",
+                  "text_gb": "写信给我亲爱的孩子提摩太：愿恩典、怜悯、平安，从父神和我们的主基督耶稣归与你。",
+                  "text_big5": "寫信給我親愛的孩子提摩太：願恩典、憐憫、平安，從父神和我們的主基督耶穌歸與你。",
+                  "text_en": "To Timothy, beloved child: Grace, mercy, peace from God the Father and Christ Jesus our Lord."
+                },
+                {
+                  "book": 56,
+                  "chapter": 1,
+                  "verse": 4,
+                  "ref_gb": "多一4",
+                  "ref_big5": "多一4",
+                  "ref_en": "Titus 1:4",
+                  "text_gb": "写信给照着共同的信仰，作我真孩子的提多：愿恩典与平安，从父神和我们的救主基督耶稣归与你。",
+                  "text_big5": "寫信給照著共同的信仰，作我真孩子的提多：願恩典與平安，從父神和我們的救主基督耶穌歸與你。",
+                  "text_en": "To Titus, genuine child according to the common faith: Grace and peace from God the Father and Christ Jesus our Savior."
+                },
+                {
+                  "book": 57,
+                  "chapter": 1,
+                  "verse": 10,
+                  "ref_gb": "门一10",
+                  "ref_big5": "門一10",
+                  "ref_en": "Philem. 1:10",
+                  "text_gb": "就是为我在捆锁中所生的孩子欧尼西母恳求你；",
+                  "text_big5": "就是為我在捆鎖中所生的孩子歐尼西母懇求你；",
+                  "text_en": "I entreat you concerning my child, whom I have begotten in my bonds, Onesimus,"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 10,
+              "raw": "参箴二三23",
+              "refs": [
+                {
+                  "book": 20,
+                  "chapter": 23,
+                  "verse": 23,
+                  "ref_gb": "箴二三23",
+                  "ref_big5": "箴二三23",
+                  "ref_en": "Prov. 23:23",
+                  "text_gb": "你当买真理，不可出卖；要买智慧、训诲和聪明。",
+                  "text_big5": "你當買真理，不可出賣；要買智慧、訓誨和聰明。",
+                  "text_en": "Buy truth, and do not sell it; / Buy wisdom and instruction and understanding."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 5,
+          "ref_gb": "约叁一5",
+          "ref_big5": "約參一5",
+          "ref_en": "3 John 1:5",
+          "text_gb": "亲[Cra]爱的，凡[Fn1]你向作[Fn2]客[Crb]旅之弟兄所行的，都是忠[Crc]信的；",
+          "text_big5": "親[Cra]愛的，凡[Fn1]你向作[Fn2]客[Crb]旅之弟兄所行的，都是忠[Crc]信的；",
+          "text_en": "Beloved, you do faithfully in whatever you have wrought for the brothers, and this for strangers,",
+          "text_gb_plain": "亲爱的，凡你向作客旅之弟兄所行的，都是忠信的；",
+          "text_big5_plain": "親愛的，凡你向作客旅之弟兄所行的，都是忠信的；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 5,
+              "zh": "指对作客旅之弟兄的款待(如保罗在罗十二13与来十三2所教导的)，也就是给那为着福音和话语的职事作客旅之弟兄的接待(7～8)。",
+              "zh_big5": "指對作客旅之弟兄的款待，（如保羅在羅十二13與來十三2所教導的，）也就是給那為著福音和話語的職事作客旅之弟兄的接待。（7～8。）",
+              "en": "1:5 1 whatever Referring to the providing of hospitality (as taught by Paul in Rom. 12:13 and Heb. 13:2), the receiving of the brothers (vv. 7-8) who traveled for the gospel and the ministry of the word."
+            },
+            {
+              "num": 2,
+              "loc": 8,
+              "zh": "受款待者多半是作客旅的，与该犹并不相识。",
+              "zh_big5": "受款待者多半是作客旅的，與該猶並不相識。",
+              "en": "1:5 2 strangers Most of the recipients of the hospitality were strangers, unacquainted with Gaius."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 1,
+              "raw": "约参1",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 1,
+                  "ref_gb": "约叁一1",
+                  "ref_big5": "約參一1",
+                  "ref_en": "3 John 1:1",
+                  "text_gb": "作长老的写信给亲爱的该犹，就是我真实所爱的。",
+                  "text_big5": "作長老的寫信給親愛的該猶，就是我真實所愛的。",
+                  "text_en": "The elder to Gaius the beloved, whom I love in truthfulness."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 9,
+              "raw": "参太二五35",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 25,
+                  "verse": 35,
+                  "ref_gb": "太二五35",
+                  "ref_big5": "太二五35",
+                  "ref_en": "Matt. 25:35",
+                  "text_gb": "因为我饿了，你们给我吃；我渴了，你们给我喝；我作客旅，你们留我住；",
+                  "text_big5": "因為我餓了，你們給我喫；我渴了，你們給我喝；我作客旅，你們留我住；",
+                  "text_en": "For I was hungry and you gave Me something to eat; I was thirsty and you gave Me a drink; I was a stranger and you took Me in,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 20,
+              "raw": "林前四2",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 2,
+                  "ref_gb": "林前四2",
+                  "ref_big5": "林前四2",
+                  "ref_en": "1 Cor. 4:2",
+                  "text_gb": "还有，在此所求于管家的，是要他显为忠信。",
+                  "text_big5": "還有，在此所求於管家的，是要他顯為忠信。",
+                  "text_en": "Here, furthermore, it is sought in stewards that one be found faithful."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 6,
+          "ref_gb": "约叁一6",
+          "ref_big5": "約參一6",
+          "ref_en": "3 John 1:6",
+          "text_gb": "他们在召[Fn1]会面前见[Cra]证了你的爱[Fn2]；你照着与[Fn3]神相配[Crb]的，送[Fn4][Crc]他们往前行，就作得好；",
+          "text_big5": "他們在召[Fn1]會面前見[Cra]證了你的愛[Fn2]；你照著與[Fn3]神相配[Crb]的，送[Fn4][Crc]他們往前行，就作得好；",
+          "text_en": "Who testified to your love before the church; whom you will do well to send forward in a manner worthy of God;",
+          "text_gb_plain": "他们在召会面前见证了你的爱；你照着与神相配的，送他们往前行，就作得好；",
+          "text_big5_plain": "他們在召會面前見證了你的愛；你照著與神相配的，送他們往前行，就作得好；",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 4,
+              "zh": "指使徒所在的召会。",
+              "zh_big5": "指使徒所在的召會。",
+              "en": "1:6 1 love In the past."
+            },
+            {
+              "num": 2,
+              "loc": 13,
+              "zh": "指已往的爱。",
+              "zh_big5": "指已往的愛。",
+              "en": "1:6 2 church The church where the apostle was."
+            },
+            {
+              "num": 3,
+              "loc": 18,
+              "zh": "送行应当以一种与慷慨的神相配的作法，指明送行必须是慷慨的。",
+              "zh_big5": "送行應當以一種與慷慨的神相配的作法，指明送行必須是慷慨的。",
+              "en": "1:6 3 will In the future. On one hand, the apostle praised Gaius for what he had done in receiving the traveling brothers in the past; on the other hand, he encouraged him to send them forward in the future."
+            },
+            {
+              "num": 4,
+              "loc": 24,
+              "zh": "指将来的送行。使徒一面称赞该犹已往在接待作客旅之弟兄的事上所行的，一面鼓励他将来要送他们往前行。",
+              "zh_big5": "指將來的送行。使徒一面稱讚該猶已往在接待作客旅之弟兄的事上所行的，一面鼓勵他將來要送他們往前行。",
+              "en": "1:6 4 worthy The sending forward should be in a manner that matches God, who is generous, indicating that the sending forward must be with generosity."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 8,
+              "raw": "约参3，12",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "约叁一3",
+                  "ref_big5": "約參一3",
+                  "ref_en": "3 John 1:3",
+                  "text_gb": "有弟兄来见证你持守真理，就是你在真理中行事为人，我就大大欢乐。",
+                  "text_big5": "有弟兄來見證你持守真理，就是你在真理中行事為人，我就大大歡樂。",
+                  "text_en": "For I rejoiced greatly at the brothers' coming and testifying to your steadfastness in the truth, even as you walk in truth."
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "约叁一12",
+                  "ref_big5": "約參一12",
+                  "ref_en": "3 John 1:12",
+                  "text_gb": "有众人给低米丢作见证，又有真理本身给他作见证，就是我们也给他作见证，你也知道我们的见证是真的。",
+                  "text_big5": "有眾人給低米丟作見證，又有真理本身給他作見證，就是我們也給他作見證，你也知道我們的見證是真的。",
+                  "text_en": "To Demetrius testimony has been borne by all and by the truth itself; and we also testify, and you know that our testimony is true."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 21,
+              "raw": "西一10，帖前二12，参弗四1，帖后一5，11",
+              "refs": [
+                {
+                  "book": 51,
+                  "chapter": 1,
+                  "verse": 10,
+                  "ref_gb": "西一10",
+                  "ref_big5": "西一10",
+                  "ref_en": "Col. 1:10",
+                  "text_gb": "行事为人配得过主，以致凡事蒙祂喜悦，在一切善工上结果子，借着认识神而长大，",
+                  "text_big5": "行事為人配得過主，以致凡事蒙祂喜悅，在一切善工上結果子，藉著認識神而長大，",
+                  "text_en": "To walk worthily of the Lord to please Him in all things, bearing fruit in every good work and growing by the full knowledge of God,"
+                },
+                {
+                  "book": 52,
+                  "chapter": 2,
+                  "verse": 12,
+                  "ref_gb": "帖前二12",
+                  "ref_big5": "帖前二12",
+                  "ref_en": "1 Thes. 2:12",
+                  "text_gb": "要叫你们行事为人，配得过那召你们进入祂自己的国和荣耀的神。",
+                  "text_big5": "要叫你們行事為人，配得過那召你們進入祂自己的國和榮耀的神。",
+                  "text_en": "So that you might walk in a manner worthy of God, who calls you into His own kingdom and glory."
+                },
+                {
+                  "book": 49,
+                  "chapter": 4,
+                  "verse": 1,
+                  "ref_gb": "弗四1",
+                  "ref_big5": "弗四1",
+                  "ref_en": "Eph. 4:1",
+                  "text_gb": "所以我这在主里的囚犯劝你们，行事为人要与你们所蒙的呼召相配，",
+                  "text_big5": "所以我這在主裏的囚犯勸你們，行事為人要與你們所蒙的呼召相配，",
+                  "text_en": "I beseech you therefore, I, the prisoner in the Lord, to walk worthily of the calling with which you were called,"
+                },
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 5,
+                  "ref_gb": "帖后一5",
+                  "ref_big5": "帖後一5",
+                  "ref_en": "2 Thes. 1:5",
+                  "text_gb": "这正是神公义审判的明证，叫你们可算配得神的国，你们的确是为这国受苦；",
+                  "text_big5": "這正是神公義審判的明證，叫你們可算配得神的國，你們的確是為這國受苦；",
+                  "text_en": "A plain indication of the righteous judgment of God, that you may be accounted worthy of the kingdom of God, for which also you suffer;"
+                },
+                {
+                  "book": 53,
+                  "chapter": 1,
+                  "verse": 11,
+                  "ref_gb": "帖后一11",
+                  "ref_big5": "帖後一11",
+                  "ref_en": "2 Thes. 1:11",
+                  "text_gb": "因此，我们也常为你们祷告，愿我们的神算你们配得过所蒙的召，又用大能成就你们所喜悦的一切良善，和信心的工作，",
+                  "text_big5": "因此，我們也常為你們禱告，願我們的神算你們配得過所蒙的召，又用大能成就你們所喜悅的一切良善，和信心的工作，",
+                  "text_en": "For which also we pray always concerning you, that our God may count you worthy of your calling and may fulfill in power your every good intention for goodness and your work of faith,"
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 24,
+              "raw": "林前十六6，11",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 6,
+                  "ref_gb": "林前十六6",
+                  "ref_big5": "林前十六6",
+                  "ref_en": "1 Cor. 16:6",
+                  "text_gb": "或许和你们同住几时，或者也过冬，以便我无论往哪里去，你们都可以给我送行。",
+                  "text_big5": "或許和你們同住幾時，或者也過冬，以便我無論往那裏去，你們都可以給我送行。",
+                  "text_en": "And perhaps I will stay with you, or even spend the winter, that you may send me forward wherever I may go."
+                },
+                {
+                  "book": 46,
+                  "chapter": 16,
+                  "verse": 11,
+                  "ref_gb": "林前十六11",
+                  "ref_big5": "林前十六11",
+                  "ref_en": "1 Cor. 16:11",
+                  "text_gb": "所以无论谁，都不可藐视他。但你们要送他平安前行，使他可以到我这里来，因我正等待他和弟兄们同来。",
+                  "text_big5": "所以無論誰，都不可藐視他。但你們要送他平安前行，使他可以到我這裏來，因我正等待他和弟兄們同來。",
+                  "text_en": "Let no one therefore despise him, but send him forward in peace that he may come to me; for I am awaiting him with the brothers."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 7,
+          "ref_gb": "约叁一7",
+          "ref_big5": "約參一7",
+          "ref_en": "3 John 1:7",
+          "text_gb": "因他们是为那名[Fn1][Cra]出外，对于外[Fn2]邦人一无所取。",
+          "text_big5": "因他們是為那名[Fn1][Cra]出外，對於外[Fn2]邦人一無所取。",
+          "text_en": "For on behalf of the Name they went out, taking nothing from the Gentiles.",
+          "text_gb_plain": "因他们是为那名出外，对于外邦人一无所取。",
+          "text_big5_plain": "因他們是為那名出外，對於外邦人一無所取。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 7,
+              "zh": "指奇妙的基督那被高举且荣耀的名(腓二9与注3，徒五41，雅二7)。",
+              "zh_big5": "指奇妙的基督那被高舉且榮耀的名。（腓二9與註3，徒五41，雅二7。）",
+              "en": "1:7 1 Name The exalted and glorious name of the wonderful Christ (Phil. 2:9 and note Phil. 2:9 3 ; Acts 5:41; James 2:7)."
+            },
+            {
+              "num": 2,
+              "loc": 13,
+              "zh": "指与神在地上完成祂经纶的行动无分无关的异教徒。任何为着神新约经纶作工的人，若从不信的人接受帮助，特别是经济的支助，来为着神的工作，这对神乃是羞耻，甚至是侮辱。在使徒的时候，为神作工的弟兄们，对于异教徒一无所取。",
+              "zh_big5": "指與神在地上完成祂經綸的行動無分無關的異教徒。任何為著神新約經綸作工的人，若從不信的人接受幫助，特別是經濟的支助，來為著神的工作，這對神乃是羞恥，甚至是侮辱。在使徒的時候，為神作工的弟兄們，對於異教徒一無所取。",
+              "en": "1:7 2 Gentiles The pagans, who have nothing to do with God's move on this earth to carry out His economy. If anyone who works for God's New Testament economy receives help for God's work, especially financial support, from the unbelievers, this is a shame and even an insult to God. In the apostle's time, the brothers who worked for God took nothing from the pagans."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "约十五21，徒四10，九29，十六18，十九17",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 15,
+                  "verse": 21,
+                  "ref_gb": "约十五21",
+                  "ref_big5": "約十五21",
+                  "ref_en": "John 15:21",
+                  "text_gb": "但他们因我的名，要向你们行这一切的事，因为他们不认识那差我来的。",
+                  "text_big5": "但他們因我的名，要向你們行這一切的事，因為他們不認識那差我來的。",
+                  "text_en": "But all these things they will do to you because of My name, because they do not know Him who sent Me."
+                },
+                {
+                  "book": 44,
+                  "chapter": 4,
+                  "verse": 10,
+                  "ref_gb": "徒四10",
+                  "ref_big5": "徒四10",
+                  "ref_en": "Acts 4:10",
+                  "text_gb": "你们众人和以色列众百姓就当知道，乃是在拿撒勒人耶稣基督，就是你们所钉十字架，神从死人中所复活者的名里，在这名里，这人才站在你们面前健康完好。",
+                  "text_big5": "你們眾人和以色列眾百姓就當知道，乃是在拿撒勒人耶穌基督，就是你們所釘十字架，神從死人中所復活者的名裏，在這名裏，這人纔站在你們面前健康完好。",
+                  "text_en": "Let it be known to you all and to all the people of Israel that in the name of Jesus Christ the Nazarene, whom you crucified and whom God has raised from the dead, in this name this man stands before you in good health."
+                },
+                {
+                  "book": 44,
+                  "chapter": 9,
+                  "verse": 29,
+                  "ref_gb": "徒九29",
+                  "ref_big5": "徒九29",
+                  "ref_en": "Acts 9:29",
+                  "text_gb": "在主的名里放胆讲说，并与说希利尼话的犹太人讲论辩驳，他们却想下手杀他。",
+                  "text_big5": "在主的名裏放膽講說，並與說希利尼話的猶太人講論辯駁，他們卻想下手殺他。",
+                  "text_en": "And he spoke and disputed with the Hellenists, but they attempted to do away with him."
+                },
+                {
+                  "book": 44,
+                  "chapter": 16,
+                  "verse": 18,
+                  "ref_gb": "徒十六18",
+                  "ref_big5": "徒十六18",
+                  "ref_en": "Acts 16:18",
+                  "text_gb": "她一连多日都这样作，保罗就十分厌烦，转身对那巫觋的灵说，我在耶稣基督的名里，吩咐你从她身上出来。那巫觋的灵当时就出来了。",
+                  "text_big5": "她一連多日都這樣作，保羅就十分厭煩，轉身對那巫覡的靈說，我在耶穌基督的名裏，吩咐你從她身上出來。那巫覡的靈當時就出來了。",
+                  "text_en": "And she did this for many days. But Paul was greatly disturbed; and turning, he said to the spirit, I charge you in the name of Jesus Christ to come out of her. And it came out that very hour."
+                },
+                {
+                  "book": 44,
+                  "chapter": 19,
+                  "verse": 17,
+                  "ref_gb": "徒十九17",
+                  "ref_big5": "徒十九17",
+                  "ref_en": "Acts 19:17",
+                  "text_gb": "凡住在以弗所的，无论是犹太人，是希利尼人，都知道这事，众人都惧怕，主耶稣的名也就尊大了。",
+                  "text_big5": "凡住在以弗所的，無論是猶太人，是希利尼人，都知道這事，眾人都懼怕，主耶穌的名也就尊大了。",
+                  "text_en": "And this became known to all, both Jews and Greeks, dwelling in Ephesus; and fear fell upon them all, and the name of the Lord Jesus was magnified."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 8,
+          "ref_gb": "约叁一8",
+          "ref_big5": "約參一8",
+          "ref_en": "3 John 1:8",
+          "text_gb": "所以我们应该款[Fn1]待、供应这样的人，使我们能成为在真[Fn2]理上的同[Cra]工。",
+          "text_big5": "所以我們應該款[Fn1]待、供應這樣的人，使我們能成為在真[Fn2]理上的同[Cra]工。",
+          "text_en": "We therefore ought to support such ones that we may become fellow workers in the truth.",
+          "text_gb_plain": "所以我们应该款待、供应这样的人，使我们能成为在真理上的同工。",
+          "text_big5_plain": "所以我們應該款待、供應這樣的人，使我們能成為在真理上的同工。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 7,
+              "zh": "款待、供应，原文由“在下”和“拿起”二辞所构成；因此是(从下面)拿起，即承担、支持、款待、供应。我们这些信徒，包括使徒在内，应当款待、供应并承担那些在神圣真理上为神作工，对于外邦人一无所取之弟兄们的需要。",
+              "zh_big5": "款待、供應，原文由“在下”和“拿起”二辭所構成；因此是（從下面）拿起，即承擔、支持、款待、供應。我們這些信徒，包括使徒在內，應當款待、供應並承擔那些在神聖真理上為神作工，對於外邦人一無所取之弟兄們的需要。",
+              "en": "1:8 1 support The Greek word is made up of two words: under and to take; thus, to take up (from underneath), that is, to undertake, to sustain, to support. We, the believers, including the apostle, ought to support and undertake for the needs of the brothers who work for God in His divine truth and who take nothing from the Gentiles."
+            },
+            {
+              "num": 2,
+              "loc": 24,
+              "zh": "指照着使徒为着神的经纶，关于神圣三一的教导，特别是关于主耶稣身位的教导，所启示出来那作新约内容的神圣实际。所有的使徒和忠信的弟兄都为此作工。",
+              "zh_big5": "指照著使徒為著神的經綸，關於神聖三一的教導，特別是關於主耶穌身位的教導，所啟示出來那作新約內容的神聖實際。所有的使徒和忠信的弟兄都為此作工。",
+              "en": "1:8 2 truth Denoting the revealed divine reality as the contents of the New Testament, according to the apostles' teaching concerning the Divine Trinity, especially the person of the Lord Jesus, for God's economy. All the apostles and faithful brothers worked for this."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 28,
+              "raw": "腓二25，四3",
+              "refs": [
+                {
+                  "book": 50,
+                  "chapter": 2,
+                  "verse": 25,
+                  "ref_gb": "腓二25",
+                  "ref_big5": "腓二25",
+                  "ref_en": "Phil. 2:25",
+                  "text_gb": "然而，我认为必须打发以巴弗提到你们那里去，他是我的弟兄、同工、并一同当兵的，也是你们的使徒，和供应我需用的供奉者。",
+                  "text_big5": "然而，我認為必須打發以巴弗提到你們那裏去，他是我的弟兄、同工、並一同當兵的，也是你們的使徒，和供應我需用的供奉者。",
+                  "text_en": "But I considered it necessary to send to you Epaphroditus, my brother and fellow worker and fellow soldier, and your apostle and minister to my need,"
+                },
+                {
+                  "book": 50,
+                  "chapter": 4,
+                  "verse": 3,
+                  "ref_gb": "腓四3",
+                  "ref_big5": "腓四3",
+                  "ref_en": "Phil. 4:3",
+                  "text_gb": "是的，我也求你这真实同负一轭的，帮助她们；她们在福音上曾与我和革利免、并我其余的同工一同努力，他们的名字都在生命册上。",
+                  "text_big5": "是的，我也求你這真實同負一軛的，幫助她們；她們在福音上曾與我和革利免、並我其餘的同工一同努力，他們的名字都在生命冊上。",
+                  "text_en": "Yes, I ask you also, genuine yokefellow, assist them, since they contended with me in the gospel, as well as with Clement and the rest of my fellow workers, whose names are in the book of life."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 9,
+          "ref_gb": "约叁一9",
+          "ref_big5": "約參一9",
+          "ref_en": "3 John 1:9",
+          "text_gb": "我曾略略地写信给召[Fn1]会；但那在他们中间好为[Fn2]首[Cra]的丢[Fn3]特腓，不接[Fn4]待我们。",
+          "text_big5": "我曾略略的寫信給召[Fn1]會；但那在他們中間好為[Fn2]首[Cra]的丟[Fn3]特腓，不接[Fn4]待我們。",
+          "text_en": "I wrote something to the church; but Diotrephes, who loves to be first among them, does not receive us.",
+          "text_gb_plain": "我曾略略地写信给召会；但那在他们中间好为首的丢特腓，不接待我们。",
+          "text_big5_plain": "我曾略略的寫信給召會；但那在他們中間好為首的丟特腓，不接待我們。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 9,
+              "zh": "该犹为其中一分子。",
+              "zh_big5": "該猶為其中一分子。",
+              "en": "1:9 1 church Of which Gaius was a member."
+            },
+            {
+              "num": 2,
+              "loc": 20,
+              "zh": "这与主在太二十25～27，二三8～11的话相反，主那些话保守祂的信徒都在同样的水平，就是弟兄的水平上。在约贰9，塞林则的智慧派率先越过了关于基督的教训。在约叁9这里，有一个人在智慧派异端道理的影响之下，在召会中好为首。前者是心智高傲，后者是在行动上高举自己。这两种恶都是神的仇敌撒但所用的利器，要施行他邪恶的计谋抵挡神的经纶。一个破坏信徒在神圣实际里的信仰，另一个拦阻他们在神行动中的工作。",
+              "zh_big5": "這與主在太二十25～27，二三8～11的話相反，主那些話保守祂的信徒都在同樣的水平，就是弟兄的水平上。在約貳9，塞林則的智慧派率先越過了關於基督的教訓。在約參9這裏，有一個人在智慧派異端道理的影響之下，在召會中好為首。前者是心智高傲，後者是在行動上高舉自己。這兩種惡都是神的仇敵撒但所用的利器，要施行他邪惡的計謀抵擋神的經綸。一個破壞信徒在神聖實際裏的信仰，另一個攔阻他們在神行動中的工作。",
+              "en": "1:9 2 Diotrephes The Greek word is made up of of Zeus (Zeus was the chief of the gods in the Greek pantheon) and to nourish; hence, Zeus-nourished. This indicates that Diotrephes, a professing Christian, never dropped his pagan name, contrary to the practice of the early believers, who took a Christian name at their baptism. According to history, he advocated the Gnostic heresy, which blasphemed the person of Christ. It is no wonder that he mingled with the believers as one who loved to be first among them."
+            },
+            {
+              "num": 3,
+              "loc": 23,
+              "zh": "原文由“丢斯(希腊庙宇中众神之首)的”和“滋养”所构成，因此，是“丢斯所滋养的。”这指明自称基督徒的丢特腓从未丢弃他异教徒的名字。这与早期信徒在受浸时取基督徒名字的作法相悖。根据历史，他倡导亵渎基督之身位的智慧派异端。难怪他搀在信徒中间，是一个好为首的。",
+              "zh_big5": "原文由“丟斯（希臘廟宇中眾神之首）的”和“滋養”所構成，因此，是“丟斯所滋養的。”這指明自稱基督徒的丟特腓從未丟棄他異教徒的名字。這與早期信徒在受浸時取基督徒名字的作法相悖。根據歷史，他倡導褻瀆基督之身位的智慧派異端。難怪他攙在信徒中間，是一個好為首的。",
+              "en": "1:9 3 to This is against the words of the Lord in Matt. 20:25-27 and Matt. 23:8-11, which keep all His believers on the same level, that of brothers. In 2 John 1:9 the Cerinthian Gnostics took the lead to advance in doctrine beyond the teaching concerning Christ. Here in 3 John 1:9 is one who was under the influence of Gnostic heretical doctrine and loved to be first in the church. The former was a matter of intellectual arrogance; the latter, of self-exaltation in one's actions. These two evils are sharp weapons used by God's enemy, Satan, to execute his evil plot against God's economy. One damages the believers' faith in the divine reality; the other frustrates the believers' work in God's move."
+            },
+            {
+              "num": 4,
+              "loc": 28,
+              "zh": "即亲切的款待。",
+              "zh_big5": "即親切的款待。",
+              "en": "1:9 4 receive I.e., receive hospitably."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 21,
+              "raw": "参太二三6，可十二38～39，路十一43，二十46",
+              "refs": [
+                {
+                  "book": 40,
+                  "chapter": 23,
+                  "verse": 6,
+                  "ref_gb": "太二三6",
+                  "ref_big5": "太二三6",
+                  "ref_en": "Matt. 23:6",
+                  "text_gb": "他们又喜爱筵席上的首座，并会堂里的高位，",
+                  "text_big5": "他們又喜愛筵席上的首座，並會堂裏的高位，",
+                  "text_en": "And they love the place of honor at the dinners and the chief seats in the synagogues"
+                },
+                {
+                  "book": 41,
+                  "chapter": 12,
+                  "verse": 38,
+                  "ref_gb": "可十二38",
+                  "ref_big5": "可十二38",
+                  "ref_en": "Mark 12:38",
+                  "text_gb": "耶稣在教训之间说，你们要提防经学家，他们好穿长袍游行，喜爱人在市场上问他们安，",
+                  "text_big5": "耶穌在教訓之間說，你們要提防經學家，他們好穿長袍遊行，喜愛人在市場上問他們安，",
+                  "text_en": "And in His teaching He said, Beware of the scribes, who like to walk around in long robes, and like greetings in the marketplaces"
+                },
+                {
+                  "book": 41,
+                  "chapter": 12,
+                  "verse": 39,
+                  "ref_gb": "可十二39",
+                  "ref_big5": "可十二39",
+                  "ref_en": "Mark 12:39",
+                  "text_gb": "又喜爱会堂里的高位，筵席上的首座；",
+                  "text_big5": "又喜愛會堂裏的高位，筵席上的首座；",
+                  "text_en": "And chief seats in the synagogues and places of honor at the dinners,"
+                },
+                {
+                  "book": 42,
+                  "chapter": 11,
+                  "verse": 43,
+                  "ref_gb": "路十一43",
+                  "ref_big5": "路十一43",
+                  "ref_en": "Luke 11:43",
+                  "text_gb": "你们这些法利赛人有祸了！因为你们喜爱会堂里的高位，且喜爱人在市场上问你们安。",
+                  "text_big5": "你們這些法利賽人有禍了！因為你們喜愛會堂裏的高位，且喜愛人在市場上問你們安。",
+                  "text_en": "Woe to you, Pharisees! For you love the chief seat in the synagogues and the greetings in the market places."
+                },
+                {
+                  "book": 42,
+                  "chapter": 20,
+                  "verse": 46,
+                  "ref_gb": "路二○46",
+                  "ref_big5": "路二○46",
+                  "ref_en": "Luke 20:46",
+                  "text_gb": "你们要提防经学家，他们好穿长袍游行，喜爱人在市场上问他们安，又喜爱会堂里的高位，筵席上的首座；",
+                  "text_big5": "你們要提防經學家，他們好穿長袍遊行，喜愛人在市場上問他們安，又喜愛會堂裏的高位，筵席上的首座；",
+                  "text_en": "Beware of the scribes, who like to walk around in long robes, and love greetings in the market places and chief seats in the synagogues and places of honor at the dinners,"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 10,
+          "ref_gb": "约叁一10",
+          "ref_big5": "約參一10",
+          "ref_en": "3 John 1:10",
+          "text_gb": "所以我若去，必要提起他所行的事，就是他用恶[Fn1]言妄[Fn2]论我们；还不以此为足，他自己不接待弟兄，有人愿意接待，他也禁止，并且把他们赶[Cra]出召会。",
+          "text_big5": "所以我若去，必要題起他所行的事，就是他用惡[Fn1]言妄[Fn2]論我們；還不以此為足，他自己不接待弟兄，有人願意接待，他也禁止，並且把他們趕[Cra]出召會。",
+          "text_en": "For this reason, if I come, I will bring to remembrance his works which he does, babbling against us with evil words; and not being satisfied with these, neither does he himself receive the brothers, and those intending to do so he forbids and casts out of the church.",
+          "text_gb_plain": "所以我若去，必要提起他所行的事，就是他用恶言妄论我们；还不以此为足，他自己不接待弟兄，有人愿意接待，他也禁止，并且把他们赶出召会。",
+          "text_big5_plain": "所以我若去，必要題起他所行的事，就是他用惡言妄論我們；還不以此為足，他自己不接待弟兄，有人願意接待，他也禁止，並且把他們趕出召會。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 21,
+              "zh": "恶，原文意邪恶的。与约壹五19者同(见该处注4)。",
+              "zh_big5": "惡，原文意邪惡的。與約壹五19者同。（見約壹五19註4。）",
+              "en": "1:10 1 babbling The Greek word is derived from a word meaning to boil over, to overflow with words, to talk idly; hence, to babble, to speak folly or nonsense."
+            },
+            {
+              "num": 2,
+              "loc": 23,
+              "zh": "原文为“沸腾，喋喋不休，讲闲话”的引伸辞，因此是妄论、谬论或胡言乱语。",
+              "zh_big5": "原文為“沸騰，喋喋不休，講閒話”的引伸辭，因此是妄論、謬論或胡言亂語。",
+              "en": "1:10 2 evil The Greek word means pernicious, as in 1 John 5:19 (see note 1 John 5:19 4 )."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 61,
+              "raw": "参约九22，34",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 9,
+                  "verse": 22,
+                  "ref_gb": "约九22",
+                  "ref_big5": "約九22",
+                  "ref_en": "John 9:22",
+                  "text_gb": "他父母说这话，是因怕犹太人，因为犹太人已经商议定了，若有承认耶稣是基督的，要把他赶出会堂。",
+                  "text_big5": "他父母說這話，是因怕猶太人，因為猶太人已經商議定了，若有承認耶穌是基督的，要把他趕出會堂。",
+                  "text_en": "His parents said these things because they feared the Jews, for the Jews had already agreed that if anyone confessed Him to be the Christ, he should be put out of the synagogue."
+                },
+                {
+                  "book": 43,
+                  "chapter": 9,
+                  "verse": 34,
+                  "ref_gb": "约九34",
+                  "ref_big5": "約九34",
+                  "ref_en": "John 9:34",
+                  "text_gb": "他们回答说，你全然生在罪中，还要教训我们么？于是把他赶出去了。",
+                  "text_big5": "他們回答說，你全然生在罪中，還要教訓我們麼？於是把他趕出去了。",
+                  "text_en": "They answered and said to him, You were wholly born in sins, and you are teaching us? And they cast him out."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 11,
+          "ref_gb": "约叁一11",
+          "ref_big5": "約參一11",
+          "ref_en": "3 John 1:11",
+          "text_gb": "亲爱的，不要效[Cra]法恶[Fn1][Crb]，只要效法善。行[Fn2]善[Crc]的是出[Fn3]于神，行[Fn4]恶的未[Fn5][Crd]曾见过神。",
+          "text_big5": "親愛的，不要效[Cra]法惡[Fn1][Crb]，只要效法善。行[Fn2]善[Crc]的是出[Fn3]於神，行[Fn4]惡的未[Fn5][Crd]曾見過神。",
+          "text_en": "Beloved, do not imitate the evil, but the good. He who does good is of God; he who does evil has not seen God.",
+          "text_gb_plain": "亲爱的，不要效法恶，只要效法善。行善的是出于神，行恶的未曾见过神。",
+          "text_big5_plain": "親愛的，不要效法惡，只要效法善。行善的是出於神，行惡的未曾見過神。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 9,
+              "zh": "原文意无益的、邪恶的、败坏的。",
+              "zh_big5": "原文意無益的、邪惡的、敗壞的。",
+              "en": "1:11 1 evil The Greek word means worthless, wicked, depraved."
+            },
+            {
+              "num": 2,
+              "loc": 17,
+              "zh": "原文意，作行善的人(为着施惠或尽责)，实行良善，因此是行善。",
+              "zh_big5": "原文意，作行善的人（為著施惠或盡責），實行良善，因此是行善。",
+              "en": "1:11 2 does The Greek word means to be a well-doer (as a favor or a duty), practicing good; hence, to do good."
+            },
+            {
+              "num": 3,
+              "loc": 21,
+              "zh": "或，属于(见约壹五19注1)。神是善的源头。作好事的人，行善的人，乃是出于神而属于神的人(参约壹三8)。",
+              "zh_big5": "或，屬於。（見約壹五19註1。）神是善的源頭。作好事的人，行善的人，乃是出於神而屬於神的人。（參約壹三8。）",
+              "en": "1:11 3 of Lit., out of (see note 1 John 5:19 1 ). God is the source of good. A well-doer, a doer of good, is one who is out of God and who belongs to God (cf. 1 John 3:8)."
+            },
+            {
+              "num": 4,
+              "loc": 25,
+              "zh": "原文意，作行恶的人，实行邪恶，因此是行恶。",
+              "zh_big5": "原文意，作行惡的人，實行邪惡，因此是行惡。",
+              "en": "1:11 4 does The Greek word means to be an evildoer, practicing evil; hence, to do evil."
+            },
+            {
+              "num": 5,
+              "loc": 28,
+              "zh": "行恶的人不仅不是出于神，甚至也未曾见过神。",
+              "zh_big5": "行惡的人不僅不是出於神，甚至也未曾見過神。",
+              "en": "1:11 5 not An evildoer not only is not out of God but has not even seen God."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 7,
+              "raw": "林前四16，十一1",
+              "refs": [
+                {
+                  "book": 46,
+                  "chapter": 4,
+                  "verse": 16,
+                  "ref_gb": "林前四16",
+                  "ref_big5": "林前四16",
+                  "ref_en": "1 Cor. 4:16",
+                  "text_gb": "所以我恳求你们要效法我。",
+                  "text_big5": "所以我懇求你們要效法我。",
+                  "text_en": "I exhort you therefore, Become imitators of me."
+                },
+                {
+                  "book": 46,
+                  "chapter": 11,
+                  "verse": 1,
+                  "ref_gb": "林前十一1",
+                  "ref_big5": "林前十一1",
+                  "ref_en": "1 Cor. 11:1",
+                  "text_gb": "你们要效法我，像我效法基督一样。",
+                  "text_big5": "你們要效法我，像我效法基督一樣。",
+                  "text_en": "Be imitators of me, as I also am of Christ."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 9,
+              "raw": "彼前三11，诗三四14，三七27，赛一16～17",
+              "refs": [
+                {
+                  "book": 60,
+                  "chapter": 3,
+                  "verse": 11,
+                  "ref_gb": "彼前三11",
+                  "ref_big5": "彼前三11",
+                  "ref_en": "1 Pet. 3:11",
+                  "text_gb": "也要离恶行善，寻求和睦，竭力追逐；",
+                  "text_big5": "也要離惡行善，尋求和睦，竭力追逐；",
+                  "text_en": "And let him turn away from evil and do good; let him seek peace and pursue it;"
+                },
+                {
+                  "book": 19,
+                  "chapter": 34,
+                  "verse": 14,
+                  "ref_gb": "诗三四14",
+                  "ref_big5": "詩三四14",
+                  "ref_en": "Psa. 34:14",
+                  "text_gb": "要离恶行善，寻求和睦，一心追赶。",
+                  "text_big5": "要離惡行善，尋求和睦，一心追趕。",
+                  "text_en": "Turn away from evil and do good; / Seek peace and pursue it."
+                },
+                {
+                  "book": 19,
+                  "chapter": 37,
+                  "verse": 27,
+                  "ref_gb": "诗三七27",
+                  "ref_big5": "詩三七27",
+                  "ref_en": "Psa. 37:27",
+                  "text_gb": "你当离恶行善，就可永远安居。",
+                  "text_big5": "你當離惡行善，就可永遠安居。",
+                  "text_en": "Turn away from evil and do good, / And abide forever."
+                },
+                {
+                  "book": 23,
+                  "chapter": 1,
+                  "verse": 16,
+                  "ref_gb": "赛一16",
+                  "ref_big5": "賽一16",
+                  "ref_en": "Isa. 1:16",
+                  "text_gb": "你们要洗濯自己，洁净自己；从我眼前除掉你们的恶行；要止住作恶，",
+                  "text_big5": "你們要洗濯自己，潔淨自己；從我眼前除掉你們的惡行；要止住作惡，",
+                  "text_en": "Wash yourselves; cleanse yourselves. / Turn away the evil of your deeds / From before My eyes. / Cease doing what is evil;"
+                },
+                {
+                  "book": 23,
+                  "chapter": 1,
+                  "verse": 17,
+                  "ref_gb": "赛一17",
+                  "ref_big5": "賽一17",
+                  "ref_en": "Isa. 1:17",
+                  "text_gb": "学习行善；寻求公平，解救受欺压的；给孤儿伸冤，为寡妇辨屈。",
+                  "text_big5": "學習行善；尋求公平，解救受欺壓的；給孤兒伸冤，為寡婦辨屈。",
+                  "text_en": "Learn to do good. / Seek justice; / Correct the ruthless. / Defend the orphan; / Plead for the widow."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 18,
+              "raw": "约五29",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 5,
+                  "verse": 29,
+                  "ref_gb": "约五29",
+                  "ref_big5": "約五29",
+                  "ref_en": "John 5:29",
+                  "text_gb": "行善的归到生命的复活，作恶的归到审判的复活。",
+                  "text_big5": "行善的歸到生命的復活，作惡的歸到審判的復活。",
+                  "text_en": "And will come forth: those who have done good, to the resurrection of life; and those who have practiced evil, to the resurrection of judgment."
+                }
+              ]
+            },
+            {
+              "label": "d",
+              "loc": 28,
+              "raw": "约壹三6",
+              "refs": [
+                {
+                  "book": 62,
+                  "chapter": 3,
+                  "verse": 6,
+                  "ref_gb": "约壹三6",
+                  "ref_big5": "約壹三6",
+                  "ref_en": "1 John 3:6",
+                  "text_gb": "凡住在祂里面的，就不犯罪；凡犯罪的，是未曾看见祂，也未曾认识祂。",
+                  "text_big5": "凡住在祂裏面的，就不犯罪；凡犯罪的，是未曾看見祂，也未曾認識祂。",
+                  "text_en": "Everyone who abides in Him does not sin; everyone who sins has not seen Him or known Him."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 12,
+          "ref_gb": "约叁一12",
+          "ref_big5": "約參一12",
+          "ref_en": "3 John 1:12",
+          "text_gb": "有众[Fn1]人给低[Fn2]米丢作见[Cra]证，又有真[Fn3]理本身给他作见证，就是我[Fn4]们也给他作见证，你也知道我们的见证是真[Fn5][Crb]的。",
+          "text_big5": "有眾[Fn1]人給低[Fn2]米丟作見[Cra]證，又有真[Fn3]理本身給他作見證，就是我[Fn4]們也給他作見證，你也知道我們的見證是真[Fn5][Crb]的。",
+          "text_en": "To Demetrius testimony has been borne by all and by the truth itself; and we also testify, and you know that our testimony is true.",
+          "text_gb_plain": "有众人给低米丢作见证，又有真理本身给他作见证，就是我们也给他作见证，你也知道我们的见证是真的。",
+          "text_big5_plain": "有眾人給低米丟作見證，又有真理本身給他作見證，就是我們也給他作見證，你也知道我們的見證是真的。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "这指明低米丢必定是在众召会中作工的弟兄，因而是众所周知的。",
+              "zh_big5": "這指明低米丟必定是在眾召會中作工的弟兄，因而是眾所周知的。",
+              "en": "1:12 1 Demetrius Demetrius, who might have been one of the brothers who traveled in working for the Lord (vv. 5-8), perhaps was the one who bore this Epistle to Gaius. Hence, it was necessary that he receive a favorable and strong commendation from the writer."
+            },
+            {
+              "num": 2,
+              "loc": 5,
+              "zh": "低米丢也许是一位出外为主作工的弟兄(5～8)，可能也是把本书信带给该犹的人。因此，需要作者为他作美好、有力的推荐。",
+              "zh_big5": "低米丟也許是一位出外為主作工的弟兄，（5～8，）可能也是把本書信帶給該猶的人。因此，需要作者為他作美好、有力的推薦。",
+              "en": "1:12 2 all This indicates that Demetrius must have been a brother working among the churches, and thus was well known."
+            },
+            {
+              "num": 3,
+              "loc": 14,
+              "zh": "指神那启示出来的真理，作基督徒信仰之素质的实际(见约壹一6注6)，是所有信徒行事为人的神圣法则，信徒的行事为人也由这真理定规。因此，这真理给那行在其中的人作美好的见证，正如给低米丢作的见证一样。",
+              "zh_big5": "指神那啟示出來的真理，作基督徒信仰之素質的實際，（見約壹一6註6，）是所有信徒行事為人的神聖法則，信徒的行事為人也由這真理定規。因此，這真理給那行在其中的人作美好的見證，正如給低米丟作的見證一樣。",
+              "en": "1:12 3 truth The revealed truth of God as the reality of the essence of the Christian faith (see note 1 John 1:6 6 ). This truth is the divine rule for the walk of all believers, and by it the believers' walk is determined. Thus, it gives good testimony to him who walks in it, as it did to Demetrius."
+            },
+            {
+              "num": 4,
+              "loc": 26,
+              "zh": "指使徒约翰并他的同人。",
+              "zh_big5": "指使徒約翰並他的同人。",
+              "en": "1:12 4 we The apostle John and his associates."
+            },
+            {
+              "num": 5,
+              "loc": 45,
+              "zh": "原文为与“真理(实际)”同源的另一个形容词(参约壹五20注5)，意真正的、实际的，因此是真的。",
+              "zh_big5": "原文為與“真理（實際）”同源的另一個形容詞，（參約壹五20註5，）意真正的、實際的，因此是真的。",
+              "en": "1:12 5 true The Greek word (an adjective akin to truth (reality) — cf. note 1 John 5:20 5 ) means genuine, real; hence, true."
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 9,
+              "raw": "约参3，6",
+              "refs": [
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 3,
+                  "ref_gb": "约叁一3",
+                  "ref_big5": "約參一3",
+                  "ref_en": "3 John 1:3",
+                  "text_gb": "有弟兄来见证你持守真理，就是你在真理中行事为人，我就大大欢乐。",
+                  "text_big5": "有弟兄來見證你持守真理，就是你在真理中行事為人，我就大大歡樂。",
+                  "text_en": "For I rejoiced greatly at the brothers' coming and testifying to your steadfastness in the truth, even as you walk in truth."
+                },
+                {
+                  "book": 64,
+                  "chapter": 1,
+                  "verse": 6,
+                  "ref_gb": "约叁一6",
+                  "ref_big5": "約參一6",
+                  "ref_en": "3 John 1:6",
+                  "text_gb": "他们在召会面前见证了你的爱；你照着与神相配的，送他们往前行，就作得好；",
+                  "text_big5": "他們在召會面前見證了你的愛；你照著與神相配的，送他們往前行，就作得好；",
+                  "text_en": "Who testified to your love before the church; whom you will do well to send forward in a manner worthy of God;"
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 45,
+              "raw": "约十九35，二一24",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 19,
+                  "verse": 35,
+                  "ref_gb": "约十九35",
+                  "ref_big5": "約十九35",
+                  "ref_en": "John 19:35",
+                  "text_gb": "那看见的人就作见证，他的见证也是真实的，并且他知道自己所说的是真实的，叫你们也可以信。",
+                  "text_big5": "那看見的人就作見證，他的見證也是真實的，並且他知道自己所說的是真實的，叫你們也可以信。",
+                  "text_en": "And he who has seen this has testified, and his testimony is true; and he knows that he says what is true, that you also may believe."
+                },
+                {
+                  "book": 43,
+                  "chapter": 21,
+                  "verse": 24,
+                  "ref_gb": "约二一24",
+                  "ref_big5": "約二一24",
+                  "ref_en": "John 21:24",
+                  "text_gb": "为这些事作见证，并且记载这些事的，就是这门徒；我们也知道他的见证是真实的。",
+                  "text_big5": "為這些事作見證，並且記載這些事的，就是這門徒；我們也知道他的見證是真實的。",
+                  "text_en": "This is the disciple who testifies concerning these things, and the one who has written these things; and we know that his testimony is true."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 13,
+          "ref_gb": "约叁一13",
+          "ref_big5": "約參一13",
+          "ref_en": "3 John 1:13",
+          "text_gb": "我原有许[Cra]多事要写给你，却不愿意用笔墨写给你；",
+          "text_big5": "我原有許[Cra]多事要寫給你，卻不願意用筆墨寫給你；",
+          "text_en": "I had many things to write to you, but I do not want to write to you with ink and pen;",
+          "text_gb_plain": "我原有许多事要写给你，却不愿意用笔墨写给你；",
+          "text_big5_plain": "我原有許多事要寫給你，卻不願意用筆墨寫給你；",
+          "footnotes": [],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 4,
+              "raw": "约贰12",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "约贰一12",
+                  "ref_big5": "約貳一12",
+                  "ref_en": "2 John 1:12",
+                  "text_gb": "我还有许多事要写给你们，却不愿意用纸墨写出来；但盼望到你们那里，与你们当面交谈，使我们的喜乐得以满足。",
+                  "text_big5": "我還有許多事要寫給你們，卻不願意用紙墨寫出來；但盼望到你們那裏，與你們當面交談，使我們的喜樂得以滿足。",
+                  "text_en": "Though I have many things to write to you, I do not want to do so with paper and ink, but I am hoping to be with you and to speak face to face that our joy may be made full."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "book": 64,
+          "chapter": 1,
+          "verse": 14,
+          "ref_gb": "约叁一14",
+          "ref_big5": "約參一14",
+          "ref_en": "3 John 1:14",
+          "text_gb": "但盼[Fn1][Cra]望快快地见你，我们当[Fn2]面交谈。愿[Fn3]你平安。朋[Crb]友们都问你安。请你替我按着姓[Crc]名问朋友们安。",
+          "text_big5": "但盼[Fn1][Cra]望快快的見你，我們當[Fn2]面交談。願[Fn3]你平安。朋[Crb]友們都問你安。請你替我按著姓[Crc]名問朋友們安。",
+          "text_en": "But I hope to see you shortly, and we will speak face to face. Peace to you. The friends greet you. Greet the friends by name.",
+          "text_gb_plain": "但盼望快快地见你，我们当面交谈。愿你平安。朋友们都问你安。请你替我按着姓名问朋友们安。",
+          "text_big5_plain": "但盼望快快的見你，我們當面交談。願你平安。朋友們都問你安。請你替我按著姓名問朋友們安。",
+          "footnotes": [
+            {
+              "num": 1,
+              "loc": 2,
+              "zh": "见约贰12注1。",
+              "zh_big5": "見約貳12註1。",
+              "en": "1:14 1 hope See note 2 John 1:12 1 ."
+            },
+            {
+              "num": 2,
+              "loc": 12,
+              "zh": "直译，口对口。",
+              "zh_big5": "直譯，口對口。",
+              "en": "1:14 2 face Lit., mouth to mouth."
+            },
+            {
+              "num": 3,
+              "loc": 1,
+              "zh": "直译，愿平安归与你。",
+              "zh_big5": "直譯，願平安歸與你。",
+              "en": ""
+            }
+          ],
+          "crossrefs": [
+            {
+              "label": "a",
+              "loc": 2,
+              "raw": "约贰12",
+              "refs": [
+                {
+                  "book": 63,
+                  "chapter": 1,
+                  "verse": 12,
+                  "ref_gb": "约贰一12",
+                  "ref_big5": "約貳一12",
+                  "ref_en": "2 John 1:12",
+                  "text_gb": "我还有许多事要写给你们，却不愿意用纸墨写出来；但盼望到你们那里，与你们当面交谈，使我们的喜乐得以满足。",
+                  "text_big5": "我還有許多事要寫給你們，卻不願意用紙墨寫出來；但盼望到你們那裏，與你們當面交談，使我們的喜樂得以滿足。",
+                  "text_en": "Though I have many things to write to you, I do not want to do so with paper and ink, but I am hoping to be with you and to speak face to face that our joy may be made full."
+                }
+              ]
+            },
+            {
+              "label": "b",
+              "loc": 6,
+              "raw": "约十一11",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 11,
+                  "verse": 11,
+                  "ref_gb": "约十一11",
+                  "ref_big5": "約十一11",
+                  "ref_en": "John 11:11",
+                  "text_gb": "耶稣说了这话，随后对他们说，我们的朋友拉撒路睡了，我要去叫醒他。",
+                  "text_big5": "耶穌說了這話，隨後對他們說，我們的朋友拉撒路睡了，我要去叫醒他。",
+                  "text_en": "He said these things, and after this He said to them, Our friend Lazarus has fallen asleep; but I am going that I may wake him out of sleep."
+                }
+              ]
+            },
+            {
+              "label": "c",
+              "loc": 20,
+              "raw": "参约十3",
+              "refs": [
+                {
+                  "book": 43,
+                  "chapter": 10,
+                  "verse": 3,
+                  "ref_gb": "约十3",
+                  "ref_big5": "約十3",
+                  "ref_en": "John 10:3",
+                  "text_gb": "看门的就给他开门，羊也听他的声音；他按着名叫自己的羊，领它们出来。",
+                  "text_big5": "看門的就給他開門，羊也聽他的聲音；他按著名叫自己的羊，領牠們出來。",
+                  "text_en": "To him the doorkeeper opens, and the sheep hear his voice; and he calls his own sheep by name and leads them out."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
