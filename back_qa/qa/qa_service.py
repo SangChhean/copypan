@@ -1059,10 +1059,13 @@ async def _run_pipeline_until_step4(
 
     total_cost = 0.0
 
-    if os.environ.get("QA_SKIP_TARGETED") == "1":
-        precheck_targeted = None
-    else:
-        precheck_targeted = await _detect_targeted(question)
+    # --- 测试开关：暂时禁用定向查询（含经文类 Haiku 预判 + _step2_targeted），一律走 Step1+语义检索 ---
+    # 恢复定向逻辑：取消下面一行赋值，并取消再下方两段注释。
+    precheck_targeted = None
+    # if os.environ.get("QA_SKIP_TARGETED") == "1":
+    #     precheck_targeted = None
+    # else:
+    #     precheck_targeted = await _detect_targeted(question)
     targeted = precheck_targeted
 
     passages: list[dict] = []
@@ -1074,23 +1077,23 @@ async def _run_pipeline_until_step4(
     step1_snapshot: dict | None = None
     rewritten_query = question
 
-    if targeted:
-        try:
-            targeted_passages = await _step2_targeted(
-                targeted["book_keyword"],
-                targeted["message_keyword"],
-                es_client,
-            )
-            if targeted_passages:
-                passages = targeted_passages
-                is_targeted = True
-                logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
-            else:
-                logger.info("[QA] 定向查询无结果，降级为完整流水线")
-                targeted = None
-        except Exception as e:
-            logger.warning("[QA] 定向查询异常，降级为完整流水线: %s", e)
-            targeted = None
+    # if targeted:
+    #     try:
+    #         targeted_passages = await _step2_targeted(
+    #             targeted["book_keyword"],
+    #             targeted["message_keyword"],
+    #             es_client,
+    #         )
+    #         if targeted_passages:
+    #             passages = targeted_passages
+    #             is_targeted = True
+    #             logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
+    #         else:
+    #             logger.info("[QA] 定向查询无结果，降级为完整流水线")
+    #             targeted = None
+    #     except Exception as e:
+    #         logger.warning("[QA] 定向查询异常，降级为完整流水线: %s", e)
+    #         targeted = None
 
     if not is_targeted:
         step1_task = asyncio.create_task(_step1(question, neo4j_client, history=history))

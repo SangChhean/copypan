@@ -38,16 +38,14 @@ def import_one(session, item: dict, *, dry_run: bool = False) -> None:
     ).single()
     concept_exists = bool(rec and rec["cnt"] > 0)
 
-    if not concept_exists:
-        print(f"  ⚠ 概念节点不存在: {concept}（经文仍将创建，但关系无法建立）")
-
     if dry_run:
-        print(
-            f"  [dry-run] {concept}  "
-            f"concept_exists={concept_exists}  "
-            f"scriptures={len(scriptures)}  "
-            f"greek_terms={len(greek_terms)}"
-        )
+        if not concept_exists:
+            print(
+                f"  [dry-run] {concept}  "
+                f"concept_exists={concept_exists}  "
+                f"scriptures={len(scriptures)}  "
+                f"greek_terms={len(greek_terms)}"
+            )
         return
 
     for sc in scriptures:
