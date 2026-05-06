@@ -708,8 +708,10 @@ async function runFullQuery() {
   }
 }
 
+/** maxLen 为 null 时展示全文（Step 3 检索段落）。 */
 function chunkPreview(text, maxLen = 200) {
   if (!text || typeof text !== "string") return "";
+  if (maxLen == null) return text;
   return text.length <= maxLen ? text : text.slice(0, maxLen) + "…";
 }
 
@@ -1747,7 +1749,7 @@ onMounted(() => {
                                 class="source-route-tag"
                               >{{ r.source_routes.length === 2 ? 'BM25+Dense' : r.source_routes[0] === 'bm25' ? 'BM25' : 'Dense' }}</a-tag>
                             </div>
-                            <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div class="chunk-text">{{ chunkPreview(r.text, null) }}</div>
                             <div v-if="r.book_title || r.message_title" class="chunk-meta">
                               {{ r.book_title }} / {{ r.message_title }} / {{ r.section_title }}
                             </div>
@@ -1760,7 +1762,7 @@ onMounted(() => {
                             class="chunk-row"
                           >
                             <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
-                            <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div class="chunk-text">{{ chunkPreview(r.text, null) }}</div>
                             <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                           </div>
                         </a-tab-pane>
@@ -1771,7 +1773,7 @@ onMounted(() => {
                             class="chunk-row"
                           >
                             <div class="chunk-meta">#{{ i + 1 }} · {{ r.chunk_id }} · {{ (r._score || r.score || 0).toFixed(3) }}</div>
-                            <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div class="chunk-text">{{ chunkPreview(r.text, null) }}</div>
                             <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                             <div v-if="r.rewritten_query" class="chunk-rewritten-query">改写Query: "{{ r.rewritten_query }}"</div>
                           </div>
@@ -1790,7 +1792,7 @@ onMounted(() => {
                               #{{ i + 1 }} · expanded_from: {{ r.expanded_from }} · {{ r.chunk_id }} ·
                               {{ (r.score != null ? r.score : r._score || 0).toFixed(3) }}
                             </div>
-                            <div class="chunk-text">{{ chunkPreview(r.text) }}</div>
+                            <div class="chunk-text">{{ chunkPreview(r.text, null) }}</div>
                             <div v-if="r.source_zh" class="chunk-source">{{ r.source_zh }}</div>
                           </div>
                         </a-tab-pane>
@@ -3189,6 +3191,8 @@ onMounted(() => {
       color: #333;
       line-height: 1.5;
       margin-bottom: 2px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .chunk-source {
       font-size: 11px;

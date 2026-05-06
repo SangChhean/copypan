@@ -282,7 +282,11 @@ TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问�
 - 太/马太 → 马太福音（book=40）
 - 可/马可 → 马可福音（book=41）
 - 路/路加 → 路加福音（book=42）
-- 约/约翰 → 约翰福音（book=43）
+- 约+数字（如约一1、约三16、约一章）→ 约翰福音（book=43）
+- 约壹/约一书/约翰壹书 → 约翰一书（book=62）
+- 约贰/约二书/约翰贰书 → 约翰二书（book=63）
+- 约叁/约三书/约翰叁书 → 约翰三书（book=64）
+- 「约」单独后接章节数字时，优先判断为约翰福音
 - 徒/使徒 → 使徒行传（book=44）
 - 罗/罗马 → 罗马书（book=45）
 - 林前 → 哥林多前书（book=46）
@@ -301,9 +305,6 @@ TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问�
 - 雅/雅各 → 雅各书（book=59）
 - 彼前 → 彼得前书（book=60）
 - 彼后 → 彼得后书（book=61）
-- 约壹 → 约翰壹书（book=62）
-- 约贰 → 约翰贰书（book=63）
-- 约叁 → 约翰叁书（book=64）
 - 犹/犹大 → 犹大书（book=65）
 - 启/启示 → 启示录（book=66）
 - 创/创世 → 创世记（book=1）
@@ -327,6 +328,9 @@ TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问�
 - 「李常受文集九四至九七年第三册第五章」→ {{"intent":"targeted","targeted":{{"book_keyword":"李常受文集一九九四至一九九七年第三册","message_keyword":"第五章"}},"bible":null}}
 - 「新约总论第三百六十三篇」→ {{"intent":"targeted","targeted":{{"book_keyword":"新约总论","message_keyword":"第三百六十三篇"}},"bible":null}}
 - 「腓一1说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":50,"chapter":1,"verse":1}}}}
+- 「约一1说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":43,"chapter":1,"verse":1}}}}
+- 「约三16」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":43,"chapter":3,"verse":16}}}}
+- 「约壹一1」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":62,"chapter":1,"verse":1}}}}
 - 「创一2上说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":1,"chapter":1,"verse":2}}}}
 - 「约翰福音一章一节的道是什么意思」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":43,"chapter":1,"verse":1}}}}
 - 「为什么约翰一章一节说道就是神」→ {{"intent":"general","targeted":null,"bible":null}}
