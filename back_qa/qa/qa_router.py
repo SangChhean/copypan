@@ -63,6 +63,9 @@ class QueryResponse(BaseModel):
     cache_hit: bool
     total_elapsed_ms: int
     total_cost_usd: float
+    bibliography: list[str] | None = None
+    verse: dict[str, Any] | None = None
+    intent: str | None = None
     debug: dict[str, Any] | None = None
 
 

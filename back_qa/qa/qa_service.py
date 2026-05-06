@@ -21,7 +21,81 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
+from back_qa.qa.dependencies import get_redis_client
+
 logger = logging.getLogger("qa")
+
+
+def _get_bible_pipeline_funcs():
+    """Lazy import to avoid bible_service <-> qa_service circular import at startup."""
+    from back_qa.qa import bible_service
+
+    return bible_service.get_verse, bible_service.run_bible_pipeline
+
+
+def _resolve_bible_verse_for_pipeline(ctx: dict) -> dict | None:
+    """bible 分支 ctx（含 type / book / chapter / verse 或 verse 范围）→ 传给 run_bible_pipeline 的 verse 结构。"""
+    from back_qa.qa import bible_service
+
+    t = str(ctx.get("type", "verse")).strip().lower()
+    try:
+        book = int(ctx["book"])
+        chapter = int(ctx["chapter"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if t == "verse":
+        try:
+            vnum = int(ctx["verse"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        return bible_service.get_verse(book, chapter, vnum)
+    if t == "range":
+        try:
+            vs = int(ctx["verse_start"])
+            ve = int(ctx["verse_end"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        rows = bible_service.get_verse_range(book, chapter, vs, ve)
+        return bible_service.composite_verses(rows)
+    if t == "chapter":
+        rows = bible_service.get_verse_range(book, chapter, None, None)
+        return bible_service.composite_verses(rows)
+    return None
+
+
+def _bible_verse_sse_data(ctx: dict) -> Any:
+    """verse_data SSE 载荷：单节为单对象；范围/整章为 {verses, query_type}。"""
+    from back_qa.qa import bible_service
+
+    t = str(ctx.get("type", "verse")).strip().lower()
+    try:
+        book = int(ctx["book"])
+        chapter = int(ctx["chapter"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if t == "verse":
+        try:
+            vnum = int(ctx["verse"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        return bible_service.get_verse(book, chapter, vnum)
+    if t == "range":
+        try:
+            vs = int(ctx["verse_start"])
+            ve = int(ctx["verse_end"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        rows = bible_service.get_verse_range(book, chapter, vs, ve)
+        if not rows:
+            return None
+        return {"verses": rows, "query_type": "range"}
+    if t == "chapter":
+        rows = bible_service.get_verse_range(book, chapter, None, None)
+        if not rows:
+            return None
+        return {"verses": rows, "query_type": "chapter"}
+    return None
+
 
 # ---------------------------------------------------------------------------
 # 模型常量
@@ -297,8 +371,10 @@ async def _run_firewall(question: str) -> dict | None:
 
 async def _detect_targeted(question: str) -> dict | None:
     """
-    用 Haiku 轻量预判是否为定向查询。
-    命中返回 {"book_keyword": "...", "message_keyword": "..."}，否则返回 None。
+    用 Haiku 预判意图，返回以下三种之一：
+    - {"intent": "targeted", "book_keyword": "...", "message_keyword": "..."}
+    - {"intent": "bible", "type": "verse"|"range"|"chapter", "book", "chapter", ...}
+    - None（general 或解析失败）
     失败时静默返回 None（降级为完整流水线）。
     """
     from back_qa.qa.prompts import TARGETED_DETECTION
@@ -310,7 +386,7 @@ async def _detect_targeted(question: str) -> dict | None:
             prompt,
             STEP3_MODEL,  # Haiku
             temperature=0,
-            max_tokens=128,
+            max_tokens=256,
             system="你是一位书目专家，只输出 JSON，不输出其他任何内容。",
         )
     except Exception as e:
@@ -322,16 +398,98 @@ async def _detect_targeted(question: str) -> dict | None:
         logger.warning("[QA] 定向预判 JSON 解析失败，raw=%s", raw[:200])
         return None
 
-    raw_targeted = parsed.get("targeted")
-    if not isinstance(raw_targeted, dict):
-        return None
-
-    book_keyword = str(raw_targeted.get("book_keyword", "")).strip()
-    message_keyword = str(raw_targeted.get("message_keyword", "")).strip()
-
-    if book_keyword and message_keyword:
-        logger.info("[QA] 定向预判命中 book=%s msg=%s", book_keyword, message_keyword)
-        return {"book_keyword": book_keyword, "message_keyword": message_keyword}
+    intent = str(parsed.get("intent", "general")).strip().lower()
+    if intent == "targeted":
+        t = parsed.get("targeted") or {}
+        if not isinstance(t, dict):
+            return None
+        book_keyword = str(t.get("book_keyword", "")).strip()
+        message_keyword = str(t.get("message_keyword", "")).strip()
+        if book_keyword and message_keyword:
+            logger.info("[QA] 定向预判命中 book=%s msg=%s", book_keyword, message_keyword)
+            return {
+                "intent": "targeted",
+                "book_keyword": book_keyword,
+                "message_keyword": message_keyword,
+            }
+    elif intent == "bible":
+        b = parsed.get("bible") or {}
+        if not isinstance(b, dict):
+            return None
+        ref_type = str(b.get("type", "")).strip().lower()
+        if ref_type not in ("verse", "range", "chapter"):
+            if b.get("verse") is not None:
+                ref_type = "verse"
+            elif b.get("verse_start") is not None and b.get("verse_end") is not None:
+                ref_type = "range"
+            else:
+                ref_type = "chapter"
+        book = b.get("book")
+        chapter = b.get("chapter")
+        if book is None or chapter is None:
+            return None
+        try:
+            bi, ch = int(book), int(chapter)
+        except (TypeError, ValueError):
+            return None
+        if ref_type == "verse":
+            verse = b.get("verse")
+            if verse is None:
+                return None
+            try:
+                vn = int(verse)
+            except (TypeError, ValueError):
+                return None
+            out = {
+                "intent": "bible",
+                "type": "verse",
+                "book": bi,
+                "chapter": ch,
+                "verse": vn,
+            }
+            logger.info(
+                "[QA] 经文意图预判 hit verse book=%s chapter=%s verse=%s",
+                bi,
+                ch,
+                vn,
+            )
+            return out
+        if ref_type == "range":
+            vs = b.get("verse_start")
+            ve = b.get("verse_end")
+            if vs is None or ve is None:
+                return None
+            try:
+                vsa, vea = int(vs), int(ve)
+            except (TypeError, ValueError):
+                return None
+            if vsa > vea:
+                vsa, vea = vea, vsa
+            out = {
+                "intent": "bible",
+                "type": "range",
+                "book": bi,
+                "chapter": ch,
+                "verse_start": vsa,
+                "verse_end": vea,
+            }
+            logger.info(
+                "[QA] 经文意图预判 hit range book=%s chapter=%s %s-%s",
+                bi,
+                ch,
+                vsa,
+                vea,
+            )
+            return out
+        if ref_type == "chapter":
+            out = {
+                "intent": "bible",
+                "type": "chapter",
+                "book": bi,
+                "chapter": ch,
+            }
+            logger.info("[QA] 经文意图预判 hit chapter book=%s chapter=%s", bi, ch)
+            return out
 
     return None
 
@@ -1059,14 +1217,26 @@ async def _run_pipeline_until_step4(
 
     total_cost = 0.0
 
-    # --- 测试开关：暂时禁用定向查询（含经文类 Haiku 预判 + _step2_targeted），一律走 Step1+语义检索 ---
-    # 恢复定向逻辑：取消下面一行赋值，并取消再下方两段注释。
-    precheck_targeted = None
-    # if os.environ.get("QA_SKIP_TARGETED") == "1":
-    #     precheck_targeted = None
-    # else:
-    #     precheck_targeted = await _detect_targeted(question)
-    targeted = precheck_targeted
+    if os.environ.get("QA_SKIP_TARGETED") == "1":
+        precheck_targeted = None
+    else:
+        precheck_targeted = await _detect_targeted(question)
+
+    # 经文查考：直接返回特殊标记，由 stream_query 处理
+    if precheck_targeted and precheck_targeted.get("intent") == "bible":
+        bible_ctx = {
+            **precheck_targeted,
+            "question": question,
+            "history": history or [],
+            "request_id": request_id,
+        }
+        return None, bible_ctx
+
+    targeted = (
+        precheck_targeted
+        if (precheck_targeted and precheck_targeted.get("intent") == "targeted")
+        else None
+    )
 
     passages: list[dict] = []
     is_targeted = False
@@ -1077,23 +1247,23 @@ async def _run_pipeline_until_step4(
     step1_snapshot: dict | None = None
     rewritten_query = question
 
-    # if targeted:
-    #     try:
-    #         targeted_passages = await _step2_targeted(
-    #             targeted["book_keyword"],
-    #             targeted["message_keyword"],
-    #             es_client,
-    #         )
-    #         if targeted_passages:
-    #             passages = targeted_passages
-    #             is_targeted = True
-    #             logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
-    #         else:
-    #             logger.info("[QA] 定向查询无结果，降级为完整流水线")
-    #             targeted = None
-    #     except Exception as e:
-    #         logger.warning("[QA] 定向查询异常，降级为完整流水线: %s", e)
-    #         targeted = None
+    if targeted:
+        try:
+            targeted_passages = await _step2_targeted(
+                targeted["book_keyword"],
+                targeted["message_keyword"],
+                es_client,
+            )
+            if targeted_passages:
+                passages = targeted_passages
+                is_targeted = True
+                logger.info("[QA] 使用定向查询，共 %d 段", len(passages))
+            else:
+                logger.info("[QA] 定向查询无结果，降级为完整流水线")
+                targeted = None
+        except Exception as e:
+            logger.warning("[QA] 定向查询异常，降级为完整流水线: %s", e)
+            targeted = None
 
     if not is_targeted:
         step1_task = asyncio.create_task(_step1(question, neo4j_client, history=history))
@@ -1257,6 +1427,36 @@ async def run_pipeline(
     if early is not None:
         return early
     assert ctx is not None
+    if ctx.get("intent") == "bible":
+        from back_qa.qa.bible_service import run_bible_pipeline
+
+        verse_obj = _resolve_bible_verse_for_pipeline(ctx)
+        if verse_obj is None:
+            return {"error": f"找不到经文：{ctx}"}
+        # 非流式：收集完整答案
+        full_answer = ""
+        bibliography: list[str] = []
+        async for ev in run_bible_pipeline(verse_obj, ctx["question"], ctx.get("history", [])):
+            if ev.get("event") == "token":
+                full_answer += str(ev.get("data", ""))
+            elif ev.get("event") == "done":
+                data = ev.get("data") or {}
+                if isinstance(data, dict):
+                    bibliography = list(data.get("bibliography", []) or [])
+
+        return {
+            "request_id": request_id,
+            "answer": full_answer,
+            "sources": bibliography,
+            "concepts": [],
+            "found": True,
+            "cache_hit": False,
+            "total_elapsed_ms": 0,
+            "total_cost_usd": 0.0,
+            "bibliography": bibliography,
+            "verse": verse_obj,
+            "intent": "bible",
+        }
 
     start = ctx["start"]
     total_cost = float(ctx["total_cost"])
@@ -1470,7 +1670,61 @@ async def stream_query(
         }
         return
 
+    if ctx and ctx.get("intent") == "bible":
+        _, run_bible_pipeline = _get_bible_pipeline_funcs()
+        bible_start = time.time()
+        redis_client = get_redis_client()
+
+        verse_obj = _resolve_bible_verse_for_pipeline(ctx)
+        sse_payload = _bible_verse_sse_data(ctx)
+        if verse_obj is None or sse_payload is None:
+            yield {"type": "error", "text": f"找不到经文：{ctx}"}
+            return
+        # 推送 verse_data（单节对象 或 {{verses, query_type}}）
+        yield {"type": "verse_data", "data": sse_payload}
+        total_cost = float(ctx.get("total_cost", 0))  # Step0 Haiku 成本
+        # 推送职事信息流
+        async for ev in run_bible_pipeline(verse_obj, ctx["question"], ctx.get("history", [])):
+            event_type = ev.get("event")
+            if event_type == "token":
+                yield {"type": "token", "text": ev.get("data", "")}
+            elif event_type == "done":
+                done_data = ev.get("data", {})
+                passages_for_cache = done_data.get("passages", []) or []
+                if passages_for_cache:
+                    bible_cache_doc = {
+                        "request_id": ctx.get("request_id", request_id),
+                        "answer": "",
+                        "sources": done_data.get("bibliography", []),
+                        "concepts": [],
+                        "found": True,
+                        "cache_hit": False,
+                        "total_elapsed_ms": 0,
+                        "total_cost_usd": 0.0,
+                        "passages": passages_for_cache,
+                    }
+                    _write_cache(redis_client, stream_cache_key, bible_cache_doc)
+                pipeline_cost = done_data.get("cost", 0) or 0
+                total_cost += pipeline_cost
+                elapsed_ms = int((time.time() - bible_start) * 1000)
+                yield {
+                    "type": "done",
+                    "answer": "",
+                    "sources": done_data.get("bibliography", []),
+                    "found": True,
+                    "concepts": [],
+                    "cache_hit": False,
+                    "cache_key": stream_cache_key,
+                    "request_id": ctx.get("request_id", ""),
+                    "elapsed_ms": elapsed_ms,
+                    "cost": round(total_cost, 6),
+                }
+            elif event_type == "error":
+                yield {"type": "error", "text": ev.get("data", "经文问答出错")}
+        return
+
     assert ctx is not None
+
     start = ctx["start"]
     total_cost = float(ctx["total_cost"])
     q = ctx["question"]
@@ -1523,6 +1777,7 @@ async def stream_query(
             return
         kind, payload = item
         if kind == "token":
+            token = payload
             if ttft_ms is None:
                 ttft_ms = int((time.monotonic() - start) * 1000)
             full_text += payload

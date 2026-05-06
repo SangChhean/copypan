@@ -142,18 +142,52 @@ FIREWALL_INSTRUCTION = """
 # ---------------------------------------------------------------------------
 # 定向查询预判（Haiku，轻量）
 # 占位符：{question}
-# 输出：严格 JSON {"targeted": {"book_keyword": "...", "message_keyword": "..."}} 或 {"targeted": null}
+# 输出：严格 JSON
+# bible 意图时 bible 为对象，内含 type："verse" | "range" | "chapter"
+# - verse: book, chapter, verse
+# - range: book, chapter, verse_start, verse_end
+# - chapter: book, chapter
 # ---------------------------------------------------------------------------
 TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问题是否在询问某本书的某个具体篇章。
 
 用户问题：
 {question}
 
-## 判断条件（必须同时满足）
+## 三种意图判断
+
+### 1) intent = "targeted"
+判断条件（必须同时满足）：
 1. 明确提到了某本书或书系的名称
 2. 明确提到了具体篇号或章号（如第三十篇、第十一章、第6篇、11章等）
+3. 注意：若用户提到的是圣经书卷名称（如约翰福音、创世记、腓立比书等）
+   而非职事书目（生命读经、李常受文集、倪柝声文集、训练特会等），
+   且没有明确说明是"生命读经"或其他职事书目，则归为 bible 意图，不归 targeted。
 
-两者缺一则输出 {{"targeted": null}}
+### 2) intent = "bible"
+用户意图是查考圣经经文本身（原文、注解、串珠、职事阐述），且能识别出书卷与范围。在 bible 对象中必须输出 **type**（三种之一）：
+
+**type = "verse"（单节）**
+- 能识别出具体书卷+章+节，且问题重心是查考**这节**经文（说什么、什么意思、如何理解等）。
+- bible 对象须含："type":"verse"、"book"、"chapter"、"verse"（均为数字）。
+
+**type = "range"（范围节）**
+- 能识别出书卷+章+起止节（如「创一1～16」「约三1到21节」「腓一1-5」）。
+- bible 对象须含："type":"range"、"book"、"chapter"、"verse_start"、"verse_end"（均为数字）。
+
+**type = "chapter"（整章）**
+- 能识别出书卷+章，但**没有**具体节号（如「创世记第一章」「约翰福音三章讲了什么」）。
+- bible 对象须含："type":"chapter"、"book"、"chapter"（均为数字，无 verse 字段）。
+
+**归为 "general" 的情况**
+- 问题虽含经文引用，但重心是神学讨论、跨章比较、概念分析、教义推导，或明显在对比多处经文，则 intent="general"，bible 为 null。
+
+### 3) intent = "general"
+其他所有情况。
+
+字段互斥规则（必须严格遵守）：
+- intent="targeted" 时：targeted 为对象，bible 为 null
+- intent="bible" 时：targeted 为 null，bible 为对象
+- intent="general" 时：targeted 与 bible 都为 null
 
 ## book_keyword 标准化规则
 
@@ -232,17 +266,84 @@ TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问�
 - 「三十篇」→「第三十篇」
 - 章/篇/课 根据上下文判断，不强行统一
 
+## bible 意图的书卷编号规则（book）
+使用标准圣经书卷编号（旧约1-39，新约40-66）：
+- 创世记=1，出埃及记=2，...，玛拉基书=39
+- 马太福音=40，马可福音=41，路加福音=42，约翰福音=43
+- 使徒行传=44，罗马书=45，哥林多前书=46，哥林多后书=47
+- 加拉太书=48，以弗所书=49，腓立比书=50，歌罗西书=51
+- 帖前=52，帖后=53，提前=54，提后=55，提多书=56，腓利门书=57
+- 希伯来书=58，雅各书=59，彼前=60，彼后=61
+- 约一=62，约二=63，约三=64，犹大书=65，启示录=66
+- chapter、verse、verse_start、verse_end 一律输出阿拉伯数字
+- bible 对象内必须含 "type" 字段，取值仅为 "verse"、"range"、"chapter" 三者之一
+
+常见简写对照（必须识别）：
+- 太/马太 → 马太福音（book=40）
+- 可/马可 → 马可福音（book=41）
+- 路/路加 → 路加福音（book=42）
+- 约/约翰 → 约翰福音（book=43）
+- 徒/使徒 → 使徒行传（book=44）
+- 罗/罗马 → 罗马书（book=45）
+- 林前 → 哥林多前书（book=46）
+- 林后 → 哥林多后书（book=47）
+- 加/加拉太 → 加拉太书（book=48）
+- 弗/以弗所 → 以弗所书（book=49）
+- 腓/腓立比 → 腓立比书（book=50）
+- 西/歌罗西 → 歌罗西书（book=51）
+- 帖前 → 帖撒罗尼迦前书（book=52）
+- 帖后 → 帖撒罗尼迦后书（book=53）
+- 提前 → 提摩太前书（book=54）
+- 提后 → 提摩太后书（book=55）
+- 多/提多 → 提多书（book=56）
+- 门/腓利门 → 腓利门书（book=57）
+- 来/希伯来 → 希伯来书（book=58）
+- 雅/雅各 → 雅各书（book=59）
+- 彼前 → 彼得前书（book=60）
+- 彼后 → 彼得后书（book=61）
+- 约壹 → 约翰壹书（book=62）
+- 约贰 → 约翰贰书（book=63）
+- 约叁 → 约翰叁书（book=64）
+- 犹/犹大 → 犹大书（book=65）
+- 启/启示 → 启示录（book=66）
+- 创/创世 → 创世记（book=1）
+- 出/出埃及 → 出埃及记（book=2）
+- 诗/诗篇 → 诗篇（book=19）
+- 赛/以赛亚 → 以赛亚书（book=23）
+- 耶/耶利米 → 耶利米书（book=24）
+- 结/以西结 → 以西结书（book=26）
+- 但/但以理 → 但以理书（book=27）
+- 亚/撒迦利亚 → 撒迦利亚书（book=38）
+
 ## 输出示例
-- 「出埃及生命读经第二章」→ {{"targeted": {{"book_keyword": "出埃及记生命读经", "message_keyword": "第二章"}}}}
-- 「约翰福音第一章」→ {{"targeted": {{"book_keyword": "约翰福音", "message_keyword": "第一章"}}}}
-- 「98年冬训第六篇」→ {{"targeted": {{"book_keyword": "1998年冬季训练", "message_keyword": "第六篇"}}}}
-- 「21感恩节第一篇」→ {{"targeted": {{"book_keyword": "2021年感恩节特会", "message_keyword": "第一篇"}}}}
-- 「倪弟兄文集第二辑十八册第二章」→ {{"targeted": {{"book_keyword": "倪柝声文集第二辑第十八册", "message_keyword": "第二章"}}}}
-- 「李常受文集九四至九七年第三册第五章」→ {{"targeted": {{"book_keyword": "李常受文集一九九四至一九九七年第三册", "message_keyword": "第五章"}}}}
-- 「新约总论第三百六十三篇」→ {{"targeted": {{"book_keyword": "新约总论", "message_keyword": "第三百六十三篇"}}}}
-- 「神的经纶的中心是什么」→ {{"targeted": null}}
-- 「感恩节特会第三篇」→ {{"targeted": null}}（无年份）
-- 「冬季训练第六篇」→ {{"targeted": null}}（无年份）
+- 「出埃及生命读经第二章」→ {{"intent":"targeted","targeted":{{"book_keyword":"出埃及记生命读经","message_keyword":"第二章"}},"bible":null}}
+- 「约翰福音第一章讲了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"chapter","book":43,"chapter":1}}}}
+- 「约翰福音生命读经第一章」→ {{"intent":"targeted","targeted":{{"book_keyword":"约翰福音生命读经","message_keyword":"第一章"}},"bible":null}}
+- 「创世记第一章」→ {{"intent":"bible","targeted":null,"bible":{{"type":"chapter","book":1,"chapter":1}}}}
+- 「创世记生命读经第一章」→ {{"intent":"targeted","targeted":{{"book_keyword":"创世记生命读经","message_keyword":"第一章"}},"bible":null}}
+- 「98年冬训第六篇」→ {{"intent":"targeted","targeted":{{"book_keyword":"1998年冬季训练","message_keyword":"第六篇"}},"bible":null}}
+- 「21感恩节第一篇」→ {{"intent":"targeted","targeted":{{"book_keyword":"2021年感恩节特会","message_keyword":"第一篇"}},"bible":null}}
+- 「倪弟兄文集第二辑十八册第二章」→ {{"intent":"targeted","targeted":{{"book_keyword":"倪柝声文集第二辑第十八册","message_keyword":"第二章"}},"bible":null}}
+- 「李常受文集九四至九七年第三册第五章」→ {{"intent":"targeted","targeted":{{"book_keyword":"李常受文集一九九四至一九九七年第三册","message_keyword":"第五章"}},"bible":null}}
+- 「新约总论第三百六十三篇」→ {{"intent":"targeted","targeted":{{"book_keyword":"新约总论","message_keyword":"第三百六十三篇"}},"bible":null}}
+- 「腓一1说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":50,"chapter":1,"verse":1}}}}
+- 「创一2上说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":1,"chapter":1,"verse":2}}}}
+- 「约翰福音一章一节的道是什么意思」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":43,"chapter":1,"verse":1}}}}
+- 「为什么约翰一章一节说道就是神」→ {{"intent":"general","targeted":null,"bible":null}}
+- 「约翰一章一节和创世记一章一节有什么关系」→ {{"intent":"general","targeted":null,"bible":null}}
+- 「创一1～16讲了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"range","book":1,"chapter":1,"verse_start":1,"verse_end":16}}}}
+- 「创世记第一章讲了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"chapter","book":1,"chapter":1}}}}
+- 「约翰福音三章十六节」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":43,"chapter":3,"verse":16}}}}
+- 「腓立比书一章1到5节」→ {{"intent":"bible","targeted":null,"bible":{{"type":"range","book":50,"chapter":1,"verse_start":1,"verse_end":5}}}}
+- 「创世记第一章和约翰福音第一章有什么关系」→ {{"intent":"general","targeted":null,"bible":null}}
+- 「太一1说了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":40,"chapter":1,"verse":1}}}}
+- 「路一1讲了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":42,"chapter":1,"verse":1}}}}
+- 「来十一1是什么意思」→ {{"intent":"bible","targeted":null,"bible":{{"type":"verse","book":58,"chapter":11,"verse":1}}}}
+- 「启二二1～5讲了什么」→ {{"intent":"bible","targeted":null,"bible":{{"type":"range","book":66,"chapter":22,"verse_start":1,"verse_end":5}}}}
+- 「腓立比书生命读经第一章」→ {{"intent":"targeted","targeted":{{"book_keyword":"腓立比书生命读经","message_keyword":"第一章"}},"bible":null}}
+- 「神的经纶是什么」→ {{"intent":"general","targeted":null,"bible":null}}
+- 「感恩节特会第三篇」→ {{"intent":"general","targeted":null,"bible":null}}（无年份）
+- 「冬季训练第六篇」→ {{"intent":"general","targeted":null,"bible":null}}（无年份）
 
 只输出 JSON，不输出其他任何内容。"""
 
@@ -251,3 +352,44 @@ TARGETED_DETECTION = """你是一位职事著作书目专家。判断用户问�
 # ---------------------------------------------------------------------------
 QA_PROMPT_VERSION = PROMPT_VERSION
 QA_MODEL_PROFILE = MODEL_PROFILE
+
+# ---------------------------------------------------------------------------
+# 经文查考 Step 4 答案生成（SSE /bible/query Step4）
+# ---------------------------------------------------------------------------
+BIBLE_STEP4_ANSWER_GENERATION = """你是一位专注于倪柝声与李常受弟兄职事著作的经文查考助手。
+用户正在查考以下经文，经文原文、注解与串珠已单独展示，
+你的任务是从职事著作段落中找到对这节经文的阐述，让原文直接供应用户。
+
+{history_context}用户查考经文：{ref_gb}
+{text_gb_plain}
+
+用户问题：
+{question}
+
+以下是相关职事著作段落（每段含来源信息）：
+{passages}
+
+{firewall_instruction}
+
+## 回答要求
+1. **先立主旨**：用1-2句话点出这节经文的核心属灵含义，作为全文主线
+2. **原文展开**：围绕主旨，用小标题组织层次，每个层次用职事原文支撑
+3. **让原文说话**：核心内容直接引用原文，用「」括起来，不改写、不总结
+4. **小标题推进论述**：小标题应推进主旨展开，措辞取自原文，严禁用"…的原则"、"…的真理"等规范性措辞
+5. **衔接语从简**：原文前后可加少量衔接语，不可超过原文篇幅
+6. **引用编号**：每段引用末尾标注纯数字编号（如 1），不加方括号
+7. **书目索引**：回答末尾输出【引用书目】，每条格式为"编号 完整书名"，编号与正文一一对应
+8. **严禁**：出现 chunk_id、文件名、段落编号等技术字符串
+9. **严禁**：改写或总结原文；自己的解说篇幅不可超过原文
+10. **书名来源**：书名必须取自段落来源信息，完整取用，不截断、不缩写；引用书目严禁重复
+
+## 输出格式示例
+**小标题**
+衔接语（可选）「原文原句...」1
+
+**小标题**
+「原文原句...」2
+
+【引用书目】
+1 李常受文集一九五九年第二册，基督是福音的负担，第十一章
+2 李常受文集一九八三年第二册，神圣三一的神圣分赐，第五章"""

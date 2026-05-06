@@ -27,13 +27,18 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse as _JSONResponse
 
 from back_qa.qa.qa_router import router as qa_router
+from back_qa.qa.bible_router import router as bible_router
 from back_qa.qa.auth_router import router as auth_router
+from back_qa.qa.bible_service import load_bible_data
 from back_qa.qa.dependencies import get_neo4j_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动
+    bible_dir = Path(__file__).resolve().parent / "bible_data"
+    load_bible_data(str(bible_dir))
+
     neo4j = get_neo4j_client()
     neo4j.startup()
 
@@ -97,6 +102,7 @@ app.add_middleware(
 )
 
 app.include_router(qa_router, prefix="/api/qa")
+app.include_router(bible_router, prefix="/api/qa")
 app.include_router(auth_router)
 
 

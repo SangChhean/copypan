@@ -62,6 +62,17 @@
             </div>
 
             <template v-else>
+              <BibleMessage
+                v-if="
+                  msg.intent === 'bible' &&
+                  (msg.verse || (msg.verses && msg.verses.length))
+                "
+                :verse="msg.verse"
+                :verses="msg.verses"
+                :query-type="msg.queryType || 'verse'"
+                :lang="msg.currentLang || 'gb'"
+                :generating="msg.bibleGenerating"
+              />
               <div
                 class="qa-answer-body"
                 :class="{ 'qa-answer-fade': msg.currentLang !== 'zh' }"
@@ -315,6 +326,7 @@ import { ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
+import BibleMessage from './BibleMessage.vue'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
 
@@ -1106,6 +1118,11 @@ async function submit() {
     cost: 0,
     request_id: '',
     question: q,
+    verse: null,
+    verses: null,
+    queryType: null,
+    bibleGenerating: false,
+    intent: null,
     feedback: null,
     feedbackSubmitting: false,
     copied: false,
@@ -1198,14 +1215,34 @@ async function submit() {
             } catch {
               continue
             }
-            if (chunk.type === 'token') {
+            if (chunk.type === 'verse_data') {
+              const idx = messages.value.findIndex((m) => m.id === assistantMsg.id)
+              if (idx !== -1) {
+                const d = chunk.data
+                messages.value[idx].intent = 'bible'
+                messages.value[idx].bibleGenerating = true
+                messages.value[idx].loading = false
+                if (d && d.verses) {
+                  messages.value[idx].verses = d.verses
+                  messages.value[idx].queryType = d.query_type || 'chapter'
+                  messages.value[idx].verse = null
+                } else {
+                  messages.value[idx].verse = d
+                  messages.value[idx].verses = null
+                  messages.value[idx].queryType = 'verse'
+                }
+              }
+            } else if (chunk.type === 'token') {
               if (!firstTokenReceived) {
                 firstTokenReceived = true
                 const row = assistantRow()
                 if (row) {
                   row.elapsed = ((Date.now() - sendTime) / 1000).toFixed(1)
                 }
-                await scrollToMessageTop(assistantMsg.id - 1)
+                // 经文问答不自动滚动，用户可能正在阅读经文区块
+                if (row?.intent !== 'bible') {
+                  await scrollToMessageTop(assistantMsg.id - 1)
+                }
               }
               const idx = messages.value.findIndex((m) => m.id === assistantMsg.id)
               if (idx !== -1) {
@@ -1215,6 +1252,17 @@ async function submit() {
               const row = assistantRow()
               if (row && row._bodyDone) {
                 // 已进入书目区，不再打字
+              } else if (row?.intent === 'bible') {
+                let bodyText = text
+                if (text.includes('【引用书目】')) {
+                  bodyText = text.split('【引用书目】')[0]
+                  if (row) row._bodyDone = true
+                }
+                const ti = messages.value.findIndex((m) => m.id === assistantMsg.id)
+                if (ti !== -1) {
+                  messages.value[ti].answer =
+                    (messages.value[ti].answer || '') + bodyText
+                }
               } else {
                 let bodyText = text
                 if (text.includes('【引用书目】')) {
@@ -1252,9 +1300,11 @@ async function submit() {
               row.cost = chunk.cost || 0
               row.loading = false
               row.streaming = false
+              row.bibleGenerating = false
             } else if (chunk.type === 'error') {
               stopTypewriter()
               const row = assistantRow()
+              row.bibleGenerating = false
               row.answer = '请求失败，请稍后重试。'
               row.found = false
               row.loading = false
@@ -1267,6 +1317,7 @@ async function submit() {
   } catch (e) {
     stopTypewriter()
     const r = assistantRow()
+    r.bibleGenerating = false
     if (firstTokenReceived) {
       // 已有内容输出，连接中断但答案部分可用，保留已有内容
       r.found = r.found ?? true
@@ -1282,6 +1333,7 @@ async function submit() {
     const r = assistantRow()
     r.loading = false
     r.streaming = false
+    r.bibleGenerating = false
     loading.value = false
     question.value = ''
     // 存补全后的问句，便于下一轮从 history 提取书名再做追问补全（气泡仍用上面的 q）
