@@ -31,7 +31,9 @@ from kg_rag.prompts import (
     STEP2_SKELETON_BUILD,
     QUERY_REWRITE,
     STEP5_GENERATION,
+    STEP5_GENERATION_V4,
     STEP5_GENERATION_FLAT,
+    STEP5_GENERATION_FLAT_V4,
 )
 from ai_search.monitoring import get_monitoring
 
@@ -1589,11 +1591,21 @@ class KgRagService:
                 "[KG-RAG DEBUG] Step5 context (skeleton_with_chunks) first_500_chars: %r",
                 ctx_head,
             )
-            base_prompt = STEP5_GENERATION.format(
-                query=query,
-                metadata_block=metadata_block,
-                skeleton_with_chunks=skeleton_with_chunks,
-            )
+            if mode == "4.0":
+                concepts_list = revelation + experience + practice
+                concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
+                base_prompt = STEP5_GENERATION_V4.format(
+                    query=query,
+                    metadata_block=metadata_block,
+                    concepts=concepts_text,
+                    skeleton_with_chunks=skeleton_with_chunks,
+                )
+            else:
+                base_prompt = STEP5_GENERATION.format(
+                    query=query,
+                    metadata_block=metadata_block,
+                    skeleton_with_chunks=skeleton_with_chunks,
+                )
             prompt_type = "skeleton"
         else:
             all_chunks = main_results + expanded_results
@@ -1603,11 +1615,21 @@ class KgRagService:
                 "[KG-RAG DEBUG] Step5 context (flat main+expanded) first_300_chars: %r",
                 ctx_head_flat,
             )
-            base_prompt = STEP5_GENERATION_FLAT.format(
-                query=query,
-                metadata_block=metadata_block,
-                chunks=chunks_text,
-            )
+            if mode == "4.0":
+                concepts_list = revelation + experience + practice
+                concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
+                base_prompt = STEP5_GENERATION_FLAT_V4.format(
+                    query=query,
+                    metadata_block=metadata_block,
+                    concepts=concepts_text,
+                    chunks=chunks_text,
+                )
+            else:
+                base_prompt = STEP5_GENERATION_FLAT.format(
+                    query=query,
+                    metadata_block=metadata_block,
+                    chunks=chunks_text,
+                )
             prompt_type = "flat"
         step5_prompt = base_prompt + fw_tail
         logger.info(f"[KG-RAG TRACE] #6 step4 prompt built: len={len(step5_prompt)}")
