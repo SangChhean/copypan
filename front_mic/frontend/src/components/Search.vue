@@ -141,6 +141,7 @@ const downloadingZhTw = ref(false);
 const aiPanelVisible = ref(false);
 /** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；4.0 全索引 */
 const aiMode = ref("3.0"); // "2.0" | "3.0" | "4.0"
+const aiModeDisplayText = computed(() => `Pan AI ${aiMode.value || "3.0"}`);
 const KG_RAG_HISTORY_KEY = "kg_rag_history";
 const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 const aiForm = reactive({
@@ -1766,7 +1767,7 @@ const onAISearch = async () => {
   <div class="ai-result" v-if="showInfo == 5 && aiResult">
     <a-alert type="success" show-icon>
       <template #message>
-        <span style="font-size: 16px">✨ <strong style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Pan AI 3.0</strong> 纲目生成完成</span>
+        <span style="font-size: 16px">✨ <strong style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ aiModeDisplayText }}</strong> 纲目生成完成</span>
       </template>
     </a-alert>
     <a-divider style="margin: 10px 0"></a-divider>
