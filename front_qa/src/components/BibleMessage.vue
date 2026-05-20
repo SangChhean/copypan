@@ -6,7 +6,10 @@
         <span v-html="renderedVerseTextSingle"></span>
       </div>
 
-      <div v-if="crossrefItemsSingle.length || footnoteItemsSingle.length" class="verse-toggles">
+      <div
+        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length || (verse && BIBLEHUB_MAP[verse.book])"
+        class="verse-toggles"
+      >
         <span
           v-if="crossrefItemsSingle.length"
           class="toggle-tag section-toggle"
@@ -21,6 +24,13 @@
         >
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
         </span>
+        <a
+          v-if="verse && BIBLEHUB_MAP[verse.book]"
+          :href="biblehubUrl(verse.book, verse.chapter, verse.verse)"
+          target="_blank"
+          rel="noopener"
+          class="toggle-tag biblehub-link"
+        >🔗 原文对照</a>
       </div>
 
       <div v-if="crossrefItemsSingle.length" class="bible-fold-block">
@@ -61,13 +71,36 @@
 
     <!-- 多节：范围 / 整章 -->
     <template v-else-if="isMulti">
+      <!-- 整章模式：生命读经按钮，放在所有经文之前 -->
+      <div v-if="queryType === 'chapter' && versesList.length" class="chapter-header">
+        <span class="toggle-tag lsm-btn" style="position:relative">
+          <span @click="showLsmDropdown = !showLsmDropdown">📖 生命读经</span>
+          <div v-if="showLsmDropdown" class="lsm-dropdown">
+            <template v-if="getLsmMessages(versesList[0].book, versesList[0].chapter).length">
+              <a
+                v-for="msg in getLsmMessages(versesList[0].book, versesList[0].chapter)"
+                :key="msg.index"
+                :href="lsmPdfUrl(LSM_MAP[versesList[0].book], msg.index)"
+                target="_blank"
+                rel="noopener"
+                class="lsm-dropdown-item"
+                @click="showLsmDropdown = false"
+              >{{ msg.label }}<span class="lsm-ref">{{ msg.reference }}</span></a>
+            </template>
+            <span v-else class="lsm-dropdown-item lsm-empty">暂无对应篇目</span>
+          </div>
+        </span>
+      </div>
       <div v-for="(v, i) in versesList" :key="verseRowKey(v, i)" class="verse-item">
         <div class="verse-row">
           <span class="verse-num">{{ v.verse }}</span>
           <span class="verse-text" v-html="renderVerseText(verseTextFor(v))"></span>
         </div>
 
-        <div v-if="hasCrossrefs(v) || hasFootnotes(v)" class="verse-toggles">
+        <div
+          v-if="hasCrossrefs(v) || hasFootnotes(v) || (v.book && BIBLEHUB_MAP[v.book])"
+          class="verse-toggles"
+        >
           <span
             v-if="hasCrossrefs(v)"
             class="toggle-tag section-toggle"
@@ -82,6 +115,13 @@
           >
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
           </span>
+          <a
+            v-if="v.book && BIBLEHUB_MAP[v.book]"
+            :href="biblehubUrl(v.book, v.chapter, v.verse)"
+            target="_blank"
+            rel="noopener"
+            class="toggle-tag biblehub-link"
+          >🔗 原文对照</a>
         </div>
 
         <div v-if="hasCrossrefs(v)" class="bible-fold-block">
@@ -136,7 +176,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
   verse: { type: Object, default: null },
@@ -151,6 +191,79 @@ const textKeyMap = {
   big5: 'text_big5',
   en: 'text_en',
 }
+
+// book编号 → BibleHub interlinear路径名
+const BIBLEHUB_MAP = {
+  1: 'genesis', 2: 'exodus', 3: 'leviticus', 4: 'numbers', 5: 'deuteronomy',
+  6: 'joshua', 7: 'judges', 8: 'ruth', 9: '1_samuel', 10: '2_samuel',
+  11: '1_kings', 12: '2_kings', 13: '1_chronicles', 14: '2_chronicles',
+  15: 'ezra', 16: 'nehemiah', 17: 'esther', 18: 'job', 19: 'psalms',
+  20: 'proverbs', 21: 'ecclesiastes', 22: 'songs', 23: 'isaiah',
+  24: 'jeremiah', 25: 'lamentations', 26: 'ezekiel', 27: 'daniel',
+  28: 'hosea', 29: 'joel', 30: 'amos', 31: 'obadiah', 32: 'jonah',
+  33: 'micah', 34: 'nahum', 35: 'habakkuk', 36: 'zephaniah', 37: 'haggai',
+  38: 'zechariah', 39: 'malachi', 40: 'matthew', 41: 'mark', 42: 'luke',
+  43: 'john', 44: 'acts', 45: 'romans', 46: '1_corinthians', 47: '2_corinthians',
+  48: 'galatians', 49: 'ephesians', 50: 'philippians', 51: 'colossians',
+  52: '1_thessalonians', 53: '2_thessalonians', 54: '1_timothy', 55: '2_timothy',
+  56: 'titus', 57: 'philemon', 58: 'hebrews', 59: 'james', 60: '1_peter',
+  61: '2_peter', 62: '1_john', 63: '2_john', 64: '3_john', 65: 'jude', 66: 'revelation',
+}
+
+// book编号 → LSM PDF前缀
+const LSM_MAP = {
+  1: 'genesis', 2: 'exodus', 3: 'leviticus', 4: 'numbers', 5: 'deuteronomy',
+  6: 'joshua', 7: 'judges', 8: 'ruth', 9: 'samuel', 10: 'samuel',
+  11: 'kings', 12: 'kings', 13: 'chronicles', 14: 'chronicles',
+  15: 'ezra', 16: 'nehemiah', 17: 'esther', 18: 'job', 19: 'psalms',
+  20: 'proverbs', 21: 'ecclesiastes', 22: 'song-of-songs', 23: 'isaiah',
+  24: 'jeremiah', 25: 'lamentations', 26: 'ezekiel', 27: 'daniel',
+  28: 'hosea', 29: 'joel', 30: 'amos', 31: 'obadiah', 32: 'jonah',
+  33: 'micah', 34: 'nahum', 35: 'habakkuk', 36: 'zephaniah', 37: 'haggai',
+  38: 'zechariah', 39: 'malachi', 40: 'matthew', 41: 'mark', 42: 'luke',
+  43: 'john', 44: 'acts', 45: 'romans', 46: '1-corinthians', 47: '2-corinthians',
+  48: 'galatians', 49: 'ephesians', 50: 'philippians', 51: 'colossians',
+  52: '1-thessalonians', 53: '2-thessalonians', 54: '1-timothy', 55: '2-timothy',
+  56: 'titus', 57: 'philemon', 58: 'hebrews', 59: 'james', 60: '1-peter',
+  61: '2-peter', 62: '1-john', 63: '2-john', 64: '3-john', 65: 'jude', 66: 'revelation',
+}
+
+const LSM_BASE_URL = '/lsm/'
+
+function biblehubUrl(book, chapter, verse) {
+  const name = BIBLEHUB_MAP[book]
+  if (!name) return null
+  return `https://biblehub.com/interlinear/${name}/${chapter}-${verse}.htm`
+}
+
+function lsmPdfUrl(prefix, index) {
+  return `${LSM_BASE_URL}${prefix}-${String(index).padStart(3, '0')}.pdf`
+}
+
+const lsmData = ref(null)
+async function loadLsmData() {
+  if (lsmData.value) return
+  try {
+    const res = await fetch('/lsm_mapping.json')
+    lsmData.value = await res.json()
+  } catch (e) {
+    console.warn('LSM mapping load failed', e)
+  }
+}
+
+function getLsmMessages(book, chapter) {
+  if (!lsmData.value) return []
+  const allBooks = [
+    ...(lsmData.value.oldTestament || []),
+    ...(lsmData.value.newTestament || []),
+  ]
+  const bookEntry = allBooks.find(b => b.order === book)
+  if (!bookEntry) return []
+  return bookEntry.chapters?.[String(chapter)]?.messages || []
+}
+
+const showLsmDropdown = ref(false)
+
 const fnKeyMap = {
   gb: 'zh',
   big5: 'zh_big5',
@@ -315,6 +428,10 @@ function hasFootnotes(v) {
   const fnKey = fnKeyMap[currentLang.value] || 'zh'
   return (v?.footnotes || []).some(fn => fn?.[fnKey] && fn[fnKey].trim().length > 0)
 }
+
+onMounted(() => {
+  loadLsmData()
+})
 </script>
 
 <style scoped>
@@ -551,5 +668,62 @@ function hasFootnotes(v) {
   .bible-note-item {
     font-size: 13px;
   }
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.biblehub-link {
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  transition: color 0.15s;
+}
+.biblehub-link:hover {
+  color: var(--color-primary);
+}
+.lsm-btn {
+  cursor: pointer;
+  user-select: none;
+}
+.lsm-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  max-width: 320px;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+}
+.lsm-dropdown-item {
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  cursor: pointer;
+}
+.lsm-dropdown-item:hover {
+  background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+}
+.lsm-ref {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  margin-left: 4px;
+}
+.lsm-empty {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  cursor: default;
 }
 </style>
