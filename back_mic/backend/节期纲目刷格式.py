@@ -1430,6 +1430,10 @@ def process_compound_outline_additions(doc):
             in_addition_section = False
             processed_count += 1
         
+        # 跳过听抄稿标记段落，避免误判为晨兴添加区间
+        elif any(m in text for m in ("【听抄稿添加开始】", "【听抄稿添加结束】", "【聽抄稿添加開始】", "【聽抄稿添加結束】")):
+            continue
+
         # 如果在标记区间内，设置斜体
         elif in_addition_section and text.strip():
             for run in para.runs:

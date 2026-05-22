@@ -65,6 +65,12 @@ const routes = [
     path: "/feast-outline",
     component: () => import("../components/toolbox/FeastOutline.vue"),
   },
+  {
+    path: "/ministerialize-outline",
+    name: "MinisterializeOutline",
+    component: () => import("../components/toolbox/MinisterializeOutline.vue"),
+    meta: { requiresAuth: true },
+  },
   { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
   { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
   {

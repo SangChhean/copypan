@@ -18,6 +18,9 @@ const outlineTypes = [
 
 // 每种类型对应的 AI 数量（由后端配置返回）
 const aiCounts = ref({ polish: 4, beginner: 1, youth: 1, truth: 1, sharing: 6 });
+const headerLine1 = ref("");
+const headerLine2 = ref("");
+const headerLine3 = ref("");
 const content = ref("");
 const loading = ref(false);
 const results = ref([]);
@@ -182,20 +185,45 @@ async function downloadFormatRoughOutline(outlineType) {
   }
   let contents;
   if (outlineType === "polish") {
-    // 润色版：两篇 Claude 在前，两篇 Gemini 在后（按 ai_model 区分）
-    const sorted = [...list].sort((a, b) => {
-      const key = (name) => {
-        const n = (name || "").toLowerCase();
-        if (n.includes("claude")) return 0;
-        if (n.includes("gemini")) return 1;
-        return 2;
-      };
-      return key(a.ai_model) - key(b.ai_model);
-    });
-    contents = sorted.map(r => (r.content || "").trim()).filter(Boolean);
+    const geminis = list.filter((r) => (r.ai_model || "").toLowerCase().includes("gemini"));
+    const claudes = list.filter((r) => (r.ai_model || "").toLowerCase().includes("claude"));
+    const ordered = [...geminis, ...claudes];
+    const geminiCount = geminis.length;
+    const versionNums = ["一", "二", "三", "四"];
+    contents = ordered
+      .map((r, idx) => {
+        let label = "";
+        if (idx < geminiCount) {
+          label = `（Gemini 2.5 Pro 版本${versionNums[idx]}）`;
+        } else {
+          label = `（Claude Sonnet 4.6 版本${versionNums[idx - geminiCount]}）`;
+        }
+        const headerLine = (headerLine3.value || "").trim();
+        const prefix = headerLine ? `${headerLine}${label}` : label;
+        return prefix + "\n" + (r.content || "").trim();
+      })
+      .filter(Boolean);
   } else if (outlineType === "sharing") {
-    // 三分钟分享：每篇上一行加「三分钟分享（AI名字）」
-    contents = list.map(r => "三分钟分享（" + (r.ai_model || "AI") + "）\n\n" + (r.content || "").trim());
+    const fixedOrder = [
+      { key: "claude", label: "Claude Sonnet 4.6" },
+      { key: "gemini", label: "Google Gemini 2.5 pro" },
+      { key: "deep", label: "Deep Seek - V3.2" },
+      { key: "perplexity", label: "Perplexity - search" },
+      { key: "gpt", label: "Chat GPT 5.2" },
+      { key: "grok", label: "Grok 4.1" },
+    ];
+    const chNums = ["一", "二", "三", "四", "五", "六"];
+    const sorted = fixedOrder
+      .map((item) => list.find((r) => (r.ai_model || "").toLowerCase().includes(item.key)))
+      .filter(Boolean);
+    console.log("[sharing排序]", sorted.map((r) => r.ai_model));
+    contents = sorted
+      .map((r, idx) => {
+        const orderItem = fixedOrder.find((item) => (r.ai_model || "").toLowerCase().includes(item.key));
+        const label = `第${chNums[idx]}例（${orderItem ? orderItem.label : r.ai_model}）`;
+        return label + "\n\n" + (r.content || "").trim();
+      })
+      .filter(Boolean);
   } else {
     contents = list.map(r => (r.content || "").trim()).filter(Boolean);
   }
@@ -211,7 +239,11 @@ async function downloadFormatRoughOutline(outlineType) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify({ outline_type: outlineType, contents }),
+      body: JSON.stringify({
+        outline_type: outlineType,
+        contents,
+        header_lines: [headerLine1.value, headerLine2.value].filter((s) => s.trim()),
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -274,6 +306,24 @@ async function downloadFormatRoughOutline(outlineType) {
       
       <a-divider :style="{ margin: '12px 0' }" />
       
+      <!-- 前三段（系列/总题/篇题） -->
+      <div class="header-fields" :style="{ marginBottom: '12px' }">
+        <a-input
+          v-model:value="headerLine1"
+          placeholder="第一行：系列名称（如：二〇二六年春季长老训练）"
+          :style="{ marginBottom: '8px' }"
+        />
+        <a-input
+          v-model:value="headerLine2"
+          placeholder="第二行：总题（如：话语的职事与为着神的经纶之神的分赐）"
+          :style="{ marginBottom: '8px' }"
+        />
+        <a-input
+          v-model:value="headerLine3"
+          placeholder="第三行：篇题（如：第一篇　坚定持续地祷告，并尽话语的职事）"
+        />
+      </div>
+
       <!-- 输入框 -->
       <a-textarea
         v-model:value="content"

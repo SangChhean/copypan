@@ -85,7 +85,12 @@ def get_verse(book: int, chapter: int, verse: int) -> dict | None:
         return None
     for v in verses:
         if isinstance(v, dict) and v.get("verse") == verse:
-            return v
+            return {
+                **v,
+                "name_gb": vol.get("name_gb", ""),
+                "name_big5": vol.get("name_big5", ""),
+                "name_en": vol.get("name_en", ""),
+            }
     return None
 
 
@@ -118,6 +123,12 @@ def get_verse_range(
     if verse_start is None and verse_end is None:
         out = [v for v in verses if isinstance(v, dict)]
         out.sort(key=lambda x: int(x.get("verse") or 0))
+        name_patch = {
+            "name_gb": vol.get("name_gb", ""),
+            "name_big5": vol.get("name_big5", ""),
+            "name_en": vol.get("name_en", ""),
+        }
+        out = [{**v, **name_patch} for v in out]
         return out
     try:
         vs = int(verse_start) if verse_start is not None else 1
@@ -137,6 +148,12 @@ def get_verse_range(
         if vs <= n <= ve:
             out.append(v)
     out.sort(key=lambda x: int(x.get("verse") or 0))
+    name_patch = {
+        "name_gb": vol.get("name_gb", ""),
+        "name_big5": vol.get("name_big5", ""),
+        "name_en": vol.get("name_en", ""),
+    }
+    out = [{**v, **name_patch} for v in out]
     return out
 
 

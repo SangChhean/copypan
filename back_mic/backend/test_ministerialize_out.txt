@@ -1,0 +1,32 @@
+﻿python : 2026-05-22 15:23:54,482 - ai_search - INFO - 鏍煎紡鍒锋ā鍧楀鍏ユ垚鍔?
+所在位置 C:\Users\Administrator\AppData\Local\Temp\ps-script-2bb5af99-1662-4f7f-862b-2f46bc13ab2b.ps1:77 字符: 64
++ ... OENCODING='utf-8'; python test_ministerialize_outline.py 2>&1 | Out-F ...
++                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-05-22 15:2... 鏍煎紡鍒锋ā鍧楀鍏ユ垚鍔?:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-05-22 15:23:54,529 - ai_search - INFO - Redis 杩炴帴鎴愬姛锛岀紦瀛樺凡鍚敤
+2026-05-22 15:23:54,623 - ai_search - INFO - Claude 瀹㈡埛绔垵濮嬪寲鎴愬姛
+2026-05-22 15:23:55,263 - ai_search - INFO - Gemini 缈昏瘧妯″瀷鍒濆鍖栨垚鍔?
+2026-05-22 15:23:55,263 - ai_search - INFO - 绾茬洰缈昏瘧杈撳嚭 token 涓婇檺锛圙EMINI_TRANSLATION_MAX_OUTPUT_TOKENS锛? 32768
+2026-05-22 15:23:55,263 - ai_search - INFO - API 骞跺彂闄愬埗: Claude=20, Gemini=10
+2026-05-22 15:23:55,264 - ai_search - INFO - AISearchService鍒濆鍖栧畬鎴?
+2026-05-22 15:23:55,396 - elastic_transport.transport - INFO - POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-ra
+g_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.042s]
+2026-05-22 15:23:56,505 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-22 15:23:58,092 - elastic_transport.transport - INFO - POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-ra
+g_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.041s]
+2026-05-22 15:23:58,700 - httpx - INFO - HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+2026-05-22 15:24:00,297 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+elapsed_sec: 5.045
+results (full):
+[
+  {
+    "index": 0,
+    "original": "鍩虹潱鏄敓鍛戒箣鐏?,
+    "status": "replaced",
+    "result": "鍥犳锛屽熀鐫ｅ氨鏄敓鍛戒箣鐏点€?
+  }
+]
+len: 1
+CHECKS: PASS

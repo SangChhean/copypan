@@ -1,5 +1,8 @@
 <template>
   <div class="bible-message">
+    <div v-if="verseTitle" class="verse-title-row">
+      <span class="verse-title-text">{{ verseTitle }}</span>
+    </div>
     <!-- 单节 -->
     <template v-if="isSingle">
       <div class="verse-text">
@@ -30,7 +33,7 @@
           target="_blank"
           rel="noopener"
           class="toggle-tag biblehub-link"
-        >🔗 原文对照</a>
+        >🔗 {{ labels.biblehub }}</a>
       </div>
 
       <div v-if="crossrefItemsSingle.length" class="bible-fold-block">
@@ -74,7 +77,7 @@
       <!-- 整章模式：生命读经按钮，放在所有经文之前 -->
       <div v-if="queryType === 'chapter' && versesList.length" class="chapter-header">
         <span class="toggle-tag lsm-btn" style="position:relative">
-          <span @click="showLsmDropdown = !showLsmDropdown">📖 生命读经</span>
+          <span @click="showLsmDropdown = !showLsmDropdown">📖 {{ labels.lsm }}</span>
           <div v-if="showLsmDropdown" class="lsm-dropdown">
             <template v-if="getLsmMessages(versesList[0].book, versesList[0].chapter).length">
               <a
@@ -85,7 +88,7 @@
                 rel="noopener"
                 class="lsm-dropdown-item"
                 @click="showLsmDropdown = false"
-              >{{ msg.label }}<span class="lsm-ref">{{ msg.reference }}</span></a>
+              ><span style="white-space:nowrap">{{ msg.label }}</span><span class="lsm-ref">{{ msg.reference }}</span></a>
             </template>
             <span v-else class="lsm-dropdown-item lsm-empty">暂无对应篇目</span>
           </div>
@@ -121,7 +124,7 @@
             target="_blank"
             rel="noopener"
             class="toggle-tag biblehub-link"
-          >🔗 原文对照</a>
+          >🔗 {{ labels.biblehub }}</a>
         </div>
 
         <div v-if="hasCrossrefs(v)" class="bible-fold-block">
@@ -329,14 +332,60 @@ const currentLang = computed(() => {
   return 'gb'
 })
 
+const refKeyMap = { gb: 'ref_gb', big5: 'ref_big5', en: 'ref_en' }
+const nameKeyMap = { gb: 'name_gb', big5: 'name_big5', en: 'name_en' }
+
+// 中文章序数汉字转换
+const chapterChinese = (n) => {
+  const nums = ['一','二','三','四','五','六','七','八','九','十',
+    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+    '二十一','二十二','二十三','二十四','二十五','二十六','二十七','二十八','二十九','三十',
+    '三十一','三十二','三十三','三十四','三十五','三十六','三十七','三十八','三十九','四十',
+    '四十一','四十二','四十三','四十四','四十五','四十六','四十七','四十八','四十九','五十']
+  return nums[n - 1] || String(n)
+}
+
+const verseTitle = computed(() => {
+  const lang = currentLang.value
+  const nKey = nameKeyMap[lang] || 'name_gb'
+  const rKey = refKeyMap[lang] || 'ref_gb'
+
+  if (props.queryType === 'verse' && props.verse) {
+    const v = props.verse
+    const name = v[nKey] || v.name_gb || ''
+    const ch = chapterChinese(v.chapter)
+    const vs = v.verse
+    if (lang === 'en') return `${name} ${v.chapter}:${vs}`
+    return `${name}第${ch}章第${vs}节`
+  }
+
+  if ((props.queryType === 'range' || props.queryType === 'chapter') && props.verses?.length) {
+    const first = props.verses[0]
+    const last = props.verses[props.verses.length - 1]
+    const name = first[nKey] || first.name_gb || ''
+    const ch = chapterChinese(first.chapter)
+
+    if (props.queryType === 'chapter') {
+      if (lang === 'en') return `${name} Chapter ${first.chapter}`
+      return `${name}第${ch}章`
+    }
+    // range
+    if (lang === 'en') return `${name} ${first.chapter}:${first.verse}–${last.verse}`
+    return `${name}第${ch}章第${first.verse}～${last.verse}节`
+  }
+  return ''
+})
+
 const labels = computed(() => {
   const l = currentLang.value
   if (l === 'big5') {
     return {
       crossrefs: '串珠',
-      footnotes: '注解',
+      footnotes: '註解',
       ministry: '相關職事信息',
       generating: '生成中',
+      biblehub: '原文對照',
+      lsm: '相關生命讀經',
     }
   }
   if (l === 'en') {
@@ -345,6 +394,8 @@ const labels = computed(() => {
       footnotes: 'Footnotes',
       ministry: 'Related Ministry Messages',
       generating: 'Generating',
+      biblehub: 'Interlinear',
+      lsm: 'Related Life-Study',
     }
   }
   return {
@@ -352,6 +403,8 @@ const labels = computed(() => {
     footnotes: '注解',
     ministry: '相关职事信息',
     generating: '生成中',
+    biblehub: '原文对照',
+    lsm: '相关生命读经',
   }
 })
 
@@ -685,6 +738,7 @@ onMounted(() => {
   color: var(--color-primary);
 }
 .lsm-btn {
+  font-size: 15px;
   cursor: pointer;
   user-select: none;
 }
@@ -709,7 +763,8 @@ onMounted(() => {
   color: var(--color-text-primary);
   text-decoration: none;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 6px;
   cursor: pointer;
 }
@@ -720,10 +775,20 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: 11px;
   margin-left: 4px;
+  flex-basis: 100%;
 }
 .lsm-empty {
   color: var(--color-text-secondary);
   font-style: italic;
   cursor: default;
+}
+
+.verse-title-row {
+  margin-bottom: 10px;
+}
+.verse-title-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 </style>

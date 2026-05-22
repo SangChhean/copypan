@@ -23,7 +23,7 @@ _TERMS_PATH = Path(__file__).resolve().parents[1] / "zh_tw_terms.json"
 
 # Gemini 客户端懒加载（参考 asr_service 中 _get_client 的写法）
 _gemini_client: Any = None
-_GEMINI_MODEL = os.environ.get("QA_TRANSLATION_GEMINI_MODEL", "gemini-3-flash-preview")
+_GEMINI_MODEL = os.environ.get("QA_TRANSLATION_GEMINI_MODEL", "gemini-3.5-flash")
 _GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"
 
 _GEMINI_TRANSLATION_SYSTEM = (
@@ -276,7 +276,7 @@ def _generate_with_retries(model: str, text: str, max_retries: int = 3) -> str:
     raise last_exc
 
 
-def _gemini_translate(text: str, max_retries: int = 3) -> str:
+def _gemini_translate(text: str, max_retries: int = 2) -> str:
     """同步：把单段中文翻译成英文。空输入返回空串；失败抛异常由调用方处理。
 
     主模型耗尽 503 重试或非 503 失败时，若主模型不是 fallback，则降级到

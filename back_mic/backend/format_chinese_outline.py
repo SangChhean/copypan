@@ -50,7 +50,7 @@ def replace_english_punctuation(text):
     for en_punc, zh_punc in punctuation_mapping.items():
         text = text.replace(en_punc, zh_punc)
     text = re.sub(r'(?<![A-Za-z])\.(?![A-Za-z])', '。', text)
-    text = text.replace('-', '—')
+    text = text.replace('--', '—')
     
     def replace_quotes(text_inner, quote_char, left_quote, right_quote):
         """内部函数：替换引号"""
@@ -205,11 +205,16 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
 
     # 步骤1和2：替换全角数字字母、英文标点为中文标点
     for para in doc.paragraphs:
-        text = para.text
-        text = fullwidth_to_halfwidth(text)
-        text = replace_english_punctuation(text)
-        if traditional_quotes:
-            text = convert_quotes_to_traditional(text)
+        original = para.text
+        text = fullwidth_to_halfwidth(original)
+        stripped = text.strip()
+        is_header_line = (
+            '版本' in stripped or bool(re.match(r'^第[一二三四五六七八九十]+例（', stripped))
+        )
+        if not is_header_line:
+            text = replace_english_punctuation(text)
+            if traditional_quotes:
+                text = convert_quotes_to_traditional(text)
         para.text = text
 
     # 步骤4：将中文单引号改为中文双引号（仅简体；繁体已在上一步得到 『』「」）
@@ -223,6 +228,13 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
     for para in doc.paragraphs:
         text = para.text.rstrip()
         if text.endswith('；'):
+            # 篇首行（润色版/三分钟分享）不改标点
+            stripped = text.strip()
+            is_header_line = (
+                '版本' in stripped or bool(re.match(r'^第[一二三四五六七八九十]+例（', stripped))
+            )
+            if is_header_line:
+                continue
             text = text[:-1] + '。'
             para.text = text
 
@@ -233,7 +245,11 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
         if '职事信息摘录：' in text or '職事信息摘錄：' in text:
             after_marker = True
         text = text.lstrip('　\t ')
-        if not after_marker and idx >= header_count:
+        stripped = text.strip()
+        is_header_line = (
+            '版本' in stripped or bool(re.match(r'^第[一二三四五六七八九十]+例（', stripped))
+        )
+        if not is_header_line and not after_marker and idx >= header_count:
             text = text.replace('　', '\t')
             text = text.replace(' ', '\t')
         para.text = text
@@ -270,6 +286,12 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
         if '职事信息摘录：' in text or '職事信息摘錄：' in text:
             after_marker = True
         if not after_marker and idx >= header_count + 1:
+            stripped = text.strip()
+            is_header_line = (
+                '版本' in stripped or bool(re.match(r'^第[一二三四五六七八九十]+例（', stripped))
+            )
+            if is_header_line:
+                continue
             if not text.endswith(('。', '！', '？', '…', '"', '\u2019', '：', '』')):
                 text += '。'
                 para.text = text
@@ -346,6 +368,25 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
         else:
             style_name = style_names[1]  # 11111西列
         _apply_style_if_exists(doc, para, style_name)
+
+    # 步骤11.5：润色版篇首行 / 三分钟分享篇首行套用 00篇题
+    for idx, para in enumerate(doc.paragraphs):
+        if idx < header_count:
+            continue
+        text = para.text.strip()
+        text_for_match = text.rstrip('。')
+        if text_for_match.endswith('）') and (
+            '版本' in text_for_match or re.match(r'^第[一二三四五六七八九十]+例（', text_for_match)
+        ):
+            # 插入两个空段落作为篇间间距（在 delete_empty_paragraphs 之后执行，不会被删除）
+            p_element = para._element
+            from docx.oxml.ns import qn
+            from lxml import etree
+            for _ in range(2):
+                new_p = etree.SubElement(p_element.getparent(), qn('w:p'))
+                p_element.getparent().remove(new_p)
+                p_element.addprevious(new_p)
+            _apply_style_if_exists(doc, para, "00篇题")
 
     # 步骤12：在「职事信息摘录：」之后，根据段落结尾是否有标点应用样式（无标点=小标题 81级标题，有标点=正文 0000模板）
     after_marker = False
@@ -446,11 +487,18 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
     if truth_underline_between_markers:
         _truth_underline_between_markers(doc)
 
-    # 三分钟分享：所有段落统一应用 0000模板
+    # 三分钟分享：纲目正文统一应用 0000模板（不覆盖前三段标题与篇首行）
     if sharing_all_0000:
-        for para in doc.paragraphs:
+        for idx, para in enumerate(doc.paragraphs):
+            if idx < header_count:
+                continue
+            text = para.text.strip().rstrip('。')
+            if text.endswith('）') and (
+                '版本' in text or re.match(r'^第[一二三四五六七八九十]+例（', text)
+            ):
+                continue  # 篇首行保留 00篇题，不覆盖
             _apply_style_if_exists(doc, para, "0000模板")
-        logger.info("三分钟分享：已将所有段落应用 0000模板")
+        logger.info("三分钟分享：已将纲目正文段落应用 0000模板")
 
     # 保存修改后的文档
     logger.info(f"保存格式化后的文档: {docx_path}")

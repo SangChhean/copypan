@@ -1843,3 +1843,228 @@ class KgRagService:
         full["steps"].pop("step5", None)
         full["answer"] = None
         return full
+
+
+# ---------------------------------------------------------------------------
+# 纲目职事化：逐条检索 + 重排 + Claude 抽句
+# ---------------------------------------------------------------------------
+
+MINISTERIALIZE_CLAUDE_MODEL = "claude-sonnet-4-20250514"
+_MINISTERIALIZE_PREFIX_RE = re.compile(
+    r"^[壹貳贰參叄叁参肆伍陸陆柒捌玖拾一二三四五六七八九十\da-z（）()]+[\t　]"
+)
+# 圣经 66 卷常用简称单字集（旧约+新约拆字去重，供 _BOOK_PAT 字符类使用）
+_BIBLE_BOOKS_66 = (
+    "创出利民申书士得撒上撒下王上王下代上代下拉尼斯伯诗箴传歌赛耶哀结但"
+    "何珥摩俄拿弥鸿哈番该亚玛"
+    "太可路约徒罗林前林后加弗腓西帖前帖后提前提后多门来雅彼前彼后约壹约贰约叁犹启"
+    "参"  # 参书（纲目参考，非 66 卷正典简称）
+)
+_BIBLE_BOOKS = "".join(dict.fromkeys(_BIBLE_BOOKS_66))  # 去重保序
+_BOOK_PAT = rf"[{_BIBLE_BOOKS}]{{1,4}}"
+_CHAP_PAT = r"[\d一二三四五六七八九十百～~\-至、\s]+"
+_REF_UNIT = rf"(?:{_BOOK_PAT})?{_CHAP_PAT}"  # 书卷名可选，支持「十四34」纯章节
+_SCRIPTURE_REF_RE = re.compile(
+    rf"(—{_BOOK_PAT}{_CHAP_PAT}(?:[,，；;]{_REF_UNIT})*[：:。]?\s*)$"
+)
+_PURE_VERSE_RE = re.compile(r"(—[\d～~\-至、\s\d]+节[。：:]?\s*)$")
+
+
+def _find_scripture_suffix(rest: str) -> tuple[str, str]:
+    """从 rest 里识别经文 suffix，返回 (body, suffix)。"""
+    matches = list(_SCRIPTURE_REF_RE.finditer(rest))
+    if matches:
+        m = matches[-1]
+        return rest[: m.start()], m.group(0)
+    m = _PURE_VERSE_RE.search(rest)
+    if m:
+        return rest[: m.start()], m.group(0)
+    return rest, ""
+
+
+MINISTERIALIZE_PROMPT_TEMPLATE = """你是一个职事语言抽取助手。
+
+任务：从下方职事书摘录中，找出语义最贴近纲目条目的一句原文，直接返回该句，不得改写、不得添加任何解释。
+
+判断标准：
+- 返回的句子必须与纲目条目语义高度吻合，核心意思基本一致
+- 如果两段摘录中都没有语义足够贴近的句子，只返回空字符串，不要强行抽取
+- 返回的句子中，分句之间只能用中文分号（；）连接，不得出现中文句号（。）
+- 返回前请先自问：这句话和纲目条目说的是同一件事吗？如果不是同一件事，返回空字符串
+
+纲目条目：{line}
+
+摘录一：{excerpt1}
+
+摘录二：{excerpt2}
+"""
+
+
+def _parse_outline_line(line: str) -> tuple[str, str, str]:
+    """
+    返回 (prefix, body, suffix)
+    prefix: 行首编号+分隔符，如 "壹\t"
+    suffix: 经文引用后缀，如 "—哀三22~23："，没有则为 ""
+    body: 中间正文
+    """
+    text = line
+    m = _MINISTERIALIZE_PREFIX_RE.match(text)
+    if m:
+        prefix = m.group(0)
+        rest = text[m.end() :]
+    else:
+        prefix = ""
+        rest = text
+
+    body, suffix = _find_scripture_suffix(rest)
+
+    return prefix, body, suffix
+
+
+def _assemble_outline_line(prefix: str, body: str, suffix: str) -> str:
+    result_body = re.sub(r"[。，、；：,;.]+$", "", body.strip())
+    result_body = result_body.replace("。", "；")  # 兜底：正文内句号改分号
+    return prefix + result_body + suffix
+
+
+def _overlap_ratio(a: str, b: str) -> float:
+    if not a or not b:
+        return 0.0
+    chars_a = set(a)
+    chars_b = set(b)
+    return len(chars_a & chars_b) / max(len(chars_a), len(chars_b))
+
+
+def _is_minor_edit(a: str, b: str, threshold: int = 5) -> bool:
+    """判断两个字符串是否只有微小差异（编辑距离≤threshold）"""
+    if a == b:
+        return False  # 完全相同走 original，不走这里
+    len_a, len_b = len(a), len(b)
+    if abs(len_a - len_b) > threshold:
+        return False
+    prev = list(range(len_b + 1))
+    for i in range(1, len_a + 1):
+        curr = [i] + [0] * len_b
+        for j in range(1, len_b + 1):
+            if a[i - 1] == b[j - 1]:
+                curr[j] = prev[j - 1]
+            else:
+                curr[j] = 1 + min(prev[j], curr[j - 1], prev[j - 1])
+        if min(curr) > threshold:
+            return False
+        prev = curr
+    return prev[len_b] <= threshold
+
+
+async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dict:
+    """单条纲目：解析结构 → BM25/Dense 仅用 body → 拼回 prefix/suffix。"""
+    prefix, body, suffix = _parse_outline_line(line)
+    body_stripped = body.strip()
+    if not body_stripped:
+        return {"index": index, "original": line, "status": "manual", "result": line}
+
+    bm25_results = await bm25_search(es_client, body_stripped, _INDICES_BASE, 5)
+    dense_results = await dense_search(es_client, body_stripped, _INDICES_BASE, 20, 100)
+    merged = await rrf_merge(bm25_results, dense_results, k=60, bm25_weight=1.0, dense_weight=1.0)
+    reranked = await rerank(merged, body_stripped, 3)
+
+    if not reranked:
+        return {
+            "index": index,
+            "original": line,
+            "status": "manual",
+            "result": _assemble_outline_line(prefix, body, suffix),
+        }
+
+    top1_text = reranked[0].get("text") or ""
+    if body_stripped in top1_text:
+        return {
+            "index": index,
+            "original": line,
+            "status": "original",
+            "result": _assemble_outline_line(prefix, body, suffix),
+        }
+
+    excerpt1 = reranked[0].get("text", "") if len(reranked) > 0 else ""
+    excerpt2 = reranked[1].get("text", "") if len(reranked) > 1 else ""
+    prompt = MINISTERIALIZE_PROMPT_TEMPLATE.format(
+        line=body_stripped,
+        excerpt1=excerpt1,
+        excerpt2=excerpt2,
+    )
+    try:
+        claude_output, _usage = await _call_claude(
+            prompt,
+            MINISTERIALIZE_CLAUDE_MODEL,
+            temperature=0,
+            max_tokens=200,
+            system="你是一位专业、精确的助手。请严格按要求的格式输出。",
+        )
+        output = (claude_output or "").strip()
+        if output:
+            clean_output = re.sub(r"[。，、；：,;.]+$", "", output.strip()).strip()
+            if clean_output == body_stripped:
+                return {
+                    "index": index,
+                    "original": line,
+                    "status": "original",
+                    "result": _assemble_outline_line(prefix, body, suffix),
+                }
+            if _is_minor_edit(body_stripped, clean_output, threshold=5):
+                return {
+                    "index": index,
+                    "original": line,
+                    "status": "minor",
+                    "result": _assemble_outline_line(prefix, clean_output, suffix),
+                }
+            if _overlap_ratio(clean_output, body_stripped) >= 0.3:
+                logger.info(
+                    "[ministerialize same?] index=%s same=%s\n  body   : %r\n  output : %r",
+                    index,
+                    clean_output == body_stripped,
+                    body_stripped,
+                    clean_output,
+                )
+                return {
+                    "index": index,
+                    "original": line,
+                    "status": "replaced",
+                    "result": _assemble_outline_line(prefix, clean_output, suffix),
+                }
+            return {
+                "index": index,
+                "original": line,
+                "status": "manual",
+                "result": _assemble_outline_line(prefix, body, suffix),
+            }
+    except Exception as e:
+        logger.warning("[纲目职事化] Claude 调用失败 index=%s: %s", index, e)
+
+    return {
+        "index": index,
+        "original": line,
+        "status": "manual",
+        "result": _assemble_outline_line(prefix, body, suffix),
+    }
+
+
+async def ministerialize_outline(lines: list[str]) -> list[dict]:
+    """
+    纲目职事化：对每条非空纲目并发执行检索与抽句，保持原始行号顺序返回。
+    """
+    try:
+        from es_config import es as es_client
+    except ImportError:
+        _backend = str(Path(__file__).resolve().parents[1])
+        if _backend not in __import__("sys").path:
+            __import__("sys").path.insert(0, _backend)
+        from es_config import es as es_client
+
+    items = [(i, line) for i, line in enumerate(lines) if (line or "").strip()]
+    if not items:
+        return []
+
+    results = await asyncio.gather(
+        *[_ministerialize_one_line(es_client, line, i) for i, line in items]
+    )
+    return sorted(results, key=lambda x: x["index"])

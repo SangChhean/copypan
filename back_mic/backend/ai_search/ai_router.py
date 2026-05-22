@@ -75,6 +75,7 @@ class RoughOutlineFormatRequest(BaseModel):
     """工具箱 - 毛胚纲目刷格式并下载（五类均可：润色版/初信版/青少年版/真理加强版/三分钟分享）"""
     outline_type: Literal["polish", "sharing", "beginner", "youth", "truth"] = Field(..., description="纲目类型")
     contents: List[str] = Field(..., min_length=1, max_length=10, description="多篇纲目正文，按顺序合并后刷格式")
+    header_lines: List[str] = Field(default_factory=list, description="前三段：系列/总题/篇题，写入 DOCX 开头")
 
 
 # ---------- 节期纲目 ----------
@@ -609,6 +610,7 @@ async def rough_outline_format_and_download(request: RoughOutlineFormatRequest):
             ai_service.format_rough_outline_docx,
             request.outline_type,
             request.contents,
+            request.header_lines,
         )
         if result.get("error") and not result.get("docx_bytes"):
             raise HTTPException(status_code=400, detail=result.get("error"))

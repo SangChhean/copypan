@@ -1,20 +1,36 @@
 # -*- coding: utf-8 -*-
 """FastAPI 路由：/api/kg_rag。query / cache_translation / generate_step5 对已登录用户开放，其余仅管理员可访问。"""
 import asyncio
+import base64
 import logging
-from typing import Optional
+import os
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from user.token import require_admin, test_token
 from kg_rag.firewall import load_firewall
-from kg_rag.kg_rag_service import KgRagService
+from kg_rag.kg_rag_service import KgRagService, ministerialize_outline
+from ai_search.ai_service import ai_service
 from kg_rag.neo4j_client import Neo4jClient
 
 router = APIRouter(prefix="/api/kg_rag", tags=["kg_rag"])
 logger = logging.getLogger("kg_rag")
+
+# 临时调试：KG_RAG_LOG=info（默认开启）输出 kg_rag INFO；完成后设 KG_RAG_LOG=0
+if os.environ.get("KG_RAG_LOG", "info").lower() not in ("0", "false", "no", "off"):
+    logger.setLevel(logging.INFO)
+    if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+        _kg_log_handler = logging.StreamHandler()
+        _kg_log_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
+        logger.addHandler(_kg_log_handler)
+# 可选：KG_RAG_DEBUG=1 时额外输出 DEBUG（默认关闭）
+if os.environ.get("KG_RAG_DEBUG", "0").lower() in ("1", "true", "yes"):
+    logger.setLevel(logging.DEBUG)
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +103,27 @@ class GenerateBurdenRequest(BaseModel):
     reference_excerpt: str = Field(default="", description="参考摘录")
 
 
+class MinisterializeRequest(BaseModel):
+    """纲目职事化：逐条检索并抽句。"""
+
+    lines: List[str] = Field(..., min_length=1, max_length=500, description="纲目条目，每行一条")
+
+
+class MinisterializeDocxRequest(BaseModel):
+    """纲目职事化结果导出 DOCX。"""
+
+    lines: List[str] = Field(..., min_length=1, max_length=2000, description="职事化后的纲目条目")
+    header_lines: Optional[List[str]] = Field(
+        default=None,
+        description="文档开头标题行：系列名/总题/篇题/读经等，过滤空值后写入 DOCX",
+    )
+    title: Optional[str] = Field(
+        default=None,
+        max_length=200,
+        description="下载文件名（篇题），不含 .docx 后缀",
+    )
+
+
 # ---------------------------------------------------------------------------
 # 路由实现
 # ---------------------------------------------------------------------------
@@ -132,6 +169,57 @@ async def generate_step5(req: GenerateStep5Request):
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/ministerialize", dependencies=[Depends(test_token)])
+async def ministerialize(req: MinisterializeRequest):
+    """纲目职事化：对每条纲目检索职事书摘录并抽取贴近原文。"""
+    try:
+        results = await ministerialize_outline(req.lines)
+        return {"results": results}
+    except Exception as e:
+        logger.exception("ministerialize 失败")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/ministerialize_docx", dependencies=[Depends(test_token)])
+async def ministerialize_docx(req: MinisterializeDocxRequest):
+    """纲目职事化结果刷格式并导出 DOCX（初信版模板）。"""
+    text_lines = [ln for ln in req.lines if (ln or "").strip()]
+    if not text_lines:
+        raise HTTPException(status_code=400, detail="内容不能为空")
+    try:
+        header_lines = [ln.strip() for ln in (req.header_lines or []) if (ln or "").strip()]
+        logger.debug(
+            "[ministerialize_docx] lines received:\n"
+            + "\n".join(f"  {i}: {l!r}" for i, l in enumerate(req.lines))
+        )
+        result = await asyncio.to_thread(
+            ai_service.format_rough_outline_docx,
+            "beginner",
+            ["\n".join(text_lines)],
+            header_lines or None,
+        )
+        logger.debug(
+            f"[ministerialize_docx] docx generated, filename={result.get('filename')}, "
+            f"error={result.get('error')}"
+        )
+        if result.get("error") and not result.get("docx_bytes"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        if not result.get("docx_bytes"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "生成 DOCX 失败")
+        title = (req.title or "").strip()
+        filename = f"{title}.docx" if title else "纲目职事化.docx"
+        return {
+            "docx_base64": base64.b64encode(result["docx_bytes"]).decode("utf-8"),
+            "filename": filename,
+            "error": result.get("error"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("ministerialize_docx 失败")
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/generate_burden", dependencies=[Depends(test_token)])

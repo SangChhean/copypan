@@ -444,21 +444,32 @@ def get_index_weights_for_display():
 
 def _strip_code_fence_for_outline(text: Optional[str]) -> Optional[str]:
     """
-    若毛胚纲目 AI 返回的内容被 markdown 代码块包裹（如 ```text 或 ``` 开头、``` 结尾），
-    剥掉首尾围栏，只保留正文，便于展示。若未包裹则原样返回。
+    提取文本中最后一个完整的 fenced code block 内容。
+    若存在多个代码块（如 Claude 先输出思考过程再输出纲目），取最后一个。
+    若文本中没有任何代码块，原样返回。
     """
     if not text or not isinstance(text, str):
         return text
     s = text.strip()
-    if not s.startswith("```"):
-        return text
+    last_start = -1
+    idx = 0
     lines = s.split("\n")
-    if len(lines) < 2:
+    fence_starts = []
+    fence_ends = []
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if not fence_starts or len(fence_starts) == len(fence_ends):
+                fence_starts.append(i)
+            elif len(fence_starts) > len(fence_ends):
+                fence_ends.append(i)
+    if not fence_starts or not fence_ends:
         return text
-    lines = lines[1:]
-    if lines and lines[-1].strip() == "```":
-        lines = lines[:-1]
-    return "\n".join(lines).strip() if lines else text
+    # 取最后一对完整的 fence
+    last_end = fence_ends[-1]
+    last_start = fence_starts[len(fence_ends) - 1]
+    inner = lines[last_start + 1 : last_end]
+    return "\n".join(inner).strip() if inner else text
 
 
 class AISearchService:
@@ -1489,6 +1500,7 @@ class AISearchService:
         self,
         outline_type: str,
         contents: List[str],
+        header_lines: Optional[List[str]] = None,
     ) -> Dict:
         """
         毛胚纲目刷格式并下载：将润色版 4 篇或三分钟分享 6 篇合并为一个 DOCX，使用中文模板与中文刷格式。
@@ -1496,6 +1508,7 @@ class AISearchService:
         Args:
             outline_type: "polish"（润色版）或 "sharing"（三分钟分享）
             contents: 多篇纲目正文，按顺序合并（润色版 4 篇，三分钟分享 6 篇）
+            header_lines: 可选前三段（系列/总题/篇题），写入正文之前
         
         Returns:
             {"docx_bytes": bytes | None, "filename": str, "error": str | None}
@@ -1521,7 +1534,7 @@ class AISearchService:
             return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": f"模板文件不存在: {template_name}"}
 
         # 合并多篇：三分钟分享各 AI 版本之间多加一行空行以作区分，其余用双换行
-        sep = "\n\n\n" if outline_type == "sharing" else "\n\n"
+        sep = "\n\n\n" if outline_type in ("sharing", "polish") else "\n\n"
         combined_text = sep.join((c or "").strip() for c in contents if (c or "").strip())
 
         _filename_map = {
@@ -1543,6 +1556,11 @@ class AISearchService:
             for para in list(doc.paragraphs):
                 p_element = para._element
                 p_element.getparent().remove(p_element)
+
+            # 写入前三段（若用户有填）
+            for line in header_lines or []:
+                if line.strip():
+                    doc.add_paragraph(line.strip())
 
             for line in combined_text.split("\n"):
                 if line.strip():
@@ -2711,12 +2729,27 @@ def _apply_transcript_add_highlight(doc: "Document") -> None:
 
     start_marker_variants = ("【听抄稿添加开始】", "【聽抄稿添加開始】")
     end_marker_variants = ("【听抄稿添加结束】", "【聽抄稿添加結束】")
+    all_markers = start_marker_variants + end_marker_variants
+
+    def _is_pure_marker_line(text: str) -> bool:
+        """仅含标记（可带句读、空白）的段落才作为删除目标，不含其他正文。"""
+        t = text.strip()
+        if not any(m in t for m in all_markers):
+            return False
+        remainder = t
+        for m in all_markers:
+            remainder = remainder.replace(m, "")
+        remainder = remainder.replace("。", "").strip()
+        return not remainder
+
     start_indices = []
     pairs = []  # [(start_idx, end_idx), ...]
     for idx, para in enumerate(doc.paragraphs):
         text = para.text.strip()
         if any(m in text for m in start_marker_variants):
-            start_indices.append(idx)
+            # 同行另有正文时不作为区间起点，避免高亮范围偏移
+            if _is_pure_marker_line(text):
+                start_indices.append(idx)
         if any(m in text for m in end_marker_variants):
             if start_indices:
                 pairs.append((start_indices.pop(), idx))
@@ -2726,15 +2759,18 @@ def _apply_transcript_add_highlight(doc: "Document") -> None:
     for (start_idx, end_idx) in reversed(pairs):
         if start_idx >= end_idx:
             continue
-        # 对两标记之间的段落整段黄色高亮
+        # 对两标记之间的段落整段黄色高亮；含标记的行不纳入高亮
         for idx in range(start_idx + 1, end_idx):
+            para_text = doc.paragraphs[idx].text
+            if any(m in para_text for m in all_markers):
+                continue
             for run in doc.paragraphs[idx].runs:
                 run.font.highlight_color = WD_COLOR_INDEX.YELLOW
-        # 删除标记段落（先删结束，再删开始）
-        end_el = doc.paragraphs[end_idx]._element
-        start_el = doc.paragraphs[start_idx]._element
-        end_el.getparent().remove(end_el)
-        start_el.getparent().remove(start_el)
+        # 仅删除纯标记段落（先删结束，再删开始）
+        for del_idx in (end_idx, start_idx):
+            if del_idx < len(doc.paragraphs) and _is_pure_marker_line(doc.paragraphs[del_idx].text):
+                el = doc.paragraphs[del_idx]._element
+                el.getparent().remove(el)
 
 
 def _get_feast_body_style(doc: "Document"):
