@@ -101,6 +101,7 @@ class GenerateBurdenRequest(BaseModel):
     outline_nature: str = Field(default="", description="纲目性质")
     audience: str = Field(default="", description="面对对象")
     reference_excerpt: str = Field(default="", description="参考摘录")
+    model: str = Field(default="claude-sonnet-4-6", description="使用的模型，默认 claude-sonnet-4-6")
 
 
 class MinisterializeRequest(BaseModel):
@@ -239,6 +240,7 @@ async def generate_burden(req: GenerateBurdenRequest):
             outline_nature=req.outline_nature,
             audience=req.audience,
             reference_excerpt=req.reference_excerpt,
+            model=req.model,
         )
         logger.info(
             "[KG-RAG BURDEN DEBUG] /generate_burden resp: scenario=%s has_error=%s",
@@ -417,23 +419,17 @@ async def test_firewall(req: TestFirewallRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@router.get("/health", dependencies=[Depends(require_admin)])
-async def health():
-    """健康检查：Neo4j / ES 等依赖可用性。"""
-    try:
-        service = get_service()
-        neo4j = get_neo4j()
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+def _build_health_payload():
+    """Neo4j / ES 依赖可用性（供 liveness 与 admin health 共用）。"""
+    service = get_service()
+    neo4j = get_neo4j()
 
-    # 检查 ES
     es_ok = False
     try:
         es_ok = bool(service.es.ping())
     except Exception:
         es_ok = False
 
-    # Neo4j 状态与概念数
     neo4j_stats = {}
     try:
         neo4j_stats = neo4j.get_stats()
@@ -448,3 +444,21 @@ async def health():
             "concept_count": neo4j_stats.get("concept_count", 0),
         },
     }
+
+
+@router.get("/liveness")
+async def liveness():
+    """无需鉴权：依赖可用性探测（供前端状态条使用）。"""
+    try:
+        return _build_health_payload()
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.get("/health", dependencies=[Depends(require_admin)])
+async def health():
+    """管理员健康检查（与 liveness 相同，保留供脚本/运维）。"""
+    try:
+        return _build_health_payload()
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})

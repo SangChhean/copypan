@@ -25,15 +25,12 @@ const healthLoading = ref(false);
 const health = ref(null);
 
 async function fetchHealth() {
-  const headers = getAuthHeaders();
-  if (!headers) return;
   healthLoading.value = true;
   try {
-    const res = await axios.get(`${apiBase}/api/kg_rag/health`, { headers });
+    const res = await axios.get(`${apiBase}/api/kg_rag/liveness`);
     health.value = res.data;
-  } catch (e) {
+  } catch {
     health.value = null;
-    message.error(e.response?.data?.error || e.message || "健康检查失败");
   } finally {
     healthLoading.value = false;
   }
@@ -43,12 +40,19 @@ async function fetchHealth() {
 const queryText = ref("");
 const queryLoading = ref(false);
 const queryResult = ref(null);
-/** 并发 Opus 4.7 对比：主流程完成后用 Step4 prompt 调 generate_step5（Opus 4.7） */
+/** 主流程完成后用同一 Step4 prompt 再调 generate_step5 做模型对比 */
 const queryResultOpus = ref(null);
 const compareOpus = ref(false);
 const compareOpusPromptUnavailable = ref(false);
 const opusCompareError = ref("");
 const opusOutlineCopied = ref(false);
+const queryResultDeepSeek = ref(null);
+const compareDeepSeek = ref(false);
+const compareDeepSeekPromptUnavailable = ref(false);
+const deepseekCompareError = ref("");
+const deepseekOutlineCopied = ref(false);
+const STEP5_COMPARE_OPUS_MODEL = "claude-opus-4-7";
+const STEP5_COMPARE_DEEPSEEK_MODEL = "deepseek-v4-pro";
 
 /** 与后端 KG-RAG 约定一致的 Claude 模型 ID（全流程下拉） */
 const claudeModelOptions = [
@@ -56,16 +60,19 @@ const claudeModelOptions = [
   { value: "claude-opus-4-6", label: "Claude Opus 4.6" },
 ];
 
-/** Step1~2 对比测试：固定 2 个 Claude + 2 个 GPT，多选并行 */
-const step12BenchmarkModels = [
-  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
-  { value: "claude-opus-4-6", label: "Claude Opus 4.6" },
+/** Step1 测试台并行模型候选 */
+const step1TestBenchmarkModels = [
   { value: "claude-opus-4-7", label: "Claude Opus 4.7" },
-  { value: "gpt-5.4", label: "GPT-5.4" },
-  { value: "gpt-5.4-thinking", label: "GPT-5.4 Thinking" },
+  { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
 ];
 
-// 检索 + LLM 可调参数（与后端 DEFAULT_PARAMS 对齐；Step1/2 拆分调试见「Step1~2 测试」Tab）
+/** Step2 测试台并行模型候选 */
+const step2TestBenchmarkModels = [
+  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+  { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+];
+
+// 检索 + LLM 可调参数（与后端 DEFAULT_PARAMS 对齐；Step1/2 见独立测试 Tab）
 const params = ref({
   bm25_top_k: 30,
   dense_top_k: 0, // 0：后端按 bm25_top_k / dense 路数自动计算每路 top_k
@@ -96,6 +103,82 @@ const burdenSelectedIdx = ref(0);
 const burdenGenLineA = ref("");
 const burdenHiddenBySkip = ref(false);
 const burdenSkipTopicSnapshot = ref("");
+
+// ── 负担说明并发测试 Tab ──────────────────────────────
+const burdenTestQuery = ref("");
+const burdenTestNature = ref("真理启示");
+const burdenTestExcerpt = ref("");
+const burdenTestSelectedModels = ref(["claude-sonnet-4-6", "deepseek-v4-pro"]);
+const burdenTestLoading = ref(false);
+const burdenTestResults = ref([]);
+
+const BURDEN_TEST_MODELS = [
+  { label: "Claude Sonnet 4.6", value: "claude-sonnet-4-6" },
+  { label: "DeepSeek V4 Pro", value: "deepseek-v4-pro" },
+];
+
+const OUTLINE_NATURE_OPTIONS = ["真理启示", "生命经历", "应用实行"];
+
+async function runBurdenTest() {
+  const q = burdenTestQuery.value.trim();
+  if (!q) {
+    message.warning("请填写主题");
+    return;
+  }
+  if (!burdenTestSelectedModels.value.length) {
+    message.warning("请至少选择一个模型");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+
+  burdenTestLoading.value = true;
+  burdenTestResults.value = burdenTestSelectedModels.value.map((m) => ({
+    model: m,
+    label: BURDEN_TEST_MODELS.find((x) => x.value === m)?.label ?? m,
+    status: "loading",
+    data: null,
+    error: null,
+    elapsed: null,
+  }));
+
+  const tasks = burdenTestSelectedModels.value.map(async (model, idx) => {
+    const t0 = Date.now();
+    try {
+      const res = await axios.post(
+        `${apiBase}/api/kg_rag/generate_burden`,
+        {
+          query: q,
+          outline_nature: burdenTestNature.value,
+          audience: "",
+          reference_excerpt: burdenTestExcerpt.value.trim(),
+          model,
+        },
+        { headers }
+      );
+      burdenTestResults.value[idx] = {
+        ...burdenTestResults.value[idx],
+        status: "ok",
+        data: res.data,
+        elapsed: ((Date.now() - t0) / 1000).toFixed(1),
+      };
+    } catch (e) {
+      burdenTestResults.value[idx] = {
+        ...burdenTestResults.value[idx],
+        status: "error",
+        error: e.response?.data?.error || e.message || "请求失败",
+        elapsed: ((Date.now() - t0) / 1000).toFixed(1),
+      };
+    }
+  });
+
+  await Promise.allSettled(tasks);
+  burdenTestLoading.value = false;
+}
+
+function copyBurdenResult(text) {
+  navigator.clipboard.writeText(text).then(() => message.success("已复制"));
+}
 
 const showBurdenPhasePanel = computed(() => {
   if (!burdenHiddenBySkip.value) return true;
@@ -498,8 +581,7 @@ async function extractConcepts() {
   }
 }
 
-async function copyStep12Summary() {
-  const text = step12SummaryText.value;
+async function copyStepTestSummary(text) {
   if (!text || !String(text).trim()) {
     message.warning("没有可复制的内容");
     return;
@@ -561,6 +643,71 @@ async function copyOpusOutlineText() {
   }
 }
 
+async function copyDeepSeekOutlineText() {
+  const text = queryResultDeepSeek.value?.answer;
+  if (!text || !String(text).trim()) {
+    message.warning("当前没有可复制的 DeepSeek 对比纲目");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(String(text));
+    deepseekOutlineCopied.value = true;
+    toastSuccess("已复制到剪贴板");
+    setTimeout(() => {
+      deepseekOutlineCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    message.error(e?.message || "复制失败");
+  }
+}
+
+async function postStep5Compare(step4Prompt, model, headers) {
+  const res = await axios.post(
+    `${apiBase}/api/kg_rag/generate_step5`,
+    { prompt: step4Prompt, model, temperature: 0.3 },
+    { headers }
+  );
+  return res.data;
+}
+
+async function runStep5Compares(step4Prompt, headers) {
+  const needOpus = compareOpus.value;
+  const needDeepSeek = compareDeepSeek.value;
+  if (!needOpus && !needDeepSeek) return;
+
+  if (!step4Prompt) {
+    if (needOpus) compareOpusPromptUnavailable.value = true;
+    if (needDeepSeek) compareDeepSeekPromptUnavailable.value = true;
+    return;
+  }
+
+  const jobs = [];
+  if (needOpus) {
+    jobs.push(
+      postStep5Compare(step4Prompt, STEP5_COMPARE_OPUS_MODEL, headers)
+        .then((data) => {
+          queryResultOpus.value = data;
+        })
+        .catch((e) => {
+          opusCompareError.value = e.response?.data?.error || e.message || "Opus 对比生成失败";
+        })
+    );
+  }
+  if (needDeepSeek) {
+    jobs.push(
+      postStep5Compare(step4Prompt, STEP5_COMPARE_DEEPSEEK_MODEL, headers)
+        .then((data) => {
+          queryResultDeepSeek.value = data;
+        })
+        .catch((e) => {
+          deepseekCompareError.value =
+            e.response?.data?.error || e.message || "DeepSeek 对比生成失败";
+        })
+    );
+  }
+  await Promise.all(jobs);
+}
+
 function downloadCurrentOutlineTxt() {
   const text = getCurrentOutlineTextForDownload();
   if (!text || !String(text).trim()) {
@@ -591,6 +738,10 @@ async function runFullQuery() {
   compareOpusPromptUnavailable.value = false;
   opusCompareError.value = "";
   opusOutlineCopied.value = false;
+  queryResultDeepSeek.value = null;
+  compareDeepSeekPromptUnavailable.value = false;
+  deepseekCompareError.value = "";
+  deepseekOutlineCopied.value = false;
   englishOutline.value = "";
   traditionalOutline.value = "";
   outlineResultTab.value = "zh";
@@ -619,26 +770,9 @@ async function runFullQuery() {
       { headers }
     );
     queryResult.value = res.data;
-    if (compareOpus.value) {
+    if (compareOpus.value || compareDeepSeek.value) {
       const step4Prompt = String(res.data?.steps?.step4?.prompt ?? "").trim();
-      if (!step4Prompt) {
-        compareOpusPromptUnavailable.value = true;
-      } else {
-        try {
-          const opusRes = await axios.post(
-            `${apiBase}/api/kg_rag/generate_step5`,
-            {
-              prompt: step4Prompt,
-              model: "claude-opus-4-7",
-              temperature: 0.3,
-            },
-            { headers }
-          );
-          queryResultOpus.value = opusRes.data;
-        } catch (e2) {
-          opusCompareError.value = e2.response?.data?.error || e2.message || "Opus 对比生成失败";
-        }
-      }
+      await runStep5Compares(step4Prompt, headers);
     }
     const ans = res.data?.answer;
     if (ans && (includeEnglish.value || includeTraditional.value)) {
@@ -744,6 +878,24 @@ function opusCompareTotalElapsedMs() {
   const hasOpus = !Number.isNaN(opus);
   if (!hasMain && !hasOpus) return null;
   return (hasMain ? main : 0) + (hasOpus ? opus : 0);
+}
+
+function deepseekCompareTotalCostUsd() {
+  const main = Number(queryResult.value?.llm_usage?.totals?.cost_usd);
+  const ds = Number(queryResultDeepSeek.value?.cost_usd);
+  const hasMain = !Number.isNaN(main);
+  const hasDs = !Number.isNaN(ds);
+  if (!hasMain && !hasDs) return null;
+  return (hasMain ? main : 0) + (hasDs ? ds : 0);
+}
+
+function deepseekCompareTotalElapsedMs() {
+  const main = Number(queryResult.value?.llm_usage?.total_elapsed_ms);
+  const ds = Number(queryResultDeepSeek.value?.elapsed_ms);
+  const hasMain = !Number.isNaN(main);
+  const hasDs = !Number.isNaN(ds);
+  if (!hasMain && !hasDs) return null;
+  return (hasMain ? main : 0) + (hasDs ? ds : 0);
 }
 
 function formatStep2Path(p) {
@@ -908,36 +1060,20 @@ function chunkPreview150(text) {
   return text.length <= 150 ? text : text.slice(0, 150) + "…";
 }
 
-// ---------- Tab 3：Prompt 预览 ----------
-const promptPreviewQuery = ref("");
-const promptPreviewLoading = ref(false);
-const promptPreviewResult = ref(null);
+// ---------- Tab 2：Step1 测试 ----------
+const step1TestQuery = ref("");
+const step1TestSelectedModels = ref([]);
+const step1TestLoading = ref(false);
+const step1TestResults = ref(null);
 
-// ---------- Tab 4：Step1~2 测试 ----------
-const step12Query = ref("");
-const step12Mode = ref("step1_only"); // step1_only | step1_step2
-const step12SelectedModels = ref([]);
-const step12Loading = ref(false);
-/** 并行结果：{ model, label, ok, data?, error? }[] */
-const step12Results = ref(null);
-const step12Phase = ref("idle"); // idle | step1_done
-const step12ConceptSelections = reactive({});
-const hasAnyStep12DeepSelected = computed(() =>
-  Object.values(step12ConceptSelections).some(
-    (sel) => sel && sel.revelation && sel.revelation.length > 0
-  )
-);
-
-/** 最下方汇总窗口：按固定标题输出题目、Step1；Step1+2 时再输出 Step2 */
-const step12SummaryText = computed(() => {
-  const rows = step12Results.value;
+const step1TestSummaryText = computed(() => {
+  const rows = step1TestResults.value;
   if (!rows || !rows.length) return "";
   const lines = [];
   const joinList = (arr) => ((arr && arr.length ? arr : []).join("、") || "（无）");
-  const q = (step12Query.value || "").trim();
+  const q = (step1TestQuery.value || "").trim();
   lines.push(`题目：${q || "（空）"}`);
   lines.push("");
-
   lines.push("Step1：概念抽取");
   lines.push("");
   for (const item of rows) {
@@ -947,10 +1083,7 @@ const step12SummaryText = computed(() => {
     lines.push(`Step1 价格：$${formatUsd(step1Cost)} USD`);
     lines.push(`Step1 耗时：${formatSec(step1Ms)} s`);
     if (!item.ok) {
-      lines.push("字面意义候选：");
       lines.push(`（请求失败）${item.error || ""}`);
-      lines.push("内在意义、经历、实行候选：");
-      lines.push("（请求失败）");
     } else {
       const s1 = item.data?.steps?.step1;
       const rs = s1?.reasoning != null ? String(s1.reasoning).trim() : "";
@@ -969,112 +1102,45 @@ const step12SummaryText = computed(() => {
     }
     lines.push("");
   }
-
-  if (step12Mode.value !== "step1_only") {
-    lines.push("Step2：概念骨架");
-    lines.push("");
-    for (const item of rows) {
-      lines.push(item.label);
-      const step2Cost = item.data?.steps?.step2?.llm_usage?.cost_usd;
-      const step2Ms = item.data?.steps?.step2?.elapsed_ms;
-      lines.push(`Step2 价格（单次骨架 LLM）：$${formatUsd(step2Cost)} USD`);
-      lines.push(`Step2 耗时（图谱查询+骨架 LLM 总墙钟）：${formatSec(step2Ms)} s`);
-      if (!item.ok) {
-        lines.push("路径：");
-        lines.push("（—）");
-        lines.push("骨架：");
-        lines.push("（—）");
-        lines.push("扩展节点（三层并集）：");
-        lines.push("（—）");
-      } else {
-        const s2 = item.data?.steps?.step2;
-        if (s2?.skipped && s2?.reason === "stop_after_step1") {
-          lines.push("路径：");
-          lines.push("（未执行，仅 Step1）");
-          lines.push("骨架：");
-          lines.push("（未执行）");
-          lines.push("扩展节点（三层并集）：");
-          lines.push("（未执行）");
-        } else if (s2?.skipped) {
-          lines.push("路径：");
-          lines.push("（未执行骨架）");
-          lines.push("骨架：");
-          lines.push("（未执行）");
-          lines.push("扩展节点（三层并集）：");
-          lines.push("（未执行）");
-        } else {
-          const paths = s2?.paths?.length
-            ? s2.paths
-                .map((p) => formatStep2Path(p))
-                .join("\n")
-            : "（无）";
-          lines.push("路径：");
-          lines.push(paths);
-          const sk = s2?.skeleton?.length
-            ? s2.skeleton.map((t, i) => {
-                const step = typeof t === "object" ? t.step || t : t;
-                const pe =
-                  typeof t === "object" && t.path_evidence
-                    ? `\n   ↳ ${formatPathEvidenceDisplay(t.path_evidence)}`
-                    : "";
-                const sa = typeof t === "object" && t.scripture_anchor ? `\n   📖 ${t.scripture_anchor}` : "";
-                return `${i + 1}. ${step}${pe}${sa}`;
-              }).join("\n")
-            : "（无）";
-          lines.push("骨架：");
-          lines.push(sk);
-          lines.push("扩展节点（三层并集）：");
-          lines.push(joinList(s2?.expanded_nodes));
-        }
-      }
-      lines.push("");
-    }
-  }
   return lines.join("\n").replace(/\n+$/, "");
 });
 
-const step12ModeOptions = [
-  { label: "仅 Step1（概念抽取）", value: "step1_only" },
-  { label: "Step1 + Step2（含概念骨架）", value: "step1_step2" },
-];
-
-async function runStep12Test() {
-  const q = (step12Query.value || "").trim();
+async function runStep1Test() {
+  const q = (step1TestQuery.value || "").trim();
   if (!q) {
     message.warning("请输入查询问题");
     return;
   }
-  const selected = new Set((step12SelectedModels.value || []).filter(Boolean));
-  const models = step12BenchmarkModels.map((m) => m.value).filter((id) => selected.has(id));
+  const selected = new Set((step1TestSelectedModels.value || []).filter(Boolean));
+  const models = step1TestBenchmarkModels.map((m) => m.value).filter((id) => selected.has(id));
   if (!models.length) {
-    message.warning("请至少勾选一个模型");
+    message.warning("请至少勾选一个 Step1 模型");
     return;
   }
   const headers = getAuthHeaders();
   if (!headers) return;
-  const mode = step12Mode.value;
-  step12Loading.value = true;
-  step12Results.value = null;
-  step12Phase.value = "idle";
-  for (const key of Object.keys(step12ConceptSelections)) {
-    delete step12ConceptSelections[key];
-  }
-  const baseParams = {
-    stop_after_step1: true,
-    skip_generation: true,
-  };
+  step1TestLoading.value = true;
+  step1TestResults.value = null;
   try {
     const settled = await Promise.allSettled(
       models.map((modelId) =>
         axios.post(
           `${apiBase}/api/kg_rag/query`,
-          { query: q, params: { ...buildQueryParams(), ...baseParams, step1_model: modelId, llm_model: modelId } },
+          {
+            query: q,
+            params: {
+              ...buildQueryParams(),
+              stop_after_step1: true,
+              skip_generation: true,
+              step1_model: modelId,
+            },
+          },
           { headers }
         )
       )
     );
-    step12Results.value = models.map((modelId, i) => {
-      const opt = step12BenchmarkModels.find((o) => o.value === modelId);
+    step1TestResults.value = models.map((modelId, i) => {
+      const opt = step1TestBenchmarkModels.find((o) => o.value === modelId);
       const label = opt ? opt.label : modelId;
       const s = settled[i];
       if (s.status === "fulfilled") {
@@ -1084,129 +1150,159 @@ async function runStep12Test() {
       const errMsg = err?.response?.data?.error || err?.message || "请求失败";
       return { model: modelId, label, ok: false, error: errMsg };
     });
-    for (const item of step12Results.value) {
-      if (item.ok && item.data?.steps?.step1) {
-        const s1 = item.data.steps.step1;
-        step12ConceptSelections[item.model] = {
-          revelation: [...(s1.revelation || [])],
-          experience: [...(s1.experience || [])],
-          practice: [...(s1.practice || [])],
-        };
-      }
-    }
-    const okN = step12Results.value.filter((r) => r.ok).length;
+    const okN = step1TestResults.value.filter((r) => r.ok).length;
     if (okN === models.length) {
-      toastSuccess(`已完成 ${okN} 路 Step1`);
+      toastSuccess(`Step1 完成：${okN} 路成功`);
     } else {
       message.warning(`部分失败：${okN} / ${models.length} 路成功`);
-    }
-    if (mode === "step1_step2") {
-      step12Phase.value = "step1_done";
     }
   } catch (e) {
     message.error(e?.message || "执行失败");
   } finally {
-    step12Loading.value = false;
+    step1TestLoading.value = false;
   }
 }
 
-async function runStep12ContinueStep2() {
-  const headers = getAuthHeaders();
-  if (!headers) return;
-  const modelsToRun = (step12Results.value || []).filter((item) => {
-    if (!item.ok) return false;
-    const sel = step12ConceptSelections[item.model];
-    return sel && sel.revelation.length > 0;
-  });
-  if (!modelsToRun.length) {
-    message.warning("请至少为一个模型保留至少一个启示层概念");
+// ---------- Tab 3：Step2 测试 ----------
+const step2TestQuery = ref("");
+const step2TestManualRevelation = ref([]);
+const step2TestManualExperience = ref([]);
+const step2TestManualPractice = ref([]);
+const step2TestSelectedModels = ref([]);
+const step2TestLoading = ref(false);
+const step2TestResults = ref(null);
+
+const step2TestSummaryText = computed(() => {
+  const rows = step2TestResults.value;
+  if (!rows || !rows.length) return "";
+  const lines = [];
+  const joinList = (arr) => ((arr && arr.length ? arr : []).join("、") || "（无）");
+  const q = (step2TestQuery.value || "").trim();
+  lines.push(`题目：${q || "（空）"}`);
+  lines.push("人工重点（启示 / 经历 / 实行）：");
+  lines.push(joinList(step2TestManualRevelation.value));
+  lines.push(joinList(step2TestManualExperience.value));
+  lines.push(joinList(step2TestManualPractice.value));
+  lines.push("");
+  lines.push("Step2：概念骨架");
+  lines.push("");
+  for (const item of rows) {
+    lines.push(item.label);
+    const step2Cost = item.data?.steps?.step2?.llm_usage?.cost_usd;
+    const step2Ms = item.data?.steps?.step2?.elapsed_ms;
+    lines.push(`Step2 价格（单次骨架 LLM）：$${formatUsd(step2Cost)} USD`);
+    lines.push(`Step2 耗时（图谱查询+骨架 LLM 总墙钟）：${formatSec(step2Ms)} s`);
+    if (!item.ok) {
+      lines.push(`（请求失败）${item.error || ""}`);
+    } else {
+      const s2 = item.data?.steps?.step2;
+      if (s2?.skipped) {
+        lines.push("路径：（未执行）");
+        lines.push("骨架：（未执行）");
+        lines.push("扩展节点：（未执行）");
+        if (s2.reason) {
+          lines.push(`原因：${s2.reason}`);
+        }
+      } else {
+        const paths = s2?.paths?.length
+          ? s2.paths.map((p) => formatStep2Path(p)).join("\n")
+          : "（无）";
+        lines.push("路径：");
+        lines.push(paths);
+        const sk = s2?.skeleton?.length
+          ? s2.skeleton
+              .map((t, i) => {
+                const step = typeof t === "object" ? t.step || t : t;
+                const pe =
+                  typeof t === "object" && t.path_evidence
+                    ? `\n   ↳ ${formatPathEvidenceDisplay(t.path_evidence)}`
+                    : "";
+                const sa = typeof t === "object" && t.scripture_anchor ? `\n   📖 ${t.scripture_anchor}` : "";
+                return `${i + 1}. ${step}${pe}${sa}`;
+              })
+              .join("\n")
+          : "（无）";
+        lines.push("骨架：");
+        lines.push(sk);
+        lines.push("扩展节点（三层并集）：");
+        lines.push(joinList(s2?.expanded_nodes));
+      }
+    }
+    lines.push("");
+  }
+  return lines.join("\n").replace(/\n+$/, "");
+});
+
+async function runStep2Test() {
+  const q = (step2TestQuery.value || "").trim();
+  if (!q) {
+    message.warning("请输入查询问题");
     return;
   }
-  step12Loading.value = true;
+  if (!step2TestManualRevelation.value.length) {
+    message.warning("请至少输入一个启示层重点");
+    return;
+  }
+  const selected = new Set((step2TestSelectedModels.value || []).filter(Boolean));
+  const models = step2TestBenchmarkModels.map((m) => m.value).filter((id) => selected.has(id));
+  if (!models.length) {
+    message.warning("请至少勾选一个 Step2 骨架模型");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  step2TestLoading.value = true;
+  step2TestResults.value = null;
+  const preset = {
+    preset_revelation: [...step2TestManualRevelation.value],
+    preset_experience: [...step2TestManualExperience.value],
+    preset_practice: [...step2TestManualPractice.value],
+  };
   try {
     const settled = await Promise.allSettled(
-      modelsToRun.map(item => {
-        const sel = step12ConceptSelections[item.model];
-        return axios.post(
+      models.map((modelId) =>
+        axios.post(
           `${apiBase}/api/kg_rag/query`,
           {
-            query: step12Query.value.trim(),
+            query: q,
             params: {
               ...buildQueryParams(),
+              ...preset,
               stop_after_step2: true,
               skip_generation: true,
-              step1_model: item.model,
-              llm_model: item.model,
-              preset_revelation: [...(sel.revelation || [])],
-              preset_experience: [...(sel.experience || [])],
-              preset_practice: [...(sel.practice || [])],
+              skip_query_rewrite: true,
+              llm_model: modelId,
             },
           },
           { headers }
-        );
-      })
+        )
+      )
     );
-    modelsToRun.forEach((item, i) => {
+    step2TestResults.value = models.map((modelId, i) => {
+      const opt = step2TestBenchmarkModels.find((o) => o.value === modelId);
+      const label = opt ? opt.label : modelId;
       const s = settled[i];
-      const resultItem = step12Results.value.find(r => r.model === item.model);
-      if (!resultItem) return;
       if (s.status === "fulfilled") {
-        const newData = s.value.data;
-        resultItem.data.steps.step2 = newData.steps?.step2;
-        resultItem.data.stopped_after = newData.stopped_after;
-        if (newData.llm_usage) {
-          const existingCalls = resultItem.data.llm_usage?.calls || [];
-          const newCalls = (newData.llm_usage?.calls || []).filter(c => c.step !== "step1");
-          resultItem.data.llm_usage = {
-            ...resultItem.data.llm_usage,
-            calls: [...existingCalls, ...newCalls],
-          };
-        }
-      } else {
-        const err = s.reason;
-        const errMsg = err?.response?.data?.error || err?.message || "Step2 请求失败";
-        if (resultItem.data) {
-          resultItem.data.steps = resultItem.data.steps || {};
-          resultItem.data.steps.step2 = { skipped: true, reason: errMsg };
-        }
+        return { model: modelId, label, ok: true, data: s.value.data };
       }
+      const err = s.reason;
+      const errMsg = err?.response?.data?.error || err?.message || "请求失败";
+      return { model: modelId, label, ok: false, error: errMsg };
     });
-    const okN = modelsToRun.filter((_, i) => settled[i].status === "fulfilled").length;
-    toastSuccess(`Step2 完成：${okN} / ${modelsToRun.length} 路成功`);
+    const okN = step2TestResults.value.filter((r) => r.ok).length;
+    if (okN === models.length) {
+      toastSuccess(`Step2 完成：${okN} 路成功`);
+    } else {
+      message.warning(`部分失败：${okN} / ${models.length} 路成功`);
+    }
   } catch (e) {
-    message.error(e?.message || "Step2 执行失败");
+    message.error(e?.message || "执行失败");
   } finally {
-    step12Loading.value = false;
-    step12Phase.value = "idle";
+    step2TestLoading.value = false;
   }
 }
 
-async function runPromptPreview() {
-  const q = (promptPreviewQuery.value || "").trim();
-  if (!q) {
-    message.warning("请输入查询");
-    return;
-  }
-  const headers = getAuthHeaders();
-  if (!headers) return;
-  promptPreviewLoading.value = true;
-  promptPreviewResult.value = null;
-  try {
-    const res = await axios.post(
-      `${apiBase}/api/kg_rag/prompt_preview`,
-      { query: q, params: buildQueryParams() },
-      { headers }
-    );
-    promptPreviewResult.value = res.data;
-    toastSuccess("Prompt 已生成");
-  } catch (e) {
-    message.error(e.response?.data?.error || e.message || "生成失败");
-  } finally {
-    promptPreviewLoading.value = false;
-  }
-}
-
-// ---------- Tab 5：防火墙测试 ----------
+// ---------- Tab 4：防火墙测试 ----------
 const firewallQuery = ref("");
 const firewallLoading = ref(false);
 const firewallResult = ref(null);
@@ -1380,6 +1476,7 @@ onMounted(() => {
                           <a-checkbox v-model:checked="includeEnglish">同时生成英文纲目</a-checkbox>
                           <a-checkbox v-model:checked="includeTraditional">同时生成繁体纲目</a-checkbox>
                           <a-checkbox v-model:checked="compareOpus">并发 Opus 4.7 对比</a-checkbox>
+                          <a-checkbox v-model:checked="compareDeepSeek">并发 DeepSeek V4 Pro 对比</a-checkbox>
                         </div>
                       </a-col>
                     </a-row>
@@ -1409,7 +1506,7 @@ onMounted(() => {
                             :dropdown-match-select-width="false"
                           />
                           <p class="param-explain">
-                            全流程：Step1 默认 Opus 4.7；Query 改写固定 Opus 4.6；Step5 纲目生成默认 Sonnet 4.6（可通过请求参数 step5_model 覆盖）；测试台勾选「并发 Opus 4.7 对比」时，主流程完成后会用同一 Step4 prompt 再调 Opus 4.7 仅生成对比纲目。下方所选模型仅用于 Step2（单次骨架 LLM）。仅测 Step1 或 Step1+2 请用 Tab「Step1~2 测试」。
+                            全流程：Step1 默认 Opus 4.7；Query 改写固定 Opus 4.6；Step5 纲目生成默认 Sonnet 4.6（可通过请求参数 step5_model 覆盖）；勾选「并发 Opus 4.7 / DeepSeek V4 Pro 对比」时，主流程完成后会用同一 Step4 prompt 并行再调对应模型仅生成对比纲目（需配置 DEEPSEEK_API_KEY）。下方所选模型仅用于 Step2（单次骨架 LLM）。Step1 / Step2 拆分调试请用独立测试 Tab。
                             与路1 / 路2 / 路3 的 Elasticsearch 检索参数无关。
                           </p>
                           <p class="param-explain param-explain-secondary">
@@ -1887,6 +1984,39 @@ onMounted(() => {
                             <pre class="answer-pre answer-pre-outline">{{ queryResultOpus.answer }}</pre>
                           </template>
                         </div>
+                        <div v-if="compareDeepSeek" class="opus-compare-section">
+                          <div class="opus-compare-title">DeepSeek V4 Pro 对比纲目</div>
+                          <p v-if="compareDeepSeekPromptUnavailable" class="opus-compare-unavailable">
+                            Step 4 prompt 不可用，无法生成对比纲目
+                          </p>
+                          <p v-else-if="deepseekCompareError" class="opus-compare-unavailable">
+                            {{ deepseekCompareError }}
+                          </p>
+                          <template v-else-if="queryResultDeepSeek">
+                            <div class="answer-outline-toolbar opus-compare-toolbar">
+                              <span class="opus-compare-meta">
+                                总价格：<strong>{{
+                                  deepseekCompareTotalCostUsd() != null
+                                    ? "$" + formatUsd(deepseekCompareTotalCostUsd())
+                                    : "—"
+                                }}</strong>
+                                　总耗时：<strong>{{
+                                  deepseekCompareTotalElapsedMs() != null
+                                    ? formatSec(deepseekCompareTotalElapsedMs()) + "s"
+                                    : "—"
+                                }}</strong>
+                              </span>
+                              <a-button type="default" size="small" @click="copyDeepSeekOutlineText">
+                                <template #icon>
+                                  <CheckOutlined v-if="deepseekOutlineCopied" style="color: #52c41a" />
+                                  <CopyOutlined v-else />
+                                </template>
+                                {{ deepseekOutlineCopied ? "已复制" : "复制对比纲目" }}
+                              </a-button>
+                            </div>
+                            <pre class="answer-pre answer-pre-outline">{{ queryResultDeepSeek.answer }}</pre>
+                          </template>
+                        </div>
                       </template>
                       <template v-else-if="queryResult.steps?.step5?.error">
                         {{ queryResult.steps.step5.error }}
@@ -1902,7 +2032,366 @@ onMounted(() => {
         </a-card>
       </a-tab-pane>
 
-      <!-- Tab 2：图谱浏览器 -->
+      <!-- Tab 2：Step1 测试 -->
+      <a-tab-pane key="step1_test" tab="Step1 测试">
+        <a-card class="tab-card">
+          <a-row :gutter="[16, 16]">
+            <a-col :span="24">
+              <div class="query-section step12-section">
+                <a-textarea
+                  v-model:value="step1TestQuery"
+                  placeholder="输入查询问题…"
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
+                  class="query-input"
+                />
+                <p class="hint step12-gpt-hint">
+                  并行对比 <strong>Step1 概念抽取</strong> 所用模型（<code>step1_model</code>）。勾选多个模型后同时请求；展示顺序与下方列表一致。DeepSeek 需 <code>DEEPSEEK_API_KEY</code>。
+                </p>
+                <div class="param-item param-item-stack step12-model-row">
+                  <span class="param-label">Step1 并行模型（多选）</span>
+                  <a-checkbox-group v-model:value="step1TestSelectedModels" class="step12-checkbox-group">
+                    <a-row :gutter="[8, 8]">
+                      <a-col v-for="m in step1TestBenchmarkModels" :key="m.value" :span="12">
+                        <a-checkbox :value="m.value">{{ m.label }}</a-checkbox>
+                      </a-col>
+                    </a-row>
+                  </a-checkbox-group>
+                </div>
+                <a-button type="primary" :loading="step1TestLoading" class="query-btn" @click="runStep1Test">并行执行 Step1</a-button>
+              </div>
+            </a-col>
+            <a-col :span="24">
+              <div v-if="!step1TestResults" class="result-placeholder">勾选 Step1 模型并执行后，自上而下展示各路概念抽取结果。</div>
+              <div v-else class="step12-results-stack">
+                <a-card
+                  v-for="item in step1TestResults"
+                  :key="item.model"
+                  size="small"
+                  class="step12-model-card step12-model-card-stack"
+                  :title="item.label"
+                >
+                  <template v-if="!item.ok">
+                    <a-alert type="error" :message="item.error" show-icon />
+                  </template>
+                  <template v-else>
+                    <div class="step12-model-id">{{ item.model }}</div>
+                    <div v-if="item.data?.steps?.step1?.llm_usage" class="llm-usage-banner llm-usage-banner-compact">
+                      <div class="llm-usage-line">
+                        Step1 LLM · 输入 <strong>{{ item.data.steps.step1.llm_usage.input_tokens ?? "—" }}</strong>
+                        · 输出 <strong>{{ item.data.steps.step1.llm_usage.output_tokens ?? "—" }}</strong> tokens
+                        · ≈<strong>${{ formatUsd(item.data.steps.step1.llm_usage.cost_usd) }}</strong>
+                      </div>
+                    </div>
+                    <a-card v-if="item.data?.steps?.step1" size="small" class="step-card step12-nested-card">
+                      <div class="step1-layer">
+                        <span class="step1-layer-label">启示层：</span>
+                        <a-tag v-for="c in (item.data.steps.step1.revelation || [])" :key="`r-${c}`">{{ c }}</a-tag>
+                        <span v-if="!(item.data.steps.step1.revelation || []).length" class="step-skipped-hint">（无）</span>
+                      </div>
+                      <div class="step1-layer">
+                        <span class="step1-layer-label">经历层：</span>
+                        <a-tag v-for="c in (item.data.steps.step1.experience || [])" :key="`e-${c}`" color="blue">{{ c }}</a-tag>
+                        <span v-if="!(item.data.steps.step1.experience || []).length" class="step-skipped-hint">（无）</span>
+                      </div>
+                      <div class="step1-layer">
+                        <span class="step1-layer-label">实行层：</span>
+                        <a-tag v-for="c in (item.data.steps.step1.practice || [])" :key="`p-${c}`" color="purple">{{ c }}</a-tag>
+                        <span v-if="!(item.data.steps.step1.practice || []).length" class="step-skipped-hint">（无）</span>
+                      </div>
+                      <div v-if="item.data.steps.step1.reasoning" class="step1-layer">
+                        <span class="step1-layer-label">推理：</span>
+                        <span>{{ item.data.steps.step1.reasoning }}</span>
+                      </div>
+                      <a-collapse v-if="item.data.steps.step1.raw_response">
+                        <a-collapse-panel key="raw" header="原始响应">
+                          <pre class="raw-pre">{{ item.data.steps.step1.raw_response }}</pre>
+                        </a-collapse-panel>
+                      </a-collapse>
+                      <p v-if="item.data.steps.step1.error" class="step12-error">{{ item.data.steps.step1.error }}</p>
+                    </a-card>
+                  </template>
+                </a-card>
+              </div>
+            </a-col>
+            <a-col v-if="step1TestResults" :span="24">
+              <div class="step12-summary-wrap">
+                <div class="step12-summary-head">
+                  <span class="step12-summary-title">汇总（Step1 纯文本）</span>
+                  <a-button type="default" size="small" @click="copyStepTestSummary(step1TestSummaryText)">
+                    <template #icon><CopyOutlined /></template>
+                    复制汇总
+                  </a-button>
+                </div>
+                <a-textarea :value="step1TestSummaryText" readonly class="step12-summary-textarea" :rows="16" />
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
+      </a-tab-pane>
+
+      <!-- Tab 3：Step2 测试 -->
+      <a-tab-pane key="step2_test" tab="Step2 测试">
+        <a-card class="tab-card">
+          <a-row :gutter="[16, 16]">
+            <a-col :span="24">
+              <div class="query-section step12-section">
+                <a-textarea
+                  v-model:value="step2TestQuery"
+                  placeholder="输入查询问题…"
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
+                  class="query-input"
+                />
+                <p class="hint step12-gpt-hint">
+                  人工输入重点后并行对比 <strong>Step2 骨架 LLM</strong>（<code>llm_model</code>）。后端跳过 Step1 LLM，直接使用 <code>preset_*</code> 概念。启示层至少填一项。
+                </p>
+                <div class="concept-manual-block param-item-stack">
+                  <div class="concept-hint">输入重点（回车或逗号添加，× 删除）</div>
+                  <div class="step1-layer step12-tags-layer">
+                    <span class="step1-layer-label">启示层：</span>
+                    <a-select
+                      v-model:value="step2TestManualRevelation"
+                      mode="tags"
+                      class="concept-tags-select step12-concept-tags"
+                      :token-separators="[',', '，']"
+                      placeholder="至少一项"
+                      allow-clear
+                    />
+                  </div>
+                  <div class="step1-layer step12-tags-layer">
+                    <span class="step1-layer-label">经历层：</span>
+                    <a-select
+                      v-model:value="step2TestManualExperience"
+                      mode="tags"
+                      class="concept-tags-select step12-concept-tags"
+                      :token-separators="[',', '，']"
+                      placeholder="可为空"
+                      allow-clear
+                    />
+                  </div>
+                  <div class="step1-layer step12-tags-layer">
+                    <span class="step1-layer-label">实行层：</span>
+                    <a-select
+                      v-model:value="step2TestManualPractice"
+                      mode="tags"
+                      class="concept-tags-select step12-concept-tags"
+                      :token-separators="[',', '，']"
+                      placeholder="可为空"
+                      allow-clear
+                    />
+                  </div>
+                </div>
+                <div class="param-item param-item-stack step12-model-row">
+                  <span class="param-label">Step2 骨架模型（多选）</span>
+                  <a-checkbox-group v-model:value="step2TestSelectedModels" class="step12-checkbox-group">
+                    <a-row :gutter="[8, 8]">
+                      <a-col v-for="m in step2TestBenchmarkModels" :key="m.value" :span="12">
+                        <a-checkbox :value="m.value">{{ m.label }}</a-checkbox>
+                      </a-col>
+                    </a-row>
+                  </a-checkbox-group>
+                </div>
+                <a-button type="primary" :loading="step2TestLoading" class="query-btn" @click="runStep2Test">并行执行 Step2</a-button>
+              </div>
+            </a-col>
+            <a-col :span="24">
+              <div v-if="!step2TestResults" class="result-placeholder">填写重点并勾选 Step2 模型后执行，展示路径与骨架。</div>
+              <div v-else class="step12-results-stack">
+                <a-card
+                  v-for="item in step2TestResults"
+                  :key="item.model"
+                  size="small"
+                  class="step12-model-card step12-model-card-stack"
+                  :title="item.label"
+                >
+                  <template v-if="!item.ok">
+                    <a-alert type="error" :message="item.error" show-icon />
+                  </template>
+                  <template v-else>
+                    <div class="step12-model-id">{{ item.model }}</div>
+                    <div v-if="item.data?.steps?.step2?.llm_usage" class="llm-usage-banner llm-usage-banner-compact">
+                      <div class="llm-usage-line">
+                        Step2 LLM · 输入 <strong>{{ item.data.steps.step2.llm_usage.input_tokens ?? "—" }}</strong>
+                        · 输出 <strong>{{ item.data.steps.step2.llm_usage.output_tokens ?? "—" }}</strong> tokens
+                        · ≈<strong>${{ formatUsd(item.data.steps.step2.llm_usage.cost_usd) }}</strong>
+                      </div>
+                    </div>
+                    <a-card size="small" class="step-card step12-nested-card">
+                      <div v-if="item.data?.steps?.step2 && !item.data.steps.step2.skipped" class="step2-meta step12-step2-meta">
+                        <span>总耗时 {{ formatSec(item.data.steps.step2.elapsed_ms) }} s</span>
+                        <span v-if="item.data.steps.step2.llm_usage"> · ${{ formatUsd(item.data.steps.step2.llm_usage.cost_usd) }}</span>
+                        <span v-else> · 无 LLM 费用</span>
+                      </div>
+                      <template v-if="item.data?.steps?.step2?.skipped">
+                        <span class="step-skipped-hint">{{ item.data.steps.step2.reason || "未执行骨架" }}</span>
+                      </template>
+                      <template v-else-if="item.data?.steps?.step2">
+                        <div v-if="item.data.steps.step2.skeleton?.length" class="step2-block">
+                          <div class="step2-title">骨架</div>
+                          <ol class="step2-ol">
+                            <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">
+                              {{ typeof s === 'object' ? s.step : s }}
+                              <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
+                              <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
+                            </li>
+                          </ol>
+                        </div>
+                        <div v-if="(item.data.steps.step2.expanded_nodes || []).length" class="step2-block">
+                          <a-tag v-for="e in item.data.steps.step2.expanded_nodes" :key="`${item.model}-ex-${e}`">{{ e }}</a-tag>
+                        </div>
+                        <a-collapse v-if="(item.data.steps.step2.paths || []).length" class="step2-inner-collapse" :bordered="false">
+                          <a-collapse-panel key="paths" :header="`路径 · ${item.data.steps.step2.paths.length} 条`">
+                            <div v-for="(p, i) in item.data.steps.step2.paths" :key="`${item.model}-p-${i}`" class="step2-line">
+                              {{ formatStep2Path(p) }}
+                            </div>
+                          </a-collapse-panel>
+                        </a-collapse>
+                        <span
+                          v-if="!(item.data.steps.step2.paths || []).length && !(item.data.steps.step2.expanded_nodes || []).length && !(item.data.steps.step2.skeleton || []).length"
+                          class="step-skipped-hint"
+                        >无路径 / 无骨架</span>
+                      </template>
+                    </a-card>
+                  </template>
+                </a-card>
+              </div>
+            </a-col>
+            <a-col v-if="step2TestResults" :span="24">
+              <div class="step12-summary-wrap">
+                <div class="step12-summary-head">
+                  <span class="step12-summary-title">汇总（Step2 纯文本）</span>
+                  <a-button type="default" size="small" @click="copyStepTestSummary(step2TestSummaryText)">
+                    <template #icon><CopyOutlined /></template>
+                    复制汇总
+                  </a-button>
+                </div>
+                <a-textarea :value="step2TestSummaryText" readonly class="step12-summary-textarea" :rows="16" />
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
+      </a-tab-pane>
+
+      <!-- Tab 5：负担说明测试 -->
+      <!-- Tab 3：负担说明测试 -->
+      <a-tab-pane key="burden_test" tab="负担说明测试">
+        <div class="burden-test-wrap">
+          <a-card size="small" title="测试参数" style="margin-bottom: 16px">
+            <a-row :gutter="[12, 12]">
+              <a-col :span="24">
+                <div class="param-label">主题</div>
+                <a-input v-model:value="burdenTestQuery" placeholder="请输入纲目主题" allow-clear />
+              </a-col>
+              <a-col :span="12">
+                <div class="param-label">纲目性质</div>
+                <a-select v-model:value="burdenTestNature" style="width: 100%">
+                  <a-select-option v-for="o in OUTLINE_NATURE_OPTIONS" :key="o" :value="o">{{ o }}</a-select-option>
+                </a-select>
+              </a-col>
+              <a-col :span="12">
+                <div class="param-label">并发模型</div>
+                <a-checkbox-group v-model:value="burdenTestSelectedModels">
+                  <a-checkbox v-for="m in BURDEN_TEST_MODELS" :key="m.value" :value="m.value">
+                    {{ m.label }}
+                  </a-checkbox>
+                </a-checkbox-group>
+              </a-col>
+              <a-col :span="24">
+                <div class="param-label">参考摘录（选填，传入则为情境 A）</div>
+                <a-textarea
+                  v-model:value="burdenTestExcerpt"
+                  :auto-size="{ minRows: 2, maxRows: 6 }"
+                  placeholder="粘贴参考段落，留空则生成三候选（情境 B）"
+                />
+              </a-col>
+              <a-col :span="24">
+                <a-button type="primary" :loading="burdenTestLoading" @click="runBurdenTest">
+                  并发生成
+                </a-button>
+              </a-col>
+            </a-row>
+          </a-card>
+
+          <div v-if="burdenTestResults.length" class="burden-test-results">
+            <a-card
+              v-for="r in burdenTestResults"
+              :key="r.model"
+              size="small"
+              class="burden-test-card"
+            >
+              <template #title>
+                <span>{{ r.label }}</span>
+                <a-tag v-if="r.elapsed" style="margin-left: 8px" :color="r.status === 'ok' ? 'green' : 'red'">
+                  {{ r.elapsed }}s
+                </a-tag>
+                <a-tag
+                  v-if="r.status === 'ok' && r.data?.llm_usage?.cost_usd != null"
+                  style="margin-left: 8px"
+                  color="blue"
+                >
+                  ≈${{ formatUsd(r.data.llm_usage.cost_usd) }}
+                </a-tag>
+              </template>
+
+              <div v-if="r.status === 'loading'" style="text-align: center; padding: 24px">
+                <a-spin />
+              </div>
+
+              <a-alert v-else-if="r.status === 'error'" type="error" :message="r.error" show-icon />
+
+              <template v-else-if="r.data?.scenario === 'A'">
+                <div class="burden-test-result-text">{{ r.data.result }}</div>
+                <a-button size="small" style="margin-top: 8px" @click="copyBurdenResult(r.data.result)">复制</a-button>
+              </template>
+
+              <template v-else-if="r.data?.scenario === 'B'">
+                <div
+                  v-for="(c, ci) in r.data.candidates"
+                  :key="ci"
+                  class="burden-test-candidate"
+                >
+                  <span class="burden-test-candidate-idx">{{ ci + 1 }}</span>
+                  <span class="burden-test-candidate-text">{{ c }}</span>
+                  <a-button size="small" @click="copyBurdenResult(c)">复制</a-button>
+                </div>
+              </template>
+
+              <pre v-else style="font-size: 11px; white-space: pre-wrap">{{ JSON.stringify(r.data, null, 2) }}</pre>
+            </a-card>
+          </div>
+        </div>
+      </a-tab-pane>
+
+      <!-- Tab 6：防火墙测试 -->
+      <a-tab-pane key="firewall" tab="防火墙测试">
+        <a-card class="tab-card">
+          <div class="firewall-section">
+            <a-input
+              v-model:value="firewallQuery"
+              placeholder="输入纲目主题"
+              class="firewall-input"
+              @pressEnter="runFirewallTest"
+            />
+            <a-button type="primary" :loading="firewallLoading" class="firewall-btn" @click="runFirewallTest">测试</a-button>
+          </div>
+          <div v-if="firewallResult" class="firewall-result">
+            <template v-if="firewallResult.matched">
+              <div class="firewall-hit">
+                <span class="firewall-label">命中：</span>
+                <span class="firewall-value">{{ firewallResult.matched }}</span>
+              </div>
+              <div class="firewall-hit">
+                <span class="firewall-label">精粹：</span>
+                <span class="firewall-value">{{ firewallResult.note || "（无）" }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="firewall-miss">未命中</div>
+            </template>
+          </div>
+        </a-card>
+      </a-tab-pane>
+
+      <!-- Tab 7：图谱浏览器 -->
       <a-tab-pane key="graph" tab="图谱浏览器">
         <a-card class="tab-card">
           <div class="graph-ops">
@@ -1965,386 +2454,6 @@ onMounted(() => {
               </a-descriptions-item>
             </a-descriptions>
           </template>
-          </div>
-        </a-card>
-      </a-tab-pane>
-
-      <!-- Tab 3：Prompt 预览 -->
-      <a-tab-pane key="prompt_preview" tab="Prompt 预览">
-        <a-card class="tab-card">
-          <div class="prompt-preview-input">
-            <a-textarea v-model:value="promptPreviewQuery" placeholder="输入查询问题..." :auto-size="{ minRows: 2, maxRows: 6 }" class="query-input" />
-            <p class="hint">
-              纲目制作选项、检索与 LLM 参数均与「全流程查询」左侧共用。仅测 Step1 或 Step1+2 请用 Tab「Step1～2 测试」；本预览为完整 Step1～4。
-            </p>
-            <a-button type="primary" :loading="promptPreviewLoading" @click="runPromptPreview">生成 Prompt</a-button>
-          </div>
-          <div v-if="promptPreviewResult" class="prompt-preview-result">
-            <div
-              v-if="promptPreviewResult.params_used || promptPreviewResult.steps?.weight"
-              class="params-used-banner params-used-banner-compact"
-            >
-              <template v-if="promptPreviewResult.params_used">
-                面对对象：{{ promptPreviewResult.params_used.audience || "—" }}
-                · 纲目性质：{{ promptPreviewResult.params_used.outline_nature ?? "—" }}
-                · 模式：{{ promptPreviewResult.params_used.depth === "deep" ? "深度" : "普通" }}
-                <span v-if="(promptPreviewResult.params_used.burden_description || '').trim()">
-                  · 负担说明：已填写
-                </span>
-                <span v-else> · 负担说明：— </span>
-              </template>
-              <template v-if="promptPreviewResult.steps?.weight">
-                <span v-if="promptPreviewResult.params_used"> | </span>
-                加权命中（BM25/Dense/路3）：
-                {{ promptPreviewResult.steps.weight.bm25_weighted ?? "—" }} /
-                {{ promptPreviewResult.steps.weight.dense_weighted ?? "—" }} /
-                {{ promptPreviewResult.steps.weight.route3_weighted ?? "—" }}
-              </template>
-            </div>
-            <div v-if="promptPreviewResult.llm_usage" class="llm-usage-banner llm-usage-banner-compact prompt-preview-usage">
-              <div class="llm-usage-line">
-                LLM（至 Step4，无 Step5）· 输入 <strong>{{ promptPreviewResult.llm_usage.totals?.input_tokens ?? "—" }}</strong>
-                · 输出 <strong>{{ promptPreviewResult.llm_usage.totals?.output_tokens ?? "—" }}</strong> tokens
-                · ≈<strong>${{ formatUsd(promptPreviewResult.llm_usage.totals?.cost_usd) }}</strong>
-              </div>
-            </div>
-            <a-alert
-              v-if="promptPreviewResult.stopped_after === 'step1'"
-              type="warning"
-              show-icon
-              class="stopped-after-alert"
-              message="响应在 Step1 结束"
-              description="未执行 Step2～4，无最终 Prompt；折叠区可查看 Step1 概念。（通常来自 API 直接传参，而非本 Tab 默认行为）"
-            />
-            <a-alert
-              v-else-if="promptPreviewResult.stopped_after === 'step2'"
-              type="warning"
-              show-icon
-              class="stopped-after-alert"
-              message="响应在 Step2 结束"
-              description="未执行 Step3～4，无最终 Prompt；折叠区可查看 Step1～2。（通常来自 API 直接传参）"
-            />
-            <div v-if="!promptPreviewResult.steps?.step4?.skipped" class="prompt-meta-row">
-              <a-tag :color="promptPreviewResult.steps?.step4?.prompt_type === 'skeleton' ? 'blue' : 'default'">
-                {{ promptPreviewResult.steps?.step4?.prompt_type === "skeleton" ? "骨架式 Prompt" : "平铺式 Prompt" }}
-              </a-tag>
-              <span class="prompt-token-hint">约 {{ promptPreviewResult.steps?.step4?.token_estimate ?? "—" }} tokens</span>
-            </div>
-            <a-textarea
-              v-if="!promptPreviewResult.steps?.step4?.skipped"
-              :value="promptPreviewResult.steps?.step4?.prompt"
-              readonly
-              :rows="16"
-              class="prompt-full-textarea"
-            />
-            <a-collapse class="steps-summary" :bordered="false">
-            <a-collapse-panel key="step1" header="Step 1 概念抽取（从图谱词表匹配）">
-              <div class="step1-layer">
-                <span class="step1-layer-label">启示层候选：</span>
-                <a-tag v-for="c in (promptPreviewResult.steps?.step1?.revelation || [])" :key="`prevelation-${c}`">{{ c }}</a-tag>
-              </div>
-              <div class="step1-layer">
-                <span class="step1-layer-label">经历层候选：</span>
-                <a-tag color="blue" v-for="c in (promptPreviewResult.steps?.step1?.experience || [])" :key="`pexperience-${c}`">{{ c }}</a-tag>
-              </div>
-              <div class="step1-layer">
-                <span class="step1-layer-label">实行层候选：</span>
-                <a-tag color="purple" v-for="c in (promptPreviewResult.steps?.step1?.practice || [])" :key="`ppractice-${c}`">{{ c }}</a-tag>
-              </div>
-              <div class="step1-layer">
-                <span class="step1-layer-label">合并送 Step2：</span>
-                <a-tag color="green" v-for="c in (promptPreviewResult.steps?.step1?.concepts || [])" :key="`pmerged-${c}`">{{ c }}</a-tag>
-              </div>
-            </a-collapse-panel>
-            <a-collapse-panel key="step2" header="Step 2 概念骨架（路径 + 单次 LLM）">
-              <div v-if="promptPreviewResult.steps?.step2 && !promptPreviewResult.steps.step2.skipped" class="step2-meta">
-                <span>总耗时 {{ formatSec(promptPreviewResult.steps.step2.elapsed_ms) }} s</span>
-                <span v-if="promptPreviewResult.steps.step2.llm_usage"> · 估算 ${{ formatUsd(promptPreviewResult.steps.step2.llm_usage.cost_usd) }} USD</span>
-                <span v-else> · 无 LLM 费用</span>
-              </div>
-              <div v-if="promptPreviewResult.steps?.step2?.skeleton && promptPreviewResult.steps.step2.skeleton.length" class="step2-block">
-                <div class="step2-title">纲目逻辑骨架</div>
-                <ol class="step2-ol">
-                  <li v-for="(s, i) in promptPreviewResult.steps.step2.skeleton" :key="`ps-${i}`">
-                    {{ typeof s === 'object' ? s.step : s }}
-                    <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
-                    <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
-                  </li>
-                </ol>
-              </div>
-              <div v-if="(promptPreviewResult.steps?.step2?.expanded_nodes || []).length" class="step2-block">
-                <div class="step2-title">扩展节点（deep）</div>
-                <a-tag v-for="e in promptPreviewResult.steps.step2.expanded_nodes" :key="`pe-${e}`">{{ e }}</a-tag>
-              </div>
-              <a-collapse v-if="(promptPreviewResult.steps?.step2?.paths || []).length" class="step2-inner-collapse" :bordered="false">
-                <a-collapse-panel key="paths" :header="`概念间路径 · ${promptPreviewResult.steps.step2.paths.length} 条`">
-                  <div v-for="(p, i) in (promptPreviewResult.steps.step2.paths || [])" :key="`pp-${i}`" class="step2-line">
-                    {{ formatStep2Path(p) }}
-                  </div>
-                </a-collapse-panel>
-              </a-collapse>
-              <template
-                v-if="promptPreviewResult.steps?.step2 && !promptPreviewResult.steps.step2.skipped && !(promptPreviewResult.steps.step2.paths || []).length && !(promptPreviewResult.steps.step2.skeleton || []).length"
-              >
-                无 1～3 跳路径或未调用骨架 LLM
-              </template>
-            </a-collapse-panel>
-            <a-collapse-panel key="step3" header="Step 3 检索统计">
-              主检索 {{ (promptPreviewResult.steps?.step3?.main_results || []).length }} 条，
-              扩展 {{ (promptPreviewResult.steps?.step3?.expanded_results || []).length }} 条
-            </a-collapse-panel>
-            </a-collapse>
-          </div>
-        </a-card>
-      </a-tab-pane>
-
-      <!-- Tab 4：Step1~2 测试 -->
-      <a-tab-pane key="step12" tab="Step1~2 测试">
-        <a-card class="tab-card">
-          <a-row :gutter="[16, 16]">
-            <a-col :span="24">
-              <div class="query-section step12-section">
-                <a-textarea
-                  v-model:value="step12Query"
-                  placeholder="输入查询问题…"
-                  :auto-size="{ minRows: 2, maxRows: 8 }"
-                  class="query-input"
-                />
-                <div class="step12-options">
-                  <span class="step12-options-label">范围</span>
-                  <a-radio-group v-model:value="step12Mode" class="step12-radio-group">
-                    <a-radio v-for="opt in step12ModeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-radio>
-                  </a-radio-group>
-                </div>
-                <p class="hint step12-gpt-hint">
-                  勾选多个模型后点击执行，将<strong>同时</strong>发起多路请求（浏览器并行）；下方按<strong>自上而下</strong>展示，顺序固定为 Sonnet 4.6 → Opus 4.6 → Opus 4.7 → GPT-5.4 → GPT-5.4 Thinking。最底部为 Step1/Step2 纯文本汇总。每路 Step1/Step2 使用同一模型；<strong>GPT-5.4 Thinking</strong> 为 <code>gpt-5.4</code> + 更高 <code>reasoning.effort</code>（非 Pro）。GPT 需 <code>OPENAI_API_KEY</code>。
-                </p>
-                <div class="param-item param-item-stack step12-model-row">
-                  <span class="param-label">并行模型（多选）</span>
-                  <a-checkbox-group v-model:value="step12SelectedModels" class="step12-checkbox-group">
-                    <a-row :gutter="[8, 8]">
-                      <a-col v-for="m in step12BenchmarkModels" :key="m.value" :span="12">
-                        <a-checkbox :value="m.value">{{ m.label }}</a-checkbox>
-                      </a-col>
-                    </a-row>
-                  </a-checkbox-group>
-                </div>
-                <a-button type="primary" :loading="step12Loading" class="query-btn" @click="runStep12Test">并行执行</a-button>
-              </div>
-            </a-col>
-            <a-col :span="24">
-              <div v-if="!step12Results" class="result-placeholder">勾选模型并执行后，自上而下展示各路 Step1 / Step2；页末为汇总文本。</div>
-              <div v-else class="step12-results-stack">
-                <a-card
-                  v-for="item in step12Results"
-                  :key="item.model"
-                  size="small"
-                  class="step12-model-card step12-model-card-stack"
-                  :title="item.label"
-                >
-                    <template v-if="!item.ok">
-                      <a-alert type="error" :message="item.error" show-icon />
-                    </template>
-                    <template v-else>
-                      <div class="step12-model-id">{{ item.model }}</div>
-                      <div v-if="item.data?.llm_usage" class="llm-usage-banner llm-usage-banner-compact">
-                        <div class="llm-usage-line">
-                          LLM · 输入 <strong>{{ item.data.llm_usage.totals?.input_tokens ?? "—" }}</strong>
-                          · 输出 <strong>{{ item.data.llm_usage.totals?.output_tokens ?? "—" }}</strong> tokens
-                          · ≈<strong>${{ formatUsd(item.data.llm_usage.totals?.cost_usd) }}</strong>
-                        </div>
-                        <a-collapse v-if="(item.data.llm_usage.calls || []).length" ghost size="small" class="llm-usage-collapse">
-                          <a-collapse-panel key="usage" header="明细">
-                            <ul class="llm-usage-calls">
-                              <li v-for="(c, idx) in item.data.llm_usage.calls" :key="idx">
-                                {{ c.step }} · {{ c.model }}（{{ c.billing_model }}）· in {{ c.input_tokens }} / out {{ c.output_tokens }}
-                                · ≈${{ formatUsd(c.cost_usd) }}
-                                <div class="rate-desc">{{ c.rate_description }}</div>
-                              </li>
-                            </ul>
-                            <p class="usage-disclaimer">{{ item.data.llm_usage.disclaimer }}</p>
-                            <ul class="usage-refs">
-                              <li v-for="(ref, i) in (item.data.llm_usage.pricing_references || [])" :key="i">{{ ref }}</li>
-                            </ul>
-                          </a-collapse-panel>
-                        </a-collapse>
-                      </div>
-                      <a-alert
-                        v-if="item.data?.stopped_after === 'step1' && step12Phase !== 'step1_done'"
-                        type="info"
-                        show-icon
-                        class="stopped-after-alert step12-mini-alert"
-                        message="仅 Step1"
-                      />
-                      <a-alert
-                        v-else-if="item.data?.stopped_after === 'step2'"
-                        type="info"
-                        show-icon
-                        class="stopped-after-alert step12-mini-alert"
-                        message="Step1+2 完成"
-                      />
-                      <a-steps direction="vertical" :current="2" class="result-steps step12-steps step12-steps-in-card">
-                        <a-step title="Step 1">
-                          <template #description>
-                            <a-card size="small" class="step-card step12-nested-card">
-                              <div v-if="item.data?.steps?.step1">
-                                <div class="step1-layer step12-tags-layer">
-                                  <span class="step1-layer-label">启示层：</span>
-                                  <a-select
-                                    v-if="step12ConceptSelections[item.model]"
-                                    v-model:value="step12ConceptSelections[item.model].revelation"
-                                    mode="tags"
-                                    class="concept-tags-select step12-concept-tags"
-                                    :token-separators="[',', '，']"
-                                    placeholder="回车或逗号添加"
-                                    allow-clear
-                                  />
-                                </div>
-                                <div class="step1-layer step12-tags-layer">
-                                  <span class="step1-layer-label">经历层：</span>
-                                  <a-select
-                                    v-if="step12ConceptSelections[item.model]"
-                                    v-model:value="step12ConceptSelections[item.model].experience"
-                                    mode="tags"
-                                    class="concept-tags-select step12-concept-tags"
-                                    :token-separators="[',', '，']"
-                                    placeholder="可为空"
-                                    allow-clear
-                                  />
-                                </div>
-                                <div class="step1-layer step12-tags-layer">
-                                  <span class="step1-layer-label">实行层：</span>
-                                  <a-select
-                                    v-if="step12ConceptSelections[item.model]"
-                                    v-model:value="step12ConceptSelections[item.model].practice"
-                                    mode="tags"
-                                    class="concept-tags-select step12-concept-tags"
-                                    :token-separators="[',', '，']"
-                                    placeholder="可为空"
-                                    allow-clear
-                                  />
-                                </div>
-                                <div v-if="step12ConceptSelections[item.model] && step12ConceptSelections[item.model].revelation.length === 0 && step12Phase === 'step1_done'" class="concept-warn" style="margin: 4px 0;">
-                                  请至少保留一个启示层概念
-                                </div>
-                                <a-collapse v-if="item.data.steps.step1.raw_response">
-                                  <a-collapse-panel key="raw" header="原始响应">
-                                    <pre class="raw-pre">{{ item.data.steps.step1.raw_response }}</pre>
-                                  </a-collapse-panel>
-                                </a-collapse>
-                                <p v-if="item.data.steps.step1.error" class="step12-error">{{ item.data.steps.step1.error }}</p>
-                              </div>
-                            </a-card>
-                          </template>
-                        </a-step>
-                        <a-step title="Step 2（路径 + 骨架）">
-                          <template #description>
-                            <a-card size="small" class="step-card step12-nested-card">
-                              <div v-if="item.data?.steps?.step2 && !item.data.steps.step2.skipped" class="step2-meta step12-step2-meta">
-                                <span>总耗时 {{ formatSec(item.data.steps.step2.elapsed_ms) }} s</span>
-                                <span v-if="item.data.steps.step2.llm_usage"> · ${{ formatUsd(item.data.steps.step2.llm_usage.cost_usd) }}</span>
-                                <span v-else> · 无 LLM 费用</span>
-                              </div>
-                              <template v-if="item.data?.steps?.step2?.skipped && item.data.steps.step2.reason === 'stop_after_step1'">
-                                <span class="step-skipped-hint">未执行（仅 Step1）</span>
-                              </template>
-                              <template v-else-if="item.data?.steps?.step2?.skipped">
-                                <span class="step-skipped-hint">未执行骨架</span>
-                              </template>
-                              <template v-else>
-                                <div v-if="item.data?.steps?.step2?.skeleton?.length" class="step2-block">
-                                  <div class="step2-title">骨架</div>
-                                  <ol class="step2-ol">
-                                    <li v-for="(s, i) in item.data.steps.step2.skeleton" :key="`${item.model}-sk-${i}`">
-                                      {{ typeof s === 'object' ? s.step : s }}
-                                      <div v-if="s && typeof s === 'object' && s.path_evidence" class="skeleton-path-evidence">↳ {{ formatPathEvidenceDisplay(s.path_evidence) }}</div>
-                                      <div v-if="s && typeof s === 'object' && s.scripture_anchor" class="skeleton-path-evidence">📖 {{ s.scripture_anchor }}</div>
-                                    </li>
-                                  </ol>
-                                </div>
-                                <div v-if="(item.data?.steps?.step2?.expanded_nodes || []).length" class="step2-block">
-                                  <a-tag v-for="e in item.data.steps.step2.expanded_nodes" :key="`${item.model}-ex-${e}`">{{ e }}</a-tag>
-                                </div>
-                                <a-collapse v-if="(item.data?.steps?.step2?.paths || []).length" class="step2-inner-collapse" :bordered="false">
-                                  <a-collapse-panel key="paths" :header="`路径 · ${item.data.steps.step2.paths.length} 条`">
-                                    <div v-for="(p, i) in (item.data.steps.step2.paths || [])" :key="`${item.model}-p-${i}`" class="step2-line">
-                                      {{ formatStep2Path(p) }}
-                                    </div>
-                                  </a-collapse-panel>
-                                </a-collapse>
-                                <template
-                                  v-if="!(item.data?.steps?.step2?.paths || []).length && !(item.data?.steps?.step2?.expanded_nodes || []).length && !(item.data?.steps?.step2?.skeleton || []).length"
-                                >
-                                  <span class="step-skipped-hint">无路径 / 无骨架</span>
-                                </template>
-                              </template>
-                            </a-card>
-                          </template>
-                        </a-step>
-                      </a-steps>
-                    </template>
-                </a-card>
-              </div>
-              <div v-if="step12Phase === 'step1_done'" class="step12-continue-wrap">
-                <a-button
-                  type="primary"
-                  :loading="step12Loading"
-                  :disabled="!hasAnyStep12DeepSelected"
-                  @click="runStep12ContinueStep2"
-                >
-                  用所选概念继续 Step2
-                </a-button>
-                <span v-if="!hasAnyStep12DeepSelected" class="concept-warn" style="margin-left: 12px;">请至少为一个模型勾选内在意义概念</span>
-              </div>
-            </a-col>
-            <a-col v-if="step12Results" :span="24">
-              <div class="step12-summary-wrap">
-                <div class="step12-summary-head">
-                  <span class="step12-summary-title">汇总（Step1 + Step2 纯文本）</span>
-                  <a-button type="default" size="small" @click="copyStep12Summary">
-                    <template #icon><CopyOutlined /></template>
-                    复制汇总
-                  </a-button>
-                </div>
-                <a-textarea
-                  :value="step12SummaryText"
-                  readonly
-                  class="step12-summary-textarea"
-                  :rows="22"
-                  placeholder="执行后将在此生成与上方一致的纯文本汇总"
-                />
-              </div>
-            </a-col>
-          </a-row>
-        </a-card>
-      </a-tab-pane>
-
-      <!-- Tab 5：防火墙测试 -->
-      <a-tab-pane key="firewall" tab="防火墙测试">
-        <a-card class="tab-card">
-          <div class="firewall-section">
-            <a-input
-              v-model:value="firewallQuery"
-              placeholder="输入纲目主题"
-              class="firewall-input"
-              @pressEnter="runFirewallTest"
-            />
-            <a-button type="primary" :loading="firewallLoading" class="firewall-btn" @click="runFirewallTest">测试</a-button>
-          </div>
-          <div v-if="firewallResult" class="firewall-result">
-            <template v-if="firewallResult.matched">
-              <div class="firewall-hit">
-                <span class="firewall-label">命中：</span>
-                <span class="firewall-value">{{ firewallResult.matched }}</span>
-              </div>
-              <div class="firewall-hit">
-                <span class="firewall-label">精粹：</span>
-                <span class="firewall-value">{{ firewallResult.note || "（无）" }}</span>
-              </div>
-            </template>
-            <template v-else>
-              <div class="firewall-miss">未命中</div>
-            </template>
           </div>
         </a-card>
       </a-tab-pane>
@@ -3284,48 +3393,50 @@ onMounted(() => {
   }
 }
 
-/* Tab 3 Prompt 预览 */
-.prompt-preview-input {
-  margin-bottom: 16px;
-  .hint {
-    color: #666;
-    font-size: 12px;
-    margin: 8px 0 12px;
-  }
+.burden-test-wrap {
+  padding: 4px 0;
 }
-
-.prompt-preview-result {
-  margin-top: 16px;
-  .prompt-preview-usage {
-    margin-bottom: 12px;
-  }
-  .prompt-meta-row {
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .prompt-token-hint {
-    font-size: 13px;
-    color: #666;
-  }
-  .prompt-full-textarea {
-    font-family: monospace;
-    font-size: 12px;
-    margin-bottom: 16px;
-    resize: none;
-  }
-  .steps-summary {
-    :deep(.ant-collapse-item) {
-      .ant-collapse-header {
-        padding: 8px 0;
-        font-size: 13px;
-      }
-      .ant-collapse-content-box {
-        padding: 8px 0 12px;
-      }
-    }
-  }
+.burden-test-results {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.burden-test-card {
+  flex: 1;
+  min-width: 0;
+}
+.burden-test-result-text {
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.burden-test-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border, #f0f0f0);
+}
+.burden-test-candidate:last-child {
+  border-bottom: none;
+}
+.burden-test-candidate-idx {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1677ff;
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.burden-test-candidate-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
 }
 </style>

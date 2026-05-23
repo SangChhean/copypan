@@ -6,6 +6,9 @@ KG-RAG LLM 费用估算：单价取自厂商公开文档（Standard，未计 Bat
   Sonnet 4.6 输入 $3/MTok、输出 $15/MTok；Opus 4.6 输入 $5/MTok、输出 $25/MTok。
 - OpenAI GPT-5.4：https://platform.openai.com/docs/pricing
   gpt-5.4（<272K context, Standard）输入 $2.50/MTok、输出 $15/MTok（与 2026-03 官网 Flagship 表一致）。
+- DeepSeek V4：https://api-docs.deepseek.com/quick_start/pricing
+  deepseek-v4-pro 当前 API 标价（2026-05 起）输入 $0.435/MTok、输出 $0.87/MTok（cache miss）；
+  未区分 cache hit（约 $0.003625/MTok），实际账单可能更低。
 
 说明：虚拟 id「gpt-5.4-thinking」实际调用仍为 gpt-5.4，计价同 gpt-5.4（Standard 单价不变）。
 开启 reasoning.effort（如 high）时，模型往往产生更多「推理侧」token；OpenAI 通常将其计入
@@ -55,6 +58,12 @@ def price_per_million_usd(billing_model: str) -> tuple[float, float, str]:
         if "pro" in m:
             return 30.0, 180.0, "gpt-5.4-pro 标准价 $30/$180 per MTok（<272K）"
         return 2.5, 15.0, "gpt-5.4 标准价 $2.50/$15 per MTok（<272K）"
+    if m == "deepseek-v4-pro":
+        return 0.435, 0.87, "DeepSeek V4 Pro API 标价 $0.435/$0.87 per MTok（cache miss）"
+    if m == "deepseek-v4-flash" or m == "deepseek-chat" or m == "deepseek-reasoner":
+        return 0.14, 0.28, "DeepSeek V4 Flash 标准价 $0.14/$0.28 per MTok（cache miss）"
+    if m.startswith("deepseek"):
+        return 0.435, 0.87, "DeepSeek（默认按 V4 Pro 档 $0.435/$0.87 per MTok 估算）"
     return 0.0, 0.0, f"未知模型 {billing_model!r}，未计价"
 
 

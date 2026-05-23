@@ -688,12 +688,26 @@ async def _call_claude(
     return msg.content[0].text, usage
 
 
+def _is_deepseek_kg_model(model: str) -> bool:
+    """根据模型 id 判断是否走 DeepSeek OpenAI 兼容 API。"""
+    m = (model or "").strip().lower()
+    return bool(m) and m.startswith("deepseek")
+
+
+def _normalize_deepseek_api_model(model: str) -> str:
+    """KG-RAG 请求的 DeepSeek 模型 id → API model 参数。"""
+    m = (model or "").strip().lower()
+    if m in ("deepseek-v3.2", "deepseek-v3"):
+        return "deepseek-chat"
+    return (model or "").strip() or "deepseek-v4-pro"
+
+
 def _is_openai_kg_model(model: str) -> bool:
-    """根据模型 id 判断是否走 OpenAI（与 claude-* 区分）。"""
+    """根据模型 id 判断是否走 OpenAI（与 claude-* / deepseek-* 区分）。"""
     m = (model or "").strip().lower()
     if not m:
         return False
-    if m.startswith("claude-"):
+    if m.startswith("claude-") or m.startswith("deepseek"):
         return False
     return m.startswith("gpt-") or m.startswith("o1") or m.startswith("o3")
 
@@ -795,6 +809,50 @@ async def _call_openai_kg_rag(
     return await asyncio.to_thread(_sync)
 
 
+async def _call_deepseek_kg_rag(
+    prompt: str,
+    model: str,
+    temperature: float = 0.0,
+    max_tokens: int = 1024,
+    system: str | None = None,
+) -> tuple[str, dict[str, int] | None]:
+    """DeepSeek Chat Completions（OpenAI 兼容，需 DEEPSEEK_API_KEY）。"""
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError("DeepSeek 未配置（请设置 DEEPSEEK_API_KEY）")
+    api_model = _normalize_deepseek_api_model(model)
+
+    def _sync() -> tuple[str, dict[str, int] | None]:
+        from openai import OpenAI
+
+        sys_text = (system or "").strip() or "你是一位专业、精确的助手。请严格按要求的格式输出。"
+        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com", timeout=600.0)
+        messages: list[dict[str, str]] = []
+        if sys_text:
+            messages.append({"role": "system", "content": sys_text})
+        messages.append({"role": "user", "content": prompt})
+        r = client.chat.completions.create(
+            model=api_model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        if not r.choices:
+            return "", None
+        msg = r.choices[0].message
+        content = getattr(msg, "content", None) or ""
+        usage: dict[str, int] | None = None
+        us = getattr(r, "usage", None)
+        if us is not None:
+            it = int(getattr(us, "prompt_tokens", 0) or 0)
+            ot = int(getattr(us, "completion_tokens", 0) or 0)
+            if it or ot:
+                usage = {"input_tokens": it, "output_tokens": ot}
+        return str(content).strip(), usage
+
+    return await asyncio.to_thread(_sync)
+
+
 async def _call_kg_rag_llm(
     prompt: str,
     model: str,
@@ -802,7 +860,11 @@ async def _call_kg_rag_llm(
     max_tokens: int = 1024,
     system: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
-    """KG-RAG 统一 LLM：Claude 或 OpenAI（含 GPT-5.4 等）。返回 (文本, usage)。"""
+    """KG-RAG 统一 LLM：Claude、OpenAI（含 GPT-5.4）或 DeepSeek。返回 (文本, usage)。"""
+    if _is_deepseek_kg_model(model):
+        return await _call_deepseek_kg_rag(
+            prompt, model, temperature=temperature, max_tokens=max_tokens, system=system
+        )
     if _is_openai_kg_model(model):
         return await _call_openai_kg_rag(
             prompt, model, temperature=temperature, max_tokens=max_tokens, system=system
@@ -1767,6 +1829,7 @@ class KgRagService:
         outline_nature: str = "",
         audience: str = "",
         reference_excerpt: str = "",
+        model: str = "claude-sonnet-4-6",
     ) -> dict[str, Any]:
         """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
         query_v = (query or "").strip()
@@ -1787,9 +1850,9 @@ class KgRagService:
             len(excerpt_v if excerpt_v != "（空）" else ""),
             len(prompt),
         )
-        raw, _usage = await _call_kg_rag_llm(
+        raw, usage = await _call_kg_rag_llm(
             prompt,
-            "claude-sonnet-4-6",
+            model,
             temperature=0.3,
             max_tokens=1200,
             system=BURDEN_DESCRIPTION_SYSTEM,
@@ -1807,6 +1870,21 @@ class KgRagService:
             bool(parsed.get("error")),
             list(parsed.keys()),
         )
+        llm_calls: list[dict[str, Any]] = []
+        sn = register_llm_usage(
+            llm_calls, step="generate_burden", request_model=model, usage=usage
+        )
+        if sn:
+            parsed["llm_usage"] = sn
+            parsed["model"] = model
+            logger.info(
+                "[KG-RAG LLM] generate_burden model=%s billing=%s in=%s out=%s cost_usd≈%s",
+                model,
+                sn["billing_model"],
+                sn["input_tokens"],
+                sn["output_tokens"],
+                sn["cost_usd"],
+            )
         return parsed
 
     @staticmethod
@@ -2018,13 +2096,6 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "result": _assemble_outline_line(prefix, clean_output, suffix),
                 }
             if _overlap_ratio(clean_output, body_stripped) >= 0.3:
-                logger.info(
-                    "[ministerialize same?] index=%s same=%s\n  body   : %r\n  output : %r",
-                    index,
-                    clean_output == body_stripped,
-                    body_stripped,
-                    clean_output,
-                )
                 return {
                     "index": index,
                     "original": line,

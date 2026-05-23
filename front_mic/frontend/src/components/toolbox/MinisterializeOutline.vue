@@ -23,6 +23,116 @@ const statusTag = {
   manual: { color: "orange", label: "人工处理" },
 };
 
+// 与 kg_rag_service.py _BIBLE_BOOKS 保持一致
+const BIBLE_BOOKS =
+  "创出利民申书士得撒上撒下王上王下代上代下拉尼斯伯诗箴传歌赛耶哀结但" +
+  "何珥摩俄拿弥鸿哈番该亚玛" +
+  "太可路约徒罗林前林后加弗腓西帖前帖后提前提后多门来雅彼前彼后约壹约贰约叁犹启" +
+  "参";
+
+const PREFIX_RE = /^[壹貳贰參叄叁参肆伍陸陆柒捌玖拾一二三四五六七八九十\da-z（）()]+[\t　]/;
+
+function escapeCharClass(s) {
+  return s.replace(/[\]\\^-]/g, "\\$&");
+}
+
+const BOOK_PAT = `[${escapeCharClass(BIBLE_BOOKS)}]{1,4}`;
+const CHAP_PAT = `[\\d一二三四五六七八九十百～~\\-至、\\s]+`;
+const REF_UNIT = `(?:${BOOK_PAT})?${CHAP_PAT}`;
+const SCRIPTURE_REF_RE = new RegExp(
+  `(—${BOOK_PAT}${CHAP_PAT}(?:[,，；;]${REF_UNIT})*[：:。]?\\s*)$`
+);
+const PURE_VERSE_RE = /(—[\d～~\-至、\s\d]+节[。：:]?\s*)$/;
+
+function findScriptureSuffix(rest) {
+  const scriptureMatches = [...rest.matchAll(new RegExp(SCRIPTURE_REF_RE.source, "g"))];
+  if (scriptureMatches.length) {
+    const m = scriptureMatches[scriptureMatches.length - 1];
+    return [rest.slice(0, m.index), m[0]];
+  }
+  const m = rest.match(PURE_VERSE_RE);
+  if (m) {
+    return [rest.slice(0, m.index), m[0]];
+  }
+  return [rest, ""];
+}
+
+function parseOutlineLine(line) {
+  const text = line || "";
+  const pm = text.match(PREFIX_RE);
+  if (pm) {
+    const prefix = pm[0];
+    const rest = text.slice(prefix.length);
+    const [body, suffix] = findScriptureSuffix(rest);
+    return { prefix, body, suffix };
+  }
+  const [body, suffix] = findScriptureSuffix(text);
+  return { prefix: "", body, suffix };
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function charDiffOps(a, b) {
+  const n = a.length;
+  const m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  for (let i = 1; i <= n; i += 1) {
+    for (let j = 1; j <= m; j += 1) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+  const ops = [];
+  let i = n;
+  let j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      ops.unshift({ type: "equal", ch: a[i - 1] });
+      i -= 1;
+      j -= 1;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.unshift({ type: "insert", ch: b[j - 1] });
+      j -= 1;
+    } else {
+      ops.unshift({ type: "delete", ch: a[i - 1] });
+      i -= 1;
+    }
+  }
+  return ops;
+}
+
+function renderDiffOps(ops) {
+  let html = "";
+  for (const op of ops) {
+    const ch = escapeHtml(op.ch);
+    if (op.type === "equal") {
+      html += ch;
+    } else if (op.type === "delete") {
+      html += `<span class="diff-del">${ch}</span>`;
+    } else {
+      html += `<span class="diff-ins">${ch}</span>`;
+    }
+  }
+  return html;
+}
+
+function diffHighlight(original, result) {
+  const o = parseOutlineLine(original);
+  const r = parseOutlineLine(result);
+  const bodyHtml = renderDiffOps(charDiffOps(o.body, r.body));
+  const suffix = r.suffix || o.suffix;
+  return `${escapeHtml(r.prefix || o.prefix)}${bodyHtml}${escapeHtml(suffix)}`;
+}
+
 const showResults = computed(() => tableData.value.length > 0);
 
 const stats = computed(() => ({
@@ -39,6 +149,19 @@ function buildHeaderLines() {
   return [headerSeries.value, headerTopic.value, headerChapter.value, headerReading.value].filter(
     (s) => (s || "").trim()
   );
+}
+
+function mapResultRow(r, displaySeq) {
+  return {
+    key: String(r.index),
+    index: r.index,
+    displaySeq,
+    original: r.original,
+    status: r.status,
+    result: r.result,
+    rerunning: false,
+    editing: false,
+  };
 }
 
 async function startMinisterialize() {
@@ -81,20 +204,54 @@ async function startMinisterialize() {
     let seq = 0;
     tableData.value = results.map((r) => {
       seq += 1;
-      return {
-        key: String(r.index),
-        index: r.index,
-        displaySeq: seq,
-        original: r.original,
-        status: r.status,
-        result: r.result,
-      };
+      return mapResultRow(r, seq);
     });
     toastSuccess(`职事化完成，共 ${results.length} 条`);
   } catch (err) {
     error.value = err.message || "网络错误，请稍后重试";
   } finally {
     loading.value = false;
+  }
+}
+
+async function rerunRow(row) {
+  const authToken = localStorage.getItem("token");
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  if (row.rerunning || loading.value) {
+    return;
+  }
+
+  row.rerunning = true;
+  try {
+    const res = await fetch(`${apiBase}/api/kg_rag/ministerialize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ lines: [row.original] }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toastWarning(data.detail || data.error || "重跑失败");
+      return;
+    }
+    const results = data.results || [];
+    const hit = results.find((r) => r.index === row.index) || results[0];
+    if (hit) {
+      row.status = hit.status;
+      row.result = hit.result;
+      row.editing = false;
+    } else {
+      toastWarning("未返回重跑结果");
+    }
+  } catch (err) {
+    toastWarning(err.message || "重跑失败");
+  } finally {
+    row.rerunning = false;
   }
 }
 
@@ -110,8 +267,6 @@ async function downloadDocx() {
   }
 
   const lines = tableData.value.map((row) => (row.result || "").trim()).filter(Boolean);
-  console.log("[ministerialize download] tableData rows:", JSON.parse(JSON.stringify(tableData.value)));
-  console.log("[ministerialize download] lines for docx:", lines);
   if (!lines.length) {
     toastWarning("结果为空，无法下载");
     return;
@@ -170,16 +325,16 @@ async function downloadDocx() {
 
       <div class="header-fields">
         <div class="header-row">
-          <span class="field-label">系列名</span>
-          <a-input v-model:value="headerSeries" placeholder="系列名（可选）" :disabled="loading" />
+          <span class="field-label">第一行</span>
+          <a-input v-model:value="headerSeries" placeholder="第一行（可选）" :disabled="loading" />
         </div>
         <div class="header-row">
-          <span class="field-label">总题</span>
-          <a-input v-model:value="headerTopic" placeholder="总题（可选）" :disabled="loading" />
+          <span class="field-label">第二行</span>
+          <a-input v-model:value="headerTopic" placeholder="第二行（可选）" :disabled="loading" />
         </div>
         <div class="header-row">
-          <span class="field-label">篇题</span>
-          <a-input v-model:value="headerChapter" placeholder="篇题（可选）" :disabled="loading" />
+          <span class="field-label">第三红</span>
+          <a-input v-model:value="headerChapter" placeholder="第三行（可选）" :disabled="loading" />
         </div>
         <div class="header-row">
           <span class="field-label">读经</span>
@@ -220,10 +375,44 @@ async function downloadDocx() {
           </div>
           <div class="result-row-inner-divider" />
           <div class="result-row-edit">
-            <a-tag :color="statusTag[row.status]?.color || 'default'" class="status-tag">
+            <a-tag
+              v-if="row.rerunning"
+              color="default"
+              class="status-tag"
+            >
+              处理中...
+            </a-tag>
+            <a-tag
+              v-else
+              :color="statusTag[row.status]?.color || 'default'"
+              class="status-tag"
+            >
               {{ statusTag[row.status]?.label || row.status }}
             </a-tag>
-            <a-input v-model:value="row.result" class="result-input" />
+            <div
+              v-if="row.status === 'minor' && !row.editing && !row.rerunning"
+              class="result-diff result-diff-clickable"
+              title="点击编辑"
+              v-html="diffHighlight(row.original, row.result)"
+              @click="row.editing = true"
+            />
+            <a-textarea
+              v-else
+              v-model:value="row.result"
+              class="result-input"
+              :auto-size="{ minRows: 1 }"
+              :disabled="row.rerunning"
+              @blur="row.editing = false"
+            />
+            <a-button
+              type="link"
+              size="small"
+              class="rerun-btn"
+              :disabled="row.rerunning || loading"
+              @click="rerunRow(row)"
+            >
+              重跑
+            </a-button>
           </div>
         </div>
       </div>
@@ -346,14 +535,44 @@ async function downloadDocx() {
 }
 .result-row-edit {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding-left: 1.5em;
 }
 .status-tag {
   flex: 0 0 auto;
+  margin-top: 4px;
 }
 .result-input {
   flex: 1;
+}
+.result-diff {
+  flex: 1;
+  min-height: 32px;
+  padding: 4px 11px;
+  line-height: 1.6;
+  word-break: break-word;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+}
+.result-diff-clickable {
+  cursor: pointer;
+}
+.result-diff-clickable:hover {
+  border-color: #4096ff;
+}
+.result-diff :deep(.diff-del) {
+  text-decoration: line-through;
+  color: #dc3545;
+}
+.result-diff :deep(.diff-ins) {
+  background: #d4edda;
+  color: #155724;
+}
+.rerun-btn {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  margin-top: 2px;
 }
 </style>
