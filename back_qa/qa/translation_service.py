@@ -18,8 +18,8 @@ from typing import Any
 
 logger = logging.getLogger("qa")
 
-# 术语表与 back_mic 一致，但本服务读取 back_qa/zh_tw_terms.json（避免跨项目依赖）
-_TERMS_PATH = Path(__file__).resolve().parents[1] / "zh_tw_terms.json"
+# 术语表：仓库根目录 shared/zh_tw_terms.json（与 back_mic 共用）
+_TERMS_PATH = Path(__file__).resolve().parents[2] / "shared" / "zh_tw_terms.json"
 
 # Gemini 客户端懒加载（参考 asr_service 中 _get_client 的写法）
 _gemini_client: Any = None
@@ -186,7 +186,7 @@ def _get_gemini_client() -> Any:
 # ---------------------------------------------------------------------------
 
 def to_traditional(text: str) -> str:
-    """简体 → 台湾繁体：先按术语表占位替换，再 OpenCC s2tw（失败回退 zhconv zh-tw）。
+    """简体 → 繁体：先按术语表占位替换，再 OpenCC s2t（失败回退 zhconv zh-hant）。
     依赖全部缺失或异常时返回原文（不抛错）。
     """
     src = text or ""
@@ -213,12 +213,12 @@ def to_traditional(text: str) -> str:
 
         try:
             from opencc import OpenCC
-            cc = OpenCC("s2tw")
+            cc = OpenCC("s2t")
             out = cc.convert(out)
         except Exception:
             try:
                 import zhconv
-                out = zhconv.convert(out, "zh-tw")
+                out = zhconv.convert(out, "zh-hant")
             except ImportError:
                 logger.warning("[QA] OpenCC/zhconv 未安装，无法做通用简繁转换")
                 return src

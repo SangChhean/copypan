@@ -158,7 +158,7 @@ async def translate_outline(request: TranslateOutlineRequest):
 async def outline_to_traditional(request: OutlineToTraditionalRequest):
     """
     用户勾选「同时生成繁体纲目」后，前端用已展示的简体纲目调用此接口。
-    后端先按术语表替换，再通用简→繁（zhconv zh-tw）。
+    后端先按术语表替换，再 OpenCC s2t（失败回退 zhconv zh-hant）。
     使用 asyncio.to_thread 避免阻塞事件循环。
     """
     try:

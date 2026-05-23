@@ -1058,7 +1058,7 @@ class AISearchService:
 
     def outline_to_traditional(self, content: str) -> Dict[str, Optional[str]]:
         """
-        将简体纲目转为台湾繁体：先按术语表替换，再通用简→繁（zhconv zh-tw）。
+        将简体纲目转为繁体：先按术语表替换，再 OpenCC s2t（失败回退 zhconv zh-hant）。
         用于 AI 纲目制作「同时生成繁体纲目」。
         
         Args:
@@ -1072,7 +1072,7 @@ class AISearchService:
         text = (content or "").strip()
         try:
             # 1. 加载台湾繁简术语表（简体 -> 繁体）
-            terms_path = Path(__file__).resolve().parent / "zh_tw_terms.json"
+            terms_path = Path(__file__).resolve().parents[3] / "shared" / "zh_tw_terms.json"
             placeholders: List[tuple] = []  # (placeholder_str, target_value)
             if terms_path.exists():
                 terms = json.loads(terms_path.read_text(encoding="utf-8"))
@@ -1087,15 +1087,15 @@ class AISearchService:
                         text = text.replace(simp, ph)
             else:
                 logger.warning("繁简术语表不存在: %s，仅做通用简繁转换", terms_path)
-            # 2. 通用简→台湾繁体（优先 OpenCC s2tw，占位符为 ASCII 不会被改动）
+            # 2. 通用简→繁体（优先 OpenCC s2t，占位符为 ASCII 不会被改动）
             try:
                 from opencc import OpenCC
-                cc = OpenCC("s2tw")
+                cc = OpenCC("s2t")
                 text = cc.convert(text)
             except Exception:
                 try:
                     import zhconv
-                    text = zhconv.convert(text, "zh-tw")
+                    text = zhconv.convert(text, "zh-hant")
                 except ImportError:
                     logger.warning("OpenCC/zhconv 未安装，无法做通用简繁转换")
                     return {"answer_zh_tw": None, "error": "繁简转换依赖未安装（opencc 或 zhconv）"}
@@ -1122,10 +1122,10 @@ class AISearchService:
             return {"answer_zh_cn": None, "error": "内容为空"}
         text = (content or "").strip()
         try:
-            # 繁→简：优先 OpenCC tw2s（台湾繁体→简体），否则 zhconv
+            # 繁→简：优先 OpenCC t2s（繁体→简体），否则 zhconv
             try:
                 from opencc import OpenCC
-                cc = OpenCC("tw2s")
+                cc = OpenCC("t2s")
                 text = cc.convert(text)
             except Exception:
                 try:
