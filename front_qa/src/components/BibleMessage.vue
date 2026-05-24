@@ -10,7 +10,7 @@
       </div>
 
       <div
-        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length || (verse && BIBLEHUB_MAP[verse.book])"
+        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length"
         class="verse-toggles"
       >
         <span
@@ -27,13 +27,6 @@
         >
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
         </span>
-        <a
-          v-if="verse && BIBLEHUB_MAP[verse.book]"
-          :href="biblehubUrl(verse.book, verse.chapter, verse.verse)"
-          target="_blank"
-          rel="noopener"
-          class="toggle-tag biblehub-link"
-        >🔗 {{ labels.biblehub }}</a>
       </div>
 
       <div v-if="crossrefItemsSingle.length" class="bible-fold-block">
@@ -74,26 +67,6 @@
 
     <!-- 多节：范围 / 整章 -->
     <template v-else-if="isMulti">
-      <!-- 整章模式：生命读经按钮，放在所有经文之前 -->
-      <div v-if="queryType === 'chapter' && versesList.length" class="chapter-header">
-        <span class="toggle-tag lsm-btn" style="position:relative">
-          <span @click="showLsmDropdown = !showLsmDropdown">📖 {{ labels.lsm }}</span>
-          <div v-if="showLsmDropdown" class="lsm-dropdown">
-            <template v-if="getLsmMessages(versesList[0].book, versesList[0].chapter).length">
-              <a
-                v-for="msg in getLsmMessages(versesList[0].book, versesList[0].chapter)"
-                :key="msg.index"
-                :href="lsmPdfUrl(LSM_MAP[versesList[0].book], msg.index)"
-                target="_blank"
-                rel="noopener"
-                class="lsm-dropdown-item"
-                @click="showLsmDropdown = false"
-              ><span style="white-space:nowrap">{{ msg.label }}</span><span class="lsm-ref">{{ msg.reference }}</span></a>
-            </template>
-            <span v-else class="lsm-dropdown-item lsm-empty">暂无对应篇目</span>
-          </div>
-        </span>
-      </div>
       <div v-for="(v, i) in versesList" :key="verseRowKey(v, i)" class="verse-item">
         <div class="verse-row">
           <span class="verse-num">{{ v.verse }}</span>
@@ -101,7 +74,7 @@
         </div>
 
         <div
-          v-if="hasCrossrefs(v) || hasFootnotes(v) || (v.book && BIBLEHUB_MAP[v.book])"
+          v-if="hasCrossrefs(v) || hasFootnotes(v)"
           class="verse-toggles"
         >
           <span
@@ -118,13 +91,6 @@
           >
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
           </span>
-          <a
-            v-if="v.book && BIBLEHUB_MAP[v.book]"
-            :href="biblehubUrl(v.book, v.chapter, v.verse)"
-            target="_blank"
-            rel="noopener"
-            class="toggle-tag biblehub-link"
-          >🔗 {{ labels.biblehub }}</a>
         </div>
 
         <div v-if="hasCrossrefs(v)" class="bible-fold-block">
