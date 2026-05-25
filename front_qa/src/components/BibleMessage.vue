@@ -10,7 +10,7 @@
       </div>
 
       <div
-        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length || (verse && BIBLEHUB_MAP[verse.book])"
+        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length || (SHOW_BIBLE_EXTRA_LINKS && verse && BIBLEHUB_MAP[verse.book])"
         class="verse-toggles"
       >
         <span
@@ -28,7 +28,7 @@
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
         </span>
         <a
-          v-if="verse && BIBLEHUB_MAP[verse.book]"
+          v-if="SHOW_BIBLE_EXTRA_LINKS && verse && BIBLEHUB_MAP[verse.book]"
           :href="biblehubUrl(verse.book, verse.chapter, verse.verse)"
           target="_blank"
           rel="noopener"
@@ -75,7 +75,7 @@
     <!-- 多节：范围 / 整章 -->
     <template v-else-if="isMulti">
       <!-- 整章模式：生命读经按钮，放在所有经文之前 -->
-      <div v-if="queryType === 'chapter' && versesList.length" class="chapter-header">
+      <div v-if="SHOW_BIBLE_EXTRA_LINKS && queryType === 'chapter' && versesList.length" class="chapter-header">
         <span ref="lsmRootRef" class="toggle-tag lsm-btn" style="position:relative">
           <span @click.stop="toggleLsmDropdown">📖 {{ labels.lsm }}</span>
           <div v-if="showLsmDropdown" class="lsm-dropdown">
@@ -101,7 +101,7 @@
         </div>
 
         <div
-          v-if="hasCrossrefs(v) || hasFootnotes(v) || (v.book && BIBLEHUB_MAP[v.book])"
+          v-if="hasCrossrefs(v) || hasFootnotes(v) || (SHOW_BIBLE_EXTRA_LINKS && v.book && BIBLEHUB_MAP[v.book])"
           class="verse-toggles"
         >
           <span
@@ -119,7 +119,7 @@
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
           </span>
           <a
-            v-if="v.book && BIBLEHUB_MAP[v.book]"
+            v-if="SHOW_BIBLE_EXTRA_LINKS && v.book && BIBLEHUB_MAP[v.book]"
             :href="biblehubUrl(v.book, v.chapter, v.verse)"
             target="_blank"
             rel="noopener"
@@ -230,6 +230,9 @@ const LSM_MAP = {
   56: 'titus', 57: 'philemon', 58: 'hebrews', 59: 'james', 60: '1-peter',
   61: '2-peter', 62: '1-john', 63: '2-john', 64: '3-john', 65: 'jude', 66: 'revelation',
 }
+
+/** 经文问答：暂时隐藏生命读经、原文对照入口（仅前端） */
+const SHOW_BIBLE_EXTRA_LINKS = false
 
 const LSM_BASE_URL = '/lsm/'
 
@@ -504,7 +507,9 @@ function hasFootnotes(v) {
 }
 
 onMounted(() => {
-  loadLsmData()
+  if (SHOW_BIBLE_EXTRA_LINKS) {
+    loadLsmData()
+  }
 })
 </script>
 
