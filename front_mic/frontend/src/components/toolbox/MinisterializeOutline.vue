@@ -15,6 +15,8 @@ const loading = ref(false);
 const downloading = ref(false);
 const error = ref(null);
 const tableData = ref([]);
+const statusFilter = ref("all");
+const usageInfo = ref(null);
 
 const statusTag = {
   original: { color: "green", label: "原文" },
@@ -135,15 +137,18 @@ function diffHighlight(original, result) {
 
 const showResults = computed(() => tableData.value.length > 0);
 
-const stats = computed(() => ({
-  original: tableData.value.filter((r) => r.status === "original").length,
-  minor: tableData.value.filter((r) => r.status === "minor").length,
-  replaced: tableData.value.filter((r) => r.status === "replaced").length,
-  manual: tableData.value.filter((r) => r.status === "manual").length,
-  total: tableData.value.length,
-}));
+const statusCount = computed(() => {
+  const c = { original: 0, minor: 0, replaced: 0, manual: 0 };
+  tableData.value.forEach((r) => {
+    if (c[r.status] !== undefined) c[r.status] += 1;
+  });
+  return c;
+});
 
-const showStats = computed(() => showResults.value && !loading.value);
+const filteredData = computed(() => {
+  if (statusFilter.value === "all") return tableData.value;
+  return tableData.value.filter((r) => r.status === statusFilter.value);
+});
 
 function buildHeaderLines() {
   return [headerSeries.value, headerTopic.value, headerChapter.value, headerReading.value].filter(
@@ -183,6 +188,7 @@ async function startMinisterialize() {
   loading.value = true;
   error.value = null;
   tableData.value = [];
+  usageInfo.value = null;
 
   try {
     const res = await fetch(`${apiBase}/api/kg_rag/ministerialize`, {
@@ -208,6 +214,16 @@ async function startMinisterialize() {
       seq += 1;
       return mapResultRow(r, seq);
     });
+    usageInfo.value =
+      data.cost_usd != null
+        ? {
+            sonnet_input: data.usage?.sonnet_input || 0,
+            sonnet_output: data.usage?.sonnet_output || 0,
+            haiku_input: data.usage?.haiku_input || 0,
+            haiku_output: data.usage?.haiku_output || 0,
+            cost_usd: data.cost_usd,
+          }
+        : null;
     toastSuccess(`职事化完成，共 ${results.length} 条`);
   } catch (err) {
     error.value = err.message || "网络错误，请稍后重试";
@@ -376,12 +392,45 @@ async function downloadDocx(withSource = false) {
     </a-card>
 
     <a-card v-if="showResults" class="result-card">
+      <div class="info-bar" v-if="tableData.length">
+        <div class="info-row">
+          <span
+            class="stat-item stat-all"
+            :class="{ 'stat-active': statusFilter === 'all' }"
+            @click="statusFilter = 'all'"
+          >全部 {{ tableData.length }}</span>
+          <span
+            class="stat-item stat-green"
+            :class="{ 'stat-active': statusFilter === 'original' }"
+            @click="statusFilter = 'original'"
+          >原文 {{ statusCount.original }}</span>
+          <span
+            class="stat-item stat-gold"
+            :class="{ 'stat-active': statusFilter === 'minor' }"
+            @click="statusFilter = 'minor'"
+          >微调 {{ statusCount.minor }}</span>
+          <span
+            class="stat-item stat-blue"
+            :class="{ 'stat-active': statusFilter === 'replaced' }"
+            @click="statusFilter = 'replaced'"
+          >已替换 {{ statusCount.replaced }}</span>
+          <span
+            class="stat-item stat-red"
+            :class="{ 'stat-active': statusFilter === 'manual' }"
+            @click="statusFilter = 'manual'"
+          >人工处理 {{ statusCount.manual }}</span>
+          <span class="stat-divider" v-if="usageInfo">|</span>
+          <span class="cost-info" v-if="usageInfo">
+            {{ (usageInfo.sonnet_input + usageInfo.haiku_input).toLocaleString() }}/{{ (usageInfo.sonnet_output + usageInfo.haiku_output).toLocaleString() }} tokens ≈ ${{ usageInfo.cost_usd.toFixed(4) }}
+          </span>
+        </div>
+      </div>
       <div class="result-list">
         <div
-          v-for="(row, idx) in tableData"
+          v-for="(row, idx) in filteredData"
           :key="row.key"
           class="result-item"
-          :class="{ 'result-item-last': idx === tableData.length - 1 }"
+          :class="{ 'result-item-last': idx === filteredData.length - 1 }"
         >
           <div class="result-row-original">
             <span class="seq-num">{{ row.displaySeq }}.</span>
@@ -456,16 +505,6 @@ async function downloadDocx(withSource = false) {
         </div>
       </div>
 
-      <div v-if="showStats" class="result-stats">
-        <a-space :size="16" wrap>
-          <span class="stat-item stat-original">原文 {{ stats.original }} 条</span>
-          <span class="stat-item stat-minor">微调 {{ stats.minor }} 条</span>
-          <span class="stat-item stat-replaced">已替换 {{ stats.replaced }} 条</span>
-          <span class="stat-item stat-manual">人工处理 {{ stats.manual }} 条</span>
-          <span class="stat-item stat-total">共 {{ stats.total }} 条</span>
-        </a-space>
-      </div>
-
       <div class="actions bottom-actions">
         <a-space>
           <a-button type="primary" :loading="downloading" @click="downloadDocx(false)">
@@ -511,28 +550,80 @@ async function downloadDocx(withSource = false) {
 .actions {
   margin-top: 16px;
 }
-.result-stats {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+.info-bar {
+  margin-bottom: 12px;
+}
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .stat-item {
-  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
 }
-.stat-original {
+.stat-all {
+  color: #595959;
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+}
+.stat-green {
   color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
 }
-.stat-minor {
-  color: #d4b106;
+.stat-gold {
+  color: #d48806;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
 }
-.stat-replaced {
-  color: #1677ff;
+.stat-blue {
+  color: #096dd9;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
 }
-.stat-manual {
+.stat-red {
   color: #cf1322;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
 }
-.stat-total {
-  color: #8c8c8c;
+.stat-all.stat-active {
+  background: #595959;
+  color: #fff;
+  border-color: #595959;
+}
+.stat-green.stat-active {
+  background: #52c41a;
+  color: #fff;
+  border-color: #52c41a;
+}
+.stat-gold.stat-active {
+  background: #faad14;
+  color: #fff;
+  border-color: #faad14;
+}
+.stat-blue.stat-active {
+  background: #1677ff;
+  color: #fff;
+  border-color: #1677ff;
+}
+.stat-red.stat-active {
+  background: #ff4d4f;
+  color: #fff;
+  border-color: #ff4d4f;
+}
+.stat-divider {
+  color: #d9d9d9;
+  margin: 0 4px;
+}
+.cost-info {
+  color: #999;
+  font-size: 12px;
 }
 .bottom-actions {
   margin-top: 20px;

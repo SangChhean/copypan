@@ -1995,7 +1995,7 @@ class KgRagService:
 # 纲目职事化：逐条检索 + 重排 + Claude 抽句
 # ---------------------------------------------------------------------------
 
-MINISTERIALIZE_CLAUDE_MODEL = "claude-sonnet-4-20250514"
+MINISTERIALIZE_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 MINISTERIALIZE_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 _MINISTERIALIZE_PREFIX_RE = re.compile(
     r"^[壹貳贰參叄叁参肆伍陸陆柒捌玖拾一二三四五六七八九十\da-z（）()]+[\t　]"
@@ -2105,10 +2105,12 @@ def _is_minor_edit(a: str, b: str, threshold: int = 5) -> bool:
     return prev[len_b] <= threshold
 
 
-async def _judge_ministerialize_status(original_body: str, claude_output: str) -> str:
+async def _judge_ministerialize_status(
+    original_body: str, claude_output: str
+) -> tuple[str, dict[str, int] | None]:
     """
     用 Claude Haiku 判断职事化结果的状态。
-    返回值：'original' | 'minor' | 'replaced' | 'manual'
+    返回值：('original' | 'minor' | 'replaced' | 'manual', usage)
     """
     prompt = f"""你是一位熟悉职事书写作风格的编辑助手。请判断「替换后纲目」相对于「原纲目」的修改程度，返回以下四种状态之一：
 
@@ -2123,7 +2125,7 @@ manual：替换后纲目与原纲目几乎无关，或替换后内容明显不�
 只输出一个词：original、minor、replaced 或 manual，不要有任何其他内容。"""
 
     try:
-        output, _ = await _call_claude(
+        output, usage = await _call_claude(
             prompt,
             MINISTERIALIZE_JUDGE_MODEL,
             temperature=0,
@@ -2132,18 +2134,42 @@ manual：替换后纲目与原纲目几乎无关，或替换后内容明显不�
         )
         status = (output or "").strip().lower()
         if status in ("original", "minor", "replaced", "manual"):
-            return status
+            return status, usage
         logger.warning("[职事化判断] Haiku 返回非预期值: %s，fallback 到 replaced", status)
-        return "replaced"
+        return "replaced", usage
     except Exception as e:
         logger.warning("[职事化判断] Haiku 调用失败: %s，fallback 到 replaced", e)
-        return "replaced"
+        return "replaced", None
 
 
 async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dict:
     """单条纲目：解析结构 → BM25/Dense 仅用 body → 拼回 prefix/suffix。"""
     prefix, body, suffix = _parse_outline_line(line)
     body_stripped = body.strip()
+    sonnet_input_tokens = 0
+    sonnet_output_tokens = 0
+    haiku_input_tokens = 0
+    haiku_output_tokens = 0
+
+    def _add_sonnet_usage(u: dict[str, int] | None) -> None:
+        nonlocal sonnet_input_tokens, sonnet_output_tokens
+        if u:
+            sonnet_input_tokens += int(u.get("input_tokens", 0) or 0)
+            sonnet_output_tokens += int(u.get("output_tokens", 0) or 0)
+
+    def _add_haiku_usage(u: dict[str, int] | None) -> None:
+        nonlocal haiku_input_tokens, haiku_output_tokens
+        if u:
+            haiku_input_tokens += int(u.get("input_tokens", 0) or 0)
+            haiku_output_tokens += int(u.get("output_tokens", 0) or 0)
+
+    def _usage_out() -> dict[str, int]:
+        return {
+            "sonnet_input": sonnet_input_tokens,
+            "sonnet_output": sonnet_output_tokens,
+            "haiku_input": haiku_input_tokens,
+            "haiku_output": haiku_output_tokens,
+        }
 
     def _extract_source(hit: dict) -> str:
         source_zh = (hit.get("source_zh") or "").strip()
@@ -2161,6 +2187,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "result": line,
             "suggestion": "",
             "source": "",
+            "usage": _usage_out(),
         }
 
     bm25_results = await bm25_search(es_client, body_stripped, _INDICES_BASE, 5)
@@ -2176,6 +2203,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "result": _assemble_outline_line(prefix, body, suffix),
             "suggestion": "",
             "source": "",
+            "usage": _usage_out(),
         }
 
     top1_source = _extract_source(reranked[0])
@@ -2188,6 +2216,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "result": _assemble_outline_line(prefix, body, suffix),
             "suggestion": "",
             "source": top1_source,
+            "usage": _usage_out(),
         }
 
     excerpt1 = reranked[0].get("text", "") if len(reranked) > 0 else ""
@@ -2205,6 +2234,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             max_tokens=200,
             system="你是一位专业、精确的助手。请严格按要求的格式输出。",
         )
+        _add_sonnet_usage(_usage)
         output = (claude_output or "").strip()
         if output:
             clean_output = re.sub(r"[。，、；：,;.]+$", "", output.strip()).strip()
@@ -2216,9 +2246,11 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": "",
                     "source": top1_source,
+                    "usage": _usage_out(),
                 }
             # 用 Haiku 判断语义修改程度
-            status = await _judge_ministerialize_status(body_stripped, clean_output)
+            status, _jusage = await _judge_ministerialize_status(body_stripped, clean_output)
+            _add_haiku_usage(_jusage)
             if status == "manual":
                 return {
                     "index": index,
@@ -2227,6 +2259,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": "",
                     "source": "",
+                    "usage": _usage_out(),
                 }
             if status == "minor":
                 return {
@@ -2236,6 +2269,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": _assemble_outline_line(prefix, clean_output, suffix),
                     "source": top1_source,
+                    "usage": _usage_out(),
                 }
             return {
                 "index": index,
@@ -2244,6 +2278,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                 "result": _assemble_outline_line(prefix, clean_output, suffix),
                 "suggestion": "",
                 "source": top1_source,
+                "usage": _usage_out(),
             }
     except Exception as e:
         logger.warning("[纲目职事化] Claude 调用失败 index=%s: %s", index, e)
@@ -2255,12 +2290,14 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
         "result": _assemble_outline_line(prefix, body, suffix),
         "suggestion": "",
         "source": "",
+        "usage": _usage_out(),
     }
 
 
-async def ministerialize_outline(lines: list[str]) -> list[dict]:
+async def ministerialize_outline(lines: list[str]) -> dict:
     """
     纲目职事化：对每条非空纲目并发执行检索与抽句，保持原始行号顺序返回。
+    返回 results、汇总 usage（Sonnet/Haiku 分列）与分模型单价计算的 cost_usd。
     """
     try:
         from es_config import es as es_client
@@ -2272,9 +2309,40 @@ async def ministerialize_outline(lines: list[str]) -> list[dict]:
 
     items = [(i, line) for i, line in enumerate(lines) if (line or "").strip()]
     if not items:
-        return []
+        return {
+            "results": [],
+            "usage": {
+                "sonnet_input": 0,
+                "sonnet_output": 0,
+                "haiku_input": 0,
+                "haiku_output": 0,
+            },
+            "cost_usd": 0.0,
+        }
 
     results = await asyncio.gather(
         *[_ministerialize_one_line(es_client, line, i) for i, line in items]
     )
-    return sorted(results, key=lambda x: x["index"])
+    sorted_results = sorted(results, key=lambda x: x["index"])
+
+    sonnet_in = sum(r.get("usage", {}).get("sonnet_input", 0) for r in sorted_results)
+    sonnet_out = sum(r.get("usage", {}).get("sonnet_output", 0) for r in sorted_results)
+    haiku_in = sum(r.get("usage", {}).get("haiku_input", 0) for r in sorted_results)
+    haiku_out = sum(r.get("usage", {}).get("haiku_output", 0) for r in sorted_results)
+
+    # 两个模型均为 claude-haiku-4-5: $1/M input, $5/M output
+    cost_usd = ((sonnet_in + haiku_in) * 1 + (sonnet_out + haiku_out) * 5) / 1_000_000
+
+    for r in sorted_results:
+        r.pop("usage", None)
+
+    return {
+        "results": sorted_results,
+        "usage": {
+            "sonnet_input": sonnet_in,
+            "sonnet_output": sonnet_out,
+            "haiku_input": haiku_in,
+            "haiku_output": haiku_out,
+        },
+        "cost_usd": round(cost_usd, 6),
+    }

@@ -189,8 +189,7 @@ async def generate_step5(req: GenerateStep5Request):
 async def ministerialize(req: MinisterializeRequest):
     """纲目职事化：对每条纲目检索职事书摘录并抽取贴近原文。"""
     try:
-        results = await ministerialize_outline(req.lines)
-        return {"results": results}
+        return await ministerialize_outline(req.lines)
     except Exception as e:
         logger.exception("ministerialize 失败")
         return JSONResponse(status_code=500, content={"error": str(e)})
