@@ -10,7 +10,7 @@
       </div>
 
       <div
-        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length"
+        v-if="crossrefItemsSingle.length || footnoteItemsSingle.length || (verse && BIBLEHUB_MAP[verse.book])"
         class="verse-toggles"
       >
         <span
@@ -27,6 +27,13 @@
         >
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
         </span>
+        <a
+          v-if="verse && BIBLEHUB_MAP[verse.book]"
+          :href="biblehubUrl(verse.book, verse.chapter, verse.verse)"
+          target="_blank"
+          rel="noopener"
+          class="toggle-tag biblehub-link"
+        >🔗 {{ labels.biblehub }}</a>
       </div>
 
       <div v-if="crossrefItemsSingle.length" class="bible-fold-block">
@@ -67,6 +74,26 @@
 
     <!-- 多节：范围 / 整章 -->
     <template v-else-if="isMulti">
+      <!-- 整章模式：生命读经按钮，放在所有经文之前 -->
+      <div v-if="queryType === 'chapter' && versesList.length" class="chapter-header">
+        <span ref="lsmRootRef" class="toggle-tag lsm-btn" style="position:relative">
+          <span @click.stop="toggleLsmDropdown">📖 {{ labels.lsm }}</span>
+          <div v-if="showLsmDropdown" class="lsm-dropdown">
+            <template v-if="getLsmMessages(versesList[0].book, versesList[0].chapter).length">
+              <a
+                v-for="msg in getLsmMessages(versesList[0].book, versesList[0].chapter)"
+                :key="msg.index"
+                :href="lsmPdfUrl(LSM_MAP[versesList[0].book], msg.index)"
+                target="_blank"
+                rel="noopener"
+                class="lsm-dropdown-item"
+                @click="showLsmDropdown = false"
+              ><span style="white-space:nowrap">{{ msg.label }}</span><span class="lsm-ref">{{ msg.reference }}</span></a>
+            </template>
+            <span v-else class="lsm-dropdown-item lsm-empty">暂无对应篇目</span>
+          </div>
+        </span>
+      </div>
       <div v-for="(v, i) in versesList" :key="verseRowKey(v, i)" class="verse-item">
         <div class="verse-row">
           <span class="verse-num">{{ v.verse }}</span>
@@ -74,7 +101,7 @@
         </div>
 
         <div
-          v-if="hasCrossrefs(v) || hasFootnotes(v)"
+          v-if="hasCrossrefs(v) || hasFootnotes(v) || (v.book && BIBLEHUB_MAP[v.book])"
           class="verse-toggles"
         >
           <span
@@ -91,6 +118,13 @@
           >
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
           </span>
+          <a
+            v-if="v.book && BIBLEHUB_MAP[v.book]"
+            :href="biblehubUrl(v.book, v.chapter, v.verse)"
+            target="_blank"
+            rel="noopener"
+            class="toggle-tag biblehub-link"
+          >🔗 {{ labels.biblehub }}</a>
         </div>
 
         <div v-if="hasCrossrefs(v)" class="bible-fold-block">
@@ -232,6 +266,27 @@ function getLsmMessages(book, chapter) {
 }
 
 const showLsmDropdown = ref(false)
+const lsmRootRef = ref(null)
+
+function toggleLsmDropdown() {
+  showLsmDropdown.value = !showLsmDropdown.value
+}
+
+watch(showLsmDropdown, (open) => {
+  if (!open) return
+  const onPointerDown = (e) => {
+    if (lsmRootRef.value && !lsmRootRef.value.contains(e.target)) {
+      showLsmDropdown.value = false
+    }
+  }
+  const timer = setTimeout(() => {
+    document.addEventListener('mousedown', onPointerDown)
+  }, 0)
+  return () => {
+    clearTimeout(timer)
+    document.removeEventListener('mousedown', onPointerDown)
+  }
+})
 
 const fnKeyMap = {
   gb: 'zh',
@@ -697,16 +752,20 @@ onMounted(() => {
 }
 .biblehub-link {
   text-decoration: none;
-  color: var(--color-text-secondary);
+  color: var(--color-link);
   transition: color 0.15s;
 }
 .biblehub-link:hover {
-  color: var(--color-primary);
+  color: var(--color-link-hover);
 }
 .lsm-btn {
   font-size: 15px;
+  color: var(--color-link);
   cursor: pointer;
   user-select: none;
+}
+.lsm-btn:hover {
+  color: var(--color-link-hover);
 }
 .lsm-dropdown {
   position: absolute;
@@ -722,11 +781,12 @@ onMounted(() => {
   padding: 4px 0;
   display: flex;
   flex-direction: column;
+  color: var(--color-text);
 }
 .lsm-dropdown-item {
   padding: 7px 14px;
   font-size: 13px;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   text-decoration: none;
   display: flex;
   align-items: flex-start;
@@ -734,7 +794,9 @@ onMounted(() => {
   gap: 6px;
   cursor: pointer;
 }
-.lsm-dropdown-item:hover {
+.lsm-dropdown-item:hover,
+.lsm-dropdown-item:visited {
+  color: var(--color-text);
   background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
 }
 .lsm-ref {

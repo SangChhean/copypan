@@ -1258,11 +1258,10 @@ async function submit() {
                   bodyText = text.split('【引用书目】')[0]
                   if (row) row._bodyDone = true
                 }
-                const ti = messages.value.findIndex((m) => m.id === assistantMsg.id)
-                if (ti !== -1) {
-                  messages.value[ti].answer =
-                    (messages.value[ti].answer || '') + bodyText
+                for (const char of bodyText) {
+                  typewriterQueue.value.push(char)
                 }
+                startTypewriter(assistantMsg)
               } else {
                 let bodyText = text
                 if (text.includes('【引用书目】')) {

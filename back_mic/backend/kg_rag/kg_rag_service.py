@@ -247,6 +247,8 @@ def _max_tokens_for_model(model: str, base: int) -> int:
     """
     if (model or "").strip().lower() == "gpt-5.4-thinking":
         return max(int(base), 4096)
+    if _is_deepseek_kg_model(model):
+        return max(int(base), 4000)
     return int(base)
 
 PATH_COUNT_THRESHOLD = 20  # 多概念路径数少于此则取全路径，否则 shortestPath + 单概念扩展
@@ -841,6 +843,14 @@ async def _call_deepseek_kg_rag(
             return "", None
         msg = r.choices[0].message
         content = getattr(msg, "content", None) or ""
+        if not content.strip():
+            # DeepSeek Reasoner/Thinking 模式：答案在 reasoning_content，content 为空
+            content = getattr(msg, "reasoning_content", None) or ""
+            if content.strip():
+                logger.warning(
+                    f"[KG-RAG WARN] DeepSeek content为空，fallback到reasoning_content "
+                    f"(很可能max_tokens不足)，chars={len(content)}"
+                )
         usage: dict[str, int] | None = None
         us = getattr(r, "usage", None)
         if us is not None:
@@ -1181,11 +1191,6 @@ class KgRagService:
                         step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
                     )
                     logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
-                    if (m1 or "").strip().lower() == "gpt-5.4-thinking":
-                        logger.info(
-                            f"[KG-RAG DEBUG] Step1 thinking raw stats: chars={len(raw1 or '')}, "
-                            f"preview={(raw1 or '')[:300]}"
-                        )
                     revelation, experience, practice, reasoning = _parse_step1_layers(
                         raw1, outline_nature=outline_nature
                     )
@@ -1854,7 +1859,7 @@ class KgRagService:
             prompt,
             model,
             temperature=0.3,
-            max_tokens=1200,
+            max_tokens=_max_tokens_for_model(model, 1200),
             system=BURDEN_DESCRIPTION_SYSTEM,
         )
         raw_text = raw or ""

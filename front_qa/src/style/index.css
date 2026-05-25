@@ -12,6 +12,8 @@
   --color-text-secondary: #6b6560;
   --color-border: #e8e2d9;
   --color-disclaimer: #8b8278;
+  --color-link: #5a7a96;
+  --color-link-hover: #466275;
   --radius: 8px;
   --shadow: 0 2px 12px rgba(0,0,0,0.08);
 }

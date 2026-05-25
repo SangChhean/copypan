@@ -117,8 +117,6 @@ const BURDEN_TEST_MODELS = [
   { label: "DeepSeek V4 Pro", value: "deepseek-v4-pro" },
 ];
 
-const OUTLINE_NATURE_OPTIONS = ["真理启示", "生命经历", "应用实行"];
-
 async function runBurdenTest() {
   const q = burdenTestQuery.value.trim();
   if (!q) {
@@ -1062,6 +1060,7 @@ function chunkPreview150(text) {
 
 // ---------- Tab 2：Step1 测试 ----------
 const step1TestQuery = ref("");
+const step1TestNature = ref("真理启示");
 const step1TestSelectedModels = ref([]);
 const step1TestLoading = ref(false);
 const step1TestResults = ref(null);
@@ -1130,6 +1129,7 @@ async function runStep1Test() {
             query: q,
             params: {
               ...buildQueryParams(),
+              outline_nature: step1TestNature.value,
               stop_after_step1: true,
               skip_generation: true,
               step1_model: modelId,
@@ -1165,6 +1165,7 @@ async function runStep1Test() {
 
 // ---------- Tab 3：Step2 测试 ----------
 const step2TestQuery = ref("");
+const step2TestBurden = ref("");
 const step2TestManualRevelation = ref([]);
 const step2TestManualExperience = ref([]);
 const step2TestManualPractice = ref([]);
@@ -1268,6 +1269,7 @@ async function runStep2Test() {
             params: {
               ...buildQueryParams(),
               ...preset,
+              burden_description: step2TestBurden.value,
               stop_after_step2: true,
               skip_generation: true,
               skip_query_rewrite: true,
@@ -2047,6 +2049,14 @@ onMounted(() => {
                 <p class="hint step12-gpt-hint">
                   并行对比 <strong>Step1 概念抽取</strong> 所用模型（<code>step1_model</code>）。勾选多个模型后同时请求；展示顺序与下方列表一致。DeepSeek 需 <code>DEEPSEEK_API_KEY</code>。
                 </p>
+                <div class="param-item param-item-stack step12-model-row" style="margin-top:10px">
+                  <span class="param-label">纲目性质</span>
+                  <a-radio-group v-model:value="step1TestNature" button-style="solid" size="small">
+                    <a-radio-button value="真理启示">真理启示</a-radio-button>
+                    <a-radio-button value="生命经历">生命经历</a-radio-button>
+                    <a-radio-button value="应用实行">应用实行</a-radio-button>
+                  </a-radio-group>
+                </div>
                 <div class="param-item param-item-stack step12-model-row">
                   <span class="param-label">Step1 并行模型（多选）</span>
                   <a-checkbox-group v-model:value="step1TestSelectedModels" class="step12-checkbox-group">
@@ -2144,6 +2154,14 @@ onMounted(() => {
                 <p class="hint step12-gpt-hint">
                   人工输入重点后并行对比 <strong>Step2 骨架 LLM</strong>（<code>llm_model</code>）。后端跳过 Step1 LLM，直接使用 <code>preset_*</code> 概念。启示层至少填一项。
                 </p>
+                <div class="param-item param-item-stack" style="margin-top:10px">
+                  <span class="param-label">负担说明（选填）</span>
+                  <a-textarea
+                    v-model:value="step2TestBurden"
+                    :auto-size="{ minRows: 2, maxRows: 5 }"
+                    placeholder="约100字概括纲目负担，留空则后端以空字符串处理"
+                  />
+                </div>
                 <div class="concept-manual-block param-item-stack">
                   <div class="concept-hint">输入重点（回车或逗号添加，× 删除）</div>
                   <div class="step1-layer step12-tags-layer">
@@ -2283,9 +2301,11 @@ onMounted(() => {
               </a-col>
               <a-col :span="12">
                 <div class="param-label">纲目性质</div>
-                <a-select v-model:value="burdenTestNature" style="width: 100%">
-                  <a-select-option v-for="o in OUTLINE_NATURE_OPTIONS" :key="o" :value="o">{{ o }}</a-select-option>
-                </a-select>
+                <a-radio-group v-model:value="burdenTestNature" button-style="solid" size="small">
+                  <a-radio-button value="真理启示">真理启示</a-radio-button>
+                  <a-radio-button value="生命经历">生命经历</a-radio-button>
+                  <a-radio-button value="应用实行">应用实行</a-radio-button>
+                </a-radio-group>
               </a-col>
               <a-col :span="12">
                 <div class="param-label">并发模型</div>
