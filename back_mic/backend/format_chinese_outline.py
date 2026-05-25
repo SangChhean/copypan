@@ -292,7 +292,7 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
             )
             if is_header_line:
                 continue
-            if not text.endswith(('。', '！', '？', '…', '"', '\u2019', '：', '』')):
+            if not text.endswith(('。', '！', '？', '…', '"', '\u2019', '：', '』', '）')):
                 text += '。'
                 para.text = text
             elif text.endswith('：'):
@@ -306,11 +306,19 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
         if text.startswith('一\t') or text.startswith('1\t') or text.startswith('a\t'):
             if prev_para is not None:
                 prev_text = prev_para.text.rstrip()
-                if prev_text.endswith(('。', '！', '？', '；', '.', '!', '?', ';', ',')) and not prev_text.endswith('：'):
+                if (
+                    prev_text.endswith(('。', '！', '？', '；', '.', '!', '?', ';', ','))
+                    and not prev_text.endswith('：')
+                    and not prev_text.endswith('）')
+                ):
                     prev_text = re.sub(r'[。！？；.,!?;]$', '：', prev_text)
                 prev_text = re.sub(r'：{2,}$', '：', prev_text)
                 prev_para.text = prev_text
-            elif prev_para and not prev_para.text.rstrip().endswith('：'):
+            elif (
+                prev_para
+                and not prev_para.text.rstrip().endswith('：')
+                and not prev_para.text.rstrip().endswith('）')
+            ):
                 prev_para.text = prev_para.text.rstrip() + '：'
                 prev_para.text = re.sub(r'：{2,}$', '：', prev_para.text)
         prev_para = para

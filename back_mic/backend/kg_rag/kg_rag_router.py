@@ -110,10 +110,19 @@ class MinisterializeRequest(BaseModel):
     lines: List[str] = Field(..., min_length=1, max_length=500, description="纲目条目，每行一条")
 
 
+class MinisterializeDocxLine(BaseModel):
+    """职事化导出行：正文与出处。"""
+
+    text: str = Field(..., description="纲目正文（含编号与经文后缀）")
+    source: str = Field(default="", description="出处，来自检索 top1 的 source_zh")
+
+
 class MinisterializeDocxRequest(BaseModel):
     """纲目职事化结果导出 DOCX。"""
 
-    lines: List[str] = Field(..., min_length=1, max_length=2000, description="职事化后的纲目条目")
+    lines: List[MinisterializeDocxLine] = Field(
+        ..., min_length=1, max_length=2000, description="职事化后的纲目条目"
+    )
     header_lines: Optional[List[str]] = Field(
         default=None,
         description="文档开头标题行：系列名/总题/篇题/读经等，过滤空值后写入 DOCX",
@@ -122,6 +131,10 @@ class MinisterializeDocxRequest(BaseModel):
         default=None,
         max_length=200,
         description="下载文件名（篇题），不含 .docx 后缀",
+    )
+    with_source: bool = Field(
+        default=False,
+        description="为 True 时在每行末追加红色括号出处",
     )
 
 
@@ -186,20 +199,27 @@ async def ministerialize(req: MinisterializeRequest):
 @router.post("/ministerialize_docx", dependencies=[Depends(test_token)])
 async def ministerialize_docx(req: MinisterializeDocxRequest):
     """纲目职事化结果刷格式并导出 DOCX（初信版模板）。"""
-    text_lines = [ln for ln in req.lines if (ln or "").strip()]
-    if not text_lines:
+    content_lines = [
+        {"text": (item.text or "").strip(), "source": (item.source or "").strip()}
+        for item in req.lines
+        if (item.text or "").strip()
+    ]
+    if not content_lines:
         raise HTTPException(status_code=400, detail="内容不能为空")
     try:
         header_lines = [ln.strip() for ln in (req.header_lines or []) if (ln or "").strip()]
         logger.debug(
-            "[ministerialize_docx] lines received:\n"
-            + "\n".join(f"  {i}: {l!r}" for i, l in enumerate(req.lines))
+            "[ministerialize_docx] lines received: count=%s with_source=%s",
+            len(content_lines),
+            req.with_source,
         )
         result = await asyncio.to_thread(
             ai_service.format_rough_outline_docx,
             "beginner",
-            ["\n".join(text_lines)],
+            [],
             header_lines or None,
+            content_lines,
+            req.with_source,
         )
         logger.debug(
             f"[ministerialize_docx] docx generated, filename={result.get('filename')}, "

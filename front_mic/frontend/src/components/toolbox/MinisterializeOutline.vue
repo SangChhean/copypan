@@ -160,6 +160,7 @@ function mapResultRow(r, displaySeq) {
     status: r.status,
     result: r.result,
     suggestion: r.suggestion || "",
+    source: r.source || "",
     rerunning: false,
     editing: false,
   };
@@ -246,6 +247,7 @@ async function rerunRow(row) {
       row.status = hit.status;
       row.result = hit.result;
       row.suggestion = hit.suggestion || "";
+      row.source = hit.source || "";
       row.editing = false;
     } else {
       toastWarning("未返回重跑结果");
@@ -261,7 +263,7 @@ function deleteRow(row) {
   tableData.value = tableData.value.filter((r) => r.key !== row.key);
 }
 
-async function downloadDocx() {
+async function downloadDocx(withSource = false) {
   if (!tableData.value.length) {
     toastWarning("请先完成职事化");
     return;
@@ -272,7 +274,12 @@ async function downloadDocx() {
     return;
   }
 
-  const lines = tableData.value.map((row) => (row.result || "").trim()).filter(Boolean);
+  const lines = tableData.value
+    .map((row) => ({
+      text: (row.result || "").trim(),
+      source: (row.source || "").trim(),
+    }))
+    .filter((r) => r.text);
   if (!lines.length) {
     toastWarning("结果为空，无法下载");
     return;
@@ -290,6 +297,7 @@ async function downloadDocx() {
         lines,
         header_lines: buildHeaderLines(),
         title: (headerChapter.value || "").trim(),
+        with_source: withSource,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -436,6 +444,14 @@ async function downloadDocx() {
               :disabled="row.rerunning"
               @blur="row.editing = false"
             />
+            <a-input
+              v-if="row.status === 'manual'"
+              v-model:value="row.source"
+              size="small"
+              placeholder="手动输入出处，如：创世记生命读经，第一篇；无需括号"
+              style="margin-top: 4px; height: 32px; font-size: 13px; color: #999"
+              allow-clear
+            />
           </div>
         </div>
       </div>
@@ -451,9 +467,14 @@ async function downloadDocx() {
       </div>
 
       <div class="actions bottom-actions">
-        <a-button type="primary" :loading="downloading" @click="downloadDocx">
-          <DownloadOutlined /> 下载 docx
-        </a-button>
+        <a-space>
+          <a-button type="primary" :loading="downloading" @click="downloadDocx(false)">
+            <DownloadOutlined /> 下载 docx
+          </a-button>
+          <a-button :loading="downloading" @click="downloadDocx(true)">
+            <DownloadOutlined /> 下载含出处 docx
+          </a-button>
+        </a-space>
       </div>
     </a-card>
   </div>

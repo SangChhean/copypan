@@ -2144,6 +2144,15 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
     """单条纲目：解析结构 → BM25/Dense 仅用 body → 拼回 prefix/suffix。"""
     prefix, body, suffix = _parse_outline_line(line)
     body_stripped = body.strip()
+
+    def _extract_source(hit: dict) -> str:
+        source_zh = (hit.get("source_zh") or "").strip()
+        if not source_zh:
+            return (hit.get("book_title") or "").strip()
+        cleaned = re.sub(r"，第[零一二三四五六七八九十百千]+[段节].*$", "", source_zh).strip()
+        cleaned = cleaned.strip("（）()").strip()
+        return cleaned
+
     if not body_stripped:
         return {
             "index": index,
@@ -2151,6 +2160,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "status": "manual",
             "result": line,
             "suggestion": "",
+            "source": "",
         }
 
     bm25_results = await bm25_search(es_client, body_stripped, _INDICES_BASE, 5)
@@ -2165,8 +2175,10 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "status": "manual",
             "result": _assemble_outline_line(prefix, body, suffix),
             "suggestion": "",
+            "source": "",
         }
 
+    top1_source = _extract_source(reranked[0])
     top1_text = reranked[0].get("text") or ""
     if body_stripped in top1_text:
         return {
@@ -2175,6 +2187,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "status": "original",
             "result": _assemble_outline_line(prefix, body, suffix),
             "suggestion": "",
+            "source": top1_source,
         }
 
     excerpt1 = reranked[0].get("text", "") if len(reranked) > 0 else ""
@@ -2202,6 +2215,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "status": "original",
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": "",
+                    "source": top1_source,
                 }
             # 用 Haiku 判断语义修改程度
             status = await _judge_ministerialize_status(body_stripped, clean_output)
@@ -2212,6 +2226,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "status": status,
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": "",
+                    "source": "",
                 }
             if status == "minor":
                 return {
@@ -2220,6 +2235,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "status": status,
                     "result": _assemble_outline_line(prefix, body, suffix),
                     "suggestion": _assemble_outline_line(prefix, clean_output, suffix),
+                    "source": top1_source,
                 }
             return {
                 "index": index,
@@ -2227,6 +2243,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                 "status": status,
                 "result": _assemble_outline_line(prefix, clean_output, suffix),
                 "suggestion": "",
+                "source": top1_source,
             }
     except Exception as e:
         logger.warning("[纲目职事化] Claude 调用失败 index=%s: %s", index, e)
@@ -2237,6 +2254,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
         "status": "manual",
         "result": _assemble_outline_line(prefix, body, suffix),
         "suggestion": "",
+        "source": "",
     }
 
 

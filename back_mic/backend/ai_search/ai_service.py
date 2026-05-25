@@ -1496,11 +1496,51 @@ class AISearchService:
                 "error": f"格式化失败: {str(e)}",
             }
 
+    @staticmethod
+    def _colorize_ministerialize_source_suffixes(doc, header_count: int) -> None:
+        """格式刷后：将段落末尾「（出处）」设为红色。"""
+        import re
+        from docx.shared import RGBColor
+
+        for idx, para in enumerate(doc.paragraphs):
+            if idx < header_count:
+                continue
+            text = (para.text or "").strip()
+            if not text:
+                continue
+            # 去掉末尾格式刷可能加上的。或：
+            clean_text = re.sub(r"[。：]\s*$", "", text).strip()
+            # 必须以）结尾才处理
+            if not clean_text.endswith("）"):
+                continue
+            # 从右往左找与末尾）配对的（
+            depth = 0
+            split_pos = -1
+            for i in range(len(clean_text) - 1, -1, -1):
+                ch = clean_text[i]
+                if ch == "）":
+                    depth += 1
+                elif ch == "（":
+                    depth -= 1
+                    if depth == 0:
+                        split_pos = i
+                        break
+            if split_pos == -1:
+                continue
+            main = clean_text[:split_pos]
+            suffix = clean_text[split_pos:]
+            para.clear()
+            para.add_run(main)
+            run_src = para.add_run(suffix)
+            run_src.font.color.rgb = RGBColor(0xFF, 0, 0)
+
     def format_rough_outline_docx(
         self,
         outline_type: str,
         contents: List[str],
         header_lines: Optional[List[str]] = None,
+        content_lines: Optional[List[dict]] = None,
+        with_source: bool = False,
     ) -> Dict:
         """
         毛胚纲目刷格式并下载：将润色版 4 篇或三分钟分享 6 篇合并为一个 DOCX，使用中文模板与中文刷格式。
@@ -1521,7 +1561,11 @@ class AISearchService:
         _allowed = ("polish", "sharing", "beginner", "youth", "truth")
         if outline_type not in _allowed:
             return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": f"不支持的纲目类型: {outline_type}"}
-        if not contents:
+        if content_lines:
+            text_parts = [(item.get("text") or "").strip() for item in content_lines if (item.get("text") or "").strip()]
+            if not text_parts:
+                return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": "内容不能为空"}
+        elif not contents:
             return {"docx_bytes": None, "filename": "毛胚纲目.docx", "error": "内容不能为空"}
 
         if format_chinese_outline_docx is None:
@@ -1535,7 +1579,12 @@ class AISearchService:
 
         # 合并多篇：三分钟分享各 AI 版本之间多加一行空行以作区分，其余用双换行
         sep = "\n\n\n" if outline_type in ("sharing", "polish") else "\n\n"
-        combined_text = sep.join((c or "").strip() for c in contents if (c or "").strip())
+        if content_lines:
+            combined_text = sep.join(
+                (item.get("text") or "").strip() for item in content_lines if (item.get("text") or "").strip()
+            )
+        else:
+            combined_text = sep.join((c or "").strip() for c in contents if (c or "").strip())
 
         _filename_map = {
             "polish": "毛胚纲目_润色版.docx",
@@ -1557,16 +1606,33 @@ class AISearchService:
                 p_element = para._element
                 p_element.getparent().remove(p_element)
 
+            header_count = 0
             # 写入前三段（若用户有填）
             for line in header_lines or []:
                 if line.strip():
                     doc.add_paragraph(line.strip())
+                    header_count += 1
 
-            for line in combined_text.split("\n"):
-                if line.strip():
-                    doc.add_paragraph(line)
-                elif len(doc.paragraphs) > 0:
-                    doc.add_paragraph("")  # 空行保留，三分钟分享各 AI 版本之间可见空白
+            if content_lines:
+                for item in content_lines:
+                    text = (item.get("text") or "").strip()
+                    if not text:
+                        continue
+                    source = (item.get("source") or "").strip()
+                    if with_source and source:
+                        doc.add_paragraph(f"{text}（{source}）")
+                    else:
+                        for line in text.split("\n"):
+                            if line.strip():
+                                doc.add_paragraph(line)
+                            elif len(doc.paragraphs) > header_count:
+                                doc.add_paragraph("")
+            else:
+                for line in combined_text.split("\n"):
+                    if line.strip():
+                        doc.add_paragraph(line)
+                    elif len(doc.paragraphs) > header_count:
+                        doc.add_paragraph("")  # 空行保留，三分钟分享各 AI 版本之间可见空白
 
             doc.save(temp_docx_path)
 
@@ -1579,6 +1645,11 @@ class AISearchService:
                 )
             except Exception as e:
                 logger.error(f"毛胚纲目格式刷失败: {e}", exc_info=True)
+
+            if with_source and content_lines:
+                doc = Document(temp_docx_path)
+                self._colorize_ministerialize_source_suffixes(doc, header_count)
+                doc.save(temp_docx_path)
 
             with open(temp_docx_path, "rb") as f:
                 docx_bytes = f.read()
