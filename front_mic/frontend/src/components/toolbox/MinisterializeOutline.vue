@@ -333,7 +333,7 @@ async function downloadDocx() {
           <a-input v-model:value="headerTopic" placeholder="第二行（可选）" :disabled="loading" />
         </div>
         <div class="header-row">
-          <span class="field-label">第三红</span>
+          <span class="field-label">第三行</span>
           <a-input v-model:value="headerChapter" placeholder="第三行（可选）" :disabled="loading" />
         </div>
         <div class="header-row">
