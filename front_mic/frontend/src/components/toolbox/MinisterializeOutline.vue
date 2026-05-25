@@ -20,7 +20,7 @@ const statusTag = {
   original: { color: "green", label: "原文" },
   minor: { color: "gold", label: "微调" },
   replaced: { color: "blue", label: "已替换" },
-  manual: { color: "orange", label: "人工处理" },
+  manual: { color: "red", label: "人工处理" },
 };
 
 // 与 kg_rag_service.py _BIBLE_BOOKS 保持一致
@@ -159,6 +159,7 @@ function mapResultRow(r, displaySeq) {
     original: r.original,
     status: r.status,
     result: r.result,
+    suggestion: r.suggestion || "",
     rerunning: false,
     editing: false,
   };
@@ -244,6 +245,7 @@ async function rerunRow(row) {
     if (hit) {
       row.status = hit.status;
       row.result = hit.result;
+      row.suggestion = hit.suggestion || "";
       row.editing = false;
     } else {
       toastWarning("未返回重跑结果");
@@ -253,6 +255,10 @@ async function rerunRow(row) {
   } finally {
     row.rerunning = false;
   }
+}
+
+function deleteRow(row) {
+  tableData.value = tableData.value.filter((r) => r.key !== row.key);
 }
 
 async function downloadDocx() {
@@ -375,44 +381,61 @@ async function downloadDocx() {
           </div>
           <div class="result-row-inner-divider" />
           <div class="result-row-edit">
-            <a-tag
-              v-if="row.rerunning"
-              color="default"
-              class="status-tag"
-            >
-              处理中...
-            </a-tag>
-            <a-tag
-              v-else
-              :color="statusTag[row.status]?.color || 'default'"
-              class="status-tag"
-            >
-              {{ statusTag[row.status]?.label || row.status }}
-            </a-tag>
-            <div
-              v-if="row.status === 'minor' && !row.editing && !row.rerunning"
-              class="result-diff result-diff-clickable"
-              title="点击编辑"
-              v-html="diffHighlight(row.original, row.result)"
-              @click="row.editing = true"
-            />
+            <div style="display: flex; align-items: center; gap: 8px">
+              <a-tag
+                v-if="row.rerunning"
+                color="default"
+                class="status-tag"
+              >
+                处理中...
+              </a-tag>
+              <a-tag
+                v-else
+                :color="statusTag[row.status]?.color || 'default'"
+                class="status-tag"
+              >
+                {{ statusTag[row.status]?.label || row.status }}
+              </a-tag>
+              <a-button
+                type="link"
+                size="small"
+                class="rerun-btn"
+                :disabled="row.rerunning || loading"
+                @click="rerunRow(row)"
+              >
+                重跑
+              </a-button>
+              <a-button
+                type="link"
+                size="small"
+                danger
+                class="rerun-btn"
+                :disabled="row.rerunning || loading"
+                @click="deleteRow(row)"
+              >
+                删除
+              </a-button>
+            </div>
+            <template v-if="row.status === 'minor' && !row.rerunning">
+              <a-textarea
+                v-model:value="row.result"
+                class="result-input"
+                :auto-size="{ minRows: 1 }"
+              />
+              <div
+                v-if="row.suggestion"
+                class="result-diff minor-suggestion"
+                v-html="diffHighlight(row.original, row.suggestion)"
+              />
+            </template>
             <a-textarea
-              v-else
+              v-else-if="row.status !== 'minor'"
               v-model:value="row.result"
               class="result-input"
               :auto-size="{ minRows: 1 }"
               :disabled="row.rerunning"
               @blur="row.editing = false"
             />
-            <a-button
-              type="link"
-              size="small"
-              class="rerun-btn"
-              :disabled="row.rerunning || loading"
-              @click="rerunRow(row)"
-            >
-              重跑
-            </a-button>
           </div>
         </div>
       </div>
@@ -485,7 +508,7 @@ async function downloadDocx() {
   color: #1677ff;
 }
 .stat-manual {
-  color: #d46b08;
+  color: #cf1322;
 }
 .stat-total {
   color: #8c8c8c;
@@ -535,13 +558,15 @@ async function downloadDocx() {
 }
 .result-row-edit {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
   padding-left: 1.5em;
 }
 .status-tag {
   flex: 0 0 auto;
-  margin-top: 4px;
+  margin: 0;
 }
 .result-input {
   flex: 1;
@@ -573,6 +598,12 @@ async function downloadDocx() {
 .rerun-btn {
   flex: 0 0 auto;
   padding: 0 4px;
-  margin-top: 2px;
+  margin: 0;
+}
+.minor-suggestion {
+  background: #fafafa;
+  border-radius: 6px;
+  color: #595959;
+  cursor: default;
 }
 </style>

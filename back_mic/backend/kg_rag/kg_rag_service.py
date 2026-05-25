@@ -35,6 +35,7 @@ from kg_rag.prompts import (
     STEP5_GENERATION_FLAT,
     STEP5_GENERATION_FLAT_V4,
 )
+from .bird_view_prompts import BIRD_VIEW_SKELETON_PROMPT, BIRD_VIEW_OUTLINE_PROMPT
 from ai_search.monitoring import get_monitoring
 
 # QUERY_REWRITE 调用时传入 Claude 的 system，与 prompts 中说明一致
@@ -1892,6 +1893,68 @@ class KgRagService:
             )
         return parsed
 
+    async def generate_bird_view_skeleton(
+        self,
+        keyword: str,
+        content_type: str,
+        content: str,
+    ) -> dict:
+        """为鸟瞰纲目生成骨架（4-7步 JSON）。"""
+        prompt = BIRD_VIEW_SKELETON_PROMPT.format(
+            keyword=keyword,
+            content=content,
+        )
+        raw, usage = await _call_kg_rag_llm(
+            prompt,
+            "claude-sonnet-4-6",
+            temperature=0,
+            max_tokens=1000,
+        )
+        obj = _safe_parse_json(raw or "")
+        steps = obj.get("skeleton", []) if obj else []
+        skeleton_text = "\n".join(
+            f"{i + 1}. {s.get('step', '')}" for i, s in enumerate(steps)
+        )
+        return {
+            "skeleton_json": steps,
+            "skeleton_text": skeleton_text,
+            "type": content_type,
+        }
+
+    async def generate_bird_view_outline(
+        self,
+        keyword: str,
+        content_type: str,
+        content: str,
+        skeleton: str,
+    ) -> dict:
+        """根据骨架与原文生成鸟瞰纲目正文。"""
+        prompt = BIRD_VIEW_OUTLINE_PROMPT.format(
+            keyword=keyword,
+            skeleton=skeleton,
+            content=content,
+        )
+        raw, usage = await _call_kg_rag_llm(
+            prompt,
+            "claude-sonnet-4-6",
+            temperature=0,
+            max_tokens=8000,
+        )
+        # 剥离可能的代码围栏（Prompt 要求写在代码块里）
+        text = (raw or "").strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            inner = []
+            for line in lines[1:]:
+                if line.strip() == "```":
+                    break
+                inner.append(line)
+            text = "\n".join(inner).strip()
+        return {
+            "outline": text,
+            "type": content_type,
+        }
+
     @staticmethod
     def update_cache_translation(cache_key: str, field: str, value: str) -> bool:
         """读出现有缓存 JSON，追加/更新 answer_en 或 answer_zh_tw 字段后重写（保持 7 天 TTL）。"""
@@ -1933,6 +1996,7 @@ class KgRagService:
 # ---------------------------------------------------------------------------
 
 MINISTERIALIZE_CLAUDE_MODEL = "claude-sonnet-4-20250514"
+MINISTERIALIZE_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 _MINISTERIALIZE_PREFIX_RE = re.compile(
     r"^[壹貳贰參叄叁参肆伍陸陆柒捌玖拾一二三四五六七八九十\da-z（）()]+[\t　]"
 )
@@ -1974,6 +2038,8 @@ MINISTERIALIZE_PROMPT_TEMPLATE = """你是一个职事语言抽取助手。
 - 如果两段摘录中都没有语义足够贴近的句子，只返回空字符串，不要强行抽取
 - 返回的句子中，分句之间只能用中文分号（；）连接，不得出现中文句号（。）
 - 返回前请先自问：这句话和纲目条目说的是同一件事吗？如果不是同一件事，返回空字符串
+
+重要规则：若原纲目中某些内容在上述摘录中找不到对应原文，请将该部分原样保留，不得删除、截短或替换；最终输出必须包含原纲目的所有实质内容，不得遗漏任何子句。
 
 纲目条目：{line}
 
@@ -2039,12 +2105,53 @@ def _is_minor_edit(a: str, b: str, threshold: int = 5) -> bool:
     return prev[len_b] <= threshold
 
 
+async def _judge_ministerialize_status(original_body: str, claude_output: str) -> str:
+    """
+    用 Claude Haiku 判断职事化结果的状态。
+    返回值：'original' | 'minor' | 'replaced' | 'manual'
+    """
+    prompt = f"""你是一位熟悉职事书写作风格的编辑助手。请判断「替换后纲目」相对于「原纲目」的修改程度，返回以下四种状态之一：
+
+original：替换后纲目与原纲目完全相同，或仅有标点符号差异。
+minor：替换后纲目对原纲目做了轻微调整——例如增删衔接词、连接词、语气助词，或个别字词微调，但核心内容与表述方式基本不变，原纲目的主体句子在替换后仍清晰可见。
+replaced：替换后纲目对原纲目有实质性改写——核心表述被重新组织、概括或改写，已不是原句的轻微变体。
+manual：替换后纲目与原纲目几乎无关，或替换后内容明显不是从职事信息原文提取的。
+
+原纲目：{original_body}
+替换后纲目：{claude_output}
+
+只输出一个词：original、minor、replaced 或 manual，不要有任何其他内容。"""
+
+    try:
+        output, _ = await _call_claude(
+            prompt,
+            MINISTERIALIZE_JUDGE_MODEL,
+            temperature=0,
+            max_tokens=10,
+            system="你是一位专业编辑助手，只输出一个判断词。",
+        )
+        status = (output or "").strip().lower()
+        if status in ("original", "minor", "replaced", "manual"):
+            return status
+        logger.warning("[职事化判断] Haiku 返回非预期值: %s，fallback 到 replaced", status)
+        return "replaced"
+    except Exception as e:
+        logger.warning("[职事化判断] Haiku 调用失败: %s，fallback 到 replaced", e)
+        return "replaced"
+
+
 async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dict:
     """单条纲目：解析结构 → BM25/Dense 仅用 body → 拼回 prefix/suffix。"""
     prefix, body, suffix = _parse_outline_line(line)
     body_stripped = body.strip()
     if not body_stripped:
-        return {"index": index, "original": line, "status": "manual", "result": line}
+        return {
+            "index": index,
+            "original": line,
+            "status": "manual",
+            "result": line,
+            "suggestion": "",
+        }
 
     bm25_results = await bm25_search(es_client, body_stripped, _INDICES_BASE, 5)
     dense_results = await dense_search(es_client, body_stripped, _INDICES_BASE, 20, 100)
@@ -2057,6 +2164,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "original": line,
             "status": "manual",
             "result": _assemble_outline_line(prefix, body, suffix),
+            "suggestion": "",
         }
 
     top1_text = reranked[0].get("text") or ""
@@ -2066,6 +2174,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             "original": line,
             "status": "original",
             "result": _assemble_outline_line(prefix, body, suffix),
+            "suggestion": "",
         }
 
     excerpt1 = reranked[0].get("text", "") if len(reranked) > 0 else ""
@@ -2092,26 +2201,32 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
                     "original": line,
                     "status": "original",
                     "result": _assemble_outline_line(prefix, body, suffix),
+                    "suggestion": "",
                 }
-            if _is_minor_edit(body_stripped, clean_output, threshold=5):
+            # 用 Haiku 判断语义修改程度
+            status = await _judge_ministerialize_status(body_stripped, clean_output)
+            if status == "manual":
                 return {
                     "index": index,
                     "original": line,
-                    "status": "minor",
-                    "result": _assemble_outline_line(prefix, clean_output, suffix),
+                    "status": status,
+                    "result": _assemble_outline_line(prefix, body, suffix),
+                    "suggestion": "",
                 }
-            if _overlap_ratio(clean_output, body_stripped) >= 0.3:
+            if status == "minor":
                 return {
                     "index": index,
                     "original": line,
-                    "status": "replaced",
-                    "result": _assemble_outline_line(prefix, clean_output, suffix),
+                    "status": status,
+                    "result": _assemble_outline_line(prefix, body, suffix),
+                    "suggestion": _assemble_outline_line(prefix, clean_output, suffix),
                 }
             return {
                 "index": index,
                 "original": line,
-                "status": "manual",
-                "result": _assemble_outline_line(prefix, body, suffix),
+                "status": status,
+                "result": _assemble_outline_line(prefix, clean_output, suffix),
+                "suggestion": "",
             }
     except Exception as e:
         logger.warning("[纲目职事化] Claude 调用失败 index=%s: %s", index, e)
@@ -2121,6 +2236,7 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
         "original": line,
         "status": "manual",
         "result": _assemble_outline_line(prefix, body, suffix),
+        "suggestion": "",
     }
 
 

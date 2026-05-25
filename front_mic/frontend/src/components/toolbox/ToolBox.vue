@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined, FileTextOutlined } from "@ant-design/icons-vue";
 
 const go = (val = "/") => {
   window.location.hash = val;
@@ -32,12 +32,22 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/info-retrieval')"><span class="card_text">信息检索</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/outline-translate')"><span class="card_text">纲目翻译</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/zh-convert')"><span class="card_text">简繁互转</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/rough-outline')"><span class="card_text">毛胚纲目</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/feast-outline')"><span class="card_text">节期纲目</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/ministerialize-outline')"><span class="card_text">纲目职事化</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/roundtable')">
           <span class="card_text">AI圆桌</span>
         </a-card-grid>
+      </a-card>
+    </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title"><FileTextOutlined /> 纲目</div>
+        </template>
+        <a-card-grid class="card c2" @click="go('/rough-outline')"><span class="card_text">毛胚纲目</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/feast-outline')"><span class="card_text">节期纲目</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/ministerialize-outline')"><span class="card_text">纲目职事化</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-outline')"><span class="card_text">词典-鸟瞰纲目</span></a-card-grid>
       </a-card>
     </div>
     <br />

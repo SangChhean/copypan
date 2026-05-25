@@ -419,6 +419,51 @@ async def test_firewall(req: TestFirewallRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+# ── 词典-鸟瞰纲目 ─────────────────────────────────────────
+class BirdViewSkeletonRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
+    type: str = Field(..., description="ministry 或 feast")
+    content: str = Field(..., min_length=1)
+
+
+class BirdViewOutlineRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
+    type: str = Field(..., description="ministry 或 feast")
+    content: str = Field(..., min_length=1)
+    skeleton: str = Field(..., min_length=1)
+
+
+@router.post("/bird_view/skeleton", dependencies=[Depends(test_token)])
+async def bird_view_skeleton(req: BirdViewSkeletonRequest):
+    service = get_service()
+    try:
+        result = await service.generate_bird_view_skeleton(
+            keyword=req.keyword,
+            content_type=req.type,
+            content=req.content,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"[bird_view_skeleton] error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bird_view/outline", dependencies=[Depends(test_token)])
+async def bird_view_outline(req: BirdViewOutlineRequest):
+    service = get_service()
+    try:
+        result = await service.generate_bird_view_outline(
+            keyword=req.keyword,
+            content_type=req.type,
+            content=req.content,
+            skeleton=req.skeleton,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"[bird_view_outline] error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def _build_health_payload():
     """Neo4j / ES 依赖可用性（供 liveness 与 admin health 共用）。"""
     service = get_service()

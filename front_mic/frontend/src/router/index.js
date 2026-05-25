@@ -71,6 +71,11 @@ const routes = [
     component: () => import("../components/toolbox/MinisterializeOutline.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/bird-view-outline",
+    component: () => import("../components/toolbox/BirdViewOutline.vue"),
+    meta: { requiresAuth: true },
+  },
   { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
   { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
   {
