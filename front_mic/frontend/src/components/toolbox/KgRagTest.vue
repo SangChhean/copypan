@@ -860,40 +860,70 @@ function formatSec(n) {
   return s || "0";
 }
 
-function opusCompareTotalCostUsd() {
+/** 主流程 Step5（默认 Claude Sonnet 纲目）估算费用，用于对比区「末步替换」合计 */
+function mainPipelineStep5CostUsd() {
+  const fromStep = queryResult.value?.steps?.step5?.llm_usage?.cost_usd;
+  if (fromStep != null && !Number.isNaN(Number(fromStep))) return Number(fromStep);
+  const calls = queryResult.value?.llm_usage?.calls || [];
+  let sum = 0;
+  let found = false;
+  for (const c of calls) {
+    if (c?.step === "step5") {
+      const n = Number(c.cost_usd);
+      if (!Number.isNaN(n)) {
+        sum += n;
+        found = true;
+      }
+    }
+  }
+  return found ? sum : null;
+}
+
+function mainPipelineStep5ElapsedMs() {
+  const ms = queryResult.value?.llm_usage?.step_elapsed_ms?.step5;
+  if (ms != null && !Number.isNaN(Number(ms))) return Number(ms);
+  return null;
+}
+
+/** 若末步由对比模型生成：主流程合计 − Step5 + 本次对比调用（非「主流程+对比」叠算） */
+function step5CompareHypotheticalCostUsd(compareCostUsd) {
   const main = Number(queryResult.value?.llm_usage?.totals?.cost_usd);
-  const opus = Number(queryResultOpus.value?.cost_usd);
+  const compare = Number(compareCostUsd);
   const hasMain = !Number.isNaN(main);
-  const hasOpus = !Number.isNaN(opus);
-  if (!hasMain && !hasOpus) return null;
-  return (hasMain ? main : 0) + (hasOpus ? opus : 0);
+  const hasCompare = compareCostUsd != null && !Number.isNaN(compare);
+  if (!hasMain && !hasCompare) return null;
+  if (!hasMain) return hasCompare ? compare : null;
+  const step5 = mainPipelineStep5CostUsd();
+  const step5v = step5 != null && !Number.isNaN(step5) ? step5 : 0;
+  return main - step5v + (hasCompare ? compare : 0);
+}
+
+function step5CompareHypotheticalElapsedMs(compareElapsedMs) {
+  const main = Number(queryResult.value?.llm_usage?.total_elapsed_ms);
+  const compare = Number(compareElapsedMs);
+  const hasMain = !Number.isNaN(main);
+  const hasCompare = compareElapsedMs != null && !Number.isNaN(compare);
+  if (!hasMain && !hasCompare) return null;
+  if (!hasMain) return hasCompare ? compare : null;
+  const step5 = mainPipelineStep5ElapsedMs();
+  const step5v = step5 != null && !Number.isNaN(step5) ? step5 : 0;
+  return main - step5v + (hasCompare ? compare : 0);
+}
+
+function opusCompareTotalCostUsd() {
+  return step5CompareHypotheticalCostUsd(queryResultOpus.value?.cost_usd);
 }
 
 function opusCompareTotalElapsedMs() {
-  const main = Number(queryResult.value?.llm_usage?.total_elapsed_ms);
-  const opus = Number(queryResultOpus.value?.elapsed_ms);
-  const hasMain = !Number.isNaN(main);
-  const hasOpus = !Number.isNaN(opus);
-  if (!hasMain && !hasOpus) return null;
-  return (hasMain ? main : 0) + (hasOpus ? opus : 0);
+  return step5CompareHypotheticalElapsedMs(queryResultOpus.value?.elapsed_ms);
 }
 
 function deepseekCompareTotalCostUsd() {
-  const main = Number(queryResult.value?.llm_usage?.totals?.cost_usd);
-  const ds = Number(queryResultDeepSeek.value?.cost_usd);
-  const hasMain = !Number.isNaN(main);
-  const hasDs = !Number.isNaN(ds);
-  if (!hasMain && !hasDs) return null;
-  return (hasMain ? main : 0) + (hasDs ? ds : 0);
+  return step5CompareHypotheticalCostUsd(queryResultDeepSeek.value?.cost_usd);
 }
 
 function deepseekCompareTotalElapsedMs() {
-  const main = Number(queryResult.value?.llm_usage?.total_elapsed_ms);
-  const ds = Number(queryResultDeepSeek.value?.elapsed_ms);
-  const hasMain = !Number.isNaN(main);
-  const hasDs = !Number.isNaN(ds);
-  if (!hasMain && !hasDs) return null;
-  return (hasMain ? main : 0) + (hasDs ? ds : 0);
+  return step5CompareHypotheticalElapsedMs(queryResultDeepSeek.value?.elapsed_ms);
 }
 
 function formatStep2Path(p) {
@@ -1964,16 +1994,26 @@ onMounted(() => {
                           <template v-else-if="queryResultOpus">
                             <div class="answer-outline-toolbar opus-compare-toolbar">
                               <span class="opus-compare-meta">
-                                总价格：<strong>{{
-                                  opusCompareTotalCostUsd() != null
-                                    ? "$" + formatUsd(opusCompareTotalCostUsd())
+                                本次 Opus：<strong>${{
+                                  queryResultOpus.cost_usd != null
+                                    ? formatUsd(queryResultOpus.cost_usd)
+                                    : "—"
+                                }}</strong> USD
+                                　耗时 <strong>{{
+                                  queryResultOpus.elapsed_ms != null
+                                    ? formatSec(queryResultOpus.elapsed_ms) + "s"
                                     : "—"
                                 }}</strong>
-                                　总耗时：<strong>{{
-                                  opusCompareTotalElapsedMs() != null
-                                    ? formatSec(opusCompareTotalElapsedMs()) + "s"
-                                    : "—"
-                                }}</strong>
+                                <template v-if="opusCompareTotalCostUsd() != null">
+                                  　｜　若末步由此生成（主流程去掉 Step5 + 本次）<strong>${{
+                                    formatUsd(opusCompareTotalCostUsd())
+                                  }}</strong> USD
+                                  　总耗时 <strong>{{
+                                    opusCompareTotalElapsedMs() != null
+                                      ? formatSec(opusCompareTotalElapsedMs()) + "s"
+                                      : "—"
+                                  }}</strong>
+                                </template>
                               </span>
                               <a-button type="default" size="small" @click="copyOpusOutlineText">
                                 <template #icon>
@@ -1997,16 +2037,26 @@ onMounted(() => {
                           <template v-else-if="queryResultDeepSeek">
                             <div class="answer-outline-toolbar opus-compare-toolbar">
                               <span class="opus-compare-meta">
-                                总价格：<strong>{{
-                                  deepseekCompareTotalCostUsd() != null
-                                    ? "$" + formatUsd(deepseekCompareTotalCostUsd())
+                                本次 DeepSeek：<strong>${{
+                                  queryResultDeepSeek.cost_usd != null
+                                    ? formatUsd(queryResultDeepSeek.cost_usd)
+                                    : "—"
+                                }}</strong> USD
+                                　耗时 <strong>{{
+                                  queryResultDeepSeek.elapsed_ms != null
+                                    ? formatSec(queryResultDeepSeek.elapsed_ms) + "s"
                                     : "—"
                                 }}</strong>
-                                　总耗时：<strong>{{
-                                  deepseekCompareTotalElapsedMs() != null
-                                    ? formatSec(deepseekCompareTotalElapsedMs()) + "s"
-                                    : "—"
-                                }}</strong>
+                                <template v-if="deepseekCompareTotalCostUsd() != null">
+                                  　｜　若末步由此生成（主流程去掉 Step5 + 本次）<strong>${{
+                                    formatUsd(deepseekCompareTotalCostUsd())
+                                  }}</strong> USD
+                                  　总耗时 <strong>{{
+                                    deepseekCompareTotalElapsedMs() != null
+                                      ? formatSec(deepseekCompareTotalElapsedMs()) + "s"
+                                      : "—"
+                                  }}</strong>
+                                </template>
                               </span>
                               <a-button type="default" size="small" @click="copyDeepSeekOutlineText">
                                 <template #icon>
