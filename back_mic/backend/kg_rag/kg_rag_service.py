@@ -2037,7 +2037,7 @@ MINISTERIALIZE_PROMPT_TEMPLATE = """你是一个职事语言抽取助手。
 - 返回的句子必须与纲目条目语义高度吻合，核心意思基本一致
 - 如果两段摘录中都没有语义足够贴近的句子，只返回空字符串，不要强行抽取
 - 返回的句子中，分句之间只能用中文分号（；）连接，不得出现中文句号（。）
-- 返回前请先自问：这句话和纲目条目说的是同一件事吗？如果不是同一件事，返回空字符串
+- 若语义不够贴近，返回空字符串。
 
 重要规则：若原纲目中某些内容在上述摘录中找不到对应原文，请将该部分原样保留，不得删除、截短或替换；最终输出必须包含原纲目的所有实质内容，不得遗漏任何子句。
 
@@ -2046,6 +2046,8 @@ MINISTERIALIZE_PROMPT_TEMPLATE = """你是一个职事语言抽取助手。
 摘录一：{excerpt1}
 
 摘录二：{excerpt2}
+
+只输出抽取的原句（或空字符串），不得输出任何分析过程、自问检查、解释说明或标记符号。
 """
 
 
@@ -2175,9 +2177,16 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
         source_zh = (hit.get("source_zh") or "").strip()
         if not source_zh:
             return (hit.get("book_title") or "").strip()
-        cleaned = re.sub(r"，第[零一二三四五六七八九十百千]+[段节].*$", "", source_zh).strip()
-        cleaned = cleaned.strip("（）()").strip()
-        return cleaned
+        s = re.sub(
+            r"，第[零一二三四五六七八九十百千\d]+[段节](?=[）)]*$)",
+            "",
+            source_zh,
+        ).strip()
+        while len(s) >= 2 and (
+            (s[0] == "（" and s[-1] == "）") or (s[0] == "(" and s[-1] == ")")
+        ):
+            s = s[1:-1]
+        return s.strip()
 
     if not body_stripped:
         return {
@@ -2235,7 +2244,16 @@ async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dic
             system="你是一位专业、精确的助手。请严格按要求的格式输出。",
         )
         _add_sonnet_usage(_usage)
-        output = (claude_output or "").strip()
+        raw_output = (claude_output or "").strip()
+        if raw_output and any(m in raw_output for m in ("自问", "检查", "**")):
+            first_line = ""
+            for ln in raw_output.splitlines():
+                ln = ln.strip()
+                if ln:
+                    first_line = ln
+                    break
+            raw_output = first_line
+        output = raw_output
         if output:
             clean_output = re.sub(r"[。，、；：,;.]+$", "", output.strip()).strip()
             if clean_output == body_stripped:

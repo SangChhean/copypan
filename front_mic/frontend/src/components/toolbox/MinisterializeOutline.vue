@@ -322,7 +322,12 @@ async function downloadDocx(withSource = false) {
       return;
     }
     const b64 = data.docx_base64;
-    const filename = data.filename || "纲目职事化.docx";
+    const title = (headerChapter.value || "").trim();
+    const filename = withSource
+      ? title
+        ? `${title}（纲目带出处）.docx`
+        : "纲目职事化（纲目带出处）.docx"
+      : data.filename || "纲目职事化.docx";
     if (!b64) {
       toastWarning(data.error || "未返回文件");
       return;
@@ -494,7 +499,7 @@ async function downloadDocx(withSource = false) {
               @blur="row.editing = false"
             />
             <a-input
-              v-if="row.status === 'manual'"
+              v-if="row.status === 'manual' || row.status === 'replaced'"
               v-model:value="row.source"
               size="small"
               placeholder="手动输入出处，如：创世记生命读经，第一篇；无需括号"
