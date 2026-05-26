@@ -185,18 +185,18 @@ async function downloadFormatRoughOutline(outlineType) {
   }
   let contents;
   if (outlineType === "polish") {
-    const geminis = list.filter((r) => (r.ai_model || "").toLowerCase().includes("gemini"));
     const claudes = list.filter((r) => (r.ai_model || "").toLowerCase().includes("claude"));
-    const ordered = [...geminis, ...claudes];
-    const geminiCount = geminis.length;
+    const geminis = list.filter((r) => (r.ai_model || "").toLowerCase().includes("gemini"));
+    const ordered = [...claudes, ...geminis];
+    const claudeCount = claudes.length;
     const versionNums = ["一", "二", "三", "四"];
     contents = ordered
       .map((r, idx) => {
         let label = "";
-        if (idx < geminiCount) {
-          label = `（Gemini 2.5 Pro 版本${versionNums[idx]}）`;
+        if (idx < claudeCount) {
+          label = `（Claude Sonnet 4.6 版本${versionNums[idx]}）`;
         } else {
-          label = `（Claude Sonnet 4.6 版本${versionNums[idx - geminiCount]}）`;
+          label = `（Gemini 2.5 Pro 版本${versionNums[idx - claudeCount]}）`;
         }
         const headerLine = (headerLine3.value || "").trim();
         const prefix = headerLine ? `${headerLine}${label}` : label;
