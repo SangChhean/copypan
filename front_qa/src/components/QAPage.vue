@@ -186,18 +186,52 @@
                   <button
                     type="button"
                     class="qa-tts-btn"
-                    :disabled="ttsState(msg) === 'loading'"
-                    @click="toggleTTS(msg)"
-                    :title="ttsState(msg) === 'playing' ? '暂停' : ttsState(msg) === 'paused' ? '继续朗读' : '朗读'"
+                    :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'polly'"
+                    @click="toggleTTS(msg, 'polly')"
+                    :title="ttsMsgEngine.get(msg.id) === 'polly' && ttsState(msg) === 'playing' ? '暂停' : 'Polly 朗读'"
                   >
-                    <span v-if="ttsState(msg) === 'loading'">…</span>
-                    <span v-else-if="ttsState(msg) === 'playing'">{{
+                    <span v-if="ttsMsgEngine.get(msg.id) === 'polly' && ttsState(msg) === 'loading'">…</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'polly' && ttsState(msg) === 'playing'">{{
                       ttsProgress(msg) ? `⏸ ${ttsProgress(msg)}` : '⏸'
                     }}</span>
-                    <span v-else-if="ttsState(msg) === 'paused'">{{
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'polly' && ttsState(msg) === 'paused'">{{
                       ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
                     }}</span>
-                    <span v-else>🔊</span>
+                    <span v-else>🔊 Polly</span>
+                  </button>
+                  <button
+                    v-if="SHOW_GOOGLE_TTS"
+                    type="button"
+                    class="qa-tts-btn qa-tts-btn--google"
+                    :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'google'"
+                    @click="toggleTTS(msg, 'google')"
+                    :title="ttsMsgEngine.get(msg.id) === 'google' && ttsState(msg) === 'playing' ? '暂停' : 'Google 朗读'"
+                  >
+                    <span v-if="ttsMsgEngine.get(msg.id) === 'google' && ttsState(msg) === 'loading'">…</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'google' && ttsState(msg) === 'playing'">{{
+                      ttsProgress(msg) ? `⏸ ${ttsProgress(msg)}` : '⏸'
+                    }}</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'google' && ttsState(msg) === 'paused'">{{
+                      ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
+                    }}</span>
+                    <span v-else>🔊 Google</span>
+                  </button>
+                  <button
+                    v-if="SHOW_MINIMAX_TTS"
+                    type="button"
+                    class="qa-tts-btn qa-tts-btn--minimax"
+                    :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'minimax'"
+                    @click="toggleTTS(msg, 'minimax')"
+                    :title="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'playing' ? '暂停' : 'MiniMax 朗读'"
+                  >
+                    <span v-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'loading'">…</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'playing'">{{
+                      ttsProgress(msg) ? `⏸ ${ttsProgress(msg)}` : '⏸'
+                    }}</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'paused'">{{
+                      ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
+                    }}</span>
+                    <span v-else>🔊 MiniMax</span>
                   </button>
                 </div>
               </div>
@@ -329,6 +363,8 @@ import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
+const SHOW_GOOGLE_TTS = false
+const SHOW_MINIMAX_TTS = false
 
 const BIBLE_BOOK_MAP = {
   '创': '创世记',
@@ -518,7 +554,7 @@ function expandBibleVerses(text) {
 async function prepareTextForTTS(rawText, lang = 'zh') {
   let text = rawText
   // 1. 去掉参考书目及其后所有内容（简体、繁体、英文）
-  text = text.replace(/(参考书目|參考書目|References)[\s\S]*$/m, '')
+  text = text.replace(/(引用书目|引用書目|参考书目|參考書目|\[References\]|References)[\s\S]*$/m, '')
   // 2. 去掉 HTML 标签
   text = text.replace(/<[^>]+>/g, '')
   // 3. 去掉 ⟪...⟫ 原文引用块
@@ -707,8 +743,9 @@ function displaySources(msg) {
   return tr ? (tr.sources || []) : (msg.sources || [])
 }
 
-// TTS（Polly Lambda）
+// TTS（Polly Lambda / Google）
 const ttsMsgId = ref(null)
+const ttsMsgEngine = ref(new Map()) // msgId -> 'polly' | 'google' | 'minimax'
 const ttsPlaying = ref(false)
 const ttsPaused = ref(false)
 const ttsAudioCtx = ref(null)
@@ -743,8 +780,9 @@ function stopTTS() {
   ttsProgressPct.value = 0
 }
 
-async function toggleTTS(msg) {
-  if (ttsMsgId.value === msg.id) {
+async function toggleTTS(msg, engine = 'google') {
+  const currentEngine = ttsMsgEngine.value.get(msg.id)
+  if (ttsMsgId.value === msg.id && currentEngine === engine) {
     if (ttsAudioCtx.value) {
       if (ttsPaused.value) {
         ttsAudioCtx.value.resume()
@@ -759,6 +797,9 @@ async function toggleTTS(msg) {
 
   stopTTS()
   ttsDestroyed.value = false
+  const nextEngine = new Map(ttsMsgEngine.value)
+  nextEngine.set(msg.id, engine)
+  ttsMsgEngine.value = nextEngine
   ttsMsgId.value = msg.id
   const currentMsgId = msg.id
 
@@ -774,7 +815,33 @@ async function toggleTTS(msg) {
     return
   }
 
-  const chunks = chunkTextForTTS(plainText, lang === 'en' ? 400 : 80)
+  const chunks = engine === 'minimax'
+    ? [plainText]
+    : engine === 'google'
+      ? (() => {
+          const minLen = lang === 'en' ? 200 : 100
+          const maxLen = lang === 'en' ? 800 : 300
+          const lines = plainText.split(/\n+/).map(s => s.trim()).filter(s => s.length > 0)
+          const merged = []
+          let current = ''
+          for (const line of lines) {
+            if (current.length === 0) {
+              current = line
+            } else if (current.length + line.length < maxLen) {
+              current += '。' + line
+            } else {
+              if (current.length >= minLen) {
+                merged.push(current)
+                current = line
+              } else {
+                current += '。' + line
+              }
+            }
+          }
+          if (current) merged.push(current)
+          return merged
+        })()
+      : chunkTextForTTS(plainText, lang === 'en' ? 400 : 80)
   if (!chunks.length) {
     if (ttsMsgId.value === currentMsgId) ttsMsgId.value = null
     return
@@ -786,59 +853,89 @@ async function toggleTTS(msg) {
 
   const audioQueue = new Array(chunks.length).fill(null)
   let playIndex = 0
+  let fetchIndex = 0
 
-  async function fetchChunk(i) {
-    if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
-    const voice = lang === 'en' ? 'Joanna' : 'Zhiyu'
-    const params = new URLSearchParams({ text: chunks[i], voice })
+  async function fetchChunkOnce(i) {
+    if (ttsDestroyed.value) return
     const ctrl = new AbortController()
     ttsActiveRequests.value.add(ctrl)
-    const timeoutId = setTimeout(() => ctrl.abort(), 30000)
     try {
-      const res = await fetch(`${POLLY_API}/?${params}`, { signal: ctrl.signal })
-      clearTimeout(timeoutId)
-      ttsActiveRequests.value.delete(ctrl)
+      let res
+      if (engine === 'google') {
+        res = await fetch('/api/qa/tts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
+          },
+          body: JSON.stringify({
+            text: chunks[i],
+            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
+          }),
+          signal: ctrl.signal,
+        })
+      } else if (engine === 'minimax') {
+        res = await fetch('/api/qa/tts/minimax', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
+          },
+          body: JSON.stringify({
+            text: chunks[i],
+            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
+          }),
+          signal: ctrl.signal,
+        })
+      } else {
+        const voice = lang === 'en' ? 'Joanna' : 'Zhiyu'
+        const params = new URLSearchParams({ text: chunks[i], voice })
+        res = await fetch(`${POLLY_API}/?${params}`, { signal: ctrl.signal })
+      }
       if (!res.ok || ttsDestroyed.value) return
       const buf = await res.arrayBuffer()
-      if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
       audioQueue[i] = await ctx.decodeAudioData(buf)
-      tryPlay()
     } catch {
-      clearTimeout(timeoutId)
+      // ignore abort
+    } finally {
       ttsActiveRequests.value.delete(ctrl)
     }
   }
 
-  let isPlayingNow = false
-
   function tryPlay() {
-    if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
-    if (isPlayingNow) return
+    if (ttsDestroyed.value) return
     if (playIndex >= chunks.length) {
       ttsPlaying.value = false
       ttsMsgId.value = null
-      ttsProgressPct.value = 0
       return
     }
-    if (!audioQueue[playIndex]) return
-    isPlayingNow = true
+    if (!audioQueue[playIndex]) {
+      // 当前段还没准备好，100ms 后重试
+      setTimeout(tryPlay, 100)
+      return
+    }
     const source = ctx.createBufferSource()
     source.buffer = audioQueue[playIndex]
     source.connect(ctx.destination)
+    const currentPlay = playIndex
     source.onended = () => {
-      isPlayingNow = false
-      ttsProgressPct.value = Math.round(((playIndex + 1) / chunks.length) * 100)
-      if (ttsDestroyed.value || ttsMsgId.value !== currentMsgId) return
+      if (ttsDestroyed.value) return
       playIndex++
+      // 播放完当前段，预加载下下段
+      const nextFetch = currentPlay + 2
+      if (nextFetch < chunks.length && !audioQueue[nextFetch]) {
+        fetchChunkOnce(nextFetch)
+      }
       tryPlay()
     }
     source.start()
   }
 
-  fetchChunk(0).then(() => tryPlay())
-  for (let i = 1; i < chunks.length; i++) {
-    setTimeout(() => fetchChunk(i), 100 * i)
-  }
+  // 启动：先加载第0段和第1段
+  fetchChunkOnce(0).then(() => {
+    tryPlay()
+    if (chunks.length > 1) fetchChunkOnce(1)
+  })
 }
 
 /** 答案下方语言切换。zh / 已缓存：直接切；未缓存：调用 /api/qa/translate（暂未实现，501 仅 console）。 */
@@ -1731,6 +1828,15 @@ async function scrollToMessageTop(messageId) {
 .qa-tts-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.qa-tts-btn--google {
+  margin-left: 4px;
+  color: var(--color-primary);
+}
+.qa-tts-btn--minimax {
+  margin-left: 4px;
+  color: var(--color-primary);
+  opacity: 0.85;
 }
 .qa-lang-toggle-btn {
   border: none;

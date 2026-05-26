@@ -318,78 +318,151 @@ async def translate(req: TranslateRequest, request: Request):
 
 @router.post("/tts")
 async def text_to_speech(req: TTSRequest, request: Request):
-    """流式 TTS。调用 Google Cloud Text-to-Speech，音频流直接 pipe 给前端。
-    - zh: zh-CN-Neural2-D（男）或 zh-CN-Neural2-F（女）
-    - zh_tw: zh-TW-Neural2-A
-    - en: en-US-Neural2-F
-    返回 MP3 音频流。
+    """TTS：调用 Gemini 3.1 Flash TTS，整段合成，返回 MP3。
+    zh/zh_tw: 普通话女声 Leda
+    en: 英文女声 Aoede
     """
     import httpx
     import base64
-
+    import struct
     _require_user(request)
 
-    # 语言和音色映射
-    lang_config = {
-        "zh": ("cmn-CN", "cmn-CN-Chirp3-HD-Aoede"),
-        "zh_tw": ("cmn-TW", "cmn-TW-Wavenet-A"),
-        "en": ("en-US", "en-US-Chirp3-HD-Aoede"),
-    }
-    language_code, voice_name = lang_config[req.lang]
-    api_key = os.environ.get("GOOGLE_TTS_API_KEY", "")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GOOGLE_TTS_API_KEY 未配置")
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not gemini_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY 未配置")
+
+    # 音色选择：中文用 Achernar，英文用 Aoede
+    voice_name = "Aoede" if req.lang == "en" else "Achernar"
 
     clean_text = req.text
-    # 先用 ASCII 码点直接删除 ⟪(U+27EA) ⟫(U+27EB) ⧸(U+29F8)
-    clean_text = req.text.replace('\u27ea', '').replace('\u27eb', '').replace('\u29f8', '')
-    clean_text = re.sub(r'⟪[^⟫]*⟫', '', clean_text)
-    # 去掉参考书目及其后所有内容
-    clean_text = re.sub(r'(参考书目|References|書目).*$', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    # 去掉 HTML 标签（含 <sup>）
-    clean_text = re.sub(r'<[^>]+>', '', clean_text)
-    # 去掉 Markdown 标题、分割线、粗体、斜体、代码
-    clean_text = re.sub(r'#{1,6}\s', '', clean_text)
-    clean_text = re.sub(r'^[-*_]{3,}\s*$', '', clean_text, flags=re.MULTILINE)
-    clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)
-    clean_text = re.sub(r'\*(.*?)\*', r'\1', clean_text)
+    # 去除 Markdown 标记
+    clean_text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', clean_text)
+    clean_text = re.sub(r'#{1,6}\s*', '', clean_text)
+    clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean_text)
     clean_text = re.sub(r'`{1,3}[^`]*`{1,3}', '', clean_text)
-    # 去掉引用编号 [1] [2]
-    clean_text = re.sub(r'\[\d+\]', '', clean_text)
-    # 明确删除职事信息答案里的引用特殊符号
-    clean_text = re.sub(r'[⟪⟫⧸「」『』〔〕【】《》〈〉︻︼﹁﹂｢｣]', '', clean_text)
-    # 只保留中文、英文、数字、常用标点和换行，其余全部删除
-    clean_text = ''.join(c for c in clean_text if _keep_char(c))
-    # 合并多余空行
-    clean_text = re.sub(r'\n{2,}', '\n', clean_text)
     clean_text = clean_text.strip()
-    clean_text = _force_break_long_sentences(clean_text)
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="清洗后文本为空")
+
+    # 语言提示（帮助 Gemini 识别语言）
+    lang_hint = {
+        "zh": "请用标准普通话朗读以下文字，语调自然流畅：\n",
+        "zh_tw": "請用標準普通話朗讀以下文字，語調自然流暢：\n",
+        "en": "Please read the following text in natural English:\n",
+    }
+    prompt = lang_hint.get(req.lang, lang_hint["zh"]) + clean_text
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {
+                "voiceConfig": {
+                    "prebuiltVoiceConfig": {"voiceName": voice_name}
+                }
+            }
+        }
+    }
+
+    async def audio_stream():
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"gemini-3.1-flash-tts-preview:generateContent?key={gemini_key}"
+        )
+        print(f"[TTS Gemini] lang={req.lang} voice={voice_name} len={len(clean_text)}")
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code != 200:
+                print(f"[TTS Gemini error]: {resp.text[:300]}")
+                raise HTTPException(status_code=500, detail=f"Gemini TTS 失败：{resp.text[:200]}")
+            data = resp.json()
+            # 提取 PCM audio data
+            try:
+                b64_audio = (
+                    data["candidates"][0]["content"]["parts"][0]
+                    ["inlineData"]["data"]
+                )
+            except (KeyError, IndexError) as e:
+                raise HTTPException(status_code=500, detail=f"Gemini TTS 响应解析失败：{e}")
+            pcm_bytes = base64.b64decode(b64_audio)
+            # PCM 转 WAV（24kHz 16bit mono）
+            sample_rate = 24000
+            num_channels = 1
+            bits_per_sample = 16
+            byte_rate = sample_rate * num_channels * bits_per_sample // 8
+            block_align = num_channels * bits_per_sample // 8
+            data_size = len(pcm_bytes)
+            wav_header = struct.pack(
+                '<4sI4s4sIHHIIHH4sI',
+                b'RIFF', 36 + data_size, b'WAVE',
+                b'fmt ', 16, 1, num_channels, sample_rate,
+                byte_rate, block_align, bits_per_sample,
+                b'data', data_size
+            )
+            wav_bytes = wav_header + pcm_bytes
+            chunk_size = 4096
+            for i in range(0, len(wav_bytes), chunk_size):
+                yield wav_bytes[i:i + chunk_size]
+
+    return StreamingResponse(audio_stream(), media_type="audio/wav")
+
+
+@router.post("/tts/minimax")
+async def text_to_speech_minimax(req: TTSRequest, request: Request):
+    """MiniMax TTS：中文用 Kind-hearted Antie，英文用 Graceful Lady"""
+    import httpx
+    _require_user(request)
+
+    api_key = os.environ.get("MINIMAX_API_KEY", "").strip()
+    group_id = os.environ.get("MINIMAX_GROUP_ID", "").strip()
+    if not api_key or not group_id:
+        raise HTTPException(status_code=500, detail="MINIMAX_API_KEY 或 MINIMAX_GROUP_ID 未配置")
+
+    voice_id = "English_Graceful_Lady" if req.lang == "en" else "Chinese (Mandarin)_Kind-hearted_Antie"
+
+    clean_text = req.text
+    clean_text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', clean_text)
+    clean_text = re.sub(r'#{1,6}\s*', '', clean_text)
+    clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean_text)
+    clean_text = re.sub(r'`{1,3}[^`]*`{1,3}', '', clean_text)
+    clean_text = clean_text.strip()
     if not clean_text:
         raise HTTPException(status_code=400, detail="清洗后文本为空")
 
     payload = {
-        "input": {"text": clean_text},
-        "voice": {
-            "languageCode": language_code,
-            "name": voice_name,
+        "model": "speech-02-hd",
+        "text": clean_text,
+        "stream": False,
+        "voice_setting": {
+            "voice_id": voice_id,
+            "speed": 1.0,
+            "vol": 1.0,
+            "pitch": 0,
         },
-        "audioConfig": {
-            "audioEncoding": "MP3",
-            "speakingRate": 0.9 if req.lang == "en" else 1.0,
+        "audio_setting": {
+            "sample_rate": 32000,
+            "bitrate": 128000,
+            "format": "mp3",
         },
     }
 
     async def audio_stream():
-        url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={api_key}"
-        async with httpx.AsyncClient(timeout=60.0, http2=False) as client:
-            print(f"[TTS sending to Google]: {repr(payload['input']['text'][:200])}")
-            resp = await client.post(url, json=payload)
+        url = f"https://api-uw.minimax.io/v1/t2a_v2?GroupId={group_id}"
+        print(f"[TTS MiniMax] lang={req.lang} voice={voice_id} len={len(clean_text)}")
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=payload,
+            )
             if resp.status_code != 200:
-                print(f"[TTS Google error full]: {repr(payload['input']['text'])}")
-                raise HTTPException(status_code=500, detail=f"Google TTS 失败：{resp.text}")
+                print(f"[TTS MiniMax error]: {resp.text[:300]}")
+                raise HTTPException(status_code=500, detail=f"MiniMax TTS 失败：{resp.text[:200]}")
             data = resp.json()
-            audio_bytes = base64.b64decode(data["audioContent"])
-            # 分块 yield，模拟流式
+            hex_audio = data.get("data", {}).get("audio", "")
+            if not hex_audio:
+                raise HTTPException(status_code=500, detail="MiniMax 响应无音频数据")
+            audio_bytes = bytes.fromhex(hex_audio)
             chunk_size = 4096
             for i in range(0, len(audio_bytes), chunk_size):
                 yield audio_bytes[i:i + chunk_size]

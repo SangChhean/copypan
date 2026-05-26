@@ -231,8 +231,7 @@ const LSM_MAP = {
   61: '2-peter', 62: '1-john', 63: '2-john', 64: '3-john', 65: 'jude', 66: 'revelation',
 }
 
-/** 经文问答：暂时隐藏生命读经、原文对照入口（仅前端） */
-const SHOW_BIBLE_EXTRA_LINKS = false
+const SHOW_BIBLE_EXTRA_LINKS = true
 
 const LSM_BASE_URL = '/lsm/'
 
