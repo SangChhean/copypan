@@ -108,6 +108,16 @@ async def me(request: Request):
     return {"username": username}
 
 
+@router.get("/api/qa/auth/usage")
+async def get_usage(request: Request):
+    """已登录：返回当日问答用量（不递增）。"""
+    username = _require_user(request)
+    from back_qa.qa.auth import get_daily_usage
+
+    daily_limit = int(os.getenv("QA_DAILY_LIMIT", "30"))
+    return get_daily_usage(username, daily_limit)
+
+
 @router.post("/api/qa/auth/invite")
 async def create_invite(req: InviteRequest, request: Request):
     """管理员：创建邀请码。"""

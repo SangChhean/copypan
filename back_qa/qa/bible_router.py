@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from back_qa.qa.auth_router import _require_user
+from back_qa.qa.auth import check_and_increment_daily_usage
 from back_qa.qa import bible_service
 from back_qa.qa.bible_ref_parser import parse_bible_ref
 
 router = APIRouter(tags=["bible"])
 
+DAILY_LIMIT = int(os.getenv("QA_DAILY_LIMIT", "30"))
 _BIBLE_DATA_DIR = Path(__file__).resolve().parents[1] / "bible_data"
 
 
@@ -39,7 +42,13 @@ def _ensure_bible_loaded() -> None:
 @router.post("/bible/query")
 async def bible_query(req: BibleQueryRequest, request: Request):
     """SSE：先推送经文 JSON，再经文问答流水线（token / done / error）。"""
-    _require_user(request)
+    username = _require_user(request)
+    usage = check_and_increment_daily_usage(username, DAILY_LIMIT)
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail=f"今日问答次数已达上限（{usage['limit']}次），请明天再来",
+        )
 
     async def event_generator():
         try:

@@ -7,6 +7,11 @@
           <span class="qa-logo-text">职事信息问答</span>
         </div>
         <div class="qa-header-right">
+          <span
+            v-if="dailyUsage.limit > 0"
+            class="qa-daily-usage"
+            :class="usageLevelClass"
+          >{{ usageDisplayText }}</span>
           <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
           <a-dropdown placement="bottomRight">
             <a-avatar class="qa-user-avatar">{{ avatarText }}</a-avatar>
@@ -363,7 +368,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
@@ -676,6 +681,57 @@ const history = ref([])
 /** 界面气泡：user / assistant，assistant 含 loading 与展示字段 */
 const messages = ref([])
 const historyRef = ref(null)
+
+const dailyUsage = ref({ used: 0, limit: 30 })
+
+const headerLang = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i]
+    if (m.role === 'assistant' && m.currentLang) return m.currentLang
+  }
+  return 'zh'
+})
+
+const usageDisplayText = computed(() => {
+  const { used, limit } = dailyUsage.value
+  if (headerLang.value === 'en') return `Today ${used}/${limit}`
+  return `今日 ${used}/${limit}`
+})
+
+const usageLevelClass = computed(() => {
+  const { used, limit } = dailyUsage.value
+  if (limit > 0 && used >= limit) return 'qa-daily-usage--danger'
+  if (limit > 0 && used >= limit * 0.8) return 'qa-daily-usage--warn'
+  return ''
+})
+
+async function fetchDailyUsage() {
+  const token = localStorage.getItem('qa_token') || ''
+  if (!token) return
+  try {
+    const res = await fetch('/api/qa/auth/usage', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    dailyUsage.value = {
+      used: Number(data.used) || 0,
+      limit: Number(data.limit) || 30,
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function incrementDailyUsageLocal() {
+  const { used, limit } = dailyUsage.value
+  if (limit <= 0) return
+  dailyUsage.value = { used: Math.min(used + 1, limit), limit }
+}
+
+onMounted(() => {
+  fetchDailyUsage()
+})
 
 let nextMessageId = 0
 const messageRefMap = new Map()
@@ -1298,6 +1354,19 @@ async function submit() {
       })
 
       if (!response.ok) {
+        if (response.status === 429) {
+          await fetchDailyUsage()
+          let detail = '今日问答次数已达上限，请明天再来'
+          try {
+            const errBody = await response.json()
+            if (errBody.detail) detail = errBody.detail
+          } catch {
+            /* ignore */
+          }
+          const err = new Error(detail)
+          err.status = 429
+          throw err
+        }
         throw new Error(`HTTP ${response.status}`)
       }
 
@@ -1410,6 +1479,7 @@ async function submit() {
               row.loading = false
               row.streaming = false
               row.bibleGenerating = false
+              incrementDailyUsageLocal()
             } else if (chunk.type === 'error') {
               stopTypewriter()
               const row = assistantRow()
@@ -1427,7 +1497,14 @@ async function submit() {
     stopTypewriter()
     const r = assistantRow()
     r.bibleGenerating = false
-    if (firstTokenReceived) {
+    if (e?.status === 429) {
+      await fetchDailyUsage()
+      message.warning(e.message || '今日问答次数已达上限，请明天再来')
+      r.found = false
+      r.answer = e.message || '今日问答次数已达上限，请明天再来'
+      r.loading = false
+      r.streaming = false
+    } else if (firstTokenReceived) {
       // 已有内容输出，连接中断但答案部分可用，保留已有内容
       r.found = r.found ?? true
       r.loading = false
@@ -1555,6 +1632,18 @@ async function scrollToMessageTop(messageId) {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.qa-daily-usage {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  user-select: none;
+}
+.qa-daily-usage--warn {
+  color: #e6a23c;
+}
+.qa-daily-usage--danger {
+  color: #f5222d;
 }
 .qa-new-chat-btn {
   border: 1px solid var(--color-border);

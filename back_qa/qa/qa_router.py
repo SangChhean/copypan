@@ -16,6 +16,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from back_qa.qa.rate_limit import check_rate_limit, check_prompt_injection
 from back_qa.qa.auth_router import _require_user
+from back_qa.qa.auth import check_and_increment_daily_usage
+
+DAILY_LIMIT = int(os.getenv("QA_DAILY_LIMIT", "30"))
 
 router = APIRouter()
 _bearer = HTTPBearer()
@@ -260,7 +263,13 @@ async def stream_answer(req: QueryRequest, request: Request):
     from back_qa.qa.qa_service import stream_query
     from back_qa.qa.dependencies import get_redis_client
 
-    _require_user(request)
+    username = _require_user(request)
+    usage = check_and_increment_daily_usage(username, DAILY_LIMIT)
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail=f"今日问答次数已达上限（{usage['limit']}次），请明天再来",
+        )
     if not check_rate_limit(request, get_redis_client()):
         raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
     if not check_prompt_injection(req.question):

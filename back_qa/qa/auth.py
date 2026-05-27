@@ -74,7 +74,67 @@ def init_db() -> None:
             )
             """
         )
+        for col, definition in [
+            ("daily_count", "INTEGER NOT NULL DEFAULT 0"),
+            ("daily_date", "TEXT NOT NULL DEFAULT '2000-01-01'"),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {col} {definition}")
+            except Exception:
+                pass  # 列已存在
         conn.commit()
+
+
+def check_and_increment_daily_usage(username: str, daily_limit: int = 30) -> dict:
+    """
+    检查并递增每日用量。
+    返回 {"allowed": True/False, "used": int, "limit": int}
+    跨天自动重置计数。
+    """
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT daily_count, daily_date FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+        if not row:
+            return {"allowed": False, "used": 0, "limit": daily_limit}
+
+        count, date_str = row
+        if date_str != today:
+            count = 0
+
+        if count >= daily_limit:
+            return {"allowed": False, "used": count, "limit": daily_limit}
+
+        conn.execute(
+            "UPDATE users SET daily_count = ?, daily_date = ? WHERE username = ?",
+            (count + 1, today, username),
+        )
+        conn.commit()
+        return {"allowed": True, "used": count + 1, "limit": daily_limit}
+    finally:
+        conn.close()
+
+
+def get_daily_usage(username: str, daily_limit: int = 30) -> dict:
+    """只查询当日用量，不递增。"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT daily_count, daily_date FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+        if not row:
+            return {"used": 0, "limit": daily_limit}
+        count, date_str = row
+        if date_str != today:
+            count = 0
+        return {"used": count, "limit": daily_limit}
+    finally:
+        conn.close()
 
 
 def create_invite_code(code: str) -> bool:
