@@ -245,6 +245,23 @@
                     }}</span>
                     <span v-else>🔊 MiniMax</span>
                   </button>
+                  <button
+                    v-if="SHOW_ELEVENLABS_TTS"
+                    type="button"
+                    class="qa-tts-btn qa-tts-btn--elevenlabs"
+                    :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'elevenlabs'"
+                    @click="toggleTTS(msg, 'elevenlabs')"
+                    :title="ttsMsgEngine.get(msg.id) === 'elevenlabs' && ttsState(msg) === 'playing' ? '暂停' : 'ElevenLabs 朗读'"
+                  >
+                    <span v-if="ttsMsgEngine.get(msg.id) === 'elevenlabs' && ttsState(msg) === 'loading'">…</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'elevenlabs' && ttsState(msg) === 'playing'">{{
+                      ttsProgress(msg) ? `⏸ ${ttsProgress(msg)}` : '⏸'
+                    }}</span>
+                    <span v-else-if="ttsMsgEngine.get(msg.id) === 'elevenlabs' && ttsState(msg) === 'paused'">{{
+                      ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
+                    }}</span>
+                    <span v-else>🔊 ElevenLabs</span>
+                  </button>
                 </div>
               </div>
             </template>
@@ -375,8 +392,9 @@ import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
-const SHOW_GOOGLE_TTS = false
-const SHOW_MINIMAX_TTS = false
+const SHOW_GOOGLE_TTS = true
+const SHOW_MINIMAX_TTS = true
+const SHOW_ELEVENLABS_TTS = true
 
 const BIBLE_BOOK_MAP = {
   '创': '创世记',
@@ -812,7 +830,7 @@ function displaySources(msg) {
 
 // TTS（Polly Lambda / Google）
 const ttsMsgId = ref(null)
-const ttsMsgEngine = ref(new Map()) // msgId -> 'polly' | 'google' | 'minimax'
+const ttsMsgEngine = ref(new Map()) // msgId -> 'polly' | 'google' | 'minimax' | 'elevenlabs'
 const ttsPlaying = ref(false)
 const ttsPaused = ref(false)
 const ttsAudioCtx = ref(null)
@@ -882,7 +900,7 @@ async function toggleTTS(msg, engine = 'google') {
     return
   }
 
-  const chunks = engine === 'minimax'
+  const chunks = engine === 'minimax' || engine === 'elevenlabs'
     ? [plainText]
     : engine === 'google'
       ? (() => {
@@ -954,12 +972,30 @@ async function toggleTTS(msg, engine = 'google') {
           }),
           signal: ctrl.signal,
         })
+      } else if (engine === 'elevenlabs') {
+        res = await fetch('/api/qa/tts/elevenlabs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
+          },
+          body: JSON.stringify({
+            text: chunks[i],
+            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
+          }),
+          signal: ctrl.signal,
+        })
       } else {
         const voice = lang === 'en' ? 'Joanna' : 'Zhiyu'
         const params = new URLSearchParams({ text: chunks[i], voice })
         res = await fetch(`${POLLY_API}/?${params}`, { signal: ctrl.signal })
       }
-      if (!res.ok || ttsDestroyed.value) return
+      if (!res.ok || ttsDestroyed.value) {
+        if (engine === 'elevenlabs') {
+          message.warning('ElevenLabs 朗读失败')
+        }
+        return
+      }
       const buf = await res.arrayBuffer()
       audioQueue[i] = await ctx.decodeAudioData(buf)
     } catch {
@@ -1939,6 +1975,11 @@ async function scrollToMessageTop(messageId) {
   color: var(--color-primary);
 }
 .qa-tts-btn--minimax {
+  margin-left: 4px;
+  color: var(--color-primary);
+  opacity: 0.85;
+}
+.qa-tts-btn--elevenlabs {
   margin-left: 4px;
   color: var(--color-primary);
   opacity: 0.85;

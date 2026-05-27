@@ -24,6 +24,11 @@ router = APIRouter()
 _bearer = HTTPBearer()
 
 
+def get_current_user(request: Request):
+    """FastAPI 依赖：返回当前登录用户。"""
+    return _require_user(request)
+
+
 # ---------- 请求 / 响应模型 ----------
 
 
@@ -477,6 +482,56 @@ async def text_to_speech_minimax(req: TTSRequest, request: Request):
                 yield audio_bytes[i:i + chunk_size]
 
     return StreamingResponse(audio_stream(), media_type="audio/mpeg")
+
+
+@router.post("/tts/elevenlabs")
+async def tts_elevenlabs(request: TTSRequest, current_user=Depends(get_current_user)):
+    import base64
+    import httpx
+
+    elevenlabs_api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    elevenlabs_voice_id = os.environ.get("ELEVENLABS_VOICE_ZH", "9lHjugDhwqoxA5MhX0az").strip()
+    elevenlabs_model = os.environ.get("ELEVENLABS_MODEL", "eleven_v3").strip()
+    if not elevenlabs_api_key:
+        raise HTTPException(status_code=500, detail="ELEVENLABS_API_KEY 未配置")
+
+    clean_text = request.text
+    clean_text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', clean_text)
+    clean_text = re.sub(r'#{1,6}\s*', '', clean_text)
+    clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean_text)
+    clean_text = re.sub(r'`{1,3}[^`]*`{1,3}', '', clean_text)
+    clean_text = clean_text.strip()
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="清洗后文本为空")
+
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{elevenlabs_voice_id}"
+    payload = {
+        "text": clean_text,
+        "model_id": elevenlabs_model,
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.75,
+        },
+    }
+    headers = {
+        "xi-api-key": elevenlabs_api_key,
+        "Content-Type": "application/json",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+        if resp.status_code != 200:
+            print(f"[TTS ElevenLabs error] status={resp.status_code}: {resp.text[:500]}")
+            raise HTTPException(status_code=500, detail="ElevenLabs TTS 失败")
+        audio_b64 = base64.b64encode(resp.content).decode("utf-8")
+        return {"audio": audio_b64, "format": "mp3"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"[TTS ElevenLabs exception]: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="ElevenLabs TTS 失败")
 
 
 @router.post("/feedback")
