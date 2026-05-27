@@ -900,33 +900,35 @@ async function toggleTTS(msg, engine = 'google') {
     return
   }
 
-  const chunks = engine === 'minimax' || engine === 'elevenlabs'
+  const chunks = engine === 'minimax'
     ? [plainText]
-    : engine === 'google'
-      ? (() => {
-          const minLen = lang === 'en' ? 200 : 100
-          const maxLen = lang === 'en' ? 800 : 300
-          const lines = plainText.split(/\n+/).map(s => s.trim()).filter(s => s.length > 0)
-          const merged = []
-          let current = ''
-          for (const line of lines) {
-            if (current.length === 0) {
-              current = line
-            } else if (current.length + line.length < maxLen) {
-              current += '。' + line
-            } else {
-              if (current.length >= minLen) {
-                merged.push(current)
+    : engine === 'elevenlabs'
+      ? chunkTextForTTS(plainText, lang === 'en' ? 400 : 180)
+      : engine === 'google'
+        ? (() => {
+            const minLen = lang === 'en' ? 200 : 100
+            const maxLen = lang === 'en' ? 800 : 300
+            const lines = plainText.split(/\n+/).map(s => s.trim()).filter(s => s.length > 0)
+            const merged = []
+            let current = ''
+            for (const line of lines) {
+              if (current.length === 0) {
                 current = line
-              } else {
+              } else if (current.length + line.length < maxLen) {
                 current += '。' + line
+              } else {
+                if (current.length >= minLen) {
+                  merged.push(current)
+                  current = line
+                } else {
+                  current += '。' + line
+                }
               }
             }
-          }
-          if (current) merged.push(current)
-          return merged
-        })()
-      : chunkTextForTTS(plainText, lang === 'en' ? 400 : 80)
+            if (current) merged.push(current)
+            return merged
+          })()
+        : chunkTextForTTS(plainText, lang === 'en' ? 400 : 80)
   if (!chunks.length) {
     if (ttsMsgId.value === currentMsgId) ttsMsgId.value = null
     return
