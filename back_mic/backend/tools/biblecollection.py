@@ -362,6 +362,8 @@ def filter_mats(mats):
                 r"(.*?)?([一二三四五六七八九十〇]*)章([一二三四五六七八九十〇\d节]*)?$",
                 mat,
             )
+            if not matt:
+                continue
             temp = ""
             mat_tpye = ""
             if matt.group(1):
@@ -395,6 +397,8 @@ def filter_mats(mats):
                         r"(.*?)?([一二三四五六七八九十〇]*)章([一二三四五六七八九十〇\d节-]*)?$",
                         mat,
                     )
+                    if not matt:
+                        continue
                     temp = ""
                     mat_tpye = ""
                     if matt.group(1):
@@ -424,6 +428,8 @@ def filter_mats(mats):
                     data.append({mat_tpye: temp})
                 else:
                     matt = re.search(r"[一二三四五六七八九十〇\d节-]*$", mat)
+                    if not matt:
+                        continue
                     verse = matt.group()
                     verse = re.sub(r"节", "", verse)
                     v_list = verse.split("-")
@@ -513,6 +519,7 @@ def get_verses(para):
     verses = []
     # 清理前导冒号和其他分隔符
     para = re.sub(r"^[:：]+", "", para)  # 去掉开头的冒号
+    para = re.sub(r"[~～]", "-", para)  # 波浪号统一转连字符
     para = re.sub(r"[，、.]", ",", para)
 
     if "," in para or "-" in para:
@@ -548,10 +555,12 @@ def get_sids(reo):
 
     for item in reo:
         temp = []
+        # 先去掉尾部全角冒号/句号/分号（纲目标点残留）
+        item = re.sub(r"[：。；]+$", "", item)
         # 先尝试匹配纯中文章号格式（太一1）：书卷+中文章+数字节
-        mat_cn = re.search(r"^(.*?)([一二三四五六七八九十〇]+)([-:：、\d]*)$", item)
+        mat_cn = re.search(r"^(.*?)([一二三四五六七八九十〇]+)([-~～:、\d]*)$", item)
         # 再尝试匹配纯数字章号格式（太5:6）：书卷+数字章+节号
-        mat_num = re.search(r"^(.*?)(\d+)([-:：、\d]*)$", item)
+        mat_num = re.search(r"^(.*?)(\d+)([-~～:、\d]*)$", item)
         
         # 优先使用中文章号匹配
         mat = mat_cn if mat_cn else mat_num
