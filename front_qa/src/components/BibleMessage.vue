@@ -19,6 +19,7 @@
           @click="showCrossrefs = !showCrossrefs"
         >
           {{ showCrossrefs ? '▼' : '▶' }} {{ labels.crossrefs }}
+          <span v-if="!showCrossrefs" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
         </span>
         <span
           v-if="footnoteItemsSingle.length"
@@ -26,13 +27,13 @@
           @click="showFootnotes = !showFootnotes"
         >
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
+          <span v-if="!showFootnotes" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
         </span>
         <a
           v-if="SHOW_BIBLE_EXTRA_LINKS && verse && BIBLEHUB_MAP[verse.book]"
           :href="biblehubUrl(verse.book, verse.chapter, verse.verse)"
-          target="_blank"
-          rel="noopener"
           class="toggle-tag biblehub-link"
+          @click.prevent="openInterlinearModal(biblehubUrl(verse.book, verse.chapter, verse.verse), bibleHubModalTitleForVerse(verse))"
         >🔗 {{ labels.biblehub }}</a>
       </div>
 
@@ -84,10 +85,8 @@
                 v-for="msg in getLsmMessages(versesList[0].book, versesList[0].chapter)"
                 :key="msg.index"
                 :href="lsmPdfUrl(LSM_MAP[versesList[0].book], msg.index)"
-                target="_blank"
-                rel="noopener"
                 class="lsm-dropdown-item"
-                @click="showLsmDropdown = false"
+                @click.prevent="openPdfModal(lsmPdfUrl(LSM_MAP[versesList[0].book], msg.index), lsmModalTitleForMsg(msg, versesList[0])); showLsmDropdown = false"
               ><span style="white-space:nowrap">{{ msg.label }}</span><span class="lsm-ref">{{ msg.reference }}</span></a>
             </template>
             <span v-else class="lsm-dropdown-item lsm-empty">暂无对应篇目</span>
@@ -110,6 +109,7 @@
             @click="toggleCrossrefs(i)"
           >
             {{ showCrossrefsByVerse[i] ? '▼' : '▶' }} {{ labels.crossrefs }}
+            <span v-if="!showCrossrefsByVerse[i]" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
           </span>
           <span
             v-if="hasFootnotes(v)"
@@ -117,13 +117,13 @@
             @click="toggleFootnotes(i)"
           >
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
+            <span v-if="!showFootnotesByVerse[i]" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
           </span>
           <a
             v-if="SHOW_BIBLE_EXTRA_LINKS && v.book && BIBLEHUB_MAP[v.book]"
             :href="biblehubUrl(v.book, v.chapter, v.verse)"
-            target="_blank"
-            rel="noopener"
             class="toggle-tag biblehub-link"
+            @click.prevent="openInterlinearModal(biblehubUrl(v.book, v.chapter, v.verse), bibleHubModalTitleForVerse(v))"
           >🔗 {{ labels.biblehub }}</a>
         </div>
 
@@ -176,10 +176,32 @@
       </span>
     </div>
   </div>
+
+  <teleport to="body">
+    <div v-if="modalOpen" class="biblehub-modal-overlay" @click.self="closeModalIframe">
+      <div class="biblehub-modal" role="dialog" aria-modal="true">
+        <div class="biblehub-modal-topbar">
+          <div class="biblehub-modal-title" :title="modalTitle">{{ modalTitle }}</div>
+          <button class="biblehub-modal-back" type="button" aria-label="返回问答" @click="closeModalIframe">
+            ✕ 返回问答
+          </button>
+        </div>
+        <div class="biblehub-modal-content">
+          <div v-if="modalLoading" class="biblehub-iframe-loading">加载中...</div>
+          <iframe
+            class="biblehub-iframe"
+            :src="modalUrl"
+            title="iframe modal"
+            @load="modalLoading = false"
+          />
+        </div>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
   verse: { type: Object, default: null },
@@ -244,6 +266,106 @@ function biblehubUrl(book, chapter, verse) {
 function lsmPdfUrl(prefix, index) {
   return `${LSM_BASE_URL}${prefix}-${String(index).padStart(3, '0')}.pdf`
 }
+
+// 全屏模态框：用于 BibleHub「原文对照」与 LSM「相关生命读经」
+const modalOpen = ref(false)
+const modalTitle = ref('')
+const modalUrl = ref('')
+const modalLoading = ref(false)
+let prevBodyOverflow = ''
+
+function toAbsoluteUrl(url) {
+  if (!url) return url
+  if (String(url).startsWith('http')) return url
+  return new URL(url, window.location.origin).href
+}
+
+function pdfToGViewUrl(pdfAbsUrl) {
+  const abs = toAbsoluteUrl(pdfAbsUrl)
+  return `https://docs.google.com/gview?url=${encodeURIComponent(abs)}&embedded=true`
+}
+
+function openModalIframe(url, title, { isPdf = false } = {}) {
+  modalTitle.value = title || ''
+  modalLoading.value = true
+  modalOpen.value = true
+  modalUrl.value = url
+}
+
+function openInterlinearModal(url, title) {
+  openModalIframe(url, title, { isPdf: false })
+}
+
+function openPdfModal(url, title) {
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const finalUrl = isDev ? url : pdfToGViewUrl(url)
+  openModalIframe(finalUrl, title, { isPdf: true })
+}
+
+function bibleHubModalTitleForVerse(v) {
+  if (!v) return labels.value?.biblehub || ''
+  const label = labels.value?.biblehub || ''
+  const name = v[nameKeyMap[currentLang.value] || 'name_gb'] || v.name_gb || ''
+  if (currentLang.value === 'en') return `${label} — ${name} ${v.chapter}:${v.verse}`
+  const ch = chapterChinese(v.chapter)
+  if (currentLang.value === 'big5') return `${label} — ${name} 第${ch}章第${v.verse}節`
+  return `${label} — ${name} 第${ch}章第${v.verse}节`
+}
+
+function lsmModalTitleForMsg(msg, verse) {
+  const bookName = verse
+    ? (verse[nameKeyMap[currentLang.value] || 'name_gb'] || verse.name_gb || '')
+    : ''
+  if (currentLang.value === 'en') {
+    const idx = msg?.index != null ? msg.index : ''
+    return idx ? `Life-Study of ${bookName}, Message ${idx}` : `Life-Study of ${bookName}`
+  }
+  const msgLabel = msg?.label || (msg?.index ? `第${msg.index}篇` : '')
+  if (currentLang.value === 'big5') return `${bookName}生命讀經 ${msgLabel}`.trim()
+  return `${bookName}生命读经 ${msgLabel}`.trim()
+}
+
+function closeModalIframe() {
+  modalOpen.value = false
+  modalLoading.value = false
+  modalUrl.value = ''
+}
+
+function isDesktopEscEnabled() {
+  try {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  } catch {
+    return true
+  }
+}
+
+function handleGlobalKeyDown(e) {
+  if (!modalOpen.value) return
+  if (e.key === 'Escape' && isDesktopEscEnabled()) {
+    e.preventDefault()
+    closeModalIframe()
+  }
+}
+
+watch(modalOpen, (open) => {
+  if (open) {
+    prevBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = prevBodyOverflow || ''
+    prevBodyOverflow = ''
+  }
+})
+
+onMounted(() => {
+  // 允许桌面端 ESC 关闭模态框
+  window.addEventListener('keydown', handleGlobalKeyDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeyDown)
+  document.body.style.overflow = prevBodyOverflow || ''
+})
 
 const lsmData = ref(null)
 async function loadLsmData() {
@@ -409,6 +531,7 @@ const labels = computed(() => {
       generating: '生成中',
       biblehub: '原文對照',
       lsm: '相關生命讀經',
+      tapToExpand: '點擊展開',
     }
   }
   if (l === 'en') {
@@ -419,6 +542,7 @@ const labels = computed(() => {
       generating: 'Generating',
       biblehub: 'Interlinear',
       lsm: 'Related Life-Study',
+      tapToExpand: 'Tap to expand',
     }
   }
   return {
@@ -428,6 +552,7 @@ const labels = computed(() => {
     generating: '生成中',
     biblehub: '原文对照',
     lsm: '相关生命读经',
+    tapToExpand: '点击展开',
   }
 })
 
@@ -573,6 +698,12 @@ onMounted(() => {
   color: var(--color-text-secondary);
   cursor: pointer;
   user-select: none;
+}
+
+.toggle-expand-hint {
+  color: #999;
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .verse-toggles .section-toggle {
@@ -822,5 +953,71 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+.biblehub-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.biblehub-modal-topbar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.biblehub-modal-back {
+  width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 16px;
+  line-height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text);
+  touch-action: manipulation;
+}
+
+.biblehub-modal-title {
+  flex: 1;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 8px;
+}
+
+.biblehub-modal-content {
+  position: relative;
+  flex: 1;
+}
+
+.biblehub-iframe {
+  width: 100%;
+  height: calc(100vh - 48px);
+  border: none;
+  display: block;
+}
+
+.biblehub-iframe-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  z-index: 1;
+  font-size: 16px;
+  color: var(--color-text);
 }
 </style>

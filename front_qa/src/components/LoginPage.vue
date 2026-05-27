@@ -5,28 +5,28 @@
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane key="login" tab="登录">
           <a-form layout="vertical" @submit.prevent="onLogin">
-            <a-form-item label="用户名">
-              <a-input v-model:value="loginForm.username" placeholder="请输入用户名" />
+            <a-form-item label="用户名" class="login-field">
+              <a-input v-model:value="loginForm.username" class="login-input" placeholder="请输入用户名" />
             </a-form-item>
-            <a-form-item label="密码">
-              <a-input-password v-model:value="loginForm.password" placeholder="请输入密码" @pressEnter="onLogin" />
+            <a-form-item label="密码" class="login-field">
+              <a-input-password v-model:value="loginForm.password" class="login-input" placeholder="请输入密码" @pressEnter="onLogin" />
             </a-form-item>
-            <a-button type="primary" block :loading="loading" @click="onLogin">登录</a-button>
+            <a-button type="primary" block class="login-submit-btn" :loading="loading" @click="onLogin">登录</a-button>
           </a-form>
         </a-tab-pane>
 
         <a-tab-pane key="register" tab="注册">
           <a-form layout="vertical" @submit.prevent="onRegister">
-            <a-form-item label="邀请码">
-              <a-input v-model:value="registerForm.invite_code" placeholder="请输入邀请码" />
+            <a-form-item label="邀请码" class="login-field">
+              <a-input v-model:value="registerForm.invite_code" class="login-input" placeholder="请输入邀请码" />
             </a-form-item>
-            <a-form-item label="用户名">
-              <a-input v-model:value="registerForm.username" placeholder="请输入用户名" />
+            <a-form-item label="用户名" class="login-field">
+              <a-input v-model:value="registerForm.username" class="login-input" placeholder="请输入用户名" />
             </a-form-item>
-            <a-form-item label="密码">
-              <a-input-password v-model:value="registerForm.password" placeholder="请输入密码" @pressEnter="onRegister" />
+            <a-form-item label="密码" class="login-field">
+              <a-input-password v-model:value="registerForm.password" class="login-input" placeholder="请输入密码" @pressEnter="onRegister" />
             </a-form-item>
-            <a-button type="primary" block :loading="loading" @click="onRegister">注册</a-button>
+            <a-button type="primary" block class="login-submit-btn" :loading="loading" @click="onRegister">注册</a-button>
           </a-form>
         </a-tab-pane>
       </a-tabs>
@@ -126,6 +126,28 @@ async function onRegister() {
   font-size: 20px;
   font-weight: 700;
   color: var(--color-primary);
+}
+
+.login-field :deep(.ant-form-item-label > label) {
+  font-size: 15px;
+}
+
+.login-input :deep(.ant-input),
+.login-input :deep(.ant-input-affix-wrapper),
+.login-input :deep(.ant-input-password) {
+  height: 48px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+.login-input :deep(.ant-input-affix-wrapper .ant-input) {
+  height: 46px;
+}
+
+.login-submit-btn {
+  height: 48px;
+  font-size: 16px;
+  border-radius: 8px;
 }
 </style>
 

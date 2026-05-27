@@ -53,7 +53,7 @@
           <div v-else class="qa-bubble qa-bubble-assistant">
             <div v-if="msg.loading" class="qa-loading">
               <a-spin size="small" />
-              <span class="qa-loading-text">正在检索职事信息…</span>
+              <span class="qa-loading-text">{{ assistantLoadingText(msg) }}</span>
             </div>
 
             <div v-else-if="!msg.found" class="qa-not-found">
@@ -73,6 +73,13 @@
                 :lang="msg.currentLang || 'gb'"
                 :generating="msg.bibleGenerating"
               />
+              <div
+                v-if="msg.hasVerseData && msg.streaming && !msg.answer"
+                class="qa-loading qa-loading--after-verse"
+              >
+                <a-spin size="small" />
+                <span class="qa-loading-text">{{ assistantLoadingText(msg) }}</span>
+              </div>
               <div
                 class="qa-answer-body"
                 :class="{ 'qa-answer-fade': msg.currentLang !== 'zh' }"
@@ -658,6 +665,10 @@ const router = useRouter()
 const question = ref('')
 const textareaKey = ref(0)
 const loading = ref(false)
+
+function assistantLoadingText(msg) {
+  return msg.hasVerseData ? '正在查找相关职事信息…' : '正在检索职事信息…'
+}
 const textareaRef = ref(null)
 const currentUsername = ref(localStorage.getItem('qa_username') || '')
 /** 发往接口的最近 3 轮 { question, answer } */
@@ -1229,6 +1240,7 @@ async function submit() {
     translatedAnswers: { zh_tw: null, en: null },
     currentLang: 'zh',
     translating: false,
+    hasVerseData: false,
   }
   messages.value.push(assistantMsg)
 
@@ -1318,6 +1330,7 @@ async function submit() {
                 const d = chunk.data
                 messages.value[idx].intent = 'bible'
                 messages.value[idx].bibleGenerating = true
+                messages.value[idx].hasVerseData = true
                 messages.value[idx].loading = false
                 if (d && d.verses) {
                   messages.value[idx].verses = d.verses
@@ -1680,6 +1693,9 @@ async function scrollToMessageTop(messageId) {
   color: var(--color-text-secondary);
 }
 .qa-loading-text { font-size: 14px; }
+.qa-loading--after-verse {
+  margin-top: 12px;
+}
 
 /* 未找到 */
 .qa-not-found {
