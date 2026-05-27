@@ -19,7 +19,6 @@
           @click="showCrossrefs = !showCrossrefs"
         >
           {{ showCrossrefs ? '▼' : '▶' }} {{ labels.crossrefs }}
-          <span v-if="!showCrossrefs" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
         </span>
         <span
           v-if="footnoteItemsSingle.length"
@@ -27,7 +26,6 @@
           @click="showFootnotes = !showFootnotes"
         >
           {{ showFootnotes ? '▼' : '▶' }} {{ labels.footnotes }}
-          <span v-if="!showFootnotes" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
         </span>
         <a
           v-if="SHOW_BIBLE_EXTRA_LINKS && verse && BIBLEHUB_MAP[verse.book]"
@@ -109,7 +107,6 @@
             @click="toggleCrossrefs(i)"
           >
             {{ showCrossrefsByVerse[i] ? '▼' : '▶' }} {{ labels.crossrefs }}
-            <span v-if="!showCrossrefsByVerse[i]" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
           </span>
           <span
             v-if="hasFootnotes(v)"
@@ -117,7 +114,6 @@
             @click="toggleFootnotes(i)"
           >
             {{ showFootnotesByVerse[i] ? '▼' : '▶' }} {{ labels.footnotes }}
-            <span v-if="!showFootnotesByVerse[i]" class="toggle-expand-hint">{{ labels.tapToExpand }}</span>
           </span>
           <a
             v-if="SHOW_BIBLE_EXTRA_LINKS && v.book && BIBLEHUB_MAP[v.book]"
@@ -531,7 +527,6 @@ const labels = computed(() => {
       generating: '生成中',
       biblehub: '原文對照',
       lsm: '相關生命讀經',
-      tapToExpand: '點擊展開',
     }
   }
   if (l === 'en') {
@@ -542,7 +537,6 @@ const labels = computed(() => {
       generating: 'Generating',
       biblehub: 'Interlinear',
       lsm: 'Related Life-Study',
-      tapToExpand: 'Tap to expand',
     }
   }
   return {
@@ -552,7 +546,6 @@ const labels = computed(() => {
     generating: '生成中',
     biblehub: '原文对照',
     lsm: '相关生命读经',
-    tapToExpand: '点击展开',
   }
 })
 
@@ -698,12 +691,6 @@ onMounted(() => {
   color: var(--color-text-secondary);
   cursor: pointer;
   user-select: none;
-}
-
-.toggle-expand-hint {
-  color: #999;
-  font-size: 12px;
-  margin-left: 8px;
 }
 
 .verse-toggles .section-toggle {

@@ -132,16 +132,25 @@ async function onRegister() {
   font-size: 15px;
 }
 
-.login-input :deep(.ant-input),
-.login-input :deep(.ant-input-affix-wrapper),
-.login-input :deep(.ant-input-password) {
+/* 直接作用于 a-input（它本身就渲染为 input 元素） */
+.login-input.ant-input {
   height: 48px;
   font-size: 16px;
   border-radius: 8px;
 }
 
-.login-input :deep(.ant-input-affix-wrapper .ant-input) {
-  height: 46px;
+/* a-input-password 的外壳 */
+.login-input.ant-input-affix-wrapper {
+  height: 48px;
+  font-size: 16px;
+  border-radius: 8px;
+  align-items: center;
+}
+
+/* a-input-password 内部的 input */
+.login-input.ant-input-affix-wrapper :deep(.ant-input) {
+  height: auto;
+  font-size: 16px;
 }
 
 .login-submit-btn {
