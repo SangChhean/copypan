@@ -360,16 +360,11 @@
               processing: audioState === 'processing'
             }"
             :disabled="audioState === 'processing'"
-            @mousedown.prevent="startRecording"
-            @mouseup="stopRecording"
-            @mouseleave="stopRecording"
-            @touchstart.prevent="startRecording"
-            @touchend.prevent="stopRecording"
-            @touchcancel.prevent="stopRecording"
+            @click="toggleRecording"
           >
             <span v-if="audioState === 'processing'">识别中...</span>
-            <span v-else-if="pressing">松开 结束</span>
-            <span v-else>按住 说话</span>
+            <span v-else-if="pressing">点击 结束</span>
+            <span v-else>点击 说话</span>
           </button>
         </div>
         <a-button
@@ -1255,6 +1250,14 @@ async function startRecording() {
   } catch (e) {
     pressing.value = false
     message.warning('请允许麦克风权限后重试')
+  }
+}
+
+function toggleRecording() {
+  if (audioState.value === 'recording') {
+    stopRecording()
+  } else {
+    startRecording()
   }
 }
 
