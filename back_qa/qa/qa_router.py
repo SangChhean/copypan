@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 from sse_starlette.sse import EventSourceResponse
@@ -486,7 +486,6 @@ async def text_to_speech_minimax(req: TTSRequest, request: Request):
 
 @router.post("/tts/elevenlabs")
 async def tts_elevenlabs(request: TTSRequest, current_user=Depends(get_current_user)):
-    import base64
     import httpx
 
     elevenlabs_api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
@@ -523,8 +522,7 @@ async def tts_elevenlabs(request: TTSRequest, current_user=Depends(get_current_u
         if resp.status_code != 200:
             print(f"[TTS ElevenLabs error] status={resp.status_code}: {resp.text[:500]}")
             raise HTTPException(status_code=500, detail="ElevenLabs TTS 失败")
-        audio_b64 = base64.b64encode(resp.content).decode("utf-8")
-        return {"audio": audio_b64, "format": "mp3"}
+        return Response(content=resp.content, media_type="audio/mpeg")
     except HTTPException:
         raise
     except Exception as e:
