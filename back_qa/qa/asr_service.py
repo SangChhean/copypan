@@ -114,8 +114,18 @@ async def transcribe(audio_bytes: bytes, filename: str) -> str:
         language="zh",
         prompt=prompt,
     )
+
+    result = response.text.strip() if hasattr(response, "text") else str(response).strip()
+
+    # 过滤异常：结果与 prompt 高度重叠，说明模型输出了提示词而非转写内容
+    if prompt and len(result) > 10:
+        prompt_core = "以下是简体中文内容"
+        if result.startswith(prompt_core) or len(set(result) & set(prompt)) / max(len(set(result)), 1) > 0.8:
+            logging.warning(f"[ASR] 疑似输出提示词，丢弃结果: {result[:50]}")
+            raise ValueError("ASR 输出异常，疑似返回提示词")
+
     asr_model = "gpt-4o-transcribe"  # 与上方 create 调用的 model= 参数保持一致
-    raw_text = (getattr(response, "text", "") or "").strip()
+    raw_text = result
     logging.info(f"[ASR] [{asr_model}] 原文：{raw_text}")
     corrected_text = await correct_transcript(raw_text)
     if corrected_text != raw_text:

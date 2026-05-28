@@ -679,5 +679,7 @@ async def asr_transcribe(
     try:
         text = await asr_service.transcribe(content, file.filename or "audio.webm")
         return {"text": text}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception:
         raise HTTPException(status_code=500, detail="语音识别失败，请重试")
