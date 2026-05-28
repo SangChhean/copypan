@@ -394,7 +394,7 @@ import BibleMessage from './BibleMessage.vue'
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
 const SHOW_GOOGLE_TTS = true
 const SHOW_MINIMAX_TTS = true
-const SHOW_ELEVENLABS_TTS = true
+const SHOW_ELEVENLABS_TTS = false
 
 const BIBLE_BOOK_MAP = {
   '创': '创世记',
