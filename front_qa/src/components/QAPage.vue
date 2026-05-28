@@ -900,11 +900,9 @@ async function toggleTTS(msg, engine = 'google') {
     return
   }
 
-  const chunks = engine === 'minimax'
+  const chunks = engine === 'minimax' || engine === 'elevenlabs'
     ? [plainText]
-    : engine === 'elevenlabs'
-      ? chunkTextForTTS(plainText, lang === 'en' ? 400 : 180)
-      : engine === 'google'
+    : engine === 'google'
         ? (() => {
             const minLen = lang === 'en' ? 200 : 100
             const maxLen = lang === 'en' ? 800 : 300
