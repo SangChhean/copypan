@@ -366,6 +366,9 @@
             <span v-else-if="pressing">点击 结束</span>
             <span v-else>点击 说话</span>
           </button>
+          <div v-if="asrError" class="qa-asr-error">
+            🎤 识别失败，请重试
+          </div>
         </div>
         <a-button
           type="primary"
@@ -1086,6 +1089,7 @@ async function switchLang(msg, lang) {
 const typewriterQueue = ref([])
 let typewriterTimer = null
 const audioState = ref('idle') // 'idle' | 'recording' | 'processing'
+const asrError = ref(false)
 const voiceMode = ref(false) // 是否处于语音模式
 const pressing = ref(false) // 是否正在长按「按住 说话」
 let mediaRecorder = null
@@ -1145,6 +1149,7 @@ async function uploadAudio() {
     question.value = ''
     voiceMode.value = false
     pressing.value = false
+    asrError.value = false
     await nextTick()
     for (let i = 0; i < text.length; i++) {
       await new Promise((r) => setTimeout(r, 30))
@@ -1157,7 +1162,8 @@ async function uploadAudio() {
       textareaRef.value.resizableTextArea.textArea.focus()
     }
   } catch (e) {
-    message.error('语音识别失败，请重试')
+    asrError.value = true
+    setTimeout(() => { asrError.value = false }, 3000)
   } finally {
     audioState.value = 'idle'
     audioChunks = []
@@ -2106,6 +2112,17 @@ async function scrollToMessageTop(messageId) {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.qa-asr-error {
+  color: #ff4d4f;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 6px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .qa-press-btn {
   width: 100%;
