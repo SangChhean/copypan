@@ -196,6 +196,7 @@
                     </button>
                   </div>
                   <button
+                    v-if="SHOW_POLLY_TTS"
                     type="button"
                     class="qa-tts-btn"
                     :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'polly'"
@@ -234,7 +235,7 @@
                     class="qa-tts-btn qa-tts-btn--minimax"
                     :disabled="ttsState(msg) === 'loading' && ttsMsgEngine.get(msg.id) === 'minimax'"
                     @click="toggleTTS(msg, 'minimax')"
-                    :title="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'playing' ? '暂停' : 'MiniMax 朗读'"
+                    :title="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'playing' ? '暂停' : '朗读'"
                   >
                     <span v-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'loading'">…</span>
                     <span v-else-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'playing'">{{
@@ -243,7 +244,7 @@
                     <span v-else-if="ttsMsgEngine.get(msg.id) === 'minimax' && ttsState(msg) === 'paused'">{{
                       ttsProgress(msg) ? `▶ ${ttsProgress(msg)}` : '▶'
                     }}</span>
-                    <span v-else>🔊 MiniMax</span>
+                    <span v-else>🔊 朗读</span>
                   </button>
                   <button
                     v-if="SHOW_ELEVENLABS_TTS"
@@ -390,7 +391,8 @@ import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
-const SHOW_GOOGLE_TTS = true
+const SHOW_POLLY_TTS = false
+const SHOW_GOOGLE_TTS = false
 const SHOW_MINIMAX_TTS = true
 const SHOW_ELEVENLABS_TTS = false
 
