@@ -76,6 +76,11 @@ const routes = [
     component: () => import("../components/toolbox/BirdViewOutline.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/feast-outline-maker",
+    component: () => import("../components/toolbox/FeastOutlineMaker.vue"),
+    meta: { requiresAuth: true },
+  },
   { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
   { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
   {

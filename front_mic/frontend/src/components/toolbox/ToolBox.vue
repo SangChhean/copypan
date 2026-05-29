@@ -35,6 +35,9 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/roundtable')">
           <span class="card_text">AI圆桌</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/feast-outline-maker')">
+          <span class="card_text">节期-数据制作</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />

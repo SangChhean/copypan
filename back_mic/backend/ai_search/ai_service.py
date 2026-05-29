@@ -110,9 +110,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 # 与主模型不同才能在主模型 404/空响应/过载时真正切换到备用（若与 GEMINI_MODEL 相同则代码会跳过备用分支）
 GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-flash")
-# 毛胚纲目：主模型 3.1，备用模型 3.0。若 503 持续可设 ROUGH_OUTLINE_GEMINI_MODEL 优先用其他模型
-ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "")
-# 主模型重试全失败后尝试的备用模型，默认 gemini-2.5-pro
+# 毛胚纲目：首次 gemini-3.1-pro-preview，失败重试 gemini-2.5-pro（官方预览 ID，见 ai.google.dev/models/gemini-3.1-pro-preview）
+ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "gemini-3.1-pro-preview")
+ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
+# 纲目翻译等其它场景：主模型重试全失败后尝试的备用模型
 GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
 gemini_client = None
 _gemini_system_instruction_en2zh = None
@@ -2526,23 +2527,11 @@ class AISearchService:
             logger.error(f"Claude API 调用失败: {e}", exc_info=True)
             return None
 
-    def _call_gemini_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
-        """
-        调用 Gemini API。主模型遇 503/429 时重试 2 次（共 3 次），仍失败则第 3 次使用备用模型。
-        若配置了 ROUGH_OUTLINE_GEMINI_MODEL，毛胚纲目优先使用该模型；
-        若配置了 GEMINI_FALLBACK_MODEL（默认 gemini-2.5-pro），主模型 3 次均失败后尝试备用模型。
-        """
-        if not gemini_client:
-            logger.error("Gemini 客户端未初始化")
-            return None
-
-        # 毛胚纲目可优先使用专用模型
-        model = (ROUGH_OUTLINE_GEMINI_MODEL or "").strip() or ai_config.get("model", GEMINI_MODEL)
-        max_retries = 2  # 主模型共尝试 3 次（首次 + 重试 2 次），第 3 次失败后改用备用模型
-        backoff_seconds = (8, 15)  # 第 1、2 次重试前等待秒数
-        last_exc = None
-
-        max_tokens = ai_config.get("max_tokens", 8192)
+    def _gemini_rough_outline_generate(
+        self, model: str, prompt: str, max_tokens: int, max_retries: int = 0
+    ) -> Optional[tuple]:
+        """调用 Gemini 生成毛胚纲目；max_retries 为同模型 503/429 时的额外重试次数。"""
+        backoff_seconds = (8, 15)
         for attempt in range(max_retries + 1):
             try:
                 from google.genai import types
@@ -2554,9 +2543,9 @@ class AISearchService:
                     )
                 text = None
                 tokens_out = None
-                if hasattr(response, 'text'):
+                if hasattr(response, "text"):
                     text = response.text
-                elif hasattr(response, 'candidates') and response.candidates:
+                elif hasattr(response, "candidates") and response.candidates:
                     text = response.candidates[0].content.parts[0].text
                 if text is not None:
                     try:
@@ -2564,17 +2553,20 @@ class AISearchService:
                         in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
                         out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
                         cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
-                        logger.info(f"[Gemini毛胚] model={model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
+                        logger.info(
+                            f"[Gemini毛胚] model={model} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}"
+                        )
                         if self.redis:
-                            get_monitoring(self.redis).record_tool_usage("rough_outline_gemini", model, in_tok, out_tok, cost)
+                            get_monitoring(self.redis).record_tool_usage(
+                                "rough_outline_gemini", model, in_tok, out_tok, cost
+                            )
                         tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
                     except Exception:
                         pass
                     return (text, tokens_out)
-                logger.error(f"Gemini 响应格式异常: {response}")
+                logger.error(f"Gemini 响应格式异常 (model={model}): {response}")
                 return None
             except Exception as e:
-                last_exc = e
                 status = getattr(e, "status_code", None) or (e.args[0] if e.args else None)
                 retryable = status in (503, 429) or "503" in str(e) or "429" in str(e)
                 if retryable and attempt < max_retries:
@@ -2586,41 +2578,31 @@ class AISearchService:
                     time.sleep(wait)
                 else:
                     logger.error(f"Gemini API 调用失败 (model={model}): {e}", exc_info=True)
-                    break
+                    return None
+        return None
 
-        # 主模型重试全部失败后，若配置了备用模型则再试一次
-        fallback = (GEMINI_FALLBACK_MODEL or "").strip()
-        if fallback and fallback != model:
-            try:
-                logger.warning("Gemini 主模型不可用，尝试备用模型: %s", fallback)
-                from google.genai import types
-                with GEMINI_SEMAPHORE:
-                    response = gemini_client.models.generate_content(
-                        model=fallback,
-                        contents=prompt,
-                        config=types.GenerateContentConfig(max_output_tokens=max_tokens),
-                    )
-                text = None
-                tokens_out = None
-                if hasattr(response, 'text'):
-                    text = response.text
-                elif hasattr(response, 'candidates') and response.candidates:
-                    text = response.candidates[0].content.parts[0].text
-                if text is not None:
-                    try:
-                        usage_meta = response.usage_metadata
-                        in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
-                        out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
-                        cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
-                        logger.info(f"[Gemini毛胚] model={fallback} | 输入={in_tok} tokens | 输出={out_tok} tokens | 费用=${cost:.6f}")
-                        if self.redis:
-                            get_monitoring(self.redis).record_tool_usage("rough_outline_gemini", fallback, in_tok, out_tok, cost)
-                        tokens_out = {"input": in_tok, "output": out_tok, "cost": cost}
-                    except Exception:
-                        pass
-                    return (text, tokens_out)
-            except Exception as e2:
-                logger.error(f"Gemini 备用模型 %s 调用失败: {e2}", fallback, exc_info=True)
+    def _call_gemini_for_rough_outline(self, ai_config: Dict, prompt: str) -> Optional[str]:
+        """
+        毛胚纲目 Gemini：首次 gemini-3.1-pro-preview，失败后改用 gemini-2.5-pro 重试（含 503/429 退避）。
+        可通过 ROUGH_OUTLINE_GEMINI_MODEL / ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL 覆盖。
+        """
+        if not gemini_client:
+            logger.error("Gemini 客户端未初始化")
+            return None
+
+        primary = (ROUGH_OUTLINE_GEMINI_MODEL or "").strip() or ai_config.get(
+            "model", "gemini-3.1-pro-preview"
+        )
+        fallback = (ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL or "").strip() or "gemini-2.5-pro"
+        max_tokens = ai_config.get("max_tokens", 8192)
+
+        result = self._gemini_rough_outline_generate(primary, prompt, max_tokens, max_retries=0)
+        if result:
+            return result
+
+        if fallback and fallback != primary:
+            logger.warning("Gemini 3.1 Pro 不可用，改用备用模型重试: %s", fallback)
+            return self._gemini_rough_outline_generate(fallback, prompt, max_tokens, max_retries=2)
         return None
 
     def _call_openai_compatible_rough_outline(

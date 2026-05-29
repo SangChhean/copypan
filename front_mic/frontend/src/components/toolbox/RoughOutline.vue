@@ -9,11 +9,11 @@ const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 // 毛胚纲目类型（多选）
 const selectedTypes = ref([]);
 const outlineTypes = [
-  { label: "润色版", value: "polish", desc: "使用 Claude Sonnet 4.5 生成2次 + Gemini 3.0 Pro 生成2次，共4篇" },
+  { label: "润色版", value: "polish", desc: "使用 Claude Sonnet 4.6 生成2次 + Gemini 3.1 Pro 生成2次，共4篇" },
   { label: "初信版（精粹）", value: "beginner", desc: "使用 Claude Sonnet 4.5" },
   { label: "青少年版", value: "youth", desc: "使用 Claude Sonnet 4.5" },
   { label: "真理加强版", value: "truth", desc: "使用 Claude 4.5" },
-  { label: "三分钟分享", value: "sharing", desc: "使用6种AI：Claude 4.5、Gemini 3.0 Pro、Deep Seek-V3.2、Perplexity–search、Chat GPT5.2、Grok 4.1" },
+  { label: "三分钟分享", value: "sharing", desc: "使用6种AI：Claude Sonnet 4.6、Gemini 3.1 Pro、Deep Seek-V3.2、Perplexity–search、Chat GPT5.4、Grok 4.1" },
 ];
 
 // 每种类型对应的 AI 数量（由后端配置返回）
@@ -196,7 +196,7 @@ async function downloadFormatRoughOutline(outlineType) {
         if (idx < claudeCount) {
           label = `（Claude Sonnet 4.6 版本${versionNums[idx]}）`;
         } else {
-          label = `（Gemini 2.5 Pro 版本${versionNums[idx - claudeCount]}）`;
+          label = `（Gemini 3.1 Pro 版本${versionNums[idx - claudeCount]}）`;
         }
         const headerLine = (headerLine3.value || "").trim();
         const prefix = headerLine ? `${headerLine}${label}` : label;
@@ -206,7 +206,7 @@ async function downloadFormatRoughOutline(outlineType) {
   } else if (outlineType === "sharing") {
     const fixedOrder = [
       { key: "claude", label: "Claude Sonnet 4.6" },
-      { key: "gemini", label: "Google Gemini 2.5 pro" },
+      { key: "gemini", label: "Google Gemini 3.1 pro" },
       { key: "deep", label: "Deep Seek - V3.2" },
       { key: "perplexity", label: "Perplexity - search" },
       { key: "gpt", label: "Chat GPT 5.2" },
