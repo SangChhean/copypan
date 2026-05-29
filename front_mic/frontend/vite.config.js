@@ -19,8 +19,9 @@ export default defineConfig({
       },
       '/api': {
         target: 'http://localhost:8000',
-        changeOrigin: true
-        // 不 rewrite：后端路由带 /api 前缀，如 /api/token
+        changeOrigin: true,
+        ws: true,
+        // 不 rewrite：后端路由带 /api 前缀，如 /api/token、/api/ws/progress
       },
       '/search': {
         target: 'http://localhost:8000',

@@ -23,6 +23,7 @@ feast_router = APIRouter(prefix="/api/feast", tags=["feast"])
 logger = logging.getLogger("kg_rag")
 
 FEAST_SEQUENCE_KEY = "feast:sequence"
+PAN_READING_INDEX = "pan_reading"
 
 # 临时调试：KG_RAG_LOG=info（默认开启）输出 kg_rag INFO；完成后设 KG_RAG_LOG=0
 if os.environ.get("KG_RAG_LOG", "info").lower() not in ("0", "false", "no", "off"):
@@ -211,6 +212,37 @@ async def get_feast_sequence():
 async def set_feast_sequence(req: FeastSequenceBody):
     """写入节期纲目 bookname/title 序号。"""
     return _feast_sequence_save(req.bsn, req.csn)
+
+
+def _parse_pan_reading_ids(ids: str) -> List[str]:
+    return [part.strip() for part in (ids or "").split(",") if part.strip()]
+
+
+def _fetch_pan_reading_by_ids(ids: str) -> dict:
+    from elasticsearch import NotFoundError
+    from es_config import es
+
+    id_list = _parse_pan_reading_ids(ids)
+    result: dict = {}
+    try:
+        for doc_id in id_list:
+            try:
+                res = es.get(index=PAN_READING_INDEX, id=doc_id)
+                result[doc_id] = res.get("_source")
+            except NotFoundError:
+                result[doc_id] = None
+    except Exception as e:
+        logger.exception("[feast_pan_reading] ES fetch failed")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    return result
+
+
+@feast_router.get("/pan-reading", dependencies=[Depends(test_token)])
+async def get_feast_pan_reading(
+    ids: str = Query(..., description="逗号分隔的 pan_reading 文档 id"),
+):
+    """批量读取 pan_reading 文档；不存在的 id 对应值为 null。"""
+    return _fetch_pan_reading_by_ids(ids)
 
 
 # ---------------------------------------------------------------------------

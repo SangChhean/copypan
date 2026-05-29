@@ -55,7 +55,12 @@ let ws;
 
 function connectWebSocket() {
   return new Promise((resolve, reject) => {
-    ws = new WebSocket("wss://pansearch.org/ws/progress");
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const isLocal =
+      ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+      window.location.port !== "443";
+    const wsHost = isLocal ? "localhost:8000" : window.location.host;
+    ws = new WebSocket(`${protocol}//${wsHost}/api/ws/progress`);
 
     // 当 WebSocket 连接成功时，触发 resolve
     ws.onopen = () => {

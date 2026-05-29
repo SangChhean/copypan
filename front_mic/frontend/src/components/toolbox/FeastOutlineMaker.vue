@@ -64,6 +64,7 @@
             <a-checkbox v-model:checked="downloadFeasts">feasts.json</a-checkbox>
             <a-checkbox v-model:checked="downloadMapBookname">map_feasts_bookname.json</a-checkbox>
             <a-checkbox v-model:checked="downloadMapTitle">map_feasts_title.json</a-checkbox>
+            <a-checkbox v-model:checked="downloadPanReadingFeasts">pan_reading_feasts.json</a-checkbox>
           </div>
           <a-button
             type="primary"
@@ -275,6 +276,26 @@ const CONFERENCE_MAP = {
   ftta_f: { zh: "年安那翰秋季全时间训练", en: "FTTA-Fall" },
 };
 
+const CONFERENCE_SHORT = {
+  ic: "年国际华语特会",
+  is: "年春季长老训练",
+  mdc: "年国殇节特会",
+  st: "年夏训",
+  if: "年秋季长老训练",
+  tgc: "年感恩节特会",
+  wt: "年冬训",
+  ftta: "年安那翰全时间训练",
+  ftta_s: "年安那翰春季全时间训练",
+  ftta_f: "年安那翰秋季全时间训练",
+};
+
+const CONFERENCE_ORDER = ["ic", "is", "mdc", "st", "if", "tgc", "wt", "ftta", "ftta_s", "ftta_f"];
+
+function getPanReadingType(type) {
+  if (type === "bible_reading") return "b_read";
+  return type;
+}
+
 const VALID_FEAST_TYPES = [
   "bookname",
   "title",
@@ -385,11 +406,16 @@ const pendingDownloadPayload = ref(null);
 const downloadFeasts = ref(true);
 const downloadMapBookname = ref(true);
 const downloadMapTitle = ref(true);
+const downloadPanReadingFeasts = ref(true);
 
 const currentChapter = computed(() => chapters.value[currentIndex.value] ?? null);
 
 const hasDownloadSelection = computed(
-  () => downloadFeasts.value || downloadMapBookname.value || downloadMapTitle.value
+  () =>
+    downloadFeasts.value ||
+    downloadMapBookname.value ||
+    downloadMapTitle.value ||
+    downloadPanReadingFeasts.value
 );
 
 const needsSequenceUpdate = computed(
@@ -768,6 +794,149 @@ function buildMapTitles() {
   return list;
 }
 
+function conferenceCodeFromRefid(refid) {
+  const m = (refid || "").match(/^feasts_\d{4}-(.+)$/);
+  if (!m) return "";
+  return m[1].replace(/-/g, "_");
+}
+
+function mergeByRefid(existing, newItems) {
+  const seen = new Set((existing || []).map((item) => item.refid));
+  const merged = [...(existing || [])];
+  for (const item of newItems) {
+    if (!seen.has(item.refid)) {
+      merged.push(item);
+      seen.add(item.refid);
+    }
+  }
+  return merged;
+}
+
+function sortTocByConferenceOrder(toc) {
+  return [...toc].sort((a, b) => {
+    const codeA = conferenceCodeFromRefid(a.refid);
+    const codeB = conferenceCodeFromRefid(b.refid);
+    const idxA = CONFERENCE_ORDER.indexOf(codeA);
+    const idxB = CONFERENCE_ORDER.indexOf(codeB);
+    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+  });
+}
+
+async function fetchPanReadingDocs(ids) {
+  const headers = getAuthHeaders();
+  if (!headers) {
+    throw new Error("未登录");
+  }
+  const res = await axios.get(`${apiBase}/api/feast/pan-reading`, {
+    params: { ids },
+    headers,
+  });
+  return res.data || {};
+}
+
+async function buildPanReadingArray() {
+  const { y, typeCode, subject, type } = getBookMeta();
+  const yearRefId = `feasts_${y}`;
+  const bookRefId = `feasts_${y}-${typeCode}`;
+  const shortName = `${y}${CONFERENCE_SHORT[type] || ""}`;
+
+  const panData = await fetchPanReadingDocs(`feasts,${yearRefId}`);
+  const feastsRoot = panData.feasts;
+  const yearDoc = panData[yearRefId];
+
+  const docs = [];
+
+  const cells = mergeByRefid(feastsRoot?.cells || [], [
+    { text: `${y}年`, refid: yearRefId },
+  ]);
+  docs.push({
+    index: ["pan_reading"],
+    refid: "feasts",
+    type: "cells",
+    bread: [
+      { text: "首页", refid: "index" },
+      { text: "节期", refid: "" },
+    ],
+    cells,
+  });
+
+  const yearToc = sortTocByConferenceOrder(
+    mergeByRefid(yearDoc?.toc || [], [
+      {
+        text: `${shortName}，${subject}`,
+        refid: bookRefId,
+        type: "toc",
+      },
+    ])
+  );
+  docs.push({
+    index: ["pan_reading"],
+    refid: yearRefId,
+    type: "toc",
+    bread: [
+      { text: "首页", refid: "index" },
+      { text: "节期", refid: "feasts" },
+      { text: `${y}年`, refid: "" },
+    ],
+    toc: yearToc,
+  });
+
+  const confirmedChapters = chapters.value.filter((ch) => ch.confirmed);
+  const bookToc = confirmedChapters.map((ch, idx) => {
+    const n = idx + 1;
+    const title_zh = (ch.title_zh || "").trim();
+    return {
+      text: title_zh,
+      refid: `${bookRefId}_${n}`,
+      type: "toc",
+    };
+  });
+  docs.push({
+    index: ["pan_reading"],
+    refid: bookRefId,
+    type: "toc",
+    bread: [
+      { text: "首页", refid: "index" },
+      { text: "节期", refid: "feasts" },
+      { text: `${y}年`, refid: yearRefId },
+      { text: shortName, refid: "" },
+    ],
+    toc: bookToc,
+  });
+
+  confirmedChapters.forEach((ch, idx) => {
+    const n = idx + 1;
+    const msgRefId = `${bookRefId}_${n}`;
+    const zh = [];
+    const en = [];
+    ch.lines.forEach((line) => {
+      const lineZh = (line.zh || "").trim();
+      const lineEn = (line.en || "").trim();
+      if (!lineZh && !lineEn) return;
+      const lineType = getPanReadingType(getType(lineZh));
+      zh.push([lineZh, lineType]);
+      en.push([lineEn, lineType]);
+    });
+    docs.push({
+      index: ["pan_reading"],
+      refid: msgRefId,
+      type: "msg",
+      showButtons: "1",
+      bread: [
+        { text: "首页", refid: "index" },
+        { text: "节期", refid: "feasts" },
+        { text: `${y}年`, refid: yearRefId },
+        { text: shortName, refid: bookRefId },
+        { text: `第${toChineseNum(n)}篇`, refid: "" },
+      ],
+      zh,
+      en,
+    });
+  });
+
+  return docs;
+}
+
 function precheckFeasts(feastsData) {
   const emptyEn = [];
   const invalidTypes = [];
@@ -796,13 +965,25 @@ function precheckFeasts(feastsData) {
   };
 }
 
-function buildDownloadPayload() {
-  return {
-    feastsData: buildFeastsArray(),
+async function buildDownloadPayload() {
+  const payload = {
+    feastsData: downloadFeasts.value ? buildFeastsArray() : [],
     mapBook: buildMapBookname(),
     mapTitles: buildMapTitles(),
+    panReadingData: null,
     confirmedCount: chapters.value.filter((ch) => ch.confirmed).length,
   };
+
+  if (downloadPanReadingFeasts.value) {
+    try {
+      payload.panReadingData = await buildPanReadingArray();
+    } catch (e) {
+      message.error("读取现有数据失败，无法生成 pan_reading_feasts.json，请检查后端服务");
+      throw e;
+    }
+  }
+
+  return payload;
 }
 
 function buildSequenceConfirmText(confirmedCount) {
@@ -817,7 +998,7 @@ function buildSequenceConfirmText(confirmedCount) {
 }
 
 async function executeDownload(payload) {
-  const { feastsData, mapBook, mapTitles, confirmedCount } = payload;
+  const { feastsData, mapBook, mapTitles, panReadingData, confirmedCount } = payload;
   const downloadedFiles = [];
 
   if (downloadFeasts.value) {
@@ -835,6 +1016,12 @@ async function executeDownload(payload) {
   if (downloadMapTitle.value) {
     downloadJson("map_feasts_title.json", mapTitles);
     downloadedFiles.push("map_feasts_title.json");
+    await sleep(300);
+  }
+
+  if (downloadPanReadingFeasts.value && panReadingData) {
+    downloadJson("pan_reading_feasts.json", panReadingData);
+    downloadedFiles.push("pan_reading_feasts.json");
     await sleep(300);
   }
 
@@ -857,8 +1044,10 @@ async function executeDownload(payload) {
 async function proceedDownload() {
   downloading.value = true;
   try {
-    const payload = buildDownloadPayload();
-    const issues = precheckFeasts(payload.feastsData);
+    const payload = await buildDownloadPayload();
+    const issues = downloadFeasts.value
+      ? precheckFeasts(payload.feastsData)
+      : { hasIssues: false };
 
     if (issues.hasIssues) {
       precheckIssues.value = issues;

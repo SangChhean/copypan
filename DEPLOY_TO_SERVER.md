@@ -246,6 +246,18 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # 导入进度 WebSocket（须在 /api/ 之前，优先匹配更长前缀）
+    location /api/ws/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # AI 生成答案接口耗时 20–30+ 秒，需加长超时，否则在线会显示「AI搜索失败」但后端已返回
     location /api/ {
         proxy_pass http://127.0.0.1:8000;
@@ -256,13 +268,6 @@ server {
         proxy_connect_timeout 120s;
         proxy_send_timeout 120s;
         proxy_read_timeout 120s;
-    }
-
-    location /ws/ {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
     }
 }
 ```
