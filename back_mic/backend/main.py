@@ -171,11 +171,57 @@ def get_map(refid: str = Form()):
 
 
 @api_router.post("/getvers", dependencies=[Depends(test_token)])
-def get_vers(input: str = Form()):
+def get_vers(input: str = Form(), lang: str = Form(default="zh")):
     try:
-        return biblecollection(input)
+        return biblecollection(input, lang)
     except:
         return JSONResponse(content={"error": "404 Not Found"}, status_code=404)
+
+
+@api_router.post("/getvers/format_download", dependencies=[Depends(test_token)])
+def getvers_format_download(contents: str = Form(), filename: str = Form(default="英文经文汇集")):
+    try:
+        from ai_search.ai_service import format_english_bibco_docx
+        contents = contents.replace("\r\n", "\n").replace("\r", "\n")
+        result = format_english_bibco_docx(contents, filename)
+        return result
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@api_router.post("/getvers/format_download_zh", dependencies=[Depends(test_token)])
+def getvers_format_download_zh(
+    contents: str = Form(),
+    filename: str = Form(default="中文经文汇集"),
+):
+    try:
+        import base64
+        from ai_search.ai_service import ai_service
+
+        contents = contents.replace("\r\n", "\n").replace("\r", "\n")
+        # 加三行空篇头，避免前三段强制样式破坏纲目内容
+        # 纯 \n 空行会在刷格式时被 delete_empty_paragraphs 删除，用零宽空格占位
+        _header_placeholder = "\u200b"
+        padded = f"{_header_placeholder}\n{_header_placeholder}\n{_header_placeholder}\n{contents}"
+        result = ai_service.format_feast_outline_docx(
+            contents=[padded],
+            outline_type="with_scripture",
+        )
+        if result.get("error") and not result.get("docx_bytes"):
+            return JSONResponse(content={"error": result["error"]}, status_code=400)
+        docx_bytes = result.get("docx_bytes")
+        if not docx_bytes:
+            return JSONResponse(
+                content={"error": result.get("error") or "生成 DOCX 失败"},
+                status_code=400,
+            )
+        out_name = filename if filename.endswith(".docx") else f"{filename}.docx"
+        return {
+            "docx_base64": base64.b64encode(docx_bytes).decode("utf-8"),
+            "filename": out_name,
+        }
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 @api_router.post("/datalist")

@@ -1707,7 +1707,7 @@ class AISearchService:
             outline_type = "original"
 
         # 所有类型（含 with_scripture）均直接使用传入的 contents，不再调用经文汇集或 Claude
-        main_contents = "\n\n".join((c or "").strip() for c in contents if (c or "").strip())
+        main_contents = "\n\n".join((c or "").rstrip() for c in contents if (c or "").strip())
         l1, l2, l3 = (line1 or "").strip(), (line2 or "").strip(), (line3 or "").strip()
         header = "\n".join([l1, l2, l3]) if (l1 or l2 or l3) else ""
 
@@ -2914,6 +2914,68 @@ def _append_transcript_info_section(
                 p.style = body_style
         else:
             doc.add_paragraph("")
+
+
+def format_english_bibco_docx(contents: str, filename: str) -> Dict:
+    """
+    将英文经文汇集纯文本写入 DOCX 并刷格式，返回 base64 编码结果。
+
+    Args:
+        contents: 多行文本（纲目行 + 经文行）
+        filename: 下载文件名（不含 .docx 后缀）
+
+    Returns:
+        {"docx_base64": str, "filename": str} 或 {"error": str}
+    """
+    import base64
+    import shutil
+    import tempfile
+    from docx import Document
+
+    if format_english_outline_docx is None:
+        return {"error": "格式刷函数未导入"}
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    template_path = backend_dir / "英文纲目模板.docx"
+    if not template_path.exists():
+        return {"error": f"模板文件不存在: 英文纲目模板.docx"}
+
+    out_name = filename if filename.endswith(".docx") else f"{filename}.docx"
+    temp_docx_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp_file:
+            temp_docx_path = tmp_file.name
+
+        shutil.copy2(template_path, temp_docx_path)
+        doc = Document(temp_docx_path)
+
+        for para in list(doc.paragraphs):
+            p_element = para._element
+            p_element.getparent().remove(p_element)
+
+        for line in contents.split("\n"):
+            doc.add_paragraph(line)
+
+        doc.save(temp_docx_path)
+        format_english_outline_docx(temp_docx_path)
+
+        with open(temp_docx_path, "rb") as f:
+            docx_bytes = f.read()
+
+        return {
+            "docx_base64": base64.b64encode(docx_bytes).decode("utf-8"),
+            "filename": out_name,
+        }
+    except Exception as e:
+        logger.error(f"英文经文汇集刷格式失败: {e}", exc_info=True)
+        return {"error": str(e)}
+    finally:
+        if temp_docx_path:
+            try:
+                os.remove(temp_docx_path)
+            except OSError:
+                pass
 
 
 # 创建全局服务实例

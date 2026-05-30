@@ -454,7 +454,10 @@ def filter_mats(mats):
                     data.append({"cv": mat})
             elif re.search(r"\d", mat):
                 if mat[0].isdigit():
-                    data.append({"v": mat})
+                    if ":" in mat or "：" in mat:
+                        data.append({"cv": mat})
+                    else:
+                        data.append({"v": mat})
                 else:
                     data.append({"bcv": mat})
 
@@ -500,12 +503,14 @@ def reorder_s(data):
             cim = mat.group(2)
             reorder.append(item)
         elif "cv" in item:
-            mat = re.search(r"[一二三四五六七八九十〇]+", item["cv"])
-            cim = mat.group()
-            item = bim + item["cv"]
+            cv_val = item["cv"]
+            colon_pos = cv_val.find(":")
+            if colon_pos > 0:
+                cim = cv_val[:colon_pos]
+            item = bim + cv_val
             reorder.append(item)
         elif "v" in item:
-            item = bim + cim + item["v"]
+            item = bim + cim + ":" + item["v"]
             reorder.append(item)
 
     return reorder
@@ -556,7 +561,7 @@ def get_sids(reo):
     for item in reo:
         temp = []
         # 先去掉尾部全角冒号/句号/分号（纲目标点残留）
-        item = re.sub(r"[：。；]+$", "", item)
+        item = re.sub(r"[：。；:]+$", "", item)
         # 先尝试匹配纯中文章号格式（太一1）：书卷+中文章+数字节
         mat_cn = re.search(r"^(.*?)([一二三四五六七八九十〇]+)([-~～:、\d]*)$", item)
         # 再尝试匹配纯数字章号格式（太5:6）：书卷+数字章+节号
@@ -598,47 +603,105 @@ def suboo(data):
     return v
 
 
-def get_ver_by_id(sid):
+def get_ver_by_id(sid, lang="zh"):
     ver = {}
     try:
         res = es.get(index="bib", id=f"bib_{sid}")["_source"]
-        ver["text"] = res["text"]
-        ver["source"] = re.sub(r"[（）]|圣经恢复本，", "", res["source"][0])
+        if lang == "en":
+            ver["text"] = (res.get("en", "") or "").strip().replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+            src = res.get("source") or []
+            if len(src) > 1:
+                ver["source"] = re.sub(
+                    r"[()]|Holy Bible Recovery Version, ",
+                    "",
+                    src[1],
+                ).strip()
+            else:
+                ver["source"] = ""
+        else:
+            ver["text"] = res["text"].strip().replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+            ver["source"] = re.sub(r"[（）]|圣经恢复本，", "", res["source"][0]).strip()
     except Exception:
         # 查询失败（文档不存在），返回空字典
         return ver
     return ver
 
 
-def get_res(sids):
+def get_res(sids, lang="zh"):
     res = []
     for sid in sids:
-        res.append(get_ver_by_id(sid))
+        res.append(get_ver_by_id(sid, lang))
     return res
 
 
-def main(text):
+def english_to_chinese(text):
+    """将英文书卷名缩写替换为中文简称，使后续中文解析流程可正常处理。"""
+    # 带数字前缀的书卷名必须优先替换（避免被后面的单名规则误拆）
+    numbered = [
+        ("1 Sam.",  "撒上"), ("2 Sam.",  "撒下"),
+        ("1 Kings", "王上"), ("2 Kings", "王下"),
+        ("1 Chron.","代上"), ("2 Chron.","代下"),
+        ("1 Cor.",  "林前"), ("2 Cor.",  "林后"),
+        ("1 Thes.", "帖前"), ("2 Thes.",  "帖后"),
+        ("1 Tim.",  "提前"), ("2 Tim.",  "提后"),
+        ("1 Pet.",  "彼前"), ("2 Pet.",  "彼后"),
+        ("1 John",  "约壹"), ("2 John",  "约贰"), ("3 John", "约叁"),
+    ]
+    # 普通缩写（无数字前缀）
+    single = [
+        ("Gen.",   "创"), ("Exo.",   "出"), ("Lev.",  "利"), ("Num.",  "民"),
+        ("Deut.",  "申"), ("Josh.",  "书"), ("Judg.", "士"), ("Ruth",  "得"),
+        ("Ezra",   "拉"), ("Neh.",   "尼"), ("Esth.", "斯"), ("Job",   "伯"),
+        ("Psa.",   "诗"), ("Prov.",  "箴"), ("Eccl.", "传"), ("S. S.", "歌"),
+        ("Isa.",   "赛"), ("Jer.",   "耶"), ("Lam.",  "哀"), ("Ezek.", "结"),
+        ("Dan.",   "但"), ("Hosea",  "何"), ("Joel",  "珥"), ("Amos",  "摩"),
+        ("Obad.",  "俄"), ("Jonah",  "拿"), ("Micah", "弥"), ("Nahum", "鸿"),
+        ("Hab.",   "哈"), ("Zeph.",  "番"), ("Hag.",  "该"), ("Zech.", "亚"),
+        ("Mal.",   "玛"), ("Matt.",  "太"), ("Mark",  "可"), ("Luke",  "路"),
+        ("John",   "约"), ("Acts",   "徒"), ("Rom.",  "罗"), ("Gal.",  "加"),
+        ("Eph.",   "弗"), ("Phil.",  "腓"), ("Col.",  "西"), ("Titus", "多"),
+        ("Philem.","门"), ("Heb.",   "来"), ("James", "雅"), ("Jude",  "犹"),
+        ("Rev.",   "启"),
+    ]
+    for en, zh in numbered + single:
+        text = text.replace(en, zh)
+    # 去掉书卷简称与章节号之间的空格（如 "太 1:1" → "太1:1"）
+    for zh in sorted(Data("bookmarks"), key=len, reverse=True):
+        text = re.sub(rf"({re.escape(zh)})\s+(?=[\d:：\-])", r"\1", text)
+    return text
+
+
+def main(text, lang="zh"):
     global bim, cim, vim
     data = []
     bim = "零"
     cim = "零"
     vim = "零"
-    text = re.sub(r"[ ]+", " ", text)
-    text = re.sub(r"[\d上下]+[,， \d]+\d", subrepl, text)
-    text = re.sub(r"\d[~～][一二三四五六七八九十]+[\d]", suboo, text)
-    text = re.sub(r"[-~～][ ]+", "～", text)
-    text = text.replace("○", "〇")
-    lines = get_lines(text)
-    for line in lines:
-        if line == "　":
+
+    def prep(t):
+        t = re.sub(r"\bp\.?\s*\d+", "", t)
+        t = re.sub(r"[ ]+", " ", t)
+        t = re.sub(r"[\d上下]+[,， \d]+\d", subrepl, t)
+        t = re.sub(r"\d[~～][一二三四五六七八九十]+[\d]", suboo, t)
+        t = re.sub(r"[-~～][ ]+", "～", t)
+        t = t.replace("○", "〇")
+        return t
+
+    original_lines = get_lines(prep(text))
+    parse_text = english_to_chinese(text) if lang == "en" else text
+    parse_lines = get_lines(prep(parse_text))
+
+    for i, parse_line in enumerate(parse_lines):
+        if parse_line == "　":
             continue
-        sources = get_sources(line)
+        display_line = original_lines[i] if i < len(original_lines) else parse_line
+        sources = get_sources(parse_line)
         reo = reorder_s(sources)
         sids = get_sids(reo)
-        data.append({"text": line, "vers": get_res(sids)})
+        data.append({"text": display_line, "vers": get_res(sids, lang)})
     return data
 
 
-def biblecollection(text):
-    res = main(text)
+def biblecollection(text, lang="zh"):
+    res = main(text, lang)
     return res
