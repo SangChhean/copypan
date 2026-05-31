@@ -63,6 +63,33 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/kg-rag-test')"><span class="card_text">KG-RAG 测试工作台</span></a-card-grid>
       </a-card>
     </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title">Vichhet &amp; Chom Pei</div>
+        </template>
+      </a-card>
+    </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title">Vannak &amp; Sila</div>
+        </template>
+      </a-card>
+    </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title">Piseth &amp; Sopheap</div>
+        </template>
+      </a-card>
+    </div>
   </div>
 </template>
 
