@@ -68,7 +68,7 @@ const go = (val = "/") => {
     <div class="cards">
       <a-card>
         <template #title>
-          <div class="card_title">Vichhet &amp; Chom Pei</div>
+          <div class="card_title">Vichhet &amp; Chom Pei 测试</div>
         </template>
       </a-card>
     </div>
@@ -77,7 +77,7 @@ const go = (val = "/") => {
     <div class="cards">
       <a-card>
         <template #title>
-          <div class="card_title">Vannak &amp; Sila</div>
+          <div class="card_title">Vannak &amp; Sila 测试</div>
         </template>
       </a-card>
     </div>
@@ -86,7 +86,7 @@ const go = (val = "/") => {
     <div class="cards">
       <a-card>
         <template #title>
-          <div class="card_title">Piseth &amp; Sopheap</div>
+          <div class="card_title">Piseth &amp; Sopheap 测试</div>
         </template>
       </a-card>
     </div>
