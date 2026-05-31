@@ -239,6 +239,8 @@ server {
     listen 80;
     server_name 你的域名.com;   # 或 服务器IP
 
+    client_max_body_size 100m;
+
     root /opt/copypan/front_mic/frontend/dist;
     index index.html;
 
@@ -258,6 +260,17 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # 大 JSON 导入可能耗时很长，单独加长超时（须在 /api/ 之前）
+    location /api/process {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 1800;
+        proxy_send_timeout 1800;
+        client_max_body_size 100m;
+    }
+
     # AI 生成答案接口耗时 20–30+ 秒，需加长超时，否则在线会显示「AI搜索失败」但后端已返回
     location /api/ {
         proxy_pass http://127.0.0.1:8000;
@@ -267,7 +280,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_connect_timeout 120s;
         proxy_send_timeout 120s;
-        proxy_read_timeout 120s;
+        proxy_read_timeout 600s;
     }
 }
 ```
@@ -278,6 +291,14 @@ server {
 sudo ln -s /etc/nginx/sites-available/copypan /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
+```
+
+**已有部署更新 Nginx（上传/导入修复）**：编辑站点配置后执行：
+
+```bash
+sudo nano /etc/nginx/sites-available/copypan
+# 按上文补充 client_max_body_size、/api/process、proxy_read_timeout 600s
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ### 9. 使用 systemd 保持后端常驻

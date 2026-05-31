@@ -2,7 +2,8 @@
 import axios from "axios";
 import { ref, onMounted, reactive } from "vue";
 import { SearchOutlined, ReloadOutlined } from "@ant-design/icons-vue";
-import { tip, showMsg } from "../utils";
+import { message } from "ant-design-vue";
+import { showMsg } from "../utils";
 
 const showSpin = ref(false);
 const openM = ref(false);
@@ -10,7 +11,7 @@ const openP = ref(false);
 const moTitle = ref("");
 const filenamev = ref("");
 const actionv = ref("");
-const isLoading = ref(false);
+const importingFilename = ref("");
 const progressVal = ref(0);
 
 const state = reactive({
@@ -51,60 +52,96 @@ const handleReset = (clearFilters) => {
 
 const datarow = ref([]);
 
-let ws;
+let ws: WebSocket | null = null;
+
+function closeWebSocket() {
+  if (ws) {
+    try {
+      ws.close();
+    } catch {
+      /* ignore */
+    }
+    ws = null;
+  }
+}
+
+function finishImport() {
+  importingFilename.value = "";
+  showSpin.value = false;
+  openP.value = false;
+  closeWebSocket();
+}
 
 function connectWebSocket() {
-  return new Promise((resolve, reject) => {
+  return new Promise<WebSocket>((resolve, reject) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const isLocal =
       ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
       window.location.port !== "443";
     const wsHost = isLocal ? "localhost:8000" : window.location.host;
-    ws = new WebSocket(`${protocol}//${wsHost}/api/ws/progress`);
+    const socket = new WebSocket(`${protocol}//${wsHost}/api/ws/progress`);
+    ws = socket;
 
-    // 当 WebSocket 连接成功时，触发 resolve
-    ws.onopen = () => {
-      console.log("WebSocket connection established.");
-      resolve(ws); // 返回 WebSocket 对象
+    socket.onopen = () => {
+      resolve(socket);
     };
 
-    // 如果连接失败，触发 reject
-    ws.onerror = (error) => {
+    socket.onerror = (error) => {
       console.error("WebSocket connection failed.", error);
-      reject(error);
+      reject(new Error("WebSocket 连接失败，无法获取导入进度，请检查 Nginx /api/ws/ 配置"));
     };
 
-    ws.onmessage = function (event) {
+    socket.onmessage = function (event) {
       const progressData = JSON.parse(event.data);
       progressVal.value = progressData.progress;
     };
 
-    ws.onclose = function () {
+    socket.onclose = function () {
       console.log("WebSocket closed.");
     };
-
-    // 可以在 socket 上添加更多事件处理器，例如 onmessage, onclose 等
   });
 }
 
-const startProcess = async (formData) => {
+function getProcessErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (data && typeof data === "object" && "error" in data && data.error) {
+      return String(data.error);
+    }
+    const status = error.response?.status;
+    if (status === 403) return "导入失败：无权限（HTTP 403）";
+    if (status === 502) return "导入失败：网关错误（HTTP 502），请检查后端是否运行";
+    if (status === 504) return "导入失败：网关超时（HTTP 504），请检查 Nginx proxy_read_timeout";
+    if (status) return `导入失败：HTTP ${status}`;
+    return error.message || "导入失败";
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "导入失败";
+}
+
+const startProcess = async (formData: FormData) => {
+  importingFilename.value = filenamev.value;
+  progressVal.value = 0;
   try {
-    const socket = await connectWebSocket();
-    progressVal.value = 0;
+    await connectWebSocket();
     openP.value = true;
     const apost = axios.create({
       timeout: 1000 * 60 * 10,
     });
-    await apost.post("/api/process", formData).then((res) => {
-      if (res.data.tip) {
-        showMsg(res.data.tip);
-        isLoading.value = false;
-      }
-      ws.close();
-      showSpin.value = false;
-    });
+    const res = await apost.post("/api/process", formData);
+    if (res.data?.error) {
+      message.error(String(res.data.error));
+    } else if (res.data?.tip) {
+      showMsg(res.data.tip);
+    } else {
+      message.error("导入失败：服务器未返回结果");
+    }
   } catch (error) {
-    console.error("Failed to connect WebSocket, cannot start the process.", error);
+    message.error(getProcessErrorMessage(error));
+  } finally {
+    finishImport();
   }
 };
 
@@ -116,8 +153,6 @@ const make_action = async () => {
   formData.append("action", action);
 
   if (action == "ins") {
-    isLoading.value = false;
-    showSpin.value = false;
     startProcess(formData);
   } else {
     showSpin.value = true;
@@ -128,8 +163,13 @@ const make_action = async () => {
       }
       if (data.tip) {
         showMsg(data.tip);
-        isLoading.value = false;
       }
+      if (data.error) {
+        message.error(String(data.error));
+      }
+      showSpin.value = false;
+    }).catch((error) => {
+      message.error(getProcessErrorMessage(error));
       showSpin.value = false;
     });
   }
@@ -178,13 +218,21 @@ onMounted(() => {
         </template>
         <template #bodyCell="{ text, column, record }">
           <template v-if="column.dataIndex === 'ins'">
-            <a-popconfirm title="确认导入？" @confirm="okHandeler">
-              <a-button @click="dealData(record.filename, 'ins')" type="primary" ghost>导入</a-button>
+            <a-popconfirm title="确认导入？" :disabled="!!importingFilename" @confirm="okHandeler">
+              <a-button
+                @click="dealData(record.filename, 'ins')"
+                type="primary"
+                ghost
+                :disabled="!!importingFilename"
+                :loading="importingFilename === record.filename"
+              >
+                导入
+              </a-button>
             </a-popconfirm>
           </template>
           <template v-if="column.dataIndex === 'del'">
-            <a-popconfirm title="确认删除？" @confirm="okHandeler">
-              <a-button @click="dealData(record.filename, 'del')" type="primary" danger ghost>删除</a-button>
+            <a-popconfirm title="确认删除？" :disabled="!!importingFilename" @confirm="okHandeler">
+              <a-button @click="dealData(record.filename, 'del')" type="primary" danger ghost :disabled="!!importingFilename">删除</a-button>
             </a-popconfirm>
           </template>
           <span v-if="state.searchText && state.searchedColumn === column.dataIndex">

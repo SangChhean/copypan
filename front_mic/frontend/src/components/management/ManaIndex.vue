@@ -23,14 +23,30 @@ const fileList = ref([]);
 const dragOver = ref(false);
 const { showIndex } = storeToRefs(useStore());
 
+const getUploadErrorDetail = (file: UploadChangeParam["file"]): string => {
+  const resp = file.response;
+  if (resp && typeof resp === "object" && "error" in resp && resp.error) {
+    return String(resp.error);
+  }
+  if (typeof resp === "string" && resp.trim()) {
+    return resp.length > 200 ? `${resp.slice(0, 200)}…` : resp;
+  }
+  const status = (file as { error?: { status?: number }; xhr?: { status?: number } }).error?.status
+    ?? (file as { xhr?: { status?: number } }).xhr?.status;
+  if (status === 413) return "文件过大（HTTP 413），请检查 Nginx client_max_body_size";
+  if (status === 403) return "无权限（HTTP 403），请确认已登录管理员";
+  if (status === 500) return "服务器错误（HTTP 500）";
+  if (status) return `HTTP ${status}`;
+  return "";
+};
+
 const handleChange = (info: UploadChangeParam) => {
   const status = info.file.status;
-  if (status !== "uploading") {
-  }
   if (status === "done") {
     message.success(`${info.file.name} 上传成功`);
   } else if (status === "error") {
-    message.error(`${info.file.name} 上传失败`);
+    const detail = getUploadErrorDetail(info.file);
+    message.error(detail ? `${info.file.name} 上传失败：${detail}` : `${info.file.name} 上传失败`);
   }
 };
 
