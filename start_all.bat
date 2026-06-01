@@ -42,7 +42,7 @@ if errorlevel 1 (
       -e "xpack.security.enabled=true" ^
       -e "ELASTIC_PASSWORD=qwSD4AF2Dcv" ^
       -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" ^
-      -v "%PROJECT_DIR:\=/%/es8_data:/usr/share/elasticsearch/data" ^
+      -v "%PROJECT_DIR:\=/%/es_data:/usr/share/elasticsearch/data" ^
       elasticsearch:8.19.0 >nul 2>&1
     if errorlevel 1 (
         echo [ERROR] Failed to create elasticsearch8 container.
