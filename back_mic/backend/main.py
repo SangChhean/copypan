@@ -33,6 +33,7 @@ from kg_rag.kg_rag_router import router as kg_rag_router, feast_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
 import asyncio
+import sys
 from pathlib import Path as pt
 from es_config import es
 
@@ -370,6 +371,11 @@ app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）
 app.include_router(kg_rag_router)
 app.include_router(feast_router)
+_repo_root = pt(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+from testC.translate.backend.translate_router_practice import router as practice_router
+app.include_router(practice_router, prefix="/api")
 
 # 注册API路由器
 app.include_router(api_router)

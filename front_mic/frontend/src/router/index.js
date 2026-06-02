@@ -89,6 +89,10 @@ const routes = [
     component: () => import("../components/toolbox/KgRagTest.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/practice-translate',
+    component: () => import('../../../../testC/translate/frontend/OutlineTranslate_practice.vue')
+  },
 ];
 
 const router = createRouter({

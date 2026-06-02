@@ -121,7 +121,23 @@ if not exist "%NGINX_DIR%\nginx.exe" (
     pause
     exit /b 1
 )
+set "NGINX_CONF_SRC=%PROJECT_DIR%\nginx.windows.conf"
+if exist "%NGINX_CONF_SRC%" (
+    set "NGINX_HTML_FWD=%NGINX_HTML:\=/%"
+    set "NGINX_ROOT_PATH=%NGINX_HTML_FWD%"
+    powershell -NoProfile -Command "$c = Get-Content -Raw '%NGINX_CONF_SRC%'; $c = $c -replace '__NGINX_HTML__', $env:NGINX_ROOT_PATH; [IO.File]::WriteAllText('%NGINX_DIR%\conf\nginx.conf', $c)"
+    echo [OK] Nginx config deployed to %NGINX_DIR%\conf\nginx.conf
+) else (
+    echo [WARN] nginx.windows.conf not found. Using existing nginx.conf.
+)
 cd /d "%NGINX_DIR%"
+nginx.exe -t
+if errorlevel 1 (
+    echo [ERROR] nginx.conf test failed. Check %NGINX_DIR%\conf\nginx.conf
+    pause
+    exit /b 1
+)
+taskkill /f /im nginx.exe >nul 2>&1
 start "" nginx.exe
 echo [OK] Nginx started.
 timeout /t 2 /nobreak >nul
