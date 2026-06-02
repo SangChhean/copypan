@@ -70,7 +70,6 @@ const go = (val = "/") => {
         <template #title>
           <div class="card_title">Vichhet &amp; Chom Pei 测试</div>
         </template>
-        <a-card-grid class="card c2" @click="go('/vichhet-translate')"><span class="card_text">纲目翻译</span></a-card-grid>
       </a-card>
     </div>
     <br />
