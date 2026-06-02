@@ -89,6 +89,9 @@ const go = (val = "/") => {
         <template #title>
           <div class="card_title">Piseth &amp; Sopheap 测试</div>
         </template>
+        <a-card-grid class="card c2" @click="go('/outline-translate-test')">
+          <span class="card_text">纲目翻译测试</span>
+        </a-card-grid>
       </a-card>
     </div>
   </div>

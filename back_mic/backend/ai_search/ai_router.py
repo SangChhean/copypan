@@ -50,7 +50,7 @@ class ConvertAndFormatRequest(BaseModel):
 
 class OutlineTranslateRequest(BaseModel):
     """工具箱 - 纲目翻译：中翻英或英翻中"""
-    direction: Literal["zh2en", "en2zh"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文")
+    direction: Literal["zh2en", "en2zh", "zh2ko"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文")
     content: str = Field(..., min_length=1, max_length=100_000, description="待翻译的纲目全文")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（仅中翻英时用于翻译标题）")
     output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
