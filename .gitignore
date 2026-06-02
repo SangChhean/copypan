@@ -16,6 +16,12 @@ backup/
 *.db
 *.db-shm
 *.db-wal
+start_all.bat
+start_qa.bat
+status.bat
+status_qa.bat
+stop_all.bat
+stop_qa.bat
 
 # 本地笔记/临时文档（可能含密钥，勿提交）
 新建*.txt

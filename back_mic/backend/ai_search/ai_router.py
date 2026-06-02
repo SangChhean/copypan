@@ -212,12 +212,20 @@ async def outline_translate(request: OutlineTranslateRequest):
                 "title_en": out.get("title_en"),
                 "error": out.get("error"),
             }
-        else:
+        elif request.direction == "en2zh":
             out = await asyncio.to_thread(ai_service.translate_outline_en2zh, request.content)
             return {
                 "result": out.get("answer_zh"),
                 "error": out.get("error"),
             }
+        elif request.direction == "zh2ko":
+            out = await asyncio.to_thread(ai_service.translate_outline_zh2ko, request.content)
+            return {
+                "result": out.get("answer_ko"),
+                "error": out.get("error"),
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"不支持的翻译方向：{request.direction}")
     except Exception as e:
         logger.error(f"outline_translate 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

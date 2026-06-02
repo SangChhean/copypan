@@ -282,6 +282,15 @@ OUTLINE_TRANSLATE_PROMPT_EN2ZH = (
     "④纲目正文句子中出现的经文引用（如Rom. 1:1、John 3:16），须翻译为中文完整形式，例如：Rom. 1:1→罗马书一章一节，John 3:16→约翰福音三章十六节，不可保留英文缩写或冒号数字格式。"
 )
 
+OUTLINE_TRANSLATE_PROMPT_ZH2KO = (
+    "请将以上中文纲目翻译为韩文。要求：\n"
+    "1. 使用正式基督教韩文术语，例如：灵→영, 魂→혼, 召会/教会→교회, "
+    "职事→사역, 生命→생명, 救恩→구원, 圣灵→성령, 基督→그리스도, "
+    "神→하나님, 主→주님, 信徒→신자, 得救→구원받다\n"
+    "2. 严格保留原纲目的层级结构、缩进格式与编号（壹贰叁→일이삼 或保留原字）\n"
+    "3. 只输出翻译后的韩文纲目，不添加任何说明或注释"
+)
+
 
 def _user_facing_translate_error(api_errors: List[str], empty_body: bool) -> str:
     """将 Gemini 异常摘要为前端可展示的中文（不泄露密钥）。"""
@@ -1063,6 +1072,110 @@ class AISearchService:
                 "error": _user_facing_translate_error(en2zh_api_errors, _last_error_empty[0]),
             }
         return {"answer_zh": answer_zh, "tokens": tokens_en2zh or {"input": 0, "output": 0, "cost": 0}}
+
+    def translate_outline_zh2ko(self, chinese_outline: str) -> Dict:
+        """
+        将中文纲目翻译为韩文纲目（调用 Gemini）。
+        用于工具箱「纲目翻译测试」- 中翻韩。失败时重试 1 次。
+        """
+        MAX_OUTLINE_LENGTH = 100_000
+        outline = (chinese_outline or "").strip()
+        if not outline:
+            return {"answer_ko": None, "error": "中文纲目为空"}
+        if len(outline) > MAX_OUTLINE_LENGTH:
+            return {"answer_ko": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
+        if not gemini_client:
+            return {"answer_ko": None, "error": "韩文翻译服务未配置（请设置 GEMINI_API_KEY）"}
+        contents_zh2ko = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2KO
+        _last_error_model_not_found = [False]
+        _last_error_retryable = [False]
+        _last_error_empty = [False]
+        zh2ko_api_errors: List[str] = []
+        def _is_model_not_found(err: str) -> bool:
+            return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+        def _zh2ko_config():
+            if gemini_translation_generate_config:
+                return gemini_translation_generate_config(_gemini_system_instruction)
+            return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
+            use_model = model or GEMINI_MODEL
+            with GEMINI_SEMAPHORE:
+                try:
+                    response = gemini_client.models.generate_content(
+                        model=use_model,
+                        contents=contents_zh2ko,
+                        config=_zh2ko_config(),
+                    )
+                    log_p = f"[Gemini中翻韩] model={use_model}"
+                    if extract_translatable_text:
+                        text = extract_translatable_text(response, log_p)
+                    else:
+                        rt = getattr(response, "text", None) if response else None
+                        text = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                    if text:
+                        tokens_zh2ko = None
+                        try:
+                            usage_meta = response.usage_metadata
+                            in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                            out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                            cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                            logger.info(
+                                "[Gemini中翻韩] model=%s | 输入=%d tokens | 输出=%d tokens | 费用=$%.6f",
+                                use_model, in_tok, out_tok, cost,
+                            )
+                            if self.redis:
+                                get_monitoring(self.redis).record_tool_usage(
+                                    "translation_zh2ko", use_model, in_tok, out_tok, cost
+                                )
+                            tokens_zh2ko = {"input": in_tok, "output": out_tok, "cost": cost}
+                        except Exception:
+                            pass
+                        return (text, tokens_zh2ko)
+                    _last_error_empty[0] = True
+                    logger.warning("Gemini 中翻韩返回空响应（重试次数: %s）", retry_count)
+                except Exception as e:
+                    error_msg = str(e)
+                    zh2ko_api_errors.append(error_msg)
+                    if _is_model_not_found(error_msg):
+                        _last_error_model_not_found[0] = True
+                        logger.warning(
+                            "Gemini 模型不可用(404): %s，将尝试备用模型 %s",
+                            e, GEMINI_TRANSLATION_FALLBACK_MODEL,
+                        )
+                    is_retryable = _gemini_error_is_retryable(error_msg)
+                    if is_retryable:
+                        _last_error_retryable[0] = True
+                    if is_retryable and retry_count == 0:
+                        logger.warning("Gemini 中翻韩调用失败（可重试）: %s，等待2秒后重试...", e)
+                        time.sleep(2)
+                    else:
+                        logger.warning("Gemini 中翻韩调用失败（重试次数: %s）: %s", retry_count, e)
+            return None
+        result = _call_gemini(retry_count=0)
+        if result is not None:
+            answer_ko, tokens_zh2ko = result[0], result[1]
+        else:
+            answer_ko, tokens_zh2ko = None, None
+        if answer_ko is None:
+            result = _call_gemini(retry_count=1)
+            if result is not None:
+                answer_ko, tokens_zh2ko = result[0], result[1]
+        if answer_ko is None and (
+            _last_error_model_not_found[0] or _last_error_retryable[0] or _last_error_empty[0]
+        ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if result is not None:
+                answer_ko, tokens_zh2ko = result[0], result[1]
+            if answer_ko is None:
+                result = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                if result is not None:
+                    answer_ko, tokens_zh2ko = result[0], result[1]
+        if answer_ko is None:
+            return {
+                "answer_ko": None,
+                "error": _user_facing_translate_error(zh2ko_api_errors, _last_error_empty[0]),
+            }
+        return {"answer_ko": answer_ko, "tokens": tokens_zh2ko or {"input": 0, "output": 0, "cost": 0}}
 
     def outline_to_traditional(self, content: str) -> Dict[str, Optional[str]]:
         """
