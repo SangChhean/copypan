@@ -21,3 +21,5 @@ backup/
 鏂板缓*.txt
 
 back_mic/backend/user/users.json
+# 屏蔽特定的巨型数据文件
+test_B/data/life.json
