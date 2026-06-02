@@ -1,0 +1,291 @@
+<script setup>
+import { ref } from "vue";
+
+const API_BASE = "";
+
+const direction = ref("zh2en");
+const content = ref("");
+const topic = ref("");
+const result = ref("");
+const titleEn = ref("");
+const errorMsg = ref("");
+const loading = ref(false);
+const copied = ref(false);
+
+async function doTranslate() {
+  if (!content.value.trim()) return;
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  loading.value = true;
+  result.value = "";
+  titleEn.value = "";
+  errorMsg.value = "";
+  try {
+    const body = {
+      direction: direction.value,
+      content: content.value,
+      outline_topic: direction.value === "zh2en" ? topic.value || null : null,
+    };
+    const res = await fetch(`${API_BASE}/api/ai_search/outline_translate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorMsg.value = data.detail || "请求失败，请检查后端是否运行";
+      return;
+    }
+    if (data.error) {
+      errorMsg.value = data.error;
+      return;
+    }
+    result.value = data.result || "";
+    titleEn.value = data.title_en || "";
+    if (!result.value) errorMsg.value = "未收到译文，请稍后重试";
+  } catch (e) {
+    errorMsg.value = "无法连接后端（http://127.0.0.1:8001），请确认后端已启动";
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function doCopy() {
+  try {
+    await navigator.clipboard.writeText(result.value);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  } catch {
+    alert("复制失败，请手动选取文字");
+  }
+}
+</script>
+
+<template>
+  <div class="container">
+    <h1>纲目翻译 · 测试版</h1>
+
+    <!-- 输入区 -->
+    <div class="card">
+      <div class="row">
+        <label>翻译方向</label>
+        <div class="seg">
+          <button :class="{ active: direction === 'zh2en' }" @click="direction = 'zh2en'">中文 → 英文</button>
+          <button :class="{ active: direction === 'en2zh' }" @click="direction = 'en2zh'">英文 → 中文</button>
+        </div>
+      </div>
+
+      <div class="row" v-if="direction === 'zh2en'">
+        <label>纲目主题</label>
+        <input type="text" v-model="topic" placeholder="选填，用于翻译标题" maxlength="200" />
+        <span class="tip">（选填）</span>
+      </div>
+
+      <textarea
+        v-model="content"
+        :placeholder="direction === 'zh2en' ? '请粘贴中文纲目…' : '请粘贴英文纲目…'"
+        rows="12"
+        maxlength="100000"
+      ></textarea>
+      <div class="char-count">{{ content.length.toLocaleString() }} / 100,000 字</div>
+
+      <div class="row" style="margin-top: 14px; margin-bottom: 0">
+        <button class="btn btn-default" @click="content = ''; result = ''; titleEn = ''; errorMsg = ''">清空</button>
+        <button class="btn btn-primary" @click="doTranslate" :disabled="loading || !content.trim()">
+          {{ loading ? "翻译中…" : "翻译" }}
+        </button>
+        <span class="loading-text" v-if="loading">⏳ 请稍候，通常需要 10–30 秒…</span>
+      </div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div class="error-msg" v-if="errorMsg">{{ errorMsg }}</div>
+
+    <!-- 结果区 -->
+    <div class="card" v-if="result">
+      <div class="row" style="margin-bottom: 10px">
+        <span style="font-size: 15px; font-weight: 600">译文</span>
+        <span class="copy-ok" v-if="copied">已复制 ✓</span>
+        <button class="btn btn-copy" style="margin-left: auto" @click="doCopy">复制全文</button>
+      </div>
+
+      <div v-if="titleEn" style="margin-bottom: 10px">
+        <div class="result-title">英文标题</div>
+        <div class="result-box" style="min-height: auto">{{ titleEn }}</div>
+      </div>
+
+      <div class="result-title">译文内容</div>
+      <div class="result-box">{{ result }}</div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #111;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+label {
+  font-size: 14px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.seg {
+  display: flex;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.seg button {
+  padding: 5px 16px;
+  font-size: 14px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s;
+}
+.seg button.active {
+  background: #1677ff;
+  color: #fff;
+}
+.seg button:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  outline: none;
+  min-width: 0;
+}
+input[type="text"]:focus {
+  border-color: #1677ff;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.6;
+}
+textarea:focus {
+  border-color: #1677ff;
+}
+.char-count {
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.btn {
+  padding: 7px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.btn:hover {
+  opacity: 0.85;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: #1677ff;
+  color: #fff;
+}
+.btn-default {
+  background: #fff;
+  color: #555;
+  border: 1px solid #d9d9d9;
+}
+.btn-copy {
+  background: #fff;
+  color: #1677ff;
+  border: 1px solid #1677ff;
+}
+
+.result-box {
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 120px;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.result-title {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.error-msg {
+  color: #cf1322;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.loading-text {
+  color: #1677ff;
+  font-size: 14px;
+}
+.tip {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.copy-ok {
+  color: #52c41a;
+  font-size: 13px;
+}
+</style>

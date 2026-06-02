@@ -53,6 +53,7 @@ const routes = [
     path: "/outline-translate",
     component: () => import("../components/toolbox/OutlineTranslate.vue"),
   },
+  { path: "/vichhet-translate", component: () => import("../components/toolbox/VichhetTranslate.vue") },
   {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
