@@ -5,8 +5,9 @@ server {
     listen       80;
     server_name  localhost;
 
-    # 二选一：指项目里的 dist（推荐），或指 start_all 复制后的目录
-    root   E:/copypan/front_mic/frontend/dist;
+    # Windows：运行 start_all.bat 会自动写入 C:\nginx-1.24.0\conf\nginx.conf（root 指 html 目录）
+    # 手动部署时二选一（路径用正斜杠）：
+    root   D:/copypan/front_mic/frontend/dist;
     # root   C:/nginx-1.24.0/html;
     index  index.html index.htm;
 
