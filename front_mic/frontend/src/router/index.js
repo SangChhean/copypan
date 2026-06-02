@@ -54,6 +54,8 @@ const routes = [
     component: () => import("../components/toolbox/OutlineTranslate.vue"),
   },
   {
+    path: "/outline-translate-test",
+    component: () => import("../components/toolbox/OutlineTranslateTest.vue"),
     path: "/test-translate-vannak",
     component: () => import("../components/toolbox/TranslateTest.vue"),
   },
@@ -92,6 +94,10 @@ const routes = [
     name: "KgRagTest",
     component: () => import("../components/toolbox/KgRagTest.vue"),
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/practice-translate',
+    component: () => import('../../../../testC/translate/frontend/OutlineTranslate_practice.vue')
   },
 ];
 
