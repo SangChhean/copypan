@@ -54,6 +54,10 @@ const routes = [
     component: () => import("../components/toolbox/OutlineTranslate.vue"),
   },
   {
+    path: "/test-translate-vannak",
+    component: () => import("../components/toolbox/TranslateTest.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
