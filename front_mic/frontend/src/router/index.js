@@ -54,6 +54,10 @@ const routes = [
     component: () => import("../components/toolbox/OutlineTranslate.vue"),
   },
   {
+    path: "/outline-translate-test",
+    component: () => import("../components/toolbox/OutlineTranslateTest.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },

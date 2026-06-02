@@ -6,7 +6,7 @@ cd /d "%~dp0"
 set "PROJECT_DIR=%CD%"
 set "BACKEND_DIR=%PROJECT_DIR%\back_mic\backend"
 set "FRONTEND_DIR=%PROJECT_DIR%\front_mic\frontend"
-set "NGINX_DIR=C:\nginx-1.24.0"
+set "NGINX_DIR=A:\nginx-1.24.0"
 set "NGINX_HTML=%NGINX_DIR%\html"
 
 echo ============================================================
@@ -42,7 +42,7 @@ if errorlevel 1 (
       -e "xpack.security.enabled=true" ^
       -e "ELASTIC_PASSWORD=qwSD4AF2Dcv" ^
       -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" ^
-      -v "%PROJECT_DIR:\=/%/es8_data:/usr/share/elasticsearch/data" ^
+      -v "%PROJECT_DIR:\=/%/es_data:/usr/share/elasticsearch/data" ^
       elasticsearch:8.19.0 >nul 2>&1
     if errorlevel 1 (
         echo [ERROR] Failed to create elasticsearch8 container.
