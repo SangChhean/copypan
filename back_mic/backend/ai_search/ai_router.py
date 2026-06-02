@@ -50,7 +50,7 @@ class ConvertAndFormatRequest(BaseModel):
 
 class OutlineTranslateRequest(BaseModel):
     """工具箱 - 纲目翻译：中翻英或英翻中"""
-    direction: Literal["zh2en", "en2zh"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文")
+    direction: Literal["zh2en", "en2zh", "zh2ko"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文")
     content: str = Field(..., min_length=1, max_length=100_000, description="待翻译的纲目全文")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（仅中翻英时用于翻译标题）")
     output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
@@ -212,12 +212,20 @@ async def outline_translate(request: OutlineTranslateRequest):
                 "title_en": out.get("title_en"),
                 "error": out.get("error"),
             }
-        else:
+        elif request.direction == "en2zh":
             out = await asyncio.to_thread(ai_service.translate_outline_en2zh, request.content)
             return {
                 "result": out.get("answer_zh"),
                 "error": out.get("error"),
             }
+        elif request.direction == "zh2ko":
+            out = await asyncio.to_thread(ai_service.translate_outline_zh2ko, request.content)
+            return {
+                "result": out.get("answer_ko"),
+                "error": out.get("error"),
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"不支持的翻译方向：{request.direction}")
     except Exception as e:
         logger.error(f"outline_translate 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

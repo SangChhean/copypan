@@ -6,7 +6,7 @@ cd /d "%~dp0"
 set "PROJECT_DIR=%CD%"
 set "BACKEND_DIR=%PROJECT_DIR%\back_mic\backend"
 set "FRONTEND_DIR=%PROJECT_DIR%\front_mic\frontend"
-set "NGINX_DIR=C:\nginx-1.24.0"
+set "NGINX_DIR=A:\nginx-1.24.0"
 set "NGINX_HTML=%NGINX_DIR%\html"
 
 echo ============================================================
