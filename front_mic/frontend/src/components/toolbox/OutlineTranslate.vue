@@ -265,7 +265,7 @@ async function downloadFormatted() {
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="direction-row">
-        <span class="label">翻译方向：</span>
+        <span class="label">翻译方向选择：</span>
         <a-segmented
           v-model:value="direction"
           class="direction-segmented"
