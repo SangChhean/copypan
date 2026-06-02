@@ -62,13 +62,13 @@ git clone <你的仓库地址> .
 
 ### 3. 启动 Elasticsearch 8 和 Redis（Docker）
 
-与本地 `start_all.bat` 对齐：镜像 **elasticsearch:8.19.0**，容器名 **elasticsearch8**，数据目录 **es8_data**，并开启安全与内置用户密码（请把示例密码改成强密码）。
+与本地 `start_all.bat` 对齐：镜像 **elasticsearch:8.19.0**，容器名 **elasticsearch8**，数据目录 **es_data**，并开启安全与内置用户密码（请把示例密码改成强密码）。
 
 ```bash
 cd /opt/copypan
 
 # 创建 ES 数据目录（持久化）
-mkdir -p es8_data
+mkdir -p es_data
 
 # 启动 Elasticsearch 8（xpack 安全 + elastic 用户密码）
 docker run -d --name elasticsearch8 \
@@ -77,7 +77,7 @@ docker run -d --name elasticsearch8 \
   -e "xpack.security.enabled=true" \
   -e "ELASTIC_PASSWORD=你的强密码" \
   -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
-  -v /opt/copypan/es8_data:/usr/share/elasticsearch/data \
+  -v /opt/copypan/es_data:/usr/share/elasticsearch/data \
   elasticsearch:8.19.0
 
 # 安装 IK 分词（如需中文检索；版本需与 ES 一致）
@@ -96,7 +96,7 @@ curl -s -u elastic:你的强密码 http://localhost:9200
 
 ### 4. 迁移 ES 数据
 
-**方式 A：直接拷贝本机 es8_data（推荐，数据完整）**
+**方式 A：直接拷贝本机 es_data（推荐，数据完整）**
 
 **本地 Windows 打包并上传：**
 
@@ -109,7 +109,7 @@ curl -s -u elastic:你的强密码 http://localhost:9200
 .\package_esdata.ps1 -StopES
 
 # 上传到服务器（替换 用户名 和 服务器IP）：
-scp .\es8_data.zip 用户名@服务器IP:/opt/copypan/
+scp .\es_data.zip 用户名@服务器IP:/opt/copypan/
 ```
 
 **服务器上解压并挂载：**
@@ -120,23 +120,23 @@ cd /opt/copypan
 docker stop elasticsearch8
 docker rm elasticsearch8
 
-# 解压（会得到 es8_data 目录）
-unzip -o es8_data.zip
+# 解压（会得到 es_data 目录）
+unzip -o es_data.zip
 
-# 重新启动 ES 8（-v 指向 /opt/copypan/es8_data；密码与 .env 中 ES_PASSWORD 一致）
+# 重新启动 ES 8（-v 指向 /opt/copypan/es_data；密码与 .env 中 ES_PASSWORD 一致）
 docker run -d --name elasticsearch8 \
   -p 9200:9200 -p 9300:9300 \
   -e "discovery.type=single-node" \
   -e "xpack.security.enabled=true" \
   -e "ELASTIC_PASSWORD=你的强密码" \
   -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
-  -v /opt/copypan/es8_data:/usr/share/elasticsearch/data \
+  -v /opt/copypan/es_data:/usr/share/elasticsearch/data \
   elasticsearch:8.19.0
 ```
 
 **方式 B：重新创建索引并导入**
 
-若无法拷贝 es8_data，可在管理端重新导入 JSON：
+若无法拷贝 es_data，可在管理端重新导入 JSON：
 
 ```bash
 # 1. 运行 es_init 创建空索引（需 Python 已安装依赖）

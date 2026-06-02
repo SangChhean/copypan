@@ -31,7 +31,7 @@ curl -s http://localhost:8000/api/ai_search/health
 ## 3. Elasticsearch 端口与连接
 
 - 后端通过 **`es_config.py`** 连接 ES，读取环境变量：`ES_HOST`、**`ES_PORT`**、`ES_USERNAME`、`ES_PASSWORD`。
-- 与 `start_all.bat` 一致时：容器 **`elasticsearch8`** 映射 **9200:9200**，数据目录 **`es8_data`**，此时 **`.env` 中可不写 `ES_PORT`**（默认 9200）。
+- 与 `start_all.bat` 一致时：容器 **`elasticsearch8`** 映射 **9200:9200**，数据目录 **`es_data`**，此时 **`.env` 中可不写 `ES_PORT`**（默认 9200）。
 - 若你把 ES 映射到其他宿主机端口，在 **`back_mic/backend/.env`** 中设置：
   ```env
   ES_PORT=你的端口
@@ -49,7 +49,7 @@ curl -s http://localhost:8000/api/ai_search/health
 
 ## 5. 数据与索引
 
-- 确认 **`es8_data`** 目录已包含迁移/导入后的索引数据；若为新装 ES 且从未导入，索引为空时搜索会无结果。
+- 确认 **`es_data`** 目录已包含迁移/导入后的索引数据；若为新装 ES 且从未导入，索引为空时搜索会无结果。
 - 可在管理端「已上传文件管理」等处重新导入，或按部署文档迁移数据目录。
 
 ## 6. 快速检查 ES 连接（本机）
@@ -71,4 +71,4 @@ python -c "from es_config import es; print('ES ping:', es.ping())"
 | 白屏 / 一直转 | 后端未启动或未开 8000        | 启动 `uvicorn main:app --port 8000` |
 | 跳到登录       | 未登录或 token 失效          | 正常登录后再访问首页 |
 | 搜索无结果     | ES 连错端口或连不上          | 核对 `.env` 的 `ES_PORT`（及认证） |
-| 搜索无结果     | 索引为空或未导入数据         | 导入数据或迁移 `es8_data` |
+| 搜索无结果     | 索引为空或未导入数据         | 导入数据或迁移 `es_data` |
