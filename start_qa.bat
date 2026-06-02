@@ -66,6 +66,17 @@ if not exist "%FRONTEND_QA%\package.json" (
     if not defined NOPAUSE pause
     exit /b 1
 )
+if not exist "%FRONTEND_QA%\node_modules\vite\bin\vite.js" (
+    echo Installing front_qa dependencies...
+    if exist "%FRONTEND_QA%\package-lock.json" (
+        start "QA Frontend Install" cmd /k "cd /d %FRONTEND_QA% && npm ci"
+    ) else (
+        start "QA Frontend Install" cmd /k "cd /d %FRONTEND_QA% && npm install"
+    )
+    echo [INFO] Please wait for install window to finish, then rerun start_qa.bat.
+    if not defined NOPAUSE pause
+    exit /b 1
+)
 start "QA Frontend" cmd /k "cd /d %FRONTEND_QA% && echo QA Frontend http://127.0.0.1:5174 && npm run dev -- --host 127.0.0.1 --port 5174"
 echo [OK] Frontend window started
 ping 127.0.0.1 -n 3 >nul

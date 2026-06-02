@@ -6,7 +6,7 @@ cd /d "%~dp0"
 set "PROJECT_DIR=%CD%"
 set "BACKEND_DIR=%PROJECT_DIR%\back_mic\backend"
 set "FRONTEND_DIR=%PROJECT_DIR%\front_mic\frontend"
-set "NGINX_DIR=A:\nginx-1.24.0"
+if "%NGINX_DIR%"=="" set "NGINX_DIR=C:\nginx-1.24.0"
 set "NGINX_HTML=%NGINX_DIR%\html"
 
 echo ============================================================
@@ -95,6 +95,25 @@ if errorlevel 1 (
 
 echo [6/7] Building and deploying frontend...
 cd /d "%FRONTEND_DIR%"
+if not exist "package.json" (
+    echo [ERROR] Missing %FRONTEND_DIR%\package.json
+    pause
+    exit /b 1
+)
+if not exist "node_modules\vite\bin\vite.js" (
+    echo Frontend dependencies missing. Installing...
+    if exist "package-lock.json" (
+        call npm ci
+    ) else (
+        call npm install
+    )
+    if errorlevel 1 (
+        echo [ERROR] Frontend dependency install failed.
+        pause
+        exit /b 1
+    )
+    echo [OK] Frontend dependencies installed.
+)
 if not exist "dist\index.html" (
     echo Running npm run build...
     call npm run build
@@ -109,7 +128,17 @@ if not exist "dist\index.html" (
 )
 if exist "dist\index.html" (
     if not exist "%NGINX_HTML%" mkdir "%NGINX_HTML%"
-    xcopy /E /Y /Q dist\* "%NGINX_HTML%\" >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] Failed to create %NGINX_HTML%
+        pause
+        exit /b 1
+    )
+    xcopy /E /Y /Q dist\* "%NGINX_HTML%\" >nul
+    if errorlevel 1 (
+        echo [ERROR] Failed to deploy frontend files to %NGINX_HTML%
+        pause
+        exit /b 1
+    )
     echo [OK] Frontend deployed to %NGINX_HTML%
 )
 echo.
