@@ -55,6 +55,7 @@ class ConvertAndFormatRequest(BaseModel):
 
 class OutlineTranslateRequest(BaseModel):
     """工具箱 - 纲目翻译：中翻英或英翻中"""
+    direction: Literal["zh2en", "en2zh", "zh2ko"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文")
     direction: Literal["zh2en", "en2zh", "zh2ko", "en2es"] = Field(
         ..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文, en2es=英文→西班牙语"
     )

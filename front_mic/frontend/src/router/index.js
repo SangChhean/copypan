@@ -60,6 +60,10 @@ const routes = [
     component: () => import("../components/toolbox/TranslateTest.vue"),
   },
   {
+    path: "/zh2tw-vannak",
+    component: () => import("../components/toolbox/ZhConvert2.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
