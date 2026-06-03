@@ -13,10 +13,10 @@ const content = ref("");
 const loading = ref(false);
 const result = ref("");
 
-const isZh2En = computed(() => direction.value === "zh2en");
 const inputPlaceholder = computed(() => {
   if (direction.value === "zh2en") return "请粘贴中文纲目正文…";
   if (direction.value === "en2zh") return "请粘贴英文纲目正文…";
+  if (direction.value === "en2es") return "请粘贴英文纲目正文…";
   return "请粘贴中文纲目正文…";
 });
 
@@ -115,6 +115,7 @@ function copyResult() {
             { label: '中文 → 英文', value: 'zh2en' },
             { label: '英文 → 中文', value: 'en2zh' },
             { label: '中文 → 韩文', value: 'zh2ko' },
+            { label: '英文 → 西班牙文', value: 'en2es' },
           ]"
         />
       </div>
