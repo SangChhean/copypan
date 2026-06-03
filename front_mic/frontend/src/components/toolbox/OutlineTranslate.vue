@@ -2,136 +2,403 @@
 import ToolsHeader from "./ToolsHeader.vue";
 import { ref, computed } from "vue";
 import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
 import { toastSuccess, toastWarning, toastError } from "../utils/Dialog";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
-/** 与后端 OutlineTranslateRequest / translate_outline 一致（字符数，非 token） */
 const MAX_CONTENT_CHARS = 100_000;
-const direction = ref("zh2en"); // zh2en | en2zh
-const isOutline = ref(true); // true=纲目，false=非纲目
-const downloadFormats = ref([]); // ["docx", "pdf"] - 用户选择的下载格式
-const content = ref("");
-const loading = ref(false);
-const downloading = ref(false); // 正在下载
-const error = ref(null);
-const result = ref(null);
-const titleEn = ref(null); // 英文标题（仅中翻英时）
 
-const isZh2En = computed(() => direction.value === "zh2en");
+const sourceLang = ref("zh"); // zh | en
+const content = ref("");
+const inputError = ref(null);
+
+const TARGET_ORDER = ["zh_cn", "zh_tw", "es"];
+const TARGET_META = {
+  zh_cn: {
+    label: "中文简体",
+    formatDirection: "en2zh",
+    usesEnglishTemplate: false,
+    hasErrorCheck: false,
+  },
+  zh_tw: {
+    label: "中文繁体",
+    formatDirection: "zh_cn2tw",
+    usesEnglishTemplate: false,
+    hasErrorCheck: true,
+  },
+  es: {
+    label: "西班牙语",
+    formatDirection: "zh2en",
+    usesEnglishTemplate: true,
+    hasErrorCheck: false,
+  },
+};
+
+const targetLanguages = ref([]);
+const activeTargets = ref([]);
+
+function emptyPanelState() {
+  return {
+    loading: false,
+    error: null,
+    result: null,
+    durationMs: null,
+    downloadFormats: [],
+    downloading: false,
+    isOutline: true,
+    errorHits: [],
+    checkingErrors: false,
+    checkErrorMsg: null,
+  };
+}
+
+const zhEnPanel = ref(emptyPanelState());
+const enPanels = ref({
+  zh_cn: emptyPanelState(),
+  zh_tw: emptyPanelState(),
+  es: emptyPanelState(),
+});
+
+const isSourceChinese = computed(() => sourceLang.value === "zh");
+const isSourceEnglish = computed(() => sourceLang.value === "en");
+
 const inputPlaceholder = computed(() =>
-  isZh2En.value ? "请粘贴中文纲目全文…" : "请粘贴英文纲目全文…"
+  isSourceChinese.value ? "请粘贴简体中文纲目全文…" : "请粘贴英文纲目全文…"
 );
 
-function copyResult() {
-  if (!result.value) return;
-  navigator.clipboard.writeText(result.value).then(() => {
+const canTranslate = computed(() => {
+  if (!(content.value || "").trim()) return false;
+  if (isSourceEnglish.value && targetLanguages.value.length === 0) return false;
+  return true;
+});
+
+const translating = computed(() => {
+  if (isSourceChinese.value) return zhEnPanel.value.loading;
+  return TARGET_ORDER.some((k) => enPanels.value[k].loading);
+});
+
+function formatDuration(ms) {
+  if (ms == null) return "";
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(1)} s`;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function normalizeErrorHits(hits) {
+  return hits.map((h, i) => ({
+    ...h,
+    id: `${h.start}-${h.end}-${i}`,
+    replaceInput: h.suggestion != null && h.suggestion !== "" ? h.suggestion : "",
+  }));
+}
+
+function getHitContextHtml(hit, text) {
+  const start = hit.start ?? 0;
+  const end = hit.end ?? start;
+  const beforeStart = Math.max(0, start - 3);
+  const afterEnd = Math.min(text.length, end + 3);
+  const prefixEllipsis = beforeStart > 0 ? "..." : "";
+  const suffixEllipsis = afterEnd < text.length ? "..." : "";
+  const before = escapeHtml(text.slice(beforeStart, start));
+  const word = escapeHtml(text.slice(start, end) || hit.word);
+  const after = escapeHtml(text.slice(end, afterEnd));
+  return `${prefixEllipsis}${before}<span class="hit-word-mark">${word}</span>${after}${suffixEllipsis}`;
+}
+
+function hitsWithAcceptInput(panel) {
+  return panel.errorHits.filter((h) => (h.replaceInput || "").trim());
+}
+
+function applyReplacementAt(text, hit, replaceValue) {
+  if (!text || !replaceValue) return null;
+  const slice = text.slice(hit.start, hit.end);
+  if (slice === hit.word) {
+    return text.slice(0, hit.start) + replaceValue + text.slice(hit.end);
+  }
+  const idx = text.indexOf(hit.word);
+  if (idx === -1) return null;
+  return text.slice(0, idx) + replaceValue + text.slice(idx + hit.word.length);
+}
+
+function rejectHit(panel, hit) {
+  panel.errorHits = panel.errorHits.filter((h) => h.id !== hit.id);
+}
+
+function acceptHit(panel, hit, onRecheck) {
+  const val = (hit.replaceInput || "").trim();
+  if (!val || !panel.result) return;
+  const next = applyReplacementAt(panel.result, hit, val);
+  if (next != null) {
+    panel.result = next;
+    onRecheck();
+  }
+}
+
+function acceptAllHits(panel, onRecheck) {
+  if (!panel.result) return;
+  const hits = hitsWithAcceptInput(panel);
+  if (!hits.length) return;
+  let text = panel.result;
+  const sorted = [...hits].sort((a, b) => b.start - a.start);
+  for (const h of sorted) {
+    const val = (h.replaceInput || "").trim();
+    if (!val) continue;
+    const slice = text.slice(h.start, h.end);
+    if (slice === h.word) {
+      text = text.slice(0, h.start) + val + text.slice(h.end);
+    }
+  }
+  panel.result = text;
+  onRecheck();
+}
+
+async function checkErrorCharsForPanel(panel) {
+  const text = (panel.result || "").trim();
+  if (!text) {
+    panel.errorHits = [];
+    panel.checkErrorMsg = null;
+    return;
+  }
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  panel.checkingErrors = true;
+  panel.checkErrorMsg = null;
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/ai_search/check_error_chars`,
+      { content: panel.result },
+      {
+        headers: { Authorization: `Bearer ${authToken}` },
+        timeout: 30000,
+      }
+    );
+    panel.errorHits = normalizeErrorHits(res.data?.hits || []);
+  } catch (err) {
+    panel.errorHits = [];
+    panel.checkErrorMsg =
+      err.response?.data?.detail || err.message || "易错字检查失败";
+  } finally {
+    panel.checkingErrors = false;
+  }
+}
+
+function copyText(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
     try {
       toastSuccess("已复制到剪贴板");
     } catch (_) {}
   });
 }
 
-// 翻译（不格式化）
-async function translate() {
-  const text = (content.value || "").trim();
-  if (!text) {
-    error.value = isZh2En.value ? "请先粘贴中文纲目" : "请先粘贴英文纲目";
-    result.value = null;
-    return;
+function parseApiError(res, errorData) {
+  let detail = errorData.detail;
+  if (Array.isArray(detail)) {
+    detail = detail.map((x) => x?.msg || x?.message || JSON.stringify(x)).join("；");
   }
-  if (text.length > MAX_CONTENT_CHARS) {
-    error.value = `正文过长：最多 ${MAX_CONTENT_CHARS.toLocaleString()} 字（与后端一致），请分段翻译`;
-    result.value = null;
-    return;
+  return detail || errorData.error || errorData.message || `请求失败（${res.status}）`;
+}
+
+async function callOutlineTranslate(apiDirection, text, authToken) {
+  const res = await fetch(`${apiBase}/api/ai_search/outline_translate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({
+      direction: apiDirection,
+      content: text,
+      outline_topic: null,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(parseApiError(res, data));
   }
-  loading.value = true;
-  error.value = null;
-  result.value = null;
-  titleEn.value = null;
-  downloadFormats.value = [];
-  isOutline.value = true; // 英翻中固定 true；中翻英允许用户在下载前切换
-  const authToken = localStorage.getItem("token") || null;
-  if (!authToken) {
-    loading.value = false;
-    window.location.hash = "/login";
-    return;
+  if (data.error && !data.result) {
+    throw new Error(data.error);
   }
+  if (!data.result) {
+    throw new Error("翻译失败，请稍后重试");
+  }
+  return data;
+}
+
+async function callOutlineToTraditional(simplified, authToken) {
+  const res = await fetch(`${apiBase}/api/ai_search/outline_to_traditional`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ content: simplified }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(parseApiError(res, data));
+  }
+  if (data.error && !data.answer_zh_tw) {
+    throw new Error(data.error);
+  }
+  if (!data.answer_zh_tw) {
+    throw new Error("转繁体失败，请稍后重试");
+  }
+  return data.answer_zh_tw;
+}
+
+async function translateZhCn(text, authToken) {
+  const start = Date.now();
+  const data = await callOutlineTranslate("en2zh", text, authToken);
+  return { result: data.result, durationMs: Date.now() - start };
+}
+
+async function translateZhTw(text, authToken) {
+  const start = Date.now();
+  const data = await callOutlineTranslate("en2zh", text, authToken);
+  const traditional = await callOutlineToTraditional(data.result, authToken);
+  return { result: traditional, durationMs: Date.now() - start };
+}
+
+async function translateEs(text, authToken) {
+  const start = Date.now();
+  const data = await callOutlineTranslate("en2es", text, authToken);
+  return { result: data.result, durationMs: Date.now() - start };
+}
+
+const TARGET_TRANSLATORS = {
+  zh_cn: translateZhCn,
+  zh_tw: translateZhTw,
+  es: translateEs,
+};
+
+async function translateChineseSource(text, authToken) {
+  Object.assign(zhEnPanel.value, emptyPanelState(), { loading: true });
+  const start = Date.now();
   try {
-    const res = await fetch(`${apiBase}/api/ai_search/outline_translate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ 
-        direction: direction.value, 
-        content: text,
-        outline_topic: null, // 工具箱翻译不需要标题
-      }),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      let detail = errorData.detail;
-      if (Array.isArray(detail)) {
-        detail = detail.map((x) => x?.msg || x?.message || JSON.stringify(x)).join("；");
-      }
-      error.value = detail || errorData.error || errorData.message || "翻译失败，请稍后重试";
-      return;
-    }
-    
-    const data = await res.json();
-    if (data.error && !data.result) {
-      error.value = data.error;
-      return;
-    }
-    
-    if (data.result) {
-      result.value = data.result;
-      if (data.title_en) {
-        titleEn.value = data.title_en;
-      }
-      try {
-        toastSuccess("翻译完成！请选择下载格式并点击下载按钮。");
-      } catch (_) {}
-    } else {
-      error.value = "翻译失败，请稍后重试";
-    }
+    const data = await callOutlineTranslate("zh2en", text, authToken);
+    zhEnPanel.value.result = data.result;
+    zhEnPanel.value.durationMs = Date.now() - start;
+    try {
+      toastSuccess("翻译完成！");
+    } catch (_) {}
   } catch (err) {
-    error.value =
-      (err && err.message) ||
-      (typeof err === "string" ? err : "") ||
-      "网络错误，请稍后重试";
+    zhEnPanel.value.error =
+      (err && err.message) || (typeof err === "string" ? err : "") || "网络错误，请稍后重试";
   } finally {
-    loading.value = false;
+    zhEnPanel.value.loading = false;
   }
 }
 
-// 下载格式化文件
-async function downloadFormatted() {
-  if (!result.value) {
+async function translateEnglishSource(text, authToken) {
+  const selected = TARGET_ORDER.filter((k) => targetLanguages.value.includes(k));
+  activeTargets.value = [...selected];
+
+  for (const key of selected) {
+    enPanels.value[key] = { ...emptyPanelState(), loading: true };
+  }
+
+  const tasks = selected.map((key) => ({
+    key,
+    promise: TARGET_TRANSLATORS[key](text, authToken),
+  }));
+
+  const settled = await Promise.allSettled(tasks.map((t) => t.promise));
+
+  let successCount = 0;
+  settled.forEach((outcome, i) => {
+    const key = tasks[i].key;
+    const panel = enPanels.value[key];
+    panel.loading = false;
+    if (outcome.status === "fulfilled") {
+      panel.result = outcome.value.result;
+      panel.durationMs = outcome.value.durationMs;
+      successCount += 1;
+      if (TARGET_META[key].hasErrorCheck) {
+        checkErrorCharsForPanel(panel);
+      }
+    } else {
+      panel.error =
+        outcome.reason?.message ||
+        (typeof outcome.reason === "string" ? outcome.reason : "") ||
+        "翻译失败，请稍后重试";
+    }
+  });
+
+  if (successCount > 0) {
+    try {
+      toastSuccess(`翻译完成（${successCount}/${selected.length}）`);
+    } catch (_) {}
+  }
+}
+
+async function translate() {
+  const text = (content.value || "").trim();
+  inputError.value = null;
+
+  if (!text) {
+    inputError.value = isSourceChinese.value
+      ? "请先粘贴简体中文纲目"
+      : "请先粘贴英文纲目";
+    return;
+  }
+  if (text.length > MAX_CONTENT_CHARS) {
+    inputError.value = `正文过长：最多 ${MAX_CONTENT_CHARS.toLocaleString()} 字（与后端一致），请分段翻译`;
+    return;
+  }
+  if (isSourceEnglish.value && targetLanguages.value.length === 0) {
+    inputError.value = "请至少选择一个目标语言";
+    return;
+  }
+
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+
+  if (isSourceChinese.value) {
+    await translateChineseSource(text, authToken);
+  } else {
+    await translateEnglishSource(text, authToken);
+  }
+}
+
+async function downloadFormatted(panel, meta) {
+  if (!panel.result) {
     try {
       toastWarning("请先完成翻译");
     } catch (_) {}
     return;
   }
-  if (downloadFormats.value.length === 0) {
+  if (panel.downloadFormats.length === 0) {
     try {
       toastWarning("请至少选择一个下载格式");
     } catch (_) {}
     return;
   }
-  
-  downloading.value = true;
+
+  panel.downloading = true;
   const authToken = localStorage.getItem("token") || null;
   if (!authToken) {
-    downloading.value = false;
+    panel.downloading = false;
     window.location.hash = "/login";
     return;
   }
-  
+
   try {
-    // 依次下载每个选中的格式，固定顺序：先 DOCX 再 PDF，避免后端 PDF 转换线程 COM 初始化顺序问题
-    const orderedFormats = ["docx", "pdf"].filter((f) => downloadFormats.value.includes(f));
+    const orderedFormats = ["docx", "pdf"].filter((f) =>
+      panel.downloadFormats.includes(f)
+    );
     for (const format of orderedFormats) {
       const res = await fetch(`${apiBase}/api/ai_search/format_outline_only`, {
         method: "POST",
@@ -139,25 +406,27 @@ async function downloadFormatted() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ 
-          direction: direction.value, 
-          translated_text: result.value,
+        body: JSON.stringify({
+          direction: meta.formatDirection,
+          translated_text: panel.result,
           output_format: format,
-          is_outline: isOutline.value,
+          is_outline: panel.isOutline,
         }),
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         try {
-          toastError(`${format.toUpperCase()} 格式化失败: ${errorData.detail || errorData.error || "未知错误"}`);
+          toastError(
+            `${format.toUpperCase()} 格式化失败: ${errorData.detail || errorData.error || "未知错误"}`
+          );
         } catch (_) {}
         continue;
       }
-      
+
       const data = await res.json();
-      
-      // 下载文件
+      const defaultExt = meta.usesEnglishTemplate ? "outline_en" : "outline_zh";
+
       if (format === "docx" && data.docx_base64) {
         try {
           const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
@@ -165,10 +434,9 @@ async function downloadFormatted() {
             type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           });
           const url = URL.createObjectURL(blob);
-          
           const a = document.createElement("a");
           a.href = url;
-          a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+          a.download = data.filename || `${defaultExt}.docx`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -181,16 +449,13 @@ async function downloadFormatted() {
         }
       } else if (format === "pdf") {
         if (data.pdf_base64) {
-          // PDF 转换成功（移动端与桌面端均使用下载）
           try {
             const bin = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
-            const blob = new Blob([bin], {
-              type: "application/pdf",
-            });
+            const blob = new Blob([bin], { type: "application/pdf" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = data.filename || (isZh2En.value ? "outline_en.pdf" : "outline_zh.pdf");
+            a.download = data.filename || `${defaultExt}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -202,7 +467,6 @@ async function downloadFormatted() {
             } catch (_) {}
           }
         } else if (data.docx_base64) {
-          // PDF 转换失败，回退到 DOCX
           try {
             const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
             const blob = new Blob([bin], {
@@ -211,17 +475,18 @@ async function downloadFormatted() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = data.filename || (isZh2En.value ? "outline_en.docx" : "outline_zh.docx");
+            a.download = data.filename || `${defaultExt}.docx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-            // 提示用户 PDF 转换失败
             try {
-              toastWarning("PDF 转换失败（可能未安装 Microsoft Word 或 LibreOffice），已下载 DOCX 文件");
+              toastWarning(
+                "PDF 转换失败（可能未安装 Microsoft Word 或 LibreOffice），已下载 DOCX 文件"
+              );
             } catch (_) {}
           } catch (downloadErr) {
-            console.error(`下载DOCX失败:`, downloadErr);
+            console.error("下载DOCX失败:", downloadErr);
             try {
               toastError("下载文件失败");
             } catch (_) {}
@@ -241,14 +506,16 @@ async function downloadFormatted() {
         } catch (_) {}
       }
     }
-    
+
     try {
       toastSuccess("下载完成！");
     } catch (_) {}
   } catch (err) {
-    error.value = err.message || "下载失败，请稍后重试";
+    try {
+      toastError(err.message || "下载失败，请稍后重试");
+    } catch (_) {}
   } finally {
-    downloading.value = false;
+    panel.downloading = false;
   }
 }
 </script>
@@ -258,31 +525,59 @@ async function downloadFormatted() {
   <div class="box">
     <a-card>
       <p class="hint">
-        粘贴纲目后点「翻译」，再选格式「刷格式并下载」。
+        选择源语言后粘贴纲目并翻译，再在各结果栏「刷格式并下载」。
         <strong>输入上限 {{ MAX_CONTENT_CHARS.toLocaleString() }} 字</strong>（下方字数统计）；
         计费按 Gemini token。译文最长受服务端单次输出 token 限制（默认 32768，环境变量
         <code>GEMINI_TRANSLATION_MAX_OUTPUT_TOKENS</code>，约 1024～65536）；过长请分段翻译。
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
-      <div class="direction-row">
-        <span class="label">翻译方向选择：</span>
-        <a-segmented
-          v-model:value="direction"
-          class="direction-segmented"
-          :options="[
-            { label: '中文 → 英文', value: 'zh2en' },
-            { label: '英文 → 中文', value: 'en2zh' },
-          ]"
-        />
+
+      <div class="source-lang-row">
+        <button
+          type="button"
+          class="source-lang-btn"
+          :class="{ active: sourceLang === 'zh' }"
+          :disabled="translating"
+          @click="sourceLang = 'zh'"
+        >
+          中文
+        </button>
+        <button
+          type="button"
+          class="source-lang-btn"
+          :class="{ active: sourceLang === 'en' }"
+          :disabled="translating"
+          @click="sourceLang = 'en'"
+        >
+          英文
+        </button>
       </div>
+
       <a-divider :style="{ margin: '12px 0' }" />
+
+      <template v-if="isSourceChinese">
+        <p class="direction-fixed">翻译方向：简体中文 → 英文</p>
+      </template>
+      <template v-else>
+        <div class="direction-row">
+          <span class="label">目标语言：</span>
+          <a-checkbox-group v-model:value="targetLanguages" :disabled="translating">
+            <a-checkbox value="zh_cn">中文简体</a-checkbox>
+            <a-checkbox value="zh_tw">中文繁体</a-checkbox>
+            <a-checkbox value="es">西班牙语</a-checkbox>
+          </a-checkbox-group>
+        </div>
+      </template>
+
+      <a-divider :style="{ margin: '12px 0' }" />
+
       <div class="textarea-wrap">
         <a-textarea
           v-model:value="content"
           :placeholder="inputPlaceholder"
           :rows="12"
           class="content-area"
-          :disabled="loading"
+          :disabled="translating"
           :maxlength="MAX_CONTENT_CHARS"
           show-count
           allow-clear
@@ -290,7 +585,7 @@ async function downloadFormatted() {
         <button
           type="button"
           class="clear-btn"
-          :disabled="!content || loading"
+          :disabled="!content || translating"
           @click="content = ''"
         >
           清空
@@ -300,66 +595,258 @@ async function downloadFormatted() {
         <button
           type="button"
           class="action-btn"
-          :disabled="loading || !content.trim()"
+          :disabled="translating || !canTranslate"
           @click="translate"
         >
-          <LoadingOutlined v-if="loading" class="btn-icon btn-spin" />
-          <span v-if="loading">翻译中…</span>
+          <LoadingOutlined v-if="translating" class="btn-icon btn-spin" />
+          <span v-if="translating">翻译中…</span>
           <span v-else>翻译</span>
         </button>
       </div>
-      <p v-if="loading" class="loading-hint">请耐心等待 1～2 分钟</p>
-      
-      <!-- 翻译结果后的下载选项 -->
-      <div v-if="result" class="download-section">
-        <a-divider :style="{ margin: '16px 0' }" />
-        <div v-if="isZh2En" class="direction-row">
-          <span class="label">文本类型：</span>
-          <a-segmented
-            v-model:value="isOutline"
-            class="direction-segmented"
-            :options="[
-              { label: '纲目', value: true },
-              { label: '非纲目', value: false },
-            ]"
-          />
-        </div>
-        <a-divider v-if="isZh2En" :style="{ margin: '12px 0' }" />
-        <div class="direction-row">
-          <span class="label">下载格式：</span>
-          <a-checkbox-group v-model:value="downloadFormats">
-            <a-checkbox value="docx">DOCX</a-checkbox>
-            <a-checkbox value="pdf">PDF</a-checkbox>
-          </a-checkbox-group>
-        </div>
-        <div class="action-row" style="margin-top: 12px;">
-          <button
-            type="button"
-            class="action-btn"
-            :disabled="downloading || downloadFormats.length === 0"
-            @click="downloadFormatted"
-          >
-            <LoadingOutlined v-if="downloading" class="btn-icon btn-spin" />
-            <DownloadOutlined v-else class="btn-icon" />
-            <span v-if="downloading">格式化并下载中…</span>
-            <span v-else>刷格式并下载</span>
-          </button>
-        </div>
-        <p v-if="downloading" class="loading-hint">请耐心等待 1～2 分钟</p>
-      </div>
+      <p v-if="translating" class="loading-hint">请耐心等待 1～2 分钟</p>
     </a-card>
 
-    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="inputError" class="error">{{ inputError }}</div>
 
-    <a-card v-if="result" class="result-card">
+    <!-- 中文源：英文结果单栏 -->
+    <a-card
+      v-if="isSourceChinese && (zhEnPanel.loading || zhEnPanel.result || zhEnPanel.error)"
+      class="result-card"
+    >
       <template #title>
-        <span>{{ isZh2En ? "英文纲目" : "中文纲目" }}</span>
-        <button type="button" class="copy-btn" @click="copyResult">
+        <span class="result-title-row">
+          <span>英文</span>
+          <span v-if="zhEnPanel.durationMs != null" class="duration-badge">
+            {{ formatDuration(zhEnPanel.durationMs) }}
+          </span>
+        </span>
+        <button
+          v-if="zhEnPanel.result"
+          type="button"
+          class="copy-btn"
+          @click="copyText(zhEnPanel.result)"
+        >
           <CopyOutlined /> 复制
         </button>
       </template>
-      <pre class="result-body">{{ result }}</pre>
+
+      <div v-if="zhEnPanel.loading" class="panel-loading">
+        <LoadingOutlined class="btn-icon btn-spin" /> 翻译中…
+      </div>
+      <div v-else-if="zhEnPanel.error" class="panel-error">{{ zhEnPanel.error }}</div>
+      <template v-else-if="zhEnPanel.result">
+        <a-textarea
+          v-model:value="zhEnPanel.result"
+          :rows="14"
+          class="result-textarea"
+          placeholder="翻译结果（可编辑）"
+        />
+        <div class="download-section">
+          <div class="direction-row">
+            <span class="label">文本类型：</span>
+            <a-segmented
+              v-model:value="zhEnPanel.isOutline"
+              class="direction-segmented"
+              :options="[
+                { label: '纲目', value: true },
+                { label: '非纲目', value: false },
+              ]"
+            />
+          </div>
+          <a-divider :style="{ margin: '12px 0' }" />
+          <div class="direction-row">
+            <span class="label">下载格式：</span>
+            <a-checkbox-group v-model:value="zhEnPanel.downloadFormats">
+              <a-checkbox value="docx">DOCX</a-checkbox>
+              <a-checkbox value="pdf">PDF</a-checkbox>
+            </a-checkbox-group>
+          </div>
+          <div class="action-row" style="margin-top: 12px;">
+            <button
+              type="button"
+              class="action-btn"
+              :disabled="zhEnPanel.downloading || zhEnPanel.downloadFormats.length === 0"
+              @click="downloadFormatted(zhEnPanel, { formatDirection: 'zh2en', usesEnglishTemplate: true })"
+            >
+              <LoadingOutlined v-if="zhEnPanel.downloading" class="btn-icon btn-spin" />
+              <DownloadOutlined v-else class="btn-icon" />
+              <span v-if="zhEnPanel.downloading">格式化并下载中…</span>
+              <span v-else>刷格式并下载</span>
+            </button>
+          </div>
+          <p v-if="zhEnPanel.downloading" class="loading-hint">请耐心等待 1～2 分钟</p>
+        </div>
+      </template>
     </a-card>
+
+    <!-- 英文源：多目标结果栏 -->
+    <template v-if="isSourceEnglish">
+      <a-card
+        v-for="key in activeTargets"
+        :key="key"
+        class="result-card"
+      >
+        <template #title>
+          <span class="result-title-row">
+            <span>{{ TARGET_META[key].label }}</span>
+            <span
+              v-if="enPanels[key].durationMs != null && !enPanels[key].loading"
+              class="duration-badge"
+            >
+              {{ formatDuration(enPanels[key].durationMs) }}
+            </span>
+          </span>
+          <button
+            v-if="enPanels[key].result"
+            type="button"
+            class="copy-btn"
+            @click="copyText(enPanels[key].result)"
+          >
+            <CopyOutlined /> 复制
+          </button>
+        </template>
+
+        <div v-if="enPanels[key].loading" class="panel-loading">
+          <LoadingOutlined class="btn-icon btn-spin" /> 翻译中…
+        </div>
+        <div v-else-if="enPanels[key].error" class="panel-error">
+          {{ enPanels[key].error }}
+        </div>
+        <template v-else-if="enPanels[key].result">
+          <a-textarea
+            v-model:value="enPanels[key].result"
+            :rows="14"
+            class="result-textarea"
+            placeholder="翻译结果（可编辑）"
+          />
+
+          <template v-if="TARGET_META[key].hasErrorCheck">
+            <div class="error-check-toolbar">
+              <button
+                type="button"
+                class="check-err-btn"
+                :disabled="enPanels[key].checkingErrors || !enPanels[key].result"
+                @click="checkErrorCharsForPanel(enPanels[key])"
+              >
+                <LoadingOutlined
+                  v-if="enPanels[key].checkingErrors"
+                  class="btn-icon btn-spin"
+                />
+                <span v-if="enPanels[key].checkingErrors">检查中…</span>
+                <span v-else>检查易错字</span>
+              </button>
+              <button
+                v-if="enPanels[key].errorHits.length"
+                type="button"
+                class="accept-all-btn"
+                :disabled="
+                  enPanels[key].checkingErrors ||
+                  !hitsWithAcceptInput(enPanels[key]).length
+                "
+                @click="
+                  acceptAllHits(enPanels[key], () =>
+                    checkErrorCharsForPanel(enPanels[key])
+                  )
+                "
+              >
+                全部接受
+              </button>
+            </div>
+            <p v-if="enPanels[key].checkErrorMsg" class="check-err-msg">
+              {{ enPanels[key].checkErrorMsg }}
+            </p>
+            <p
+              v-else-if="
+                !enPanels[key].checkingErrors &&
+                enPanels[key].result &&
+                enPanels[key].errorHits.length === 0
+              "
+              class="check-ok"
+            >
+              ✓ 未发现易错字
+            </p>
+            <ul v-if="enPanels[key].errorHits.length" class="hit-list">
+              <li
+                v-for="hit in enPanels[key].errorHits"
+                :key="hit.id"
+                class="hit-item"
+              >
+                <div
+                  class="hit-context"
+                  v-html="getHitContextHtml(hit, enPanels[key].result)"
+                />
+                <div class="hit-row">
+                  <a-input
+                    v-model:value="hit.replaceInput"
+                    class="hit-input"
+                    size="small"
+                    :placeholder="hit.suggestion ? undefined : '输入替换值'"
+                    :disabled="enPanels[key].checkingErrors"
+                  />
+                  <div class="hit-actions">
+                    <button
+                      type="button"
+                      class="accept-btn"
+                      :disabled="
+                        enPanels[key].checkingErrors ||
+                        !(hit.replaceInput || '').trim()
+                      "
+                      @click="
+                        acceptHit(enPanels[key], hit, () =>
+                          checkErrorCharsForPanel(enPanels[key])
+                        )
+                      "
+                    >
+                      接受
+                    </button>
+                    <button
+                      type="button"
+                      class="reject-btn"
+                      :disabled="enPanels[key].checkingErrors"
+                      @click="rejectHit(enPanels[key], hit)"
+                    >
+                      拒绝
+                    </button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </template>
+
+          <div class="download-section">
+            <div class="direction-row">
+              <span class="label">下载格式：</span>
+              <a-checkbox-group v-model:value="enPanels[key].downloadFormats">
+                <a-checkbox value="docx">DOCX</a-checkbox>
+                <a-checkbox value="pdf">PDF</a-checkbox>
+              </a-checkbox-group>
+            </div>
+            <div class="action-row" style="margin-top: 12px;">
+              <button
+                type="button"
+                class="action-btn"
+                :disabled="
+                  enPanels[key].downloading ||
+                  enPanels[key].downloadFormats.length === 0
+                "
+                @click="downloadFormatted(enPanels[key], TARGET_META[key])"
+              >
+                <LoadingOutlined
+                  v-if="enPanels[key].downloading"
+                  class="btn-icon btn-spin"
+                />
+                <DownloadOutlined v-else class="btn-icon" />
+                <span v-if="enPanels[key].downloading">格式化并下载中…</span>
+                <span v-else>刷格式并下载</span>
+              </button>
+            </div>
+            <p v-if="enPanels[key].downloading" class="loading-hint">
+              请耐心等待 1～2 分钟
+            </p>
+          </div>
+        </template>
+      </a-card>
+    </template>
   </div>
 </template>
 
@@ -388,6 +875,49 @@ async function downloadFormatted() {
   border-radius: 4px;
 }
 
+.source-lang-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.source-lang-btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 14px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid #d9d9d9;
+  background: #fafafa;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.source-lang-btn:hover:not(:disabled) {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.source-lang-btn.active {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.source-lang-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.direction-fixed {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 1em;
+}
+
 .direction-row {
   display: flex;
   align-items: center;
@@ -401,7 +931,6 @@ async function downloadFormatted() {
   font-size: 1em;
 }
 
-/* 翻译方向分段控件：更醒目，选中项绿色 */
 .direction-segmented :deep(.ant-segmented-group) {
   gap: 4px;
 }
@@ -441,7 +970,6 @@ async function downloadFormatted() {
   font-family: inherit;
 }
 
-/* 明显的清空按钮 */
 .clear-btn {
   margin-top: 10px;
   padding: 6px 16px;
@@ -516,7 +1044,6 @@ async function downloadFormatted() {
   cursor: not-allowed;
 }
 
-
 .error {
   margin-top: 12px;
   color: #cf1322;
@@ -531,6 +1058,22 @@ async function downloadFormatted() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.result-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.duration-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #595959;
+  background: #f0f0f0;
+  border-radius: 10px;
 }
 
 .copy-btn {
@@ -552,13 +1095,193 @@ async function downloadFormatted() {
   border-color: #1890ff;
 }
 
-.result-body {
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
+.panel-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8c8c8c;
+  padding: 16px 0;
+}
+
+.panel-error {
+  color: #cf1322;
+  padding: 8px 0;
+  font-size: 0.95em;
+}
+
+.result-textarea {
+  display: block;
+}
+
+.result-textarea :deep(.ant-input) {
+  font-family: inherit;
   font-size: 0.95em;
   line-height: 1.6;
-  max-height: 60vh;
-  overflow-y: auto;
+  border-radius: 8px;
+}
+
+.download-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.error-check-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.check-err-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.check-err-btn:hover:not(:disabled) {
+  color: #1890ff;
+  border-color: #1890ff;
+}
+
+.check-err-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.accept-all-btn {
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: #52c41a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.accept-all-btn:hover:not(:disabled) {
+  background: #73d13d;
+}
+
+.accept-all-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.check-ok {
+  margin: 10px 0 0;
+  color: #389e0d;
+  font-size: 0.95em;
+}
+
+.check-err-msg {
+  margin: 10px 0 0;
+  color: #cf1322;
+  font-size: 0.9em;
+}
+
+.hit-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.hit-context {
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  color: #333;
+  font-size: 0.95em;
+}
+
+.hit-context :deep(.hit-word-mark) {
+  background: #ffbb96;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.hit-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+}
+
+.hit-input {
+  flex: 1;
+  min-width: 120px;
+  max-width: 280px;
+}
+
+.hit-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.accept-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #52c41a;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+}
+
+.accept-btn:hover:not(:disabled) {
+  background: #f6ffed;
+}
+
+.accept-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.reject-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+}
+
+.reject-btn:hover:not(:disabled) {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+  background: #fff1f0;
+}
+
+.reject-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 </style>

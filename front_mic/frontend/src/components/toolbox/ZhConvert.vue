@@ -14,10 +14,131 @@ const downloading = ref(false); // 正在下载
 const error = ref(null);
 const result = ref(null);
 
+const errorHits = ref([]);
+const checkingErrors = ref(false);
+const checkErrorMsg = ref(null);
+
 const isCn2Tw = computed(() => direction.value === "zh_cn2tw");
 const inputPlaceholder = computed(() =>
   isCn2Tw.value ? "请粘贴简体纲目全文…" : "请粘贴台湾繁体纲目全文…"
 );
+
+const hitsWithAcceptInput = computed(() =>
+  errorHits.value.filter((h) => (h.replaceInput || "").trim())
+);
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function getAuthToken() {
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return null;
+  }
+  return authToken;
+}
+
+async function checkErrorChars() {
+  const text = (result.value || "").trim();
+  if (!text || !isCn2Tw.value) {
+    errorHits.value = [];
+    checkErrorMsg.value = null;
+    return;
+  }
+  const authToken = getAuthToken();
+  if (!authToken) return;
+
+  checkingErrors.value = true;
+  checkErrorMsg.value = null;
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/ai_search/check_error_chars`,
+      { content: result.value },
+      {
+        headers: { Authorization: `Bearer ${authToken}` },
+        timeout: 30000,
+      }
+    );
+    errorHits.value = normalizeErrorHits(res.data?.hits || []);
+  } catch (err) {
+    errorHits.value = [];
+    checkErrorMsg.value =
+      err.response?.data?.detail || err.message || "易错字检查失败";
+  } finally {
+    checkingErrors.value = false;
+  }
+}
+
+function normalizeErrorHits(hits) {
+  return hits.map((h, i) => ({
+    ...h,
+    id: `${h.start}-${h.end}-${i}`,
+    replaceInput: h.suggestion != null && h.suggestion !== "" ? h.suggestion : "",
+  }));
+}
+
+/** 命中词前后各最多 3 字，易错字橙色高亮 */
+function getHitContextHtml(hit) {
+  const text = result.value || "";
+  const start = hit.start ?? 0;
+  const end = hit.end ?? start;
+  const beforeStart = Math.max(0, start - 3);
+  const afterEnd = Math.min(text.length, end + 3);
+  const prefixEllipsis = beforeStart > 0 ? "..." : "";
+  const suffixEllipsis = afterEnd < text.length ? "..." : "";
+  const before = escapeHtml(text.slice(beforeStart, start));
+  const word = escapeHtml(text.slice(start, end) || hit.word);
+  const after = escapeHtml(text.slice(end, afterEnd));
+  return `${prefixEllipsis}${before}<span class="hit-word-mark">${word}</span>${after}${suffixEllipsis}`;
+}
+
+function applyReplacementAt(hit, replaceValue) {
+  if (!result.value || !replaceValue) return false;
+  const slice = result.value.slice(hit.start, hit.end);
+  if (slice === hit.word) {
+    result.value =
+      result.value.slice(0, hit.start) + replaceValue + result.value.slice(hit.end);
+    return true;
+  }
+  const idx = result.value.indexOf(hit.word);
+  if (idx === -1) return false;
+  result.value =
+    result.value.slice(0, idx) + replaceValue + result.value.slice(idx + hit.word.length);
+  return true;
+}
+
+function rejectHit(hit) {
+  errorHits.value = errorHits.value.filter((h) => h.id !== hit.id);
+}
+
+function acceptHit(hit) {
+  const val = (hit.replaceInput || "").trim();
+  if (!val || !result.value) return;
+  if (applyReplacementAt(hit, val)) {
+    checkErrorChars();
+  }
+}
+
+function acceptAllHits() {
+  if (!result.value || !hitsWithAcceptInput.value.length) return;
+  let text = result.value;
+  const sorted = [...hitsWithAcceptInput.value].sort((a, b) => b.start - a.start);
+  for (const h of sorted) {
+    const val = (h.replaceInput || "").trim();
+    if (!val) continue;
+    const slice = text.slice(h.start, h.end);
+    if (slice === h.word) {
+      text = text.slice(0, h.start) + val + text.slice(h.end);
+    }
+  }
+  result.value = text;
+  checkErrorChars();
+}
 
 function copyResult() {
   if (!result.value) return;
@@ -40,10 +161,11 @@ async function convert() {
   error.value = null;
   result.value = null;
   downloadFormats.value = [];
-  const authToken = localStorage.getItem("token") || null;
+  errorHits.value = [];
+  checkErrorMsg.value = null;
+  const authToken = getAuthToken();
   if (!authToken) {
     loading.value = false;
-    window.location.hash = "/login";
     return;
   }
   try {
@@ -64,6 +186,9 @@ async function convert() {
     const data = res.data;
     if (data[fieldName]) {
       result.value = data[fieldName];
+      if (isCn2Tw.value) {
+        await checkErrorChars();
+      }
       try {
         toastSuccess("转换完成！请选择下载格式并点击下载按钮。");
       } catch (_) {}
@@ -311,7 +436,76 @@ async function downloadFormatted() {
           <CopyOutlined /> 复制
         </button>
       </template>
-      <pre class="result-body">{{ result }}</pre>
+
+      <template v-if="isCn2Tw">
+        <a-textarea
+          v-model:value="result"
+          :rows="14"
+          class="result-textarea"
+          placeholder="转换结果（可编辑）"
+        />
+        <div class="error-check-toolbar">
+          <button
+            type="button"
+            class="check-err-btn"
+            :disabled="checkingErrors || !result"
+            @click="checkErrorChars"
+          >
+            <LoadingOutlined v-if="checkingErrors" class="btn-icon btn-spin" />
+            <span v-if="checkingErrors">检查中…</span>
+            <span v-else>检查易错字</span>
+          </button>
+          <button
+            v-if="errorHits.length"
+            type="button"
+            class="accept-all-btn"
+            :disabled="checkingErrors || !hitsWithAcceptInput.length"
+            @click="acceptAllHits"
+          >
+            全部接受
+          </button>
+        </div>
+        <p v-if="checkErrorMsg" class="check-err-msg">{{ checkErrorMsg }}</p>
+        <p
+          v-else-if="!checkingErrors && result && errorHits.length === 0"
+          class="check-ok"
+        >
+          ✓ 未发现易错字
+        </p>
+        <ul v-if="errorHits.length" class="hit-list">
+          <li v-for="hit in errorHits" :key="hit.id" class="hit-item">
+            <div class="hit-context" v-html="getHitContextHtml(hit)" />
+            <div class="hit-row">
+              <a-input
+                v-model:value="hit.replaceInput"
+                class="hit-input"
+                size="small"
+                :placeholder="hit.suggestion ? undefined : '输入替换值'"
+                :disabled="checkingErrors"
+              />
+              <div class="hit-actions">
+                <button
+                  type="button"
+                  class="accept-btn"
+                  :disabled="checkingErrors || !(hit.replaceInput || '').trim()"
+                  @click="acceptHit(hit)"
+                >
+                  接受
+                </button>
+                <button
+                  type="button"
+                  class="reject-btn"
+                  :disabled="checkingErrors"
+                  @click="rejectHit(hit)"
+                >
+                  拒绝
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </template>
+      <pre v-else class="result-body">{{ result }}</pre>
     </a-card>
   </div>
 </template>
@@ -505,5 +699,175 @@ async function downloadFormatted() {
   line-height: 1.6;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.result-textarea {
+  display: block;
+}
+
+.result-textarea :deep(.ant-input) {
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.6;
+  border-radius: 8px;
+}
+
+.error-check-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.check-err-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.check-err-btn:hover:not(:disabled) {
+  color: #1890ff;
+  border-color: #1890ff;
+}
+
+.check-err-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.accept-all-btn {
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: #52c41a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.accept-all-btn:hover:not(:disabled) {
+  background: #73d13d;
+}
+
+.accept-all-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.check-ok {
+  margin: 10px 0 0;
+  color: #389e0d;
+  font-size: 0.95em;
+}
+
+.check-err-msg {
+  margin: 10px 0 0;
+  color: #cf1322;
+  font-size: 0.9em;
+}
+
+.hit-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.hit-context {
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  color: #333;
+  font-size: 0.95em;
+}
+
+.hit-context :deep(.hit-word-mark) {
+  background: #ffbb96;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.hit-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+}
+
+.hit-input {
+  flex: 1;
+  min-width: 120px;
+  max-width: 280px;
+}
+
+.hit-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.accept-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #52c41a;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+}
+
+.accept-btn:hover:not(:disabled) {
+  background: #f6ffed;
+}
+
+.accept-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.reject-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+}
+
+.reject-btn:hover:not(:disabled) {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+  background: #fff1f0;
+}
+
+.reject-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 </style>

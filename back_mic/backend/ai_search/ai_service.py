@@ -117,6 +117,7 @@ ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_FALLBACK_M
 GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
 gemini_client = None
 _gemini_system_instruction_en2zh = None
+_gemini_system_instruction_en2es = None
 if GEMINI_API_KEY:
     try:
         from google import genai
@@ -129,14 +130,21 @@ if GEMINI_API_KEY:
             _gemini_system_instruction_en2zh = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
         except Exception:
             _gemini_system_instruction_en2zh = None
+        try:
+            from .gemini_translation_instruction_en2es import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
+            _gemini_system_instruction_en2es = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
+        except Exception:
+            _gemini_system_instruction_en2es = None
         logger.info("Gemini 翻译模型初始化成功")
     except Exception as e:
         logger.error(f"Gemini 翻译模型初始化失败: {e}")
         gemini_client = None
         _gemini_system_instruction = None
         _gemini_system_instruction_en2zh = None
+        _gemini_system_instruction_en2es = None
 else:
     _gemini_system_instruction = None
+    _gemini_system_instruction_en2es = None
     logger.info("Gemini 未配置: GEMINI_API_KEY 未设置（.env 路径: %s）", env_path)
 
 try:
@@ -289,6 +297,14 @@ OUTLINE_TRANSLATE_PROMPT_ZH2KO = (
     "神→하나님, 主→주님, 信徒→신자, 得救→구원받다\n"
     "2. 严格保留原纲目的层级结构、缩进格式与编号（壹贰叁→일이삼 或保留原字）\n"
     "3. 只输出翻译后的韩文纲目，不添加任何说明或注释"
+)
+
+OUTLINE_TRANSLATE_PROMPT_EN2ES = (
+    "请将以上英文纲目翻译为西班牙语。要求：\n"
+    "1. 严格使用 System instructions 中的英文→西班牙文职事术语表。\n"
+    "2. 纲目层级序号（I.、A.、B.、1.、a.、1) 等）保持原样，不翻译序号，只翻译正文。\n"
+    "3. 不要缩进，直接输出；保持与原文相同的换行与条目结构。\n"
+    "4. 只输出翻译后的西班牙语纲目，不添加任何说明或注释。"
 )
 
 
@@ -487,6 +503,95 @@ def _strip_code_fence_for_outline(text: Optional[str]) -> Optional[str]:
     last_start = fence_starts[len(fence_ends) - 1]
     inner = lines[last_start + 1 : last_end]
     return "\n".join(inner).strip() if inner else text
+
+
+# ---------- 易错字检查（简繁互转结果校验） ----------
+_ERROR_CHAR_PAIRS: List[Tuple[str, str]] = [
+    ("預", "豫"), ("秘", "祕"), ("才是", "纔是"), ("才會", "纔會"),
+    ("什", "甚"), ("台", "臺"), ("兇", "凶"), ("份", "分"),
+    ("吃", "喫"), ("吧", "罷"), ("恒", "恆"), ("唇", "脣"),
+    ("做人", "作人"), ("做事", "作事"), ("做工", "作工"),
+    ("啊", "阿"), ("唯", "惟"), ("夠", "彀"), ("腊", "臘"),
+    ("裡", "裏"), ("葯", "藥"), ("嘆", "歎"), ("燄", "焰"),
+    ("嚐", "嘗"), ("餵", "餧"), ("鎗", "槍"), ("效忠", "効忠"),
+    ("計劃", "計畫"), ("借著", "藉著"), ("撒旦", "撒但"),
+    ("形象", "形像"), ("翻譯", "繙譯"), ("對像", "對象"),
+    ("複習", "復習"), ("重覆", "重複"), ("撲倒", "仆倒"),
+]
+_ERROR_PATTERNS_SORTED: List[Tuple[str, str]] = sorted(
+    _ERROR_CHAR_PAIRS, key=lambda p: len(p[0]), reverse=True
+)
+_terms_key_patterns: Optional[List[Tuple[str, str]]] = None
+_terms_patterns_lock = threading.Lock()
+
+
+def _load_terms_key_patterns() -> List[Tuple[str, str]]:
+    """术语表正向模式：简体键 → 繁体值，按键长降序（最长优先匹配）。"""
+    global _terms_key_patterns
+    with _terms_patterns_lock:
+        if _terms_key_patterns is None:
+            terms_path = Path(__file__).resolve().parents[3] / "shared" / "zh_tw_terms.json"
+            with open(terms_path, encoding="utf-8") as f:
+                terms = json.load(f)
+            patterns = [
+                (simp, trad)
+                for simp, trad in terms.items()
+                if simp and trad is not None and simp != trad
+            ]
+            patterns.sort(key=lambda x: len(x[0]), reverse=True)
+            _terms_key_patterns = patterns
+        return _terms_key_patterns
+
+
+def _longest_error_match_at(content: str, i: int) -> Optional[Tuple[int, str, str]]:
+    for wrong, right in _ERROR_PATTERNS_SORTED:
+        if wrong and content.startswith(wrong, i):
+            return (len(wrong), wrong, right)
+    return None
+
+
+def _longest_terms_match_at(content: str, i: int) -> Optional[Tuple[int, str, str]]:
+    for simp, trad in _load_terms_key_patterns():
+        if content.startswith(simp, i):
+            return (len(simp), simp, trad)
+    return None
+
+
+def scan_error_chars(content: str) -> List[Dict[str, Optional[str]]]:
+    """
+    左优先最长匹配扫描易错字；_ERROR_CHAR_PAIRS 优先于术语表残留简体键。
+    返回按 start 升序的命中列表。
+    """
+    if not content:
+        return []
+    hits: List[Dict[str, Optional[str]]] = []
+    i = 0
+    n = len(content)
+    while i < n:
+        err = _longest_error_match_at(content, i)
+        if err:
+            length, word, suggestion = err
+            hits.append({
+                "word": word,
+                "start": i,
+                "end": i + length,
+                "suggestion": suggestion,
+            })
+            i += length
+            continue
+        term = _longest_terms_match_at(content, i)
+        if term:
+            length, word, suggestion = term
+            hits.append({
+                "word": word,
+                "start": i,
+                "end": i + length,
+                "suggestion": suggestion if suggestion else None,
+            })
+            i += length
+            continue
+        i += 1
+    return hits
 
 
 class AISearchService:
@@ -1177,6 +1282,117 @@ class AISearchService:
             }
         return {"answer_ko": answer_ko, "tokens": tokens_zh2ko or {"input": 0, "output": 0, "cost": 0}}
 
+    def translate_outline_en2es(self, english_outline: str) -> Dict:
+        """
+        将英文纲目翻译为西班牙语纲目（调用 Gemini）。
+        用于工具箱「纲目翻译」- 英翻西（direction: en2es）。失败时重试 1 次。
+        """
+        MAX_OUTLINE_LENGTH = 100_000
+        outline = (english_outline or "").strip()
+        if not outline:
+            return {"answer_es": None, "error": "英文纲目为空"}
+        if len(outline) > MAX_OUTLINE_LENGTH:
+            return {"answer_es": None, "error": f"英文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
+        if not gemini_client:
+            return {"answer_es": None, "error": "西班牙语翻译服务未配置（请设置 GEMINI_API_KEY）"}
+        if not _gemini_system_instruction_en2es:
+            return {"answer_es": None, "error": "英翻西 instruction 未配置"}
+
+        contents_en2es = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ES
+        _last_error_model_not_found = [False]
+        _last_error_retryable = [False]
+        _last_error_empty = [False]
+        en2es_api_errors: List[str] = []
+
+        def _is_model_not_found(err: str) -> bool:
+            return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
+
+        def _en2es_config():
+            if gemini_translation_generate_config:
+                return gemini_translation_generate_config(_gemini_system_instruction_en2es)
+            return types.GenerateContentConfig(system_instruction=_gemini_system_instruction_en2es)
+
+        def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
+            use_model = model or GEMINI_MODEL
+            with GEMINI_SEMAPHORE:
+                try:
+                    response = gemini_client.models.generate_content(
+                        model=use_model,
+                        contents=contents_en2es,
+                        config=_en2es_config(),
+                    )
+                    log_p = f"[Gemini英翻西] model={use_model}"
+                    if extract_translatable_text:
+                        text = extract_translatable_text(response, log_p)
+                    else:
+                        rt = getattr(response, "text", None) if response else None
+                        text = rt.strip() if isinstance(rt, str) and rt.strip() else None
+                    if text:
+                        tokens_en2es = None
+                        try:
+                            usage_meta = response.usage_metadata
+                            in_tok = int(getattr(usage_meta, "prompt_token_count", 0) or 0)
+                            out_tok = int(getattr(usage_meta, "candidates_token_count", 0) or 0)
+                            cost = (in_tok * 1.25 + out_tok * 10) / 1_000_000
+                            logger.info(
+                                "[Gemini英翻西] model=%s | 输入=%d tokens | 输出=%d tokens | 费用=$%.6f",
+                                use_model, in_tok, out_tok, cost,
+                            )
+                            if self.redis:
+                                get_monitoring(self.redis).record_tool_usage(
+                                    "translation_en2es", use_model, in_tok, out_tok, cost
+                                )
+                            tokens_en2es = {"input": in_tok, "output": out_tok, "cost": cost}
+                        except Exception:
+                            pass
+                        return (text, tokens_en2es)
+                    _last_error_empty[0] = True
+                    logger.warning("Gemini 英翻西返回空响应（重试次数: %s）", retry_count)
+                except Exception as e:
+                    error_msg = str(e)
+                    en2es_api_errors.append(error_msg)
+                    if _is_model_not_found(error_msg):
+                        _last_error_model_not_found[0] = True
+                        logger.warning(
+                            "Gemini 模型不可用(404): %s，将尝试备用模型 %s",
+                            e, GEMINI_TRANSLATION_FALLBACK_MODEL,
+                        )
+                    is_retryable = _gemini_error_is_retryable(error_msg)
+                    if is_retryable:
+                        _last_error_retryable[0] = True
+                    if is_retryable and retry_count == 0:
+                        logger.warning("Gemini 英翻西调用失败（可重试）: %s，等待2秒后重试...", e)
+                        time.sleep(2)
+                    else:
+                        logger.warning("Gemini 英翻西调用失败（重试次数: %s）: %s", retry_count, e)
+            return None
+
+        result = _call_gemini(retry_count=0)
+        if result is not None:
+            answer_es, tokens_en2es = result[0], result[1]
+        else:
+            answer_es, tokens_en2es = None, None
+        if answer_es is None:
+            result = _call_gemini(retry_count=1)
+            if result is not None:
+                answer_es, tokens_en2es = result[0], result[1]
+        if answer_es is None and (
+            _last_error_model_not_found[0] or _last_error_retryable[0] or _last_error_empty[0]
+        ) and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+            result = _call_gemini(retry_count=0, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+            if result is not None:
+                answer_es, tokens_en2es = result[0], result[1]
+            if answer_es is None:
+                result = _call_gemini(retry_count=1, model=GEMINI_TRANSLATION_FALLBACK_MODEL)
+                if result is not None:
+                    answer_es, tokens_en2es = result[0], result[1]
+        if answer_es is None:
+            return {
+                "answer_es": None,
+                "error": _user_facing_translate_error(en2es_api_errors, _last_error_empty[0]),
+            }
+        return {"answer_es": answer_es, "tokens": tokens_en2es or {"input": 0, "output": 0, "cost": 0}}
+
     def outline_to_traditional(self, content: str) -> Dict[str, Optional[str]]:
         """
         将简体纲目转为繁体：先按术语表替换，再 OpenCC s2t（失败回退 zhconv zh-hant）。
@@ -1259,6 +1475,10 @@ class AISearchService:
         except Exception as e:
             logger.error("繁转简失败: %s", e, exc_info=True)
             return {"answer_zh_cn": None, "error": str(e)}
+
+    def check_error_chars(self, content: str) -> List[Dict[str, Optional[str]]]:
+        """易错字检查：硬编码易错对 + 术语表残留简体键扫描。"""
+        return scan_error_chars(content or "")
 
     def _convert_docx_to_pdf(self, docx_path: str) -> Optional[bytes]:
         """
