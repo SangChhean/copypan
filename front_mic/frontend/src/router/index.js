@@ -68,6 +68,8 @@ const routes = [
     name: "ZhConvertTest",
     component: () => import("../components/toolbox/ZhConvertTest.vue"),
     meta: { requiresAuth: true },
+  },
+  {
     path: "/zh2tw-vannak",
     component: () => import("../components/toolbox/ZhConvert2.vue"),
   },
