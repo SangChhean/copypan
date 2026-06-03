@@ -4,6 +4,10 @@ import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined, Fil
 const go = (val = "/") => {
   window.location.hash = val;
 };
+
+const openZh2tw = () => {
+  go('/zh2tw-vannak');
+};
 </script>
 
 <template>
@@ -71,6 +75,7 @@ const go = (val = "/") => {
           <div class="card_title">Vichhet &amp; Chom Pei 测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/practice-translate')"><span class="card_text">纲目翻译练习</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/zh2tw-practice')"><span class="card_text">简繁互转练习</span></a-card-grid>
       </a-card>
     </div>
     <br />
@@ -81,6 +86,7 @@ const go = (val = "/") => {
           <div class="card_title">Vannak &amp; Sila 测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/test-translate-vannak')"><span class="card_text">翻译工具</span></a-card-grid>
+        <a-card-grid class="card c2" @click="openZh2tw()"><span class="card_text">简繁互转</span></a-card-grid>
       </a-card>
     </div>
     <br />
