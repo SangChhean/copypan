@@ -13,6 +13,8 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 from user.token import set_token, test_token
 from user.add_user import signup as signup_fun
 from user.changePass import change_pass
@@ -68,6 +70,41 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Retrieval-Log"],
 )
+
+
+class StaticCacheControlMiddleware(BaseHTTPMiddleware):
+    """index.html 禁止缓存；带 hash 的 js/css 等静态资源可长期缓存。"""
+
+    _LONG_CACHE_SUFFIXES = (
+        ".js",
+        ".css",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".webp",
+        ".svg",
+        ".ico",
+    )
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if response.headers.get("cache-control"):
+            return response
+        path = request.url.path
+        lower = path.lower()
+        if lower in ("/", "/index.html") or lower.endswith(".html"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+        elif "/assets/" in lower or lower.endswith(self._LONG_CACHE_SUFFIXES):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+app.add_middleware(StaticCacheControlMiddleware)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -391,3 +428,12 @@ if str(_repo_root) not in sys.path:
     sys.path.append(str(_repo_root))
 from testA.translate.backend.translate_router import router as test_translate_router
 app.include_router(test_translate_router)
+
+# 前端构建产物（Vite dist）；须在所有 API 路由注册之后挂载，避免覆盖 /api
+_FRONTEND_DIST = pt(__file__).resolve().parents[2] / "front_mic" / "frontend" / "dist"
+if _FRONTEND_DIST.is_dir():
+    app.mount(
+        "/",
+        StaticFiles(directory=str(_FRONTEND_DIST), html=True),
+        name="frontend",
+    )

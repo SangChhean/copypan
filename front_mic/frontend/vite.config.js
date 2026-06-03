@@ -9,6 +9,16 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
+  // 默认即带 content hash；显式写出便于确认 index.html 引用 [name]-[hash].js
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
