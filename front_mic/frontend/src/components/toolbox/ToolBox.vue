@@ -99,6 +99,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/outline-translate-test')">
           <span class="card_text">纲目翻译测试</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/zh-convert-test')">
+          <span class="card_text">简繁互转测试</span>
+        </a-card-grid>
       </a-card>
     </div>
   </div>

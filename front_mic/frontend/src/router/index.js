@@ -55,11 +55,19 @@ const routes = [
   },
   {
     path: "/outline-translate-test",
+    name: "OutlineTranslateTest",
     component: () => import("../components/toolbox/OutlineTranslateTest.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/test-translate-vannak",
     component: () => import("../components/toolbox/TranslateTest.vue"),
   },
   {
+    path: "/zh-convert-test",
+    name: "ZhConvertTest",
+    component: () => import("../components/toolbox/ZhConvertTest.vue"),
+    meta: { requiresAuth: true },
     path: "/zh2tw-vannak",
     component: () => import("../components/toolbox/ZhConvert2.vue"),
   },
