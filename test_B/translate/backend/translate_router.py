@@ -34,6 +34,7 @@ OUTLINE_TRANSLATE_PROMPT_ZH2KO = (
     "2. 严格保留原纲目的层级结构、缩进格式与编号（壹贰叁等保留原字或译为일이삼）；"
     "3. 只输出翻译后的韩文纲目，不添加任何说明或注释。"
 )
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-flash")
