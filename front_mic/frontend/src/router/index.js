@@ -99,6 +99,10 @@ const routes = [
     path: '/practice-translate',
     component: () => import('../../../../testC/translate/frontend/OutlineTranslate_practice.vue')
   },
+  {
+    path: '/zh2tw-practice',
+    component: () => import('../../../../testC/zh2tw/frontend/src/components/ZhConvert.vue')
+  },
 ];
 
 const router = createRouter({
