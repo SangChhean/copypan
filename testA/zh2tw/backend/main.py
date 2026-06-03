@@ -1,8 +1,8 @@
 """
-testA 独立练习后端入口。
+testA 简繁互转练习后端入口。
 
-启动（在 testA/translate/backend 目录）：
-    uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+启动（在 testA/zh2tw/backend 目录）：
+    uvicorn main:app --host 0.0.0.0 --port 8004 --reload
 """
 import logging
 
@@ -14,11 +14,11 @@ load_dotenv(Path(__file__).resolve().parents[3] / "back_mic" / "backend" / ".env
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from translate_router import router as translate_router
+from zh_router import router as zh_router
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="testA Translate Practice API")
+app = FastAPI(title="[testA] ZhConvert API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(translate_router)
+app.include_router(zh_router)
 
 
 @app.get("/health")

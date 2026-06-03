@@ -3,7 +3,7 @@
 import { ref, computed } from "vue";
 import PageHeader from "./PageHeader.vue";
 
-const apiBase = "http://localhost:8001";
+const apiBase = "http://localhost:8002";
 const MAX_CONTENT_CHARS = 100_000;
 const direction = ref("zh2en");
 const content = ref("");
