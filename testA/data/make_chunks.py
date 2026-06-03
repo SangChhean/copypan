@@ -2,7 +2,7 @@ import json
 
 
 INPUT = r"E:\copypan\testA\data\life_48.json"
-OUTPUT = r"E:\copypan\testA\data\chunks.json"
+OUTPUT = r"E:\copypan\testA\data\galatians_chunks.json"
 
 
 def main():
@@ -22,11 +22,22 @@ def main():
         else:
             source_first = ""
 
+        title = item.get("title", "")
+        parts = title.split("，", 1)
+        if len(parts) == 2:
+            book_title = parts[0]
+            message_title = parts[1]
+        else:
+            book_title = title
+            message_title = ""
+            print(f"[警告] 无法拆分 title，chunk_id={item.get('id', '')}, title={title!r}")
+
         chunk = {
-            "chunk_id": item.get("id", ""),
+            "chunk_id": item.get("id", "").replace("life_48-", "galatians-"),
             "text": item.get("text", ""),
-            "title": item.get("title", ""),
-            "source": source_first,
+            "book_title": book_title,
+            "message_title": message_title,
+            "source_zh": source_first,
         }
         chunks.append(chunk)
 
