@@ -2,6 +2,10 @@
 test_B/translate 独立后端入口。
 启动（在 test_B/translate/backend 目录）：
     uvicorn main:app --host 0.0.0.0 --port 8003 --reload
+
+前端 UI（在 test_B/translate/frontend 目录）：
+    npm install && npm run dev
+    浏览器打开 http://localhost:8007
 """
 import logging
 from dotenv import load_dotenv

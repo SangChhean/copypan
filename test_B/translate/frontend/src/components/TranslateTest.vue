@@ -1,22 +1,29 @@
+<!-- test_B 纲目翻译练习页 · 对接 /api/test_b/translate/translate -->
 <script setup>
 import { ref, computed } from "vue";
+import PageHeader from "./PageHeader.vue";
 
 const apiBase = "";
-
-const goTools = () => {
-  window.location.hash = "/tools";
-};
-const direction = ref("s2t");
+const MAX_CONTENT_CHARS = 100_000;
+const direction = ref("zh2en");
 const content = ref("");
 const loading = ref(false);
 const error = ref(null);
 const result = ref(null);
 const toast = ref("");
 
-const isS2t = computed(() => direction.value === "s2t");
-const inputPlaceholder = computed(() =>
-  isS2t.value ? "请粘贴简体中文…" : "请粘贴繁体中文…"
-);
+const inputPlaceholder = computed(() => {
+  if (direction.value === "en2zh") return "请粘贴英文纲目全文…";
+  return "请粘贴中文纲目全文…";
+});
+
+const resultTitle = computed(() => {
+  if (direction.value === "zh2en") return "英文纲目";
+  if (direction.value === "zh2ko") return "韩文纲目";
+  return "中文纲目";
+});
+
+const charCount = computed(() => (content.value || "").length);
 
 function showToast(msg) {
   toast.value = msg;
@@ -28,29 +35,30 @@ function showToast(msg) {
 function copyResult() {
   if (!result.value) return;
   navigator.clipboard.writeText(result.value).then(() => {
-    showToast("已复制");
+    showToast("已复制到剪贴板");
   });
 }
 
-async function convert() {
+async function translate() {
   const text = (content.value || "").trim();
   if (!text) {
-    error.value = "请先粘贴要转换的内容";
+    error.value = "请先粘贴纲目内容";
+    result.value = null;
+    return;
+  }
+  if (text.length > MAX_CONTENT_CHARS) {
+    error.value = `正文过长：最多 ${MAX_CONTENT_CHARS.toLocaleString()} 字，请分段翻译`;
     result.value = null;
     return;
   }
   loading.value = true;
   error.value = null;
   result.value = null;
-  const endpoint = isS2t.value
-    ? `${apiBase}/api/testb/zh_convert`
-    : `${apiBase}/api/testb/zh_to_simplified`;
-  const resultField = isS2t.value ? "answer_zh_tw" : "answer_zh_cn";
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetch(`${apiBase}/api/test_b/translate/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: text }),
+      body: JSON.stringify({ content: text, direction: direction.value }),
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
@@ -58,20 +66,19 @@ async function convert() {
       if (Array.isArray(detail)) {
         detail = detail.map((x) => x?.msg || x?.message || JSON.stringify(x)).join("；");
       }
-      error.value = detail || errorData.error || errorData.message || "转换失败，请稍后重试";
+      error.value = detail || errorData.error || errorData.message || "翻译失败，请稍后重试";
       return;
     }
     const data = await res.json();
-    const answer = data[resultField];
-    if (data.error && !answer) {
+    if (data.error && !data.result) {
       error.value = data.error;
       return;
     }
-    if (answer) {
-      result.value = answer;
-      showToast("转换完成！");
+    if (data.result) {
+      result.value = data.result;
+      showToast("翻译完成！");
     } else {
-      error.value = "转换失败，请稍后重试";
+      error.value = "翻译失败，请稍后重试";
     }
   } catch (err) {
     error.value =
@@ -85,34 +92,41 @@ async function convert() {
 </script>
 
 <template>
+  <PageHeader title="纲目翻译（test_B · ephesians）" />
   <div v-if="toast" class="toast">{{ toast }}</div>
   <div class="box">
-    <header class="page-header">
-      <button type="button" class="back-btn" aria-label="返回" @click="goTools">←</button>
-      <h1 class="page-title">简繁互转测试</h1>
-    </header>
-
     <section class="card">
-      <p class="hint">独立练习环境：粘贴内容后选择方向，点「转换」即可（无下载、无登录）。</p>
+      <p class="hint">
+        独立练习环境：粘贴纲目后点「翻译」即可（无下载、无登录）。
+        <strong>输入上限 {{ MAX_CONTENT_CHARS.toLocaleString() }} 字</strong>。
+      </p>
       <hr class="divider" />
       <div class="direction-row">
-        <span class="label">转换方向：</span>
+        <span class="label">翻译方向：</span>
         <div class="segmented">
           <button
             type="button"
             class="seg-btn"
-            :class="{ active: direction === 's2t' }"
-            @click="direction = 's2t'"
+            :class="{ active: direction === 'zh2en' }"
+            @click="direction = 'zh2en'"
           >
-            简体 → 繁体
+            中文 → 英文
           </button>
           <button
             type="button"
             class="seg-btn"
-            :class="{ active: direction === 't2s' }"
-            @click="direction = 't2s'"
+            :class="{ active: direction === 'en2zh' }"
+            @click="direction = 'en2zh'"
           >
-            繁体 → 简体
+            英文 → 中文
+          </button>
+          <button
+            type="button"
+            class="seg-btn"
+            :class="{ active: direction === 'zh2ko' }"
+            @click="direction = 'zh2ko'"
+          >
+            中文 → 韩文
           </button>
         </div>
       </div>
@@ -121,26 +135,32 @@ async function convert() {
         <textarea
           v-model="content"
           :placeholder="inputPlaceholder"
+          rows="12"
           class="content-area"
           :disabled="loading"
+          :maxlength="MAX_CONTENT_CHARS"
         />
+        <div class="count-row">
+          <span class="char-count">{{ charCount.toLocaleString() }} / {{ MAX_CONTENT_CHARS.toLocaleString() }}</span>
+          <button type="button" class="clear-btn" :disabled="!content || loading" @click="content = ''">
+            清空
+          </button>
+        </div>
       </div>
       <div class="action-row">
-        <button type="button" class="clear-btn" :disabled="!content || loading" @click="content = ''">
-          清空
-        </button>
-        <button type="button" class="convert-btn" :disabled="loading || !content.trim()" @click="convert">
+        <button type="button" class="action-btn" :disabled="loading || !content.trim()" @click="translate">
           <span v-if="loading" class="spin">⟳</span>
-          <span>{{ loading ? "转换中…" : "转换" }}</span>
+          <span>{{ loading ? "翻译中…" : "翻译" }}</span>
         </button>
       </div>
+      <p v-if="loading" class="loading-hint">请耐心等待 1～2 分钟</p>
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
 
     <section v-if="result" class="card result-card">
       <div class="result-head">
-        <span>转换结果</span>
+        <span>{{ resultTitle }}</span>
         <button type="button" class="copy-btn" @click="copyResult">复制</button>
       </div>
       <pre class="result-body">{{ result }}</pre>
@@ -165,33 +185,6 @@ async function convert() {
   padding: 1em;
   max-width: 720px;
   margin: 0 auto;
-}
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.back-btn {
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
-  line-height: 1;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fff;
-  color: #333;
-  cursor: pointer;
-}
-.back-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
-}
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #222;
 }
 .card {
   background: #fff;
@@ -226,21 +219,21 @@ async function convert() {
   flex-wrap: wrap;
 }
 .seg-btn {
-  padding: 8px 20px;
+  padding: 8px 16px;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 14px;
   border: 2px solid #d9d9d9;
   border-radius: 6px;
   background: #fafafa;
   cursor: pointer;
 }
 .seg-btn:hover {
-  border-color: #52c41a;
-  color: #389e0d;
+  border-color: #722ed1;
+  color: #531dab;
 }
 .seg-btn.active {
-  background: #52c41a;
-  border-color: #52c41a;
+  background: #722ed1;
+  border-color: #722ed1;
   color: #fff;
 }
 .textarea-wrap {
@@ -249,15 +242,34 @@ async function convert() {
 .content-area {
   width: 100%;
   box-sizing: border-box;
-  height: calc(100vh - 420px);
-  min-height: 400px;
   border-radius: 8px;
   border: 1px solid #d9d9d9;
   padding: 10px;
   font-family: inherit;
   font-size: 14px;
-  resize: none;
-  overflow-y: auto;
+  resize: vertical;
+}
+.count-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+.char-count {
+  font-size: 13px;
+  color: #888;
+}
+.clear-btn {
+  padding: 6px 16px;
+  font-size: 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.clear-btn:hover:not(:disabled) {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
 }
 .action-row {
   margin-top: 16px;
@@ -265,27 +277,8 @@ async function convert() {
   border-top: 1px solid #f0f0f0;
   display: flex;
   justify-content: center;
-  gap: 16px;
 }
-.clear-btn {
-  padding: 8px 24px;
-  font-size: 16px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fff;
-  color: #333;
-  cursor: pointer;
-}
-.clear-btn:hover:not(:disabled) {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-}
-.clear-btn:disabled {
-  opacity: 0.5;
-  color: #bbb;
-  cursor: not-allowed;
-}
-.convert-btn {
+.action-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -297,10 +290,7 @@ async function convert() {
   color: #fff;
   cursor: pointer;
 }
-.convert-btn:hover:not(:disabled) {
-  background: #40a9ff;
-}
-.convert-btn:disabled {
+.action-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -309,8 +299,18 @@ async function convert() {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.loading-hint {
+  margin: 8px 0 0;
+  color: #8c8c8c;
+  font-size: 0.9em;
+  text-align: center;
 }
 .error {
   margin-top: 12px;
@@ -333,10 +333,6 @@ async function convert() {
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
-}
-.copy-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
 }
 .result-body {
   white-space: pre-wrap;
