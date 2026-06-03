@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+opencc-python-reimplemented
+python-dotenv
