@@ -2,7 +2,7 @@
 testA 独立练习后端入口。
 
 启动（在 testA/translate/backend 目录）：
-    uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 """
 import logging
 

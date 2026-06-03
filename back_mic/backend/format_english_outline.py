@@ -269,7 +269,7 @@ def format_english_outline_docx(docx_path: str) -> None:
 
         # 根据状态处理
         if state == "title":
-            if text.lower().startswith("scripture reading:"):
+            if text.lower().startswith("scripture reading:") or text.lower().startswith("lectura bíblica:"):
                 set_center(para)
                 para.paragraph_format.space_after = Pt(12)
                 after_scripture_reading = True
