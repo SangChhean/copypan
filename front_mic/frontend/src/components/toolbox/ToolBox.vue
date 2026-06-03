@@ -75,6 +75,7 @@ const openZh2tw = () => {
           <div class="card_title">Vichhet &amp; Chom Pei 测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/practice-translate')"><span class="card_text">纲目翻译练习</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/zh2tw-practice')"><span class="card_text">简繁互转练习</span></a-card-grid>
       </a-card>
     </div>
     <br />

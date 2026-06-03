@@ -41,6 +41,11 @@ class TraditionalToSimplifiedRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=100_000, description="台湾繁体纲目全文")
 
 
+class CheckErrorCharsRequest(BaseModel):
+    """易错字检查：传入繁体纲目全文（简繁转换结果）"""
+    content: str = Field(..., max_length=100_000, description="待检查的纲目全文")
+
+
 class ConvertAndFormatRequest(BaseModel):
     """简繁转换并格式化：传入纲目全文"""
     direction: Literal["zh_cn2tw", "zh_tw2cn"] = Field(..., description="zh_cn2tw=简体→繁体, zh_tw2cn=繁体→简体")
@@ -51,6 +56,9 @@ class ConvertAndFormatRequest(BaseModel):
 class OutlineTranslateRequest(BaseModel):
     """工具箱 - 纲目翻译：中翻英或英翻中"""
     direction: Literal["zh2en", "en2zh", "zh2ko"] = Field(..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文")
+    direction: Literal["zh2en", "en2zh", "zh2ko", "en2es"] = Field(
+        ..., description="zh2en=中文→英文, en2zh=英文→中文, zh2ko=中文→韩文, en2es=英文→西班牙语"
+    )
     content: str = Field(..., min_length=1, max_length=100_000, description="待翻译的纲目全文")
     outline_topic: Optional[str] = Field(None, max_length=200, description="纲目主题（仅中翻英时用于翻译标题）")
     output_format: Literal["docx", "pdf"] = Field("docx", description="输出格式：docx 或 pdf，默认 docx")
@@ -192,6 +200,20 @@ async def traditional_to_simplified(request: TraditionalToSimplifiedRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@_auth.post("/ai_search/check_error_chars", summary="易错字检查（简繁互转结果）")
+async def check_error_chars(request: CheckErrorCharsRequest):
+    """
+    扫描繁体文本中的易错用字及残留简体键。
+    返回命中位置与建议替换值（suggestion 为 null 时需人工处理）。
+    """
+    try:
+        hits = await asyncio.to_thread(ai_service.check_error_chars, request.content)
+        return {"hits": hits}
+    except Exception as e:
+        logger.error(f"易错字检查失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @_auth.post("/ai_search/outline_translate", summary="工具箱 - 纲目翻译（中翻英 / 英翻中）")
 async def outline_translate(request: OutlineTranslateRequest):
     """
@@ -222,6 +244,12 @@ async def outline_translate(request: OutlineTranslateRequest):
             out = await asyncio.to_thread(ai_service.translate_outline_zh2ko, request.content)
             return {
                 "result": out.get("answer_ko"),
+                "error": out.get("error"),
+            }
+        elif request.direction == "en2es":
+            out = await asyncio.to_thread(ai_service.translate_outline_en2es, request.content)
+            return {
+                "result": out.get("answer_es"),
                 "error": out.get("error"),
             }
         else:
