@@ -20,9 +20,16 @@
           <button
             v-for="c in group.candidates" :key="c"
             class="btn-candidate"
-            :class="{ selected: item.selected === c }"
+            :class="{ selected: item.selected === c && !item.manualInput }"
             @click="selectItem(item, c)"
           >{{ c }}</button>
+          <input
+            type="text"
+            class="manual-input"
+            :value="item.manualInput || ''"
+            :placeholder="group.candidates.length ? '或手动输入' : '手动输入'"
+            @input="onManualInput(item, $event.target.value)"
+          />
         </div>
       </div>
     </div>
@@ -91,6 +98,19 @@ function setAll(group) {
 function selectItem(item, candidate) {
   item.selected = candidate
   item.current = candidate
+  item.manualInput = ''
+}
+
+function onManualInput(item, value) {
+  item.manualInput = value
+  if (value.trim()) {
+    item.selected = value.trim()
+    item.current = value.trim()
+  } else {
+    // 输入框清空时，恢复到候选词选中状态或未选状态
+    item.selected = null
+    item.current = item.char
+  }
 }
 
 function confirmAll() {
@@ -156,4 +176,18 @@ function undo() {
 .btn-undo { background: #fff; color: #dc3545; border: 1px solid #dc3545; padding: 10px 28px; }
 .btn-undo:hover { background: #fff5f5; }
 .btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
+.manual-input {
+  border: 1px solid #5c4db1;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 13px;
+  width: 80px;
+  outline: none;
+  color: #212529;
+  background: #fff;
+}
+.manual-input:focus {
+  border-color: #4a3d9a;
+  box-shadow: 0 0 0 2px #ede9f8;
+}
 </style>
