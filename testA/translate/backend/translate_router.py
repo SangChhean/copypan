@@ -21,6 +21,18 @@ from gemini_response_utils import extract_translatable_text, gemini_translation_
 from gemini_translation_instruction import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
 from gemini_translation_instruction_en2zh import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
 
+# 英翻西班牙文术语表
+import json as _json
+
+_EN2ES_TERMS_PATH = Path(__file__).resolve().parent / "en2es_terms.json"
+try:
+    with open(_EN2ES_TERMS_PATH, encoding="utf-8") as _f:
+        EN2ES_TERMS: dict = _json.load(_f)
+    _EN2ES_SORTED = sorted(EN2ES_TERMS.keys(), key=len, reverse=True)
+except Exception:
+    EN2ES_TERMS = {}
+    _EN2ES_SORTED = []
+
 logger = logging.getLogger(__name__)
 
 MAX_CONTENT_CHARS = 100_000
@@ -33,7 +45,24 @@ OUTLINE_TRANSLATE_PROMPT_EN2ZH = (
     "请将文章翻译为中文，严格使用System instructions中的专用术语表进行翻译。"
     "格式要求：①读经格式为缩写，例如：罗一1；②英文序号为I.，翻译为中文壹，A.翻译为一，B.翻译为二，1.翻译为1，a.翻译为a，1)翻译为(一)，以此类推；注意，纲目层级之后只加空格，不加其他符号，如：壹 神爱世人，为世人舍了自己的独生子—约三16：；③不要缩进，直接输出。"
 )
-OUTLINE_TRANSLATE_PROMPT_EN2ES = "请将英文翻译成西班牙文"
+OUTLINE_TRANSLATE_PROMPT_EN2ES = (
+    "Translate the following English text into Spanish. "
+    "Output ONLY the Spanish translation, with no explanations, no notes, no original text, and no markdown formatting."
+)
+
+
+def _build_en2es_system_instruction() -> str:
+    if not EN2ES_TERMS:
+        return ""
+    lines = [
+        "You are a professional English-to-Spanish translator for Christian ministry materials.",
+        "CRITICAL RULE: Output ONLY the Spanish translation. No explanations, no notes, no original English text, no Chinese text, no markdown, no bullet points. Just the translated Spanish text.",
+    ]
+    lines.append("Strictly use the following terminology glossary:")
+    lines.append("")
+    for en, es in EN2ES_TERMS.items():
+        lines.append(f"  {en} → {es}")
+    return "\n".join(lines)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
@@ -163,11 +192,8 @@ def _en2zh_config():
 
 
 def _en2es_config():
-    if gemini_translation_generate_config:
-        return gemini_translation_generate_config(None)
-    from google.genai import types
-
-    return types.GenerateContentConfig()
+    si = _build_en2es_system_instruction()
+    return gemini_translation_generate_config(si if si else None)
 
 
 def _extract_text(response, log_prefix: str) -> Optional[str]:
@@ -287,13 +313,27 @@ def _translate_en2es(content: str) -> dict:
         return {"result": None, "error": f"英文纲目过长（最多 {MAX_CONTENT_CHARS} 字）"}
 
     contents_en2es = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_EN2ES
-    return _call_gemini_translate(
+    raw = _call_gemini_translate(
         contents=contents_en2es,
         config_factory=_en2es_config,
         log_label="testA-Gemini英翻西",
         system_instruction_ok=True,
         missing_instruction_error="",
     )
+    # 清洗：提取最长的连续西班牙文段落，去除多余说明
+    if raw.get("result"):
+        import re
+
+        text = raw["result"]
+        # 去除 markdown 加粗
+        text = re.sub(r"\*+", "", text)
+        # 只保留含拉丁字母的行，过滤中文行
+        lines = text.splitlines()
+        es_lines = [l.strip() for l in lines if l.strip() and not re.search(r"[\u4e00-\u9fff]", l)]
+        # 去除以 * - • 开头的注释行
+        es_lines = [l for l in es_lines if not re.match(r"^[\*\-•]", l)]
+        raw["result"] = "\n".join(es_lines).strip()
+    return raw
 
 
 @router.post("/zh2en", summary="纲目翻译练习 - 中文→英文")
