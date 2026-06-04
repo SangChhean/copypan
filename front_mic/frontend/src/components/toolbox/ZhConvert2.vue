@@ -8,8 +8,10 @@ const direction = ref("zh_cn2tw"); // zh_cn2tw | zh_tw2cn
 const content = ref("");
 const loading = ref(false);
 const error = ref(null);
-const result = ref(null);
+const resultText = ref(null);
 const copyHint = ref("");
+const errors = ref([]);
+const correctedWords = ref({});
 
 const isCn2Tw = computed(() => direction.value === "zh_cn2tw");
 const charCount = computed(() => (content.value || "").length);
@@ -23,9 +25,17 @@ const apiUrl = computed(() =>
     : `${apiBase}/api/testa/tw_convert`
 );
 
+const highlightMarkers = (sentence) => {
+  return sentence
+    .replace(/【【/g, '<span class="error-highlight">')
+    .replace(/】】/g, "</span>");
+};
+
 function clearInput() {
   content.value = "";
   error.value = null;
+  errors.value = [];
+  correctedWords.value = {};
 }
 
 function goBack() {
@@ -33,8 +43,8 @@ function goBack() {
 }
 
 function copyResult() {
-  if (!result.value) return;
-  navigator.clipboard.writeText(result.value).then(() => {
+  if (!resultText.value) return;
+  navigator.clipboard.writeText(resultText.value).then(() => {
     copyHint.value = "已复制";
     setTimeout(() => {
       copyHint.value = "";
@@ -42,22 +52,38 @@ function copyResult() {
   });
 }
 
+const applyCorrections = () => {
+  let text = resultText.value;
+  errors.value.forEach((item, idx) => {
+    const original = item.word;
+    const corrected = correctedWords.value[idx];
+    if (corrected && corrected !== original) {
+      text = text.split(original).join(corrected);
+      errors.value[idx] = { ...item, word: corrected };
+      correctedWords.value[idx] = corrected;
+    }
+  });
+  resultText.value = text;
+};
+
 async function convert() {
   const text = (content.value || "").trim();
   if (!text) {
     error.value = isCn2Tw.value ? "请先粘贴简体内容" : "请先粘贴繁体内容";
-    result.value = null;
+    resultText.value = null;
     return;
   }
   if (text.length > MAX_CONTENT_CHARS) {
     error.value = `正文过长：最多 ${MAX_CONTENT_CHARS.toLocaleString()} 字`;
-    result.value = null;
+    resultText.value = null;
     return;
   }
 
   loading.value = true;
   error.value = null;
-  result.value = null;
+  resultText.value = null;
+  errors.value = [];
+  correctedWords.value = {};
 
   try {
     const res = await fetch(apiUrl.value, {
@@ -81,8 +107,14 @@ async function convert() {
       error.value = data.error;
       return;
     }
-    if (data.result) {
-      result.value = data.result;
+    if (data.result !== undefined && data.result !== null && data.result !== "") {
+      resultText.value = data.result;
+      errors.value = data.errors || [];
+      const init = {};
+      errors.value.forEach((item, idx) => {
+        init[idx] = item.word;
+      });
+      correctedWords.value = init;
     } else {
       error.value = "转换失败，请稍后重试";
     }
@@ -177,13 +209,43 @@ async function convert() {
 
       <div v-if="error" class="error">{{ error }}</div>
 
-      <div v-if="result" class="card result-card">
+      <div v-if="resultText" class="card result-card">
         <div class="result-head">
           <span class="result-title">{{ resultTitle }}</span>
           <span v-if="copyHint" class="copy-hint">{{ copyHint }}</span>
           <button type="button" class="copy-btn" @click="copyResult">复制</button>
         </div>
-        <pre class="result-body">{{ result }}</pre>
+        <pre class="result-body">{{ resultText }}</pre>
+
+        <!-- 易错字报告区 -->
+        <div v-if="errors.length > 0" class="error-report">
+          <div class="error-report-title">
+            <span>易错字报告</span>
+            <span class="error-count">{{ errors.length }} 处</span>
+          </div>
+          <div
+            v-for="(item, idx) in errors"
+            :key="idx"
+            class="error-item"
+          >
+            <div class="error-sentence" v-html="highlightMarkers(item.sentence)"></div>
+            <div class="error-fix-row">
+              <span class="error-label">修正为：</span>
+              <a-input
+                v-model:value="correctedWords[idx]"
+                size="small"
+                class="error-input"
+              />
+            </div>
+          </div>
+          <a-button
+            type="primary"
+            class="apply-btn"
+            @click="applyCorrections"
+          >
+            应用全部修正
+          </a-button>
+        </div>
       </div>
     </div>
   </div>
@@ -461,5 +523,84 @@ async function convert() {
   line-height: 1.6;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.error-report {
+  margin-top: 16px;
+  border: 1px solid #faad14;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fffbe6;
+}
+
+.error-report-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d48806;
+}
+
+.error-count {
+  background: #faad14;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.error-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ffe58f;
+}
+
+.error-item:last-of-type {
+  border-bottom: none;
+}
+
+.error-sentence {
+  font-size: 13px;
+  color: #595959;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.error-sentence :deep(.error-highlight) {
+  background: #fff1b8;
+  color: #d4380d;
+  font-weight: 600;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.error-fix-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+
+.error-input {
+  width: 160px;
+}
+
+.apply-btn {
+  margin-top: 12px;
+  width: 100%;
+  background: #faad14;
+  border-color: #faad14;
+}
+
+.apply-btn:hover {
+  background: #ffc53d !important;
+  border-color: #ffc53d !important;
 }
 </style>

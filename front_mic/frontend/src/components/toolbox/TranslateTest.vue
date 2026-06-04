@@ -1,6 +1,6 @@
 <!-- 练习组件：连接 testA 独立后端 http://localhost:8001 -->
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import ToolsHeader from "./ToolsHeader.vue";
 
 const apiBase = "";
@@ -12,7 +12,20 @@ const error = ref(null);
 const result = ref(null);
 const toast = ref("");
 
+const simplifiedChecked = ref(true);
+const traditionalChecked = ref(false);
+
+const resultTraditional = ref(null);
+const errorsTraditional = ref([]);
+const correctedWordsTraditional = ref({});
+
+watch(traditionalChecked, (val) => {
+  if (val) simplifiedChecked.value = true;
+});
+
+const isEn2Zh = computed(() => direction.value === "en2zh");
 const isZh2En = computed(() => direction.value === "zh2en");
+
 const inputPlaceholder = computed(() => {
   if (direction.value === "zh2en") return "请粘贴中文纲目全文…";
   return "请粘贴英文纲目全文…";
@@ -31,6 +44,12 @@ const resultTitle = computed(() => {
   return "中文纲目";
 });
 
+watch(direction, () => {
+  resultTraditional.value = null;
+  errorsTraditional.value = [];
+  correctedWordsTraditional.value = {};
+});
+
 function showToast(msg) {
   toast.value = msg;
   setTimeout(() => {
@@ -38,11 +57,31 @@ function showToast(msg) {
   }, 2500);
 }
 
-function copyResult() {
-  if (!result.value) return;
-  navigator.clipboard.writeText(result.value).then(() => {
+function copyResult(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
     showToast("已复制到剪贴板");
   });
+}
+
+function highlightMarkers(sentence) {
+  return sentence
+    .replace(/【【/g, '<span class="error-highlight">')
+    .replace(/】】/g, "</span>");
+}
+
+function applyCorrections() {
+  let text = resultTraditional.value;
+  errorsTraditional.value.forEach((item, idx) => {
+    const original = item.word;
+    const corrected = correctedWordsTraditional.value[idx];
+    if (corrected && corrected !== original) {
+      text = text.split(original).join(corrected);
+      errorsTraditional.value[idx] = { ...item, word: corrected };
+      correctedWordsTraditional.value[idx] = corrected;
+    }
+  });
+  resultTraditional.value = text;
 }
 
 async function translate() {
@@ -57,9 +96,14 @@ async function translate() {
     result.value = null;
     return;
   }
+
   loading.value = true;
   error.value = null;
   result.value = null;
+  resultTraditional.value = null;
+  errorsTraditional.value = [];
+  correctedWordsTraditional.value = {};
+
   try {
     const res = await fetch(translateEndpoint.value, {
       method: "POST",
@@ -80,12 +124,31 @@ async function translate() {
       error.value = data.error;
       return;
     }
-    if (data.result) {
-      result.value = data.result;
-      showToast("翻译完成！");
-    } else {
+    if (!data.result) {
       error.value = "翻译失败，请稍后重试";
+      return;
     }
+    result.value = data.result;
+
+    if (direction.value === "en2zh" && traditionalChecked.value) {
+      const res2 = await fetch(`${apiBase}/api/testa/zh_convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: data.result }),
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        resultTraditional.value = data2.result || "";
+        errorsTraditional.value = data2.errors || [];
+        const init = {};
+        (data2.errors || []).forEach((item, idx) => {
+          init[idx] = item.word;
+        });
+        correctedWordsTraditional.value = init;
+      }
+    }
+
+    showToast("翻译完成！");
   } catch (err) {
     error.value =
       (err && err.message) ||
@@ -136,6 +199,22 @@ async function translate() {
           </button>
         </div>
       </div>
+
+      <div v-if="isEn2Zh" class="output-options">
+        <label class="option-label" :class="{ locked: traditionalChecked }">
+          <input
+            type="checkbox"
+            v-model="simplifiedChecked"
+            :disabled="traditionalChecked"
+          />
+          中文简体
+        </label>
+        <label class="option-label">
+          <input v-model="traditionalChecked" type="checkbox" />
+          中文繁体
+        </label>
+      </div>
+
       <hr class="divider" />
       <div class="textarea-wrap">
         <textarea
@@ -162,15 +241,56 @@ async function translate() {
       <p v-if="loading" class="loading-hint">请耐心等待 1～2 分钟</p>
     </section>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <div v-if="error" class="error">{{ error }}</div>
 
-    <section v-if="result" class="card result-card">
+    <div v-if="result && !isEn2Zh" class="card result-wrap">
       <div class="result-head">
-        <span>{{ resultTitle }}</span>
-        <button type="button" class="copy-btn" @click="copyResult">复制</button>
+        <span class="result-title">{{ resultTitle }}</span>
+        <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
       </div>
       <pre class="result-body">{{ result }}</pre>
-    </section>
+    </div>
+
+    <div v-if="result && isEn2Zh && simplifiedChecked" class="card result-wrap">
+      <div class="result-head">
+        <span class="result-title">中文简体</span>
+        <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
+      </div>
+      <pre class="result-body">{{ result }}</pre>
+    </div>
+
+    <div v-if="resultTraditional && isEn2Zh && traditionalChecked" class="card result-wrap">
+      <div class="result-head">
+        <span class="result-title">中文繁体</span>
+        <button type="button" class="copy-btn" @click="copyResult(resultTraditional)">复制</button>
+      </div>
+      <pre class="result-body">{{ resultTraditional }}</pre>
+
+      <div v-if="errorsTraditional.length > 0" class="error-report">
+        <div class="error-report-title">
+          <span>易错字报告</span>
+          <span class="error-count">{{ errorsTraditional.length }} 处</span>
+        </div>
+        <div
+          v-for="(item, idx) in errorsTraditional"
+          :key="idx"
+          class="error-item"
+        >
+          <div class="error-sentence" v-html="highlightMarkers(item.sentence)"></div>
+          <div class="error-fix-row">
+            <span class="error-label">修正为：</span>
+            <a-input
+              v-model:value="correctedWordsTraditional[idx]"
+              size="small"
+              class="error-input"
+            />
+          </div>
+        </div>
+        <a-button type="primary" class="apply-btn" @click="applyCorrections">
+          应用全部修正
+        </a-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -242,6 +362,33 @@ async function translate() {
   border-color: #52c41a;
   color: #fff;
 }
+.output-options {
+  display: flex;
+  gap: 20px;
+  padding: 10px 0 4px;
+}
+.option-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+.option-label.locked {
+  color: #bbb;
+  cursor: not-allowed;
+}
+.option-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #52c41a;
+}
+.option-label.locked input[type="checkbox"] {
+  cursor: not-allowed;
+}
 .textarea-wrap {
   margin-top: 8px;
 }
@@ -305,8 +452,12 @@ async function translate() {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .loading-hint {
   margin: 8px 0 0;
@@ -318,7 +469,7 @@ async function translate() {
   margin-top: 12px;
   color: #cf1322;
 }
-.result-card {
+.result-wrap {
   margin-top: 20px;
 }
 .result-head {
@@ -327,6 +478,9 @@ async function translate() {
   justify-content: space-between;
   margin-bottom: 12px;
   font-weight: 600;
+}
+.result-title {
+  color: #333;
 }
 .copy-btn {
   padding: 4px 10px;
@@ -344,5 +498,72 @@ async function translate() {
   line-height: 1.6;
   max-height: 60vh;
   overflow-y: auto;
+}
+.error-report {
+  margin-top: 16px;
+  border: 1px solid #faad14;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fffbe6;
+}
+.error-report-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d48806;
+}
+.error-count {
+  background: #faad14;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.error-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ffe58f;
+}
+.error-item:last-of-type {
+  border-bottom: none;
+}
+.error-sentence {
+  font-size: 13px;
+  color: #595959;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+:deep(.error-highlight) {
+  background: #fff1b8;
+  color: #d4380d;
+  font-weight: 600;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.error-fix-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.error-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+.error-input {
+  width: 160px;
+}
+.apply-btn {
+  margin-top: 12px;
+  width: 100%;
+  background: #faad14;
+  border-color: #faad14;
+}
+.apply-btn:hover {
+  background: #ffc53d !important;
+  border-color: #ffc53d !important;
 }
 </style>
