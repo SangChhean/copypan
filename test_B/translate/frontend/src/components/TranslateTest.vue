@@ -3,7 +3,7 @@
 import { ref, computed } from "vue";
 import PageHeader from "./PageHeader.vue";
 
-const apiBase = "";
+const apiBase = "http://localhost:8003";
 const MAX_CONTENT_CHARS = 100_000;
 const direction = ref("zh2en");
 const content = ref("");
@@ -13,13 +13,14 @@ const result = ref(null);
 const toast = ref("");
 
 const inputPlaceholder = computed(() => {
-  if (direction.value === "en2zh") return "请粘贴英文纲目全文…";
+  if (direction.value === "en2zh" || direction.value === "en2es") return "请粘贴英文纲目全文…";
   return "请粘贴中文纲目全文…";
 });
 
 const resultTitle = computed(() => {
   if (direction.value === "zh2en") return "英文纲目";
   if (direction.value === "zh2ko") return "韩文纲目";
+  if (direction.value === "en2es") return "西班牙文纲目";
   return "中文纲目";
 });
 
@@ -128,6 +129,14 @@ async function translate() {
           >
             中文 → 韩文
           </button>
+          <button
+            type="button"
+            class="seg-btn"
+            :class="{ active: direction === 'en2es' }"
+            @click="direction = 'en2es'"
+          >
+            英文 → 西班牙文
+          </button>
         </div>
       </div>
       <hr class="divider" />
@@ -228,12 +237,12 @@ async function translate() {
   cursor: pointer;
 }
 .seg-btn:hover {
-  border-color: #722ed1;
-  color: #531dab;
+  border-color: #52c41a;
+  color: #389e0d;
 }
 .seg-btn.active {
-  background: #722ed1;
-  border-color: #722ed1;
+  background: #52c41a;
+  border-color: #52c41a;
   color: #fff;
 }
 .textarea-wrap {

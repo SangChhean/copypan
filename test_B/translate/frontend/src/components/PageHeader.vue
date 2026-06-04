@@ -13,7 +13,6 @@ const goTools = () => {
     <button type="button" class="back-btn" aria-label="返回" @click="goTools">←</button>
     <div class="title-wrap">
       <h1>{{ title }}</h1>
-      <p class="sub">test_B 练习 · 临时测试</p>
     </div>
   </header>
 </template>
@@ -24,24 +23,25 @@ const goTools = () => {
   align-items: center;
   gap: 12px;
   background: #001529;
-  color: #fff;
-  padding: 16px 20px;
+  color: #55bbff;
+  padding: 10px 20px;
+  margin-bottom: 30px;
 }
 .back-btn {
   width: 36px;
   height: 36px;
   font-size: 20px;
   line-height: 1;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(85, 187, 255, 0.4);
   border-radius: 6px;
   background: transparent;
-  color: #fff;
+  color: #55bbff;
   cursor: pointer;
   flex-shrink: 0;
 }
 .back-btn:hover {
-  border-color: #55bbff;
-  color: #55bbff;
+  border-color: #1677ff;
+  color: #1677ff;
 }
 .title-wrap {
   flex: 1;
@@ -51,11 +51,7 @@ const goTools = () => {
 .page-header h1 {
   margin: 0;
   font-size: 1.25rem;
-  font-weight: 600;
-}
-.sub {
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.65);
+  font-weight: bold;
+  color: #55bbff;
 }
 </style>
