@@ -1,6 +1,10 @@
 <script setup>
 import { ref, computed } from "vue";
 
+// 暴露给模板，使内联的 window.location.href 在 Vue 模板作用域内可用
+const window = globalThis;
+
+const apiBase = "http://localhost:8005";
 const apiBase = "";
 
 const goTools = () => {
@@ -88,6 +92,7 @@ async function convert() {
   <div v-if="toast" class="toast">{{ toast }}</div>
   <div class="box">
     <header class="page-header">
+      <button type="button" class="back-btn" aria-label="返回" @click="window.location.href = 'http://localhost/#/tools'">←</button>
       <button type="button" class="back-btn" aria-label="返回" @click="goTools">←</button>
       <h1 class="page-title">简繁互转测试</h1>
     </header>

@@ -17,6 +17,12 @@
       >
         英文 → 中文
       </button>
+      <button
+        :class="['toggle-btn', direction === 'en2es' ? 'active' : '']"
+        @click="direction = 'en2es'"
+      >
+        英文 → 西语
+      </button>
     </div>
 
     <!-- 输入区：多行文本框 -->
