@@ -6,7 +6,9 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'src'),
+      '@testd': resolve(__dirname, '../../testD/frontend/src'),
+      '@main': resolve(__dirname, 'src'),
     }
   },
   // 默认即带 content hash；显式写出便于确认 index.html 引用 [name]-[hash].js
@@ -21,6 +23,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    fs: {
+      allow: [resolve(__dirname, '../..')],
+    },
     proxy: {
       '/api/ai_search': {
         target: 'http://localhost:8000',

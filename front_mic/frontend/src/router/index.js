@@ -54,6 +54,12 @@ const routes = [
     component: () => import("../components/toolbox/OutlineTranslate.vue"),
   },
   {
+    path: "/enhanced-translate",
+    component: () =>
+      import("@testd/components/EnhancedTranslate.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/outline-translate-test",
     name: "OutlineTranslateTest",
     component: () => import("../components/toolbox/OutlineTranslateTest.vue"),
