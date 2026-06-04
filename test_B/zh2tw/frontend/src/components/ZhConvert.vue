@@ -4,7 +4,6 @@ import { ref, computed } from "vue";
 // 暴露给模板，使内联的 window.location.href 在 Vue 模板作用域内可用
 const window = globalThis;
 
-const apiBase = "http://localhost:8005";
 const apiBase = "";
 
 const goTools = () => {
