@@ -34,7 +34,6 @@ OUTLINE_TRANSLATE_PROMPT_ZH2KO = (
     "2. 严格保留原纲目的层级结构、缩进格式与编号（壹贰叁等保留原字或译为일이삼）；"
     "3. 只输出翻译后的韩文纲目，不添加任何说明或注释。"
 )
-
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-flash")
@@ -56,7 +55,7 @@ router = APIRouter(prefix="/api/test_b/translate")
 
 class TranslateRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=MAX_CONTENT_CHARS)
-    direction: str = Field(..., description="zh2en | en2zh | zh2ko")
+    direction: str = Field(..., description="zh2en | en2zh | zh2ko | en2es")
 
 def _is_model_not_found(err: str) -> bool:
     return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
@@ -135,6 +134,7 @@ def _call_gemini(contents: str, system_instruction: str, log_label: str) -> dict
 
 def _do_translate(content: str, direction: str) -> dict:
     from translation_instruction_zh2ko import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_ZH2KO
+    from translation_instruction_en2es import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
 
     try:
         import sys
@@ -161,6 +161,9 @@ def _do_translate(content: str, direction: str) -> dict:
     elif direction == "zh2ko":
         contents = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2KO
         return _call_gemini(contents, GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_ZH2KO, "test_B-中翻韩")
+    elif direction == "en2es":
+        contents = outline + "\n\n" + "请将以上英文纲目翻译为西班牙文，严格使用System instructions中的专用术语表，保留原编号结构，只输出翻译结果。"
+        return _call_gemini(contents, GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES, "test_B-英翻西")
     else:
         return {"result": None, "error": f"不支持的翻译方向：{direction}"}
 

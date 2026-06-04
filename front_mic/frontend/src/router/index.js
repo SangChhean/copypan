@@ -68,6 +68,8 @@ const routes = [
     name: "ZhConvertTest",
     component: () => import("../components/toolbox/ZhConvertTest.vue"),
     meta: { requiresAuth: true },
+  },
+  {
     path: "/zh2tw-vannak",
     component: () => import("../components/toolbox/ZhConvert2.vue"),
   },
@@ -114,6 +116,14 @@ const routes = [
   {
     path: '/zh2tw-practice',
     component: () => import('../../../../testC/zh2tw/frontend/src/components/ZhConvert.vue')
+  },
+  {
+    path: '/testb-translate',
+    component: () => import('../../../../test_B/translate/frontend/src/components/TranslateTest.vue')
+  },
+  {
+    path: '/testb-zh2tw',
+    component: () => import('../../../../test_B/zh2tw/frontend/src/components/ZhConvert.vue')
   },
 ];
 

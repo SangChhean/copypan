@@ -5,6 +5,11 @@ import { ref, computed } from "vue";
 const window = globalThis;
 
 const apiBase = "http://localhost:8005";
+const apiBase = "";
+
+const goTools = () => {
+  window.location.hash = "/tools";
+};
 const direction = ref("s2t");
 const content = ref("");
 const loading = ref(false);
@@ -88,6 +93,7 @@ async function convert() {
   <div class="box">
     <header class="page-header">
       <button type="button" class="back-btn" aria-label="返回" @click="window.location.href = 'http://localhost/#/tools'">←</button>
+      <button type="button" class="back-btn" aria-label="返回" @click="goTools">←</button>
       <h1 class="page-title">简繁互转测试</h1>
     </header>
 

@@ -2,6 +2,10 @@
 test_B/zh2tw 独立后端入口。
 启动（在 test_B/zh2tw/backend 目录）：
     uvicorn main:app --host 0.0.0.0 --port 8005 --reload
+
+前端 UI（在 test_B/zh2tw/frontend 目录）：
+    npm install && npm run dev
+    浏览器打开 http://localhost:8008
 """
 import logging
 from dotenv import load_dotenv

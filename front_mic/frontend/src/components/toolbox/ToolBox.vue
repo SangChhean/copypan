@@ -96,10 +96,11 @@ const openZh2tw = () => {
         <template #title>
           <div class="card_title">Piseth &amp; Sopheap 测试</div>
         </template>
-        <a-card-grid class="card c2" @click="go('/outline-translate-test')">
+        <a-card-grid class="card c2" @click="go('/testb-translate')">
           <span class="card_text">纲目翻译测试</span>
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/zh-convert-test')">
+        <a-card-grid class="card c2" @click="go('/testb-zh2tw')">
           <span class="card_text">简繁互转测试</span>
         </a-card-grid>
       </a-card>
