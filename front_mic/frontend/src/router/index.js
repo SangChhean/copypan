@@ -84,6 +84,11 @@ const routes = [
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
   {
+    path: "/article-polish",
+    component: () => import("../components/toolbox/ArticlePolish.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/rough-outline",
     component: () => import("../components/toolbox/RoughOutline.vue"),
   },

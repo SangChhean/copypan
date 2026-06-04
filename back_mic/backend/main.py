@@ -1,5 +1,6 @@
 from typing import Annotated, List
 import json
+import logging
 from fastapi import (
     FastAPI,
     Depends,
@@ -30,6 +31,7 @@ from user.users import user_opt
 from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
 from ai_search import ai_router
+from ai_search.polish_router import router as polish_router
 from roundtable import roundtable_router
 from kg_rag.kg_rag_router import router as kg_rag_router, feast_router
 from ai_search.monitoring import get_monitoring
@@ -39,6 +41,7 @@ import sys
 from pathlib import Path as pt
 from es_config import es
 
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -262,6 +265,34 @@ def getvers_format_download_zh(
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
+@api_router.post("/kg_rag/bird_view/format_download", dependencies=[Depends(test_token)])
+def bird_view_format_download(
+    contents: str = Form(),
+    filename: str = Form(default="鸟瞰纲目"),
+    keyword: str = Form(default=""),
+    type: str = Form(default="feast"),
+):
+    """鸟瞰纲目刷格式下载。"""
+    try:
+        import base64
+        from bird_view_format import format_bird_view_docx
+        contents = contents.replace("\r\n", "\n").replace("\r", "\n")
+        docx_bytes = format_bird_view_docx(
+            outline_text=contents,
+            keyword=keyword.strip(),
+            bird_type=type,
+        )
+        safe_name = filename.strip() or "鸟瞰纲目"
+        out_name = safe_name if safe_name.endswith(".docx") else f"{safe_name}.docx"
+        return {
+            "docx_base64": base64.b64encode(docx_bytes).decode("utf-8"),
+            "filename": out_name,
+        }
+    except Exception as e:
+        logger.error(f"鸟瞰纲目格式下载失败: {e}", exc_info=True)
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
 @api_router.post("/datalist")
 async def datalist_fun(r: Request, index: str = Form(), opt: str = Form()):
     session = r.cookies.get("session")
@@ -403,6 +434,8 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 
 # AI 搜索路由（Claude 问答 / RAG）
 app.include_router(ai_router)
+# 文章润色
+app.include_router(polish_router)
 # AI 圆桌路由
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）

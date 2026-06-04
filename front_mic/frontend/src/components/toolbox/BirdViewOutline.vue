@@ -64,6 +64,11 @@
               size="small"
               @click="copyText(results.ministry.outline)"
             >复制</a-button>
+            <a-button
+              v-if="results.ministry?.outline"
+              size="small"
+              @click="downloadFormat('ministry')"
+            >刷格式下载</a-button>
           </template>
 
           <!-- 骨架 -->
@@ -109,6 +114,11 @@
               size="small"
               @click="copyText(results.feast.outline)"
             >复制</a-button>
+            <a-button
+              v-if="results.feast?.outline"
+              size="small"
+              @click="downloadFormat('feast')"
+            >刷格式下载</a-button>
           </template>
 
           <div v-if="results.feast?.skeleton_text" class="skeleton-block">
@@ -243,6 +253,46 @@ function runAll() {
 
 function copyText(text) {
   navigator.clipboard.writeText(text).then(() => message.success("已复制"))
+}
+
+async function downloadFormat(birdType) {
+  const item = results[birdType];
+  if (!item?.outline) return;
+  const token = localStorage.getItem("token") || "";
+  try {
+    const params = new URLSearchParams();
+    const typeLabel = birdType === "ministry" ? "3a 职事信息的鸟瞰" : "3b 节期纲目的鸟瞰";
+    params.append("contents", item.outline);
+    params.append("filename", `${keyword.value.trim()}【${typeLabel}】`);
+    params.append("keyword", keyword.value.trim());
+    params.append("type", birdType);
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/bird_view/format_download`,
+      params,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        timeout: 60000,
+      }
+    );
+    const { docx_base64, filename } = res.data;
+    const binary = atob(docx_base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    message.error("下载失败：" + (err.response?.data?.detail || err.message));
+  }
 }
 </script>
 
