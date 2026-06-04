@@ -32,6 +32,14 @@ export default defineConfig({
         changeOrigin: true
         // No rewrite - backend expects /api/ai_search
       },
+      '/api/testa/generate_outline': {
+        target: 'http://localhost:8007',
+        changeOrigin: true,
+      },
+      '/api/testa': {
+        target: 'http://localhost:8004',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
