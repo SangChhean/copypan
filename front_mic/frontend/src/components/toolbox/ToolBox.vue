@@ -104,6 +104,18 @@ const openZh2tw = () => {
         </a-card-grid>
       </a-card>
     </div>
+    <br />
+    <br />
+    <div class="cards">
+      <a-card>
+        <template #title>
+          <div class="card_title">Sotchea 测试</div>
+        </template>
+        <a-card-grid class="card c2" @click="go('/enhanced-translate')">
+          <span class="card_text">增强式翻译</span>
+        </a-card-grid>
+      </a-card>
+    </div>
   </div>
 </template>
 
