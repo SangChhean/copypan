@@ -136,6 +136,10 @@ const routes = [
     path: '/testb-zh2tw',
     component: () => import('../../../../test_B/zh2tw/frontend/src/components/ZhConvert.vue')
   },
+  {
+    path: '/panai2-test',
+    component: () => import('../components/toolbox/PanAI2Test.vue')
+  },
 ];
 
 const router = createRouter({
