@@ -124,10 +124,6 @@ const routes = [
     component: () => import('../../../../testC/zh2tw/frontend/src/components/ZhConvert.vue')
   },
   {
-    path: '/testb-translate',
-    component: () => import('../../../../test_B/translate/frontend/src/components/TranslateTest.vue')
-  },
-  {
     path: '/testb-zh2tw',
     component: () => import('../../../../test_B/zh2tw/frontend/src/components/ZhConvert.vue')
   },
