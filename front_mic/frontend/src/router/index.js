@@ -80,6 +80,10 @@ const routes = [
     component: () => import("../components/toolbox/ZhConvert2.vue"),
   },
   {
+    path: "/generate-outline-vannak",
+    component: () => import("@/components/toolbox/GenerateOutline.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },

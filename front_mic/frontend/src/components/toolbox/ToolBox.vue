@@ -87,6 +87,9 @@ const openZh2tw = () => {
         </template>
         <a-card-grid class="card c2" @click="go('/test-translate-vannak')"><span class="card_text">翻译工具</span></a-card-grid>
         <a-card-grid class="card c2" @click="openZh2tw()"><span class="card_text">简繁互转</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/generate-outline-vannak')">
+          <span class="card_text">PanAI 纲目生成</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
