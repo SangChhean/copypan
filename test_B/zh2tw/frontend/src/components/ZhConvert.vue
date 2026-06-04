@@ -1,20 +1,19 @@
 <script setup>
 import { ref, computed } from "vue";
-
-// 暴露给模板，使内联的 window.location.href 在 Vue 模板作用域内可用
 const window = globalThis;
-
 const apiBase = "";
-
 const goTools = () => {
   window.location.hash = "/tools";
 };
+
 const direction = ref("s2t");
 const content = ref("");
 const loading = ref(false);
+const checking = ref(false);
 const error = ref(null);
 const result = ref(null);
 const toast = ref("");
+const hits = ref([]); // 易错字命中列表
 
 const isS2t = computed(() => direction.value === "s2t");
 const inputPlaceholder = computed(() =>
@@ -35,16 +34,82 @@ function copyResult() {
   });
 }
 
+// 全部接受
+function acceptAll() {
+  if (!result.value) return;
+  let text = result.value;
+  let count = 0;
+  // 按词长降序替换，避免短词截断长词
+  const toAccept = [...hits.value]
+    .filter(h => h.suggestion && !h.accepted)
+    .sort((a, b) => b.word.length - a.word.length);
+  for (const hit of toAccept) {
+    if (text.includes(hit.word)) {
+      text = text.replaceAll(hit.word, hit.suggestion);
+      hit.accepted = true;
+      count++;
+    }
+  }
+  result.value = text;
+  showToast(`已接受 ${count} 条建议`);
+}
+
+// 取命中词的上下文（前后10个字）
+function getContext(hit) {
+  if (!result.value) return { before: "", word: "", after: "" };
+  const pos = hit.positions[0];
+  const start = Math.max(0, pos - 5);
+  const end = Math.min(result.value.length, pos + hit.word.length + 5);
+  const before = result.value.slice(start, pos);
+  const word = result.value.slice(pos, pos + hit.word.length);
+  const after = result.value.slice(pos + hit.word.length, end);
+  return { before, word, after };
+}
+
+// 接受手动输入
+function acceptManual(hit) {
+  const val = (hit.manualInput || "").trim();
+  if (!val || !result.value) return;
+  result.value = result.value.replaceAll(hit.word, val);
+  hit.accepted = true;
+  showToast(`已替换：${hit.word} → ${val}`);
+}
+
+// 扫描易错字
+async function checkErrors() {
+  if (!result.value) return;
+  checking.value = true;
+  hits.value = [];
+  try {
+    const res = await fetch(`${apiBase}/api/testb/check_errors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: result.value }),
+    });
+    const data = await res.json();
+    hits.value = (data.hits || []).map(h => ({ ...h, accepted: false, manualInput: h.suggestion || "" }));
+    if (hits.value.length === 0) {
+      showToast("未发现易错字");
+    }
+  } catch (e) {
+    showToast("易错字检查失败，请稍后重试");
+  } finally {
+    checking.value = false;
+  }
+}
+
 async function convert() {
   const text = (content.value || "").trim();
   if (!text) {
     error.value = "请先粘贴要转换的内容";
     result.value = null;
+    hits.value = [];
     return;
   }
   loading.value = true;
   error.value = null;
   result.value = null;
+  hits.value = [];
   const endpoint = isS2t.value
     ? `${apiBase}/api/testb/zh_convert`
     : `${apiBase}/api/testb/zh_to_simplified`;
@@ -72,7 +137,11 @@ async function convert() {
     }
     if (answer) {
       result.value = answer;
-      showToast("转换完成！");
+      showToast("转换完成，正在检查易错字…");
+      // 简转繁后自动扫描
+      if (isS2t.value) {
+        await checkErrors();
+      }
     } else {
       error.value = "转换失败，请稍后重试";
     }
@@ -91,7 +160,6 @@ async function convert() {
   <div v-if="toast" class="toast">{{ toast }}</div>
   <div class="box">
     <header class="page-header">
-      <button type="button" class="back-btn" aria-label="返回" @click="window.location.href = 'http://localhost/#/tools'">←</button>
       <button type="button" class="back-btn" aria-label="返回" @click="goTools">←</button>
       <h1 class="page-title">简繁互转测试</h1>
     </header>
@@ -145,9 +213,65 @@ async function convert() {
     <section v-if="result" class="card result-card">
       <div class="result-head">
         <span>转换结果</span>
-        <button type="button" class="copy-btn" @click="copyResult">复制</button>
+        <div class="result-head-actions">
+          <button type="button" class="copy-btn" @click="copyResult">复制</button>
+          <button type="button" class="recheck-btn" :disabled="checking" @click="checkErrors">
+            <span v-if="checking" class="spin">⟳</span>
+            {{ checking ? "检查中…" : "重新检查" }}
+          </button>
+        </div>
       </div>
-      <pre class="result-body">{{ result }}</pre>
+      <textarea v-model="result" class="result-area" />
+
+      <!-- 易错字列表 -->
+      <div v-if="hits.length > 0" class="hits-section">
+        <div class="hits-header">
+          <span class="hits-title">发现 {{ hits.length }} 处易错字</span>
+          <button type="button" class="accept-all-btn"
+            :disabled="hits.filter(h => h.suggestion && !h.accepted).length === 0"
+            @click="acceptAll">
+            全部接受
+          </button>
+        </div>
+        <div class="hits-list">
+          <div v-for="(hit, idx) in hits" :key="idx"
+            class="hit-item" :class="{ accepted: hit.accepted }">
+            <div class="hit-main">
+              <template v-if="hit.suggestion">
+                <span class="hit-context-inline" v-if="!hit.accepted">
+                  <span class="ctx-before">…{{ getContext(hit).before }}</span>
+                  <span class="ctx-word">{{ getContext(hit).word }}</span>
+                  <span class="ctx-after">{{ getContext(hit).after }}…</span>
+                </span>
+                <input v-model="hit.manualInput" class="manual-input"
+                  :disabled="hit.accepted" />
+                <button type="button" class="accept-btn"
+                  :disabled="hit.accepted || !hit.manualInput.trim()"
+                  @click="acceptManual(hit)">
+                  {{ hit.accepted ? "已接受" : "接受" }}
+                </button>
+              </template>
+              <template v-else>
+                <span class="hit-context-inline" v-if="!hit.accepted">
+                  <span class="ctx-before">…{{ getContext(hit).before }}</span>
+                  <span class="ctx-word">{{ getContext(hit).word }}</span>
+                  <span class="ctx-after">{{ getContext(hit).after }}…</span>
+                </span>
+                <input v-model="hit.manualInput" class="manual-input"
+                  :placeholder="`替换为…`" :disabled="hit.accepted" />
+                <button type="button" class="accept-btn"
+                  :disabled="hit.accepted || !hit.manualInput.trim()"
+                  @click="acceptManual(hit)">
+                  {{ hit.accepted ? "已接受" : "替换" }}
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="!checking && result" class="no-hits">
+        未发现易错字 ✓
+      </div>
     </section>
   </div>
 </template>
@@ -350,5 +474,156 @@ async function convert() {
   line-height: 1.6;
   max-height: 60vh;
   overflow-y: auto;
+}
+.result-area {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 200px;
+  max-height: 50vh;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.result-head-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.recheck-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.recheck-btn:hover:not(:disabled) {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+.hits-section {
+  margin-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+.hits-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.hits-title {
+  font-weight: 600;
+  color: #cf1322;
+  font-size: 0.95em;
+}
+.accept-all-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  border: 1px solid #52c41a;
+  border-radius: 4px;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+}
+.accept-all-btn:hover:not(:disabled) {
+  background: #52c41a;
+  color: #fff;
+}
+.accept-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.hit-item.accepted {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  opacity: 0.7;
+}
+.hit-word {
+  font-weight: 600;
+  color: #cf1322;
+  min-width: 40px;
+}
+.accept-btn {
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 13px;
+  border: 1px solid #52c41a;
+  border-radius: 4px;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+}
+.accept-btn:hover:not(:disabled) {
+  background: #52c41a;
+  color: #fff;
+}
+.accept-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hit-no-suggestion {
+  color: #8c8c8c;
+  font-size: 13px;
+}
+.no-hits {
+  margin-top: 12px;
+  color: #52c41a;
+  font-size: 0.9em;
+  text-align: center;
+}
+.hit-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hit-context-inline {
+  font-size: 13px;
+  color: #555;
+}
+.ctx-before, .ctx-after {
+  color: #888;
+}
+.ctx-word {
+  color: #cf1322;
+  font-weight: 600;
+  background: #fff1f0;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.manual-input {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 13px;
+  width: 100px;
+  outline: none;
+}
+.manual-input:focus {
+  border-color: #1890ff;
 }
 </style>

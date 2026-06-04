@@ -122,3 +122,101 @@ def zh_to_simplified(request: ZhToSimplifiedRequest):
     if result.get("error") and result.get("answer_zh_cn") is None:
         raise HTTPException(status_code=400, detail=result.get("error"))
     return result
+
+
+# ── 易错字检查 ──────────────────────────────────────────
+
+def _load_error_chars() -> list[str]:
+    p = Path(__file__).resolve().parents[1] / "error_chars.txt"
+    if not p.exists():
+        return []
+    words = [ln.strip() for ln in p.read_text(encoding="utf-8").splitlines()]
+    words = [w for w in words if w]
+    words.sort(key=len, reverse=True)
+    return words
+
+def _load_colon_dict(filename: str) -> dict[str, str]:
+    p = Path(__file__).resolve().parents[1] / filename
+    mapping: dict[str, str] = {}
+    if not p.exists():
+        return mapping
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        sep = "\uff1a" if "\uff1a" in line else "："
+        if sep not in line:
+            continue
+        src, tgt = line.split(sep, 1)
+        src, tgt = src.strip(), tgt.strip()
+        if src and tgt:
+            mapping[src] = tgt
+    return mapping
+
+def _build_suggestion_map() -> dict[str, str]:
+    result: dict[str, str] = {}
+    for simp, trad in _load_colon_dict("自定义词典.txt").items():
+        if simp != trad:
+            result[simp] = trad
+    for wrong, correct in _load_colon_dict("post_trad_rules.txt").items():
+        if wrong != correct:
+            result[wrong] = correct
+    return result
+
+def scan_error_chars(text: str) -> list[dict]:
+    error_words = _load_error_chars()
+    post_rules = _load_colon_dict("post_trad_rules.txt")
+    all_scan_words = list({*error_words, *post_rules.keys()})
+    all_scan_words.sort(key=len, reverse=True)
+    suggestion_map = _build_suggestion_map()
+    if not all_scan_words or not text:
+        return []
+    seen: set[str] = set()
+    hits: list[dict] = []
+    for word in all_scan_words:
+        if not word or word in seen:
+            continue
+        positions = [i for i in range(len(text)) if text.startswith(word, i)]
+        if not positions:
+            continue
+        seen.add(word)
+        suggestion = suggestion_map.get(word)
+        if suggestion == word:
+            suggestion = None
+        hits.append({
+            "word": word,
+            "suggestion": suggestion,
+            "positions": positions,
+        })
+    hits.sort(key=lambda h: h["positions"][0])
+
+    # 去重：若某词的每个位置都已被更长的词覆盖，则跳过
+    def _is_covered(word: str, positions: list[int], accepted: list[dict]) -> bool:
+        for pos in positions:
+            covered = any(
+                pos >= a_pos and pos + len(word) <= a_pos + len(a["word"])
+                for a in accepted
+                for a_pos in a["positions"]
+            )
+            if not covered:
+                return False
+        return True
+
+    deduped: list[dict] = []
+    for hit in hits:
+        if not _is_covered(hit["word"], hit["positions"], deduped):
+            deduped.append(hit)
+
+    return deduped
+
+
+class CheckErrorsRequest(BaseModel):
+    content: str
+
+@router.post("/check_errors")
+def check_errors(request: CheckErrorsRequest):
+    text = (request.content or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="内容为空")
+    hits = scan_error_chars(text)
+    return {"hits": hits}

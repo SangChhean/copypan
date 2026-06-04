@@ -55,7 +55,7 @@ router = APIRouter(prefix="/api/test_b/translate")
 
 class TranslateRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=MAX_CONTENT_CHARS)
-    direction: str = Field(..., description="zh2en | en2zh | zh2ko | en2es")
+    direction: str = Field(..., description="zh2en | en2zh | zh2ko | en2es | en2zhtw")
 
 def _is_model_not_found(err: str) -> bool:
     return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
@@ -164,6 +164,24 @@ def _do_translate(content: str, direction: str) -> dict:
     elif direction == "en2es":
         contents = outline + "\n\n" + "请将以上英文纲目翻译为西班牙文，严格使用System instructions中的专用术语表，保留原编号结构，只输出翻译结果。"
         return _call_gemini(contents, GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES, "test_B-英翻西")
+    elif direction == "en2zhtw":
+        # 第一步：英文→简体中文
+        zh_result = _do_translate(content, "en2zh")
+        if zh_result.get("error") or not zh_result.get("result"):
+            return {"result": None, "error": zh_result.get("error") or "英翻中失败"}
+        # 第二步：简体→繁体（复用 zh2tw 后端的 convert_to_traditional）
+        try:
+            import sys
+            zh2tw_path = str(Path(__file__).resolve().parents[2] / "zh2tw" / "backend")
+            if zh2tw_path not in sys.path:
+                sys.path.insert(0, zh2tw_path)
+            from zh_router import convert_to_traditional
+            trad_result = convert_to_traditional(zh_result["result"])
+            if trad_result.get("error") or not trad_result.get("answer_zh_tw"):
+                return {"result": None, "error": trad_result.get("error") or "简转繁失败"}
+            return {"result": trad_result["answer_zh_tw"], "error": None}
+        except Exception as e:
+            return {"result": None, "error": f"简转繁失败：{e}"}
     else:
         return {"result": None, "error": f"不支持的翻译方向：{direction}"}
 
