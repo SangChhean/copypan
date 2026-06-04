@@ -129,6 +129,10 @@ const routes = [
     component: () => import('../../../../testC/zh2tw/frontend/src/components/ZhConvert.vue')
   },
   {
+    path: '/practice-kg-rag',
+    component: () => import('../components/toolbox/KgRagPractice.vue'),
+  },
+  {
     path: '/testb-zh2tw',
     component: () => import('../../../../test_B/zh2tw/frontend/src/components/ZhConvert.vue')
   },

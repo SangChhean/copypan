@@ -77,6 +77,9 @@ const openZh2tw = () => {
         </template>
         <a-card-grid class="card c2" @click="go('/practice-translate')"><span class="card_text">纲目翻译练习</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/zh2tw-practice')"><span class="card_text">简繁互转练习</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/practice-kg-rag')">
+          <span class="card_text">AI纲目制作练习</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
