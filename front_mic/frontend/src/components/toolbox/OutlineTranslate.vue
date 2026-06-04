@@ -1,6 +1,6 @@
 <script setup>
 import ToolsHeader from "./ToolsHeader.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { toastSuccess, toastWarning, toastError } from "../utils/Dialog";
@@ -36,6 +36,13 @@ const TARGET_META = {
 
 const targetLanguages = ref([]);
 const activeTargets = ref([]);
+
+watch(targetLanguages, (newVal, oldVal) => {
+  const justCheckedTw = newVal.includes("zh_tw") && !oldVal.includes("zh_tw");
+  if (justCheckedTw && !newVal.includes("zh_cn")) {
+    targetLanguages.value = [...newVal, "zh_cn"];
+  }
+});
 
 function emptyPanelState() {
   return {
