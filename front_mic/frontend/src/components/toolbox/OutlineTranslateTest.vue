@@ -14,6 +14,67 @@ const enChecks = ref({ en2zh: false, en2zhtw: false, en2es: false });
 const content = ref("");
 const loading = ref(false);
 const results = ref([]);
+const checking = ref(false);
+
+// 易错字检查
+async function checkErrors(resultItem) {
+  if (!resultItem.text) return;
+  resultItem.checking = true;
+  resultItem.hits = [];
+  try {
+    const res = await fetch(`${apiBase}/api/testb/check_errors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: resultItem.text }),
+    });
+    const data = await res.json();
+    resultItem.hits = (data.hits || []).map(h => ({
+      ...h, accepted: false, manualInput: h.suggestion || ""
+    }));
+  } catch (e) {
+    message.error("易错字检查失败");
+  } finally {
+    resultItem.checking = false;
+  }
+}
+
+function getContext(hit, text) {
+  if (!text) return { before: "", word: "", after: "" };
+  const pos = hit.positions[0];
+  const start = Math.max(0, pos - 5);
+  const end = Math.min(text.length, pos + hit.word.length + 5);
+  return {
+    before: text.slice(start, pos),
+    word: text.slice(pos, pos + hit.word.length),
+    after: text.slice(pos + hit.word.length, end),
+  };
+}
+
+function acceptManual(hit, resultItem) {
+  const val = (hit.manualInput || "").trim();
+  if (!val || !resultItem.text) return;
+  resultItem.text = resultItem.text.replaceAll(hit.word, val);
+  hit.accepted = true;
+  message.success(`已替换：${hit.word} → ${val}`);
+}
+
+function acceptAll(resultItem) {
+  if (!resultItem.text) return;
+  let text = resultItem.text;
+  let count = 0;
+  const toAccept = [...resultItem.hits]
+    .filter(h => h.manualInput && !h.accepted)
+    .sort((a, b) => b.word.length - a.word.length);
+  for (const hit of toAccept) {
+    if (text.includes(hit.word)) {
+      text = text.replaceAll(hit.word, hit.manualInput);
+      hit.accepted = true;
+      count++;
+    }
+  }
+  resultItem.text = text;
+  message.success(`已接受 ${count} 条建议`);
+}
 
 const inputPlaceholder = computed(() => {
   if (sourceLang.value === "en") return "请粘贴英文纲目正文…";
@@ -74,14 +135,35 @@ async function translate() {
 
   try {
     const settled = await Promise.allSettled(directions.map(dir => doFetch(dir)));
+    const newResults = [];
     settled.forEach((res, i) => {
       if (res.status === "fulfilled" && res.value) {
-        results.value.push({ label: DIRECTION_LABELS[directions[i]], text: res.value });
+        newResults.push({
+          label: DIRECTION_LABELS[directions[i]],
+          text: res.value,
+          direction: directions[i],
+          hits: [],
+          checking: false,
+        });
       } else {
-        results.value.push({ label: DIRECTION_LABELS[directions[i]], text: null, error: res.reason?.message || "翻译失败" });
+        newResults.push({
+          label: DIRECTION_LABELS[directions[i]],
+          text: null,
+          direction: directions[i],
+          error: res.reason?.message || "翻译失败",
+          hits: [],
+          checking: false,
+        });
       }
     });
+    results.value = newResults;
     message.success("翻译完成！");
+    // 繁体结果自动触发易错字检查
+    for (const r of results.value) {
+      if (r.direction === "en2zhtw" && r.text) {
+        checkErrors(r);
+      }
+    }
   } catch (e) {
     message.error(e.message || "翻译失败，请稍后重试");
   } finally {
@@ -177,7 +259,46 @@ function copyResult(text) {
           </button>
         </template>
         <p v-if="r.error" class="result-error">{{ r.error }}</p>
-        <pre v-else class="result-body">{{ r.text }}</pre>
+        <template v-else>
+          <textarea v-model="r.text" class="result-area" />
+          <!-- 易错字区域（仅繁体） -->
+          <template v-if="r.direction === 'en2zhtw'">
+            <div class="hits-header" v-if="r.hits && r.hits.length > 0">
+              <span class="hits-title">发现 {{ r.hits.length }} 处易错字</span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button type="button" class="recheck-btn"
+                  :disabled="r.checking" @click="checkErrors(r)">
+                  <span v-if="r.checking" class="spin">⟳</span>
+                  {{ r.checking ? "检查中…" : "重新检查" }}
+                </button>
+                <button type="button" class="accept-all-btn"
+                  :disabled="r.hits.filter(h => h.manualInput && !h.accepted).length === 0"
+                  @click="acceptAll(r)">全部接受</button>
+              </div>
+            </div>
+            <div v-else-if="r.checking" class="loading-hint">正在检查易错字…</div>
+            <div v-else-if="r.hits && r.hits.length === 0 && !r.checking && r.text" class="no-hits">未发现易错字 ✓</div>
+            <div v-if="r.hits && r.hits.length > 0" class="hits-list">
+              <div v-for="(hit, hidx) in r.hits" :key="hidx"
+                class="hit-item" :class="{ accepted: hit.accepted }">
+                <div class="hit-main">
+                  <span class="hit-context-inline" v-if="!hit.accepted">
+                    <span class="ctx-before">…{{ getContext(hit, r.text).before }}</span>
+                    <span class="ctx-word">{{ getContext(hit, r.text).word }}</span>
+                    <span class="ctx-after">{{ getContext(hit, r.text).after }}…</span>
+                  </span>
+                  <input v-model="hit.manualInput" class="manual-input"
+                    :placeholder="'替换为…'" :disabled="hit.accepted" />
+                  <button type="button" class="accept-btn"
+                    :disabled="hit.accepted || !hit.manualInput.trim()"
+                    @click="acceptManual(hit, r)">
+                    {{ hit.accepted ? "已接受" : "接受" }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </template>
       </a-card>
     </div>
   </div>
@@ -339,4 +460,59 @@ function copyResult(text) {
   max-height: 60vh;
   overflow-y: auto;
 }
+.result-area {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 200px;
+  max-height: 50vh;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.hits-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0 8px;
+}
+.hits-title { font-weight: 600; color: #cf1322; font-size: 0.95em; }
+.recheck-btn {
+  padding: 4px 10px; font-size: 13px; border: 1px solid #d9d9d9;
+  border-radius: 4px; background: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.recheck-btn:hover:not(:disabled) { border-color: #1890ff; color: #1890ff; }
+.accept-all-btn {
+  padding: 4px 12px; font-size: 13px; border: 1px solid #52c41a;
+  border-radius: 4px; background: #fff; color: #389e0d; cursor: pointer;
+}
+.accept-all-btn:hover:not(:disabled) { background: #52c41a; color: #fff; }
+.accept-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.no-hits { margin-top: 10px; color: #52c41a; font-size: 0.9em; text-align: center; }
+.hits-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.hit-item {
+  display: flex; align-items: center; padding: 6px 10px;
+  background: #fff7e6; border: 1px solid #ffd591; border-radius: 6px;
+}
+.hit-item.accepted { background: #f6ffed; border-color: #b7eb8f; opacity: 0.7; }
+.hit-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; }
+.hit-context-inline { font-size: 13px; color: #555; }
+.ctx-before, .ctx-after { color: #888; }
+.ctx-word { color: #cf1322; font-weight: 600; background: #fff1f0; border-radius: 3px; padding: 0 2px; }
+.manual-input {
+  border: 1px solid #d9d9d9; border-radius: 4px; padding: 2px 8px;
+  font-size: 13px; width: 100px; outline: none;
+}
+.manual-input:focus { border-color: #1890ff; }
+.accept-btn {
+  margin-left: auto; padding: 2px 10px; font-size: 13px;
+  border: 1px solid #52c41a; border-radius: 4px; background: #fff; color: #389e0d; cursor: pointer;
+}
+.accept-btn:hover:not(:disabled) { background: #52c41a; color: #fff; }
+.accept-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
