@@ -35,8 +35,14 @@ from kg_rag.prompts import (
     STEP5_GENERATION_FLAT,
     STEP5_GENERATION_FLAT_V4,
 )
-from .bird_view_prompts import BIRD_VIEW_SKELETON_PROMPT, BIRD_VIEW_OUTLINE_PROMPT
+from .bird_view_prompts import (
+    BIRD_VIEW_SKELETON_PROMPT,
+    BIRD_VIEW_OUTLINE_PROMPT,
+    BIRD_VIEW_SOURCE_PROMPT_MINISTRY,
+    BIRD_VIEW_SOURCE_PROMPT_FEAST,
+)
 from ai_search.monitoring import get_monitoring
+from ai_search.ai_service import _strip_code_fence_for_outline
 
 # QUERY_REWRITE 调用时传入 Claude 的 system，与 prompts 中说明一致
 QUERY_REWRITE_SYSTEM = "你是一个资深的圣经研究学者，只输出 JSON，不输出其他任何内容。"
@@ -1940,18 +1946,41 @@ class KgRagService:
             temperature=0,
             max_tokens=8000,
         )
-        # 剥离可能的代码围栏（Prompt 要求写在代码块里）
-        text = (raw or "").strip()
-        if text.startswith("```"):
-            lines = text.split("\n")
-            inner = []
-            for line in lines[1:]:
-                if line.strip() == "```":
-                    break
-                inner.append(line)
-            text = "\n".join(inner).strip()
+        # 提取最后一个完整代码块（处理模型先输出推理再输出代码块的情况）
+        text = (_strip_code_fence_for_outline(raw) or (raw or "")).strip()
         return {
             "outline": text,
+            "type": content_type,
+        }
+
+    async def generate_bird_view_with_source(
+        self,
+        keyword: str,
+        content_type: str,
+        content: str,
+        outline: str,
+    ) -> dict:
+        """为鸟瞰纲目加出处，返回带出处的纲目正文。"""
+        if content_type == "ministry":
+            prompt = BIRD_VIEW_SOURCE_PROMPT_MINISTRY.format(
+                content=content,
+                outline=outline,
+            )
+        else:
+            prompt = BIRD_VIEW_SOURCE_PROMPT_FEAST.format(
+                content=content,
+                outline=outline,
+            )
+        raw, usage = await _call_kg_rag_llm(
+            prompt,
+            "claude-sonnet-4-6",
+            temperature=0,
+            max_tokens=8000,
+        )
+        # 提取最后一个完整代码块（处理模型先输出推理再输出代码块的情况）
+        text = (_strip_code_fence_for_outline(raw) or (raw or "")).strip()
+        return {
+            "outline_with_source": text,
             "type": content_type,
         }
 

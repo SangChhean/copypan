@@ -10,6 +10,11 @@ const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const feastOutlineTypes = [
   { label: "纲目的原文", value: "original", desc: "刷格式" },
   { label: "带经文的纲目", value: "with_scripture", desc: "经文汇集 + 刷格式" },
+  {
+    value: "morning_revival_direct",
+    label: "带晨兴的纲目",
+    desc: "纲目原文 + 晨兴内容直接拼接刷格式",
+  },
   { label: "晨兴信息选读的纲目", value: "morning_revival", desc: "Claude 生成 + 刷格式" },
   { label: "听抄稿的纲目", value: "transcript", desc: "原纲目 + 听抄稿重点" },
   { label: "复合的纲目", value: "composite", desc: "听抄稿纲目 + 晨兴纲目融合" },
@@ -41,6 +46,7 @@ const formatDownloadingByType = reactive({
   transcript: false,
   composite: false,
 });
+const downloadingMorningRevivalDirect = ref(false);
 
 // 按类型分组结果（用于刷格式并下载）
 const originalResults = computed(() => results.value.filter((r) => r.type === "original"));
@@ -371,6 +377,59 @@ async function downloadFormat(typeKey) {
   }
 }
 
+async function downloadMorningRevivalDirect() {
+  if (!inputOutline.value.trim() || !inputMorningRevival.value.trim()) return;
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  downloadingMorningRevivalDirect.value = true;
+  try {
+    const body = {
+      contents: [inputOutline.value.trim()],
+      outline_type: "morning_revival",
+      filename: "节期纲目_带晨兴.docx",
+      line1: inputLine1.value?.trim() || "",
+      line2: inputLine2.value?.trim() || "",
+      line3: inputLine3.value?.trim() || "",
+      morning_revival_content: inputMorningRevival.value.trim(),
+    };
+    const res = await fetch(
+      `${apiBase}/api/ai_search/feast_outline/format_download`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toastWarning(data.detail || data.error || "下载失败");
+      return;
+    }
+    const b64 = data.docx_base64;
+    const filename = data.filename || "节期纲目_带晨兴.docx";
+    if (!b64) {
+      toastWarning(data.error || "未返回文件");
+      return;
+    }
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bin], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toastSuccess(`已下载：${filename}`);
+  } catch (e) {
+    console.error("带晨兴下载失败", e);
+    toastWarning(e.message || "下载失败");
+  } finally {
+    downloadingMorningRevivalDirect.value = false;
+  }
+}
+
 function copyResult(content) {
   if (!content) return;
   navigator.clipboard.writeText(content).then(() => toastSuccess("已复制到剪贴板"));
@@ -499,6 +558,15 @@ function copyResult(content) {
             @click="downloadFormat('with_scripture')"
           >
             <DownloadOutlined /> 带经文（{{ withScriptureResults.length }}）
+          </a-button>
+          <a-button
+            v-if="selectedTypes.includes('morning_revival_direct')"
+            size="small"
+            :disabled="!inputOutline.trim() || !inputMorningRevival.trim()"
+            :loading="downloadingMorningRevivalDirect"
+            @click="downloadMorningRevivalDirect"
+          >
+            带晨兴的纲目
           </a-button>
           <a-button
             type="primary"

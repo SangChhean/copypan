@@ -36,6 +36,10 @@ from back_qa.qa.dependencies import get_neo4j_client
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动
+    from back_qa.qa.auth import init_db
+
+    init_db()
+
     bible_dir = Path(__file__).resolve().parent / "bible_data"
     load_bible_data(str(bible_dir))
 

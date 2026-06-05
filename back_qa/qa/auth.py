@@ -74,14 +74,16 @@ def init_db() -> None:
             )
             """
         )
+        existing = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(users)").fetchall()
+        }
         for col, definition in [
             ("daily_count", "INTEGER NOT NULL DEFAULT 0"),
             ("daily_date", "TEXT NOT NULL DEFAULT '2000-01-01'"),
         ]:
-            try:
+            if col not in existing:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {col} {definition}")
-            except Exception:
-                pass  # 列已存在
         conn.commit()
 
 

@@ -10,11 +10,14 @@
 """
 from __future__ import annotations
 import logging
+import re
 import shutil
 import tempfile
 import os
 from pathlib import Path
 from docx import Document
+from docx.shared import RGBColor
+from docx.enum.text import WD_COLOR_INDEX
 from format_chinese_outline import format_chinese_outline_docx
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,7 @@ def format_bird_view_docx(
     outline_text: str,
     keyword: str,
     bird_type: str = "feast",
+    with_source: bool = False,
 ) -> bytes:
     """
     将鸟瞰纲目正文生成格式化 DOCX，返回字节流。
@@ -41,6 +45,7 @@ def format_bird_view_docx(
         outline_text: LLM 生成的纲目正文（纯文本，含「读经：」行）
         keyword:      关键词，作为第二段篇题
         bird_type:    "ministry" 或 "feast"
+        with_source:  是否为带出处模式（触发标红/标绿着色）
 
     Returns:
         docx 字节流
@@ -112,6 +117,12 @@ def format_bird_view_docx(
         # 5. 调用中文纲目格式刷处理第5段起的纲目内容
         format_chinese_outline_docx(tmp_path, traditional_quotes=False)
 
+        # Step 10/11：出处标红 + 无出处行标绿 + 关键词标红（仅 with_source 模式）
+        if with_source:
+            doc_color = Document(tmp_path)
+            _colorize_bird_view_sources(doc_color, keyword)
+            doc_color.save(tmp_path)
+
         # 6. 读取字节流返回
         with open(tmp_path, "rb") as f:
             return f.read()
@@ -121,3 +132,100 @@ def format_bird_view_docx(
             os.unlink(tmp_path)
         except Exception:
             pass
+
+
+def _is_scripture_reference(text: str) -> bool:
+    """判断括号内容是否为圣经经节出处（如：弗一10、创一26~28）"""
+    pattern = r'^[\u4e00-\u9fa5]{1,3}[一二三四五六七八九十百千0-9]+[上下~\-,，、0-9一二三四五六七八九十]*$'
+    return bool(re.match(pattern, text.strip()))
+
+
+def _colorize_bird_view_sources(doc, keyword: str) -> None:
+    """
+    鸟瞰纲目带出处模式的着色逻辑：
+    - 以 ）结尾且括号内非圣经经节 → 括号部分（含括号）标红
+    - 不以 ）结尾且非读经行 → 整行标绿（找不到出处）
+    - keyword 在全文中出现处标红（优先级高于标绿）
+    跳过前4段篇头。
+    """
+    has_bracket_ending = False
+    for i, para in enumerate(doc.paragraphs):
+        if i < 4:
+            continue
+        text = para.text.strip()
+        if text.endswith('）'):
+            left = text.rfind('（')
+            if left != -1:
+                inner = text[left + 1:-1]
+                if not _is_scripture_reference(inner):
+                    has_bracket_ending = True
+                    break
+
+    if not has_bracket_ending:
+        return
+
+    keywords = [kw.strip() for kw in keyword.split('、') if kw.strip()] if keyword else []
+
+    for i, para in enumerate(doc.paragraphs):
+        if i < 4:
+            # 第2段（index=1）是关键词段，只做关键词标红
+            if i == 1 and keywords:
+                text = para.text.strip()
+                if any(kw in text for kw in keywords):
+                    para.clear()
+                    _add_run_with_keyword_red(para, text, keywords)
+            continue
+        text = para.text.strip()
+        if not text:
+            continue
+        is_reading = text.startswith('读经：')
+        ends_with_bracket = text.endswith('）')
+
+        if ends_with_bracket and not is_reading:
+            nested = 0
+            left_index = -1
+            for j, ch in enumerate(text):
+                if ch == '（':
+                    if nested == 0:
+                        left_index = j
+                    nested += 1
+                elif ch == '）':
+                    nested -= 1
+            if left_index != -1:
+                inner = text[left_index + 1:text.rfind('）')]
+                if not _is_scripture_reference(inner):
+                    para.clear()
+                    before = text[:left_index]
+                    bracket = text[left_index:]
+                    if before:
+                        _add_run_with_keyword_red(para, before, keywords)
+                    run_bracket = para.add_run(bracket)
+                    run_bracket.font.color.rgb = RGBColor(0xFF, 0, 0)
+                    continue
+
+        if not ends_with_bracket and not is_reading:
+            para.clear()
+            run_green = para.add_run(text)
+            run_green.font.highlight_color = WD_COLOR_INDEX.BRIGHT_GREEN
+            if keywords and any(kw in text for kw in keywords):
+                para.clear()
+                _add_run_with_keyword_red(para, text, keywords, apply_highlight=True)
+
+
+def _add_run_with_keyword_red(para, text: str, keywords: list, apply_highlight: bool = False) -> None:
+    """将文本写入段落，关键词标红，其余部分按 apply_highlight 决定是否标绿。"""
+    if not keywords:
+        run = para.add_run(text)
+        if apply_highlight:
+            run.font.highlight_color = WD_COLOR_INDEX.BRIGHT_GREEN
+        return
+    pattern = '(' + '|'.join(re.escape(kw) for kw in keywords) + ')'
+    parts = re.split(pattern, text)
+    for part in parts:
+        if not part:
+            continue
+        run = para.add_run(part)
+        if part in keywords:
+            run.font.color.rgb = RGBColor(0xFF, 0, 0)
+        elif apply_highlight:
+            run.font.highlight_color = WD_COLOR_INDEX.BRIGHT_GREEN

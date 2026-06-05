@@ -66,33 +66,71 @@
             >复制</a-button>
             <a-button
               v-if="results.ministry?.outline"
+              type="primary"
+              ghost
               size="small"
-              @click="downloadFormat('ministry')"
-            >刷格式下载</a-button>
+              :loading="results.ministry?.sourceLoading"
+              :disabled="results.ministry?.sourceLoading"
+              @click="generateSource('ministry')"
+            >{{ results.ministry?.sourceLoading ? '加出处中…' : '加出处' }}</a-button>
           </template>
 
-          <!-- 骨架 -->
-          <div v-if="results.ministry?.skeleton_text" class="skeleton-block">
-            <div class="skeleton-title">骨架</div>
-            <div
-              v-for="(s, i) in results.ministry.skeleton_json"
-              :key="i"
-              class="skeleton-step"
-            >
-              <span class="step-dot">{{ i + 1 }}</span>{{ s.step }}
-            </div>
-          </div>
-          <a-divider v-if="results.ministry?.skeleton_text && results.ministry?.outline" style="margin:10px 0" />
-
-          <!-- 纲目正文 -->
-          <div v-if="results.ministry?.outlineLoading" class="loading-row">
-            <a-spin size="small" /><span>生成纲目中…</span>
-          </div>
-          <pre v-else-if="results.ministry?.outline" class="outline-text">{{ results.ministry.outline }}</pre>
-          <div v-else-if="results.ministry?.skeletonLoading" class="loading-row">
+          <div v-if="results.ministry?.skeletonLoading" class="loading-row">
             <a-spin size="small" /><span>生成骨架中…</span>
           </div>
-          <a-alert v-else-if="results.ministry?.error" type="error" :message="results.ministry.error" show-icon />
+          <div v-else-if="results.ministry?.outlineLoading" class="loading-row">
+            <a-spin size="small" /><span>生成纲目中…</span>
+          </div>
+
+          <a-card
+            v-if="results.ministry?.skeleton_text"
+            size="small"
+            class="layer-card"
+          >
+            <template #title>骨架</template>
+            <div class="skeleton-block">
+              <div
+                v-for="(s, i) in results.ministry.skeleton_json"
+                :key="i"
+                class="skeleton-step"
+              >
+                <span class="step-dot">{{ i + 1 }}</span>{{ s.step }}
+              </div>
+            </div>
+          </a-card>
+
+          <a-card
+            v-if="results.ministry?.outline && !results.ministry?.outlineLoading"
+            size="small"
+            class="layer-card"
+          >
+            <template #title>纲目</template>
+            <template #extra>
+              <a-button
+                size="small"
+                @click="downloadFormat('ministry', false)"
+              >下载原纲目</a-button>
+            </template>
+            <pre class="outline-text">{{ results.ministry.outline }}</pre>
+          </a-card>
+
+          <a-card
+            v-if="results.ministry?.outline_with_source"
+            size="small"
+            class="layer-card layer-card--source"
+          >
+            <template #title>带出处版</template>
+            <template #extra>
+              <a-button
+                size="small"
+                @click="downloadFormat('ministry', true)"
+              >下载带出处</a-button>
+            </template>
+            <pre class="outline-text">{{ results.ministry.outline_with_source }}</pre>
+          </a-card>
+          <div v-if="results.ministry?.sourceError" class="source-error">{{ results.ministry.sourceError }}</div>
+
+          <a-alert v-if="results.ministry?.error" type="error" :message="results.ministry.error" show-icon />
         </a-card>
       </a-col>
 
@@ -116,31 +154,71 @@
             >复制</a-button>
             <a-button
               v-if="results.feast?.outline"
+              type="primary"
+              ghost
               size="small"
-              @click="downloadFormat('feast')"
-            >刷格式下载</a-button>
+              :loading="results.feast?.sourceLoading"
+              :disabled="results.feast?.sourceLoading"
+              @click="generateSource('feast')"
+            >{{ results.feast?.sourceLoading ? '加出处中…' : '加出处' }}</a-button>
           </template>
 
-          <div v-if="results.feast?.skeleton_text" class="skeleton-block">
-            <div class="skeleton-title">骨架</div>
-            <div
-              v-for="(s, i) in results.feast.skeleton_json"
-              :key="i"
-              class="skeleton-step"
-            >
-              <span class="step-dot">{{ i + 1 }}</span>{{ s.step }}
-            </div>
-          </div>
-          <a-divider v-if="results.feast?.skeleton_text && results.feast?.outline" style="margin:10px 0" />
-
-          <div v-if="results.feast?.outlineLoading" class="loading-row">
-            <a-spin size="small" /><span>生成纲目中…</span>
-          </div>
-          <pre v-else-if="results.feast?.outline" class="outline-text">{{ results.feast.outline }}</pre>
-          <div v-else-if="results.feast?.skeletonLoading" class="loading-row">
+          <div v-if="results.feast?.skeletonLoading" class="loading-row">
             <a-spin size="small" /><span>生成骨架中…</span>
           </div>
-          <a-alert v-else-if="results.feast?.error" type="error" :message="results.feast.error" show-icon />
+          <div v-else-if="results.feast?.outlineLoading" class="loading-row">
+            <a-spin size="small" /><span>生成纲目中…</span>
+          </div>
+
+          <a-card
+            v-if="results.feast?.skeleton_text"
+            size="small"
+            class="layer-card"
+          >
+            <template #title>骨架</template>
+            <div class="skeleton-block">
+              <div
+                v-for="(s, i) in results.feast.skeleton_json"
+                :key="i"
+                class="skeleton-step"
+              >
+                <span class="step-dot">{{ i + 1 }}</span>{{ s.step }}
+              </div>
+            </div>
+          </a-card>
+
+          <a-card
+            v-if="results.feast?.outline && !results.feast?.outlineLoading"
+            size="small"
+            class="layer-card"
+          >
+            <template #title>纲目</template>
+            <template #extra>
+              <a-button
+                size="small"
+                @click="downloadFormat('feast', false)"
+              >下载原纲目</a-button>
+            </template>
+            <pre class="outline-text">{{ results.feast.outline }}</pre>
+          </a-card>
+
+          <a-card
+            v-if="results.feast?.outline_with_source"
+            size="small"
+            class="layer-card layer-card--source"
+          >
+            <template #title>带出处版</template>
+            <template #extra>
+              <a-button
+                size="small"
+                @click="downloadFormat('feast', true)"
+              >下载带出处</a-button>
+            </template>
+            <pre class="outline-text">{{ results.feast.outline_with_source }}</pre>
+          </a-card>
+          <div v-if="results.feast?.sourceError" class="source-error">{{ results.feast.sourceError }}</div>
+
+          <a-alert v-if="results.feast?.error" type="error" :message="results.feast.error" show-icon />
         </a-card>
       </a-col>
     </a-row>
@@ -202,7 +280,18 @@ async function runOne(type, content) {
   const key = type === "ministry" ? "ministry" : "feast"
   const t0 = Date.now()
 
-  results[key] = { skeletonLoading: true, outlineLoading: false, skeleton_json: [], skeleton_text: "", outline: "", error: null, elapsed: null }
+  results[key] = {
+    skeletonLoading: true,
+    outlineLoading: false,
+    sourceLoading: false,
+    skeleton_json: [],
+    skeleton_text: "",
+    outline: "",
+    outline_with_source: "",
+    sourceError: "",
+    error: null,
+    elapsed: null,
+  }
 
   // Step A：生成骨架
   let skeletonText = ""
@@ -255,15 +344,49 @@ function copyText(text) {
   navigator.clipboard.writeText(text).then(() => message.success("已复制"))
 }
 
-async function downloadFormat(birdType) {
+async function generateSource(birdType) {
+  const item = results[birdType]
+  if (!item?.outline) return
+  const headers = getAuthHeaders()
+  if (!headers) return
+  const key = birdType
+  results[key].sourceLoading = true
+  results[key].sourceError = ""
+  try {
+    const res = await axios.post(
+      `${apiBase}/api/kg_rag/bird_view/source`,
+      {
+        keyword: keyword.value.trim(),
+        type: birdType,
+        content: birdType === "ministry" ? ministryContent.value : feastContent.value,
+        outline: item.outline,
+      },
+      { headers }
+    )
+    results[key].outline_with_source = res.data.outline_with_source || ""
+  } catch (e) {
+    results[key].sourceError = "加出处失败，请重试"
+  } finally {
+    results[key].sourceLoading = false
+  }
+}
+
+async function downloadFormat(birdType, withSource) {
   const item = results[birdType];
-  if (!item?.outline) return;
+  if (withSource) {
+    if (!item?.outline_with_source) return;
+  } else if (!item?.outline) {
+    return;
+  }
   const token = localStorage.getItem("token") || "";
   try {
     const params = new URLSearchParams();
     const typeLabel = birdType === "ministry" ? "3a 职事信息的鸟瞰" : "3b 节期纲目的鸟瞰";
-    params.append("contents", item.outline);
-    params.append("filename", `${keyword.value.trim()}【${typeLabel}】`);
+    const outlineToUse = withSource ? item.outline_with_source : item.outline;
+    const filenameBase = `${keyword.value.trim()}【${typeLabel}】`;
+    params.append("contents", outlineToUse);
+    if (withSource) params.append("with_source", "true");
+    params.append("filename", withSource ? `${filenameBase}（出处）` : filenameBase);
     params.append("keyword", keyword.value.trim());
     params.append("type", birdType);
     const res = await axios.post(
@@ -302,8 +425,7 @@ async function downloadFormat(birdType) {
 .param-label { font-size: 13px; color: #555; margin-bottom: 6px; }
 .hint { margin-left: 12px; color: #999; font-size: 12px; }
 .result-card { height: 100%; }
-.skeleton-block { margin-bottom: 4px; }
-.skeleton-title { font-size: 11px; color: #999; margin-bottom: 6px; }
+.skeleton-block { margin-bottom: 0; }
 .skeleton-step {
   display: flex; align-items: flex-start; gap: 6px;
   font-size: 13px; line-height: 1.7; margin-bottom: 2px;
@@ -322,4 +444,29 @@ async function downloadFormat(birdType) {
   color: #999; font-size: 13px; padding: 16px 0;
 }
 .elapsed { margin-left: 6px; color: #999; font-size: 12px; }
+.source-error {
+  color: red;
+  font-size: 13px;
+  margin-top: 6px;
+}
+.layer-card {
+  margin-top: 10px;
+  border-radius: 6px;
+}
+.layer-card :deep(.ant-card-head) {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #888;
+}
+.layer-card :deep(.ant-card-body) {
+  padding: 8px 10px;
+}
+.layer-card--source {
+  border-color: #f5a623;
+}
+.layer-card--source :deep(.ant-card-head) {
+  color: #f5a623;
+  border-bottom-color: #f5a623;
+}
 </style>

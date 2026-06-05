@@ -590,6 +590,29 @@ async def bird_view_outline(req: BirdViewOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class BirdViewSourceRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
+    type: str = Field(..., description="ministry 或 feast")
+    content: str = Field(..., min_length=1)
+    outline: str = Field(..., min_length=1)
+
+
+@router.post("/bird_view/source", dependencies=[Depends(test_token)])
+async def bird_view_source(req: BirdViewSourceRequest):
+    service = get_service()
+    try:
+        result = await service.generate_bird_view_with_source(
+            keyword=req.keyword,
+            content_type=req.type,
+            content=req.content,
+            outline=req.outline,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"[bird_view_source] error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def _build_health_payload():
     """Neo4j / ES 依赖可用性（供 liveness 与 admin health 共用）。"""
     service = get_service()

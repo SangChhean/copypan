@@ -271,16 +271,19 @@ def bird_view_format_download(
     filename: str = Form(default="鸟瞰纲目"),
     keyword: str = Form(default=""),
     type: str = Form(default="feast"),
+    with_source: str = Form(default="false"),
 ):
     """鸟瞰纲目刷格式下载。"""
     try:
         import base64
         from bird_view_format import format_bird_view_docx
         contents = contents.replace("\r\n", "\n").replace("\r", "\n")
+        with_source_bool = with_source.lower() == "true"
         docx_bytes = format_bird_view_docx(
             outline_text=contents,
             keyword=keyword.strip(),
             bird_type=type,
+            with_source=with_source_bool,
         )
         safe_name = filename.strip() or "鸟瞰纲目"
         out_name = safe_name if safe_name.endswith(".docx") else f"{safe_name}.docx"
