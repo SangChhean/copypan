@@ -1,11 +1,16 @@
 # 简繁互转路由
+import io
 import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
+
+from format_utils import format_zh, format_zhtw
 
 logger = logging.getLogger(__name__)
 
@@ -220,3 +225,33 @@ def check_errors(request: CheckErrorsRequest):
         raise HTTPException(status_code=400, detail="内容为空")
     hits = scan_error_chars(text)
     return {"hits": hits}
+
+
+# ── 刷格式（生成 docx） ──────────────────────────────────
+
+class FormatRequest(BaseModel):
+    text: str
+
+
+async def _docx_response(result: tuple[bytes, str]) -> Response:
+    docx_bytes, filename = result
+    encoded = quote(filename + ".docx")
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
+    )
+
+
+@router.post("/format/zh")
+async def format_zh_route(req: FormatRequest):
+    import asyncio
+    result = await asyncio.to_thread(format_zh, req.text)
+    return await _docx_response(result)
+
+
+@router.post("/format/zhtw")
+async def format_zhtw_route(req: FormatRequest):
+    import asyncio
+    result = await asyncio.to_thread(format_zhtw, req.text)
+    return await _docx_response(result)

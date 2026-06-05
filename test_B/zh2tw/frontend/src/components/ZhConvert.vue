@@ -14,6 +14,7 @@ const error = ref(null);
 const result = ref(null);
 const toast = ref("");
 const hits = ref([]); // 易错字命中列表
+const downloading = ref(false);
 
 const isS2t = computed(() => direction.value === "s2t");
 const inputPlaceholder = computed(() =>
@@ -32,6 +33,50 @@ function copyResult() {
   navigator.clipboard.writeText(result.value).then(() => {
     showToast("已复制");
   });
+}
+
+function parseFilename(disposition, fallback) {
+  if (!disposition) return fallback;
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (m && m[1]) {
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (e) {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
+// 刷格式下载：type 为 'zh'（简体）或 'zhtw'（繁体）
+async function downloadFormat(text, type) {
+  if (!text || downloading.value) return;
+  downloading.value = true;
+  try {
+    const res = await fetch(`${apiBase}/api/testb/format/${type}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("下载失败");
+    const filename = parseFilename(
+      res.headers.get("Content-Disposition"),
+      "纲目.docx"
+    );
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("下载失败，请重试");
+  } finally {
+    downloading.value = false;
+  }
 }
 
 // 全部接受
@@ -215,6 +260,12 @@ async function convert() {
         <span>转换结果</span>
         <div class="result-head-actions">
           <button type="button" class="copy-btn" @click="copyResult">复制</button>
+          <button type="button" class="format-btn"
+            :disabled="downloading"
+            @click="downloadFormat(result, isS2t ? 'zhtw' : 'zh')">
+            <span v-if="downloading" class="spin">⟳</span>
+            {{ downloading ? "下载中…" : "⬇ 刷格式下载" }}
+          </button>
           <button type="button" class="recheck-btn" :disabled="checking" @click="checkErrors">
             <span v-if="checking" class="spin">⟳</span>
             {{ checking ? "检查中…" : "重新检查" }}
@@ -465,6 +516,26 @@ async function convert() {
 .copy-btn:hover {
   border-color: #1890ff;
   color: #1890ff;
+}
+.format-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #52c41a;
+  border-radius: 4px;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.format-btn:hover:not(:disabled) {
+  background: #52c41a;
+  color: #fff;
+}
+.format-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .result-body {
   white-space: pre-wrap;
