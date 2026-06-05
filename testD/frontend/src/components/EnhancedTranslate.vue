@@ -13,11 +13,14 @@ const loading = ref(false);
 const error = ref(null);
 const result = ref(null);
 const refs = ref([]);
+const summary = ref(null);
 const warnings = ref([]);
 const durationMs = ref(null);
 const downloadFormats = ref(["docx"]);
 const downloading = ref(false);
 const downloadingRefsTxt = ref(false);
+/** line_index → 用户编辑后的 gemini_translate */
+const editedTranslations = ref({});
 
 const canTranslate = computed(() => !!(content.value || "").trim());
 
@@ -73,6 +76,8 @@ async function translate() {
   error.value = null;
   result.value = null;
   refs.value = [];
+  editedTranslations.value = {};
+  summary.value = null;
   warnings.value = [];
 
   if (!text) {
@@ -110,6 +115,12 @@ async function translate() {
     if (!data.result) throw new Error("翻译失败，请稍后重试");
     result.value = data.result;
     refs.value = data.refs || [];
+    const edits = {};
+    for (const group of data.refs || []) {
+      edits[group.line_index] = group.gemini_translate || "";
+    }
+    editedTranslations.value = edits;
+    summary.value = data.summary || null;
     warnings.value = data.warnings || [];
     durationMs.value = Date.now() - start;
     if (warnings.value.length) {
@@ -124,8 +135,66 @@ async function translate() {
   }
 }
 
+function getEditedResultText() {
+  if (!lineRefGroups.value.length) return (result.value || "").trim();
+  return lineRefGroups.value
+    .map((g, i) => {
+      const idx = g.line_index ?? i;
+      const edited = editedTranslations.value[idx];
+      if (edited !== undefined && edited !== null) return String(edited);
+      return g.gemini_translate || "";
+    })
+    .join("\n");
+}
+
+const savingLineIndex = ref(null);
+
+async function saveTranslation(group) {
+  const originalLine = (group.original_line || "").trim();
+  const lineIndex = group.line_index;
+  const newTranslation = (editedTranslations.value[lineIndex] || "").trim();
+  if (!originalLine || !newTranslation) return;
+
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  savingLineIndex.value = lineIndex;
+  try {
+    const res = await fetch(`${apiBase}/api/kg_rag/enhanced_translate/update_translation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        original_line: originalLine,
+        new_translation: newTranslation,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(parseApiError(res, data));
+    if (data.success) {
+      group.gemini_translate = newTranslation;
+      toastSuccess(`Line ${lineIndex + 1} 已更新 Additional Pool`);
+    } else {
+      toastWarning(data.error || "Pool 中无对应条目，未写入");
+    }
+  } catch (e) {
+    toastError(e.message || "更新 Pool 失败");
+  } finally {
+    savingLineIndex.value = null;
+  }
+}
+
+function onTranslationBlur(group) {
+  saveTranslation(group);
+}
+
 async function downloadFormatted() {
-  if (!result.value) {
+  const editedText = getEditedResultText();
+  if (!editedText) {
     toastWarning("请先完成翻译");
     return;
   }
@@ -149,7 +218,7 @@ async function downloadFormatted() {
         },
         body: JSON.stringify({
           direction: "zh2en",
-          translated_text: result.value,
+          translated_text: editedText,
           output_format: format,
           is_outline: true,
         }),
@@ -203,6 +272,32 @@ const totalDedupedCount = computed(() =>
   lineRefGroups.value.reduce((n, g) => n + (g.deduped_refs || []).length, 0)
 );
 
+function lineTypeClass(group) {
+  const t = group.line_type || "reference";
+  return t === "outline" ? "line-type-outline" : "line-type-reference";
+}
+
+function formatCost(usd) {
+  if (usd == null || Number.isNaN(usd)) return "";
+  return `$${Number(usd).toFixed(4)}`;
+}
+
+function statLabel(key) {
+  const map = {
+    total_lines: "总行数",
+    pool: "Pool 子句",
+    exact: "直接引用",
+    retrieved: "参考翻译",
+    none: "无匹配",
+    additional_pool_lines: "Additional Pool 行",
+    pool_full_match_lines: "ES Pool 行",
+    additional_pool_appended: "Pool 新增",
+    additional_pool_append_skipped: "Pool 跳过",
+    gemini_cost_usd: "Gemini 费用",
+  };
+  return map[key] || key;
+}
+
 function effectiveMatchKind(r) {
   const raw = r.match_kind || r.match_type;
   if (raw === "exact" || raw === "direct") return "exact";
@@ -233,11 +328,18 @@ function buildRefsTxtContent() {
   lines.push("【带翻译内容】");
   lines.push((content.value || "").trim());
   lines.push("");
+  lines.push("【编辑后译文】");
+  lines.push(getEditedResultText());
+  lines.push("");
   lines.push("【参考语料列表】");
   lineRefGroups.value.forEach((group, gIdx) => {
     if (gIdx > 0) lines.push("");
     const lineNo = (group.line_index ?? gIdx) + 1;
     lines.push(`Line ${lineNo}：${group.original_line || ""}`);
+    const edited = editedTranslations.value[group.line_index ?? gIdx];
+    if (edited !== undefined && edited !== null && String(edited).trim()) {
+      lines.push(`译文：${String(edited).trim()}`);
+    }
     (group.deduped_refs || []).forEach((r, pIdx) => {
       if (pIdx > 0) lines.push("");
       const nr = normalizeDedupedRef(r, group.line_index ?? gIdx);
@@ -297,7 +399,8 @@ function downloadRefsTxt() {
       type="warning"
       show-icon
       class="warn-banner"
-      :message="warnings.join('；')"
+      message="检索服务提示"
+      :description="warnings.join('；') + '（此为临时状态，可稍后重新点击「增强式翻译」重试。）'"
     />
 
     <a-textarea
@@ -321,6 +424,18 @@ function downloadRefsTxt() {
     </div>
 
     <div v-if="error" class="err panel-err">{{ error }}</div>
+
+    <div v-if="summary" class="summary-block">
+      <div class="summary-head">统计摘要</div>
+      <div class="summary-grid">
+        <div v-for="(val, key) in summary" :key="key" class="summary-item">
+          <span class="summary-label">{{ statLabel(key) }}</span>
+          <span class="summary-value">
+            {{ key === "gemini_cost_usd" || key === "total_cost_usd" ? formatCost(val) : val }}
+          </span>
+        </div>
+      </div>
+    </div>
 
     <div v-if="result" class="result-block">
       <div class="result-head">
@@ -353,7 +468,28 @@ function downloadRefsTxt() {
           :key="`line-${group.line_index}`"
           class="ref-line-group"
         >
-          <div class="ref-line-title">Line {{ group.line_index + 1 }}：{{ group.original_line }}</div>
+          <div class="ref-line-title" :class="lineTypeClass(group)">
+            <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
+            Line {{ group.line_index + 1 }}：{{ group.original_line }}
+            <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
+            <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
+          </div>
+          <a-textarea
+            v-model:value="editedTranslations[group.line_index]"
+            class="line-translation-input"
+            :auto-size="{ minRows: 1 }"
+            placeholder="编辑该行译文（失焦后自动更新 Additional Pool）"
+            @blur="onTranslationBlur(group)"
+          />
+          <div class="line-translation-actions">
+            <a-button
+              size="small"
+              :loading="savingLineIndex === group.line_index"
+              @click="saveTranslation(group)"
+            >
+              保存
+            </a-button>
+          </div>
           <div
             v-for="r in (group.deduped_refs || []).map((x) => normalizeDedupedRef(x, group.line_index))"
             :key="`${group.line_index}-p-${r.paragraph}-${r.id}`"
@@ -406,6 +542,19 @@ function downloadRefsTxt() {
 }
 .warn-banner {
   margin-bottom: 0.75rem;
+  border: 1px solid #ffd591;
+  background: #fff7e6;
+  border-radius: 8px;
+}
+.warn-banner :deep(.ant-alert-icon) {
+  color: #fa8c16;
+}
+.warn-banner :deep(.ant-alert-message) {
+  color: #d46b08;
+  font-weight: 600;
+}
+.warn-banner :deep(.ant-alert-description) {
+  color: #ad6800;
 }
 .input-area {
   font-family: inherit;
@@ -425,6 +574,34 @@ function downloadRefsTxt() {
 }
 .panel-err {
   margin: 1rem 0;
+}
+.summary-block {
+  margin-top: 1rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+.summary-head {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem 1rem;
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85em;
+}
+.summary-label {
+  color: #8c8c8c;
+}
+.summary-value {
+  font-weight: 600;
+  color: #262626;
 }
 .result-block {
   margin-top: 1.5rem;
@@ -481,6 +658,46 @@ function downloadRefsTxt() {
   font-size: 0.9em;
   line-height: 1.5;
   word-break: break-word;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.line-type-tag {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: #f0f0f0;
+  color: #595959;
+}
+.line-type-outline .line-type-tag {
+  background: rgba(114, 46, 209, 0.1);
+  color: #722ed1;
+}
+.pool-tag {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: rgba(56, 158, 13, 0.1);
+  color: #389e0d;
+}
+.pool-tag.es-pool {
+  background: rgba(22, 119, 255, 0.1);
+  color: #1677ff;
+}
+.line-translation-input {
+  margin-bottom: 0.35rem;
+  font-family: inherit;
+  font-size: 14px;
+}
+.line-translation-input :deep(textarea) {
+  overflow-y: hidden;
+  resize: none;
+}
+.line-translation-actions {
+  margin-bottom: 0.65rem;
 }
 .ref-line-group .ref-card {
   margin-top: 0.5rem;
