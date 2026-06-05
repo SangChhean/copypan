@@ -450,18 +450,6 @@ app.include_router(practice_router, prefix="/api")
 # 注册API路由器
 app.include_router(api_router)
 
-# testA 练习路由（不影响主项目任何功能）
-import sys
-from pathlib import Path
-_repo_root = Path(__file__).resolve().parents[2]
-_testA_backend = _repo_root / "testA" / "translate" / "backend"
-if str(_testA_backend) not in sys.path:
-    sys.path.append(str(_testA_backend))
-if str(_repo_root) not in sys.path:
-    sys.path.append(str(_repo_root))
-from testA.translate.backend.translate_router import router as test_translate_router
-app.include_router(test_translate_router)
-
 # test_B 练习路由（临时学生测试）
 from test_B.translate.backend.translate_router import router as test_b_translate_router
 from test_B.zh2tw.backend.zh_router import router as test_b_zh_router
