@@ -33,9 +33,9 @@ const inputPlaceholder = computed(() => {
 const charCount = computed(() => (content.value || "").length);
 
 const translateEndpoint = computed(() => {
-  if (direction.value === "zh2en") return `${apiBase}/api/test/translate/zh2en`;
-  if (direction.value === "en2es") return `${apiBase}/api/test/translate/en2es`;
-  return `${apiBase}/api/test/translate/en2zh`;
+  if (direction.value === "zh2en") return `${apiBase}/api/testa/translate/zh2en`;
+  if (direction.value === "en2es") return `${apiBase}/api/testa/translate/en2es`;
+  return `${apiBase}/api/testa/translate/en2zh`;
 });
 
 const resultTitle = computed(() => {

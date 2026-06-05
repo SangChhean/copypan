@@ -84,6 +84,10 @@ const routes = [
     component: () => import("@/components/toolbox/GenerateOutline.vue"),
   },
   {
+    path: "/article-polish-vannak",
+    component: () => import("@/components/toolbox/ArticlePolishA.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
