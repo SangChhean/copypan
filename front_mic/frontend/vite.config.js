@@ -32,12 +32,52 @@ export default defineConfig({
         changeOrigin: true
         // No rewrite - backend expects /api/ai_search
       },
+      '/api/testa/translate': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
+      },
+      '/api/testa/church': {
+        target: 'http://localhost:8011',
+        changeOrigin: true,
+      },
+      '/api/testa/memorial': {
+        target: 'http://localhost:8011',
+        changeOrigin: true,
+      },
+      '/api/testa/memorial_roles': {
+        target: 'http://localhost:8011',
+        changeOrigin: true,
+      },
+      '/api/testa/polish': {
+        target: 'http://localhost:8011',
+        changeOrigin: true,
+      },
+      '/api/testa/styles': {
+        target: 'http://localhost:8011',
+        changeOrigin: true,
+      },
       '/api/testa/generate_outline': {
         target: 'http://localhost:8007',
         changeOrigin: true,
       },
       '/api/testa': {
         target: 'http://localhost:8004',
+        changeOrigin: true,
+      },
+      '/api/testc/polish': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/memorial': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/styles': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/roles': {
+        target: 'http://localhost:8013',
         changeOrigin: true,
       },
       '/api': {

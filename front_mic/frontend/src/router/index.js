@@ -84,6 +84,10 @@ const routes = [
     component: () => import("@/components/toolbox/GenerateOutline.vue"),
   },
   {
+    path: "/article-polish-vannak",
+    component: () => import("@/components/toolbox/ArticlePolishA.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
@@ -143,6 +147,18 @@ const routes = [
   {
     path: '/panai2-test',
     component: () => import('../components/toolbox/PanAI2Test.vue')
+  },
+  {
+    path: '/article-polish-c',
+    component: () => import('../components/toolbox/ArticlePolishTestC.vue'),
+    path: '/article-polish-b',
+    component: () => import('../components/toolbox/ArticlePolishB.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/article-polish-hub',
+    component: () => import('../components/toolbox/ArticlePolishHub.vue'),
+    meta: { requiresAuth: true }
   },
 ];
 

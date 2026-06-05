@@ -80,6 +80,7 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/practice-kg-rag')">
           <span class="card_text">AI纲目制作练习</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/article-polish-c')"><span class="card_text">文章润色练习</span></a-card-grid>
       </a-card>
     </div>
     <br />
@@ -93,6 +94,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="openZh2tw()"><span class="card_text">简繁互转</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/generate-outline-vannak')">
           <span class="card_text">PanAI 纲目生成</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/article-polish-vannak')">
+          <span class="card_text">文章润色</span>
         </a-card-grid>
       </a-card>
     </div>
@@ -111,6 +115,9 @@ const openZh2tw = () => {
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/panai2-test')">
           <span class="card_text">AI纲目制作</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/article-polish-hub')">
+          <span class="card_text">文章润色测试</span>
         </a-card-grid>
       </a-card>
     </div>

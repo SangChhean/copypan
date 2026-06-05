@@ -92,7 +92,7 @@ def _parse_concurrent_limit(env_key: str, default: int) -> int:
 
 GEMINI_SEMAPHORE = threading.Semaphore(_parse_concurrent_limit("GEMINI_CONCURRENT_LIMIT", 10))
 
-router = APIRouter(prefix="/api/test/translate")
+router = APIRouter(prefix="/api/testa/translate")
 
 
 class TranslateContentRequest(BaseModel):

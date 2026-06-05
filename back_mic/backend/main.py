@@ -453,18 +453,6 @@ app.include_router(practice_router, prefix="/api")
 # 注册API路由器
 app.include_router(api_router)
 
-# testA 练习路由（不影响主项目任何功能）
-import sys
-from pathlib import Path
-_repo_root = Path(__file__).resolve().parents[2]
-_testA_backend = _repo_root / "testA" / "translate" / "backend"
-if str(_testA_backend) not in sys.path:
-    sys.path.append(str(_testA_backend))
-if str(_repo_root) not in sys.path:
-    sys.path.append(str(_repo_root))
-from testA.translate.backend.translate_router import router as test_translate_router
-app.include_router(test_translate_router)
-
 # test_B 练习路由（临时学生测试）
 from test_B.translate.backend.translate_router import router as test_b_translate_router
 from test_B.zh2tw.backend.zh_router import router as test_b_zh_router
@@ -474,6 +462,9 @@ app.include_router(test_b_zh_router)
 # testD 增强式翻译（业务在 testD/，此处仅挂载路由）
 from testD.backend.enhanced_translate_router import router as enhanced_translate_router
 app.include_router(enhanced_translate_router)
+
+from church_polish_router import router as church_polish_router
+app.include_router(church_polish_router)
 
 # 前端构建产物（Vite dist）；须在所有 API 路由注册之后挂载，避免覆盖 /api
 _FRONTEND_DIST = pt(__file__).resolve().parents[2] / "front_mic" / "frontend" / "dist"
