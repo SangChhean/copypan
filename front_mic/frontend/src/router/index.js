@@ -144,6 +144,10 @@ const routes = [
     path: '/panai2-test',
     component: () => import('../components/toolbox/PanAI2Test.vue')
   },
+  {
+    path: '/article-polish-c',
+    component: () => import('../components/toolbox/ArticlePolishTestC.vue'),
+  },
 ];
 
 const router = createRouter({

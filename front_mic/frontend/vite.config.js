@@ -40,6 +40,22 @@ export default defineConfig({
         target: 'http://localhost:8004',
         changeOrigin: true,
       },
+      '/api/testc/polish': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/memorial': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/styles': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
+      '/api/testc/roles': {
+        target: 'http://localhost:8013',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

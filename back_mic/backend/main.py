@@ -472,6 +472,9 @@ app.include_router(test_b_zh_router)
 from testD.backend.enhanced_translate_router import router as enhanced_translate_router
 app.include_router(enhanced_translate_router)
 
+from church_polish_router import router as church_polish_router
+app.include_router(church_polish_router)
+
 # 前端构建产物（Vite dist）；须在所有 API 路由注册之后挂载，避免覆盖 /api
 _FRONTEND_DIST = pt(__file__).resolve().parents[2] / "front_mic" / "frontend" / "dist"
 if _FRONTEND_DIST.is_dir():
