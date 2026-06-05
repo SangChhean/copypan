@@ -2094,7 +2094,14 @@ class AISearchService:
         else:
             return {"docx_bytes": None, "filename": "节期纲目.docx", "error": "节期纲目模板.docx 或 template.docx 不存在"}
 
-        allowed = ("original", "with_scripture", "morning_revival", "transcript", "composite")
+        allowed = (
+            "original",
+            "with_scripture",
+            "morning_revival",
+            "morning_revival_direct",
+            "transcript",
+            "composite",
+        )
         if outline_type not in allowed:
             outline_type = "original"
 
@@ -2208,6 +2215,7 @@ class AISearchService:
                 "original": "（纲目的原文）",
                 "with_scripture": "（带经文的纲目）",
                 "morning_revival": "（晨兴信息选读的纲目）",
+                "morning_revival_direct": "（带晨兴的纲目）",
                 "transcript": "（听抄稿的纲目）",
                 "composite": "（复合的纲目）",
             }
@@ -2242,7 +2250,7 @@ class AISearchService:
                 logger.warning(f"节期纲目刷格式模块未导入: {e}，跳过格式刷")
             except Exception as e:
                 logger.error(f"节期纲目格式刷失败: {e}", exc_info=True)
-            if outline_type == "morning_revival" and (morning_revival_raw or "").strip():
+            if outline_type in ("morning_revival", "morning_revival_direct") and (morning_revival_raw or "").strip():
                 doc2 = Document(temp_docx_path)
                 _append_morning_revival_section(doc2, (morning_revival_raw or "").strip())
                 doc2.save(temp_docx_path)

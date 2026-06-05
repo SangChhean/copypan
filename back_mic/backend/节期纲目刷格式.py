@@ -1453,11 +1453,19 @@ OUTLINE_TYPE_TO_PREFIX = {
     'original': '【纲目的原文】',
     'with_scripture': '【带经文的纲目】',
     'morning_revival': '【晨兴信息选读的纲目】',
+    'morning_revival_direct': '【带晨兴的纲目】',
     'transcript': '【听抄稿的纲目】',
     'composite': '【复合的纲目】',
 }
 # 第三段末尾可能带的类型后缀，用于从正文中剥掉
-_TYPE_SUFFIX_PATTERNS = ['（纲目的原文）', '（带经文的纲目）', '（晨兴信息选读的纲目）', '（听抄稿的纲目）', '（复合的纲目）']
+_TYPE_SUFFIX_PATTERNS = [
+    '（纲目的原文）',
+    '（带经文的纲目）',
+    '（晨兴信息选读的纲目）',
+    '（带晨兴的纲目）',
+    '（听抄稿的纲目）',
+    '（复合的纲目）',
+]
 
 
 def suggest_feast_outline_filename(third_para_text, outline_type):
@@ -1522,7 +1530,14 @@ def suggest_feast_outline_filename(third_para_text, outline_type):
 
 
 # ===== Web 入口：按类型刷格式（无双出处） =====
-FEAST_OUTLINE_TYPES = ('original', 'with_scripture', 'morning_revival', 'transcript', 'composite')
+FEAST_OUTLINE_TYPES = (
+    'original',
+    'with_scripture',
+    'morning_revival',
+    'morning_revival_direct',
+    'transcript',
+    'composite',
+)
 
 
 def format_feast_outline_docx(docx_path, outline_type):

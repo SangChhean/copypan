@@ -52,6 +52,7 @@ const downloadingMorningRevivalDirect = ref(false);
 const originalResults = computed(() => results.value.filter((r) => r.type === "original"));
 const withScriptureResults = computed(() => results.value.filter((r) => r.type === "with_scripture"));
 const morningRevivalResults = computed(() => results.value.filter((r) => r.type === "morning_revival"));
+const morningRevivalDirectResults = computed(() => results.value.filter((r) => r.type === "morning_revival_direct"));
 const transcriptResults = computed(() => results.value.filter((r) => r.type === "transcript"));
 const compositeResults = computed(() => results.value.filter((r) => r.type === "composite"));
 
@@ -285,6 +286,18 @@ async function generateAll() {
       }
     }
 
+    if (selectedTypes.value.includes("morning_revival_direct")) {
+      const combinedContent =
+        inputOutline.value.trim() +
+        "\n\n--- 分页符 ---\n\n晨兴信息选读：\n" +
+        inputMorningRevival.value.trim();
+      newResults.push({
+        type: "morning_revival_direct",
+        type_label: "带晨兴的纲目",
+        content: combinedContent,
+      });
+    }
+
     results.value = newResults;
     if (newResults.length) toastSuccess(`成功生成 ${newResults.length} 类节期纲目`);
     if (errors.length) toastWarning(errors.join("；"));
@@ -385,7 +398,7 @@ async function downloadMorningRevivalDirect() {
   try {
     const body = {
       contents: [inputOutline.value.trim()],
-      outline_type: "morning_revival",
+      outline_type: "morning_revival_direct",
       filename: "节期纲目_带晨兴.docx",
       line1: inputLine1.value?.trim() || "",
       line2: inputLine2.value?.trim() || "",
@@ -561,12 +574,12 @@ function copyResult(content) {
           </a-button>
           <a-button
             v-if="selectedTypes.includes('morning_revival_direct')"
-            size="small"
-            :disabled="!inputOutline.trim() || !inputMorningRevival.trim()"
+            type="primary"
+            :disabled="!inputOutline.trim() || !inputMorningRevival.trim() || downloadingMorningRevivalDirect"
             :loading="downloadingMorningRevivalDirect"
             @click="downloadMorningRevivalDirect"
           >
-            带晨兴的纲目
+            <DownloadOutlined /> 带晨兴的纲目（{{ morningRevivalDirectResults.length }}）
           </a-button>
           <a-button
             type="primary"
