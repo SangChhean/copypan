@@ -1,8 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Literal
+import asyncio
 import sys
 import os
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from back_shared.format_utils.format_outline import format_and_download
 
 # 引入正式后端的 ai_service
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../back_mic/backend"))
@@ -128,6 +133,24 @@ def translate_en2es(content: str) -> dict:
 class TranslateRequest(BaseModel):
     direction: Literal["zh2en", "en2zh", "en2es"]  # 翻译方向
     content: str                                     # 待翻译内容
+
+
+class FormatDownloadRequest(BaseModel):
+    text: str
+    direction: str   # 'zh' | 'zh_tw' | 'en' | 'es'
+    output_format: str = 'docx'  # 'docx' | 'pdf'
+
+
+@router.post("/practice/format_download")
+async def practice_format_download(req: FormatDownloadRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail='内容不能为空')
+    if req.direction not in ('zh', 'zh_tw', 'en', 'es'):
+        raise HTTPException(status_code=400, detail='无效的语言方向')
+    result = await asyncio.to_thread(
+        format_and_download, req.text, req.direction, req.output_format
+    )
+    return result
 
 
 @router.post("/practice/translate")

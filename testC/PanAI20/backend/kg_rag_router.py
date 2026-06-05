@@ -2,13 +2,17 @@
 """PanAI 2.0 练习：检索 + Claude 生成纲目。"""
 import asyncio
 import os
+import sys
 from pathlib import Path
 
 import anthropic
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from back_shared.format_utils.format_outline import format_and_download
 
 from back_shared.retrieval import bm25_search, dense_search, rerank, rrf_merge
 
@@ -27,6 +31,12 @@ class KgRagRequest(BaseModel):
     query: str = Field(..., min_length=1, description="纲目主题")
     outline_nature: str = Field("一般性", description="纲目性质")
     burden_description: str = Field("", description="负担说明")
+
+
+class FormatDownloadRequest(BaseModel):
+    text: str
+    direction: str   # 'zh' | 'zh_tw' | 'en' | 'es'
+    output_format: str = 'docx'  # 'docx' | 'pdf'
 
 
 def format_chunks(chunks: list[dict]) -> str:
@@ -71,6 +81,18 @@ def _call_claude(prompt: str) -> str:
         messages=[{"role": "user", "content": prompt}],
     )
     return response.content[0].text
+
+
+@router.post("/format_download")
+async def kg_rag_format_download(req: FormatDownloadRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail='内容不能为空')
+    if req.direction not in ('zh', 'zh_tw', 'en', 'es'):
+        raise HTTPException(status_code=400, detail='无效的语言方向')
+    result = await asyncio.to_thread(
+        format_and_download, req.text, req.direction, req.output_format
+    )
+    return result
 
 
 @router.post("/query")

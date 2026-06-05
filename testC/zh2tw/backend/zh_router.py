@@ -1,9 +1,14 @@
 # 简繁互转路由
+import asyncio
+import sys
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
 from opencc import OpenCC
 import json
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from back_shared.format_utils.format_outline import format_and_download
 
 ERROR_CHARS_PATH = Path(__file__).resolve().parents[3] / 'shared' / 'error_chars.txt'
 
@@ -139,7 +144,25 @@ class ZhConvertRequest(BaseModel):
     direction: str = "zh2tw"  # 默认简转繁
 
 
+class FormatDownloadRequest(BaseModel):
+    text: str
+    direction: str   # 'zh' | 'zh_tw' | 'en' | 'es'
+    output_format: str = 'docx'  # 'docx' | 'pdf'
+
+
 # ── 路由 ─────────────────────────────────────────────
+@router.post("/format_download")
+async def zh_format_download(req: FormatDownloadRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail='内容不能为空')
+    if req.direction not in ('zh', 'zh_tw', 'en', 'es'):
+        raise HTTPException(status_code=400, detail='无效的语言方向')
+    result = await asyncio.to_thread(
+        format_and_download, req.text, req.direction, req.output_format
+    )
+    return result
+
+
 @router.post("/zh_convert")
 async def zh_convert(req: ZhConvertRequest):
     if not req.content or not req.content.strip():
