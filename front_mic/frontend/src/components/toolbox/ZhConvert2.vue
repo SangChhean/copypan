@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from "vue";
-import { ArrowLeftOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 
 const apiBase = "";
 const MAX_CONTENT_CHARS = 100_000;
@@ -50,6 +50,54 @@ function copyResult() {
       copyHint.value = "";
     }, 2000);
   });
+}
+
+const formatLoading = ref(false);
+
+function showToast(msg) {
+  copyHint.value = msg;
+  setTimeout(() => {
+    if (copyHint.value === msg) copyHint.value = "";
+  }, 2500);
+}
+
+async function formatAndDownload() {
+  const text = resultText.value;
+  if (!text) return;
+  formatLoading.value = true;
+  try {
+    const res = await fetch("/api/testa/translate/format_download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, lang: "zh" }),
+    });
+    if (!res.ok) {
+      showToast("下载失败");
+      return;
+    }
+    let filename = "formatted_zh.docx";
+    const disposition = res.headers.get("Content-Disposition");
+    if (disposition) {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match) {
+        filename = decodeURIComponent(utf8Match[1]);
+      } else {
+        const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+        if (asciiMatch) filename = asciiMatch[1];
+      }
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showToast("下载失败");
+  } finally {
+    formatLoading.value = false;
+  }
 }
 
 const applyCorrections = () => {
@@ -246,6 +294,12 @@ async function convert() {
             应用全部修正
           </a-button>
         </div>
+      </div>
+      <div v-if="resultText" class="format-bar">
+        <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload">
+          <template #icon><DownloadOutlined /></template>
+          刷格式并下载
+        </a-button>
       </div>
     </div>
   </div>
@@ -513,6 +567,25 @@ async function convert() {
 .copy-btn:hover {
   color: #1890ff;
   border-color: #1890ff;
+}
+
+.format-bar {
+  margin: 0 16px 12px;
+}
+.format-download-btn {
+  width: 100%;
+  height: 38px;
+  background: #55bbff;
+  border-color: #55bbff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+.format-download-btn:hover {
+  background: #7cccff;
+  border-color: #7cccff;
+  color: #fff;
 }
 
 .result-body {

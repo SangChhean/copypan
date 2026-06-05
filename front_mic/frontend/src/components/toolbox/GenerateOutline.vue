@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { LeftOutlined } from "@ant-design/icons-vue";
+import { DownloadOutlined, LeftOutlined } from "@ant-design/icons-vue";
 
 const router = useRouter();
 
@@ -29,6 +29,40 @@ function copyResult() {
   if (!answer.value) return;
   const text = query.value ? `${query.value}\n\n${answer.value}` : answer.value;
   navigator.clipboard.writeText(text).then(() => showToast("已复制到剪贴板"));
+}
+
+const formatLoading = ref(false);
+
+async function formatAndDownload() {
+  const text = answer.value;
+  if (!text) return;
+  const fullText = query.value ? `${query.value}\n${text}` : text;
+
+  formatLoading.value = true;
+  try {
+    const res = await fetch("/api/testa/translate/format_download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: fullText, lang: "zh" }),
+    });
+    if (!res.ok) {
+      showToast("下载失败");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safeName = query.value.replace(/[\\/:*?"<>|]/g, "") || "outline";
+    a.download = `${safeName}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showToast("下载失败");
+  } finally {
+    formatLoading.value = false;
+  }
 }
 
 function clearAll() {
@@ -184,6 +218,12 @@ async function generate() {
       <div class="divider" />
       <div class="result-topic">{{ query }}</div>
       <pre class="result-body">{{ answer }}</pre>
+    </div>
+    <div v-if="answer" class="format-bar">
+      <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload">
+        <template #icon><DownloadOutlined /></template>
+        刷格式并下载
+      </a-button>
     </div>
 
     <!-- 参考段落卡片 -->
@@ -406,6 +446,24 @@ async function generate() {
 .copy-btn:hover {
   color: #1890ff;
   border-color: #1890ff;
+}
+.format-bar {
+  margin: 0 16px 12px;
+}
+.format-download-btn {
+  width: 100%;
+  height: 38px;
+  background: #55bbff;
+  border-color: #55bbff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+.format-download-btn:hover {
+  background: #7cccff;
+  border-color: #7cccff;
+  color: #fff;
 }
 .result-topic {
   text-align: center;
