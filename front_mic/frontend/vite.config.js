@@ -80,6 +80,22 @@ export default defineConfig({
         target: 'http://localhost:8013',
         changeOrigin: true,
       },
+      '/api/practice/kg_rag': {
+        target: 'http://localhost:8009',
+        changeOrigin: true,
+      },
+      '/api/testc/zh_convert': {
+        target: 'http://localhost:8006',
+        changeOrigin: true,
+      },
+      '/api/testc/format_download': {
+        target: 'http://localhost:8006',
+        changeOrigin: true,
+      },
+      '/api/practice/kg_rag/format_download': {
+        target: 'http://localhost:8009',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

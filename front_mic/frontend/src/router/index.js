@@ -151,9 +151,11 @@ const routes = [
   {
     path: '/article-polish-c',
     component: () => import('../components/toolbox/ArticlePolishTestC.vue'),
+  },
+  {
     path: '/article-polish-b',
     component: () => import('../components/toolbox/ArticlePolishB.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/article-polish-hub',

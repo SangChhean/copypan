@@ -21,6 +21,11 @@
         <button class="btn btn-copy" @click="copy">复制结果</button>
       </div>
       <div class="result-text">{{ resultText }}</div>
+      <FormatDownloadBar
+        :text="resultText"
+        :direction="formatDirection"
+        api-endpoint="/api/testc/format_download"
+      />
     </div>
 
     <!-- 易错字审核区 -->
@@ -33,8 +38,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import ErrorReview from './ErrorReview.vue'
+import FormatDownloadBar from '../../../../../front_mic/frontend/src/components/toolbox/FormatDownloadBar.vue'
 
 const input = ref('')
 const resultText = ref('')
@@ -43,6 +49,10 @@ const loading = ref(false)
 const emptyError = ref(false)
 const errorMsg = ref('')
 const direction = ref('zh2tw')
+
+const formatDirection = computed(() => {
+  return direction.value === 'zh2tw' ? 'zh_tw' : 'zh'
+})
 
 async function convert() {
   emptyError.value = false
@@ -90,100 +100,184 @@ function copy() {
 </script>
 
 <style scoped>
+:global(body) {
+  background-color: #f7f5f0;
+}
+
 .container {
-  max-width: 1100px;
-  margin: 32px auto;
-  padding: 40px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  color: #1a1a2e;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  background: #f7f5f0;
+  color: #2d2d2d;
   font-family: sans-serif;
 }
+
 .title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d2d2d;
   text-align: center;
-  font-size: 24px;
   margin-bottom: 24px;
-  color: #5c4db1;
-  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #dde3e9;
 }
+
 .direction-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 2px 12px rgba(44, 95, 138, 0.08);
 }
+
 .btn-dir {
-  padding: 8px 20px;
-  border-radius: 8px;
-  background: #e9ecef;
-  color: #495057;
-  border: 1px solid #dee2e6;
-  font-size: 14px;
+  padding: 9px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #6b6b6b;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-dir:hover:not(.active) {
+  background: #e8f0f7;
+  color: #2c5f8a;
 }
 .btn-dir.active {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
-  font-weight: bold;
-  border-color: #5c4db1;
+  border-color: #2c5f8a;
+  box-shadow: 0 2px 6px rgba(44, 95, 138, 0.25);
 }
+
+.btn-back {
+  background: transparent;
+  color: #6b6b6b;
+  border: 1.5px solid #dde3e9;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+.btn-back:hover {
+  border-color: #2c5f8a;
+  color: #2c5f8a;
+}
+
 .textarea {
   width: 100%;
-  background: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  color: #212529;
-  font-size: 15px;
-  padding: 12px;
-  resize: vertical;
   box-sizing: border-box;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.8;
+  border: 1.5px solid #dde3e9;
+  border-radius: 8px;
+  background: #fdfcfb;
+  color: #2d2d2d;
+  resize: vertical;
+  outline: none;
+  min-height: 200px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.textarea:focus {
+  border-color: #2c5f8a;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, 0.1);
+}
+
 .btn-row {
   display: flex;
   gap: 12px;
   margin-top: 16px;
 }
+
 .btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
+
 .btn-primary {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
-  font-weight: bold;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 36px;
+  font-size: 16px;
 }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-secondary { background: #e9ecef; color: #495057; }
-.btn-back {
-  background: transparent;
-  color: #6c757d;
-  border: 1px solid #ced4da;
-  margin-bottom: 16px;
-  padding: 6px 16px;
+.btn-primary:hover:not(:disabled) {
+  background: #1e4a6e;
+}
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #6b6b6b;
+  border: 1.5px solid #dde3e9;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 15px;
+}
+.btn-secondary:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.error-msg {
+  color: #c0392b;
+  margin-top: 8px;
   font-size: 13px;
-  border-radius: 8px;
-  cursor: pointer;
 }
-.error-msg { color: #dc3545; margin-top: 12px; }
+
 .result-box {
   margin-top: 24px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  padding: 16px;
+  padding: 20px;
+  border: 1px solid #dde3e9;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(44, 95, 138, 0.08);
 }
+
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  color: #2d6a4f;
-  font-weight: bold;
+  color: #2c5f8a;
+  font-weight: 600;
+  font-size: 14px;
 }
-.btn-copy { background: #e9ecef; color: #495057; padding: 6px 16px; font-size: 13px; }
-.result-text { white-space: pre-wrap; line-height: 1.8; color: #212529; font-size: 17px; }
+
+.btn-copy {
+  border: 1.5px solid #2c5f8a;
+  color: #2c5f8a;
+  background: #fff;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.btn-copy:hover {
+  background: #e8f0f7;
+}
+
+.result-text {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #2d2d2d;
+}
+
 /* 审核区 */
 .review-box {
   margin-top: 20px;
@@ -216,7 +310,7 @@ function copy() {
 .group-char {
   font-size: 16px;
   font-weight: bold;
-  color: #5c4db1;
+  color: #2c5f8a;
 }
 .group-count { font-size: 13px; color: #6c757d; }
 .group-candidates {
@@ -228,8 +322,8 @@ function copy() {
 .label { font-size: 13px; color: #6c757d; }
 .btn-candidate {
   background: #fff;
-  color: #5c4db1;
-  border: 1px solid #5c4db1;
+  color: #2c5f8a;
+  border: 1px solid #2c5f8a;
   border-radius: 4px;
   padding: 2px 10px;
   font-size: 13px;
@@ -237,7 +331,7 @@ function copy() {
 }
 .btn-candidate:hover { background: #ede9f8; }
 .btn-candidate.selected {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
 }
 .btn-set-all {
@@ -280,7 +374,7 @@ function copy() {
   border-top: 1px solid #dee2e6;
 }
 .btn-confirm {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
   font-weight: bold;
   padding: 10px 28px;

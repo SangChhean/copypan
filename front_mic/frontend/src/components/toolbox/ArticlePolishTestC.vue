@@ -1,6 +1,8 @@
 <template>
   <ToolsHeader title="文章润色练习" />
   <div class="page">
+    <p class="page-desc">支持通用风格润色、恩典陵园见证稿、召会通讯见证类文章</p>
+
     <div class="tab-bar">
       <button
         v-for="tab in TABS"
@@ -14,20 +16,41 @@
       </button>
     </div>
 
-    <a-card class="main-card">
+    <a-card class="main-card" :bordered="false">
       <!-- Tab 1：通用类 -->
       <div v-if="activeTab === 'polish'" class="option-section">
         <div class="section-label">润色风格</div>
-        <a-checkbox-group v-model:value="selectedStyles" class="style-checks" :disabled="loading">
-          <a-checkbox v-for="(meta, key) in styles" :key="key" :value="key">
+        <div class="style-tags">
+          <label
+            v-for="(meta, key) in styles"
+            :key="key"
+            class="style-tag"
+            :class="{ active: selectedStyles.includes(key), disabled: loading }"
+          >
+            <input
+              v-model="selectedStyles"
+              type="checkbox"
+              :value="key"
+              :disabled="loading"
+              class="tag-input"
+            />
             {{ meta.label }}
-          </a-checkbox>
-        </a-checkbox-group>
+          </label>
+        </div>
 
         <div class="ministry-row">
-          <a-checkbox v-model:checked="addMinistryColor" :disabled="loading">
+          <label
+            class="ministry-tag"
+            :class="{ active: addMinistryColor, disabled: loading }"
+          >
+            <input
+              v-model="addMinistryColor"
+              type="checkbox"
+              :disabled="loading"
+              class="tag-input"
+            />
             <span class="ministry-label">体现主恢复色彩</span>
-          </a-checkbox>
+          </label>
           <span class="ministry-hint">（勾选后将在润色指令中附加：体现主恢复而非一般宗教色彩）</span>
         </div>
       </div>
@@ -69,7 +92,7 @@
         </div>
       </div>
 
-      <a-divider style="margin: 16px 0" />
+      <a-divider class="section-divider" />
 
       <a-textarea
         v-model:value="article"
@@ -109,10 +132,11 @@
           v-for="item in results"
           :key="item.style"
           class="result-card result-fade"
+          :bordered="false"
         >
           <template #title>
             <div class="result-head">
-              <span>{{ item.label }}</span>
+              <span class="result-title">{{ item.label }}</span>
               <button
                 type="button"
                 class="copy-btn"
@@ -136,10 +160,10 @@
       </template>
 
       <!-- Tab 2 / 3：单块结果 -->
-      <a-card v-else class="result-card result-fade">
+      <a-card v-else class="result-card result-fade" :bordered="false">
         <template #title>
           <div class="result-head">
-            <span>润色结果</span>
+            <span class="result-title">润色结果</span>
             <button
               type="button"
               class="copy-btn"
@@ -374,164 +398,289 @@ function copyText(text, key) {
 </script>
 
 <style scoped>
+:global(body) {
+  background-color: #f7f5f0;
+}
+
 .page {
-  padding: 1em;
-  max-width: 900px;
-  width: 100%;
+  --bg-page: #f7f5f0;
+  --bg-card: #ffffff;
+  --bg-input: #fdfcfb;
+  --color-primary: #2c5f8a;
+  --color-primary-light: #e8f0f7;
+  --color-primary-hover: #1e4a6e;
+  --color-text: #2d2d2d;
+  --color-text-secondary: #6b6b6b;
+  --color-border: #dde3e9;
+  --color-border-active: #2c5f8a;
+  --radius-card: 10px;
+  --radius-btn: 6px;
+  --shadow-card: 0 2px 12px rgba(44, 95, 138, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  background: var(--bg-page);
+  background-color: #f7f5f0;
+  max-width: 920px;
   margin: 0 auto;
+  padding: 28px 24px;
+  color: var(--color-text);
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 20px;
+  line-height: 1.6;
 }
 
 .tab-bar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 6px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
 }
 
 .tab-btn {
-  padding: 8px 20px;
+  padding: 9px 24px;
   font-size: 15px;
   font-weight: 500;
-  border: 2px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fafafa;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.tab-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+.tab-btn:hover:not(.active) {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 .tab-btn.active {
-  background: #1890ff;
-  border-color: #1890ff;
+  background: var(--color-primary);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(44, 95, 138, 0.25);
 }
 
-.main-card,
-.result-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+.main-card {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+.main-card :deep(.ant-card-body) {
+  padding: 24px;
 }
 
 .section-label {
   font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 0.95em;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  font-size: 15px;
 }
 
-.style-checks {
+.style-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 10px;
+}
+
+.tag-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.style-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  color: #555;
+}
+.style-tag:hover:not(.disabled):not(.active) {
+  border-color: var(--color-border-active);
+  color: var(--color-primary);
+}
+.style-tag.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.style-tag.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .ministry-row {
-  margin-top: 14px;
+  margin-top: 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.ministry-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  color: #555;
+}
+.ministry-tag:hover:not(.disabled):not(.active) {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+.ministry-tag.active {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+}
+.ministry-tag.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .ministry-label {
   font-weight: 500;
-  color: #333;
 }
 .ministry-hint {
   color: #8c8c8c;
-  font-size: 0.88em;
+  font-size: 13px;
 }
 
 .role-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .role-card {
   text-align: left;
-  padding: 12px 14px;
-  border: 2px solid #e8e8e8;
+  padding: 14px 16px;
+  border: 1.5px solid var(--color-border);
   border-radius: 8px;
-  background: #fafafa;
+  background: #fff;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.role-card:hover:not(:disabled) {
-  border-color: #1890ff;
+.role-card:hover:not(:disabled):not(.active) {
+  border-color: var(--color-border-active);
+  box-shadow: 0 2px 8px rgba(44, 95, 138, 0.1);
 }
 .role-card.active {
-  border-color: #1890ff;
-  background: #e6f4ff;
+  border: 1.5px solid #2c5f8a;
+  border-left: 4px solid #2c5f8a;
+  background: #e8f0f7;
+  padding-left: 13px;
 }
 .role-card:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .role-label {
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
+  color: var(--color-text);
 }
 .role-desc {
-  font-size: 0.88em;
-  color: #666;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
   line-height: 1.5;
 }
 
 .church-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .church-btn {
-  padding: 12px 10px;
+  padding: 14px;
   font-size: 14px;
   font-weight: 500;
-  border: 2px solid #d9d9d9;
+  border: 1.5px solid var(--color-border);
   border-radius: 8px;
   background: #fff;
+  color: var(--color-text);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.church-btn:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+.church-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--color-border-active);
+  color: var(--color-primary);
 }
 .church-btn.active {
-  background: #1890ff;
-  border-color: #1890ff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 .church-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-.content-area :deep(.ant-input),
-.result-textarea :deep(.ant-input) {
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 16px;
-  line-height: 1.8;
-  width: 100%;
+.section-divider :deep(.ant-divider) {
+  margin: 20px 0;
+  border-color: #e8e8e0;
 }
 
 .content-area :deep(textarea.ant-input) {
+  background: var(--bg-input);
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.8;
+  padding: 12px;
   min-height: 200px;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.content-area :deep(textarea.ant-input:focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, 0.12);
+}
+
+.result-textarea :deep(textarea.ant-input) {
+  background: var(--bg-input);
+  border: none;
+  border-radius: 0;
+  font-size: 15px;
+  line-height: 1.9;
+  padding: 16px 20px;
+  width: 100%;
+  resize: none;
 }
 
 .char-hint {
-  margin-top: 6px;
-  font-size: 0.85em;
-  color: #8c8c8c;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9e9e9e;
+  text-align: right;
 }
 
 .action-row {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e0;
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -541,66 +690,87 @@ function copyText(text, key) {
 .action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: #1890ff;
+  gap: 8px;
+  background: var(--color-primary);
   color: #fff;
   border: none;
-  padding: 8px 24px;
-  border-radius: 6px;
+  padding: 10px 36px;
+  border-radius: var(--radius-btn);
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
 }
 .action-btn:hover:not(:disabled) {
-  background: #40a9ff;
+  background: var(--color-primary-hover);
 }
 .action-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .clear-btn {
   background: #fff;
-  color: #666;
-  border: 1px solid #d9d9d9;
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
+  padding: 10px 24px;
+  border-radius: var(--radius-btn);
+  font-size: 15px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 .clear-btn:hover:not(:disabled) {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-  background: #fff1f0;
+  color: #c62828;
+  border-color: #c62828;
+  background: #fff;
 }
 .clear-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .loading-hint {
-  margin-top: 16px;
-  color: #8c8c8c;
+  margin-top: 20px;
+  color: #9e9e9e;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 20px 0;
+  font-size: 14px;
 }
 
 .error-block {
   margin-top: 12px;
-  color: #cf1322;
-  font-size: 0.95em;
+  color: #c62828;
+  font-size: 14px;
   text-align: center;
 }
 
 .results-section {
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.result-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.result-card :deep(.ant-card-head) {
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 20px;
+  min-height: auto;
+}
+.result-card :deep(.ant-card-head-title) {
+  padding: 0;
+}
+.result-card :deep(.ant-card-body) {
+  padding: 0;
 }
 
 .result-fade {
@@ -624,30 +794,35 @@ function copyText(text, key) {
   width: 100%;
 }
 
+.result-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 .copy-btn {
   background: #fff;
-  border: 1px solid #d9d9d9;
+  border: 1.5px solid var(--color-primary);
   border-radius: 4px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 13px;
-  color: #555;
+  color: var(--color-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 .copy-btn:hover:not(:disabled) {
-  color: #1890ff;
-  border-color: #1890ff;
+  background: var(--color-primary-light);
 }
 .copy-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .error {
-  color: #cf1322;
-  font-size: 0.95em;
+  color: #c62828;
+  font-size: 14px;
   line-height: 1.5;
-  margin-bottom: 8px;
+  margin: 12px 20px;
 }
 
 .btn-spin {

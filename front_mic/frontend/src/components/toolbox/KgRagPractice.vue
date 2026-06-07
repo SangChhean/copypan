@@ -52,30 +52,18 @@
         </button>
       </div>
       <pre class="result-pre">{{ result }}</pre>
-      <div class="download-row">
-        <button
-          class="btn btn-download"
-          type="button"
-          :disabled="downloadingDocx"
-          @click="download('docx')"
-        >
-          {{ downloadingDocx ? "下载中…" : "下载 DOCX" }}
-        </button>
-        <button
-          class="btn btn-download"
-          type="button"
-          :disabled="downloadingPdf"
-          @click="download('pdf')"
-        >
-          {{ downloadingPdf ? "下载中…" : "下载 PDF" }}
-        </button>
-      </div>
+      <FormatDownloadBar
+        :text="fullText()"
+        direction="zh"
+        api-endpoint="/api/practice/kg_rag/format_download"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import FormatDownloadBar from "./FormatDownloadBar.vue";
 
 const natureOptions = ["一般性", "真理启示", "生命经历", "应用实行"];
 
@@ -87,8 +75,6 @@ const loading = ref(false);
 const emptyError = ref(false);
 const errorMsg = ref("");
 const copied = ref(false);
-const downloadingDocx = ref(false);
-const downloadingPdf = ref(false);
 
 function goBack() {
   window.location.hash = "/tools";
@@ -149,233 +135,207 @@ async function copyResult() {
   }
 }
 
-function doDownload(data, format) {
-  const baseName = (query.value.trim() || "outline_zh").replace(/[\\/:*?"<>|]/g, "_");
-  if (format === "docx" && data.docx_base64) {
-    const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
-    const blob = new Blob([bin], {
-      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = data.filename || `${baseName}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } else if (format === "pdf") {
-    if (data.pdf_base64) {
-      const bin = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bin], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = data.filename || `${baseName}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } else if (data.docx_base64) {
-      const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bin], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = (data.filename || baseName).replace(/\.pdf$/i, ".docx");
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      errorMsg.value = "PDF 转换失败，已下载 DOCX";
-    }
-  }
-}
-
-async function download(format) {
-  if (!result.value) return;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.hash = "/login";
-    return;
-  }
-  if (format === "docx") downloadingDocx.value = true;
-  else downloadingPdf.value = true;
-  try {
-    const res = await fetch("/api/ai_search/format_outline_only", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        direction: "en2zh",
-        translated_text: fullText(),
-        output_format: format,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      errorMsg.value = data.detail || data.error || "下载失败";
-      return;
-    }
-    doDownload(data, format);
-  } catch (e) {
-    errorMsg.value = e?.message || "下载失败";
-  } finally {
-    if (format === "docx") downloadingDocx.value = false;
-    else downloadingPdf.value = false;
-  }
-}
 </script>
 
 <style scoped>
+:global(body) {
+  background-color: #f7f5f0;
+}
+
 .container {
-  max-width: 1100px;
-  margin: 32px auto;
-  padding: 40px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  color: #1a1a2e;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  background: #f7f5f0;
+  color: #2d2d2d;
   font-family: sans-serif;
 }
+
 .title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d2d2d;
   text-align: center;
-  font-size: 24px;
   margin-bottom: 24px;
-  color: #5c4db1;
-  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #dde3e9;
 }
+
 .label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 500;
-  color: #495057;
+  font-weight: 600;
+  color: #2d2d2d;
+  font-size: 15px;
 }
+
 .input {
   width: 100%;
   box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  color: #212529;
+  padding: 12px 16px;
   font-size: 15px;
-  padding: 12px;
-  margin-bottom: 16px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  border: 1.5px solid #dde3e9;
+  border-radius: 8px;
+  background: #fdfcfb;
+  color: #2d2d2d;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.input:focus {
+  border-color: #2c5f8a;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, 0.1);
+}
+.input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .nature-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
+
 .btn-nature {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #e9ecef;
-  color: #495057;
-  border: 1px solid #dee2e6;
+  padding: 8px 20px;
   font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid #dde3e9;
+  border-radius: 20px;
+  background: #fff;
+  color: #555;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-nature:hover:not(.active):not(:disabled) {
+  border-color: #2c5f8a;
+  color: #2c5f8a;
 }
 .btn-nature.active {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
-  font-weight: bold;
-  border-color: #5c4db1;
+  border-color: #2c5f8a;
+  box-shadow: 0 2px 6px rgba(44, 95, 138, 0.25);
 }
 .btn-nature:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
+
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  color: #212529;
+  padding: 12px 16px;
   font-size: 15px;
-  padding: 12px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  border: 1.5px solid #dde3e9;
+  border-radius: 8px;
+  background: #fdfcfb;
+  color: #2d2d2d;
   resize: vertical;
-  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.textarea:focus {
+  border-color: #2c5f8a;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, 0.1);
+}
+.textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .btn-row {
   display: flex;
   gap: 12px;
   margin-top: 8px;
 }
+
 .btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
+
 .btn-primary {
-  background: #5c4db1;
+  background: #2c5f8a;
   color: #fff;
-  font-weight: bold;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 10px 36px;
+  font-size: 16px;
+  border: none;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1e4a6e;
 }
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
+
 .btn-back {
   background: transparent;
-  color: #6c757d;
-  border: 1px solid #ced4da;
-  margin-bottom: 16px;
-  padding: 6px 16px;
+  color: #6b6b6b;
+  border: 1.5px solid #dde3e9;
+  border-radius: 6px;
+  padding: 6px 14px;
   font-size: 13px;
+  margin-bottom: 20px;
+  cursor: pointer;
 }
+.btn-back:hover {
+  border-color: #2c5f8a;
+  color: #2c5f8a;
+}
+
 .btn-copy {
-  background: #e9ecef;
-  color: #495057;
-  padding: 6px 16px;
+  border: 1.5px solid #2c5f8a;
+  color: #2c5f8a;
+  background: #fff;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-copy:hover {
+  background: #e8f0f7;
+}
+
+.error-msg {
+  color: #c0392b;
+  margin-top: 8px;
   font-size: 13px;
 }
-.btn-download {
-  background: #5c4db1;
-  color: #fff;
-  font-size: 14px;
-}
-.btn-download:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.error-msg {
-  color: #dc3545;
-  margin-top: 12px;
-}
+
 .result-box {
   margin-top: 24px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  padding: 16px;
+  padding: 20px;
+  border: 1px solid #dde3e9;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(44, 95, 138, 0.08);
 }
+
 .result-header {
+  color: #2c5f8a;
+  font-weight: 600;
+  font-size: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  font-weight: bold;
-  color: #5c4db1;
 }
+
 .result-pre {
   white-space: pre-wrap;
   line-height: 1.8;
-  color: #212529;
+  color: #2d2d2d;
   font-size: 15px;
   margin: 0;
   font-family: inherit;
-}
-.download-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
 }
 </style>

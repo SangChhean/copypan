@@ -39,12 +39,20 @@
     </div>
     <p v-if="twLoading" class="tw-loading">繁体转换中…</p>
     <p v-if="twError" class="error-text">{{ twError }}</p>
+
+    <FormatDownloadBar
+      v-if="result"
+      :text="formatText"
+      :direction="formatDirection"
+      api-endpoint="/api/practice/format_download"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import ErrorReview from '../../zh2tw/frontend/src/components/ErrorReview.vue'
+import FormatDownloadBar from '../../../front_mic/frontend/src/components/toolbox/FormatDownloadBar.vue'
 
 const direction = ref('zh2en')
 const content = ref('')
@@ -59,6 +67,18 @@ const twResult = ref('')
 const twErrorChecks = ref([])
 const twLoading = ref(false)
 const twError = ref('')
+
+const formatDirection = computed(() => {
+  if (direction.value === 'zh2en') return 'en'
+  if (direction.value === 'en2zh') return generateTw.value ? 'zh_tw' : 'zh'
+  if (direction.value === 'en2es') return 'es'
+  return 'zh'
+})
+
+const formatText = computed(() => {
+  if (direction.value === 'en2zh' && generateTw.value && twResult.value) return twResult.value
+  return result.value
+})
 
 async function handleTranslate() {
   emptyError.value = false
@@ -144,24 +164,186 @@ async function handleCopy(type) {
 </script>
 
 <style scoped>
-.container { max-width: 900px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; }
-.title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #222; }
-.direction-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
-.toggle-btn { padding: 6px 18px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 14px; }
-.toggle-btn.active { background: #1a6ef5; border-color: #1a6ef5; color: #fff; }
-.tw-option { margin-bottom: 12px; font-size: 14px; color: #444; display: flex; align-items: center; gap: 6px; }
-.tw-option input { cursor: pointer; }
-.input-area { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; line-height: 1.6; resize: vertical; outline: none; }
-.input-area:focus { border-color: #1a6ef5; }
-.error-text { margin: 6px 0 0; color: #d0021b; font-size: 13px; }
-.translate-btn { margin-top: 14px; padding: 8px 28px; background: #1a6ef5; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
-.translate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.result-box { position: relative; margin-top: 24px; padding: 16px; border: 1px solid #ddd; border-radius: 4px; background: #fafafa; }
-.tw-result-box { border-color: #5c4db1; background: #faf9ff; }
-.result-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; }
-.tw-label { color: #5c4db1; }
-.copy-btn { position: absolute; top: 10px; right: 12px; padding: 4px 14px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; }
-.copy-btn:hover { background: #f0f0f0; }
-.result-text { margin: 0; padding-right: 60px; white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.7; color: #333; }
-.tw-loading { margin-top: 12px; font-size: 14px; color: #5c4db1; }
+:global(body) {
+  background-color: #f7f5f0;
+}
+
+.container {
+  --bg-page: #f7f5f0;
+  --bg-card: #ffffff;
+  --bg-input: #fdfcfb;
+  --color-primary: #2c5f8a;
+  --color-primary-hover: #1e4a6e;
+  --color-primary-light: #e8f0f7;
+  --color-text: #2d2d2d;
+  --color-text-secondary: #6b6b6b;
+  --color-border: #dde3e9;
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(44, 95, 138, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  background-color: #f7f5f0;
+  min-height: 100vh;
+  color: var(--color-text);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #dde3e9;
+}
+
+.direction-toggle {
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: var(--shadow);
+}
+
+.toggle-btn {
+  padding: 9px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #6b6b6b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.toggle-btn:hover:not(.active) {
+  background: #e8f0f7;
+  color: #2c5f8a;
+}
+.toggle-btn.active {
+  background: #2c5f8a;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(44, 95, 138, 0.25);
+}
+
+.tw-option {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tw-option input {
+  cursor: pointer;
+}
+
+.input-area {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.8;
+  border: 1.5px solid #dde3e9;
+  border-radius: 8px;
+  background: #fdfcfb;
+  color: #2d2d2d;
+  resize: vertical;
+  outline: none;
+  min-height: 200px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-area:focus {
+  border-color: #2c5f8a;
+  box-shadow: 0 0 0 3px rgba(44, 95, 138, 0.1);
+}
+
+.translate-btn {
+  margin-top: 16px;
+  padding: 10px 36px;
+  font-size: 16px;
+  font-weight: 500;
+  background: #2c5f8a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.translate-btn:hover:not(:disabled) {
+  background: #1e4a6e;
+}
+.translate-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.error-text {
+  margin: 8px 0 0;
+  color: #c0392b;
+  font-size: 13px;
+}
+
+.result-box {
+  position: relative;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #dde3e9;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.tw-result-box {
+  border: 1px solid #2c5f8a;
+  border-left: 4px solid #2c5f8a;
+  background: #f0f4f8;
+}
+
+.result-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b6b6b;
+  margin-bottom: 10px;
+}
+
+.tw-label {
+  color: #2c5f8a;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 5px 14px;
+  font-size: 12px;
+  border: 1.5px solid #2c5f8a;
+  border-radius: 4px;
+  background: #fff;
+  color: #2c5f8a;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.copy-btn:hover {
+  background: #e8f0f7;
+}
+
+.result-text {
+  margin: 0;
+  padding-right: 70px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #2d2d2d;
+}
+
+.tw-loading {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #2c5f8a;
+}
 </style>
