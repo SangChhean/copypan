@@ -1,6 +1,7 @@
 <!-- 练习组件：连接 testA 独立后端 http://localhost:8001 -->
 <script setup>
 import { ref, computed, watch } from "vue";
+import { DownloadOutlined } from "@ant-design/icons-vue";
 import ToolsHeader from "./ToolsHeader.vue";
 
 const apiBase = "";
@@ -62,6 +63,54 @@ function copyResult(text) {
   navigator.clipboard.writeText(text).then(() => {
     showToast("已复制到剪贴板");
   });
+}
+
+const formatLoading = ref(false);
+
+async function formatAndDownload(text, lang) {
+  const content = text ?? result.value;
+  if (!content) return;
+  let dlLang = lang;
+  if (!dlLang) {
+    dlLang = "zh";
+    if (direction.value === "zh2en") dlLang = "en";
+    if (direction.value === "en2es") dlLang = "es";
+  }
+
+  formatLoading.value = true;
+  try {
+    const res = await fetch("/api/testa/translate/format_download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: content, lang: dlLang }),
+    });
+    if (!res.ok) {
+      showToast("下载失败，请稍后重试");
+      return;
+    }
+    let filename = `formatted_${dlLang}.docx`;
+    const disposition = res.headers.get("Content-Disposition");
+    if (disposition) {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match) {
+        filename = decodeURIComponent(utf8Match[1]);
+      } else {
+        const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+        if (asciiMatch) filename = asciiMatch[1];
+      }
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showToast("下载失败，请稍后重试");
+  } finally {
+    formatLoading.value = false;
+  }
 }
 
 function highlightMarkers(sentence) {
@@ -246,23 +295,41 @@ async function translate() {
     <div v-if="result && !isEn2Zh" class="card result-wrap">
       <div class="result-head">
         <span class="result-title">{{ resultTitle }}</span>
-        <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
+        <div class="result-actions">
+          <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
+        </div>
       </div>
       <pre class="result-body">{{ result }}</pre>
+    </div>
+    <div v-if="result && !isEn2Zh" class="format-bar">
+      <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload()">
+        <template #icon><DownloadOutlined /></template>
+        刷格式并下载
+      </a-button>
     </div>
 
     <div v-if="result && isEn2Zh && simplifiedChecked" class="card result-wrap">
       <div class="result-head">
         <span class="result-title">中文简体</span>
-        <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
+        <div class="result-actions">
+          <button type="button" class="copy-btn" @click="copyResult(result)">复制</button>
+        </div>
       </div>
       <pre class="result-body">{{ result }}</pre>
+    </div>
+    <div v-if="result && isEn2Zh && simplifiedChecked" class="format-bar">
+      <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload(result, 'zh')">
+        <template #icon><DownloadOutlined /></template>
+        刷格式并下载
+      </a-button>
     </div>
 
     <div v-if="resultTraditional && isEn2Zh && traditionalChecked" class="card result-wrap">
       <div class="result-head">
         <span class="result-title">中文繁体</span>
-        <button type="button" class="copy-btn" @click="copyResult(resultTraditional)">复制</button>
+        <div class="result-actions">
+          <button type="button" class="copy-btn" @click="copyResult(resultTraditional)">复制</button>
+        </div>
       </div>
       <pre class="result-body">{{ resultTraditional }}</pre>
 
@@ -290,6 +357,12 @@ async function translate() {
           应用全部修正
         </a-button>
       </div>
+    </div>
+    <div v-if="resultTraditional && isEn2Zh && traditionalChecked" class="format-bar">
+      <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload(resultTraditional, 'zh')">
+        <template #icon><DownloadOutlined /></template>
+        刷格式并下载
+      </a-button>
     </div>
   </div>
 </template>
@@ -481,6 +554,29 @@ async function translate() {
 }
 .result-title {
   color: #333;
+}
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.format-bar {
+  margin: 0 16px 12px;
+}
+.format-download-btn {
+  width: 100%;
+  height: 38px;
+  background: #55bbff;
+  border-color: #55bbff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+.format-download-btn:hover {
+  background: #7cccff;
+  border-color: #7cccff;
+  color: #fff;
 }
 .copy-btn {
   padding: 4px 10px;

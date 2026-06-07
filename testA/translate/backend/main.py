@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from translate_router import router as translate_router
+from format_router import router as format_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(translate_router)
+app.include_router(format_router)
 
 
 @app.get("/health")
