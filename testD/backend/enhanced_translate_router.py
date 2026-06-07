@@ -12,6 +12,7 @@ from testD.backend._bootstrap import ensure_main_backend_path
 ensure_main_backend_path()
 
 from user.token import test_token
+from testD.backend.additional_pool import update_record
 from testD.backend.enhanced_translate_service import (
     enhanced_translate,
     get_prompt_override,
@@ -30,6 +31,11 @@ class EnhancedTranslateRequest(BaseModel):
 
 class UpdatePromptRequest(BaseModel):
     prompt: str = Field(default="", max_length=10_000)
+
+
+class UpdateTranslationRequest(BaseModel):
+    original_line: str = Field(..., min_length=1, max_length=10_000)
+    new_translation: str = Field(..., min_length=1, max_length=10_000)
 
 
 @router.post(
@@ -51,3 +57,17 @@ async def api_enhanced_translate(req: EnhancedTranslateRequest):
 async def api_update_prompt(req: UpdatePromptRequest):
     set_prompt_override(req.prompt)
     return {"success": True, "prompt": get_prompt_override()}
+
+
+@router.post(
+    "/enhanced_translate/update_translation",
+    dependencies=[Depends(test_token)],
+)
+async def api_update_translation(req: UpdateTranslationRequest):
+    updated = update_record(req.original_line, req.new_translation)
+    if not updated:
+        return {
+            "success": False,
+            "error": "Additional Pool 中未找到对应条目，或译文为空",
+        }
+    return {"success": True}
