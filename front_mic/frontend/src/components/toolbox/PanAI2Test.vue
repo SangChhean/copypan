@@ -16,6 +16,7 @@ const chunksUsed = ref(0);
 const chunks = ref([]);
 const showChunks = ref(false);
 const copied = ref(false);
+const downloading = ref(false);
 
 const canGenerate = computed(
   () => !!query.value.trim() && !!outlineNature.value && !loading.value
@@ -71,6 +72,51 @@ function copyAnswer() {
       copied.value = false;
     }, 2000);
   });
+}
+
+function parseFilename(disposition, fallback) {
+  if (!disposition) return fallback;
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (m && m[1]) {
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (e) {
+      return fallback;
+    }
+  }
+  const m2 = /filename="?([^";]+)"?/i.exec(disposition);
+  return m2 && m2[1] ? m2[1] : fallback;
+}
+
+async function downloadFormat() {
+  const text = answer.value;
+  if (!text || downloading.value) return;
+  downloading.value = true;
+  try {
+    const res = await fetch("/api/testb/format/zh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("下载失败");
+    const filename = parseFilename(
+      res.headers.get("Content-Disposition"),
+      "纲目.docx"
+    );
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("下载失败，请重试");
+  } finally {
+    downloading.value = false;
+  }
 }
 </script>
 
@@ -142,9 +188,16 @@ function copyAnswer() {
     <a-card v-if="answer" class="result-card">
       <template #title>
         <span>参考了 {{ chunksUsed }} 条段落</span>
-        <button type="button" class="copy-btn" @click="copyAnswer">
-          <CopyOutlined /> {{ copied ? "已复制" : "复制" }}
-        </button>
+        <div class="result-head-actions">
+          <button type="button" class="copy-btn" @click="copyAnswer">
+            <CopyOutlined /> {{ copied ? "已复制" : "复制" }}
+          </button>
+          <button type="button" class="format-btn"
+            :disabled="downloading" @click="downloadFormat">
+            <LoadingOutlined v-if="downloading" class="btn-spin" />
+            {{ downloading ? "下载中…" : "⬇ 刷格式下载" }}
+          </button>
+        </div>
       </template>
       <pre class="result-body">{{ answer }}</pre>
 
@@ -336,8 +389,14 @@ function copyAnswer() {
   flex-wrap: wrap;
 }
 
-.copy-btn {
+.result-head-actions {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -352,6 +411,27 @@ function copyAnswer() {
 .copy-btn:hover {
   color: #1890ff;
   border-color: #1890ff;
+}
+
+.format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #52c41a;
+  background: #fff;
+  color: #389e0d;
+  cursor: pointer;
+}
+.format-btn:hover:not(:disabled) {
+  background: #52c41a;
+  color: #fff;
+}
+.format-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .result-body {

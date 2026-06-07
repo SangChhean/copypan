@@ -11,8 +11,10 @@ import time
 from pathlib import Path
 from typing import List, Optional
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
+
+from format_utils import format_zh, format_zhtw, format_en
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -29,10 +31,13 @@ OUTLINE_TRANSLATE_PROMPT_EN2ZH = (
     "格式要求：①读经格式为缩写，例如：罗一1；②英文序号为I.，翻译为中文壹，A.翻译为一，1.翻译为1，a.翻译为a，以此类推；③不要缩进，直接输出。"
 )
 OUTLINE_TRANSLATE_PROMPT_ZH2KO = (
-    "请将以上中文纲目翻译为韩文。要求："
-    "1. 使用上方术语表中的专用韩文术语；"
-    "2. 严格保留原纲目的层级结构、缩进格式与编号（壹贰叁等保留原字或译为일이삼）；"
-    "3. 只输出翻译后的韩文纲目，不添加任何说明或注释。"
+    "请将以上中文纲目翻译为韩文，严格使用 System instructions 中的专用韩文术语表。"
+    "格式要求："
+    "①所有内容都必须翻译成韩文，包括总题、系列题、篇题、读经行与全部正文，不可保留任何中文；"
+    "②序号统一改用英文格式：壹翻译为 I.，一翻译为 A.，二翻译为 B.，1 翻译为 1.，2 翻译为 2.，"
+    "a 翻译为 a.，b 翻译为 b.，（一）翻译为 1)，以此类推（与英文纲目编号完全一致）；"
+    "③序号与其后内容之间用一个 Tab（制表符）分隔；"
+    "④保留原纲目的层级结构，不要缩进，直接输出，只输出翻译后的韩文纲目，不添加任何说明或注释。"
 )
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
@@ -162,7 +167,12 @@ def _do_translate(content: str, direction: str) -> dict:
         contents = outline + "\n\n" + OUTLINE_TRANSLATE_PROMPT_ZH2KO
         return _call_gemini(contents, GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_ZH2KO, "test_B-中翻韩")
     elif direction == "en2es":
-        contents = outline + "\n\n" + "请将以上英文纲目翻译为西班牙文，严格使用System instructions中的专用术语表，保留原编号结构，只输出翻译结果。"
+        contents = outline + "\n\n" + (
+            "请将以上英文纲目完整翻译为西班牙文，严格使用System instructions中的专用术语表。"
+            "要求：①必须逐行翻译所有内容，包括读经（Scripture Reading）行上方的标题行"
+            "（如课次、篇题、系列标题等），不可保留任何英文原文；②保留原编号结构与层级；"
+            "③只输出翻译结果，不要添加说明。"
+        )
         return _call_gemini(contents, GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES, "test_B-英翻西")
     elif direction == "en2zhtw":
         # 第一步：英文→简体中文
@@ -192,3 +202,36 @@ async def translate(request: TranslateRequest):
     except Exception as e:
         logger.error("translate 失败: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+class FormatRequest(BaseModel):
+    text: str
+
+
+def _docx_response(result: tuple[bytes, str]) -> Response:
+    from urllib.parse import quote
+    docx_bytes, filename = result
+    encoded = quote((filename or "纲目") + ".docx")
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
+    )
+
+
+@router.post("/format/zh", summary="刷格式 - 中文简体")
+async def format_zh_route(req: FormatRequest):
+    result = await asyncio.to_thread(format_zh, req.text)
+    return _docx_response(result)
+
+
+@router.post("/format/zhtw", summary="刷格式 - 繁体")
+async def format_zhtw_route(req: FormatRequest):
+    result = await asyncio.to_thread(format_zhtw, req.text)
+    return _docx_response(result)
+
+
+@router.post("/format/en", summary="刷格式 - 英文")
+async def format_en_route(req: FormatRequest):
+    result = await asyncio.to_thread(format_en, req.text)
+    return _docx_response(result)

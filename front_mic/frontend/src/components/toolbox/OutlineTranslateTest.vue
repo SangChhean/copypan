@@ -11,9 +11,18 @@ const sourceLang = ref(null);
 const zhChecks = ref({ zh2en: false, zh2ko: false });
 const enChecks = ref({ en2zh: false, en2zhtw: false, en2es: false });
 
-const content = ref("");
+// 按来源语言分别保存输入与结果，切换中/英 tab 时不丢失
+const contentByLang = ref({ zh: "", en: "" });
+const resultsByLang = ref({ zh: [], en: [] });
+const content = computed({
+  get: () => (sourceLang.value ? contentByLang.value[sourceLang.value] : ""),
+  set: (v) => { if (sourceLang.value) contentByLang.value[sourceLang.value] = v; },
+});
+const results = computed({
+  get: () => (sourceLang.value ? resultsByLang.value[sourceLang.value] : []),
+  set: (v) => { if (sourceLang.value) resultsByLang.value[sourceLang.value] = v; },
+});
 const loading = ref(false);
-const results = ref([]);
 const checking = ref(false);
 
 // 易错字检查
@@ -91,9 +100,6 @@ const hasChecked = computed(() => {
 function selectSource(lang) {
   if (sourceLang.value === lang) return;
   sourceLang.value = lang;
-  zhChecks.value = { zh2en: false, zh2ko: false };
-  enChecks.value = { en2zh: false, en2zhtw: false, en2es: false };
-  results.value = [];
 }
 
 const DIRECTION_LABELS = {
@@ -121,6 +127,22 @@ async function doFetch(direction) {
   return data.result;
 }
 
+// 简体 → 繁体（复用 zh2tw 后端，保证简繁内容一致）
+async function convertToTraditional(simplified) {
+  const res = await fetch(`${apiBase}/api/testb/zh_convert`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: simplified }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.error || "简转繁失败");
+  }
+  const data = await res.json();
+  if (!data.answer_zh_tw) throw new Error(data.error || "简转繁失败");
+  return data.answer_zh_tw;
+}
+
 async function translate() {
   const text = (content.value || "").trim();
   if (!text) { message.error("请先粘贴纲目正文"); return; }
@@ -133,8 +155,19 @@ async function translate() {
   const checks = sourceLang.value === "zh" ? zhChecks.value : enChecks.value;
   const directions = Object.entries(checks).filter(([, v]) => v).map(([k]) => k);
 
+  // 同时勾选简体与繁体时，繁体由同一份简体转换而来，保证两者内容（含标题）一致
+  const deriveTw = sourceLang.value === "en" && checks.en2zh && checks.en2zhtw;
+  const zhPromise = deriveTw ? doFetch("en2zh") : null;
+
   try {
-    const settled = await Promise.allSettled(directions.map(dir => doFetch(dir)));
+    const settled = await Promise.allSettled(directions.map(async (dir) => {
+      if (deriveTw && dir === "en2zh") return await zhPromise;
+      if (deriveTw && dir === "en2zhtw") {
+        const zhText = await zhPromise;
+        return await convertToTraditional(zhText);
+      }
+      return await doFetch(dir);
+    }));
     const newResults = [];
     settled.forEach((res, i) => {
       if (res.status === "fulfilled" && res.value) {
@@ -173,6 +206,61 @@ async function translate() {
 
 function copyResult(text) {
   navigator.clipboard.writeText(text).then(() => message.success("已复制"));
+}
+
+const FORMAT_ROUTE = {
+  zh2en: "en",
+  zh2ko: "en",
+  en2es: "en",
+  en2zh: "zh",
+  en2zhtw: "zhtw",
+};
+
+function parseFilename(disposition, fallback) {
+  if (!disposition) return fallback;
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (m && m[1]) {
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (e) {
+      return fallback;
+    }
+  }
+  const m2 = /filename="?([^";]+)"?/i.exec(disposition);
+  return m2 && m2[1] ? m2[1] : fallback;
+}
+
+async function downloadFormat(resultItem) {
+  const text = resultItem.text;
+  const direction = resultItem.direction;
+  if (!text) return;
+  const slug = FORMAT_ROUTE[direction] || "zh";
+  resultItem.downloading = true;
+  try {
+    const res = await fetch(`${apiBase}/api/test_b/translate/format/${slug}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("下载失败");
+    const filename = parseFilename(
+      res.headers.get("Content-Disposition"),
+      `${direction}_纲目.docx`
+    );
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("下载失败，请重试");
+  } finally {
+    resultItem.downloading = false;
+  }
 }
 </script>
 
@@ -256,6 +344,11 @@ function copyResult(text) {
           <span>{{ r.label }}</span>
           <button v-if="r.text" type="button" class="copy-btn" @click="copyResult(r.text)">
             复制
+          </button>
+          <button v-if="r.text" type="button" class="format-btn"
+            :disabled="r.downloading" @click="downloadFormat(r)">
+            <span v-if="r.downloading" class="spin">⟳</span>
+            {{ r.downloading ? "下载中…" : "⬇ 刷格式下载" }}
           </button>
         </template>
         <p v-if="r.error" class="result-error">{{ r.error }}</p>
@@ -450,6 +543,21 @@ function copyResult(text) {
   color: #555;
 }
 .copy-btn:hover { color: #1890ff; border-color: #1890ff; }
+.format-btn {
+  margin-left: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #52c41a;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #389e0d;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.format-btn:hover:not(:disabled) { background: #52c41a; color: #fff; }
+.format-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .result-error { color: #cf1322; margin: 0; }
 .result-body {
   white-space: pre-wrap;
