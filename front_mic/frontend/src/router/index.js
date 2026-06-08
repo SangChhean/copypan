@@ -88,6 +88,10 @@ const routes = [
     component: () => import("@/components/toolbox/ArticlePolishA.vue"),
   },
   {
+    path: "/bird-view-a",
+    component: () => import("@/components/toolbox/BirdViewA.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
