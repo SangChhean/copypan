@@ -81,6 +81,9 @@ const openZh2tw = () => {
           <span class="card_text">AI纲目制作练习</span>
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/article-polish-c')"><span class="card_text">文章润色练习</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-c')">
+          <span class="card_text">词典-鸟瞰纲目练习</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
