@@ -81,6 +81,9 @@ const openZh2tw = () => {
           <span class="card_text">AI纲目制作练习</span>
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/article-polish-c')"><span class="card_text">文章润色练习</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-c')">
+          <span class="card_text">词典-鸟瞰纲目练习</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
@@ -91,6 +94,9 @@ const openZh2tw = () => {
           <div class="card_title">Vannak &amp; Sila 测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/test-translate-vannak')"><span class="card_text">翻译工具</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-a')">
+          <span class="card_text">鸟瞰纲目</span>
+        </a-card-grid>
         <a-card-grid class="card c2" @click="openZh2tw()"><span class="card_text">简繁互转</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/generate-outline-vannak')">
           <span class="card_text">PanAI 纲目生成</span>
@@ -118,6 +124,9 @@ const openZh2tw = () => {
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/article-polish-hub')">
           <span class="card_text">文章润色测试</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-b')">
+          <span class="card_text">词典-鸟瞰纲目测试</span>
         </a-card-grid>
       </a-card>
     </div>

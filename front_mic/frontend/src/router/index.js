@@ -88,6 +88,10 @@ const routes = [
     component: () => import("@/components/toolbox/ArticlePolishA.vue"),
   },
   {
+    path: "/bird-view-a",
+    component: () => import("@/components/toolbox/BirdViewA.vue"),
+  },
+  {
     path: "/zh-convert",
     component: () => import("../components/toolbox/ZhConvert.vue"),
   },
@@ -161,6 +165,13 @@ const routes = [
     path: '/article-polish-hub',
     component: () => import('../components/toolbox/ArticlePolishHub.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/bird-view-c',
+    component: () => import('../components/toolbox/BirdViewC.vue'),
+    meta: { requiresAuth: true }
+    path: '/bird-view-b',
+    component: () => import('../components/toolbox/BirdViewB.vue')
   },
 ];
 
