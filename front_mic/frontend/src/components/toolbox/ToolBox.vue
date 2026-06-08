@@ -119,6 +119,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/article-polish-hub')">
           <span class="card_text">文章润色测试</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/bird-view-b')">
+          <span class="card_text">词典-鸟瞰纲目测试</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />

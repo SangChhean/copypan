@@ -162,6 +162,10 @@ const routes = [
     component: () => import('../components/toolbox/ArticlePolishHub.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/bird-view-b',
+    component: () => import('../components/toolbox/BirdViewB.vue')
+  },
 ];
 
 const router = createRouter({
