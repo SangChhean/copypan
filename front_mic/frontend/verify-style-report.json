@@ -1,0 +1,15 @@
+{
+  "bodyBg": "rgb(247, 245, 240)",
+  "pageBg": "rgb(247, 245, 240)",
+  "ministryActive": {
+    "background": "rgb(46, 125, 50)",
+    "border": "rgb(46, 125, 50)",
+    "color": "rgb(255, 255, 255)"
+  },
+  "roleActive": {
+    "borderLeft": "4px solid rgb(44, 95, 138)",
+    "borderLeftWidth": "4px",
+    "borderLeftColor": "rgb(44, 95, 138)",
+    "background": "rgb(232, 240, 247)"
+  }
+}

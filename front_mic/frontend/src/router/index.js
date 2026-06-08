@@ -167,6 +167,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/bird-view-c',
+    component: () => import('../components/toolbox/BirdViewC.vue'),
+    meta: { requiresAuth: true }
     path: '/bird-view-b',
     component: () => import('../components/toolbox/BirdViewB.vue')
   },
