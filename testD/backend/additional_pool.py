@@ -17,7 +17,7 @@ _POOL_DIR = Path(__file__).resolve().parent / "Additional-pool"
 _POOL_FILE = _POOL_DIR / "pool.jsonl"
 
 _PUNCT_RE = re.compile(
-    r"[\s\u3000\.,，。、；;：:!?！？\"'""''（）()\\[\\]【】《》〈〉—…·-]+"
+    r"[\s\u3000\.,，。、；;：:!?！？\"'""''（）()\\[\\]【】《》〈〉—…·-\u201c\u201d\u2018\u2019\uff5e\u2500\u2014\u007e\u003b\uff0d]+"
 )
 
 _cache_by_norm: dict[str, dict[str, Any]] = {}
