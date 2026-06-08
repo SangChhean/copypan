@@ -454,6 +454,11 @@ app.include_router(practice_router, prefix="/api")
 app.include_router(api_router)
 
 # test_B 练习路由（临时学生测试）
+_test_b_translate_backend = _repo_root / "test_B" / "translate" / "backend"
+_test_b_zh2tw_backend = _repo_root / "test_B" / "zh2tw" / "backend"
+for _p in (_test_b_translate_backend, _test_b_zh2tw_backend):
+    if str(_p) not in sys.path:
+        sys.path.append(str(_p))
 from test_B.translate.backend.translate_router import router as test_b_translate_router
 from test_B.zh2tw.backend.zh_router import router as test_b_zh_router
 app.include_router(test_b_translate_router)
