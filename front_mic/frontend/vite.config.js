@@ -96,6 +96,10 @@ export default defineConfig({
         target: 'http://localhost:8009',
         changeOrigin: true,
       },
+      '/api/testb/bird_view': {
+        target: 'http://localhost:8022',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

@@ -3,12 +3,15 @@ test_B/translate 独立后端 — 纲目翻译路由。
 支持：中文→英文（zh2en）、英文→中文（en2zh）、中文→韩文（zh2ko）
 """
 from __future__ import annotations
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+
 import asyncio
 import logging
 import os
 import threading
 import time
-from pathlib import Path
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Response
