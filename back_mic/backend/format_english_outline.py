@@ -255,7 +255,7 @@ def format_english_outline_docx(docx_path: str) -> None:
             para.paragraph_format.space_before = Pt(12)
             continue
 
-        if text.lower().startswith("excerpts from the ministry:"):
+        if text.lower().startswith("excerpts from the ministry:") or text.lower().startswith("extractos del ministerio:"):
             state = "excerpts"
             set_left_bold(para)
             para.paragraph_format.space_after = Pt(12)
@@ -324,7 +324,7 @@ def format_english_outline_docx(docx_path: str) -> None:
             apply_style_with_font(para, "paragraph", doc)
 
     # 在特定关键词之前插入分页符
-    page_break_keywords = ['excerpts from the ministry:', 'references and further reading:']
+    page_break_keywords = ['excerpts from the ministry:', 'extractos del ministerio:', 'references and further reading:']
     page_break_paras = [para for para in doc.paragraphs
                         if any(kw in para.text.lower() for kw in page_break_keywords)]
     for para in page_break_paras:

@@ -34,6 +34,7 @@ Mutuality	La mutualidad
 Millennium	El milenio
 New Testament economy	La economía neotestamentaria
 Ministry	El ministerio
+Excerpts from the Ministry	Extractos del ministerio
 Recovery Version Bible	La Santa Biblia Versión Recobro
 Organic	Orgánico
 Disciple	El discípulo
