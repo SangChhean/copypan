@@ -86,8 +86,15 @@ def init_db() -> None:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {col} {definition}")
         conn.commit()
 
+        # 迁移：daily_limit（v3.3）
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN daily_limit INTEGER NOT NULL DEFAULT 3")
+            conn.commit()
+        except Exception:
+            pass  # 字段已存在时忽略
 
-def check_and_increment_daily_usage(username: str, daily_limit: int = 30) -> dict:
+
+def check_and_increment_daily_usage(username: str) -> dict:
     """
     检查并递增每日用量。
     返回 {"allowed": True/False, "used": int, "limit": int}
@@ -97,13 +104,12 @@ def check_and_increment_daily_usage(username: str, daily_limit: int = 30) -> dic
     conn = _connect()
     try:
         row = conn.execute(
-            "SELECT daily_count, daily_date FROM users WHERE username = ?",
+            "SELECT daily_count, daily_date, daily_limit FROM users WHERE username = ?",
             (username,),
         ).fetchone()
         if not row:
-            return {"allowed": False, "used": 0, "limit": daily_limit}
-
-        count, date_str = row
+            return {"allowed": False, "used": 0, "limit": 0}
+        count, date_str, daily_limit = row
         if date_str != today:
             count = 0
 
@@ -120,18 +126,18 @@ def check_and_increment_daily_usage(username: str, daily_limit: int = 30) -> dic
         conn.close()
 
 
-def get_daily_usage(username: str, daily_limit: int = 30) -> dict:
+def get_daily_usage(username: str) -> dict:
     """只查询当日用量，不递增。"""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     conn = _connect()
     try:
         row = conn.execute(
-            "SELECT daily_count, daily_date FROM users WHERE username = ?",
+            "SELECT daily_count, daily_date, daily_limit FROM users WHERE username = ?",
             (username,),
         ).fetchone()
         if not row:
-            return {"used": 0, "limit": daily_limit}
-        count, date_str = row
+            return {"used": 0, "limit": 0}
+        count, date_str, daily_limit = row
         if date_str != today:
             count = 0
         return {"used": count, "limit": daily_limit}
@@ -170,7 +176,7 @@ def use_invite_code(code: str, username: str) -> bool:
         return cur.rowcount > 0
 
 
-def create_user(username: str, password: str) -> bool:
+def create_user(username: str, password: str, daily_limit: int = 3) -> bool:
     username = (username or "").strip()
     password = password or ""
     if not username or not password:
@@ -179,13 +185,24 @@ def create_user(username: str, password: str) -> bool:
     try:
         with _connect() as conn:
             conn.execute(
-                "INSERT INTO users(username, hashed_password) VALUES(?, ?)",
-                (username, hashed),
+                "INSERT INTO users(username, hashed_password, daily_limit) VALUES(?, ?, ?)",
+                (username, hashed, daily_limit),
             )
             conn.commit()
         return True
     except sqlite3.IntegrityError:
         return False
+
+
+def set_user_daily_limit(username: str, daily_limit: int) -> bool:
+    """设置指定用户的每日问答上限。"""
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE users SET daily_limit = ? WHERE username = ?",
+            (daily_limit, username),
+        )
+        conn.commit()
+        return cur.rowcount > 0
 
 
 def verify_user(username: str, password: str) -> bool:

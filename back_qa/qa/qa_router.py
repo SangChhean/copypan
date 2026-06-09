@@ -269,7 +269,7 @@ async def stream_answer(req: QueryRequest, request: Request):
     from back_qa.qa.dependencies import get_redis_client
 
     username = _require_user(request)
-    usage = check_and_increment_daily_usage(username, DAILY_LIMIT)
+    usage = check_and_increment_daily_usage(username)
     if not usage["allowed"]:
         raise HTTPException(
             status_code=429,
