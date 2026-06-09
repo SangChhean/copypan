@@ -35,6 +35,7 @@ const inputTranscriptAddendum = ref("");
 // 生成节期纲目时得到的序言纲目、添言纲目（听抄稿/复合稿下载时使用）
 const generatedPrefaceOutline = ref("");
 const generatedAddendumOutline = ref("");
+const inputMorningRevivalOutline = ref(""); // ⑥ 已有晨兴纲目（可选，直接输入已做好的晨兴纲目用于复合稿）
 
 const loading = ref(false);
 const results = ref([]); // { type, type_label, content }
@@ -107,14 +108,17 @@ function canGenerate() {
   const o = (inputOutline.value || "").trim();
   const m = (inputMorningRevival.value || "").trim();
   const t = (inputTranscript.value || "").trim();
+  const mo = (inputMorningRevivalOutline.value || "").trim();
   if (selectedTypes.value.length === 0) return false;
   if (selectedTypes.value.includes("original") && !o) return false;
   if (selectedTypes.value.includes("with_scripture") && !o) return false;
   if (selectedTypes.value.includes("morning_revival") && !m) return false;
   if (selectedTypes.value.includes("transcript") && (!o || !t)) return false;
+  if (selectedTypes.value.includes("morning_revival_direct") && (!o || !m)) return false;
   if (selectedTypes.value.includes("composite")) {
-    // 复合需要先有晨兴纲目和听抄稿纲目，本轮生成时会自动跑
-    if (!m || !o || !t) return false;
+    // 有已有晨兴纲目时，② 晨兴原文可不填
+    if (!o || !t) return false;
+    if (!mo && !m) return false;
   }
   return true;
 }
@@ -173,7 +177,10 @@ async function generateAll() {
 
     // 3. 晨兴信息选读的纲目
     const runMorningRevival = async () => {
+      const mo = (inputMorningRevivalOutline.value || "").trim();
+      // 如果用户已提供晨兴纲目，且只是为了复合稿，直接返回
       if (!selectedTypes.value.includes("morning_revival") && !selectedTypes.value.includes("composite")) return "";
+      if (!selectedTypes.value.includes("morning_revival") && mo) return mo;
       if (!m) return "";
       const res = await fetch(`${apiBase}/api/ai_search/feast_outline/generate/morning_revival`, {
         method: "POST",
@@ -459,7 +466,8 @@ function copyResult(content) {
         第一行：特会系列<br>
         第二行：总题<br>
         第三行：篇题<br>
-        ① 纲目原文、② 晨兴信息选读、③ 听抄稿（序言、添言需分开输入）<br>
+        ① 纲目原文、② 晨兴信息选读、③ 听抄稿（序言、添言需分开输入）、⑥ 已有晨兴纲目（可选）<br>
+        复合稿：若晨兴纲目已提前做好，可填 ⑥ 跳过晨兴 AI 生成，仅做听抄稿与复合稿。<br>
         点击「生成节期纲目」后即可在结果中查看并刷格式下载。<br>
         <span class="hint-warn">线上部署时，听抄稿接口常需 2～3 分钟；Nginx 等对 <code>/api/ai_search/</code> 的 <code>proxy_read_timeout</code> 须 ≥300 秒，否则浏览器会断连而后端日志仍显示 Claude 成功。</span>
       </p>
@@ -538,6 +546,15 @@ function copyResult(content) {
         v-model:value="inputTranscriptAddendum"
         placeholder="生成节期纲目时一并交给 Claude 做成添言纲目，并用于听抄稿/复合稿"
         :rows="3"
+        :style="{ marginBottom: '16px' }"
+      />
+
+      <a-divider :style="{ margin: '12px 0' }" />
+      <div class="label">⑥ 已有晨兴纲目 <span class="optional-tag">可选 · 有此项时复合稿直接使用，无需重新生成</span></div>
+      <a-textarea
+        v-model:value="inputMorningRevivalOutline"
+        placeholder="如晨兴信息选读的纲目已提前做好，可直接粘贴于此；复合稿生成时将跳过晨兴纲目的 AI 生成步骤"
+        :rows="5"
         :style="{ marginBottom: '16px' }"
       />
 
