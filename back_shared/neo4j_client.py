@@ -158,6 +158,42 @@ class Neo4jClient:
             print(f"[QA] get_key_verses 失败: {e}")
             return {}
 
+    def get_concept_relations(self, concept_names: list[str]) -> list[dict]:
+        """查询概念列表内部的直接关系。
+        输入：概念名称列表
+        输出：[{"from": "概念A", "rel": "LEADS_TO", "to": "概念B"}, ...]
+        只查输入概念之间的内部关系，不扩展到外部邻居。
+        不可用时返回空列表，不抛异常。
+        """
+        if not self._available or self._driver is None or not concept_names:
+            return []
+        names = [str(x).strip() for x in concept_names if str(x).strip()]
+        if len(names) < 2:
+            return []
+        try:
+            with self._driver.session() as session:
+                result = session.run(
+                    "MATCH (a:Concept)-[r]->(b:Concept) "
+                    "WHERE a.name IN $names AND b.name IN $names "
+                    "RETURN a.name AS from_concept, type(r) AS rel, b.name AS to_concept",
+                    names=names,
+                )
+                out: list[dict] = []
+                for record in result:
+                    from_c = record.get("from_concept")
+                    rel = record.get("rel")
+                    to_c = record.get("to_concept")
+                    if from_c and rel and to_c:
+                        out.append({
+                            "from": str(from_c),
+                            "rel": str(rel),
+                            "to": str(to_c),
+                        })
+                return out
+        except Exception as e:
+            print(f"[QA] get_concept_relations 失败: {e}")
+            return []
+
     def get_baseline(self) -> dict[str, Any]:
         """查询数据基线：concept_total 与 concept_with_greek_terms。
         供 readiness 接口使用，不可用时返回 -1。

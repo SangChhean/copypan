@@ -101,7 +101,7 @@ def _bible_verse_sse_data(ctx: dict) -> Any:
 # 模型常量
 # ---------------------------------------------------------------------------
 # Step1 与设计方案一致默认 Opus；长词表偶发 refusal 可观察日志；可用 QA_STEP1_MODEL 临时覆盖
-STEP1_MODEL = os.environ.get("QA_STEP1_MODEL", "claude-opus-4-6")
+STEP1_MODEL = os.environ.get("QA_STEP1_MODEL", "claude-sonnet-4-6")
 STEP3_MODEL = "claude-haiku-4-5-20251001"
 STEP4_MODEL = "claude-sonnet-4-6"
 
@@ -503,6 +503,7 @@ async def _step1(question: str, neo4j_client, history: list[dict] | None = None)
         greek_terms_context: str,
         key_verses_context: str,
         rewritten_query: str,
+        graph_context: str,
         cost_usd: float,
     }
     """
@@ -545,7 +546,8 @@ async def _step1(question: str, neo4j_client, history: list[dict] | None = None)
             "surface": [], "deep": [], "concepts": [],
             "targeted": None,
             "reasoning": "",
-            "greek_terms_context": "", "key_verses_context": "", "cost_usd": 0.0,
+            "greek_terms_context": "", "key_verses_context": "", "graph_context": "",
+            "cost_usd": 0.0,
             "rewritten_query": question,
         }
 
@@ -628,6 +630,30 @@ async def _step1(question: str, neo4j_client, history: list[dict] | None = None)
         except Exception as e:
             logger.warning("[QA] get_key_verses 失败: %s", e)
 
+    # 从 Neo4j 取概念内部关系
+    graph_context = ""
+    if concepts:
+        try:
+            relations = neo4j_client.get_concept_relations(concepts)
+            if relations:
+                rel_labels = {
+                    "CONTAINS": "包含",
+                    "OPPOSES": "对立",
+                    "LEADS_TO": "引导",
+                    "EXPERIENCES": "经历",
+                    "PRACTICED_AS": "实践",
+                    "LOCATED_IN": "位于",
+                }
+                lines = []
+                for r in relations:
+                    label = rel_labels.get(r["rel"], r["rel"])
+                    lines.append(f"- {r['from']} [{label}] {r['to']}")
+                graph_context = "\n【概念关系参考】\n" + "\n".join(lines) + "\n"
+        except Exception as e:
+            logger.warning("[QA] get_concept_relations 失败: %s", e)
+
+    logger.info("[QA] Step1 graph_context=%s", graph_context[:200] if graph_context else "(空)")
+
     return {
         "surface": surface,
         "deep": deep,
@@ -636,6 +662,7 @@ async def _step1(question: str, neo4j_client, history: list[dict] | None = None)
         "reasoning": reasoning,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
+        "graph_context": graph_context,
         "rewritten_query": rewritten_query,
         "cost_usd": cost,
     }
@@ -984,6 +1011,7 @@ def _step4_build_prompt(
     key_verses_context: str,
     firewall_doc: dict | None,
     history_context: str = "",
+    graph_context: str = "",
 ) -> str:
     """构建 Step4 发给 Claude 的 user prompt（不含 LLM 调用）。"""
     from back_qa.qa.prompts import STEP4_ANSWER_GENERATION, FIREWALL_INSTRUCTION
@@ -1017,6 +1045,7 @@ def _step4_build_prompt(
         passages=passages_text,
         greek_context=greek_terms_context,
         verse_context=key_verses_context,
+        graph_context=graph_context,
         firewall_instruction=firewall_instruction,
     )
 
@@ -1141,6 +1170,7 @@ async def _step4(
     key_verses_context: str,
     firewall_doc: dict | None,
     history_context: str = "",
+    graph_context: str = "",
 ) -> tuple[str, list[str], float]:
     """
     返回 (answer: str, sources: list[str], cost_usd: float)。
@@ -1153,6 +1183,7 @@ async def _step4(
         key_verses_context,
         firewall_doc,
         history_context=history_context,
+        graph_context=graph_context,
     )
 
     global _last_step4_prompt
@@ -1243,6 +1274,7 @@ async def _run_pipeline_until_step4(
     concepts: list = []
     greek_terms_context = ""
     key_verses_context = ""
+    graph_context = ""
     firewall_task = None
     step1_snapshot: dict | None = None
     rewritten_query = question
@@ -1276,6 +1308,7 @@ async def _run_pipeline_until_step4(
         deep = step1_result["deep"]
         greek_terms_context = step1_result["greek_terms_context"]
         key_verses_context = step1_result["key_verses_context"]
+        graph_context = step1_result.get("graph_context", "")
         rw = step1_result.get("rewritten_query")
         rewritten_query = str(rw).strip() if rw else ""
         if not rewritten_query:
@@ -1359,10 +1392,13 @@ async def _run_pipeline_until_step4(
         "passages": passages,
         "greek_terms_context": greek_terms_context,
         "key_verses_context": key_verses_context,
+        "graph_context": graph_context,
         "firewall_doc": firewall_doc,
         "history_context": history_context,
         "concepts": concepts,
         "total_cost": total_cost,
+        "step3_cost": step3_cost,
+        "step0_cost": 0.0,
         "cache_key": cache_key,
         "redis_client": redis_client,
         "request_id": request_id,
@@ -1464,6 +1500,7 @@ async def run_pipeline(
     passages = ctx["passages"]
     greek_terms_context = ctx["greek_terms_context"]
     key_verses_context = ctx["key_verses_context"]
+    graph_context = ctx.get("graph_context", "")
     firewall_doc = ctx["firewall_doc"]
     history_context = ctx["history_context"]
     concepts = ctx["concepts"]
@@ -1474,6 +1511,7 @@ async def run_pipeline(
     step1_snapshot = ctx["step1_snapshot"]
     rewritten_query = ctx.get("rewritten_query", question)
 
+    step4_cost = 0.0
     try:
         answer, sources, step4_cost = await _step4(
             question,
@@ -1482,6 +1520,7 @@ async def run_pipeline(
             key_verses_context,
             firewall_doc,
             history_context=history_context,
+            graph_context=graph_context,
         )
         total_cost += step4_cost
     except Exception as e:
@@ -1513,6 +1552,13 @@ async def run_pipeline(
             "firewall": firewall_doc,
             "step4_prompt": _last_step4_prompt,
             "retrieved_chunks": [p.get("chunk_id", "") for p in (passages or [])],
+            "cost_breakdown": {
+                "step0_haiku": round(float(ctx.get("step0_cost", 0)), 6),
+                "step1_opus": round(total_cost - step4_cost - float(ctx.get("step3_cost", 0)), 6),
+                "step3_haiku": round(float(ctx.get("step3_cost", 0)), 6),
+                "step4_sonnet": round(step4_cost, 6),
+                "total": round(total_cost, 6),
+            },
         }
 
     if not debug:
@@ -1731,6 +1777,7 @@ async def stream_query(
     passages = ctx["passages"]
     greek_terms_context = ctx["greek_terms_context"]
     key_verses_context = ctx["key_verses_context"]
+    graph_context = ctx.get("graph_context", "")
     firewall_doc = ctx["firewall_doc"]
     history_context = ctx["history_context"]
     concepts = ctx["concepts"]
@@ -1763,6 +1810,7 @@ async def stream_query(
         key_verses_context,
         firewall_doc,
         history_context=history_context,
+        graph_context=graph_context,
     )
     global _last_step4_prompt
     _last_step4_prompt = prompt
