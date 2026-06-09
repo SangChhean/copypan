@@ -165,50 +165,94 @@
       <div v-if="showStep3">
         <div class="step3-card">
 
-          <!-- 概念词可编辑区 -->
+          <!-- 概念词勾选编辑区 -->
           <div v-if="step1Done || revelation35.length || experience35.length || practice35.length" class="concepts-edit-box">
-            <div class="concepts-row" v-if="revelation35.length">
+
+            <!-- 启示层 -->
+            <div class="concepts-row-wrap">
               <span class="concept-layer-label">启示</span>
-              <span
-                v-for="(w, i) in revelation35"
-                :key="'rev-'+i"
-                class="concept-tag c-revelation"
-              >{{ w }}<button type="button" class="tag-remove" @click="revelation35.splice(i,1)">×</button></span>
+              <div class="concepts-row">
+                <label
+                  v-for="(w, i) in revelation35"
+                  :key="'rev-'+i"
+                  class="concept-tag c-revelation"
+                  :class="{ unchecked: !revelationChecked[i] }"
+                >
+                  <input type="checkbox" v-model="revelationChecked[i]" class="tag-checkbox" />
+                  {{ w }}
+                </label>
+                <div class="tag-input-wrap">
+                  <input
+                    v-model="newRevelation"
+                    class="tag-inline-input"
+                    placeholder="+ 添加重点词"
+                    @keydown.enter.prevent="addToLayer('revelation')"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="concepts-row" v-if="experience35.length">
+
+            <!-- 经历层 -->
+            <div class="concepts-row-wrap">
               <span class="concept-layer-label">经历</span>
-              <span
-                v-for="(w, i) in experience35"
-                :key="'exp-'+i"
-                class="concept-tag c-experience"
-              >{{ w }}<button type="button" class="tag-remove" @click="experience35.splice(i,1)">×</button></span>
+              <div class="concepts-row">
+                <label
+                  v-for="(w, i) in experience35"
+                  :key="'exp-'+i"
+                  class="concept-tag c-experience"
+                  :class="{ unchecked: !experienceChecked[i] }"
+                >
+                  <input type="checkbox" v-model="experienceChecked[i]" class="tag-checkbox" />
+                  {{ w }}
+                </label>
+                <div class="tag-input-wrap">
+                  <input
+                    v-model="newExperience"
+                    class="tag-inline-input"
+                    placeholder="+ 添加重点词"
+                    @keydown.enter.prevent="addToLayer('experience')"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="concepts-row" v-if="practice35.length">
+
+            <!-- 实行层 -->
+            <div class="concepts-row-wrap">
               <span class="concept-layer-label">实行</span>
-              <span
-                v-for="(w, i) in practice35"
-                :key="'pra-'+i"
-                class="concept-tag c-practice"
-              >{{ w }}<button type="button" class="tag-remove" @click="practice35.splice(i,1)">×</button></span>
+              <div class="concepts-row">
+                <label
+                  v-for="(w, i) in practice35"
+                  :key="'pra-'+i"
+                  class="concept-tag c-practice"
+                  :class="{ unchecked: !practiceChecked[i] }"
+                >
+                  <input type="checkbox" v-model="practiceChecked[i]" class="tag-checkbox" />
+                  {{ w }}
+                </label>
+                <div class="tag-input-wrap">
+                  <input
+                    v-model="newPractice"
+                    class="tag-inline-input"
+                    placeholder="+ 添加重点词"
+                    @keydown.enter.prevent="addToLayer('practice')"
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
 
-          <label class="label-sm">搜索图谱中重点</label>
-          <p class="hint-text">直接输入重点，回车添加，× 删除。</p>
-          <input
-            v-model="extraNode"
-            class="input"
-            type="text"
-            placeholder="输入概念词后按回车添加"
-            :disabled="loading35"
-            @keydown.enter.prevent="addExtraNode"
-          />
-          <div class="concepts-row extra-row" v-if="extraNodes35.length">
-            <span
-              v-for="(w, i) in extraNodes35"
-              :key="'extra-'+i"
-              class="concept-tag c-extra"
-            >{{ w }}<button type="button" class="tag-remove" @click="extraNodes35.splice(i,1)">×</button></span>
+          <!-- Query Rewrite 改写句（验证用） -->
+          <div v-if="rewrittenDisplay.length" class="rewrite-box">
+            <div class="rewrite-title">查询改写（验证用）</div>
+            <div
+              v-for="(s, i) in rewrittenDisplay"
+              :key="i"
+              class="rewrite-item"
+            >
+              <span class="rewrite-angle">{{ ['启示', '真理', '经历', '应用'][i] }}</span>
+              {{ s }}
+            </div>
           </div>
 
           <div class="checkbox-row">
@@ -242,6 +286,7 @@
 
         <!-- 生成结果 -->
         <div v-if="result35" class="result-box">
+          <div v-if="expandedSummary" class="expanded-summary">{{ expandedSummary }}</div>
           <div class="result-header">
             <span>生成结果（PanAI 3.5）</span>
             <button class="btn btn-copy" type="button" @click="copyResult35">
@@ -339,25 +384,49 @@ const experience35 = ref([]);
 const practice35 = ref([]);
 const expandedNodes35 = ref([]);
 const rewrittenQueries35 = ref([]);
-const extraNode = ref("");
-const extraNodes35 = ref([]);
-
-function addExtraNode() {
-  const val = extraNode.value.trim();
-  if (val && !extraNodes35.value.includes(val)) {
-    extraNodes35.value.push(val);
-  }
-  extraNode.value = "";
-}
 
 const step1Loading = ref(false);
 const step1Done = ref(false);
+
+const revelationChecked = ref([]);
+const experienceChecked = ref([]);
+const practiceChecked = ref([]);
+const newRevelation = ref("");
+const newExperience = ref("");
+const newPractice = ref("");
+
+function addToLayer(layer) {
+  if (layer === 'revelation') {
+    const val = newRevelation.value.trim();
+    if (val && !revelation35.value.includes(val)) {
+      revelation35.value.push(val);
+      revelationChecked.value.push(true);
+    }
+    newRevelation.value = "";
+  } else if (layer === 'experience') {
+    const val = newExperience.value.trim();
+    if (val && !experience35.value.includes(val)) {
+      experience35.value.push(val);
+      experienceChecked.value.push(true);
+    }
+    newExperience.value = "";
+  } else if (layer === 'practice') {
+    const val = newPractice.value.trim();
+    if (val && !practice35.value.includes(val)) {
+      practice35.value.push(val);
+      practiceChecked.value.push(true);
+    }
+    newPractice.value = "";
+  }
+}
 
 const genEnglish = ref(false);
 const genTraditional = ref(false);
 const burdenLoading = ref(false);
 const generateLoading35 = ref(false);
 const result35 = ref("");
+const expandedSummary = ref("");
+const rewrittenDisplay = ref([]);
 const errorMsg35 = ref("");
 const copied35 = ref(false);
 
@@ -444,8 +513,12 @@ async function runStep1() {
       revelation35.value = data.revelation || [];
       experience35.value = data.experience || [];
       practice35.value = data.practice || [];
+      revelationChecked.value = data.revelation.map(() => true);
+      experienceChecked.value = data.experience.map(() => true);
+      practiceChecked.value = data.practice.map(() => true);
       expandedNodes35.value = data.expanded_nodes || [];
       rewrittenQueries35.value = data.rewritten_queries || [];
+      rewrittenDisplay.value = data.rewritten_queries || [];
       step1Done.value = true;
     }
   } catch (e) {
@@ -462,7 +535,11 @@ async function generate35() {
   loading35.value = true;
   errorMsg35.value = "";
   result35.value = "";
-  const nodes = [...expandedNodes35.value, ...extraNodes35.value];
+  const nodes = [
+    ...revelation35.value.filter((_, i) => revelationChecked.value[i] !== false),
+    ...experience35.value.filter((_, i) => experienceChecked.value[i] !== false),
+    ...practice35.value.filter((_, i) => practiceChecked.value[i] !== false),
+  ];
   try {
     const res = await fetch("/api/practice/kg_rag/query35", {
       method: "POST",
@@ -478,7 +555,13 @@ async function generate35() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) errorMsg35.value = data.detail || `请求失败（${res.status}）`;
     else if (data.error) errorMsg35.value = data.error;
-    else if (data.answer) result35.value = data.answer;
+    else if (data.answer) {
+      result35.value = data.answer;
+      if (data.expanded_results_count !== undefined) {
+        const nodes = (data.expanded_from_nodes || []).join("、");
+        expandedSummary.value = `路3查询：共找到 ${data.expanded_results_count} 个额外段落，来自概念词：${nodes || "无"}`;
+      }
+    }
     else errorMsg35.value = "未返回纲目内容";
   } catch (e) {
     errorMsg35.value = e?.message || "网络错误";
@@ -691,33 +774,111 @@ async function copyResult35() {
 
 /* 概念词展示 */
 .concepts-box { margin-bottom: 20px; }
-.concepts-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .concept-layer-label {
   font-size: 12px; font-weight: 600; color: #888;
   min-width: 28px; margin-right: 4px;
 }
-.concept-tag {
-  padding: 3px 10px; border-radius: 12px;
-  font-size: 13px; font-weight: 500;
-}
 .c-revelation { background: #e8eef7; color: #2c5f8a; border: 1px solid #b8cde0; }
 .c-experience  { background: #e8f5ee; color: #1e6e44; border: 1px solid #a8d4b8; }
 .c-practice    { background: #fef3e2; color: #8a5c1a; border: 1px solid #e0c890; }
-.c-extra { background: #f3eef8; color: #6b3fa0; border: 1px solid #d0b8e8; }
-.tag-remove {
-  background: none; border: none; cursor: pointer;
-  margin-left: 4px; padding: 0 2px;
-  font-size: 12px; line-height: 1;
-  color: inherit; opacity: 0.6;
+.concepts-row-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.tag-remove:hover { opacity: 1; }
-.hint-text { font-size: 12px; color: #888; margin: -4px 0 8px; }
-.extra-row { margin-top: 8px; }
+.concepts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.concept-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+.concept-tag.unchecked {
+  opacity: 0.35;
+}
+.tag-checkbox {
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+  accent-color: #2c5f8a;
+}
+.tag-input-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.tag-inline-input {
+  border: 1px dashed #aaa;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 13px;
+  color: #666;
+  background: transparent;
+  outline: none;
+  width: 110px;
+  transition: border-color 0.2s, width 0.2s;
+}
+.tag-inline-input:focus {
+  border-color: #2c5f8a;
+  width: 150px;
+  color: #2d2d2d;
+}
+
+.rewrite-box {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f0f5fa;
+  border-radius: 8px;
+  border: 1px solid #d0e0ee;
+}
+.rewrite-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c5f8a;
+  margin-bottom: 8px;
+}
+.rewrite-item {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.8;
+}
+.rewrite-angle {
+  display: inline-block;
+  min-width: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #2c5f8a;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 6px;
+  text-align: center;
+}
 
 /* checkbox */
 .checkbox-row { display: flex; gap: 24px; margin-bottom: 16px; }
 .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #444; cursor: pointer; }
 .checkbox-label input { cursor: pointer; }
+
+.expanded-summary {
+  font-size: 13px;
+  color: #666;
+  background: #f5f5f0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+}
 
 /* 结果区 */
 .result-box {
