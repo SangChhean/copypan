@@ -11,6 +11,8 @@ const promptOverride = ref("");
 const inputError = ref(null);
 const loading = ref(false);
 const error = ref(null);
+const errorModalVisible = ref(false);
+const errorModalMessage = ref("");
 const result = ref(null);
 const refs = ref([]);
 const summary = ref(null);
@@ -74,6 +76,8 @@ async function translate() {
   const text = (content.value || "").trim();
   inputError.value = null;
   error.value = null;
+  errorModalVisible.value = false;
+  errorModalMessage.value = "";
   result.value = null;
   refs.value = [];
   editedTranslations.value = {};
@@ -111,7 +115,11 @@ async function translate() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(parseApiError(res, data));
-    if (data.error && !data.result) throw new Error(data.error);
+    if (data.error && !data.result) {
+      errorModalMessage.value = data.error;
+      errorModalVisible.value = true;
+      return;
+    }
     if (!data.result) throw new Error("翻译失败，请稍后重试");
     result.value = data.result;
     refs.value = data.refs || [];
@@ -389,6 +397,16 @@ function downloadRefsTxt() {
 
 <template>
   <ToolsHeader title="增强式翻译（testD）" />
+
+  <a-modal
+    v-model:visible="errorModalVisible"
+    title="翻译失败"
+    ok-text="知道了"
+    hide-cancel
+    @ok="errorModalVisible = false"
+  >
+    <p>{{ errorModalMessage }}</p>
+  </a-modal>
 
   <div class="page">
     <p class="hint">
