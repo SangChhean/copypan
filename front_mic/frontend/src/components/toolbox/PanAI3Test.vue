@@ -1,10 +1,6 @@
 <script setup>
-import ToolsHeader from "./ToolsHeader.vue";
 import { ref, computed } from "vue";
 import { LoadingOutlined, CopyOutlined } from "@ant-design/icons-vue";
-import PanAI3Test from "./PanAI3Test.vue";
-
-const activeTab = ref("2.0");
 
 const NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 
@@ -17,19 +13,98 @@ const error = ref(null);
 const answer = ref(null);
 const chunksUsed = ref(0);
 const chunks = ref([]);
+const concepts = ref({ revelation: [], experience: [], practice: [] });
 const showChunks = ref(false);
 const copied = ref(false);
 const downloading = ref(false);
+
+const analyzeLoading = ref(false);
+const analyzed = ref(false);
+const rewrittenQueries = ref([]);
+const expandedNodes = ref([]);
+const addingLayer = ref("");
+const addingWord = ref("");
 
 const canGenerate = computed(
   () => !!query.value.trim() && !!outlineNature.value && !loading.value
 );
 
+const conceptLayers = computed(() => [
+  { key: "revelation", label: "真理启示", words: concepts.value.revelation },
+  { key: "experience", label: "生命经历", words: concepts.value.experience },
+  { key: "practice", label: "应用实行", words: concepts.value.practice },
+]);
+
 function selectNature(nature) {
   outlineNature.value = nature;
 }
 
-async function generate() {
+async function doAnalyze() {
+  if (!query.value.trim() || !outlineNature.value) return;
+  analyzeLoading.value = true;
+  analyzed.value = false;
+  error.value = null;
+  try {
+    const res = await fetch("/api/panai2/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query.value,
+        outline_nature: outlineNature.value,
+        burden_description: burdenDescription.value,
+      }),
+    });
+    const data = await res.json();
+    concepts.value = data.concepts || { revelation: [], experience: [], practice: [] };
+    rewrittenQueries.value = data.rewritten_queries || [];
+    expandedNodes.value = data.expanded_nodes || [];
+    analyzed.value = true;
+  } catch (err) {
+    error.value = (err && err.message) || "网络错误，请稍后重试";
+  } finally {
+    analyzeLoading.value = false;
+  }
+}
+
+function removeWord(layerKey, idx) {
+  concepts.value[layerKey].splice(idx, 1);
+  syncExpandedNodes();
+}
+
+function startAdd(layerKey) {
+  addingLayer.value = layerKey;
+  addingWord.value = "";
+}
+
+function confirmAdd() {
+  if (!addingWord.value.trim()) {
+    addingLayer.value = "";
+    return;
+  }
+  concepts.value[addingLayer.value].push(addingWord.value.trim());
+  syncExpandedNodes();
+  addingLayer.value = "";
+  addingWord.value = "";
+}
+
+function syncExpandedNodes() {
+  expandedNodes.value = [
+    ...concepts.value.revelation,
+    ...concepts.value.experience,
+    ...concepts.value.practice,
+  ];
+}
+
+function resetAnalyze() {
+  analyzed.value = false;
+  concepts.value = { revelation: [], experience: [], practice: [] };
+  rewrittenQueries.value = [];
+  expandedNodes.value = [];
+  answer.value = "";
+  chunks.value = [];
+}
+
+async function doGenerate() {
   if (!query.value.trim() || !outlineNature.value) return;
   loading.value = true;
   error.value = null;
@@ -45,6 +120,8 @@ async function generate() {
         query: query.value,
         outline_nature: outlineNature.value,
         burden_description: burdenDescription.value,
+        expanded_nodes: expandedNodes.value,
+        rewritten_queries: rewrittenQueries.value,
       }),
     });
     if (!res.ok) {
@@ -124,13 +201,6 @@ async function downloadFormat() {
 </script>
 
 <template>
-  <ToolsHeader title="AI 纲目制作" />
-  <div class="tab-bar">
-    <button :class="['tab-btn', activeTab === '2.0' ? 'active' : '']" @click="activeTab = '2.0'">PanAI 2.0</button>
-    <button :class="['tab-btn', activeTab === '3.5' ? 'active' : '']" @click="activeTab = '3.5'">PanAI 3.5</button>
-  </div>
-
-  <div v-show="activeTab === '2.0'">
   <div class="box">
     <a-card>
       <p class="hint">
@@ -177,16 +247,61 @@ async function downloadFormat() {
         />
       </div>
 
-      <div class="action-row">
+      <!-- 第一阶段按钮 -->
+      <div v-if="!analyzed" class="action-row">
         <button
           type="button"
           class="action-btn"
-          :disabled="!canGenerate"
-          @click="generate"
+          :disabled="analyzeLoading || !canGenerate"
+          @click="doAnalyze"
+        >
+          <LoadingOutlined v-if="analyzeLoading" class="btn-icon btn-spin" />
+          {{ analyzeLoading ? "分析中..." : "确认，推荐重点" }}
+        </button>
+      </div>
+
+      <!-- 分析结果区 -->
+      <div v-if="analyzed" class="analyze-result">
+        <div class="concept-section">
+          <div class="concept-row" v-for="layer in conceptLayers" :key="layer.key">
+            <span class="layer-label">{{ layer.label }}：</span>
+            <div class="concept-tags-wrap">
+              <span :class="['concept-tag', `tag-${layer.key}`]" v-for="(word, idx) in layer.words" :key="idx">
+                {{ word }}
+                <span class="remove-btn" @click="removeWord(layer.key, idx)">×</span>
+              </span>
+              <template v-if="addingLayer === layer.key">
+                <input
+                  v-model="addingWord"
+                  class="add-input"
+                  placeholder="输入概念词"
+                  @keyup.enter="confirmAdd"
+                />
+                <span class="confirm-btn" @click="confirmAdd">确认</span>
+              </template>
+              <span v-else class="add-btn" @click="startAdd(layer.key)">+ 添加</span>
+            </div>
+          </div>
+        </div>
+        <div class="rewrite-section">
+          <div class="rewrite-title">【改写句】</div>
+          <div v-for="(q, i) in rewrittenQueries" :key="i" class="rewrite-item">· {{ q }}</div>
+        </div>
+      </div>
+
+      <!-- 第二阶段按钮 -->
+      <div v-if="analyzed" class="action-row">
+        <button
+          type="button"
+          class="action-btn"
+          :disabled="loading"
+          @click="doGenerate"
         >
           <LoadingOutlined v-if="loading" class="btn-icon btn-spin" />
-          <span v-if="loading">生成中...</span>
-          <span v-else>生成纲目</span>
+          {{ loading ? "生成中..." : "生成纲目" }}
+        </button>
+        <button type="button" class="reset-btn" @click="resetAnalyze">
+          重新生成重点
         </button>
       </div>
       <p v-if="loading" class="loading-hint">请耐心等待 1～2 分钟</p>
@@ -208,6 +323,7 @@ async function downloadFormat() {
           </button>
         </div>
       </template>
+
       <pre class="result-body">{{ answer }}</pre>
 
       <div v-if="chunks.length" class="chunks-section">
@@ -218,11 +334,22 @@ async function downloadFormat() {
           </button>
         </div>
         <div v-if="showChunks" class="chunks-list">
-          <div v-for="(c, idx) in chunks" :key="idx" class="chunk-item">
+          <div
+            v-for="(c, idx) in chunks"
+            :key="idx"
+            class="chunk-item"
+            :class="{ 'chunk-route3': c.source === 'skeleton_route' }"
+          >
             <div class="chunk-meta">
               [{{ c.chunk_id }}] {{ c.book_title }}
               <template v-if="c.message_number">第{{ c.message_number }}篇</template>
               <template v-if="c.message_title"> {{ c.message_title }}</template>
+              <span
+                v-if="c.source === 'skeleton_route' && c.expanded_from"
+                class="chunk-expanded-from"
+              >
+                路3 · {{ c.expanded_from }}
+              </span>
             </div>
             <div class="chunk-text">{{ c.text }}</div>
           </div>
@@ -230,47 +357,9 @@ async function downloadFormat() {
       </div>
     </a-card>
   </div>
-  </div>
-
-  <div v-show="activeTab === '3.5'">
-    <PanAI3Test />
-  </div>
 </template>
 
 <style scoped>
-.tab-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  padding: 16px 1em 0;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.tab-btn {
-  padding: 8px 20px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #555;
-  background: #fafafa;
-  border: 2px solid #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.tab-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
-}
-
-.tab-btn.active {
-  background: #1890ff;
-  border-color: #1890ff;
-  color: #fff;
-}
-
 .box {
   padding: 1em;
   max-width: 720px;
@@ -481,6 +570,24 @@ async function downloadFormat() {
   cursor: not-allowed;
 }
 
+.concepts-box {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #595959;
+}
+.concepts-title {
+  font-weight: 600;
+  color: #434343;
+  margin-bottom: 4px;
+}
+.concepts-line {
+  word-break: break-word;
+}
+
 .result-body {
   white-space: pre-wrap;
   word-break: break-word;
@@ -531,7 +638,15 @@ async function downloadFormat() {
 .chunk-item:last-child {
   border-bottom: none;
 }
+.chunk-route3 {
+  background: #e6f4ff;
+  border-bottom: 1px solid #d6e8fb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
 .chunk-meta {
+  position: relative;
   color: #555;
   font-size: 0.82em;
   font-weight: 700;
@@ -541,6 +656,19 @@ async function downloadFormat() {
   border-radius: 4px;
   display: inline-block;
 }
+.chunk-route3 .chunk-meta {
+  background: #bae0ff;
+}
+.chunk-expanded-from {
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 0.92em;
+  font-weight: 600;
+  color: #0958d9;
+  background: #fff;
+  border: 1px solid #91caff;
+  border-radius: 10px;
+}
 .chunk-text {
   color: #333;
   font-size: 0.92em;
@@ -548,4 +676,24 @@ async function downloadFormat() {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+.analyze-result { background: #f5f5f5; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.concept-row { margin-bottom: 8px; display: flex; flex-wrap: nowrap; align-items: flex-start; }
+.layer-label { font-size: 15px; font-weight: bold; color: #555; min-width: 70px; flex-shrink: 0; padding-top: 3px; }
+.concept-tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.concept-tag { border: 1px solid #d0d0d0; border-radius: 12px; padding: 2px 8px; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
+.tag-revelation { background: #E8F4FD; }
+.tag-experience { background: #E8F8F0; }
+.tag-practice   { background: #FEF3E8; }
+.remove-btn { cursor: pointer; color: #999; font-size: 14px; }
+.remove-btn:hover { color: #f00; }
+.add-btn { cursor: pointer; color: #1890ff; font-size: 12px; border: 1px dashed #1890ff; border-radius: 12px; padding: 2px 8px; }
+.add-input { border: 1px solid #1890ff; border-radius: 8px; padding: 2px 6px; font-size: 12px; width: 80px; }
+.confirm-btn { cursor: pointer; color: #fff; background: #1890ff; border-radius: 8px; padding: 2px 8px; font-size: 12px; }
+.rewrite-section { margin-top: 10px; border-top: 1px solid #e0e0e0; padding-top: 8px; }
+.rewrite-title { font-size: 13px; font-weight: bold; color: #555; margin-bottom: 6px; }
+.rewrite-item { font-size: 12px; color: #666; line-height: 1.8; }
+.action-row { display: flex; gap: 12px; margin-top: 12px; }
+.reset-btn { padding: 8px 20px; font-size: 15px; border-radius: 6px; border: 1px solid #d9d9d9; background: #fff; color: #555; cursor: pointer; }
+.reset-btn:hover { border-color: #1890ff; color: #1890ff; }
 </style>

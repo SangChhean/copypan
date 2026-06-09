@@ -164,7 +164,7 @@ const routes = [
   {
     path: '/article-polish-hub',
     component: () => import('../components/toolbox/ArticlePolishHub.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/bird-view-c',
