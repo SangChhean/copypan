@@ -43,7 +43,7 @@ def _ensure_bible_loaded() -> None:
 async def bible_query(req: BibleQueryRequest, request: Request):
     """SSE：先推送经文 JSON，再经文问答流水线（token / done / error）。"""
     username = _require_user(request)
-    usage = check_and_increment_daily_usage(username, DAILY_LIMIT)
+    usage = check_and_increment_daily_usage(username)
     if not usage["allowed"]:
         raise HTTPException(
             status_code=429,

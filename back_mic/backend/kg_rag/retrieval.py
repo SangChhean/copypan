@@ -44,9 +44,12 @@ async def bm25_search(
         "_source": [
             "chunk_id",
             "text",
+            "en",
             "book_title",
             "author",
             "source_zh",
+            "source_en",
+            "source",
             "message_number",
             "message_title",
             "section_title",
@@ -105,8 +108,10 @@ async def dense_search(
         "_source": [
             "chunk_id",
             "text",
+            "en",
             "book_title",
             "author",
+            "source_zh",
             "source_zh",
             "message_number",
             "message_title",
