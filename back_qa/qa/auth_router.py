@@ -12,8 +12,10 @@ from back_qa.qa.auth import (
     create_invite_code,
     create_token,
     create_user,
+    get_daily_usage,
     list_invite_codes,
     list_users,
+    set_user_daily_limit,
     use_invite_code,
     verify_token,
     verify_user,
@@ -112,10 +114,7 @@ async def me(request: Request):
 async def get_usage(request: Request):
     """已登录：返回当日问答用量（不递增）。"""
     username = _require_user(request)
-    from back_qa.qa.auth import get_daily_usage
-
-    daily_limit = int(os.getenv("QA_DAILY_LIMIT", "30"))
-    return get_daily_usage(username, daily_limit)
+    return get_daily_usage(username)
 
 
 @router.post("/api/qa/auth/invite")
@@ -150,4 +149,20 @@ async def invites(request: Request):
     """管理员：邀请码列表。"""
     _check_admin(request)
     return {"items": list_invite_codes()}
+
+
+class SetLimitRequest(BaseModel):
+    daily_limit: int
+
+
+@router.post("/api/qa/auth/users/{username}/limit")
+async def set_limit(username: str, req: SetLimitRequest, request: Request):
+    """管理员：设置指定用户的每日问答上限。"""
+    _check_admin(request)
+    if req.daily_limit < 0:
+        raise HTTPException(status_code=400, detail="daily_limit 不能为负数")
+    ok = set_user_daily_limit(username, req.daily_limit)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"用户 {username!r} 不存在")
+    return {"ok": True, "username": username, "daily_limit": req.daily_limit}
 
