@@ -15,6 +15,7 @@ from user.token import test_token
 from testD.backend.additional_pool import update_record
 from testD.backend.enhanced_translate_service import (
     enhanced_translate,
+    enhanced_translate_en2zh,
     get_prompt_override,
     set_prompt_override,
 )
@@ -47,6 +48,21 @@ async def api_enhanced_translate(req: EnhancedTranslateRequest):
         return await enhanced_translate(req.content, req.prompt_override)
     except Exception as e:
         logger.exception("enhanced_translate 失败")
+        return {"result": None, "refs": [], "error": str(e)}
+
+
+@router.post(
+    "/en2zh",
+    dependencies=[Depends(test_token)],
+)
+async def translate_en2zh(req: EnhancedTranslateRequest):
+    try:
+        return await enhanced_translate_en2zh(
+            content=req.content,
+            prompt_override=req.prompt_override,
+        )
+    except Exception as e:
+        logger.exception("enhanced_translate_en2zh 失败")
         return {"result": None, "refs": [], "error": str(e)}
 
 

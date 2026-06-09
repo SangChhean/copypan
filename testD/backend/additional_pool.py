@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import shutil
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -16,16 +17,13 @@ logger = logging.getLogger("testD.additional_pool")
 _POOL_DIR = Path(__file__).resolve().parent / "Additional-pool"
 _POOL_FILE = _POOL_DIR / "pool.jsonl"
 
-_PUNCT_RE = re.compile(
-    r"[\s\u3000\.,，。、；;：:!?！？\"'""''（）()\\[\\]【】《》〈〉—…·-\u201c\u201d\u2018\u2019\uff5e\u2500\u2014\u007e\u003b\uff0d]+"
-)
-
 _cache_by_norm: dict[str, dict[str, Any]] = {}
 _cache_mtime: float = 0.0
 
 
-def normalize_zh(zh: str) -> str:
-    return _PUNCT_RE.sub("", (zh or "").strip())
+def normalize_zh(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text or "")
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
 
 
 def _load_pool_file() -> dict[str, dict[str, Any]]:

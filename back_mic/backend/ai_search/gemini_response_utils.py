@@ -37,17 +37,24 @@ except ImportError:
 def gemini_translation_generate_config(system_instruction: Any) -> Any:
     """
     纲目翻译专用 GenerateContentConfig：关闭 AFC、显式 max_output_tokens（见 translation_max_output_tokens）。
-    不设置 thinking_config（避免各版本 SDK/服务端对 ThinkingConfig 校验不一致导致请求失败）。
+    若 SDK 支持则设置 thinking_level=MINIMAL，降低思考 token 消耗。
     """
     if genai_types is None:
         raise RuntimeError("google.genai 未安装")
 
     max_out = translation_max_output_tokens()
-    return genai_types.GenerateContentConfig(
+    kwargs = dict(
         system_instruction=system_instruction,
         automatic_function_calling=genai_types.AutomaticFunctionCallingConfig(disable=True),
         max_output_tokens=max_out,
     )
+
+    if hasattr(genai_types, "ThinkingConfig") and hasattr(genai_types, "ThinkingLevel"):
+        kwargs["thinking_config"] = genai_types.ThinkingConfig(
+            thinking_level=genai_types.ThinkingLevel.MINIMAL
+        )
+
+    return genai_types.GenerateContentConfig(**kwargs)
 
 
 def _part_summary(part: Any) -> str:

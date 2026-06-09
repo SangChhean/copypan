@@ -17,23 +17,27 @@
 
 ### 1.2 输入与输出
 
-**输入**：中文纲目文本，多行，每行结构为：
+**中翻英（`enhanced_translate`，`direction=zh2en`）**
 
-```
-[序号前缀][正文内容][读经后缀]
-```
+- **输入**：简体中文纲目，多行，每行 `[序号前缀][正文][读经后缀]`
+- **输出**：英文纲目、每行参考语料、统计摘要
 
-例：
+**英翻中（`enhanced_translate_en2zh`，`direction=en2zh`）**
+
+- **输入**：英文纲目，结构与中翻英对称（序号、分号子句、读经后缀）
+- **输出**：中文纲目、每行参考语料、统计摘要
+
+例（中翻英输入）：
 ```
 一	神圣的生命；基督的经历—约一1：
 二	职事的路
 壹	神的经纶
 ```
 
-**输出**：
-- 英文纲目（行对齐）
-- 每行的参考语料明细（供审校）
-- 统计摘要（命中率、Gemini 成本等）
+**输出**（两个方向共用 API 结构）：
+- 翻译结果全文（`result`，行对齐）
+- 每行参考语料明细（`refs`，供审校）
+- 统计摘要（`summary`：命中率、Gemini token 与费用等）
 
 ---
 
@@ -50,12 +54,16 @@
     两个 Pool 按优先级短路
 
 阶段三：检索（Retrieve）
-    未命中 Pool 的行，做子句级 ES 检索
+    未命中 Pool 的行，做行级 ES 检索（四路并行 + RRF + rerank top1）
 
 阶段四：翻译与组装（Translate & Assemble）
-    需要 batch 的行调用 Gemini 批量翻译
-    有读经后缀的行额外调用 _translate_suffix（单独 Gemini）
+    需要 batch 的行调用 Gemini 批量翻译（整行送入，含 prefix+body+suffix）
+    Pool / 缓存命中行直接输出，不调用 Gemini
 ```
+
+**2026-06 重要变更**：已移除 `_translate_suffix`、`_zh_line_for_batch`；读经后缀随整行一并送入 Gemini 或由 Pool 整行返回。检索失败（`retrieval_failed`）时**整单报错**，不再无参考硬译。
+
+**双向支持**：`enhanced_translate`（中→英）与 `enhanced_translate_en2zh`（英→中）共用解析、组装与前端 UI，检索与 Pool 查询字段对称切换（见 §5.3）。
 
 ---
 
@@ -74,7 +82,7 @@
 |------|------|----------|
 | `prefix` | 行首序号 + 紧跟的 Tab 或全角空格 | 查 `_PREFIX_TO_EN` 规则表，不走 Gemini |
 | `body` | prefix 之后、suffix 之前的正文 | 走 Pool → 检索 → Gemini 流程 |
-| `suffix` | 行末读经标注，以 `—` 开头 | 单独调用 Gemini 翻译为英文缩写格式 |
+| `suffix` | 行末读经标注，以 `—` 开头 | **不再单独 Gemini**；随整行送入 batch 或由 Pool 整行返回 |
 
 ---
 
@@ -261,11 +269,7 @@ _POOL_INDICES = ",".join([
 ])
 ```
 
-官方翻译池的 ES 索引名列表（逗号拼接，直接传给 `es_client.search` 的 `index` 参数）。这些是 Pansearch 段落库索引，字段是 `zh`/`en`，**无** `zh.keyword` 子字段，**无** `embedding` 字段，与 `kg-rag_*` 完全不同。
-
-**`_POOL_KEYWORD_MAX_LEN = 10`**：
-
-短/长子句的分界线（字符数）。`≤ 10` 用 `match_phrase`，`> 10` 用 BM25。这个阈值基于实验，短文本词少 BM25 不稳定，长文本 phrase 匹配太严格。
+官方翻译池的 ES 索引名列表。字段为 `zh` / `en` / `text`，**无** `embedding`，与 `kg-rag_*` 不同。
 
 **`_normalize_pool_text`**：
 
@@ -274,22 +278,31 @@ def _normalize_pool_text(s: str) -> str:
     return normalize_zh(s)
 ```
 
-等同于 `normalize_zh`（去空白和常见标点），专门给 pool 命中校验用，语义上强调「这是 pool 的对齐函数」。
+等同于 `normalize_zh`（NFKC + 去非字母数字），用于 Pool 全等校验。
 
 ---
 
 #### 3.2.6 其他模块级变量
 
-**`_INDICES_BASE`**：
+**`_INDICES_DENSE`**（chunk 检索 / exact_match，无 7feasts）：
 
 ```python
-_INDICES_BASE = ",".join([
+_INDICES_DENSE = ",".join([
     "kg-rag_cwwl", "kg-rag_life", "kg-rag_cwwn",
-    "kg-rag_others", "kg-rag_7feasts", "kg-rag_bib",
+    "kg-rag_others", "kg-rag_bib",
 ])
 ```
 
-chunk 检索使用的 ES 索引名列表（逗号拼接），对应职事著作的 6 个 kg-rag 索引。不含 `kg-rag_map_note`、`kg-rag_pano`、`kg-rag_dictionary`（这些不适合纲目翻译参考）。
+**`_INDICES_BM25`**（= `_POOL_INDICES`，BM25 与 ES Pool 共用）：
+
+```python
+_INDICES_BM25 = ",".join([
+    "life", "cwwn", "cwwl", "others",
+    "bib", "foo", "hymn", "feasts",
+])
+```
+
+`_RetrievalCtx.index` 默认 `_INDICES_DENSE`；`bm25_index` 默认 `_INDICES_BM25`。
 
 **`MAX_CONTENT_CHARS = 100_000`**：请求体纲目最大字符数，超出直接返回错误。
 
@@ -452,7 +465,7 @@ def _detect_line_type(body: str, prefix: str = "") -> str:
             都失败 → suffix = ""
             → body = rest[:m.start()].strip()，suffix = m.group(0)
                 │
-                ├─ _translate_prefix(prefix) → en_prefix
+                ├─ _translate_prefix(prefix)（解析用，组装不再拼接 en_prefix）
                 │
                 ├─ _split_body(body) → clauses[]
                 │
@@ -469,9 +482,9 @@ def _detect_line_type(body: str, prefix: str = "") -> str:
 |---|---|---|
 | 存储位置 | 本地 `pool.jsonl` 文件 | Elasticsearch（`life`, `cwwn`, `cwwl` 等索引） |
 | 数据来源 | 系统自动积累 + 手动导入 | 职事著作官方英译本段落库 |
-| 匹配粒度 | **整行**（含 prefix+body+suffix） | **整行 body**（不含 prefix 和 suffix） |
-| 匹配键 | `normalize_zh(整行)` 全等 | ≤10字 match_phrase + 全等；>10字 BM25 top1 + 全等 |
-| 命中后 | 直接输出缓存英文，跳过一切后续 | 直接输出 pool 英文，跳过检索和 Gemini |
+| 匹配粒度 | **整行**（含 prefix+body+suffix） | **整行**（含 prefix+body+suffix） |
+| 匹配键 | `normalize_zh(整行)` 全等 | `match_phrase` + `normalize_zh` 全等 |
+| 命中后 | 直接输出缓存译文，跳过检索与 Gemini | 直接输出 Pool 译文，跳过检索与 Gemini |
 
 ### 4.2 Additional Pool 详解
 
@@ -486,7 +499,7 @@ def _detect_line_type(body: str, prefix: str = "") -> str:
 }
 ```
 
-**匹配逻辑**：内存字典 `_pool`，键为 `norm_zh`，O(1) 查询。`normalize_zh` 去掉空白和标点，使「一\t生命」和「一 生命」命中同一条。
+**匹配逻辑**：内存字典 `_pool`，键为 `norm_zh`，O(1) 查询。`normalize_zh` 经 NFKC 统一字符后剥离标点与空白，使「一\t生命」和「一 生命」命中同一条。
 
 **自动回写**：每次翻译后把新翻行按 `norm_zh` 去重写入 `pool.jsonl`，Pool 随使用自动增长。
 
@@ -494,41 +507,31 @@ def _detect_line_type(body: str, prefix: str = "") -> str:
 
 ### 4.3 ES Pool 详解
 
-**`_pool_lookup_keyword(clause: str) -> str | None`**（≤10字）：
+**统一入口 `_pool_lookup(clause)`**（中翻英，查 `zh` 返回 `en`）：
 
 ```python
 body = {
     "query": {"match_phrase": {"zh": {"query": clause}}},
-    "size": 3,
+    "size": 10,
     "_source": ["zh", "en", "text"],
 }
-# 对每个 hit：normalize_zh(clause) == normalize_zh(hit_zh) 才采纳 en
+# 遍历 hits：normalize_zh(clause) == normalize_zh(hit_zh) 且 en 非空 → 返回 en
 ```
 
-**`_pool_lookup_bm25_punct(clause: str) -> str | None`**（>10字）：
+**英翻中对称入口 `_pool_lookup_en2zh(clause)`**（查 `en` 返回 `zh`）：
 
 ```python
 body = {
-    "query": {"match": {"zh": {"query": clause, "analyzer": "ik_smart"}}},
-    "size": 1,
+    "query": {"match_phrase": {"en": {"query": clause}}},
+    "size": 10,
     "_source": ["zh", "en", "text"],
 }
-# 取 top1：normalize_zh(clause) == normalize_zh(hit_zh) 才采纳 en
+# 遍历 hits：normalize_zh(clause) == normalize_zh(hit_en) 且 zh 非空 → 返回 zh
 ```
 
-**`_pool_lookup(clause: str) -> str | None`**：
+> 已删除 `_pool_lookup_keyword`、`_pool_lookup_bm25_punct`、`_POOL_KEYWORD_MAX_LEN` 分流逻辑。
 
-```python
-async def _pool_lookup(clause: str) -> str | None:
-    clause = (clause or "").strip()
-    if not clause:
-        return None
-    if len(clause) <= _POOL_KEYWORD_MAX_LEN:    # <= 10 字
-        return await _pool_lookup_keyword(clause)
-    return await _pool_lookup_bm25_punct(clause)
-```
-
-**全等校验的原理**：BM25/phrase 可能召回相近句，`normalize_zh` 去标点后全等是最后一道防线。「神圣的生命，」和「神圣的生命」视为相同；「神圣的生命与性情」和「神圣的生命」不同。
+**全等校验的原理**：`match_phrase` 可能召回标点/引号变体相近句；`normalize_zh` 经 NFKC 统一后全等是最后一道防线（弯引号、`─`/`—`、`~`/`～` 等差异可对齐）。
 
 ### 4.4 两个 Pool 在代码中的位置
 
@@ -536,98 +539,87 @@ async def _pool_lookup(clause: str) -> str | None:
 # ── 主流程最开头：Additional Pool ──
 line_cached_en: dict[int, str] = {}
 for i, line in enumerate(lines):
-    cached = lookup_line_en(line)     # 整行含序号
+    cached = lookup_line_en(line)     # 整行；英翻中暂复用此接口（后续可扩展反向键）
     if cached:
         line_cached_en[i] = cached
 
-# ── _retrieve_line 最开头：ES Pool ──
-pool_en = await _pool_lookup(body)    # 整行 body，clauses 循环之前
-if pool_en is not None:
-    return {
-        "needs_batch": False,
-        "pool_line_en": pool_en,
-        ...
-    }
-# 以下才是子句循环（exact / retrieve_top1）
+# ── _retrieve_line / _retrieve_line_en2zh 最开头：ES Pool ──
+pool_hit = await _pool_lookup(line)           # zh2en → en
+# pool_hit = await _pool_lookup_en2zh(line)  # en2zh → zh，存入 prep["pool_line_en"]
+if pool_hit is not None:
+    return { "needs_batch": False, "pool_line_en": pool_hit, ... }
+# 以下才是行级检索（exact / BM25 / dense / clause）
 ```
 
-**优先级**：Additional Pool > ES Pool > 子句检索 + Gemini
+**优先级**：Additional Pool > ES Pool > 行级检索 + Gemini
 
 ---
 
-## 五、阶段三：子句检索（_retrieve_line）
+## 五、阶段三：行级检索（_retrieve_line / _retrieve_line_en2zh）
 
-只有两个 Pool 都未命中的行才进入这个阶段。
+只有两个 Pool 都未命中的行才进入这个阶段。检索粒度为**整行**（合并多路命中后 RRF + Rerank 取 **top1** 作为该行唯一参考），不再对每个子句单独 rerank。
 
 ### 5.1 `_RetrievalCtx` 数据类
 
 ```python
 @dataclass
 class _RetrievalCtx:
-    index: str              # ES 索引名（逗号拼接的 _INDICES_BASE）
+    index: str              # _INDICES_DENSE（kg-rag_*）
+    bm25_index: str = ""    # _INDICES_BM25（life,cwwn,...）
     es_enabled: bool = True
     dense_enabled: bool = True
+    en_dense_enabled: bool = False   # 英翻中预留，当前未启用 Dense
     warnings: list[str] = field(default_factory=list)
-    _es_down_logged: bool = False   # 防止重复打日志
+    _es_down_logged: bool = False
 ```
 
-`create` 类方法：检查 `OPENROUTER_API_KEY`，没有则 `dense_enabled=False` 并加 warning。
+`create`：检查 `OPENROUTER_API_KEY`，无则 `dense_enabled=False` 并 warning。
 
-`mark_es_down(reason)`：首次调用时关闭 `es_enabled`，向 `warnings` 追加用户可见提示，并打一条 log（`_es_down_logged` 防止重复打 log）。**warning 文案**（2026-06 更新）：
+`mark_es_down` / `_probe_es` / `_is_es_failure`：行为同前（探测最多 3 次、间隔 3s）。降级后跳过 kg-rag 检索；**ES Pool 查询独立**，不受 `es_enabled` 门控。
 
-```
-Elasticsearch 暂时无法连接，请稍等片刻后重试。若持续出现请检查 ES 是否启动、kg-rag_* 索引是否正常。
-```
-
-降级后：`ctx.es_enabled=False` → `_exact_match` / `_retrieve_top1` / `_enrich_hit_en` 跳过 kg-rag 检索，子句级 ref 变为 `match_kind=none`，但仍可走 Gemini 无参考翻译。**ES Pool（`life` 等）查询不受 `es_enabled` 影响**，`_pool_lookup` 独立调 ES，失败只打 log 返回 `None`。
-
-**`_is_es_failure(exc)`**：判断异常是否是 ES 故障（用于检索过程中的中途降级，与探测重试无关）：
-
-```python
-def _is_es_failure(exc: BaseException) -> bool:
-    msg = str(exc).lower()
-    return (
-        "503" in msg
-        or "search_phase_execution_exception" in msg
-        or "unavailable" in msg
-        or "connection" in msg
-        or "timeout" in msg
-    )
-```
-
-**`_probe_es(ctx)`**（2026-06 更新：探测重试）：
-
-请求开始时对 `ctx.index` 的**第一个索引**（如 `kg-rag_cwwl`）发 `match_all size=0` 探测（`request_timeout=5`）。
-
-| 步骤 | 行为 |
-|------|------|
-| 索引名为空 | 立即 `mark_es_down`，不重试 |
-| 第 1–3 次探测 | `es_client.search` 成功 → 正常继续 |
-| 某次失败且未满 3 次 | `logger.warning` 记录次数与错误，`await asyncio.sleep(3)` 后重试 |
-| 3 次均失败 | `mark_es_down(last_err)`，本请求整单降级 |
-
-最坏额外等待约 **6 秒**（2 次间隔），用于消化 ES 短暂不可用，避免一次抖动就整单无参考翻译。
-
-### 5.2 检索流程（每个子句）
+### 5.2 中翻英 `_retrieve_line` 流程
 
 ```
-子句
- ├─ _exact_match（match_phrase on kg-rag_*.text）
- │    _source 含：chunk_id, text, en, book_title, source_zh, source_en, message_*
- │    命中条件：clause in chunk["text"]（子句字符串出现在 chunk 正文中）
- │    命中后：match_kind = "exact"，前端绿色标签「直接引用」
+整行 line（含序号与读经后缀）
  │
- ├─ 未命中 → _retrieve_top1
- │    bm25_search（top 5）
- │    + dense_search（top 20，需 OpenRouter）
- │    → rrf_merge（k=60，bm25_weight=1.0，dense_weight=1.0）
- │    → rerank（top 3 → 取 top1，_RERANK_SEM 限并发）
- │    命中后：match_kind = "retrieved"，前端蓝色标签「参考翻译」
+ ├─ 1. ES Pool：_pool_lookup(line) → 命中则 needs_batch=False
  │
- └─ 都未命中 → match_kind = "none"
+ ├─ 2. 四路并行（asyncio.gather）：
+ │      A) _exact_match(line)          match_phrase on text，size=40，验证 normalize_zh(clause) in normalize_zh(text)
+ │      B) _bm25_hits(body)            top_k=40，_filter_en_hits
+ │      C) _dense_hits(line)           top_k=40，num_candidates=100，需 OpenRouter
+ │      D) 每子句 _clause_retrieval    = _exact_match(clause) + _bm25_hits(clause, 40)
+ │
+ ├─ 3. _dedupe_hits_by_chunk_id 合并全部 hits
+ │
+ ├─ 4. 若仍为空：feasts BM25 top50 → rerank top1 → match_kind=retrieved
+ │
+ ├─ 5. 若仍为空：retrieval_failed=True（主流程报错，不调 Gemini）
+ │
+ ├─ 6. _enrich_hit_en 补全 en 字段
+ │
+ ├─ 7. 按 dense_ids 分桶 → rrf_merge(bm25_bucket, dense_bucket) → rerank(body, top1)
+ │
+ └─ 8. 单行 ref：_build_ref_entry(line_i, 0, ref_clause, top) → deduped_refs 进 Gemini
 ```
 
-### 5.3 `_build_ref_entry` — 统一 ref 结构
+### 5.3 英翻中 `_retrieve_line_en2zh` 流程（对称）
+
+与 §5.2 相同骨架，差异：
+
+| 步骤 | 中翻英 | 英翻中 |
+|------|--------|--------|
+| ES Pool | `_pool_lookup(line)` → `en` | `_pool_lookup_en2zh(line)` → `zh`（仍存 `pool_line_en` 字段） |
+| exact | `_exact_match` on `text` | `_exact_match_en` on `en` |
+| BM25 | `_bm25_hits(body)` on `text` + ik_smart | `_bm25_hits_en(body)` on `en` + standard |
+| Dense | `_dense_hits(line)` | **无**（不调用 Dense） |
+| 子句 | `_clause_retrieval` | `_clause_retrieval_en` |
+| 过滤 | `_filter_en_hits` | `_filter_zh_hits` |
+| feasts 备用 | `bm25_search(line, feasts, 50)` | `_bm25_hits_en(line, feasts, 50)` |
+| RRF | bm25_bucket + dense_bucket | 仅 `rrf_merge(enriched, [])` |
+| Gemini 参考块 | `_format_ref_block_for_gemini` | `_format_ref_block_for_gemini_en2zh`（展示 en + zh） |
+
+### 5.4 `_build_ref_entry` — 统一 ref 结构
 
 ```python
 def _build_ref_entry(line_index, clause_index, clause, hit) -> dict:
@@ -650,7 +642,7 @@ def _build_ref_entry(line_index, clause_index, clause, hit) -> dict:
 | `source` / `ch_source` | 中文来源（书名+消息号，经 `_extract_source` 清洗） |
 | `en_source` | 英文来源；**API 字段名**为 `en_source`，ES `_source` 中对应字段为 **`source_en`**（如 `"(Life-study of Exodus , msg. 11)"`），**不存在** `en_source` 字段 |
 
-### 5.4 去重与编号
+### 5.5 去重与编号
 
 ```python
 deduped_refs = _dedupe_refs_by_chunk_id(line_refs)
@@ -666,114 +658,52 @@ deduped_refs = _assign_paragraph_numbers(deduped_refs)
 
 ## 六、阶段四：翻译与组装
 
-### 6.1 批量翻译（_translate_batch）
+### 6.1 批量翻译（`_translate_batch` / `_translate_batch_en2zh`）
 
-每批最多 10 行。送入 Gemini 的中文行**去掉读经后缀**（`_zh_line_for_batch`），后缀由 `_translate_suffix` 单独翻译后在组装阶段拼接。
+每批最多 10 行。送入 Gemini 的为 **prep["line"] 整行**（含 prefix、body、读经后缀），不再剥离后缀。
 
-**`contents` 拼装顺序**（自上而下）：
+**`contents` 拼装（中翻英）**：
 
 ```
-[blocks 区]     ← 每行一个 block，用 "\n\n" 连接
+[blocks]   Line {pos}: {整行中文}{参考语料块}
 +
-[extra]         ← "\n\n" + prompt_extra（ENHANCED_TRANSLATE_PROMPT_SUFFIX 或覆盖值）
-+
-"\n\n"
-+
-[OUTLINE_TRANSLATE_PROMPT_ZH2EN]
+[extra]    "\n\n" + prompt_extra（ENHANCED_TRANSLATE_PROMPT_SUFFIX 或覆盖值）
 +
 "\n\nTranslate each line above to English. Output ONLY in this exact format:\n"
-+
-[输出格式模板]   ← Line 1: {english translation}\nLine 2: ...
-```
-
-**单个 block 结构**（`_format_ref_block_for_gemini` 生成参考语料块）：
-
-```
-Line {pos}: {zh_line}
-
-参考语料：
-Paragraph 1 [直接引用]
-id: chunk_abc
-text: {chunk 中文}
-en: {chunk 英文}
-
-Paragraph 2 [参考翻译]
-id: chunk_def
-text: {chunk 中文}
-en: {chunk 英文}
-```
-
-- `pos`：batch 内序号（1, 2, 3…），**不是**原始 `line_i`
-- `zh_line`：去掉读经后缀的中文行（含序号 prefix + body）
-- 无参考语料时 `ref_block` 为空串
-
-**完整示例**（3 行 batch，第 1 行有 2 段语料）：
-
-```
-Line 1: 一	神圣的生命；基督的经历
-
-参考语料：
-Paragraph 1 [直接引用]
-id: chunk_abc
-text: 神圣的生命是神自己的生命
-en: The divine life is God's own life
-
-Paragraph 2 [参考翻译]
-id: chunk_def
-text: 基督的经历就是基督所经过的一切
-en: The experience of Christ is all that Christ has passed through
-
-Line 2: 二	职事的路
-
-Line 3: 三	召会的建造
-
-{ENHANCED_TRANSLATE_PROMPT_SUFFIX 全文}
-
-{OUTLINE_TRANSLATE_PROMPT_ZH2EN}
-
-Translate each line above to English. Output ONLY in this exact format:
 Line 1: {english translation}
-Line 2: {english translation}
-Line 3: {english translation}
+...
 ```
 
-**`_parse_batch_translations`**：用 `_BATCH_LINE_OUT_RE` 解析输出，按 `Line N:` 对齐；缺失行 fallback 为原始中文行（不让整批崩掉）。
+**英翻中**：同上结构，使用 `_format_ref_block_for_gemini_en2zh`，结尾为 `Translate each line above to Chinese...`。
 
-**Fallback 机制**：主模型失败则试 `GEMINI_TRANSLATION_FALLBACK_MODEL`；fallback 也失败则每行退化为原文 `zh_line` 占位。
+> 已移除 `OUTLINE_TRANSLATE_PROMPT_ZH2EN` 拼接；通用纲目规则由 `GEMINI_TRANSLATION_SYSTEM_INSTRUCTION`（system）承担。
 
-**Token 均摊**：`usage["in_tok"] // max(len(items), 1)` 均摊到每行，用于 `stats.gemini_in_tok` / `gemini_out_tok`。
+**`_parse_batch_translations`**：解析 `Line N:` 输出；缺失行 fallback 为原文行。
 
-### 6.2 组装（_assemble_line）
+**Fallback**：主模型失败试 `GEMINI_TRANSLATION_FALLBACK_MODEL`；仍失败则每行退化为原文占位。
+
+**Token 统计**：batch 级 `cumulative_usage` 汇总 `in_tok` / `out_tok`（`out_tok` 含 `thoughts_token_count`），写入 `summary`，不再按行均摊。
+
+### 6.2 组装（`_assemble_line`）
 
 ```python
-# 优先级 1：Additional Pool 命中
+# 优先级 1：Additional Pool
 if cached_en:
     return cached_en, _build_line_ref_group(..., additional_pool_line=True, retrieval_skipped=True)
 
-# 优先级 2：ES Pool 命中
-pool_line_en = (prep.get("pool_line_en") or "").strip()
+# 优先级 2：ES Pool（zh2en 为 en；en2zh 为 zh，均存 pool_line_en）
 if pool_line_en:
-    en_suffix = await _translate_suffix(suffix, prompt_extra) if suffix else ""
-    translated = en_prefix + pool_line_en + en_suffix
-    return translated, _build_line_ref_group(..., pool_line=True)
+    return pool_line_en, _build_line_ref_group(..., pool_line=True)
 
-# 优先级 3：空 body（仅序号+读经）
+# 优先级 3：空 body / needs_batch=False
 if not prep["needs_batch"]:
-    en_suffix = await _translate_suffix(suffix, prompt_extra) if suffix else ""
-    return en_prefix + en_suffix, _build_line_ref_group(...)
+    return line, _build_line_ref_group(...)
 
-# 优先级 4：Gemini batch 结果
-zh_for_batch = _zh_line_for_batch(line, suffix)   # 去掉后缀的中文行
-body_en = translate_by_line.get(line_i) or zh_for_batch
-en_suffix = await _translate_suffix(suffix, prompt_extra) if suffix else ""
-return body_en + en_suffix, _build_line_ref_group(..., gemini_translate=body_en)
+# 优先级 4：Gemini batch
+return translate_by_line[line_i] or line, _build_line_ref_group(..., gemini_translate=...)
 ```
 
-**组装说明**：
-- Additional Pool 命中：直接返回缓存整行英文（已含 prefix，不再拼接）
-- ES Pool 命中：`en_prefix + pool_line_en + en_suffix`
-- 空 body：`en_prefix + en_suffix`
-- Batch 命中：`body_en + en_suffix`（batch 输入已含 prefix+body，不含 suffix）
+不再拼接 `en_prefix` / `en_suffix`；Pool 与 batch 均返回**整行译文**。
 
 ### 6.3 并行策略
 
@@ -789,64 +719,37 @@ batch_outcomes = await asyncio.gather(*[_run_batch_chunk(chunk) for chunk in chu
 results = await asyncio.gather(*[_assemble_line(...) for prep in preps])
 ```
 
-### 6.4 Gemini API 调用（_call_gemini_sync）
+### 6.4 Gemini API 调用（`_call_gemini_sync`）
 
-所有 Gemini 请求统一经 `_call_gemini_sync` 发起，由 `_translate_batch`（批量纲目）和 `_translate_suffix`（读经后缀）通过 `asyncio.to_thread` 调用。
-
-**调用点**：
-
-| 函数 | 用途 | fallback 模型 |
-|------|------|---------------|
-| `_translate_batch` | 批量翻译纲目行 | 有（主模型空响应时） |
-| `_translate_suffix` | 单独翻译读经后缀 | 无（失败则返回原 suffix） |
+经 `_translate_batch` / `_translate_batch_en2zh` 通过 `asyncio.to_thread` 调用。
 
 **`generate_content` 参数**：
 
 ```python
 response = gemini_client.models.generate_content(
-    model=use_model,           # GEMINI_MODEL 或 GEMINI_TRANSLATION_FALLBACK_MODEL
-    contents=contents,         # user 消息（拼装字符串）
-    config=_gemini_config(),   # system_instruction + max_output_tokens 等
+    model=use_model,
+    contents=contents,
+    config=_gemini_config(),
 )
 ```
 
-**`_gemini_config()`**：调用主工程 `gemini_translation_generate_config(GEMINI_TRANSLATION_SYSTEM_INSTRUCTION)`，设置：
-- `system_instruction`：职事术语表（`GEMINI_TRANSLATION_SYSTEM_INSTRUCTION`）
-- `automatic_function_calling`：`disable=True`
-- `max_output_tokens`：来自环境变量 `GEMINI_TRANSLATION_MAX_OUTPUT_TOKENS`（默认 32768，范围 1024–65536）
-- **未设置** `temperature`、`thinking_config`
+**`_gemini_config()`**：`gemini_translation_generate_config(GEMINI_TRANSLATION_SYSTEM_INSTRUCTION)`：
+- `system_instruction`：职事术语表
+- `automatic_function_calling.disable=True`
+- `max_output_tokens`：默认 32768
+- `thinking_level=MINIMAL`（SDK 支持时，降低思考 token）
 
-**模型来源**：先从 `ai_search.ai_service` 导入，随后在 `enhanced_translate_service.py` 内**覆盖**为本模块专用值（不影响主站其他翻译功能）：
+**模型**：`gemini-3.5-flash` / fallback `gemini-2.5-flash`
 
-```python
-GEMINI_MODEL = "gemini-3.5-flash"
-GEMINI_TRANSLATION_FALLBACK_MODEL = "gemini-2.5-flash"
-```
-
-**重试逻辑**：
-- `_gemini_error_is_retryable(err)` 为真时，sleep 2 秒后重试 **1 次**（`retry_count` 0→1）
-- 无显式 API timeout 参数
-
-**并发控制**：
-- `GEMINI_SEMAPHORE`（主工程全局，默认 10）：所有 `generate_content` 共享
-- `batch_sem = asyncio.Semaphore(10)`：限制并行 batch chunk 数
-- `_RERANK_SEM = asyncio.Semaphore(10)`：限制 rerank 并发（检索阶段，非 Gemini）
-
-**`_translate_suffix` 的 contents 拼装**（与 batch 顺序不同）：
+**Token 日志**（每次成功调用）：
 
 ```
-任务说明（只翻译读经后缀）
-+
-"\n\n"
-+
-{suffix 原文}
-+
-"\n\n"
-+
-OUTLINE_TRANSLATE_PROMPT_ZH2EN
-+
-extra（"\n\n" + prompt_extra）
+[enhanced_translate] gemini call: model=... in_tok=... out_tok=... think_tok=...
 ```
+
+`cumulative_usage["out_tok"]` 累加 `candidates_token_count + thoughts_token_count`。
+
+**费用**：`_gemini_cost_usd(in, out) = (in*1.50 + out*9.0) / 1_000_000`
 
 ---
 
@@ -857,18 +760,19 @@ extra（"\n\n" + prompt_extra）
 ```python
 {
     "line_i": int,
-    "line": str,            # 原始行
-    "body": str,            # 去掉 prefix 和 suffix 的正文
-    "suffix": str,          # 读经后缀（可能为空串）
-    "en_prefix": str,       # 已翻序号（如 "A.\t"，可能为空串）
+    "line": str,            # 原始行（整行）
+    "body": str,            # 去掉 prefix 和 suffix 的正文（解析用）
     "line_type": str,       # "outline" | "reference"
-    "line_refs": [...],     # 子句级 ref 列表（池命中行为 []）
+    "line_refs": [...],     # 行级 ref（通常 1 条；Pool 命中为 []）
     "deduped_refs": [...],  # 去重+编号后的 refs（进 Gemini prompt）
-    "needs_batch": bool,    # True → 需要进 _translate_batch
-    "line_cached_en": str,  # Additional Pool 命中的英文（非空则短路）
-    "pool_line_en": str,    # ES Pool 命中的英文（非空则跳过检索和 Gemini）
+    "needs_batch": bool,
+    "line_cached_en": str,  # Additional Pool 命中译文（字段名历史保留）
+    "pool_line_en": str,    # ES Pool 命中译文（zh2en=en，en2zh=zh）
+    "retrieval_failed": bool,
 }
 ```
+
+> 已移除 `suffix`、`en_prefix` 字段。
 
 ### 7.2 line_ref_group（API 响应单行）
 
@@ -885,14 +789,14 @@ extra（"\n\n" + prompt_extra）
         "exact": int,
         "retrieved": int,
         "none": int,
-        "gemini_in_tok": int,
-        "gemini_out_tok": int,
         "additional_pool_line": bool,
         "retrieval_skipped": bool,
-        "pool_line": bool,           # 整行命中 ES Pool
+        "pool_line": bool,
     }
 }
 ```
+
+> 已移除 per-line `gemini_in_tok` / `gemini_out_tok`；token 仅在 `summary` 批次级汇总。
 
 ### 7.3 summary
 
@@ -904,10 +808,12 @@ extra（"\n\n" + prompt_extra）
     "retrieved": int,
     "none": int,
     "additional_pool_lines": int,
-    "pool_full_match_lines": int,       # 整行命中 ES Pool 的行数
+    "pool_full_match_lines": int,
     "additional_pool_appended": int,
     "additional_pool_append_skipped": int,
-    "gemini_cost_usd": float,           # (in*1.25 + out*10) / 1_000_000
+    "total_in_tok": int,
+    "total_out_tok": int,
+    "gemini_cost_usd": float,     # (in*1.50 + out*9.0) / 1_000_000
     "total_cost_usd": float,
 }
 ```
@@ -920,93 +826,56 @@ extra（"\n\n" + prompt_extra）
 
 | 层 | 内容 | 来源 |
 |----|------|------|
-| System Instruction | 职事术语表（数百条中英对照） | `GEMINI_TRANSLATION_SYSTEM_INSTRUCTION` |
-| 任务说明 | 纲目翻译通用规则 | `OUTLINE_TRANSLATE_PROMPT_ZH2EN` |
-| 增强规则 | 直接引用/参考翻译使用说明（含正反例） | `testD/backend/enhanced_translate_prompts.py` → `ENHANCED_TRANSLATE_PROMPT_SUFFIX` |
-| 可覆盖层 | 用户自定义规则 | `_PROMPT_OVERRIDE` 或请求体 `prompt_override` |
+| System Instruction | 职事术语表 | `GEMINI_TRANSLATION_SYSTEM_INSTRUCTION` |
+| 增强规则（中→英） | 直接引用/参考翻译/序号/读经格式 | `ENHANCED_TRANSLATE_PROMPT_SUFFIX` |
+| 增强规则（英→中） | 对称规则（引用 zh 字段） | `ENHANCED_TRANSLATE_PROMPT_EN2ZH` |
+| 可覆盖层 | 用户自定义（仅 zh2en 支持服务级覆盖） | `_PROMPT_OVERRIDE` 或 `prompt_override` |
 
 ### 8.2 Prompt 覆盖优先级
 
+**中翻英 `enhanced_translate`**：
+
 ```python
 if prompt_override is not None:
-    prompt_extra = prompt_override.strip()    # 请求级（单次有效）
+    prompt_extra = prompt_override.strip()
 else:
     prompt_extra = (_PROMPT_OVERRIDE or ENHANCED_TRANSLATE_PROMPT_SUFFIX).strip()
-    # _PROMPT_OVERRIDE 非空 → 服务级（POST /update_prompt，进程内持久）
-    # _PROMPT_OVERRIDE 为空 → 默认规则
+```
+
+**英翻中 `enhanced_translate_en2zh`**：
+
+```python
+prompt_extra = (prompt_override or ENHANCED_TRANSLATE_PROMPT_EN2ZH).strip()
 ```
 
 ---
 
 ## 九、完整主流程伪代码
 
+### 9.1 中翻英 `enhanced_translate`
+
 ```python
 async def enhanced_translate(content, prompt_override=None):
-    # 输入验证
-    if not outline: return error
-    if len > MAX_CONTENT_CHARS: return error
-    if not gemini_client: return error
+    # 验证 → prompt_extra → lines
+    # Additional Pool：lookup_line_en(整行)
+    ctx = _RetrievalCtx.create(_INDICES_DENSE)
+    if any line not cached: await _probe_es(ctx)
 
-    # Prompt 选择
-    prompt_extra = prompt_override or _PROMPT_OVERRIDE or ENHANCED_TRANSLATE_PROMPT_SUFFIX
+    preps = gather(_prep_cached_line or _retrieve_line)
+    if any prep.retrieval_failed: return error  # 不调 Gemini
 
-    lines = [ln for ln in content.splitlines() if ln.strip()]
+    batch_items = [(line_i, line, deduped_refs, prompt_extra) for needs_batch]
+    translate_by_line = gather(_translate_batch chunks)
 
-    # ── 阶段二A：Additional Pool（整行含序号）──
-    line_cached_en: dict[int, str] = {}
-    for i, line in enumerate(lines):
-        en = lookup_line_en(line)
-        if en:
-            line_cached_en[i] = en
-
-    # ── ES 探测（最多 3 次，间隔 3s；全失败才 mark_es_down）──
-    ctx = _RetrievalCtx.create(_INDICES_BASE)
-    if any(i not in line_cached_en for i in range(len(lines))):
-        await _probe_es(ctx)   # 探测 kg-rag 第一个索引；ES Pool 查询不依赖 es_enabled
-
-    # ── 阶段二B + 阶段三：并行检索 ──
-    async def _prep_one(i, line):
-        if i in line_cached_en:
-            return _prep_cached_line(i, line, line_cached_en[i])
-        prep = await _retrieve_line(i, line, ctx)
-        # _retrieve_line 内部：
-        #   1. _pool_lookup(body) → 命中则 pool_line_en=..., needs_batch=False
-        #   2. 未命中 → for clause in clauses: exact → retrieve_top1 → enrich
-        prep["line_cached_en"] = ""
-        return prep
-
-    preps = await gather(_prep_one for all lines)
-
-    # ── 阶段四A：收集 batch ──
-    batch_items = [
-        (prep["line_i"], _zh_line_for_batch(prep["line"], prep["suffix"]), prep["deduped_refs"], prompt_extra)
-        for prep in preps
-        if prep["needs_batch"] and not prep.get("line_cached_en")
-        # Additional Pool 命中 → line_cached_en 非空 → 跳过
-        # ES Pool 命中 → needs_batch=False → 跳过
-    ]
-
-    # ── 阶段四B：批量翻译（每批 ≤10 行，并行多批）──
-    chunks = [batch_items[i:i+10] for i in range(0, len(batch_items), 10)]
-    batch_outcomes = await gather(_translate_batch for each chunk)
-    translate_by_line, usage_by_line = 整理结果
-
-    # ── 阶段四C：组装 ──
-    results = await gather(
-        _assemble_line(prep, prompt_extra, translate_by_line, usage_by_line)
-        for prep in preps
-    )
-    # 优先级：cached_en > pool_line_en > gemini_result
-    # Additional Pool：整行缓存；ES Pool：en_prefix + pool_body + en_suffix
-    # Batch：body_en + en_suffix（body_en 已含 prefix+body 的英文）
-
-    # ── 自动回写 Additional Pool ──
-    if auto_append_enabled():
-        rows = collect_auto_append_rows(line_ref_groups, out_lines)
-        added, skipped = append_records(rows)
-
-    return { result, refs, summary, error: None, warnings }
+    results = gather(_assemble_line for each prep)
+    auto_append → summary → { result, refs, summary, warnings }
 ```
+
+### 9.2 英翻中 `enhanced_translate_en2zh`
+
+与中翻英对称：`prompt_extra = ENHANCED_TRANSLATE_PROMPT_EN2ZH`；`_retrieve_line_en2zh`；`_translate_batch_en2zh`；`POST /api/kg_rag/en2zh`。
+
+**检索失败策略**：任一行 `retrieval_failed=True` → 返回 `error: "部分行检索失败..."`，**不调用 Gemini**。
 
 ---
 
@@ -1016,10 +885,10 @@ async def enhanced_translate(content, prompt_override=None):
 
 | | kg-rag_* 索引族 | Pool 索引族 |
 |---|---|---|
-| 索引名 | `kg-rag_cwwl`, `kg-rag_life`, `kg-rag_cwwn`, `kg-rag_others`, `kg-rag_7feasts`, `kg-rag_bib` | `life`, `cwwn`, `cwwl`, `others`, `bib`, `foo`, `hymn`, `feasts` |
-| 用途 | chunk 级检索（exact/BM25/dense） | 整行 body 官方译文查询 |
-| 主要字段 | `text`, `en`, `embedding`, `source_zh`, **`source_en`**, `chunk_id`, `book_title` | `zh`, `en` |
-| 查询字段 | `text` | `zh` |
+| 索引名 | `kg-rag_cwwl`, `kg-rag_life`, `kg-rag_cwwn`, `kg-rag_others`, `kg-rag_bib` | `life`, `cwwn`, `cwwl`, `others`, `bib`, `foo`, `hymn`, `feasts` |
+| 用途 | chunk 级检索（exact/BM25/dense） | ES Pool + BM25 备用（feasts） |
+| 主要字段 | `text`, `en`, `zh`, `embedding`, `source_zh`, `source_en`, `chunk_id` | `zh`, `en`, `text` |
+| 查询字段 | `text`（zh2en）/ `en`（en2zh exact & bm25_en） | `zh`（zh2en pool）/ `en`（en2zh pool） |
 | 有无向量 | 有（1024维，bge-m3） | 无 |
 | `zh.keyword` | 无 | 无（不能用 term 查询） |
 | 英文出处字段 | ES 为 **`source_en`**；API ref 中暴露为 **`en_source`** | 无单独出处字段 |
@@ -1035,7 +904,7 @@ async def enhanced_translate(content, prompt_override=None):
 
 ### 阶段 A：骨架
 1. `_bootstrap.py`：把主工程 backend 加入 sys.path
-2. `enhanced_translate_router.py`：三个 POST 端点（见 §14.9）
+2. `enhanced_translate_router.py`：API 端点（见 §14.9，含 `/en2zh`）
 3. 空壳 `enhanced_translate`，直接返回原文
 4. 接入主工程 `main.py`
 
@@ -1048,45 +917,41 @@ async def enhanced_translate(content, prompt_override=None):
 10. `_OUTLINE_HEAD_RE` 和 `_detect_line_type`
 
 ### 阶段 C：ES 检索
-11. `_RetrievalCtx` dataclass（`index`, `es_enabled`, `dense_enabled`, `warnings`, `_es_down_logged`）
-12. `_is_es_failure`、`_probe_es`（3 次重试 + 3s 间隔）、`mark_es_down`（可重试 warning 文案）
-13. `_exact_match`（match_phrase on `text`，验证 `clause in hit["text"]`）
-14. `_retrieve_top1`（bm25 + dense + rrf_merge + rerank，`_RERANK_SEM` 限流）
-15. `_enrich_hit_en`（补全 en 字段）
-16. `_build_ref_entry`（统一 ref 结构，处理 pool/exact/retrieved/none 四种 match_kind）
-17. `_dedupe_refs_by_chunk_id`、`_assign_paragraph_numbers`
-18. `_format_ref_block_for_gemini`
+11. `_RetrievalCtx`（含 `bm25_index`、`en_dense_enabled`）
+12. `_is_es_failure`、`_probe_es`、`mark_es_down`
+13. `_exact_match` / `_exact_match_en`（size=40，normalize 子串验证）
+14. `_bm25_hits` / `_bm25_hits_en`、`_dense_hits`、`_clause_retrieval` / `_clause_retrieval_en`
+15. `_retrieve_line` / `_retrieve_line_en2zh`（行级四路并行 + feasts 备用 + RRF + rerank top1）
+16. `_enrich_hit_en`、`_build_ref_entry`、去重与编号
+17. `_format_ref_block_for_gemini` / `_format_ref_block_for_gemini_en2zh`
 
 ### 阶段 D：ES Pool
-19. `_POOL_INDICES`、`_POOL_KEYWORD_MAX_LEN = 10`、`_normalize_pool_text`
-20. `_pool_lookup_keyword`（match_phrase + 全等校验）
-21. `_pool_lookup_bm25_punct`（BM25 + 全等校验）
-22. `_pool_lookup`（分流 ≤10 / >10 字）
-23. 在 `_retrieve_line` 里，`clauses` 非空后立即调 `_pool_lookup(body)`，命中则提前返回
+19. `_pool_lookup`（match_phrase on `zh`，size=10，normalize 全等）
+20. `_pool_lookup_en2zh`（match_phrase on `en`，对称）
+21. `_retrieve_line` 开头 `_pool_lookup(整行 line)`
 
 ### 阶段 E：Gemini 翻译
-24. `_call_gemini_sync`（同步，在 `asyncio.to_thread` 里跑，含一次重试）
-25. `_translate_batch`（合并 prompt，`_parse_batch_translations`，fallback 原文占位）
-26. `_translate_suffix`（读经标注单独小 prompt）
-27. `_assemble_line`（四级优先级判断）
+22. `_call_gemini_sync`（含 think_tok 日志与累计）
+23. `_translate_batch` / `_translate_batch_en2zh`
+24. `_assemble_line`（四级优先级，整行输出）
 
-### 阶段 F：Additional Pool
-28. `additional_pool.py`：`normalize_zh`, `lookup_line_en`, `append_records`, `update_record`, `_write_pool`, `collect_auto_append_rows`
-29. 主流程开头循环 `lookup_line_en` → `line_cached_en`
-30. `_prep_cached_line`（短路路径，`pool_line_en: ""`）
-31. `enhanced_translate_router`：`POST update_translation` → `update_record`
+### 阶段 F：英翻中
+25. `_exact_match_en`, `_bm25_hits_en`, `_filter_zh_hits`, `_clause_retrieval_en`
+26. `_retrieve_line_en2zh`, `_format_ref_block_for_gemini_en2zh`
+27. `enhanced_translate_en2zh` 主入口
 
-### 阶段 G：统计
-32. `_stats_from_line_refs`（统计各 match_kind 数量）
-33. `_gemini_cost_usd`（公式：`(in*1.25 + out*10) / 1_000_000`）
-34. `_build_line_ref_group`（含 `pool_line` 参数）
-35. `_build_summary`（含 `pool_full_match_lines`）
+### 阶段 G：Additional Pool
+28. `additional_pool.py`（`normalize_zh` NFKC 版）
+29. 主流程 `lookup_line_en`；`update_record`
 
-### 阶段 H：前端
-36. `EnhancedTranslate.vue`：summary、行类型标签、Pool 标签、橙色 warnings、逐行编辑与保存、编辑态下载
+### 阶段 H：统计
+30. `_build_summary`（`total_in_tok` / `total_out_tok` 批次级）
 
-### 阶段 I：验证
-37. `test_translate.py`：mock `_retrieve_line` 和 `_translate_batch`，断言 Additional Pool 命中行不进这两个函数
+### 阶段 I：前端
+31. `EnhancedTranslate.vue`：中翻英/英翻中/清除三按钮，`direction` 切换 API
+
+### 阶段 J：验证
+32. `test_translate.py`
 
 ---
 
@@ -1095,17 +960,14 @@ async def enhanced_translate(content, prompt_override=None):
 | 决策 | 原因 |
 |------|------|
 | Additional Pool 含序号整行匹配 | 不同序号对应不同英文前缀，不能共享缓存 |
-| ES Pool 匹配整行 body（不含序号/后缀） | 段落库数据是正文本身；序号和后缀单独处理 |
+| ES Pool 匹配整行（含序号与读经后缀） | 与 Additional Pool 粒度一致；`match_phrase` + normalize 全等 |
 | Pool 都是整行匹配，不看子句 | 官方译文要么整句用，要么不用，不做部分替换 |
-| ES Pool 查询在子句循环之前 | 整行能命中就不需要分解子句，节省时间 |
-| 检索与翻译严格分两阶段 | 翻译需等所有检索完成才能合理分 batch |
-| Gemini 最多 10 行一 batch | 太多行 LLM 容易丢失；太少则 API 调用次数多 |
-| ES 探测失败重试 3 次（间隔 3s） | 短暂抖动不立即整单降级；3 次均失败才 `mark_es_down` |
-| ES 中途故障时降级而不报错 | 可用性优先，无参考仍可翻译；warning 提示可重试 |
-| ES Pool 不受 `es_enabled` 门控 | 官方段落池与 kg-rag chunk 索引独立；探测降级后仍尝试 ES Pool |
-| Pool 查询做全等校验 | BM25/phrase 可能召回相近句，全等是最后一道防线 |
-| `_detect_line_type` 优先看 prefix | 带 ministerialize prefix 的行（`一\t…`）直接判 outline；无 prefix 时再匹配 body |
-| token 按行均摊 | 一次 batch 无法精确归因每行，均摊是合理近似 |
+| ES Pool 查询在子句循环之前 | 整行 `_pool_lookup(line)` 在检索前短路 |
+| 检索失败则整单报错 | 无参考语料时不硬译，保证术语质量 |
+| 行级 RRF+Rerank top1 | 多子句/多路命中合并为单行一条参考，减 token |
+| `normalize_zh` 用 NFKC + `\W` 剥离 | 统一弯引号、全角标点、波浪号等 Pool 变体 |
+| Gemini `thinking_level=MINIMAL` | 降低思考 token，日志记录 `think_tok` |
+| 双向 API 共用 prep 结构 | `pool_line_en` 在 en2zh 下存中文译文 |
 
 ---
 
@@ -1127,6 +989,8 @@ python -m pytest testD/backend/test_translate.py -v
 - `test_split_body`：分号拆句
 - `test_normalize_zh`：Additional Pool 归一化
 - `test_pool_skip_gemini`：Additional Pool 短路验证
+
+> **英翻中**：当前 `test_translate.py` 仅覆盖中翻英主路径；`enhanced_translate_en2zh` 可通过 `POST /api/kg_rag/en2zh` 手工验收或后续补测。
 
 **Pool 短路断言**（mock `_retrieve_line` / `_translate_batch`）：
 
@@ -1153,7 +1017,8 @@ assert out[2].startswith("GEMINI_")
 | `line_type` 判断 | 「一\t神圣的生命」→ outline；「神乃是灵」→ reference |
 | ES Pool 命中 | `stats.pool_line=True`，`pool_full_match_lines` 增加 |
 | Additional Pool 命中 | `stats.additional_pool_line=True`，`retrieval_skipped=True` |
-| ES 关闭或 3 次探测失败 | `warnings` 含橙色横幅文案，仍返回 Gemini 译文；恢复 ES 后重试应正常检索 |
+| ES 关闭或 3 次探测失败 | `warnings` 含橙色横幅；若某行 `retrieval_failed=True`，**整单报错**（`error` 非空、`result=null`），不调 Gemini |
+| 英翻中 | 切换「英翻中」→ `POST /en2zh`；无 Dense 路径；参考块展示 `en` + `zh` |
 | 行内编辑译文 | 改 `gemini_translate` → 失焦或点「保存」→ `update_translation` 写回 Pool（须已有对应 `norm_zh`） |
 | 下载 DOCX | 使用用户编辑后的 `editedTranslations`，非原始 `result` |
 | 重复翻译同一纲目 | 第二次 `additional_pool_lines` 上升，耗时下降 |
@@ -1162,7 +1027,7 @@ assert out[2].startswith("GEMINI_")
 
 ---
 
-*文档版本：2026-06-05（复盘更新），对应 `enhanced_translate_service.py` 约 1007 行、`EnhancedTranslate.vue` 约 780 行、`pool.jsonl` 约 438 条。*
+*文档版本：2026-06-09，对应 `enhanced_translate_service.py` 约 1437 行、`EnhancedTranslate.vue` 双向模式、`pool.jsonl` 持续增长中。*
 
 ---
 
@@ -1234,54 +1099,27 @@ _POOL_FILE = _POOL_DIR / "pool.jsonl"
 
 Pool 文件位于 `testD/backend/Additional-pool/pool.jsonl`，目录由代码自动创建（`_POOL_DIR.mkdir(parents=True, exist_ok=True)`）。
 
-```python
-_PUNCT_RE = re.compile(
-    r"[\s\u3000\.,，。、；;：:!?！？\"'""''（）()\\[\\]【】《》〈〉—…·-]+"
-)
-```
-
-`normalize_zh` 用的正则，匹配所有需要去除的字符：
-
-| 字符/类 | 含义 |
-|---------|------|
-| `\s` | 所有 ASCII 空白（空格、Tab、换行） |
-| `\u3000` | 全角空格 |
-| `\.,，。、` | 中英文句号、逗号、顿号 |
-| `；;：:` | 中英文分号、冒号 |
-| `!?！？` | 中英文感叹号、问号 |
-| `\"'""''` | 中英文双引号、单引号 |
-| `（）()\[\]【】《》〈〉` | 各种括号 |
-| `—\-…·` | 破折号、连字符、省略号、间隔号 |
-| `+` | 一个或多个连续匹配，一次性替换为空串 |
+#### 14.2.2 `normalize_zh(text: str) -> str`
 
 ```python
-_cache_by_norm: dict[str, dict[str, Any]] = {}
-_cache_mtime: float = 0.0
+import unicodedata
+import re
+
+def normalize_zh(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text or "")
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
 ```
 
-内存缓存：`_cache_by_norm` 是 `norm_zh → 完整记录` 的字典；`_cache_mtime` 是上次加载时的文件修改时间戳，用于按需重载。
+先 **NFKC** 统一兼容字符（全角数字、弯引号、`～`/`~` 等），再删除所有非字母数字字符（Unicode `\W`）。
 
----
-
-#### 14.2.2 `normalize_zh(zh: str) -> str`
-
-```python
-def normalize_zh(zh: str) -> str:
-    return _PUNCT_RE.sub("", (zh or "").strip())
-```
-
-输入先 `strip()` 再用 `_PUNCT_RE` 去掉所有标点空白，返回纯汉字+字母+数字的字符串。
-
-**作用范围**：被 `additional_pool.py` 和 `enhanced_translate_service.py`（通过 `from testD.backend.additional_pool import normalize_zh`）共同使用，统一了 Additional Pool 和 ES Pool 的全等校验逻辑。
+**作用范围**：Additional Pool 与 ES Pool 全等校验共用；`_exact_match` 验证 `normalize_zh(clause) in normalize_zh(text)`。
 
 **示例**：
 
-| 输入 | 输出 |
-|------|------|
-| `一\t生命` | `一生命` |
-| `神圣的生命，` | `神圣的生命` |
-| `神圣的生命；基督的经历` | `神圣的生命基督的经历` |
-| `  （一）召会  ` | `一召会` |
+| 输入 A | 输入 B | normalize 后 |
+|--------|--------|--------------|
+| `壹　神的愿望；…—创一26～29。` | `壹　神的愿望;…─创一26~29。` | 相同（可对齐 Pool 命中） |
+| `一\t生命` | `一 生命` | `一生命` |
 
 ---
 
@@ -1502,73 +1340,36 @@ def auto_append_enabled() -> bool:
 
 #### 14.3.1 `ENHANCED_TRANSLATE_PROMPT_SUFFIX`
 
-完整内容见 `testD/backend/enhanced_translate_prompts.py`（约 106 行）。结构为 **11 条规则 + 多组正反例**，分四段：
+完整内容见 `testD/backend/enhanced_translate_prompts.py`（约 85 行，含 `PROOFREAD_OUTLINE_PROMPT`）。`ENHANCED_TRANSLATE_PROMPT_SUFFIX` 与 `ENHANCED_TRANSLATE_PROMPT_EN2ZH` 结构对称，按 **P0 → P3 优先级** 组织：
 
 **开场角色设定**：专业基督教事奉文字翻译员，熟悉恢复版圣经术语与李常受/倪柝声著作风格。
 
-**【语料结构说明】**：解释 `参考语料` 区块中 `text` / `en` / `[直接引用]` / `[参考翻译]` 各字段含义。
-
-**【语料使用规则】**（1–4条）：
-
-| 条 | 规则 |
-|----|------|
-| 1 | `[直接引用]`：`en` 字段**一字不改**照搬；附 2 组错误示范（改词、改介词） |
-| 2 | `[参考翻译]`：`en` 视为已审定译文，**最大限度原样复用**；仅缺口部分补译；附错误示范（漏译语料已有句子） |
-| 3 | 语料覆盖范围：语料已覆盖的内容不得删减或重译；无对应才补译 |
-| 4 | 多语料段落按原文片段顺序拼接；语料多余句子忽略 |
-
-**【序号格式规则】**（5–6条）：
-
-| 条 | 规则 |
-|----|------|
-| 5 | 序号转换表（含 `六→F.`、括号序号 `(一)→1)` 等），附 3 个完整示例 |
-| 6 | 序号必须原样保留在译文最前，不可省略或移位 |
-
-完整序号对照：
-
-```
-壹→I.  贰→II.  叁→III.  肆→IV.  伍→V.  陆→VI.  柒→VII.  捌→VIII.
-一→A.  二→B.   三→C.    四→D.   五→E.  六→F.
-1→1.   2→2.    3→3.
-a→a.   b→b.    c→c.
-(一)→1)  (二)→2)  (三)→3)
-```
-
-**【术语与输出规则】**（7–11条）：
-
-| 条 | 规则 |
-|----|------|
-| 7 | 严格使用 System instructions 专用术语表 |
-| 8 | 纲目标题末尾读经标注保持缩写（附 `—约三16：`、`—林前十五45：` 示例） |
-| 9 | 正文经文引用转标准英文缩写（附 `Rom. 1:1`、`John 3:16` 示例） |
-| 10 | 直接输出译文，不缩进 |
-| 11 | 只输出翻译结果，不附加解释或备注 |
+| 优先级 | 规则 |
+|--------|------|
+| **P0 直接引用** | `[直接引用]` 语料的 `en`/`zh` 字段一字不改照搬；附错误示范 |
+| **P0.5 引号** | 引号内内容必须在语料对应字段中找到并逐字复制 |
+| **P1 参考翻译** | `[参考翻译]` 最大限度原样复用语料字段；语料已覆盖部分不得删减 |
+| **P2 缺失补译** | 仅语料未覆盖的句子才补译；风格与术语表一致 |
+| **P3 格式** | 序号转换表、读经缩写、经文引用缩写 |
+| **输出** | 直接输出译文，多语料按原文顺序拼接为一行，不附加解释 |
 
 **这个 prompt 在哪里被使用**：
 
 ```python
-# enhanced_translate_service.py 主流程
-from testD.backend.enhanced_translate_prompts import ENHANCED_TRANSLATE_PROMPT_SUFFIX
+# enhanced_translate（中→英）
 prompt_extra = (_PROMPT_OVERRIDE or ENHANCED_TRANSLATE_PROMPT_SUFFIX).strip()
+contents = "\n\n".join(blocks) + extra + "\n\nTranslate each line above to English..."
 
-# 拼入 _translate_batch（extra 在 OUTLINE_TRANSLATE_PROMPT_ZH2EN 之前）
-contents = (
-    "\n\n".join(blocks)
-    + extra                           # extra = f"\n\n{prompt_extra}"
-    + "\n\n"
-    + OUTLINE_TRANSLATE_PROMPT_ZH2EN
-    + "\n\nTranslate each line above..."
-)
-
-# 拼入 _translate_suffix（extra 在 OUTLINE_TRANSLATE_PROMPT_ZH2EN 之后）
-contents = (
-    "Translate ONLY this Chinese scripture suffix..."
-    + f"\n\n{suffix}"
-    + f"\n\n{OUTLINE_TRANSLATE_PROMPT_ZH2EN}{extra}"
-)
+# enhanced_translate_en2zh（英→中）
+prompt_extra = ENHANCED_TRANSLATE_PROMPT_EN2ZH.strip()
+contents = "\n\n".join(blocks) + extra + "\n\nTranslate each line above to Chinese..."
 ```
 
-#### 14.3.2 `PROOFREAD_OUTLINE_PROMPT`
+#### 14.3.2 `ENHANCED_TRANSLATE_PROMPT_EN2ZH`
+
+英翻中专用增强规则，结构与 `ENHANCED_TRANSLATE_PROMPT_SUFFIX` 对称：引用语料 **`zh` 字段**、序号 I.→壹　、读经 —John 3:16: → —约三16： 等。见 `enhanced_translate_prompts.py`。
+
+#### 14.3.3 `PROOFREAD_OUTLINE_PROMPT`
 
 ```python
 PROOFREAD_OUTLINE_PROMPT = (
@@ -1679,19 +1480,15 @@ testD/
       │     └── 数据：Additional-pool/pool.jsonl
       │
       ├── enhanced_translate_prompts.py
-      │     └── 提供：ENHANCED_TRANSLATE_PROMPT_SUFFIX, PROOFREAD_OUTLINE_PROMPT
+      │     └── 提供：ENHANCED_TRANSLATE_PROMPT_SUFFIX, ENHANCED_TRANSLATE_PROMPT_EN2ZH
       │
       ├── enhanced_translate_service.py
-      │     ├── import _bootstrap → ensure_main_backend_path()
-      │     ├── import additional_pool → normalize_zh, lookup_line_en 等
-      │     ├── import enhanced_translate_prompts → ENHANCED_TRANSLATE_PROMPT_SUFFIX
-      │     └── import（经 bootstrap）back_mic/backend 下：
-      │           kg_rag.retrieval, es_config, ai_search.*, embedding_adapter
+      │     ├── enhanced_translate / enhanced_translate_en2zh
+      │     ├── _retrieve_line / _retrieve_line_en2zh
+      │     └── _pool_lookup / _pool_lookup_en2zh
       │
       ├── enhanced_translate_router.py
-      │     ├── import enhanced_translate_service → enhanced_translate, get/set_prompt_override
-      │     └── import additional_pool → update_record
-      │     └── 端点：enhanced_translate / update_prompt / update_translation（§14.9）
+      │     └── 端点：enhanced_translate / en2zh / update_prompt / update_translation
       │
       ├── test_translate.py
       │     └── 单元测试（行解析 + Pool 短路验证）
@@ -1834,8 +1631,11 @@ app.add_middleware(
 路径：`testD/frontend/src/components/EnhancedTranslate.vue`
 
 **主要功能**：
-- 粘贴中文纲目 → `POST /api/kg_rag/enhanced_translate`
-- 展示英文纲目、按行参考语料（绿色=直接引用，蓝色=参考翻译）
+- **方向切换**：输入框上方「中翻英」「英翻中」「清除」三按钮；`direction` ref（`zh2en` / `en2zh`）
+- 中翻英 → `POST /api/kg_rag/enhanced_translate`
+- 英翻中 → `POST /api/kg_rag/en2zh`
+- 清除：清空输入、结果、语料、统计，不触发翻译
+- 展示译文、按行参考语料（绿色=直接引用，蓝色=参考翻译）
 - **逐行可编辑译文** → 失焦自动保存或点「保存」→ `POST /enhanced_translate/update_translation`
 - 下载 DOCX（`format_outline_only`，**使用编辑后译文**）、下载原文+语料 TXT
 - 保存/覆盖服务端 Prompt（`POST /enhanced_translate/update_prompt`）
@@ -1844,7 +1644,7 @@ app.add_middleware(
 
 | 字段 | 前端用途 |
 |------|----------|
-| `result` | 英文纲目总览（`pre` 展示；下载时优先用编辑态） |
+| `result` | 翻译结果总览（中翻英为英文、英翻中为中文；`pre` 展示；下载时优先用编辑态） |
 | `refs` | 按行参考语料（`line_ref_groups`） |
 | `summary` | 统计摘要面板 |
 | `warnings` | 顶部**橙色**警告横幅 + `toastWarning`（非红色错误样式） |
@@ -1890,9 +1690,10 @@ app.add_middleware(
 
 | 方法 | 路径 | 请求体 | 响应 |
 |------|------|--------|------|
-| POST | `/enhanced_translate` | `{ content, prompt_override? }` | `{ result, refs, summary, warnings, error? }` |
-| POST | `/enhanced_translate/update_prompt` | `{ prompt }` | `{ success, prompt }` |
-| POST | `/enhanced_translate/update_translation` | `{ original_line, new_translation }` | `{ success }` 或 `{ success: false, error }` |
+| POST | `/enhanced_translate` | `{ content, prompt_override? }` | 中→英 |
+| POST | `/en2zh` | `{ content, prompt_override? }` | 英→中 |
+| POST | `/enhanced_translate/update_prompt` | `{ prompt }` | 服务级 Prompt（zh2en） |
+| POST | `/enhanced_translate/update_translation` | `{ original_line, new_translation }` | 更新 Additional Pool |
 
 `update_translation`：调用 `additional_pool.update_record`；仅当 `normalize_zh(original_line)` 已在 `pool.jsonl` 中存在时更新成功（通常为先翻译自动回写、再人工修正的场景）。
 
@@ -1900,58 +1701,56 @@ app.add_middleware(
 
 ## 十五、实现状态与近期变更（复盘）
 
-截至 **2026-06-05**，`testD/` 增强式翻译已具备完整四阶段流水线，并与主站 `back_mic/backend` 通过 `_bootstrap.py` 复用 ES / 检索 / Gemini。
+截至 **2026-06-09**，`testD/` 增强式翻译支持**中翻英 + 英翻中**双向流水线。
 
 ### 15.1 文件清单
 
 | 路径 | 职责 |
 |------|------|
-| `backend/enhanced_translate_service.py` | 核心：解析、Pool、检索、Gemini、组装、summary |
-| `backend/enhanced_translate_router.py` | 3 个 API 端点 |
-| `backend/enhanced_translate_prompts.py` | `ENHANCED_TRANSLATE_PROMPT_SUFFIX` |
-| `backend/additional_pool.py` | `pool.jsonl` 读写、`update_record` |
-| `backend/Additional-pool/pool.jsonl` | 本地缓存语料（约 438 条，随自动回写增长） |
-| `backend/test_translate.py` | 单元测试 + Pool 短路 |
-| `backend/app.py` | 本地调试（端口 8010） |
-| `frontend/src/components/EnhancedTranslate.vue` | 翻译 UI、审校、下载 |
-| `docs/ENHANCED_TRANSLATE_DESIGN.md` | 本文档 |
+| `backend/enhanced_translate_service.py` | 核心（约 1437 行）：双向主入口、行级检索、Pool、Gemini |
+| `backend/enhanced_translate_router.py` | 4 个 API 端点（含 `/en2zh`） |
+| `backend/enhanced_translate_prompts.py` | `ENHANCED_TRANSLATE_PROMPT_SUFFIX` + `ENHANCED_TRANSLATE_PROMPT_EN2ZH` |
+| `backend/additional_pool.py` | `normalize_zh`（NFKC）、`pool.jsonl` 读写 |
+| `frontend/src/components/EnhancedTranslate.vue` | 三按钮方向切换、审校、下载 |
 
-### 15.2 相对初版设计的主要增量
+### 15.2 2026-06 主要变更
 
 | 主题 | 实现要点 |
 |------|----------|
-| **ES 探测重试** | `_probe_es` 最多 3 次、间隔 3s；warning 文案改为可重试提示 |
-| **英文出处字段** | ES `source_en` → API `en_source`；`_exact_match` / `_enrich_hit_en` 已拉取 |
-| **Gemini 模型** | 模块内覆盖为 `gemini-3.5-flash` / `gemini-2.5-flash` |
-| **Additional Pool 审校** | `update_record` + `POST update_translation`；前端逐行编辑保存 |
-| **前端 warnings** | 橙色 `warn-banner`，区别于红色 `.err` |
-| **下载** | DOCX 使用 `editedTranslations` 拼接结果 |
-| **Pool 落盘** | `append_records` / `update_record` 共用 `_write_pool` |
+| **英翻中** | `enhanced_translate_en2zh`、`_retrieve_line_en2zh`、`_translate_batch_en2zh`、`POST /en2zh` |
+| **行级检索** | 四路并行 → dedupe → feasts 备用（top50+rerank）→ RRF → rerank top1；删除 `_retrieve_top1` |
+| **ES Pool 统一** | 单一 `_pool_lookup`（match_phrase size=10）；删除 keyword/BM25 分流 |
+| **normalize_zh** | NFKC + `re.sub(r"[\W_]+", ...)` 统一标点变体 |
+| **整行 Gemini** | 删除 `_translate_suffix`、`_zh_line_for_batch`；suffix 随整行翻译 |
+| **检索失败** | `retrieval_failed` 时整单报错，不调 Gemini |
+| **Token** | batch 级 `total_in_tok`/`total_out_tok`；`think_tok` 日志；费用 `(in*1.50+out*9.0)/1e6` |
+| **thinking** | `gemini_translation_generate_config` 设 `thinking_level=MINIMAL` |
+| **前端** | 中翻英/英翻中/清除；`direction` 切换 API |
+| **检索 top_k** | exact/BM25/dense：40；dense `num_candidates=100` |
 
-### 15.3 数据流总览
+### 15.3 数据流总览（中翻英）
 
 ```mermaid
 flowchart TD
-  A[中文纲目] --> B[阶段一 Parse]
-  B --> C{Additional Pool 整行?}
-  C -->|命中| H[直接输出缓存 en]
-  C -->|未命中| D[_probe_es 最多3次]
-  D --> E{ES Pool body?}
-  E -->|命中| F[en_prefix + pool_en + suffix Gemini]
-  E -->|未命中| G[子句 exact / BM25+dense+rerank]
-  G --> I[Gemini batch ≤10 行]
-  I --> J[组装 + suffix]
-  F --> K[自动回写 pool.jsonl]
-  J --> K
-  H --> L[API result + refs + summary + warnings]
-  F --> L
-  J --> L
-  L --> M[前端编辑 → update_translation]
+  A[中文纲目] --> B[Parse]
+  B --> C{Additional Pool?}
+  C -->|命中| H[缓存整行 en]
+  C -->|未命中| D[_probe_es]
+  D --> E{ES Pool 整行?}
+  E -->|命中| F[pool_line_en]
+  E -->|未命中| G[四路检索 + feasts 备用]
+  G -->|失败| X[retrieval_failed 报错]
+  G -->|成功| I[Gemini batch 整行]
+  F --> L[result + refs + summary]
+  H --> L
+  I --> L
 ```
+
+英翻中流程对称：输入英文、Pool 查 `en` 返 `zh`、无 Dense、`_translate_batch_en2zh`。
 
 ### 15.4 已知边界
 
-- `update_record` **不能**为 Pool 中不存在的新行创建条目（需先经翻译自动回写或 `append.py` 导入）。
-- ES 探测降级只影响 **kg-rag chunk 检索**；若 ES 完全宕机，ES Pool 查询也会失败（仅打 log，不追加用户 warning）。
-- `update_translation` 与自动回写均按 `norm_zh` 键；序号/标点不同视为不同行。
+- Additional Pool 反向查询（英翻中）暂复用 `lookup_line_en(line)`，后续可扩展 `lookup_line_zh`。
+- `update_record` 仍按中文 `original_line` 键，主要服务中翻英审校。
+- ES Pool 与 kg-rag 索引独立；ES 全宕时两者均不可用。
 
