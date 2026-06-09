@@ -336,10 +336,7 @@ async def kg_rag_step1(req: Step1Request):
             burden_line=burden_line,
             concept_list=concept_list_text,
         )
-        rewrite_input = req.query
-        if req.burden_description.strip():
-            rewrite_input += f"\n负担方向：{req.burden_description.strip()}"
-        rewrite_prompt = QUERY_REWRITE.format(query=rewrite_input)
+        rewrite_prompt = QUERY_REWRITE.format(query=req.query)
 
         step1_raw, rewrite_raw = await asyncio.gather(
             asyncio.to_thread(_call_claude_with_system, step1_prompt, None),
@@ -421,11 +418,16 @@ async def kg_rag_query35(req: Query35Request):
         )
         answer = await asyncio.to_thread(_call_claude, prompt)
 
+        expanded_from_nodes = list(dict.fromkeys(
+            doc.get("expanded_from", "") for doc in expanded_results
+            if doc.get("expanded_from")
+        ))
         return {
             "answer": answer,
             "chunks_used": len(chunks),
             "main_results_count": len(main_results),
             "expanded_results_count": len(expanded_results),
+            "expanded_from_nodes": expanded_from_nodes,
         }
     except Exception as e:
         return {"answer": None, "error": str(e)}
