@@ -88,6 +88,10 @@ const routes = [
     component: () => import("@/components/toolbox/ArticlePolishA.vue"),
   },
   {
+    path: "/feast-outline-a",
+    component: () => import("@/components/toolbox/FeastOutlineA.vue"),
+  },
+  {
     path: "/bird-view-a",
     component: () => import("@/components/toolbox/BirdViewA.vue"),
   },

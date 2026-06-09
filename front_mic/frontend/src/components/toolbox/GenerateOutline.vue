@@ -73,8 +73,9 @@ const formatLoading = ref(false);
 async function formatAndDownload() {
   const text = answer.value;
   if (!text) return;
-  const fullText = query.value ? `${query.value}\n${text}` : text;
-
+  const fullText = query.value.trim()
+    ? `${query.value.trim()}\n${text}`
+    : text;
   formatLoading.value = true;
   try {
     const res = await fetch("/api/testa/translate/format_download", {
@@ -86,12 +87,11 @@ async function formatAndDownload() {
       showToast("下载失败");
       return;
     }
-
+    const safeName = (query.value || "纲目").replace(/[\\/:*?"<>|]/g, "");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const safeName = query.value.replace(/[\\/:*?"<>|]/g, "") || "outline";
     a.download = `${safeName}.docx`;
     a.click();
     URL.revokeObjectURL(url);
@@ -104,32 +104,26 @@ async function formatAndDownload() {
 
 async function formatAndDownload35() {
   if (!answer35.value) return;
+  const fullText = query.value.trim()
+    ? `${query.value.trim()}\n${answer35.value}`
+    : answer35.value;
   formatLoading35.value = true;
   try {
     const res = await fetch("/api/testa/translate/format_download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: answer35.value, lang: "zh" }),
+      body: JSON.stringify({ text: fullText, lang: "zh" }),
     });
     if (!res.ok) {
       showToast("下载失败");
       return;
     }
-    let filename = `${query.value || "纲目"}.docx`;
-    const disposition = res.headers.get("Content-Disposition");
-    if (disposition) {
-      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-      if (utf8Match) filename = decodeURIComponent(utf8Match[1]);
-      else {
-        const asciiMatch = disposition.match(/filename="([^"]+)"/i);
-        if (asciiMatch) filename = asciiMatch[1];
-      }
-    }
+    const safeName = (query.value || "纲目").replace(/[\\/:*?"<>|]/g, "");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename;
+    a.download = `${safeName}.docx`;
     a.click();
     URL.revokeObjectURL(url);
   } catch (e) {
@@ -412,7 +406,10 @@ async function generate() {
       <template v-if="conceptMode === 'ai'">
         <div v-if="conceptCandidates" class="concept-layers">
           <div class="concept-layer">
-            <div class="layer-label">真理启示</div>
+            <div class="layer-header">
+              <div class="layer-dot dot-revelation"></div>
+              <span class="layer-label">真理启示</span>
+            </div>
             <div class="tags">
               <span
                 v-for="word in conceptCandidates.revelation"
@@ -424,7 +421,10 @@ async function generate() {
             </div>
           </div>
           <div class="concept-layer">
-            <div class="layer-label">生命经历</div>
+            <div class="layer-header">
+              <div class="layer-dot dot-experience"></div>
+              <span class="layer-label">生命经历</span>
+            </div>
             <div class="tags">
               <span
                 v-for="word in conceptCandidates.experience"
@@ -436,7 +436,10 @@ async function generate() {
             </div>
           </div>
           <div class="concept-layer">
-            <div class="layer-label">应用实行</div>
+            <div class="layer-header">
+              <div class="layer-dot dot-practice"></div>
+              <span class="layer-label">应用实行</span>
+            </div>
             <div class="tags">
               <span
                 v-for="word in conceptCandidates.practice"
@@ -471,9 +474,15 @@ async function generate() {
       </template>
 
       <div class="concept-action-row">
-        <a-button v-if="conceptMode === 'ai'" class="ai-btn" :loading="conceptLoading" @click="extractConcepts">
-          推荐重点
-        </a-button>
+        <button
+          v-if="conceptMode === 'ai'"
+          class="recommend-btn"
+          :disabled="conceptLoading"
+          @click="extractConcepts"
+        >
+          <i class="ti ti-sparkles" aria-hidden="true"></i>
+          {{ conceptLoading ? "推荐中…" : "推荐重点" }}
+        </button>
         <div class="right-btns">
           <a-button class="clear-btn" :disabled="loading35" @click="clearAll">清空</a-button>
           <a-button type="primary" class="generate-btn" :loading="loading35" @click="generate35">
@@ -853,39 +862,63 @@ async function generate() {
 }
 .mode-toggle {
   display: flex;
-  gap: 6px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
 }
 .mode-btn {
-  padding: 4px 12px;
+  padding: 5px 16px;
   border-radius: 6px;
-  border: 0.5px solid #d9d9d9;
-  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
   color: #8c8c8c;
-  font-size: 12px;
   cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.15s;
   user-select: none;
 }
 .mode-btn.active {
-  background: #e6f7ff;
-  border-color: #1890ff;
+  background: #fff;
   color: #1890ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .concept-layers {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 .concept-layer {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+.layer-header {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
+.layer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-revelation {
+  background: #2f54eb;
+}
+.dot-experience {
+  background: #389e0d;
+}
+.dot-practice {
+  background: #d46b08;
+}
 .layer-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #8c8c8c;
-  margin-bottom: 8px;
   letter-spacing: 0.3px;
 }
 .tags {
@@ -896,31 +929,34 @@ async function generate() {
 .tag {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   user-select: none;
-  transition: opacity 0.15s;
-  font-weight: 500;
+  transition: all 0.15s;
 }
 .tag-revelation {
   background: #f0f5ff;
-  border: 0.5px solid #adc6ff;
+  border: 1px solid #adc6ff;
   color: #2f54eb;
 }
 .tag-experience {
   background: #f6ffed;
-  border: 0.5px solid #b7eb8f;
+  border: 1px solid #b7eb8f;
   color: #389e0d;
 }
 .tag-practice {
   background: #fff7e6;
-  border: 0.5px solid #ffd591;
+  border: 1px solid #ffd591;
   color: #d46b08;
 }
 .tag.unchecked {
-  opacity: 0.35;
+  opacity: 0.3;
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+  color: #8c8c8c;
 }
 .concept-hint {
   font-size: 13px;
@@ -942,11 +978,26 @@ async function generate() {
   justify-content: space-between;
   align-items: center;
 }
-.ai-btn {
-  border-color: #1890ff;
+.recommend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid #1890ff;
+  background: #e6f7ff;
   color: #1890ff;
   font-size: 13px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.recommend-btn:hover {
+  background: #bae7ff;
+}
+.recommend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .right-btns {
   display: flex;
