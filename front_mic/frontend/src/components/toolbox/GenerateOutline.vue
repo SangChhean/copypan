@@ -16,6 +16,32 @@ const chunksData = ref([]);
 const showChunks = ref(false);
 const toast = ref("");
 
+// 版本切换
+const mode = ref("2.0"); // '2.0' | '3.5'
+
+// 3.5 推荐重点
+const conceptMode = ref("ai"); // 'ai' | 'manual'
+const conceptLoading = ref(false);
+const conceptCandidates = ref(null); // { revelation, experience, practice }
+const selectedRevelation = ref([]);
+const selectedExperience = ref([]);
+const selectedPractice = ref([]);
+const manualRevelation = ref("");
+const manualExperience = ref("");
+const manualPractice = ref("");
+
+// 3.5 结果
+const answer35 = ref(null);
+const chunksUsed35 = ref(0);
+const expandedCount35 = ref(0);
+const chunks35 = ref([]);
+const expandedChunks35 = ref([]);
+const showChunks35 = ref(false);
+const showExpandedChunks35 = ref(false);
+const formatLoading35 = ref(false);
+const loading35 = ref(false);
+const error35 = ref(null);
+
 const outlineNatureOptions = ["一般性", "真理启示", "生命经历", "应用实行"];
 
 function showToast(msg) {
@@ -25,9 +51,20 @@ function showToast(msg) {
   }, 2500);
 }
 
+function switchMode(m) {
+  mode.value = m;
+  error35.value = null;
+}
+
 function copyResult() {
   if (!answer.value) return;
   const text = query.value ? `${query.value}\n\n${answer.value}` : answer.value;
+  navigator.clipboard.writeText(text).then(() => showToast("已复制到剪贴板"));
+}
+
+function copyResult35() {
+  if (!answer35.value) return;
+  const text = query.value ? `${query.value}\n\n${answer35.value}` : answer35.value;
   navigator.clipboard.writeText(text).then(() => showToast("已复制到剪贴板"));
 }
 
@@ -65,6 +102,43 @@ async function formatAndDownload() {
   }
 }
 
+async function formatAndDownload35() {
+  if (!answer35.value) return;
+  formatLoading35.value = true;
+  try {
+    const res = await fetch("/api/testa/translate/format_download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: answer35.value, lang: "zh" }),
+    });
+    if (!res.ok) {
+      showToast("下载失败");
+      return;
+    }
+    let filename = `${query.value || "纲目"}.docx`;
+    const disposition = res.headers.get("Content-Disposition");
+    if (disposition) {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match) filename = decodeURIComponent(utf8Match[1]);
+      else {
+        const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+        if (asciiMatch) filename = asciiMatch[1];
+      }
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showToast("下载失败");
+  } finally {
+    formatLoading35.value = false;
+  }
+}
+
 function clearAll() {
   query.value = "";
   outlineNature.value = "一般性";
@@ -74,10 +148,131 @@ function clearAll() {
   chunksUsed.value = 0;
   chunksData.value = [];
   showChunks.value = false;
+  conceptCandidates.value = null;
+  selectedRevelation.value = [];
+  selectedExperience.value = [];
+  selectedPractice.value = [];
+  manualRevelation.value = "";
+  manualExperience.value = "";
+  manualPractice.value = "";
+  answer35.value = null;
+  error35.value = null;
+  chunksUsed35.value = 0;
+  expandedCount35.value = 0;
+  chunks35.value = [];
+  expandedChunks35.value = [];
+  showChunks35.value = false;
+  showExpandedChunks35.value = false;
 }
 
 function toggleChunks() {
   showChunks.value = !showChunks.value;
+}
+
+async function extractConcepts() {
+  if (!query.value.trim()) {
+    error35.value = "请先输入纲目主题";
+    return;
+  }
+  conceptLoading.value = true;
+  conceptCandidates.value = null;
+  error35.value = null;
+  try {
+    const res = await fetch("/api/testa/generate_outline/step1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query.value.trim(),
+        outline_nature: outlineNature.value,
+        burden_description: burdenDescription.value,
+      }),
+    });
+    if (!res.ok) throw new Error("概念抽取失败");
+    const data = await res.json();
+    conceptCandidates.value = {
+      revelation: [...(data.revelation || [])],
+      experience: [...(data.experience || [])],
+      practice: [...(data.practice || [])],
+    };
+    selectedRevelation.value = [...(data.revelation || [])];
+    selectedExperience.value = [...(data.experience || [])];
+    selectedPractice.value = [...(data.practice || [])];
+  } catch (e) {
+    error35.value = e.message || "概念抽取失败，请重试";
+  } finally {
+    conceptLoading.value = false;
+  }
+}
+
+function toggleConcept(layer, word) {
+  const map = { revelation: selectedRevelation, experience: selectedExperience, practice: selectedPractice };
+  const arr = map[layer];
+  const idx = arr.value.indexOf(word);
+  if (idx >= 0) arr.value.splice(idx, 1);
+  else arr.value.push(word);
+}
+
+function parseManual(str) {
+  return str.split(/[，,、\n]/).map((s) => s.trim()).filter(Boolean);
+}
+
+async function generate35() {
+  if (!query.value.trim()) {
+    error35.value = "请先输入纲目主题";
+    return;
+  }
+  loading35.value = true;
+  error35.value = null;
+  answer35.value = null;
+
+  let preset_revelation = [];
+  let preset_experience = [];
+  let preset_practice = [];
+
+  if (conceptMode.value === "ai" && conceptCandidates.value) {
+    preset_revelation = selectedRevelation.value;
+    preset_experience = selectedExperience.value;
+    preset_practice = selectedPractice.value;
+  } else if (conceptMode.value === "manual") {
+    preset_revelation = parseManual(manualRevelation.value);
+    preset_experience = parseManual(manualExperience.value);
+    preset_practice = parseManual(manualPractice.value);
+  }
+
+  try {
+    const res = await fetch("/api/testa/generate_outline/query35", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query.value.trim(),
+        outline_nature: outlineNature.value,
+        burden_description: burdenDescription.value,
+        preset_revelation,
+        preset_experience,
+        preset_practice,
+      }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      error35.value = errData.detail || "生成失败，请稍后重试";
+      return;
+    }
+    const data = await res.json();
+    if (data.answer) {
+      answer35.value = data.answer;
+      chunksUsed35.value = data.chunks_used || 0;
+      expandedCount35.value = data.expanded_results_count || 0;
+      chunks35.value = data.chunks || [];
+      expandedChunks35.value = data.expanded_chunks || [];
+      showToast("纲目生成完成！");
+    } else {
+      error35.value = "生成失败，请稍后重试";
+    }
+  } catch (e) {
+    error35.value = (e && e.message) || "网络错误，请稍后重试";
+  } finally {
+    loading35.value = false;
+  }
 }
 
 async function generate() {
@@ -141,18 +336,18 @@ async function generate() {
 
     <!-- 版本切换 -->
     <div class="version-bar">
-      <div class="ver-btn active">PanAI 2.0</div>
-      <div class="ver-btn disabled">PanAI 3.5</div>
+      <div class="ver-btn" :class="{ active: mode === '2.0' }" @click="switchMode('2.0')">PanAI 2.0</div>
+      <div class="ver-btn" :class="{ active: mode === '3.5' }" @click="switchMode('3.5')">PanAI 3.5</div>
     </div>
 
     <!-- 输入卡片 -->
-    <div class="card">
+    <div class="card" v-show="mode === '2.0' || mode === '3.5'">
       <div class="field">
         <label class="field-label">纲目主题 <span class="required">*</span></label>
         <a-input
           v-model:value="query"
           placeholder="请输入纲目主题，如：基督是我们的生命"
-          :disabled="loading"
+          :disabled="loading || loading35"
           size="large"
         />
       </div>
@@ -164,8 +359,8 @@ async function generate() {
             v-for="opt in outlineNatureOptions"
             :key="opt"
             class="seg-btn"
-            :class="{ active: outlineNature === opt, disabled: loading }"
-            @click="!loading && (outlineNature = opt)"
+            :class="{ active: outlineNature === opt, disabled: loading || loading35 }"
+            @click="!(loading || loading35) && (outlineNature = opt)"
           >
             {{ opt }}
           </div>
@@ -180,14 +375,14 @@ async function generate() {
         <a-textarea
           v-model:value="burdenDescription"
           placeholder="请输入负担说明…"
-          :disabled="loading"
+          :disabled="loading || loading35"
           :auto-size="{ minRows: 2, maxRows: 4 }"
         />
       </div>
 
       <div class="divider" />
 
-      <div class="action-row">
+      <div class="action-row" v-show="mode === '2.0'">
         <a-button class="clear-btn" :disabled="loading" @click="clearAll">
           清空
         </a-button>
@@ -203,44 +398,179 @@ async function generate() {
       </div>
     </div>
 
-    <!-- 错误提示 -->
-    <div v-if="error" class="error-msg">{{ error }}</div>
-
-    <!-- 结果卡片 -->
-    <div v-if="answer" class="card result-card">
-      <div class="result-head">
-        <span class="result-title-text">生成结果</span>
-        <span class="chunks-badge" @click="toggleChunks">
-          参考段落 {{ chunksUsed }} 条
-        </span>
-        <button class="copy-btn" @click="copyResult">复制</button>
-      </div>
-      <div class="divider" />
-      <div class="result-topic">{{ query }}</div>
-      <pre class="result-body">{{ answer }}</pre>
-    </div>
-    <div v-if="answer" class="format-bar">
-      <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload">
-        <template #icon><DownloadOutlined /></template>
-        刷格式并下载
-      </a-button>
-    </div>
-
-    <!-- 参考段落卡片 -->
-    <div v-if="answer && showChunks" class="card chunks-card">
-      <div class="chunks-title">参考段落</div>
-      <div
-        v-for="(chunk, idx) in chunksData"
-        :key="idx"
-        class="chunk-item"
-      >
-        <div class="chunk-source">
-          出处：<span>{{ chunk.book_title }}</span>
-          {{ chunk.message_number ? ` 第${chunk.message_number}篇` : "" }}
-          {{ chunk.message_title || "" }}
+    <!-- 3.5 推荐重点 -->
+    <div class="card concept-card" v-show="mode === '3.5'">
+      <div class="concept-header">
+        <span class="field-label" style="margin-bottom: 0">推荐重点</span>
+        <div class="mode-toggle">
+          <div class="mode-btn" :class="{ active: conceptMode === 'ai' }" @click="conceptMode = 'ai'">自动推荐</div>
+          <div class="mode-btn" :class="{ active: conceptMode === 'manual' }" @click="conceptMode = 'manual'">手动输入</div>
         </div>
-        <div class="chunk-text">
-          {{ (chunk.text || "").slice(0, 50) }}…
+      </div>
+
+      <!-- AI 推荐模式 -->
+      <template v-if="conceptMode === 'ai'">
+        <div v-if="conceptCandidates" class="concept-layers">
+          <div class="concept-layer">
+            <div class="layer-label">真理启示</div>
+            <div class="tags">
+              <span
+                v-for="word in conceptCandidates.revelation"
+                :key="word"
+                class="tag tag-revelation"
+                :class="{ unchecked: !selectedRevelation.includes(word) }"
+                @click="toggleConcept('revelation', word)"
+              >{{ word }}</span>
+            </div>
+          </div>
+          <div class="concept-layer">
+            <div class="layer-label">生命经历</div>
+            <div class="tags">
+              <span
+                v-for="word in conceptCandidates.experience"
+                :key="word"
+                class="tag tag-experience"
+                :class="{ unchecked: !selectedExperience.includes(word) }"
+                @click="toggleConcept('experience', word)"
+              >{{ word }}</span>
+            </div>
+          </div>
+          <div class="concept-layer">
+            <div class="layer-label">应用实行</div>
+            <div class="tags">
+              <span
+                v-for="word in conceptCandidates.practice"
+                :key="word"
+                class="tag tag-practice"
+                :class="{ unchecked: !selectedPractice.includes(word) }"
+                @click="toggleConcept('practice', word)"
+              >{{ word }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="conceptLoading" class="concept-loading">
+          <a-spin size="small" /> 概念抽取中…
+        </div>
+        <div v-else class="concept-hint">点「推荐重点」自动抽取概念，或直接点「生成纲目」跳过</div>
+      </template>
+
+      <!-- 手动输入模式 -->
+      <template v-if="conceptMode === 'manual'">
+        <div class="concept-layer">
+          <div class="layer-label">真理启示</div>
+          <a-input v-model:value="manualRevelation" placeholder="用逗号分隔，如：基督，生命，赐生命的灵" />
+        </div>
+        <div class="concept-layer">
+          <div class="layer-label">生命经历</div>
+          <a-input v-model:value="manualExperience" placeholder="用逗号分隔" />
+        </div>
+        <div class="concept-layer">
+          <div class="layer-label">应用实行</div>
+          <a-input v-model:value="manualPractice" placeholder="用逗号分隔" />
+        </div>
+      </template>
+
+      <div class="concept-action-row">
+        <a-button v-if="conceptMode === 'ai'" class="ai-btn" :loading="conceptLoading" @click="extractConcepts">
+          推荐重点
+        </a-button>
+        <div class="right-btns">
+          <a-button class="clear-btn" :disabled="loading35" @click="clearAll">清空</a-button>
+          <a-button type="primary" class="generate-btn" :loading="loading35" @click="generate35">
+            {{ loading35 ? "生成中…" : "生成纲目" }}
+          </a-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.0 错误提示 -->
+    <div v-if="error && mode === '2.0'" class="error-msg">{{ error }}</div>
+
+    <!-- 2.0 结果卡片 -->
+    <template v-if="mode === '2.0'">
+      <div v-if="answer" class="card result-card">
+        <div class="result-head">
+          <span class="result-title-text">生成结果</span>
+          <span class="chunks-badge" @click="toggleChunks">
+            参考段落 {{ chunksUsed }} 条
+          </span>
+          <button class="copy-btn" @click="copyResult">复制</button>
+        </div>
+        <div class="divider" />
+        <div class="result-topic">{{ query }}</div>
+        <pre class="result-body">{{ answer }}</pre>
+      </div>
+      <div v-if="answer" class="format-bar">
+        <a-button class="format-download-btn" :loading="formatLoading" @click="formatAndDownload">
+          <template #icon><DownloadOutlined /></template>
+          刷格式并下载
+        </a-button>
+      </div>
+
+      <div v-if="answer && showChunks" class="card chunks-card">
+        <div class="chunks-title">参考段落</div>
+        <div v-for="(chunk, idx) in chunksData" :key="idx" class="chunk-item">
+          <div class="chunk-source">
+            出处：<span>{{ chunk.book_title }}</span>
+            {{ chunk.message_number ? ` 第${chunk.message_number}篇` : "" }}
+            {{ chunk.message_title || "" }}
+          </div>
+          <div class="chunk-text">
+            {{ (chunk.text || "").slice(0, 50) }}…
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- 3.5 结果区 -->
+    <div v-show="mode === '3.5'">
+      <div v-if="error35" class="error-msg">{{ error35 }}</div>
+
+      <div v-if="answer35" class="card result-card">
+        <div class="result-head">
+          <span class="result-title">生成结果</span>
+          <span class="chunks-badge" @click="showChunks35 = !showChunks35">
+            主检索 {{ chunksUsed35 }} 条
+          </span>
+          <span class="chunks-badge expanded-badge" @click="showExpandedChunks35 = !showExpandedChunks35">
+            路3扩展 {{ expandedCount35 }} 条
+          </span>
+          <button class="copy-btn" @click="copyResult35">复制</button>
+        </div>
+        <div class="divider" />
+        <div class="result-topic">{{ query }}</div>
+        <pre class="result-body">{{ answer35 }}</pre>
+      </div>
+
+      <div v-if="answer35" class="format-bar">
+        <a-button class="format-download-btn" :loading="formatLoading35" @click="formatAndDownload35">
+          <template #icon><DownloadOutlined /></template>
+          刷格式并下载
+        </a-button>
+      </div>
+
+      <div v-if="answer35 && showChunks35" class="card chunks-card">
+        <div class="chunks-title">主检索段落</div>
+        <div v-for="(chunk, idx) in chunks35" :key="idx" class="chunk-item">
+          <div class="chunk-source">
+            出处：<span>{{ chunk.book_title }}</span>
+            {{ chunk.message_number ? ` 第${chunk.message_number}篇` : "" }}
+            {{ chunk.message_title || "" }}
+          </div>
+          <div class="chunk-text">{{ (chunk.text || "").slice(0, 50) }}…</div>
+        </div>
+      </div>
+
+      <div v-if="answer35 && showExpandedChunks35" class="card chunks-card">
+        <div class="chunks-title">路3扩展段落</div>
+        <div v-for="(chunk, idx) in expandedChunks35" :key="idx" class="chunk-item">
+          <div class="chunk-source">
+            出处：<span>{{ chunk.book_title }}</span>
+            {{ chunk.message_number ? ` 第${chunk.message_number}篇` : "" }}
+            {{ chunk.message_title || "" }}
+            <span class="route3-tag" v-if="chunk.expanded_from">{{ chunk.expanded_from }}</span>
+          </div>
+          <div class="chunk-text">{{ (chunk.text || "").slice(0, 50) }}…</div>
         </div>
       </div>
     </div>
@@ -302,15 +632,13 @@ async function generate() {
   background: #fff;
   color: #8c8c8c;
   text-align: center;
-  cursor: default;
+  cursor: pointer;
+  user-select: none;
 }
 .ver-btn.active {
   background: #1890ff;
   border-color: #1890ff;
   color: #fff;
-}
-.ver-btn.disabled {
-  opacity: 0.45;
 }
 .card {
   background: #fff;
@@ -414,8 +742,10 @@ async function generate() {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
-.result-title-text {
+.result-title-text,
+.result-title {
   font-size: 14px;
   font-weight: 500;
   color: #333;
@@ -511,5 +841,129 @@ async function generate() {
   font-size: 12px;
   color: #aaa;
   line-height: 1.6;
+}
+.concept-card {
+  margin-top: 0;
+}
+.concept-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.mode-toggle {
+  display: flex;
+  gap: 6px;
+}
+.mode-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 0.5px solid #d9d9d9;
+  background: #fff;
+  color: #8c8c8c;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.mode-btn.active {
+  background: #e6f7ff;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+.concept-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.concept-layer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.layer-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8c8c8c;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s;
+  font-weight: 500;
+}
+.tag-revelation {
+  background: #f0f5ff;
+  border: 0.5px solid #adc6ff;
+  color: #2f54eb;
+}
+.tag-experience {
+  background: #f6ffed;
+  border: 0.5px solid #b7eb8f;
+  color: #389e0d;
+}
+.tag-practice {
+  background: #fff7e6;
+  border: 0.5px solid #ffd591;
+  color: #d46b08;
+}
+.tag.unchecked {
+  opacity: 0.35;
+}
+.concept-hint {
+  font-size: 13px;
+  color: #8c8c8c;
+  padding: 8px 0;
+  margin-bottom: 14px;
+}
+.concept-loading {
+  font-size: 13px;
+  color: #8c8c8c;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.concept-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ai-btn {
+  border-color: #1890ff;
+  color: #1890ff;
+  font-size: 13px;
+  font-weight: 500;
+}
+.right-btns {
+  display: flex;
+  gap: 8px;
+}
+.expanded-badge {
+  background: #fff7e6;
+  color: #d46b08;
+  border-color: #ffd591;
+}
+.route3-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #fff7e6;
+  color: #d46b08;
+  border: 0.5px solid #ffd591;
+  margin-left: 4px;
 }
 </style>
