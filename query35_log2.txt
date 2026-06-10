@@ -1,9 +1,0 @@
-INFO:generate_outline:[3.5] query=���������ǵ�����
-INFO:generate_outline:[3.5] ʹ��Ԥ�������� Step1
-INFO:generate_outline:[3.5] expanded_nodes=['����������', '��ס�Ļ���', '��������', '��������', '���ܻ���', '�����ĳ���', '��������', '��������', '������']
-INFO:generate_outline:[3.5] rewritten_queries=['���������ǵ�����']
-INFO:generate_outline:[3.5] has_skeleton=False, steps=0
-INFO:generate_outline:[3.5] main_results=20
-INFO:generate_outline:[3.5] expanded_results=30
-INFO:generate_outline:[3.5] �������
-INFO:     127.0.0.1:11595 - "POST /api/testa/generate_outline/query35 HTTP/1.0" 200 OK

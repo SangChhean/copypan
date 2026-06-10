@@ -44,6 +44,10 @@ export default defineConfig({
         target: 'http://localhost:8009',
         changeOrigin: true,
       },
+      '/api/testc/rough_outline': {
+        target: 'http://localhost:8029',
+        changeOrigin: true,
+      },
       '/api/testc/zh_convert': {
         target: 'http://localhost:8006',
         changeOrigin: true,
