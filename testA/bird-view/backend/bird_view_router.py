@@ -53,7 +53,7 @@ def safe_parse_json(raw: str) -> dict:
 
 
 def strip_code_fence(raw: str) -> str:
-    """提取最后一个完整代码块的内容，找不到则清理后返回原文。"""
+    """提取最后一个完整代码块的内容，找不到则返回原文。"""
     text = (raw or '').strip()
     lines = text.split('\n')
     last_fence_start = -1
@@ -69,41 +69,10 @@ def strip_code_fence(raw: str) -> str:
                 break
             inner.append(line)
         result = '\n'.join(inner).strip()
+        # 只有找到完整代码块（有开有闭）且内容非空时才返回剥离结果
         if found_close and result:
             return result
-        # 有开头无结尾：从代码块开头之后找纲目起始位置
-        if inner:
-            content_lines = []
-            started = False
-            for line in inner:
-                if not started:
-                    stripped = line.strip()
-                    # 遇到读经行或壹字大纲才开始收集
-                    if ('读经：' in stripped or '讀經：' in stripped or
-                            re.match(r'^[壹贰叁肆伍陆柒捌玖拾]', stripped)):
-                        started = True
-                        content_lines.append(line)
-                else:
-                    content_lines.append(line)
-            if content_lines:
-                return '\n'.join(content_lines).strip()
-    # 无代码块但开头有```：清理掉
-    if text.startswith('```'):
-        clean_lines = []
-        started = False
-        for line in text.split('\n'):
-            stripped = line.strip()
-            if stripped == '```' or stripped.startswith('```'):
-                continue
-            if not started:
-                if ('读经：' in stripped or '讀經：' in stripped or
-                        re.match(r'^[壹贰叁肆伍陆柒捌玖拾]', stripped)):
-                    started = True
-                    clean_lines.append(line)
-            else:
-                clean_lines.append(line)
-        if clean_lines:
-            return '\n'.join(clean_lines).strip()
+    # 找不到完整代码块或内容为空，返回原始文本
     return text
 
 
@@ -168,7 +137,6 @@ async def outline(req: OutlineRequest):
         content=req.content,
     )
     raw = await call_claude(prompt, max_tokens=8000)
-    print(f"[outline raw] {repr(raw[:300])}")
     text = strip_code_fence(raw)
     print(f"[outline] type={req.type} outline_length={len(text)} outline_preview={text[:100]!r}")
     return {

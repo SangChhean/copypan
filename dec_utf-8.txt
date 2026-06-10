@@ -1,0 +1,4 @@
+INFO:generate_outline:[3.5] expanded_nodes=['����������', '����������', '����', '��ס�Ļ���', '����֮�����', '����������', '��������', '��ס', '�����ı仯', '�����������ǻ���', '������', 'ס�ڻ�����', '���������', '��������']
+INFO:generate_outline:[3.5] has_skeleton=True, steps=7
+INFO:generate_outline:[3.5] expanded_nodes=['����������', '��ס�Ļ���', '��������', '��������', '���ܻ���', '�����ĳ���', '��������', '��������', '������']
+INFO:generate_outline:[3.5] has_skeleton=False, steps=0
