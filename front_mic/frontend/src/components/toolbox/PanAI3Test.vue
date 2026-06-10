@@ -54,8 +54,9 @@ async function generateBurden() {
   const cleaned = referenceExcerpt.value
     .replace(/[，。！？、；：""''「」【】《》\s]/gu, "")
     .replace(/\p{P}/gu, "");
-  if (cleaned.length <= 10) {
-    alert("请输入超过10个字的原稿内容");
+  // 有内容但不够10字才拦截，空内容直接走情境B
+  if (referenceExcerpt.value.trim().length > 0 && cleaned.length <= 10) {
+    alert("原稿内容太短，请输入超过10个字");
     return;
   }
   burdenLoading.value = true;
