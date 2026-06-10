@@ -7,6 +7,7 @@ const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const MAX_CONTENT_CHARS = 100_000;
 
 const content = ref("");
+const direction = ref("zh2en");
 const promptOverride = ref("");
 const inputError = ref(null);
 const loading = ref(false);
@@ -72,6 +73,30 @@ async function updatePrompt() {
   }
 }
 
+function clearAll() {
+  content.value = "";
+  inputError.value = null;
+  error.value = null;
+  errorModalVisible.value = false;
+  errorModalMessage.value = "";
+  result.value = null;
+  refs.value = [];
+  editedTranslations.value = {};
+  summary.value = null;
+  warnings.value = [];
+  durationMs.value = null;
+}
+
+function translateZh2en() {
+  direction.value = "zh2en";
+  translate();
+}
+
+function translateEn2zh() {
+  direction.value = "en2zh";
+  translate();
+}
+
 async function translate() {
   const text = (content.value || "").trim();
   inputError.value = null;
@@ -85,7 +110,8 @@ async function translate() {
   warnings.value = [];
 
   if (!text) {
-    inputError.value = "请先粘贴简体中文纲目";
+    inputError.value =
+      direction.value === "en2zh" ? "请先粘贴英文纲目" : "请先粘贴简体中文纲目";
     return;
   }
   if (text.length > MAX_CONTENT_CHARS) {
@@ -101,8 +127,12 @@ async function translate() {
 
   loading.value = true;
   const start = Date.now();
+  const apiPath =
+    direction.value === "en2zh"
+      ? "/api/kg_rag/en2zh"
+      : "/api/kg_rag/enhanced_translate";
   try {
-    const res = await fetch(`${apiBase}/api/kg_rag/enhanced_translate`, {
+    const res = await fetch(`${apiBase}${apiPath}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -299,9 +329,11 @@ function statLabel(key) {
     none: "无匹配",
     additional_pool_lines: "Additional Pool 行",
     pool_full_match_lines: "ES Pool 行",
+    feasts_lines: "Feasts 行",
     additional_pool_appended: "Pool 新增",
     additional_pool_append_skipped: "Pool 跳过",
     gemini_cost_usd: "Gemini 费用",
+    total_cost_usd: "总费用",
   };
   return map[key] || key;
 }
@@ -421,10 +453,32 @@ function downloadRefsTxt() {
       :description="warnings.join('；') + '（此为临时状态，可稍后重新点击「增强式翻译」重试。）'"
     />
 
+    <div class="direction-actions">
+      <a-button
+        :type="direction === 'zh2en' ? 'primary' : 'default'"
+        :disabled="!canTranslate || loading"
+        @click="translateZh2en"
+      >
+        {{ loading && direction === "zh2en" ? "翻译中…" : "中翻英" }}
+      </a-button>
+      <a-button
+        :type="direction === 'en2zh' ? 'primary' : 'default'"
+        :disabled="!canTranslate || loading"
+        @click="translateEn2zh"
+      >
+        {{ loading && direction === "en2zh" ? "翻译中…" : "英翻中" }}
+      </a-button>
+      <a-button type="default" danger @click="clearAll">清除</a-button>
+    </div>
+
     <a-textarea
       v-model:value="content"
       :rows="14"
-      placeholder="请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）"
+      :placeholder="
+        direction === 'en2zh'
+          ? '请粘贴英文纲目全文（可含分号子句与行末读经标注，如 —John 3:16:）'
+          : '请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）'
+      "
       class="input-area"
     />
     <p v-if="inputError" class="err">{{ inputError }}</p>
@@ -435,23 +489,22 @@ function downloadRefsTxt() {
       <a-button size="small" @click="updatePrompt">保存 Prompt</a-button>
     </div>
 
-    <div class="actions">
-      <a-button type="primary" :disabled="!canTranslate || loading" @click="translate">
-        {{ loading ? "翻译中…" : "增强式翻译" }}
-      </a-button>
-    </div>
-
     <div v-if="error" class="err panel-err">{{ error }}</div>
 
     <div v-if="summary" class="summary-block">
       <div class="summary-head">统计摘要</div>
       <div class="summary-grid">
-        <div v-for="(val, key) in summary" :key="key" class="summary-item">
-          <span class="summary-label">{{ statLabel(key) }}</span>
-          <span class="summary-value">
-            {{ key === "gemini_cost_usd" || key === "total_cost_usd" ? formatCost(val) : val }}
-          </span>
-        </div>
+        <template v-for="(val, key) in summary" :key="key">
+          <div
+            v-if="val !== null && val !== undefined"
+            class="summary-item"
+          >
+            <span class="summary-label">{{ statLabel(key) }}</span>
+            <span class="summary-value">
+              {{ key === "gemini_cost_usd" || key === "total_cost_usd" ? formatCost(val) : val }}
+            </span>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -491,6 +544,7 @@ function downloadRefsTxt() {
             Line {{ group.line_index + 1 }}：{{ group.original_line }}
             <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
             <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
+            <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
           </div>
           <a-textarea
             v-model:value="editedTranslations[group.line_index]"
@@ -584,8 +638,11 @@ function downloadRefsTxt() {
   align-items: center;
   margin: 0.75rem 0;
 }
-.actions {
-  margin: 1rem 0;
+.direction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 .err {
   color: #cf1322;
