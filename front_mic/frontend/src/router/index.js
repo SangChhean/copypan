@@ -190,6 +190,11 @@ const routes = [
      component: () => import('../components/toolbox/FeastOutlineC.vue'),
      meta: { requiresAuth: true },
   },
+  {
+    path: '/rough-outline-a',
+    component: () => import('@/components/toolbox/RoughOutlineA.vue'),
+    meta: { requiresAuth: true }
+  },
 ];
 
 const router = createRouter({
