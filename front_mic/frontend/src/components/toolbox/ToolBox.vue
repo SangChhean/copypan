@@ -35,6 +35,7 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/bibco')"><span class="card_text">经文汇集</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/info-retrieval')"><span class="card_text">信息检索</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/outline-translate')"><span class="card_text">纲目翻译</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/enhanced-translate-official')"><span class="card_text">增强式翻译</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/zh-convert')"><span class="card_text">简繁互转</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/article-polish')"><span class="card_text">文章润色</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/roundtable')">

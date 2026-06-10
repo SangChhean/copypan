@@ -60,6 +60,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/enhanced-translate-official",
+    component: () => import("../components/toolbox/EnhancedTranslate.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/outline-translate-test",
     name: "OutlineTranslateTest",
     component: () => import("../components/toolbox/OutlineTranslateTest.vue"),
