@@ -88,6 +88,10 @@ const routes = [
     component: () => import("@/components/toolbox/ArticlePolishA.vue"),
   },
   {
+    path: "/feast-outline-a",
+    component: () => import("@/components/toolbox/FeastOutlineA.vue"),
+  },
+  {
     path: "/bird-view-a",
     component: () => import("@/components/toolbox/BirdViewA.vue"),
   },
@@ -180,6 +184,11 @@ const routes = [
     path: '/feast-outline-b',
     component: () => import('../components/toolbox/FeastOutlineB.vue'),
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/feast-outline-c',
+     component: () => import('../components/toolbox/FeastOutlineC.vue'),
+     meta: { requiresAuth: true },
   },
 ];
 

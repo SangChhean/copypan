@@ -27,7 +27,6 @@ from ai_search.ai_service import (
     GEMINI_SEMAPHORE,
     GEMINI_MODEL,
     GEMINI_TRANSLATION_FALLBACK_MODEL,
-    OUTLINE_TRANSLATE_PROMPT_ZH2EN,
     _gemini_error_is_retryable,
     gemini_client,
 )
@@ -49,7 +48,12 @@ from testD.backend.additional_pool import (
     lookup_line_en,
     normalize_zh,
 )
-from testD.backend.enhanced_translate_prompts import ENHANCED_TRANSLATE_PROMPT_SUFFIX
+from testD.backend.enhanced_translate_prompts import (
+    ENHANCED_TRANSLATE_PROMPT_EN2ZH,
+    ENHANCED_TRANSLATE_PROMPT_FEASTS,
+    ENHANCED_TRANSLATE_PROMPT_SUFFIX,
+    PROOFREAD_OUTLINE_PROMPT,
+)
 
 logger = logging.getLogger("testD.enhanced_translate")
 
@@ -69,7 +73,6 @@ _INDICES_BM25 = ",".join([
 _POOL_INDICES = _INDICES_BM25
 
 MAX_CONTENT_CHARS = 100_000
-_POOL_KEYWORD_MAX_LEN = 10
 
 _PROMPT_OVERRIDE: str = ""
 _RERANK_SEM = asyncio.Semaphore(10)
@@ -89,10 +92,18 @@ _BIBLE_BOOKS = "".join(dict.fromkeys(_BIBLE_BOOKS_66))
 _BOOK_PAT = rf"[{_BIBLE_BOOKS}]{{1,4}}"
 _CHAP_PAT = r"[\d一二三四五六七八九十百～~\-至、\s]+"
 _REF_UNIT = rf"(?:{_BOOK_PAT})?{_CHAP_PAT}"
+_DASH_CLASS = "[—─–―]"
 _SCRIPTURE_REF_RE = re.compile(
-    rf"(—{_BOOK_PAT}{_CHAP_PAT}(?:[,，；;]{_REF_UNIT})*[：:。]?\s*)$"
+    rf"({_DASH_CLASS}{_BOOK_PAT}{_CHAP_PAT}(?:[,，；;]{_REF_UNIT})*[：:。]?\s*)$"
 )
-_PURE_VERSE_RE = re.compile(r"(—[\d～~\-至、\s\d]+节[。：:]?\s*)$")
+_PURE_VERSE_RE = re.compile(rf"({_DASH_CLASS}[\d～~\-至、\s\d]+节[。：:]?\s*)$")
+_SCRIPTURE_CANDIDATE_RE = re.compile(
+    rf"^{_DASH_CLASS}参?(?:"
+    rf"(?:[{_BIBLE_BOOKS}]{{1,4}})[一二三四五六七八九十百千]*\d"
+    rf"|[一二三四五六七八九十百千]+\d"
+    rf"|\d"
+    rf")"
+)
 
 _PREFIX_TO_EN = {
     "壹": "I.",
@@ -138,17 +149,18 @@ def _normalize_pool_text(s: str) -> str:
 
 
 def _find_scripture_suffix(rest: str) -> tuple[str, str]:
-    matches = list(_SCRIPTURE_REF_RE.finditer(rest))
-    if matches:
-        m = matches[-1]
-        return rest[: m.start()], m.group(0)
-    m = _PURE_VERSE_RE.search(rest)
-    if m:
-        return rest[: m.start()], m.group(0)
+    m = re.search(r"[—─–―]", rest[::-1])
+    if not m:
+        return rest, ""
+    pos = len(rest) - m.start() - 1
+    candidate = rest[pos:]
+    if _SCRIPTURE_CANDIDATE_RE.match(candidate):
+        return rest[:pos], candidate
     return rest, ""
 
 
 def _strip_scripture_suffix(line: str) -> tuple[str, str, str]:
+    line = line.replace("─", "—").replace("–", "—").replace("―", "—")
     text = line
     m = _MINISTERIALIZE_PREFIX_RE.match(text)
     if m:
@@ -199,6 +211,7 @@ class _RetrievalCtx:
     bm25_index: str = ""
     es_enabled: bool = True
     dense_enabled: bool = True
+    en_dense_enabled: bool = False
     warnings: list[str] = field(default_factory=list)
     _es_down_logged: bool = False
 
@@ -235,21 +248,14 @@ def _is_es_failure(exc: BaseException) -> bool:
 
 
 async def _probe_es(ctx: _RetrievalCtx) -> None:
-    first = (ctx.index.split(",")[0] or "").strip()
-    if not first:
-        ctx.mark_es_down("索引名为空")
-        return
     max_attempts = 3
     last_err: Exception | None = None
     for attempt in range(1, max_attempts + 1):
         try:
-            await asyncio.to_thread(
-                es_client.search,
-                index=first,
-                body={"size": 0, "query": {"match_all": {}}},
-                request_timeout=5,
-            )
-            return
+            ok = await asyncio.to_thread(es_client.ping, request_timeout=10)
+            if ok:
+                return
+            raise Exception("ping 返回 False")
         except Exception as e:
             last_err = e
             if attempt < max_attempts:
@@ -263,10 +269,13 @@ async def _probe_es(ctx: _RetrievalCtx) -> None:
     ctx.mark_es_down(str(last_err) if last_err else "未知错误")
 
 
-async def _pool_lookup_keyword(clause: str) -> str | None:
+async def _pool_lookup(clause: str) -> str | None:
+    clause = (clause or "").strip()
+    if not clause:
+        return None
     body = {
-        "query": {"match_phrase": {"zh": {"query": clause}}},
-        "size": 3,
+        "query": {"match": {"zh": {"query": clause, "operator": "and"}}},
+        "size": 300,
         "_source": ["zh", "en", "text"],
     }
     try:
@@ -277,22 +286,57 @@ async def _pool_lookup_keyword(clause: str) -> str | None:
             request_timeout=8,
         )
     except Exception as e:
-        logger.warning("[enhanced_translate] pool keyword 失败: %s", e)
+        logger.warning("[enhanced_translate] pool lookup 失败: %s", e)
         return None
     norm_clause = _normalize_pool_text(clause)
     for hit in (resp.get("hits") or {}).get("hits") or []:
         src = hit.get("_source") or {}
         hit_zh = (src.get("zh") or src.get("text") or "").strip()
-        if norm_clause == _normalize_pool_text(hit_zh):
+        if _normalize_pool_text(hit_zh) == norm_clause:
             en = (src.get("en") or "").strip()
             if en:
                 return en
     return None
 
 
-async def _pool_lookup_bm25_punct(clause: str) -> str | None:
+async def _feasts_body_lookup(body: str) -> str | None:
+    """用 body 在 feasts 索引做 match 召回 + normalize 验证，返回英文 body 或 None。"""
+    body = (body or "").strip()
+    if not body:
+        return None
+    es_body = {
+        "query": {"match": {"zh": {"query": body, "operator": "and"}}},
+        "size": 300,
+        "_source": ["zh", "en", "text"],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index="feasts",
+            body=es_body,
+            request_timeout=8,
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate] feasts body lookup 失败: %s", e)
+        return None
+    norm_body = _normalize_pool_text(body)
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = hit.get("_source") or {}
+        hit_zh = (src.get("zh") or src.get("text") or "").strip()
+        _, hit_body, _ = _strip_scripture_suffix(hit_zh)
+        if _normalize_pool_text(hit_body) == norm_body:
+            en = (src.get("en") or "").strip()
+            if en:
+                return en
+    return None
+
+
+async def _pool_lookup_en2zh(clause: str) -> str | None:
+    clause = (clause or "").strip()
+    if not clause:
+        return None
     body = {
-        "query": {"match_phrase": {"zh": {"query": clause}}},
+        "query": {"match_phrase": {"en": {"query": clause}}},
         "size": 10,
         "_source": ["zh", "en", "text"],
     }
@@ -304,27 +348,17 @@ async def _pool_lookup_bm25_punct(clause: str) -> str | None:
             request_timeout=8,
         )
     except Exception as e:
-        logger.warning("[enhanced_translate] pool bm25 失败: %s", e)
+        logger.warning("[enhanced_translate] pool en2zh lookup 失败: %s", e)
         return None
-    hits = (resp.get("hits") or {}).get("hits") or []
     norm_clause = _normalize_pool_text(clause)
-    for hit in hits:
+    for hit in (resp.get("hits") or {}).get("hits") or []:
         src = hit.get("_source") or {}
-        hit_zh = (src.get("zh") or src.get("text") or "").strip()
-        if _normalize_pool_text(hit_zh) == norm_clause:
-            en = (src.get("en") or "").strip()
-            if en:
-                return en
+        hit_en = (src.get("en") or "").strip()
+        if _normalize_pool_text(hit_en) == norm_clause:
+            zh = (src.get("zh") or src.get("text") or "").strip()
+            if zh:
+                return zh
     return None
-
-
-async def _pool_lookup(clause: str) -> str | None:
-    clause = (clause or "").strip()
-    if not clause:
-        return None
-    if len(clause) <= _POOL_KEYWORD_MAX_LEN:
-        return await _pool_lookup_keyword(clause)
-    return await _pool_lookup_bm25_punct(clause)
 
 
 async def _exact_match(clause: str, ctx: _RetrievalCtx) -> list[dict[str, Any]]:
@@ -370,6 +404,50 @@ async def _exact_match(clause: str, ctx: _RetrievalCtx) -> list[dict[str, Any]]:
     return out
 
 
+async def _exact_match_en(clause: str, ctx: _RetrievalCtx) -> list[dict[str, Any]]:
+    if not ctx.es_enabled or not clause or not clause.strip():
+        return []
+    body = {
+        "query": {"match_phrase": {"en": {"query": clause}}},
+        "size": 40,
+        "_source": [
+            "chunk_id",
+            "text",
+            "en",
+            "zh",
+            "book_title",
+            "source_zh",
+            "source_en",
+            "message_number",
+            "message_title",
+        ],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index=ctx.index,
+            body=body,
+            request_timeout=8,
+        )
+    except Exception as e:
+        if _is_es_failure(e):
+            ctx.mark_es_down(str(e))
+        else:
+            logger.warning("[enhanced_translate] exact_match_en 失败: %s", e)
+        return []
+    out: list[dict[str, Any]] = []
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = (hit.get("_source") or {}).copy()
+        en = (src.get("en") or "").strip()
+        if normalize_zh(clause) in normalize_zh(en):
+            src["score"] = hit.get("_score") or 0.0
+            src["chunk_id"] = src.get("chunk_id") or hit.get("_id", "")
+            src["_index"] = hit.get("_index") or ""
+            src["match_kind"] = "exact"
+            out.append(src)
+    return out
+
+
 def _hit_chunk_id(hit: dict[str, Any]) -> str:
     return (hit.get("chunk_id") or hit.get("_id") or "").strip()
 
@@ -391,12 +469,41 @@ def _filter_en_hits(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [h for h in hits if (h.get("en") or "").strip()]
 
 
+def _filter_zh_hits(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [h for h in hits if (h.get("zh") or h.get("text") or "").strip()]
+
+
 async def _bm25_hits(query: str, index: str, top_k: int = 40) -> list[dict[str, Any]]:
     q = (query or "").strip()
     if not q:
         return []
     raw = await bm25_search(es_client, q, index, top_k)
     return _filter_en_hits(raw)
+
+
+async def _bm25_hits_en(query: str, index: str, top_k: int = 40) -> list[dict[str, Any]]:
+    q = (query or "").strip()
+    if not q:
+        return []
+    body_q = {
+        "query": {"match": {"en": {"query": q, "analyzer": "standard"}}},
+        "size": top_k,
+        "_source": ["chunk_id", "text", "en", "zh", "book_title", "source_zh", "source_en"],
+    }
+    try:
+        resp = await asyncio.to_thread(es_client.search, index=index, body=body_q)
+    except Exception as e:
+        logger.warning("[enhanced_translate] bm25_en 失败: %s", e)
+        return []
+    out = []
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = (hit.get("_source") or {}).copy()
+        src["score"] = hit.get("_score") or 0.0
+        src["source"] = "bm25"
+        src["_index"] = hit.get("_index") or ""
+        src.setdefault("chunk_id", hit.get("_id", ""))
+        out.append(src)
+    return _filter_zh_hits(out)
 
 
 async def _dense_hits(query: str, ctx: _RetrievalCtx, top_k: int = 40) -> list[dict[str, Any]]:
@@ -411,6 +518,14 @@ async def _clause_retrieval(clause: str, ctx: _RetrievalCtx) -> list[dict[str, A
     exact_hits, bm25_hits = await asyncio.gather(
         _exact_match(clause, ctx),
         _bm25_hits(clause, ctx.bm25_index, 40),
+    )
+    return exact_hits + bm25_hits
+
+
+async def _clause_retrieval_en(clause: str, ctx: _RetrievalCtx) -> list[dict[str, Any]]:
+    exact_hits, bm25_hits = await asyncio.gather(
+        _exact_match_en(clause, ctx),
+        _bm25_hits_en(clause, ctx.bm25_index, 40),
     )
     return exact_hits + bm25_hits
 
@@ -540,13 +655,25 @@ def _format_ref_block_for_gemini(deduped_refs: list[dict[str, Any]]) -> str:
         return ""
     block = "\n\n参考语料："
     for i, r in enumerate(deduped_refs, 1):
-        kind = r.get("match_kind", "retrieved")
-        label = "直接引用" if kind == "exact" else "参考翻译"
         block += (
-            f"\nParagraph {i} [{label}]"
+            f"\nParagraph {i}"
             f"\nid: {r.get('chunk_id') or r.get('id') or ''}"
             f"\ntext: {r.get('text') or ''}"
             f"\nen: {r.get('en') or ''}"
+        )
+    return block
+
+
+def _format_ref_block_for_gemini_en2zh(deduped_refs: list[dict[str, Any]]) -> str:
+    if not deduped_refs:
+        return ""
+    block = "\n\n参考语料："
+    for i, r in enumerate(deduped_refs, 1):
+        block += (
+            f"\nParagraph {i}"
+            f"\nid: {r.get('chunk_id') or r.get('id') or ''}"
+            f"\nen: {r.get('en') or ''}"
+            f"\nzh: {r.get('zh') or r.get('text') or ''}"
         )
     return block
 
@@ -557,6 +684,7 @@ def _stats_from_line_refs(
     additional_pool_line: bool = False,
     retrieval_skipped: bool = False,
     pool_line: bool = False,
+    feasts_line: bool = False,
 ) -> dict[str, Any]:
     pool = sum(1 for r in line_refs if r.get("match_kind") == "pool")
     exact = sum(1 for r in line_refs if r.get("match_kind") == "exact")
@@ -570,6 +698,7 @@ def _stats_from_line_refs(
         "additional_pool_line": additional_pool_line,
         "retrieval_skipped": retrieval_skipped,
         "pool_line": pool_line,
+        "feasts_line": feasts_line,
     }
 
 
@@ -583,6 +712,7 @@ def _build_line_ref_group(
     additional_pool_line: bool = False,
     retrieval_skipped: bool = False,
     pool_line: bool = False,
+    feasts_line: bool = False,
 ) -> dict[str, Any]:
     deduped = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
     stats = _stats_from_line_refs(
@@ -590,6 +720,7 @@ def _build_line_ref_group(
         additional_pool_line=additional_pool_line,
         retrieval_skipped=retrieval_skipped,
         pool_line=pool_line,
+        feasts_line=feasts_line,
     )
     return {
         "line_index": line_index,
@@ -616,7 +747,7 @@ def _build_summary(
 ) -> dict[str, Any]:
     total_lines = len(line_ref_groups)
     pool = exact = retrieved = none = 0
-    additional_pool_lines = pool_full_match_lines = 0
+    additional_pool_lines = pool_full_match_lines = feasts_lines = 0
     for g in line_ref_groups:
         st = g.get("stats") or {}
         pool += int(st.get("pool") or 0)
@@ -627,6 +758,8 @@ def _build_summary(
             additional_pool_lines += 1
         if st.get("pool_line"):
             pool_full_match_lines += 1
+        if st.get("feasts_line"):
+            feasts_lines += 1
     gemini_cost = _gemini_cost_usd(total_in_tok, total_out_tok)
     return {
         "total_lines": total_lines,
@@ -636,6 +769,7 @@ def _build_summary(
         "none": none,
         "additional_pool_lines": additional_pool_lines,
         "pool_full_match_lines": pool_full_match_lines,
+        "feasts_lines": feasts_lines,
         "additional_pool_appended": append_added,
         "additional_pool_append_skipped": append_skipped,
         "gemini_cost_usd": gemini_cost,
@@ -676,13 +810,18 @@ def _call_gemini_sync(
             else:
                 rt = getattr(response, "text", None) if response else None
                 text = rt.strip() if isinstance(rt, str) and rt.strip() else None
-            call_in = call_out = 0
+            call_in = call_out = call_think = 0
             meta = getattr(response, "usage_metadata", None)
             if meta:
                 call_in = int(getattr(meta, "prompt_token_count", 0) or 0)
                 call_out = int(getattr(meta, "candidates_token_count", 0) or 0)
+                call_think = int(getattr(meta, "thoughts_token_count", 0) or 0)
             cumulative_usage["in_tok"] += call_in
-            cumulative_usage["out_tok"] += call_out
+            cumulative_usage["out_tok"] += call_out + call_think
+            logger.info(
+                "[enhanced_translate] gemini call: model=%s in_tok=%d out_tok=%d think_tok=%d",
+                use_model, call_in, call_out, call_think
+            )
             return text, cumulative_usage
         except Exception as e:
             err = str(e)
@@ -731,8 +870,6 @@ async def _translate_batch(
     contents = (
         "\n\n".join(blocks)
         + extra
-        + "\n\n"
-        + OUTLINE_TRANSLATE_PROMPT_ZH2EN
         + "\n\nTranslate each line above to English. Output ONLY in this exact format:\n"
         + "\n".join(f"Line {pos}: {{english translation}}" for pos in range(1, len(items) + 1))
     )
@@ -752,20 +889,84 @@ async def _translate_batch(
     return parsed, cumulative_usage
 
 
+async def _translate_batch_en2zh(
+    items: list[tuple[int, str, list[dict[str, Any]], str]],
+) -> tuple[dict[int, str], dict[str, int]]:
+    """items: (line_i, en_line, deduped_refs, prompt_extra)"""
+    if not items:
+        return {}, {}
+    blocks: list[str] = []
+    for pos, (line_i, en_line, deduped_refs, _) in enumerate(items, 1):
+        ref_block = _format_ref_block_for_gemini_en2zh(deduped_refs)
+        blocks.append(f"Line {pos}: {en_line}{ref_block}")
+
+    prompt_extra = items[0][3] if items else ""
+    extra = f"\n\n{prompt_extra}" if prompt_extra else ""
+    contents = (
+        "\n\n".join(blocks)
+        + extra
+        + "\n\nTranslate each line above to Chinese. Output ONLY in this exact format:\n"
+        + "\n".join(f"Line {pos}: {{chinese translation}}" for pos in range(1, len(items) + 1))
+    )
+
+    indexed = [(line_i, en) for line_i, en, _, _ in items]
+    cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
+    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    if not text and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+        text, _ = await asyncio.to_thread(
+            _call_gemini_sync, contents, 0, GEMINI_TRANSLATION_FALLBACK_MODEL, cumulative_usage
+        )
+
+    if not text:
+        return {line_i: en for line_i, en in indexed}, cumulative_usage
+
+    parsed = _parse_batch_translations(text, indexed)
+    return parsed, cumulative_usage
+
+
+async def _translate_batch_feasts(
+    items: list[tuple[int, str]],
+) -> tuple[dict[int, str], dict[str, int]]:
+    """items: (line_i, feasts_line) — feasts 索引已提供英文 body，Gemini 仅校对格式。"""
+    if not items:
+        return {}, {}
+    blocks = [f"Line {pos}: {feasts_line}" for pos, (_, feasts_line) in enumerate(items, 1)]
+    contents = (
+        ENHANCED_TRANSLATE_PROMPT_FEASTS
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\nProofread each line above. Output ONLY in this exact format:\n"
+        + "\n".join(f"Line {pos}: {{corrected english text}}" for pos in range(1, len(items) + 1))
+    )
+
+    indexed = [(line_i, feasts_line) for line_i, feasts_line in items]
+    cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
+    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    if not text and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
+        text, _ = await asyncio.to_thread(
+            _call_gemini_sync, contents, 0, GEMINI_TRANSLATION_FALLBACK_MODEL, cumulative_usage
+        )
+
+    if not text:
+        return {line_i: feasts_line for line_i, feasts_line in indexed}, cumulative_usage
+
+    parsed = _parse_batch_translations(text, indexed)
+    return parsed, cumulative_usage
+
+
 def _prep_cached_line(line_i: int, line: str, cached_en: str) -> dict[str, Any]:
-    prefix, body, suffix = _strip_scripture_suffix(line)
+    prefix, body, _ = _strip_scripture_suffix(line)
     return {
         "line_i": line_i,
         "line": line,
         "body": body,
-        "suffix": suffix,
-        "en_prefix": _translate_prefix(prefix),
         "line_type": _detect_line_type(body, prefix),
         "line_refs": [],
         "deduped_refs": [],
         "needs_batch": False,
         "line_cached_en": cached_en,
         "pool_line_en": "",
+        "feasts_line": "",
         "retrieval_failed": False,
     }
 
@@ -775,8 +976,7 @@ async def _retrieve_line(
     line: str,
     ctx: _RetrievalCtx,
 ) -> dict[str, Any]:
-    prefix, body, suffix = _strip_scripture_suffix(line)
-    en_prefix = _translate_prefix(prefix)
+    prefix, body, _ = _strip_scripture_suffix(line)
     line_type = _detect_line_type(body, prefix)
 
     if line_type == "outline":
@@ -791,14 +991,51 @@ async def _retrieve_line(
                 "line_i": line_i,
                 "line": line,
                 "body": body,
-                "suffix": suffix,
-                "en_prefix": en_prefix,
                 "line_type": line_type,
                 "line_refs": [],
                 "deduped_refs": [],
                 "needs_batch": False,
                 "line_cached_en": "",
                 "pool_line_en": pool_en,
+                "feasts_line": "",
+                "retrieval_failed": False,
+            }
+
+    # feasts body 精确匹配快速路径
+    if body.strip():
+        feasts_en_body = await _feasts_body_lookup(body)
+        if feasts_en_body is not None:
+            prefix, _, suffix = _strip_scripture_suffix(line)
+            en_prefix = _translate_prefix(prefix)
+            feasts_line = f"{en_prefix}{feasts_en_body}{suffix}"
+            feasts_ref = {
+                "line_index": line_i,
+                "clause_index": 0,
+                "zh": body,
+                "match_kind": "match_body",
+                "match_type": "reference",
+                "zh_snippet": body,
+                "en_snippet": feasts_en_body,
+                "text": body,
+                "en": feasts_en_body,
+                "chunk_id": "",
+                "id": "",
+                "source": "feasts",
+                "ch_source": "feasts",
+                "en_source": "",
+            }
+            deduped_refs = _assign_paragraph_numbers([feasts_ref])
+            return {
+                "line_i": line_i,
+                "line": line,
+                "body": body,
+                "line_type": line_type,
+                "line_refs": [feasts_ref],
+                "deduped_refs": deduped_refs,
+                "needs_batch": True,
+                "line_cached_en": "",
+                "pool_line_en": "",
+                "feasts_line": feasts_line,
                 "retrieval_failed": False,
             }
 
@@ -807,14 +1044,13 @@ async def _retrieve_line(
             "line_i": line_i,
             "line": line,
             "body": body,
-            "suffix": suffix,
-            "en_prefix": en_prefix,
             "line_type": line_type,
             "line_refs": [],
             "deduped_refs": [],
             "needs_batch": False,
             "line_cached_en": "",
             "pool_line_en": "",
+            "feasts_line": "",
             "retrieval_failed": False,
         }
 
@@ -843,14 +1079,13 @@ async def _retrieve_line(
             "line_i": line_i,
             "line": line,
             "body": body,
-            "suffix": suffix,
-            "en_prefix": en_prefix,
             "line_type": line_type,
             "line_refs": [],
             "deduped_refs": [],
             "needs_batch": False,
             "line_cached_en": "",
             "pool_line_en": "",
+            "feasts_line": "",
             "retrieval_failed": True,
         }
 
@@ -876,8 +1111,130 @@ async def _retrieve_line(
             "line_i": line_i,
             "line": line,
             "body": body,
-            "suffix": suffix,
-            "en_prefix": en_prefix,
+            "line_type": line_type,
+            "line_refs": [],
+            "deduped_refs": [],
+            "needs_batch": False,
+            "line_cached_en": "",
+            "pool_line_en": "",
+            "feasts_line": "",
+            "retrieval_failed": True,
+        }
+
+    top = dict(reranked[0])
+    if top.get("match_kind") != "exact":
+        top["match_kind"] = "retrieved"
+
+    ref_clause = body.strip() or line.strip()
+    line_refs = [_build_ref_entry(line_i, 0, ref_clause, top)]
+    deduped_refs = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
+
+    return {
+        "line_i": line_i,
+        "line": line,
+        "body": body,
+        "line_type": line_type,
+        "line_refs": line_refs,
+        "deduped_refs": deduped_refs,
+        "needs_batch": True,
+        "line_cached_en": "",
+        "pool_line_en": "",
+        "feasts_line": "",
+        "retrieval_failed": False,
+    }
+
+
+async def _retrieve_line_en2zh(
+    line_i: int,
+    line: str,
+    ctx: _RetrievalCtx,
+) -> dict[str, Any]:
+    prefix, body, _ = _strip_scripture_suffix(line)
+    line_type = _detect_line_type(body, prefix)
+
+    if line_type == "outline":
+        clauses = _split_body(body)
+    else:
+        clauses = [body] if body.strip() else []
+
+    if line.strip():
+        pool_zh = await _pool_lookup_en2zh(line)
+        if pool_zh is not None:
+            return {
+                "line_i": line_i,
+                "line": line,
+                "body": body,
+                "line_type": line_type,
+                "line_refs": [],
+                "deduped_refs": [],
+                "needs_batch": False,
+                "line_cached_en": "",
+                "pool_line_en": pool_zh,
+                "retrieval_failed": False,
+            }
+
+    if not body.strip() and not clauses:
+        return {
+            "line_i": line_i,
+            "line": line,
+            "body": body,
+            "line_type": line_type,
+            "line_refs": [],
+            "deduped_refs": [],
+            "needs_batch": False,
+            "line_cached_en": "",
+            "pool_line_en": "",
+            "retrieval_failed": False,
+        }
+
+    clause_tasks = [_clause_retrieval_en(c, ctx) for c in clauses]
+    gather_results = await asyncio.gather(
+        _exact_match_en(line, ctx),
+        _bm25_hits_en(body, ctx.bm25_index, 40),
+        *clause_tasks,
+    )
+    line_exact = gather_results[0]
+    body_bm25 = gather_results[1]
+    clause_groups = gather_results[2:]
+    clause_hits = [h for group in clause_groups for h in group]
+
+    merged_hits = _dedupe_hits_by_chunk_id(line_exact + body_bm25 + clause_hits)
+
+    if not merged_hits:
+        feasts_raw = await _bm25_hits_en(line, "feasts", 50)
+        if feasts_raw:
+            async with _RERANK_SEM:
+                feasts_reranked = await rerank(feasts_raw, body.strip() or line.strip(), 1)
+            merged_hits = _dedupe_hits_by_chunk_id(feasts_reranked)
+            for h in merged_hits:
+                h["match_kind"] = "retrieved"
+
+    if not merged_hits:
+        return {
+            "line_i": line_i,
+            "line": line,
+            "body": body,
+            "line_type": line_type,
+            "line_refs": [],
+            "deduped_refs": [],
+            "needs_batch": False,
+            "line_cached_en": "",
+            "pool_line_en": "",
+            "retrieval_failed": True,
+        }
+
+    enriched = await asyncio.gather(*[_enrich_hit_en(dict(h), ctx) for h in merged_hits])
+
+    rrf_merged = await rrf_merge(list(enriched), [], k=60, bm25_weight=1.0, dense_weight=1.0)
+    rerank_query = body.strip() or line.strip()
+    async with _RERANK_SEM:
+        reranked = await rerank(rrf_merged, rerank_query, 1)
+
+    if not reranked:
+        return {
+            "line_i": line_i,
+            "line": line,
+            "body": body,
             "line_type": line_type,
             "line_refs": [],
             "deduped_refs": [],
@@ -899,8 +1256,6 @@ async def _retrieve_line(
         "line_i": line_i,
         "line": line,
         "body": body,
-        "suffix": suffix,
-        "en_prefix": en_prefix,
         "line_type": line_type,
         "line_refs": line_refs,
         "deduped_refs": deduped_refs,
@@ -943,8 +1298,7 @@ async def _assemble_line(
         )
 
     if not prep["needs_batch"]:
-        translated = (prep.get("en_prefix") or "").strip()
-        return translated, _build_line_ref_group(
+        return line, _build_line_ref_group(
             line_i,
             line,
             prep.get("line_refs") or [],
@@ -953,12 +1307,14 @@ async def _assemble_line(
         )
 
     body_en = (translate_by_line.get(line_i) or line).strip()
+    is_feasts = bool(prep.get("feasts_line"))
     return body_en, _build_line_ref_group(
         line_i,
         line,
         prep.get("line_refs") or [],
         line_type=prep["line_type"],
         gemini_translate=body_en,
+        feasts_line=is_feasts,
     )
 
 
@@ -1022,14 +1378,15 @@ async def enhanced_translate(
         }
 
     batch_items = [
-        (
-            prep["line_i"],
-            prep["line"],
-            prep["deduped_refs"],
-            prompt_extra,
-        )
+        (prep["line_i"], prep["line"], prep["deduped_refs"], prompt_extra)
         for prep in preps
-        if prep["needs_batch"] and not prep.get("line_cached_en")
+        if prep["needs_batch"] and not prep.get("line_cached_en") and not prep.get("feasts_line")
+    ]
+
+    feasts_items = [
+        (prep["line_i"], prep["feasts_line"])
+        for prep in preps
+        if prep.get("feasts_line")
     ]
 
     chunks = [batch_items[i : i + 10] for i in range(0, len(batch_items), 10)]
@@ -1048,11 +1405,136 @@ async def enhanced_translate(
         total_in_tok += usage.get("in_tok", 0)
         total_out_tok += usage.get("out_tok", 0)
 
+    feasts_chunks = [feasts_items[i : i + 10] for i in range(0, len(feasts_items), 10)]
+
+    async def _run_feasts_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
+        async with batch_sem:
+            return await _translate_batch_feasts(chunk)
+
+    feasts_outcomes = await asyncio.gather(*[_run_feasts_chunk(c) for c in feasts_chunks]) if feasts_chunks else []
+    for trans, usage in feasts_outcomes:
+        translate_by_line.update(trans)
+        total_in_tok += usage.get("in_tok", 0)
+        total_out_tok += usage.get("out_tok", 0)
+
     results = await asyncio.gather(
         *[
             _assemble_line(prep, prompt_extra, translate_by_line)
             for prep in preps
         ]
+    )
+
+    out_lines: list[str] = []
+    line_ref_groups: list[dict[str, Any]] = []
+    for translated, line_group in results:
+        out_lines.append(translated)
+        line_ref_groups.append(line_group)
+
+    append_added = append_skipped = 0
+    if auto_append_enabled():
+        rows = collect_auto_append_rows(line_ref_groups, out_lines)
+        append_added, append_skipped = append_records(rows)
+
+    summary = _build_summary(
+        line_ref_groups,
+        total_in_tok=total_in_tok,
+        total_out_tok=total_out_tok,
+        append_added=append_added,
+        append_skipped=append_skipped,
+    )
+
+    return {
+        "result": "\n".join(out_lines),
+        "refs": line_ref_groups,
+        "summary": summary,
+        "error": None,
+        "warnings": list(dict.fromkeys(ctx.warnings)),
+    }
+
+
+async def enhanced_translate_en2zh(
+    content: str,
+    prompt_override: str | None = None,
+) -> dict[str, Any]:
+    outline = (content or "").strip()
+    if not outline:
+        return {"result": None, "refs": [], "summary": None, "error": "内容为空", "warnings": []}
+    if len(outline) > MAX_CONTENT_CHARS:
+        return {
+            "result": None,
+            "refs": [],
+            "summary": None,
+            "error": f"内容过长（最多 {MAX_CONTENT_CHARS} 字）",
+            "warnings": [],
+        }
+    if not gemini_client:
+        return {
+            "result": None,
+            "refs": [],
+            "summary": None,
+            "error": "翻译服务未配置（请设置 GEMINI_API_KEY）",
+            "warnings": [],
+        }
+
+    if prompt_override is not None:
+        prompt_extra = prompt_override.strip()
+    else:
+        prompt_extra = ENHANCED_TRANSLATE_PROMPT_EN2ZH.strip()
+
+    lines = [ln for ln in outline.splitlines() if ln.strip()]
+
+    line_cached_en: dict[int, str] = {}
+    for i, line in enumerate(lines):
+        cached = lookup_line_en(line)
+        if cached:
+            line_cached_en[i] = cached
+
+    ctx = _RetrievalCtx.create(_INDICES_DENSE)
+    if any(i not in line_cached_en for i in range(len(lines))):
+        await _probe_es(ctx)
+
+    async def _prep_one(i: int, line: str) -> dict[str, Any]:
+        if i in line_cached_en:
+            return _prep_cached_line(i, line, line_cached_en[i])
+        prep = await _retrieve_line_en2zh(i, line, ctx)
+        prep["line_cached_en"] = ""
+        return prep
+
+    preps = await asyncio.gather(*[_prep_one(i, line) for i, line in enumerate(lines)])
+
+    if any(prep.get("retrieval_failed") for prep in preps):
+        return {
+            "result": None,
+            "refs": [],
+            "summary": None,
+            "error": "部分行检索失败，无法获取参考语料，请稍后重试。",
+            "warnings": [],
+        }
+
+    batch_items = [
+        (prep["line_i"], prep["line"], prep["deduped_refs"], prompt_extra)
+        for prep in preps
+        if prep["needs_batch"] and not prep.get("line_cached_en")
+    ]
+
+    chunks = [batch_items[i : i + 10] for i in range(0, len(batch_items), 10)]
+    batch_sem = asyncio.Semaphore(10)
+
+    async def _run_batch_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
+        async with batch_sem:
+            return await _translate_batch_en2zh(chunk)
+
+    batch_outcomes = await asyncio.gather(*[_run_batch_chunk(c) for c in chunks]) if chunks else []
+    translate_by_line: dict[int, str] = {}
+    total_in_tok = 0
+    total_out_tok = 0
+    for trans, usage in batch_outcomes:
+        translate_by_line.update(trans)
+        total_in_tok += usage.get("in_tok", 0)
+        total_out_tok += usage.get("out_tok", 0)
+
+    results = await asyncio.gather(
+        *[_assemble_line(prep, prompt_extra, translate_by_line) for prep in preps]
     )
 
     out_lines: list[str] = []

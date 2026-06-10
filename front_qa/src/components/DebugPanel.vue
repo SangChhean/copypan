@@ -61,6 +61,22 @@
               <div><span class="debug-label">cache_hit</span><span :class="result.cache_hit ? 'tag-ok' : 'tag-gray'">{{ result.cache_hit }}</span></div>
               <div><span class="debug-label">耗时</span><span>{{ (result.total_elapsed_ms/1000).toFixed(1) }}s</span></div>
               <div><span class="debug-label">费用</span><span>${{ result.total_cost_usd }}</span></div>
+              <div v-if="result.debug?.cost_breakdown">
+                <span class="debug-label">Step 0</span>
+                <span>${{ result.debug.cost_breakdown.step0_haiku }}</span>
+              </div>
+              <div v-if="result.debug?.cost_breakdown">
+                <span class="debug-label">Step 1</span>
+                <span>${{ result.debug.cost_breakdown.step1_opus }}</span>
+              </div>
+              <div v-if="result.debug?.cost_breakdown">
+                <span class="debug-label">Step 3</span>
+                <span>${{ result.debug.cost_breakdown.step3_haiku }}</span>
+              </div>
+              <div v-if="result.debug?.cost_breakdown">
+                <span class="debug-label">Step 4</span>
+                <span>${{ result.debug.cost_breakdown.step4_sonnet }}</span>
+              </div>
             </div>
           </section>
 

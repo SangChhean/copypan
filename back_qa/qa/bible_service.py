@@ -296,6 +296,7 @@ async def run_bible_pipeline(
             text_gb_plain=text_gb_plain,
             question=rewritten_query,
             passages=passages_text,
+            graph_context="",
             firewall_instruction=firewall_instruction,
         )
     except Exception as e:

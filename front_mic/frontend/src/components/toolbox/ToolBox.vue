@@ -84,6 +84,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/bird-view-c')">
           <span class="card_text">词典-鸟瞰纲目练习</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/feast-outline-c')">
+          <span class="card_text">节期纲目制作练习</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
@@ -103,6 +106,9 @@ const openZh2tw = () => {
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/article-polish-vannak')">
           <span class="card_text">文章润色</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/feast-outline-a')">
+          <span class="card_text">节期纲目</span>
         </a-card-grid>
       </a-card>
     </div>
