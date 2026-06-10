@@ -1,12 +1,18 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { LoadingOutlined, CopyOutlined } from "@ant-design/icons-vue";
 
 const NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 
 const query = ref("");
 const outlineNature = ref("");
-const burdenDescription = ref("");
+const referenceExcerpt = ref("");  // 原稿内容（原 burdenDescription）
+const burdenResult = ref("");      // 生成的负担说明（可编辑）
+const burdenLoading = ref(false);
+const burdenCandidates = ref([]);  // 情境B三条候选
+const selectedCandidate = ref(0);  // 选中的候选索引
+const referenceExcerptEl = ref(null);
+const burdenResultEl = ref(null);
 
 const loading = ref(false);
 const error = ref(null);
@@ -25,6 +31,10 @@ const expandedNodes = ref([]);
 const addingLayer = ref("");
 const addingWord = ref("");
 
+const hasSkeleton = ref(false);
+const skeletonSteps = ref(0);
+const skeletonPreview = ref([]);
+
 const canGenerate = computed(
   () => !!query.value.trim() && !!outlineNature.value && !loading.value
 );
@@ -39,6 +49,52 @@ function selectNature(nature) {
   outlineNature.value = nature;
 }
 
+async function generateBurden() {
+  // 校验原稿内容去标点后>10字
+  const cleaned = referenceExcerpt.value
+    .replace(/[，。！？、；：""''「」【】《》\s]/gu, "")
+    .replace(/\p{P}/gu, "");
+  // 有内容但不够10字才拦截，空内容直接走情境B
+  if (referenceExcerpt.value.trim().length > 0 && cleaned.length <= 10) {
+    alert("原稿内容太短，请输入超过10个字");
+    return;
+  }
+  burdenLoading.value = true;
+  burdenCandidates.value = [];
+  burdenResult.value = "";
+
+  try {
+    const res = await fetch("/api/panai2/generate_burden", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query.value,
+        outline_nature: outlineNature.value,
+        audience: "",
+        reference_excerpt: referenceExcerpt.value,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.scenario === "A") {
+      // 情境A：直接填入负担说明框
+      burdenResult.value = data.result || "";
+      burdenCandidates.value = [];
+    } else {
+      // 情境B：显示三条候选
+      burdenCandidates.value = data.candidates || [];
+      if (burdenCandidates.value.length > 0) {
+        selectedCandidate.value = 0;
+        burdenResult.value = burdenCandidates.value[0];
+      }
+    }
+  } catch (err) {
+    error.value = (err && err.message) || "网络错误，请稍后重试";
+  } finally {
+    burdenLoading.value = false;
+  }
+}
+
 async function doAnalyze() {
   if (!query.value.trim() || !outlineNature.value) return;
   analyzeLoading.value = true;
@@ -51,7 +107,7 @@ async function doAnalyze() {
       body: JSON.stringify({
         query: query.value,
         outline_nature: outlineNature.value,
-        burden_description: burdenDescription.value,
+        burden_description: burdenResult.value,
       }),
     });
     const data = await res.json();
@@ -102,6 +158,9 @@ function resetAnalyze() {
   expandedNodes.value = [];
   answer.value = "";
   chunks.value = [];
+  hasSkeleton.value = false;
+  skeletonSteps.value = 0;
+  skeletonPreview.value = [];
 }
 
 async function doGenerate() {
@@ -119,7 +178,7 @@ async function doGenerate() {
       body: JSON.stringify({
         query: query.value,
         outline_nature: outlineNature.value,
-        burden_description: burdenDescription.value,
+        burden_description: burdenResult.value,
         expanded_nodes: expandedNodes.value,
         rewritten_queries: rewrittenQueries.value,
       }),
@@ -137,6 +196,9 @@ async function doGenerate() {
     answer.value = data.answer;
     chunksUsed.value = data.chunks_used || 0;
     chunks.value = data.chunks || [];
+    hasSkeleton.value = data.has_skeleton || false;
+    skeletonSteps.value = data.skeleton_steps || 0;
+    skeletonPreview.value = data.skeleton_preview || [];
   } catch (err) {
     error.value = (err && err.message) || "网络错误，请稍后重试";
   } finally {
@@ -154,6 +216,22 @@ function copyAnswer() {
   });
 }
 
+function resizeTextarea(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+
+function autoResize(e) {
+  resizeTextarea(e.target);
+}
+
+watch([referenceExcerpt, burdenResult], async () => {
+  await nextTick();
+  resizeTextarea(referenceExcerptEl.value);
+  resizeTextarea(burdenResultEl.value);
+});
+
 function parseFilename(disposition, fallback) {
   if (!disposition) return fallback;
   const m = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
@@ -169,10 +247,11 @@ function parseFilename(disposition, fallback) {
 }
 
 async function downloadFormat() {
-  const text = answer.value;
-  if (!text || downloading.value) return;
+  if (!answer.value || downloading.value) return;
   downloading.value = true;
   try {
+    const header = "\u200b\n\u200b\n" + query.value + "\n";
+    const text = header + answer.value;
     const res = await fetch("/api/testb/format/zh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -237,13 +316,52 @@ async function downloadFormat() {
       </div>
 
       <div class="field field-col">
+        <span class="label">原稿内容：</span>
+        <textarea
+          ref="referenceExcerptEl"
+          v-model="referenceExcerpt"
+          class="burden-area"
+          placeholder="可选：粘贴原稿内容，用于生成负担说明"
+          :disabled="loading"
+          @input="autoResize"
+        />
+      </div>
+
+      <!-- 生成负担说明 -->
+      <div class="action-row">
+        <button
+          type="button"
+          class="action-btn"
+          :disabled="burdenLoading"
+          @click="generateBurden"
+        >
+          <LoadingOutlined v-if="burdenLoading" class="btn-icon btn-spin" />
+          {{ burdenLoading ? "生成中..." : "生成负担说明" }}
+        </button>
+      </div>
+
+      <!-- 情境B候选 -->
+      <div v-if="burdenCandidates.length > 0" class="candidates-box">
+        <div
+          v-for="(c, i) in burdenCandidates"
+          :key="i"
+          :class="['candidate-item', selectedCandidate === i ? 'selected' : '']"
+          @click="selectedCandidate = i; burdenResult = c"
+        >
+          <span class="candidate-label">候选{{ ['一','二','三'][i] }}</span>
+          {{ c }}
+        </div>
+      </div>
+
+      <div class="field field-col">
         <span class="label">负担说明：</span>
         <textarea
-          v-model="burdenDescription"
+          ref="burdenResultEl"
+          v-model="burdenResult"
           class="burden-area"
-          placeholder="可选"
-          rows="4"
+          placeholder="生成后可在此编辑"
           :disabled="loading"
+          @input="autoResize"
         />
       </div>
 
@@ -323,6 +441,27 @@ async function downloadFormat() {
           </button>
         </div>
       </template>
+
+      <div v-if="answer" class="skeleton-info">
+        <!-- 有骨架 -->
+        <div v-if="hasSkeleton" class="skeleton-header has-skeleton">
+          ✅ 有骨架（{{ skeletonSteps }} 步）
+        </div>
+        <!-- 无骨架降级 -->
+        <div v-else class="skeleton-header no-skeleton">
+          ⚠️ 降级模式（无骨架）
+        </div>
+        <!-- 骨架步骤列表 -->
+        <div v-if="hasSkeleton" class="skeleton-steps">
+          <div
+            v-for="(step, i) in skeletonPreview"
+            :key="i"
+            class="skeleton-step"
+          >
+            {{ step }}
+          </div>
+        </div>
+      </div>
 
       <pre class="result-body">{{ answer }}</pre>
 
@@ -451,7 +590,10 @@ async function downloadFormat() {
   font-size: 14px;
   border: 1px solid #d9d9d9;
   border-radius: 8px;
-  resize: vertical;
+  min-height: 80px;
+  max-height: 600px;
+  overflow-y: auto;
+  resize: none;
   outline: none;
 }
 .burden-area:focus {
@@ -696,4 +838,16 @@ async function downloadFormat() {
 .action-row { display: flex; gap: 12px; margin-top: 12px; }
 .reset-btn { padding: 8px 20px; font-size: 15px; border-radius: 6px; border: 1px solid #d9d9d9; background: #fff; color: #555; cursor: pointer; }
 .reset-btn:hover { border-color: #1890ff; color: #1890ff; }
+
+.candidates-box { background: #fff7e6; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+.candidate-item { padding: 8px; border-radius: 6px; cursor: pointer; margin-bottom: 6px; border: 1px solid #ffd591; font-size: 13px; line-height: 1.6; }
+.candidate-item.selected { background: #ffe7ba; border-color: #ffa940; }
+.candidate-label { font-weight: bold; margin-right: 6px; color: #d46b08; }
+
+.skeleton-info { margin-bottom: 12px; }
+.skeleton-header { padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+.has-skeleton { background: #e6f4ff; color: #1677ff; }
+.no-skeleton { background: #fff7e6; color: #d46b08; }
+.skeleton-steps { background: #f6ffed; border-radius: 6px; padding: 8px 12px; }
+.skeleton-step { font-size: 12px; color: #389e0d; line-height: 1.8; }
 </style>

@@ -10,12 +10,21 @@ load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../back_
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import asyncio, anthropic
+import asyncio, anthropic, json
 from elasticsearch import Elasticsearch
 from back_shared.retrieval import bm25_search, dense_search, rrf_merge, rerank
-from test_B.AI纲目制作.prompts import STEP5_GENERATION_FLAT
-from utils import _parse_step1_layers, _parse_json_array, _apply_outline_nature_weight
-from prompts import STEP1_CONCEPT_EXTRACTION, QUERY_REWRITE, QUERY_REWRITE_SYSTEM
+from utils import (
+    _parse_step1_layers, _parse_json_array, _apply_outline_nature_weight,
+    _parse_burden_generation_output,
+    _parse_step2_skeleton, _build_skeleton_bound_prompt_block,
+    _format_paths_text, _format_key_verses_text, _format_chunk_line
+)
+from prompts import (
+    STEP5_GENERATION_FLAT, STEP1_CONCEPT_EXTRACTION,
+    QUERY_REWRITE, QUERY_REWRITE_SYSTEM,
+    BURDEN_DESCRIPTION_PROMPT, BURDEN_DESCRIPTION_SYSTEM,
+    STEP2_SKELETON_BUILD, STEP5_GENERATION
+)
 from neo4j_client import Neo4jClient
 from kg_rag.retrieval import skeleton_route_search
 
@@ -45,8 +54,9 @@ concept_list_text = '、'.join(concept_names)
 
 
 async def call_claude(prompt: str, system: str | None = None, max_tokens: int = 4096,
+                      temperature: float | None = None,
                       model: str = 'claude-sonnet-4-6') -> str:
-    """调用 Claude，放线程池执行避免阻塞事件循环；支持可选 system。"""
+    """调用 Claude，放线程池执行避免阻塞事件循环；支持可选 system、temperature。"""
     def _run() -> str:
         client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY') or os.getenv('CLAUDE_API_KEY'))
         kwargs = {
@@ -56,6 +66,8 @@ async def call_claude(prompt: str, system: str | None = None, max_tokens: int = 
         }
         if system:
             kwargs['system'] = system
+        if temperature is not None:
+            kwargs['temperature'] = temperature
         message = client.messages.create(**kwargs)
         return message.content[0].text
     return await asyncio.to_thread(_run)
@@ -74,6 +86,13 @@ class AnalyzeRequest(BaseModel):
     query: str
     outline_nature: str = '一般性'
     burden_description: str = ''
+
+
+class BurdenRequest(BaseModel):
+    query: str
+    outline_nature: str = ''
+    audience: str = ''
+    reference_excerpt: str = ''
 
 
 async def run_step1_and_rewrite(query: str, outline_nature: str, burden_description: str):
@@ -156,6 +175,19 @@ async def panai2_analyze(req: AnalyzeRequest):
     }
 
 
+@app.post('/api/panai2/generate_burden')
+async def generate_burden(req: BurdenRequest):
+    prompt = BURDEN_DESCRIPTION_PROMPT.format(
+        query=req.query,
+        outline_nature=req.outline_nature or '（未填）',
+        audience=req.audience or '（未填）',
+        reference_excerpt=req.reference_excerpt or '（空）',
+    )
+    raw = await call_claude(prompt, system=BURDEN_DESCRIPTION_SYSTEM, temperature=0.3, max_tokens=1200)
+    result = _parse_burden_generation_output(raw)
+    return result
+
+
 @app.post('/api/panai2/query')
 async def panai2_query(req: QueryRequest):
     if req.expanded_nodes:
@@ -168,6 +200,36 @@ async def panai2_query(req: QueryRequest):
         # 原有逻辑：并发跑 Step1 + Query Rewrite
         revelation, experience, practice, reasoning, rewritten_queries, expanded_nodes = \
             await run_step1_and_rewrite(req.query, req.outline_nature, req.burden_description)
+
+    # Step2：骨架构建
+    skeleton = None
+    deep = []
+    if expanded_nodes:
+        # Neo4j 查询（字段映射：rel → relation）
+        paths_raw = neo4j_client.get_concept_relations(expanded_nodes)
+        paths = [{"from": p["from"], "relation": p["rel"], "to": p["to"]} for p in paths_raw]
+        key_verses_raw = neo4j_client.get_key_verses(revelation + experience + practice)
+
+        # 构建 deep 列表（顺序固定：revelation + experience + practice，不去重）
+        deep = revelation + experience + practice
+
+        # 构建 Step2 Prompt
+        bd = (req.burden_description or '').strip()
+        intrinsic_burden_text = bd if bd else '（未填写负担说明）'
+        step2_prompt = STEP2_SKELETON_BUILD.format(
+            query=req.query,
+            outline_nature=req.outline_nature,
+            intrinsic_burden_text=intrinsic_burden_text,
+            revelation_json=json.dumps(revelation, ensure_ascii=False),
+            experience_json=json.dumps(experience, ensure_ascii=False),
+            practice_json=json.dumps(practice, ensure_ascii=False),
+            paths_text=_format_paths_text(paths),
+            key_verses_text=_format_key_verses_text(key_verses_raw),
+        )
+
+        # 调 Claude 生成骨架
+        step2_raw = await call_claude(step2_prompt, temperature=0, max_tokens=2048)
+        skeleton = _parse_step2_skeleton(step2_raw)
 
     # Dense 检索用原始 query + 四个改写句（共最多5路）
     dense_query_list = [req.query] + rewritten_queries[:4]
@@ -225,16 +287,29 @@ async def panai2_query(req: QueryRequest):
 
     # 最终 chunks = main_results + expanded_results
     final_results = main_results + expanded_results
-    chunks_text = format_chunks(final_results)
     metadata_lines = []
     if req.burden_description.strip():
         metadata_lines.append(f'负担说明：{req.burden_description.strip()}')
     metadata_block = '\n'.join(metadata_lines)
-    prompt = STEP5_GENERATION_FLAT.format(
-        query=req.query,
-        metadata_block=metadata_block,
-        chunks=chunks_text
-    )
+
+    # 有骨架走 STEP5_GENERATION（骨架绑定段落），无骨架退回 STEP5_GENERATION_FLAT
+    if skeleton:
+        skeleton_with_chunks = _build_skeleton_bound_prompt_block(
+            skeleton, expanded_results, deep, main_results
+        )
+        prompt = STEP5_GENERATION.format(
+            query=req.query,
+            metadata_block=metadata_block,
+            skeleton_with_chunks=skeleton_with_chunks,
+        )
+    else:
+        all_chunks = main_results + expanded_results
+        chunks_text = format_chunks(all_chunks)
+        prompt = STEP5_GENERATION_FLAT.format(
+            query=req.query,
+            metadata_block=metadata_block,
+            chunks=chunks_text,
+        )
     client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY') or os.getenv('CLAUDE_API_KEY'))
     message = client.messages.create(
         model='claude-sonnet-4-6',
@@ -253,6 +328,9 @@ async def panai2_query(req: QueryRequest):
         'rewritten_queries': rewritten_queries,
         'expanded_nodes_count': len(expanded_nodes),
         'expanded_results_count': len(expanded_results),
+        'has_skeleton': skeleton is not None,
+        'skeleton_steps': len(skeleton) if skeleton else 0,
+        'skeleton_preview': [s.get('step', '') for s in skeleton] if skeleton else [],
         'chunks': [
             {
                 'chunk_id': c.get('chunk_id', ''),
