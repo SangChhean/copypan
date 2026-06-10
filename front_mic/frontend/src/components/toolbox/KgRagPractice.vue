@@ -111,12 +111,12 @@
           </button>
         </div>
 
-        <label class="label-sm">原稿请贴这里</label>
+        <label class="label-sm">参考摘录（可选）</label>
         <textarea
-          v-model="draftText"
+          v-model="referenceExcerpt"
           class="textarea"
-          rows="4"
-          placeholder="有原稿直接生成负担说明，无原稿可生成三个负担说明以供选择"
+          rows="8"
+          placeholder="可选：粘贴一段参考摘录，有摘录生成1条负担说明（情境A），无摘录生成3条候选（情境B）"
           :disabled="loading35 || showStep3"
         />
 
@@ -130,7 +130,7 @@
         </div>
 
         <!-- 无原稿：3条候选 -->
-        <div v-if="burdenCandidates.length > 0 && !draftText.trim()" class="candidates-box">
+        <div v-if="burdenCandidates.length > 0 && !referenceExcerpt.trim()" class="candidates-box">
           <label class="label-sm">请选择一条负担说明：</label>
           <div
             v-for="(c, i) in burdenCandidates"
@@ -146,7 +146,7 @@
         <textarea
           v-model="burdenResult"
           class="textarea"
-          rows="3"
+          rows="6"
           placeholder="在此输入或编辑负担说明，也可留空"
           :disabled="loading35 || showStep3"
         />
@@ -287,6 +287,14 @@
         <!-- 生成结果 -->
         <div v-if="result35" class="result-box">
           <div v-if="expandedSummary" class="expanded-summary">{{ expandedSummary }}</div>
+          <div v-if="skeletonStatus" class="skeleton-status" :class="hasSkeleton35 ? 'has-skeleton' : 'no-skeleton'">
+            {{ skeletonStatus }}
+          </div>
+          <div v-if="hasSkeleton35 && skeletonPreview35.length" class="skeleton-preview">
+            <div v-for="(s, i) in skeletonPreview35" :key="i" class="skeleton-step">
+              第{{ i + 1 }}步：{{ s }}
+            </div>
+          </div>
           <div class="result-header">
             <span>生成结果（PanAI 3.5）</span>
             <button class="btn btn-copy" type="button" @click="copyResult35">
@@ -372,7 +380,7 @@ async function copyResult() {
 // ── PanAI 3.5 状态 ────────────────────────────────────────────
 const query35 = ref("");
 const outlineNature35 = ref("一般性");
-const draftText = ref("");
+const referenceExcerpt = ref("");
 const burdenResult = ref("");
 const burdenCandidates = ref([]);
 const selectedCandidate = ref(-1);
@@ -426,6 +434,10 @@ const burdenLoading = ref(false);
 const generateLoading35 = ref(false);
 const result35 = ref("");
 const expandedSummary = ref("");
+const hasSkeleton35 = ref(false)
+const skeletonSteps35 = ref(0)
+const skeletonPreview35 = ref([])
+const skeletonStatus = ref("")
 const rewrittenDisplay = ref([]);
 const errorMsg35 = ref("");
 const copied35 = ref(false);
@@ -466,18 +478,21 @@ async function generateBurden() {
       body: JSON.stringify({
         query: query35.value.trim(),
         outline_nature: outlineNature35.value,
-        draft_text: draftText.value.trim(),
+        audience: "",
+        reference_excerpt: referenceExcerpt.value.trim(),
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       errorMsg35.value = data.detail || `请求失败（${res.status}）`;
-    } else if (data.burdens && data.burdens.length > 0) {
-      if (draftText.value.trim()) {
-        burdenResult.value = data.burdens[0];
-      } else {
-        burdenCandidates.value = data.burdens;
-      }
+    } else if (data.scenario === 'A' && data.result) {
+      burdenResult.value = data.result;
+      burdenCandidates.value = [];
+    } else if (data.scenario === 'B' && data.candidates && data.candidates.length > 0) {
+      burdenCandidates.value = data.candidates;
+      burdenResult.value = "";
+    } else if (data.error) {
+      errorMsg35.value = data.error;
     }
   } catch (e) {
     errorMsg35.value = e?.message || "网络错误";
@@ -550,6 +565,9 @@ async function generate35() {
         burden_description: burdenResult.value.trim(),
         expanded_nodes: nodes,
         rewritten_queries: rewrittenQueries35.value,
+        revelation: revelation35.value.filter((_, i) => revelationChecked.value[i] !== false),
+        experience: experience35.value.filter((_, i) => experienceChecked.value[i] !== false),
+        practice: practice35.value.filter((_, i) => practiceChecked.value[i] !== false),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -558,9 +576,15 @@ async function generate35() {
     else if (data.answer) {
       result35.value = data.answer;
       if (data.expanded_results_count !== undefined) {
-        const nodes = (data.expanded_from_nodes || []).join("、");
-        expandedSummary.value = `路3查询：共找到 ${data.expanded_results_count} 个额外段落，来自概念词：${nodes || "无"}`;
+        const ns = (data.expanded_from_nodes || []).join("、");
+        expandedSummary.value = `路3查询：共找到 ${data.expanded_results_count} 个额外段落，来自概念词：${ns || "无"}`;
       }
+      hasSkeleton35.value = !!data.has_skeleton;
+      skeletonSteps35.value = data.skeleton_steps || 0;
+      skeletonPreview35.value = data.skeleton_preview || [];
+      skeletonStatus.value = data.has_skeleton
+        ? `✅ 有骨架（${data.skeleton_steps} 步）`
+        : "⚠️ 降级模式（无骨架）";
     }
     else errorMsg35.value = "未返回纲目内容";
   } catch (e) {
@@ -679,9 +703,9 @@ async function copyResult35() {
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 16px;
-  font-size: 15px;
-  line-height: 1.8;
+  padding: 14px 16px;
+  font-size: 16px;
+  line-height: 1.9;
   margin-bottom: 16px;
   border: 1.5px solid #dde3e9;
   border-radius: 8px;
@@ -690,6 +714,7 @@ async function copyResult35() {
   resize: vertical;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow-y: auto;
 }
 .textarea:focus { border-color: #2c5f8a; box-shadow: 0 0 0 3px rgba(44,95,138,0.1); }
 .textarea:disabled { opacity: 0.65; cursor: not-allowed; }
@@ -878,6 +903,32 @@ async function copyResult35() {
   border-radius: 6px;
   padding: 8px 14px;
   margin-bottom: 14px;
+}
+.skeleton-status {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.skeleton-status.has-skeleton {
+  background: #e8f5ee;
+  color: #1e6e44;
+}
+.skeleton-status.no-skeleton {
+  background: #fef3e2;
+  color: #8a5c1a;
+}
+.skeleton-preview {
+  background: #f0f7f2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.skeleton-step {
+  font-size: 13px;
+  color: #2d4a38;
+  line-height: 1.8;
 }
 
 /* 结果区 */
