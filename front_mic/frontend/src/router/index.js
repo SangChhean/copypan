@@ -180,6 +180,11 @@ const routes = [
     component: () => import('../components/toolbox/BirdViewB.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/feast-outline-c',
+    component: () => import('../components/toolbox/FeastOutlineC.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
