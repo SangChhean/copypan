@@ -134,6 +134,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/bird-view-b')">
           <span class="card_text">词典-鸟瞰纲目测试</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/feast-outline-b')">
+          <span class="card_text">节期纲目测试</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />

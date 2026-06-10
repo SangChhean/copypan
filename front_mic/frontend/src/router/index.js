@@ -181,9 +181,14 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/feast-outline-c',
-    component: () => import('../components/toolbox/FeastOutlineC.vue'),
+    path: '/feast-outline-b',
+    component: () => import('../components/toolbox/FeastOutlineB.vue'),
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/feast-outline-c',
+     component: () => import('../components/toolbox/FeastOutlineC.vue'),
+     meta: { requiresAuth: true },
   },
 ];
 
