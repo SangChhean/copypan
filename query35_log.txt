@@ -1,0 +1,53 @@
+INFO:generate_outline:[3.5] query=���������ǵ�����
+INFO:generate_outline:[3.5] ʹ��Ԥ�������� Step1
+INFO:generate_outline:[3.5] expanded_nodes=['����������', '��ס�Ļ���', '��������', '��������', '���ܻ���', '�����ĳ���', '��������', '��������', '������']
+INFO:generate_outline:[3.5] rewritten_queries=['���������ǵ�����']
+INFO:httpx:HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+INFO:generate_outline:[3.5] has_skeleton=False, steps=0
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.033s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.034s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.038s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.042s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.046s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.053s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.066s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.080s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.092s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.102s]
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.064s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.087s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.066s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.082s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.062s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.037s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.043s]
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.067s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.034s]
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.036s]
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:elastic_transport.transport:POST http://localhost:9200/kg-rag_life,kg-rag_cwwl,kg-rag_cwwn,kg-rag_others,kg-rag_bib,kg-rag_map_note,kg-rag_7feasts/_search [status:200 duration:0.035s]
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.jina.ai/v1/rerank "HTTP/1.1 200 OK"
+INFO:generate_outline:[3.5] main_results=20
+INFO:generate_outline:[3.5] expanded_results=30
+INFO:httpx:HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+INFO:generate_outline:[3.5] �������
+INFO:     127.0.0.1:11595 - "POST /api/testa/generate_outline/query35 HTTP/1.0" 200 OK

@@ -19,10 +19,22 @@ const toast = ref("");
 // 版本切换
 const mode = ref("2.0"); // '2.0' | '3.5'
 
+// 3.5 负担说明流程
+const burdenSkipped = ref(false)
+const burdenConfirmed = ref(false)
+const referenceExcerpt = ref("")
+const burdenLoading = ref(false)
+const burdenError = ref(null)
+const burdenResult = ref(null)
+const burdenCandidates = ref([])
+const selectedCandidateIndex = ref(0)
+const burdenEditText = ref("")
+const burdenScenario = ref(null)
+
 // 3.5 推荐重点
 const conceptMode = ref("ai"); // 'ai' | 'manual'
 const conceptLoading = ref(false);
-const conceptCandidates = ref(null); // { revelation, experience, practice }
+const conceptCandidates = ref(null);
 const selectedRevelation = ref([]);
 const selectedExperience = ref([]);
 const selectedPractice = ref([]);
@@ -41,6 +53,11 @@ const showExpandedChunks35 = ref(false);
 const formatLoading35 = ref(false);
 const loading35 = ref(false);
 const error35 = ref(null);
+
+// 3.5 链路信息
+const hasSkeleton35 = ref(false);
+const skeletonSteps35 = ref(0);
+const skeletonPreview35 = ref([]);
 
 const outlineNatureOptions = ["一般性", "真理启示", "生命经历", "应用实行"];
 
@@ -73,9 +90,7 @@ const formatLoading = ref(false);
 async function formatAndDownload() {
   const text = answer.value;
   if (!text) return;
-  const fullText = query.value.trim()
-    ? `${query.value.trim()}\n${text}`
-    : text;
+  const fullText = query.value.trim() ? `${query.value.trim()}\n${text}` : text;
   formatLoading.value = true;
   try {
     const res = await fetch("/api/testa/translate/format_download", {
@@ -83,10 +98,7 @@ async function formatAndDownload() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: fullText, lang: "zh" }),
     });
-    if (!res.ok) {
-      showToast("下载失败");
-      return;
-    }
+    if (!res.ok) { showToast("下载失败"); return; }
     const safeName = (query.value || "纲目").replace(/[\\/:*?"<>|]/g, "");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -104,9 +116,7 @@ async function formatAndDownload() {
 
 async function formatAndDownload35() {
   if (!answer35.value) return;
-  const fullText = query.value.trim()
-    ? `${query.value.trim()}\n${answer35.value}`
-    : answer35.value;
+  const fullText = query.value.trim() ? `${query.value.trim()}\n${answer35.value}` : answer35.value;
   formatLoading35.value = true;
   try {
     const res = await fetch("/api/testa/translate/format_download", {
@@ -114,10 +124,7 @@ async function formatAndDownload35() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: fullText, lang: "zh" }),
     });
-    if (!res.ok) {
-      showToast("下载失败");
-      return;
-    }
+    if (!res.ok) { showToast("下载失败"); return; }
     const safeName = (query.value || "纲目").replace(/[\\/:*?"<>|]/g, "");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -157,10 +164,85 @@ function clearAll() {
   expandedChunks35.value = [];
   showChunks35.value = false;
   showExpandedChunks35.value = false;
+  burdenSkipped.value = false;
+  burdenConfirmed.value = false;
+  referenceExcerpt.value = "";
+  burdenLoading.value = false;
+  burdenError.value = null;
+  burdenResult.value = null;
+  burdenCandidates.value = [];
+  selectedCandidateIndex.value = 0;
+  burdenEditText.value = "";
+  burdenScenario.value = null;
+  hasSkeleton35.value = false;
+  skeletonSteps35.value = 0;
+  skeletonPreview35.value = [];
 }
 
 function toggleChunks() {
   showChunks.value = !showChunks.value;
+}
+
+// 负担说明：跳过
+function skipBurden() {
+  burdenSkipped.value = true;
+  burdenDescription.value = "";
+}
+
+// 负担说明：生成
+async function generateBurden() {
+  if (!query.value.trim()) {
+    burdenError.value = "请先输入纲目主题";
+    return;
+  }
+  burdenLoading.value = true;
+  burdenError.value = null;
+  burdenResult.value = null;
+  burdenCandidates.value = [];
+  burdenScenario.value = null;
+  try {
+    const res = await fetch("/api/testa/generate_outline/generate_burden", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query.value.trim(),
+        outline_nature: outlineNature.value,
+        audience: "",
+        reference_excerpt: referenceExcerpt.value.trim(),
+      }),
+    });
+    if (!res.ok) throw new Error("生成失败");
+    const data = await res.json();
+    if (data.scenario === "A") {
+      burdenScenario.value = "A";
+      burdenResult.value = data.result || "";
+      burdenEditText.value = data.result || "";
+    } else if (data.scenario === "B") {
+      burdenScenario.value = "B";
+      burdenCandidates.value = data.candidates || [];
+      selectedCandidateIndex.value = 0;
+      burdenEditText.value = data.candidates?.[0] || "";
+    } else {
+      burdenError.value = data.error || "生成失败，请重试";
+    }
+  } catch (e) {
+    burdenError.value = e.message || "网络错误，请重试";
+  } finally {
+    burdenLoading.value = false;
+  }
+}
+
+// 情境B：选候选
+function selectCandidate(idx) {
+  selectedCandidateIndex.value = idx;
+  burdenEditText.value = burdenCandidates.value[idx] || "";
+}
+
+// 负担说明：确认
+function confirmBurden() {
+  if (!burdenEditText.value.trim()) return;
+  burdenDescription.value = burdenEditText.value.trim();
+  burdenConfirmed.value = true;
 }
 
 async function extractConcepts() {
@@ -218,11 +300,9 @@ async function generate35() {
   loading35.value = true;
   error35.value = null;
   answer35.value = null;
-
   let preset_revelation = [];
   let preset_experience = [];
   let preset_practice = [];
-
   if (conceptMode.value === "ai" && conceptCandidates.value) {
     preset_revelation = selectedRevelation.value;
     preset_experience = selectedExperience.value;
@@ -232,7 +312,6 @@ async function generate35() {
     preset_experience = parseManual(manualExperience.value);
     preset_practice = parseManual(manualPractice.value);
   }
-
   try {
     const res = await fetch("/api/testa/generate_outline/query35", {
       method: "POST",
@@ -258,6 +337,9 @@ async function generate35() {
       expandedCount35.value = data.expanded_results_count || 0;
       chunks35.value = data.chunks || [];
       expandedChunks35.value = data.expanded_chunks || [];
+      hasSkeleton35.value = data.has_skeleton || false;
+      skeletonSteps35.value = data.skeleton_steps || 0;
+      skeletonPreview35.value = data.skeleton_preview || [];
       showToast("纲目生成完成！");
     } else {
       error35.value = "生成失败，请稍后重试";
@@ -282,7 +364,6 @@ async function generate() {
   chunksUsed.value = 0;
   chunksData.value = [];
   showChunks.value = false;
-
   try {
     const res = await fetch("/api/testa/generate_outline/query", {
       method: "POST",
@@ -361,7 +442,8 @@ async function generate() {
         </div>
       </div>
 
-      <div class="field">
+      <!-- 2.0 负担说明输入框 -->
+      <div class="field" v-if="mode === '2.0'">
         <label class="field-label">
           负担说明
           <span class="optional">（可选）</span>
@@ -369,10 +451,84 @@ async function generate() {
         <a-textarea
           v-model:value="burdenDescription"
           placeholder="请输入负担说明…"
-          :disabled="loading || loading35"
+          :disabled="loading"
           :auto-size="{ minRows: 2, maxRows: 4 }"
         />
       </div>
+
+      <!-- 阶段二：负担说明（3.5 模式，未跳过时显示） -->
+      <template v-if="mode === '3.5' && !burdenSkipped">
+        <div class="divider" />
+        <div class="field">
+          <label class="field-label">
+            参考摘录
+            <span class="optional">（可选，用于生成负担说明）</span>
+          </label>
+          <a-textarea
+            v-model:value="referenceExcerpt"
+            placeholder="可粘贴一段职事摘录，AI 将据此生成负担说明…"
+            :disabled="burdenLoading || burdenConfirmed"
+            :auto-size="{ minRows: 2, maxRows: 4 }"
+          />
+        </div>
+        <div class="burden-action-row">
+          <button class="skip-btn" :disabled="burdenLoading || burdenConfirmed" @click="skipBurden">
+            跳过，直接推荐重点
+          </button>
+          <a-button
+            class="burden-btn"
+            :loading="burdenLoading"
+            :disabled="burdenLoading || burdenConfirmed"
+            @click="generateBurden"
+          >
+            {{ burdenLoading ? '生成中…' : '生成负担说明' }}
+          </a-button>
+        </div>
+
+        <!-- 情境A：只读结果 -->
+        <div v-if="burdenScenario === 'A' && burdenResult" class="burden-result-readonly">
+          {{ burdenResult }}
+        </div>
+
+        <!-- 情境B：三条候选 -->
+        <div v-if="burdenScenario === 'B' && burdenCandidates.length" class="burden-candidates">
+          <div class="burden-candidates-label">请选择一条负担说明：</div>
+          <div
+            v-for="(c, idx) in burdenCandidates"
+            :key="idx"
+            class="candidate-item"
+            :class="{ 'candidate-selected': selectedCandidateIndex === idx }"
+            @click="!burdenConfirmed && selectCandidate(idx)"
+          >
+            <div class="candidate-radio">
+              <div class="radio-dot" :class="{ 'radio-checked': selectedCandidateIndex === idx }"></div>
+              <div class="candidate-text">{{ c }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 编辑框（情境A或B填入后显示） -->
+        <div v-if="burdenScenario !== null" class="field" style="margin-top: 10px;">
+          <label class="field-label">生成的负担说明</label>
+          <a-textarea
+            v-model:value="burdenEditText"
+            :disabled="burdenConfirmed"
+            :auto-size="{ minRows: 2, maxRows: 5 }"
+            :class="{ 'burden-locked': burdenConfirmed }"
+          />
+          <div v-if="burdenConfirmed" class="burden-confirmed-notice">
+            ✓ 已确认，负担说明将用于推荐重点
+          </div>
+          <div v-else class="burden-confirm-row">
+            <a-button type="primary" class="burden-confirm-btn" @click="confirmBurden">
+              确认，开始推荐重点
+            </a-button>
+          </div>
+        </div>
+
+        <!-- 负担说明错误 -->
+        <div v-if="burdenError" class="error-msg" style="margin-top: 8px;">{{ burdenError }}</div>
+      </template>
 
       <div class="divider" />
 
@@ -477,7 +633,7 @@ async function generate() {
         <button
           v-if="conceptMode === 'ai'"
           class="recommend-btn"
-          :disabled="conceptLoading"
+          :disabled="conceptLoading || (!burdenConfirmed && !burdenSkipped)"
           @click="extractConcepts"
         >
           <i class="ti ti-sparkles" aria-hidden="true"></i>
@@ -534,6 +690,65 @@ async function generate() {
     <!-- 3.5 结果区 -->
     <div v-show="mode === '3.5'">
       <div v-if="error35" class="error-msg">{{ error35 }}</div>
+
+      <div v-if="answer35" class="card chain-info-card">
+        <div class="chain-info-title">链路信息</div>
+        <!-- Step1 三层概念 -->
+        <div v-if="chunks35.length || expandedChunks35.length" class="chain-concepts">
+          <div class="chain-layer">
+            <span class="chain-layer-dot dot-revelation"></span>
+            <span class="chain-layer-label">真理启示</span>
+            <span
+              v-for="word in selectedRevelation"
+              :key="word"
+              class="tag tag-revelation"
+            >{{ word }}</span>
+          </div>
+          <div class="chain-layer">
+            <span class="chain-layer-dot dot-experience"></span>
+            <span class="chain-layer-label">生命经历</span>
+            <span
+              v-for="word in selectedExperience"
+              :key="word"
+              class="tag tag-experience"
+            >{{ word }}</span>
+          </div>
+          <div class="chain-layer">
+            <span class="chain-layer-dot dot-practice"></span>
+            <span class="chain-layer-label">应用实行</span>
+            <span
+              v-for="word in selectedPractice"
+              :key="word"
+              class="tag tag-practice"
+            >{{ word }}</span>
+          </div>
+        </div>
+        <div class="divider" />
+        <!-- 骨架状态 -->
+        <div class="chain-skeleton-status">
+          <span v-if="hasSkeleton35" class="skeleton-badge skeleton-badge-ok">
+            ✓ 有骨架（{{ skeletonSteps35 }}步）
+          </span>
+          <span v-else class="skeleton-badge skeleton-badge-warn">
+            ⚠ 降级模式（无骨架）
+          </span>
+        </div>
+        <!-- 骨架步骤 -->
+        <div v-if="hasSkeleton35 && skeletonPreview35.length" class="chain-skeleton-steps">
+          <div
+            v-for="(item, idx) in skeletonPreview35"
+            :key="idx"
+            class="skeleton-step-item"
+          >
+            <div>
+              <span class="skeleton-step-num">第{{ idx + 1 }}步</span>{{ item.step }}
+            </div>
+            <div v-if="item.path_evidence" class="skeleton-path-evidence">
+              {{ item.path_evidence }}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div v-if="answer35" class="card result-card">
         <div class="result-head">
@@ -1016,5 +1231,194 @@ async function generate() {
   color: #d46b08;
   border: 0.5px solid #ffd591;
   margin-left: 4px;
+}
+.burden-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.skip-btn {
+  background: transparent;
+  border: none;
+  color: #8c8c8c;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.skip-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.burden-btn {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+  color: #0958d9;
+  font-size: 13px;
+  font-weight: 500;
+}
+.burden-result-readonly {
+  background: #f0f7ff;
+  border: 1px solid #bae0ff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #0958d9;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.burden-candidates {
+  margin-top: 8px;
+}
+.burden-candidates-label {
+  font-size: 12px;
+  color: #d46b08;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.candidate-item {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: #fafafa;
+  cursor: pointer;
+}
+.candidate-item:hover {
+  border-color: #1890ff;
+}
+.candidate-selected {
+  border-color: #1890ff;
+  background: #e6f7ff;
+}
+.candidate-radio {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.radio-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid #d9d9d9;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.radio-checked {
+  border-color: #1890ff;
+  background: #1890ff;
+  box-shadow: inset 0 0 0 2.5px #e6f7ff;
+}
+.candidate-text {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+}
+.burden-locked {
+  background: #f5f5f5 !important;
+  color: #8c8c8c !important;
+}
+.burden-confirmed-notice {
+  font-size: 12px;
+  color: #52c41a;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.burden-confirm-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.burden-confirm-btn {
+  font-size: 13px;
+  font-weight: 500;
+}
+.chain-info-card {
+  background: #f0f7ff;
+  border: 1px solid #bae0ff;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 0 16px 10px;
+}
+.chain-info-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0958d9;
+  margin-bottom: 10px;
+}
+.chain-concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.chain-layer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chain-layer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.chain-layer-label {
+  font-size: 11px;
+  color: #8c8c8c;
+  font-weight: 500;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.chain-skeleton-status {
+  margin-bottom: 8px;
+}
+.skeleton-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.skeleton-badge-ok {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #389e0d;
+}
+.skeleton-badge-warn {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  color: #d46b08;
+}
+.chain-skeleton-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.skeleton-step-item {
+  font-size: 12px;
+  color: #555;
+  padding: 3px 0 3px 10px;
+  border-left: 2px solid #b7eb8f;
+  line-height: 1.5;
+}
+.skeleton-step-num {
+  font-size: 11px;
+  color: #389e0d;
+  font-weight: 500;
+  margin-right: 6px;
+}
+.skeleton-path-evidence {
+  font-size: 11px;
+  color: #8c8c8c;
+  margin-top: 2px;
+  padding-left: 10px;
+  font-family: var(--font-mono, monospace);
 }
 </style>
