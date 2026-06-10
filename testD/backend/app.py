@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from testD.backend.enhanced_translate_router import router
+from testD.backend.retrieve_test_router import router as retrieve_test_router
 
 app = FastAPI(title="testD Enhanced Translate (debug)")
 app.add_middleware(
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+app.include_router(retrieve_test_router)
 
 if __name__ == "__main__":
     import uvicorn

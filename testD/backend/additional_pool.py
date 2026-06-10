@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Additional Pool：本地 pool.jsonl 整行缓存。"""
+"""Additional Pool：本地 pool.jsonl 整行缓存。
+
+``normalize_zh`` / ``zh_eq`` / ``zh_contains`` 是 testD 检索与 Pool 匹配的**唯一**
+中文归一化入口（OpenCC t2s + ``_VARIANT_MAP`` + NFKC + 去标点）。
+凡中文全等、子串 ``in`` 比对均须经此模块，勿另写繁简或去标点逻辑。
+
+调用方：``enhanced_translate_service``、``source_translator``、
+``retrieve_test_router``、Additional-pool 工具脚本。
+"""
 from __future__ import annotations
 
 import json
@@ -8,6 +16,8 @@ import os
 import re
 import shutil
 import unicodedata
+
+import opencc as _opencc
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -20,10 +30,42 @@ _POOL_FILE = _POOL_DIR / "pool.jsonl"
 _cache_by_norm: dict[str, dict[str, Any]] = {}
 _cache_mtime: float = 0.0
 
+_T2S = _opencc.OpenCC("t2s")
 
-def normalize_zh(text: str) -> str:
-    text = unicodedata.normalize("NFKC", text or "")
-    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
+# 异体字/繁简混用归一化：仅用于生成匹配键，不影响存储与展示文本。
+# OpenCC 是词组级转换，单字残留（如「藉一个」「显著/显着」）由此表兜底。
+# 注意：不收 祢/祂（神学专用）、甚/祇（简体有独立含义，误映射风险高）。
+_VARIANT_MAP = str.maketrans({
+    "藉": "借",
+    "著": "着",
+    "彀": "够",
+    "裏": "里",
+    "裡": "里",
+    "於": "于",
+    "麽": "么",
+    "牠": "它",
+    "那": "哪",
+    "豫": "预",
+})
+
+
+def normalize_zh(s: str) -> str:
+    s = _T2S.convert(s or "")
+    s = s.translate(_VARIANT_MAP)
+    s = unicodedata.normalize("NFKC", s)
+    return re.sub(r"[\W_]+", "", s, flags=re.UNICODE)
+
+
+def zh_eq(a: str, b: str) -> bool:
+    """中文全等：两侧均经 ``normalize_zh``。"""
+    na, nb = normalize_zh(a), normalize_zh(b)
+    return bool(na) and na == nb
+
+
+def zh_contains(sub: str, s: str) -> bool:
+    """中文子串：``normalize_zh(sub) in normalize_zh(s)``。"""
+    ns, nh = normalize_zh(sub), normalize_zh(s)
+    return bool(ns) and bool(nh) and ns in nh
 
 
 def _load_pool_file() -> dict[str, dict[str, Any]]:
@@ -45,7 +87,8 @@ def _load_pool_file() -> dict[str, dict[str, Any]]:
             en = (rec.get("en") or "").strip()
             if not zh or not en:
                 continue
-            norm = (rec.get("norm_zh") or "").strip() or normalize_zh(zh)
+            # 忽略记录里预存的 norm_zh（可能由旧规则生成），总是按当前规则现算
+            norm = normalize_zh(zh)
             if not norm:
                 continue
             out[norm] = {**rec, "zh": zh, "en": en, "norm_zh": norm}

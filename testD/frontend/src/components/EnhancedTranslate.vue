@@ -1,11 +1,13 @@
 <script setup>
 import ToolsHeader from "@main/components/toolbox/ToolsHeader.vue";
+import RetrieveTest from "./RetrieveTest.vue";
 import { ref, computed } from "vue";
 import { toastSuccess, toastWarning, toastError } from "@main/components/utils/Dialog.js";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const MAX_CONTENT_CHARS = 100_000;
 
+const activeView = ref("translate");
 const content = ref("");
 const direction = ref("zh2en");
 const promptOverride = ref("");
@@ -334,6 +336,7 @@ function statLabel(key) {
     additional_pool_append_skipped: "Pool 跳过",
     gemini_cost_usd: "Gemini 费用",
     total_cost_usd: "总费用",
+    source_translated: "出处已翻译",
   };
   return map[key] || key;
 }
@@ -360,6 +363,8 @@ function normalizeDedupedRef(r, lineIndex) {
     match_type: kind === "exact" ? "direct" : kind === "retrieved" ? "reference" : "none",
     line_index: lineIndex,
     zh: r.zh,
+    source_type: r.source_type || "main",
+    clauses: r.clauses || [],
   };
 }
 
@@ -441,6 +446,16 @@ function downloadRefsTxt() {
   </a-modal>
 
   <div class="page">
+    <div class="view-switcher">
+      <a-button
+        :type="activeView === 'test' ? 'primary' : 'default'"
+        @click="activeView = activeView === 'test' ? 'translate' : 'test'"
+      >
+        检索测试台
+      </a-button>
+    </div>
+
+    <div v-if="activeView === 'translate'">
     <p class="hint">
       逐条检索职事语料后翻译为英文。绿色为直接引用，蓝色为参考翻译。
     </p>
@@ -546,6 +561,15 @@ function downloadRefsTxt() {
             <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
             <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
           </div>
+          <div
+            v-if="group.reference_source_zh"
+            class="ref-source-block"
+          >
+            <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
+            <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
+            <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
+            <span v-else class="ref-source-pending">（待翻译）</span>
+          </div>
           <a-textarea
             v-model:value="editedTranslations[group.line_index]"
             class="line-translation-input"
@@ -574,6 +598,14 @@ function downloadRefsTxt() {
             <div class="ref-card-head">
               <span class="ref-para">Paragraph {{ r.paragraph }}</span>
               <span
+                v-if="r.source_type === 'main'"
+                class="ref-source-tag tag-main"
+              >主参考</span>
+              <span
+                v-else-if="r.source_type === 'clause'"
+                class="ref-source-tag tag-clause"
+              >子句参考</span>
+              <span
                 class="ref-tag-pill"
                 :class="{
                   'tag-direct': r.match_kind === 'exact',
@@ -583,6 +615,13 @@ function downloadRefsTxt() {
               >
                 [{{ matchTypeLabel(r) }}]
               </span>
+            </div>
+            <div
+              v-if="r.source_type === 'clause' && r.clauses?.length"
+              class="ref-clauses"
+            >
+              <span class="ref-label">clause</span>
+              <span class="ref-value">{{ r.clauses.join("；") }}</span>
             </div>
             <div v-if="r.id" class="ref-id">id: {{ r.id }}</div>
             <div v-if="r.text" class="ref-field">
@@ -599,6 +638,8 @@ function downloadRefsTxt() {
         </div>
       </div>
     </div>
+    </div>
+    <RetrieveTest v-else />
   </div>
 </template>
 
@@ -642,6 +683,9 @@ function downloadRefsTxt() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.view-switcher {
   margin-bottom: 0.75rem;
 }
 .err {
@@ -851,5 +895,43 @@ function downloadRefsTxt() {
   margin-top: 0.35rem;
   font-size: 0.8em;
   color: #8c8c8c;
+}
+.ref-source-tag {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+.tag-main {
+  background: rgba(114, 46, 209, 0.08);
+  color: #722ed1;
+}
+.tag-clause {
+  background: rgba(19, 194, 194, 0.08);
+  color: #08979c;
+}
+.ref-clauses {
+  margin-top: 0.35rem;
+}
+.ref-source-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 0.85em;
+}
+.ref-source-zh {
+  color: #8c8c8c;
+}
+.ref-source-arrow {
+  color: #bbb;
+}
+.ref-source-en {
+  color: #1677ff;
+  font-style: italic;
+}
+.ref-source-pending {
+  color: #faad14;
 }
 </style>

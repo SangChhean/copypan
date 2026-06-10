@@ -66,7 +66,7 @@ async def bm25_search(
     for hit in (resp.get("hits") or {}).get("hits") or []:
         src = (hit.get("_source") or {}).copy()
         src["score"] = hit.get("_score") or 0.0
-        src["source"] = "bm25"
+        src["retrieval_route"] = "bm25"
         src["_index"] = hit.get("_index") or ""
         src.setdefault("chunk_id", hit.get("_id", ""))
         out.append(src)
