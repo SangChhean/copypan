@@ -1,0 +1,5 @@
+from ai_search.ai_service import ai_service
+
+get_rough_outline_ai_counts = ai_service.get_rough_outline_ai_counts
+generate_rough_outline = ai_service.generate_rough_outline
+format_rough_outline_docx = ai_service.format_rough_outline_docx

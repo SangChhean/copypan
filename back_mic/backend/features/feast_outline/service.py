@@ -1,0 +1,7 @@
+from ai_search.ai_service import ai_service
+
+format_feast_outline_docx = ai_service.format_feast_outline_docx
+feast_outline_collect_scripture = ai_service.feast_outline_collect_scripture
+feast_outline_morning_revival = ai_service.feast_outline_morning_revival
+feast_outline_transcript = ai_service.feast_outline_transcript
+feast_outline_composite = ai_service.feast_outline_composite

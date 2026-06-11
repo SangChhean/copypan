@@ -58,15 +58,10 @@ logger = logging.getLogger("ai_search")
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# 导入格式刷函数（从 backend 目录导入）
+# 导入格式刷函数（formatters 包）
 try:
-    import sys
-    backend_dir = Path(__file__).resolve().parent.parent
-    logger.debug(f"尝试导入格式刷模块，backend_dir: {backend_dir}")
-    if str(backend_dir) not in sys.path:
-        sys.path.insert(0, str(backend_dir))
-    from format_chinese_outline import format_chinese_outline_docx
-    from format_english_outline import format_english_outline_docx, format_plain_docx
+    from formatters.format_chinese_outline import format_chinese_outline_docx
+    from formatters.format_english_outline import format_english_outline_docx, format_plain_docx
     logger.info("格式刷模块导入成功")
 except ImportError as e:
     format_chinese_outline_docx = None
@@ -126,12 +121,12 @@ if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
         _gemini_system_instruction = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
         try:
-            from .gemini_translation_instruction_en2zh import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
+            from features.outline_translate.gemini_instruction_en2zh import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
             _gemini_system_instruction_en2zh = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ZH
         except Exception:
             _gemini_system_instruction_en2zh = None
         try:
-            from .gemini_translation_instruction_en2es import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
+            from features.outline_translate.gemini_instruction_en2es import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
             _gemini_system_instruction_en2es = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION_EN2ES
         except Exception:
             _gemini_system_instruction_en2es = None
@@ -2244,7 +2239,7 @@ class AISearchService:
                 import sys
                 if str(backend_dir) not in sys.path:
                     sys.path.insert(0, str(backend_dir))
-                from 节期纲目刷格式 import format_feast_outline_docx as apply_feast_format
+                from formatters.feast_format import format_feast_outline_docx as apply_feast_format
                 apply_feast_format(temp_docx_path, outline_type)
             except ImportError as e:
                 logger.warning(f"节期纲目刷格式模块未导入: {e}，跳过格式刷")
@@ -2294,7 +2289,7 @@ class AISearchService:
             # 根据第三段与类型生成下载文件名「【类型】序号 内容.docx」，失败则用默认名
             download_filename = "节期纲目.docx"
             try:
-                from 节期纲目刷格式 import suggest_feast_outline_filename
+                from formatters.feast_format import suggest_feast_outline_filename
                 doc_for_name = Document(temp_docx_path)
                 if len(doc_for_name.paragraphs) >= 3:
                     third_text = doc_for_name.paragraphs[2].text or ""
@@ -2319,7 +2314,7 @@ class AISearchService:
     def feast_outline_collect_scripture(self, outline_text: str) -> str:
         """节期纲目 - 带经文：用经文汇集处理纲目，返回带经文内容的纯文本（用于后续刷格式）。"""
         try:
-            from tools.biblecollection import biblecollection
+            from features.bible_co.biblecollection import biblecollection
         except ImportError:
             logger.warning("biblecollection 未导入，节期纲目带经文功能不可用")
             return outline_text
@@ -2340,7 +2335,7 @@ class AISearchService:
     def feast_outline_morning_revival(self, content: str) -> Dict[str, Any]:
         """节期纲目 - 晨兴信息选读：用 Claude 根据晨兴内容生成纲目。返回 { outline: str, error: str | None }"""
         try:
-            from .feast_outline_prompts import get_morning_revival_prompt
+            from features.feast_outline.prompts import get_morning_revival_prompt
         except ImportError:
             return {"outline": "", "error": "节期纲目 prompt 未找到"}
         prompt = get_morning_revival_prompt(content)
@@ -2374,7 +2369,7 @@ class AISearchService:
         """节期纲目 - 听抄稿：用 Claude 在原纲目基础上加入听抄稿重点。
         若提供 transcript_preface/transcript_addendum，会一并生成序言/添言纲目并返回。"""
         try:
-            from .feast_outline_prompts import get_transcript_prompt
+            from features.feast_outline.prompts import get_transcript_prompt
         except ImportError:
             return {"outline": "", "error": "节期纲目 prompt 未找到"}
         prompt = get_transcript_prompt(original_outline, transcript)
@@ -2439,7 +2434,7 @@ class AISearchService:
     def feast_outline_composite(self, transcript_outline: str, morning_revival_outline: str) -> Dict[str, Any]:
         """节期纲目 - 复合：用 Claude 将晨兴纲目融入听抄稿纲目。返回 { outline: str, error: str | None }"""
         try:
-            from .feast_outline_prompts import get_composite_prompt
+            from features.feast_outline.prompts import get_composite_prompt
         except ImportError:
             return {"outline": "", "error": "节期纲目 prompt 未找到"}
         prompt = get_composite_prompt(transcript_outline, morning_revival_outline)
@@ -2466,7 +2461,7 @@ class AISearchService:
     def feast_outline_preface(self, content: str) -> Dict[str, Any]:
         """节期纲目 - 序言：用 Claude 将序言内容整理成纲目格式。返回 { outline: str, error: str | None }"""
         try:
-            from .feast_outline_prompts import get_preface_outline_prompt
+            from features.feast_outline.prompts import get_preface_outline_prompt
         except ImportError:
             return {"outline": "", "error": "节期纲目 prompt 未找到"}
         prompt = get_preface_outline_prompt(content)
@@ -2493,7 +2488,7 @@ class AISearchService:
     def feast_outline_addendum(self, content: str) -> Dict[str, Any]:
         """节期纲目 - 添言：用 Claude 将添言内容整理成纲目格式。返回 { outline: str, error: str | None }"""
         try:
-            from .feast_outline_prompts import get_addendum_outline_prompt
+            from features.feast_outline.prompts import get_addendum_outline_prompt
         except ImportError:
             return {"outline": "", "error": "节期纲目 prompt 未找到"}
         prompt = get_addendum_outline_prompt(content)
@@ -2779,7 +2774,7 @@ class AISearchService:
     def get_rough_outline_ai_counts(self) -> Dict[str, int]:
         """返回每种纲目类型对应的 AI 数量（即该类型需调用几次 API）。"""
         try:
-            from .rough_outline_prompts import get_ai_configs
+            from features.rough_outline.prompts import get_ai_configs
             types = ("polish", "beginner", "youth", "truth", "sharing")
             return {t: len(get_ai_configs(t)) for t in types}
         except Exception as e:
@@ -2807,7 +2802,7 @@ class AISearchService:
             }
         """
         try:
-            from .rough_outline_prompts import get_prompt_template, get_ai_configs
+            from features.rough_outline.prompts import get_prompt_template, get_ai_configs
             
             ai_configs = get_ai_configs(outline_type)
             if not ai_configs:
@@ -3302,7 +3297,7 @@ def _append_transcript_info_section(
         _backend = Path(__file__).resolve().parent.parent
         if str(_backend) not in sys.path:
             sys.path.insert(0, str(_backend))
-        from 节期纲目刷格式 import apply_custom_92_style
+        from formatters.feast_format import apply_custom_92_style
     except ImportError:
         apply_custom_92_style = None
     for line in combined.split("\n"):

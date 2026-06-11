@@ -29,12 +29,18 @@ from database.upopt import opt
 from database.datalist import datalist
 from user.users import user_opt
 from user.ivcode import iv_opt
-from tools.biblecollection import biblecollection
 from ai_search import ai_router
-from ai_search.polish_router import router as polish_router
-from ai_search.enhanced_translate_router import router as enhanced_translate_official_router
-from roundtable import roundtable_router
-from kg_rag.kg_rag_router import router as kg_rag_router, feast_router
+from features.enhanced_translate.router import router as enhanced_translate_official_router
+from features.roundtable import roundtable_router
+from kg_rag.kg_rag_router import router as kg_rag_router
+from features.feast_outline_maker.feast_router import feast_router
+from features.zh_convert.router import router as zh_convert_router
+from features.outline_translate.router import router as outline_translate_router
+from features.rough_outline.router import router as rough_outline_router
+from features.feast_outline.router import router as feast_outline_router
+from features.info_retrieval.router import router as info_retrieval_router
+from features.bible_co.router import router as bible_co_router
+from features.article_polish.router import router as article_polish_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
 import asyncio
@@ -212,60 +218,6 @@ def get_map(refid: str = Form()):
         pass
 
 
-@api_router.post("/getvers", dependencies=[Depends(test_token)])
-def get_vers(input: str = Form(), lang: str = Form(default="zh")):
-    try:
-        return biblecollection(input, lang)
-    except:
-        return JSONResponse(content={"error": "404 Not Found"}, status_code=404)
-
-
-@api_router.post("/getvers/format_download", dependencies=[Depends(test_token)])
-def getvers_format_download(contents: str = Form(), filename: str = Form(default="英文经文汇集")):
-    try:
-        from ai_search.ai_service import format_english_bibco_docx
-        contents = contents.replace("\r\n", "\n").replace("\r", "\n")
-        result = format_english_bibco_docx(contents, filename)
-        return result
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-
-
-@api_router.post("/getvers/format_download_zh", dependencies=[Depends(test_token)])
-def getvers_format_download_zh(
-    contents: str = Form(),
-    filename: str = Form(default="中文经文汇集"),
-):
-    try:
-        import base64
-        from ai_search.ai_service import ai_service
-
-        contents = contents.replace("\r\n", "\n").replace("\r", "\n")
-        # 加三行空篇头，避免前三段强制样式破坏纲目内容
-        # 纯 \n 空行会在刷格式时被 delete_empty_paragraphs 删除，用零宽空格占位
-        _header_placeholder = "\u200b"
-        padded = f"{_header_placeholder}\n{_header_placeholder}\n{_header_placeholder}\n{contents}"
-        result = ai_service.format_feast_outline_docx(
-            contents=[padded],
-            outline_type="with_scripture",
-        )
-        if result.get("error") and not result.get("docx_bytes"):
-            return JSONResponse(content={"error": result["error"]}, status_code=400)
-        docx_bytes = result.get("docx_bytes")
-        if not docx_bytes:
-            return JSONResponse(
-                content={"error": result.get("error") or "生成 DOCX 失败"},
-                status_code=400,
-            )
-        out_name = filename if filename.endswith(".docx") else f"{filename}.docx"
-        return {
-            "docx_base64": base64.b64encode(docx_bytes).decode("utf-8"),
-            "filename": out_name,
-        }
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-
-
 @api_router.post("/kg_rag/bird_view/format_download", dependencies=[Depends(test_token)])
 def bird_view_format_download(
     contents: str = Form(),
@@ -277,7 +229,7 @@ def bird_view_format_download(
     """鸟瞰纲目刷格式下载。"""
     try:
         import base64
-        from bird_view_format import format_bird_view_docx
+        from formatters.bird_view_format import format_bird_view_docx
         contents = contents.replace("\r\n", "\n").replace("\r", "\n")
         with_source_bool = with_source.lower() == "true"
         docx_bytes = format_bird_view_docx(
@@ -438,8 +390,14 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 
 # AI 搜索路由（Claude 问答 / RAG）
 app.include_router(ai_router)
-# 文章润色
-app.include_router(polish_router)
+# Feature 层路由（阶段一：与 ai_router 并存）
+app.include_router(zh_convert_router)
+app.include_router(outline_translate_router)
+app.include_router(rough_outline_router)
+app.include_router(feast_outline_router)
+app.include_router(info_retrieval_router)
+app.include_router(bible_co_router)
+app.include_router(article_polish_router)
 # 增强式翻译（主站副本，中→英）
 app.include_router(enhanced_translate_official_router)
 # AI 圆桌路由
@@ -470,9 +428,6 @@ app.include_router(test_b_zh_router)
 # testD 增强式翻译（业务在 testD/，此处仅挂载路由）
 from testD.backend.enhanced_translate_router import router as enhanced_translate_router
 app.include_router(enhanced_translate_router)
-
-from church_polish_router import router as church_polish_router
-app.include_router(church_polish_router)
 
 # 前端构建产物（Vite dist）；须在所有 API 路由注册之后挂载，避免覆盖 /api
 _FRONTEND_DIST = pt(__file__).resolve().parents[2] / "front_mic" / "frontend" / "dist"
