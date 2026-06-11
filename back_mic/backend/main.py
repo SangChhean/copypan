@@ -32,6 +32,7 @@ from user.ivcode import iv_opt
 from tools.biblecollection import biblecollection
 from ai_search import ai_router
 from ai_search.polish_router import router as polish_router
+from ai_search.enhanced_translate_router import router as enhanced_translate_official_router
 from roundtable import roundtable_router
 from kg_rag.kg_rag_router import router as kg_rag_router, feast_router
 from ai_search.monitoring import get_monitoring
@@ -439,6 +440,8 @@ async def upload_file_fun(r: Request, file: UploadFile = File(...)):
 app.include_router(ai_router)
 # 文章润色
 app.include_router(polish_router)
+# 增强式翻译（主站副本，中→英）
+app.include_router(enhanced_translate_official_router)
 # AI 圆桌路由
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）

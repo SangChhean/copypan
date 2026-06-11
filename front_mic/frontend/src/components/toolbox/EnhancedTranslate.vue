@@ -1,15 +1,12 @@
 <script setup>
-import ToolsHeader from "@main/components/toolbox/ToolsHeader.vue";
-import RetrieveTest from "./RetrieveTest.vue";
+import ToolsHeader from "./ToolsHeader.vue";
 import { ref, computed } from "vue";
-import { toastSuccess, toastWarning, toastError } from "@main/components/utils/Dialog.js";
+import { toastSuccess, toastWarning, toastError } from "../utils/Dialog.js";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const MAX_CONTENT_CHARS = 100_000;
 
-const activeView = ref("translate");
 const content = ref("");
-const direction = ref("zh2en");
 const promptOverride = ref("");
 const inputError = ref(null);
 const loading = ref(false);
@@ -24,7 +21,6 @@ const durationMs = ref(null);
 const downloadFormats = ref(["docx"]);
 const downloading = ref(false);
 const downloadingRefsTxt = ref(false);
-/** line_index → 用户编辑后的 gemini_translate */
 const editedTranslations = ref({});
 
 const canTranslate = computed(() => !!(content.value || "").trim());
@@ -52,29 +48,6 @@ function copyText(text) {
   });
 }
 
-async function updatePrompt() {
-  const authToken = localStorage.getItem("token") || null;
-  if (!authToken) {
-    window.location.hash = "/login";
-    return;
-  }
-  try {
-    const res = await fetch(`${apiBase}/api/kg_rag/enhanced_translate/update_prompt`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ prompt: promptOverride.value }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(parseApiError(res, data));
-    toastSuccess("Prompt 已更新");
-  } catch (e) {
-    toastError(e.message || "更新失败");
-  }
-}
-
 function clearAll() {
   content.value = "";
   inputError.value = null;
@@ -87,16 +60,7 @@ function clearAll() {
   summary.value = null;
   warnings.value = [];
   durationMs.value = null;
-}
-
-function translateZh2en() {
-  direction.value = "zh2en";
-  translate();
-}
-
-function translateEn2zh() {
-  direction.value = "en2zh";
-  translate();
+  refsFilter.value = "all";
 }
 
 async function translate() {
@@ -110,10 +74,10 @@ async function translate() {
   editedTranslations.value = {};
   summary.value = null;
   warnings.value = [];
+  refsFilter.value = "all";
 
   if (!text) {
-    inputError.value =
-      direction.value === "en2zh" ? "请先粘贴英文纲目" : "请先粘贴简体中文纲目";
+    inputError.value = "请先粘贴简体中文纲目";
     return;
   }
   if (text.length > MAX_CONTENT_CHARS) {
@@ -129,12 +93,8 @@ async function translate() {
 
   loading.value = true;
   const start = Date.now();
-  const apiPath =
-    direction.value === "en2zh"
-      ? "/api/kg_rag/en2zh"
-      : "/api/kg_rag/enhanced_translate";
   try {
-    const res = await fetch(`${apiBase}${apiPath}`, {
+    const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/translate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -202,7 +162,7 @@ async function saveTranslation(group) {
   }
   savingLineIndex.value = lineIndex;
   try {
-    const res = await fetch(`${apiBase}/api/kg_rag/enhanced_translate/update_translation`, {
+    const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/update_translation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -300,12 +260,36 @@ function isLineGroupShape(arr) {
   return arr.length > 0 && arr[0] != null && arr[0].original_line != null;
 }
 
-/** 后端 refs：按行 [{ line_index, original_line, deduped_refs, line_refs }] */
 const lineRefGroups = computed(() => {
   const raw = refs.value || [];
   if (!raw.length) return [];
   if (isLineGroupShape(raw)) return raw;
   return [];
+});
+
+const refsFilter = ref("all");
+
+/** 行级状态：direct=绿（Pool/精确命中）、reference=蓝（参考翻译）、none=灰（无匹配/降级） */
+function lineStatus(group) {
+  const st = group.stats || {};
+  if (st.additional_pool_line || st.pool_line) return "direct";
+  const kinds = (group.deduped_refs || []).map((r) => effectiveMatchKind(r));
+  if (kinds.includes("exact")) return "direct";
+  if (kinds.includes("retrieved")) return "reference";
+  return "none";
+}
+
+const refsStatusCount = computed(() => {
+  const c = { direct: 0, reference: 0, none: 0 };
+  lineRefGroups.value.forEach((g) => {
+    c[lineStatus(g)] += 1;
+  });
+  return c;
+});
+
+const filteredLineRefGroups = computed(() => {
+  if (refsFilter.value === "all") return lineRefGroups.value;
+  return lineRefGroups.value.filter((g) => lineStatus(g) === refsFilter.value);
 });
 
 const totalDedupedCount = computed(() =>
@@ -336,7 +320,6 @@ function statLabel(key) {
     additional_pool_append_skipped: "Pool 跳过",
     gemini_cost_usd: "Gemini 费用",
     total_cost_usd: "总费用",
-    source_translated: "出处已翻译",
   };
   return map[key] || key;
 }
@@ -363,8 +346,6 @@ function normalizeDedupedRef(r, lineIndex) {
     match_type: kind === "exact" ? "direct" : kind === "retrieved" ? "reference" : "none",
     line_index: lineIndex,
     zh: r.zh,
-    source_type: r.source_type || "main",
-    clauses: r.clauses || [],
   };
 }
 
@@ -433,7 +414,7 @@ function downloadRefsTxt() {
 </script>
 
 <template>
-  <ToolsHeader title="增强式翻译（testD）" />
+  <ToolsHeader title="增强式翻译" />
 
   <a-modal
     v-model:visible="errorModalVisible"
@@ -445,302 +426,370 @@ function downloadRefsTxt() {
     <p>{{ errorModalMessage }}</p>
   </a-modal>
 
-  <div class="page">
-    <div class="view-switcher">
-      <a-button
-        :type="activeView === 'test' ? 'primary' : 'default'"
-        @click="activeView = activeView === 'test' ? 'translate' : 'test'"
-      >
-        检索测试台
-      </a-button>
-    </div>
+  <div class="box">
+    <a-card>
+      <p class="hint">
+        逐条检索职事语料后翻译为英文。绿色为直接引用，蓝色为参考翻译，灰色为无匹配。
+        <strong>输入上限 {{ MAX_CONTENT_CHARS.toLocaleString() }} 字</strong>。
+      </p>
+      <a-divider :style="{ margin: '12px 0' }" />
 
-    <div v-if="activeView === 'translate'">
-    <p class="hint">
-      逐条检索职事语料后翻译为英文。绿色为直接引用，蓝色为参考翻译。
-    </p>
-    <a-alert
-      v-if="warnings.length"
-      type="warning"
-      show-icon
-      class="warn-banner"
-      message="检索服务提示"
-      :description="warnings.join('；') + '（此为临时状态，可稍后重新点击「增强式翻译」重试。）'"
-    />
+      <p class="direction-fixed">翻译方向：简体中文 → 英文</p>
+      <a-divider :style="{ margin: '12px 0' }" />
 
-    <div class="direction-actions">
-      <a-button
-        :type="direction === 'zh2en' ? 'primary' : 'default'"
-        :disabled="!canTranslate || loading"
-        @click="translateZh2en"
-      >
-        {{ loading && direction === "zh2en" ? "翻译中…" : "中翻英" }}
-      </a-button>
-      <a-button
-        :type="direction === 'en2zh' ? 'primary' : 'default'"
-        :disabled="!canTranslate || loading"
-        @click="translateEn2zh"
-      >
-        {{ loading && direction === "en2zh" ? "翻译中…" : "英翻中" }}
-      </a-button>
-      <a-button type="default" danger @click="clearAll">清除</a-button>
-    </div>
-
-    <a-textarea
-      v-model:value="content"
-      :rows="14"
-      :placeholder="
-        direction === 'en2zh'
-          ? '请粘贴英文纲目全文（可含分号子句与行末读经标注，如 —John 3:16:）'
-          : '请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）'
-      "
-      class="input-area"
-    />
-    <p v-if="inputError" class="err">{{ inputError }}</p>
-
-    <div class="prompt-row">
-      <span>附加 Prompt（可选）</span>
-      <a-input v-model:value="promptOverride" placeholder="仅影响本次或保存到服务端" />
-      <a-button size="small" @click="updatePrompt">保存 Prompt</a-button>
-    </div>
-
-    <div v-if="error" class="err panel-err">{{ error }}</div>
-
-    <div v-if="summary" class="summary-block">
-      <div class="summary-head">统计摘要</div>
-      <div class="summary-grid">
-        <template v-for="(val, key) in summary" :key="key">
-          <div
-            v-if="val !== null && val !== undefined"
-            class="summary-item"
-          >
-            <span class="summary-label">{{ statLabel(key) }}</span>
-            <span class="summary-value">
-              {{ key === "gemini_cost_usd" || key === "total_cost_usd" ? formatCost(val) : val }}
-            </span>
-          </div>
-        </template>
+      <div class="textarea-wrap">
+        <a-textarea
+          v-model:value="content"
+          :rows="12"
+          placeholder="请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）"
+          class="content-area"
+          :disabled="loading"
+          :maxlength="MAX_CONTENT_CHARS"
+          show-count
+          allow-clear
+        />
       </div>
-    </div>
 
-    <div v-if="result" class="result-block">
-      <div class="result-head">
-        <span>英文纲目</span>
-        <span v-if="durationMs" class="dur">{{ formatDuration(durationMs) }}</span>
-        <a-button type="link" size="small" @click="copyText(result)">复制</a-button>
-        <a-button type="link" size="small" :loading="downloading" @click="downloadFormatted">
-          下载 DOCX
-        </a-button>
-        <a-button
-          type="link"
-          size="small"
-          :loading="downloadingRefsTxt"
-          :disabled="!lineRefGroups.length"
-          @click="downloadRefsTxt"
+      <div class="prompt-row">
+        <span class="label">附加 Prompt（可选，仅本次请求）</span>
+        <a-input
+          v-model:value="promptOverride"
+          placeholder="留空则使用默认增强翻译规则"
+          :disabled="loading"
+        />
+      </div>
+
+      <div class="action-row">
+        <button
+          type="button"
+          class="action-btn"
+          :disabled="!canTranslate || loading"
+          @click="translate"
         >
-          下载原文+语料
-        </a-button>
+          <span v-if="loading">翻译中…</span>
+          <span v-else>增强式翻译</span>
+        </button>
+        <button type="button" class="clear-btn" :disabled="loading" @click="clearAll">清空</button>
       </div>
-      <pre class="result-text">{{ result }}</pre>
-    </div>
+      <p v-if="loading" class="loading-hint">请耐心等待，逐行检索与翻译可能需要 1～2 分钟</p>
+    </a-card>
 
-    <div v-if="lineRefGroups.length" class="refs-block">
-      <div class="refs-head">
-        <span>参考语料（{{ lineRefGroups.length }} 行 · {{ totalDedupedCount }} 段）</span>
+    <div v-if="inputError" class="error">{{ inputError }}</div>
+    <div v-if="error" class="error">{{ error }}</div>
+
+    <template v-if="result || summary || lineRefGroups.length">
+      <div v-if="warnings.length" class="warn-strip">
+        <div v-for="(w, i) in warnings" :key="i" class="warn-line">{{ w }}</div>
       </div>
-      <div class="refs-list">
-        <div
-          v-for="group in lineRefGroups"
-          :key="`line-${group.line_index}`"
-          class="ref-line-group"
-        >
-          <div class="ref-line-title" :class="lineTypeClass(group)">
-            <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
-            Line {{ group.line_index + 1 }}：{{ group.original_line }}
-            <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
-            <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
-            <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
-          </div>
-          <div
-            v-if="group.reference_source_zh"
-            class="ref-source-block"
-          >
-            <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
-            <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
-            <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
-            <span v-else class="ref-source-pending">（待翻译）</span>
-          </div>
-          <a-textarea
-            v-model:value="editedTranslations[group.line_index]"
-            class="line-translation-input"
-            :auto-size="{ minRows: 1 }"
-            placeholder="编辑该行译文（失焦后自动更新 Additional Pool）"
-            @blur="onTranslationBlur(group)"
-          />
-          <div class="line-translation-actions">
-            <a-button
-              size="small"
-              :loading="savingLineIndex === group.line_index"
-              @click="saveTranslation(group)"
-            >
-              保存
-            </a-button>
-          </div>
-          <div
-            v-for="r in (group.deduped_refs || []).map((x) => normalizeDedupedRef(x, group.line_index))"
-            :key="`${group.line_index}-p-${r.paragraph}-${r.id}`"
-            class="ref-card"
-            :class="{
-              'ref-card-direct': r.match_kind === 'exact',
-              'ref-card-reference': r.match_kind === 'retrieved',
-            }"
-          >
-            <div class="ref-card-head">
-              <span class="ref-para">Paragraph {{ r.paragraph }}</span>
-              <span
-                v-if="r.source_type === 'main'"
-                class="ref-source-tag tag-main"
-              >主参考</span>
-              <span
-                v-else-if="r.source_type === 'clause'"
-                class="ref-source-tag tag-clause"
-              >子句参考</span>
-              <span
-                class="ref-tag-pill"
-                :class="{
-                  'tag-direct': r.match_kind === 'exact',
-                  'tag-reference': r.match_kind === 'retrieved',
-                  'tag-none': r.match_kind === 'none',
-                }"
-              >
-                [{{ matchTypeLabel(r) }}]
+
+      <a-card v-if="summary" class="result-card">
+        <template #title>统计摘要</template>
+        <div class="summary-grid">
+          <template v-for="(val, key) in summary" :key="key">
+            <div v-if="val !== null && val !== undefined" class="summary-item">
+              <span class="summary-label">{{ statLabel(key) }}</span>
+              <span class="summary-value">
+                {{ key === "gemini_cost_usd" || key === "total_cost_usd" ? formatCost(val) : val }}
               </span>
             </div>
-            <div
-              v-if="r.source_type === 'clause' && r.clauses?.length"
-              class="ref-clauses"
+          </template>
+        </div>
+      </a-card>
+
+      <a-card v-if="result" class="result-card">
+        <template #title>
+          <div class="result-title-row">
+            <span>英文纲目</span>
+            <span v-if="durationMs" class="dur">{{ formatDuration(durationMs) }}</span>
+            <button type="button" class="link-btn" @click="copyText(result)">复制</button>
+            <button type="button" class="link-btn" :disabled="downloading" @click="downloadFormatted">
+              {{ downloading ? "下载中…" : "下载 DOCX" }}
+            </button>
+            <button
+              type="button"
+              class="link-btn"
+              :disabled="downloadingRefsTxt || !lineRefGroups.length"
+              @click="downloadRefsTxt"
             >
-              <span class="ref-label">clause</span>
-              <span class="ref-value">{{ r.clauses.join("；") }}</span>
+              {{ downloadingRefsTxt ? "下载中…" : "下载原文+语料" }}
+            </button>
+          </div>
+        </template>
+        <div class="result-scroll">
+          <pre class="result-text">{{ result }}</pre>
+        </div>
+      </a-card>
+
+      <a-card v-if="lineRefGroups.length" class="result-card refs-card">
+        <template #title>
+          参考语料（{{ lineRefGroups.length }} 行 · {{ totalDedupedCount }} 段）
+        </template>
+        <div class="refs-stats">
+          <span
+            class="stat-item stat-all"
+            :class="{ 'stat-active': refsFilter === 'all' }"
+            @click="refsFilter = 'all'"
+          >全部 ({{ lineRefGroups.length }})</span>
+          <span
+            class="stat-item stat-green"
+            :class="{ 'stat-active': refsFilter === 'direct' }"
+            @click="refsFilter = 'direct'"
+          >直接引用 ({{ refsStatusCount.direct }})</span>
+          <span
+            class="stat-item stat-blue"
+            :class="{ 'stat-active': refsFilter === 'reference' }"
+            @click="refsFilter = 'reference'"
+          >参考翻译 ({{ refsStatusCount.reference }})</span>
+          <span
+            class="stat-item stat-gray"
+            :class="{ 'stat-active': refsFilter === 'none' }"
+            @click="refsFilter = 'none'"
+          >无匹配 ({{ refsStatusCount.none }})</span>
+        </div>
+        <div class="refs-scroll">
+        <div class="refs-list">
+          <div
+            v-for="group in filteredLineRefGroups"
+            :key="`line-${group.line_index}`"
+            class="ref-line-group"
+          >
+            <div class="ref-line-title" :class="lineTypeClass(group)">
+              <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
+              Line {{ group.line_index + 1 }}：{{ group.original_line }}
+              <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
+              <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
+              <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
             </div>
-            <div v-if="r.id" class="ref-id">id: {{ r.id }}</div>
-            <div v-if="r.text" class="ref-field">
-              <span class="ref-label">text</span>
-              <span class="ref-value">{{ r.text }}</span>
+            <a-textarea
+              v-model:value="editedTranslations[group.line_index]"
+              class="line-translation-input"
+              :auto-size="{ minRows: 1, maxRows: 4 }"
+              placeholder="编辑该行译文（失焦后自动更新 Additional Pool）"
+              @blur="onTranslationBlur(group)"
+            />
+            <div class="line-translation-actions">
+              <a-button
+                size="small"
+                :loading="savingLineIndex === group.line_index"
+                @click="saveTranslation(group)"
+              >
+                保存
+              </a-button>
             </div>
-            <div v-if="r.en" class="ref-field">
-              <span class="ref-label">en</span>
-              <span class="ref-value">{{ r.en }}</span>
+            <div
+              v-for="r in (group.deduped_refs || []).map((x) => normalizeDedupedRef(x, group.line_index))"
+              :key="`${group.line_index}-p-${r.paragraph}-${r.id}`"
+              class="ref-card"
+              :class="{
+                'ref-card-direct': r.match_kind === 'exact',
+                'ref-card-reference': r.match_kind === 'retrieved',
+              }"
+            >
+              <div class="ref-card-head">
+                <span class="ref-para">Paragraph {{ r.paragraph }}</span>
+                <span
+                  class="ref-tag-pill"
+                  :class="{
+                    'tag-direct': r.match_kind === 'exact',
+                    'tag-reference': r.match_kind === 'retrieved',
+                    'tag-none': r.match_kind === 'none',
+                  }"
+                >
+                  [{{ matchTypeLabel(r) }}]
+                </span>
+              </div>
+              <div v-if="r.id" class="ref-id">id: {{ r.id }}</div>
+              <div v-if="r.text" class="ref-field">
+                <span class="ref-label">text</span>
+                <span class="ref-value">{{ r.text }}</span>
+              </div>
+              <div v-if="r.en" class="ref-field">
+                <span class="ref-label">en</span>
+                <span class="ref-value">{{ r.en }}</span>
+              </div>
+              <div v-if="r.ch_source" class="ref-source-line">ch_source: {{ r.ch_source }}</div>
+              <div v-if="r.en_source" class="ref-source-line">en_source: {{ r.en_source }}</div>
             </div>
-            <div v-if="r.ch_source" class="ref-source-line">ch_source: {{ r.ch_source }}</div>
-            <div v-if="r.en_source" class="ref-source-line">en_source: {{ r.en_source }}</div>
           </div>
         </div>
-      </div>
-    </div>
-    </div>
-    <RetrieveTest v-else />
+        </div>
+      </a-card>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.page {
-  max-width: 960px;
+.box {
+  padding: 1em;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 1rem 1.5rem 3rem;
 }
+
+.box :deep(.ant-card) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 .hint {
-  color: #666;
-  margin-bottom: 0.75rem;
+  color: #555;
+  margin: 0;
+  font-size: 0.95em;
+  line-height: 1.5;
 }
-.warn-banner {
-  margin-bottom: 0.75rem;
-  border: 1px solid #ffd591;
-  background: #fff7e6;
-  border-radius: 8px;
-}
-.warn-banner :deep(.ant-alert-icon) {
-  color: #fa8c16;
-}
-.warn-banner :deep(.ant-alert-message) {
-  color: #d46b08;
+
+.direction-fixed {
+  margin: 0;
   font-weight: 600;
+  color: #333;
+  font-size: 1em;
 }
-.warn-banner :deep(.ant-alert-description) {
-  color: #ad6800;
+
+.textarea-wrap {
+  position: relative;
 }
-.input-area {
+
+.content-area {
   font-family: inherit;
 }
+
 .prompt-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  margin: 0.75rem 0;
-}
-.direction-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-.view-switcher {
-  margin-bottom: 0.75rem;
-}
-.err {
-  color: #cf1322;
-}
-.panel-err {
-  margin: 1rem 0;
-}
-.summary-block {
-  margin-top: 1rem;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  background: #fff;
-}
-.summary-head {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem 1rem;
-}
-.summary-item {
-  display: flex;
   flex-direction: column;
-  font-size: 0.85em;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0;
 }
-.summary-label {
-  color: #8c8c8c;
+
+.prompt-row .label {
+  font-size: 0.9em;
+  color: #555;
 }
-.summary-value {
-  font-weight: 600;
-  color: #262626;
-}
-.result-block {
-  margin-top: 1.5rem;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #fafafa;
-}
-.result-head {
+
+.action-row {
   display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 0.5em 1.5em;
+  font-size: 1em;
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: #40a9ff;
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.clear-btn {
+  padding: 0.5em 1em;
+  font-size: 0.95em;
+  background: #fff;
+  color: #666;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.clear-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.loading-hint {
+  margin: 0.75rem 0 0;
+  color: #888;
+  font-size: 0.9em;
+}
+
+.error {
+  color: #cf1322;
+  margin-top: 0.75rem;
+}
+
+.warn-strip {
+  margin-top: 1rem;
+  padding: 0.65rem 0.85rem;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+}
+
+.warn-line {
+  color: #ad6800;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.result-card {
+  margin-top: 1rem;
+}
+
+.result-title-row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
 }
+
 .dur {
   color: #888;
   font-weight: normal;
   font-size: 0.9em;
 }
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #1890ff;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.link-btn:disabled {
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85em;
+}
+
+.summary-label {
+  color: #8c8c8c;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #262626;
+}
+
+.result-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: #fafafa;
+}
+
 .result-text {
   white-space: pre-wrap;
   word-break: break-word;
@@ -748,28 +797,93 @@ function downloadRefsTxt() {
   font-size: 14px;
   line-height: 1.6;
 }
-.refs-block {
-  margin-top: 1.5rem;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
+
+.refs-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.refs-head {
-  padding: 0.75rem 1rem;
-  font-weight: 600;
+
+.stat-item {
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.stat-all {
+  color: #595959;
   background: #f5f5f5;
+  border: 1px solid #d9d9d9;
 }
+
+.stat-green {
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.stat-blue {
+  color: #096dd9;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+}
+
+.stat-gray {
+  color: #8c8c8c;
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+}
+
+.stat-all.stat-active {
+  background: #595959;
+  color: #fff;
+  border-color: #595959;
+}
+
+.stat-green.stat-active {
+  background: #52c41a;
+  color: #fff;
+  border-color: #52c41a;
+}
+
+.stat-blue.stat-active {
+  background: #1677ff;
+  color: #fff;
+  border-color: #1677ff;
+}
+
+.stat-gray.stat-active {
+  background: #8c8c8c;
+  color: #fff;
+  border-color: #8c8c8c;
+}
+
+.refs-scroll {
+  max-height: 1200px;
+  overflow-y: auto;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: #fafafa;
+}
+
 .refs-list {
-  padding: 0.75rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 .ref-line-group {
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   padding: 0.75rem;
-  background: #fafafa;
+  background: #fff;
 }
+
 .ref-line-title {
   font-weight: 600;
   color: #333;
@@ -782,6 +896,7 @@ function downloadRefsTxt() {
   align-items: center;
   gap: 0.35rem;
 }
+
 .line-type-tag {
   font-size: 0.75em;
   font-weight: 600;
@@ -790,10 +905,12 @@ function downloadRefsTxt() {
   background: #f0f0f0;
   color: #595959;
 }
+
 .line-type-outline .line-type-tag {
   background: rgba(114, 46, 209, 0.1);
   color: #722ed1;
 }
+
 .pool-tag {
   font-size: 0.75em;
   font-weight: 600;
@@ -802,38 +919,39 @@ function downloadRefsTxt() {
   background: rgba(56, 158, 13, 0.1);
   color: #389e0d;
 }
+
 .pool-tag.es-pool {
   background: rgba(22, 119, 255, 0.1);
   color: #1677ff;
 }
+
 .line-translation-input {
   margin-bottom: 0.35rem;
   font-family: inherit;
   font-size: 14px;
 }
-.line-translation-input :deep(textarea) {
-  overflow-y: hidden;
-  resize: none;
-}
+
 .line-translation-actions {
   margin-bottom: 0.65rem;
 }
-.ref-line-group .ref-card {
-  margin-top: 0.5rem;
-}
+
 .ref-card {
   border: 1px solid #e8e8e8;
   border-radius: 10px;
   padding: 0.75rem 1rem;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-top: 0.5rem;
 }
+
 .ref-card-direct {
   border-left: 4px solid #389e0d;
 }
+
 .ref-card-reference {
   border-left: 4px solid #1677ff;
 }
+
 .ref-card-head {
   display: flex;
   flex-wrap: wrap;
@@ -841,42 +959,45 @@ function downloadRefsTxt() {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
+
 .ref-para {
   font-weight: 600;
   color: #333;
 }
-.ref-loc {
-  color: #999;
-  font-size: 0.85em;
-}
+
 .ref-tag-pill {
   font-size: 0.85em;
   font-weight: 600;
   padding: 0.1em 0.45em;
   border-radius: 4px;
 }
+
 .tag-direct {
   color: #389e0d;
   background: rgba(56, 158, 13, 0.08);
 }
+
 .tag-reference {
   color: #1677ff;
   background: rgba(22, 119, 255, 0.08);
 }
+
 .tag-none {
   color: #8c8c8c;
   background: #f5f5f5;
 }
-.ref-id,
-.ref-query {
+
+.ref-id {
   font-size: 0.85em;
   color: #666;
   margin-bottom: 0.35rem;
 }
+
 .ref-field {
   margin-top: 0.35rem;
   line-height: 1.55;
 }
+
 .ref-label {
   display: block;
   font-size: 0.75em;
@@ -885,53 +1006,17 @@ function downloadRefsTxt() {
   text-transform: lowercase;
   margin-bottom: 0.15rem;
 }
+
 .ref-value {
   display: block;
   color: #262626;
   white-space: pre-wrap;
   word-break: break-word;
 }
+
 .ref-source-line {
   margin-top: 0.35rem;
   font-size: 0.8em;
   color: #8c8c8c;
-}
-.ref-source-tag {
-  font-size: 0.75em;
-  font-weight: 600;
-  padding: 0.1em 0.4em;
-  border-radius: 4px;
-}
-.tag-main {
-  background: rgba(114, 46, 209, 0.08);
-  color: #722ed1;
-}
-.tag-clause {
-  background: rgba(19, 194, 194, 0.08);
-  color: #08979c;
-}
-.ref-clauses {
-  margin-top: 0.35rem;
-}
-.ref-source-block {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.35rem;
-  font-size: 0.85em;
-}
-.ref-source-zh {
-  color: #8c8c8c;
-}
-.ref-source-arrow {
-  color: #bbb;
-}
-.ref-source-en {
-  color: #1677ff;
-  font-style: italic;
-}
-.ref-source-pending {
-  color: #faad14;
 }
 </style>
