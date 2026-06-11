@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""增强式翻译 Additional Pool：本地 pool.jsonl 整行缓存。"""
+"""增强式翻译 Additional Pool：本地 pool.jsonl 整行缓存。
+
+``normalize_zh`` / ``zh_eq`` / ``zh_contains`` 是检索与 Pool 匹配的**唯一**
+中文归一化入口（OpenCC t2s + ``_VARIANT_MAP`` + NFKC + 去标点）。
+"""
 from __future__ import annotations
 
 import json
@@ -12,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import opencc as _opencc
+
 logger = logging.getLogger("ai_search.enhanced_translate_pool")
 
 _POOL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "enhanced_translate"
@@ -20,10 +26,37 @@ _POOL_FILE = _POOL_DIR / "pool.jsonl"
 _cache_by_norm: dict[str, dict[str, Any]] = {}
 _cache_mtime: float = 0.0
 
+_T2S = _opencc.OpenCC("t2s")
 
-def normalize_zh(text: str) -> str:
-    text = unicodedata.normalize("NFKC", text or "")
-    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
+_VARIANT_MAP = str.maketrans({
+    "藉": "借",
+    "著": "着",
+    "彀": "够",
+    "裏": "里",
+    "裡": "里",
+    "於": "于",
+    "麽": "么",
+    "牠": "它",
+    "那": "哪",
+    "豫": "预",
+})
+
+
+def normalize_zh(s: str) -> str:
+    s = _T2S.convert(s or "")
+    s = s.translate(_VARIANT_MAP)
+    s = unicodedata.normalize("NFKC", s)
+    return re.sub(r"[\W_]+", "", s, flags=re.UNICODE)
+
+
+def zh_eq(a: str, b: str) -> bool:
+    na, nb = normalize_zh(a), normalize_zh(b)
+    return bool(na) and na == nb
+
+
+def zh_contains(sub: str, s: str) -> bool:
+    ns, nh = normalize_zh(sub), normalize_zh(s)
+    return bool(ns) and bool(nh) and ns in nh
 
 
 def _load_pool_file() -> dict[str, dict[str, Any]]:
@@ -45,7 +78,7 @@ def _load_pool_file() -> dict[str, dict[str, Any]]:
             en = (rec.get("en") or "").strip()
             if not zh or not en:
                 continue
-            norm = (rec.get("norm_zh") or "").strip() or normalize_zh(zh)
+            norm = normalize_zh(zh)
             if not norm:
                 continue
             out[norm] = {**rec, "zh": zh, "en": en, "norm_zh": norm}
@@ -93,7 +126,7 @@ def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tup
         en = (rec.get("en") or "").strip()
         if not zh or not en:
             continue
-        norm = (rec.get("norm_zh") or "").strip() or normalize_zh(zh)
+        norm = normalize_zh(zh)
         if norm in existing and not force:
             skipped += 1
             continue
@@ -158,7 +191,6 @@ def _write_pool(existing: dict[str, dict[str, Any]]) -> None:
 
 
 def update_record(zh: str, new_en: str) -> bool:
-    """按 norm_zh 查找条目，替换 en 字段并写回 pool.jsonl。"""
     zh = (zh or "").strip()
     new_en = (new_en or "").strip()
     if not zh or not new_en:

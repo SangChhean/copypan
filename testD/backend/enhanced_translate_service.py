@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 load_dotenv(ensure_main_backend_path() / ".env")
 
-from embedding_adapter import OPENROUTER_API_KEY
+from kg_rag.embedding_adapter import OPENROUTER_API_KEY
 from kg_rag.retrieval import bm25_search, dense_search, rrf_merge
 from testD.backend.rerank_service import rerank
 from es_config import es as es_client

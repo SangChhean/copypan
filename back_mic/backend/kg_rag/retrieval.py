@@ -206,7 +206,7 @@ async def rerank(
     texts = [d.get("text") or "" for d in results]
     try:
         from ai_search.reranker_service import rerank as _jina_rerank
-        indices, degraded = await _jina_rerank(query, texts, top_n=top_n)
+        indices, _scores, degraded = await _jina_rerank(query, texts, top_n=top_n)
         if degraded:
             logger.info("[KG-RAG] Jina Reranker degraded=True（原序或解析失败）")
     except Exception as e:
