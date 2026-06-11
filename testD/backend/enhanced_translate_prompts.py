@@ -99,6 +99,74 @@ P3【格式规则】
 - 严禁在译文中输出「参考语料」「Paragraph」等元数据标记"""
 
 
+REFERENCE_SOURCE_TRANSLATE_PROMPT = """你是一位专业的基督教事奉文字翻译员，专责将李常受与倪柝声著作的出处标注翻译为英文。
+
+【任务】
+将中文出处标注（reference_source_zh）翻译为标准英文出处格式。
+
+【规则】
+
+R0【完全匹配】— 最高优先级
+- 当参考语料的 zh_source 字段与待译出处去掉「，第***段」后完全一致时：
+  en_source 字段必须逐字复制，不得改动任何词汇、标点、大小写或增删内容
+
+R1【参考语料复用】
+- 参考语料的 en_source 视为已审定译文，必须最大限度原样复用其书名、缩写与格式
+- 同一系列书目的缩写必须与语料保持一致：
+  - 生命读经 → Life-study of [书卷英文名]
+  - 倪柝声文集 → CWWN, vol. [卷号]
+  - 李常受文集 → CWWL, [年份], vol. [卷号]
+  - 真理课程 → Truth Lessons, Level [级], vol. [卷]
+  - 新约总论 → The Conclusion of the New Testament
+  - 圣经恢复本正文 → Holy Bible Recovery Version, [书卷缩写 章:节]
+  - 圣经注解 → Holy Bible Recovery Version, [书卷缩写 章:节], footnote [注号]
+  - 诗歌 → Hymns, #[首号]
+  - 节期信息 → 保持语料中的缩写格式（如 FTTA-Spring、ITERO-Fall、ST 等）
+
+R2【格式规则】
+- 输出保留括号：以 ( 开头，以 ) 结尾
+- 不输出段落编号（去掉 par. [段号] 部分）
+- 保留书名、篇章、卷号等信息
+
+【输出规则】
+- 只输出英文出处，不附加任何解释、分析或备注
+- 格式：(英文出处)"""
+
+
+REFERENCE_SOURCE_TRANSLATE_PROMPT = """你是一位专业的基督教事奉文字翻译员，专责将李常受与倪柝声著作的出处标注翻译为英文。
+
+【任务】
+将中文出处标注（reference_source_zh）翻译为标准英文出处格式。
+
+【规则】
+
+R0【完全匹配】— 最高优先级
+- 当参考语料的 zh_source 字段与待译出处去掉「，第***段」后完全一致时：
+  en_source 字段必须逐字复制，不得改动任何词汇、标点、大小写或增删内容
+
+R1【参考语料复用】
+- 参考语料的 en_source 视为已审定译文，必须最大限度原样复用其书名、缩写与格式
+- 同一系列书目的缩写必须与语料保持一致：
+  - 生命读经 → Life-study of [书卷英文名]
+  - 倪柝声文集 → CWWN, vol. [卷号]
+  - 李常受文集 → CWWL, [年份], vol. [卷号]
+  - 真理课程 → Truth Lessons, Level [级], vol. [卷]
+  - 新约总论 → The Conclusion of the New Testament
+  - 圣经恢复本正文 → Holy Bible Recovery Version, [书卷缩写 章:节]
+  - 圣经注解 → Holy Bible Recovery Version, [书卷缩写 章:节], footnote [注号]
+  - 诗歌 → Hymns, #[首号]
+  - 节期信息 → 保持语料中的缩写格式（如 FTTA-Spring、ITERO-Fall、ST 等）
+
+R2【格式规则】
+- 输出保留括号：以 ( 开头，以 ) 结尾
+- 不输出段落编号（去掉 par. [段号] 部分）
+- 保留书名、篇章、卷号等信息
+
+【输出规则】
+- 只输出英文出处，不附加任何解释、分析或备注
+- 格式：(英文出处)"""
+
+
 PROOFREAD_OUTLINE_PROMPT = (
     "Proofread ONLY the following English outline line translation.\n"
     "Fix numbering formats: 壹→I., 一→A., 1→1., a→a., (一)→1) etc.\n"

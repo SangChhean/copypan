@@ -16,7 +16,7 @@ STEP1_CONCEPT_EXTRACTION = """你是一位深研圣经与倪柝声、李常受�
 {history_questions}用户提问：
 {question}
 
-以下是职事信息概念词表（共 637 个概念）：
+以下是职事信息概念词表：
 {concept_list}
 
 ## 任务

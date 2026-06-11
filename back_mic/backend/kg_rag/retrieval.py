@@ -8,14 +8,14 @@ logger = logging.getLogger("kg_rag")
 
 # ES 客户端由调用方传入；embedding 与 reranker 从项目现有模块导入
 try:
-    from embedding_adapter import get_embedding
+    from kg_rag.embedding_adapter import get_embedding
 except ImportError:
     import sys
     from pathlib import Path
     _backend = str(Path(__file__).resolve().parents[2])
     if _backend not in sys.path:
         sys.path.insert(0, _backend)
-    from embedding_adapter import get_embedding
+    from kg_rag.embedding_adapter import get_embedding
 
 
 async def bm25_search(
@@ -66,7 +66,7 @@ async def bm25_search(
     for hit in (resp.get("hits") or {}).get("hits") or []:
         src = (hit.get("_source") or {}).copy()
         src["score"] = hit.get("_score") or 0.0
-        src["source"] = "bm25"
+        src["retrieval_route"] = "bm25"
         src["_index"] = hit.get("_index") or ""
         src.setdefault("chunk_id", hit.get("_id", ""))
         out.append(src)
