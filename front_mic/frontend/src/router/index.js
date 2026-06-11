@@ -194,8 +194,17 @@ const routes = [
     path: '/feast-outline-c',
      component: () => import('../components/toolbox/FeastOutlineC.vue'),
      meta: { requiresAuth: true },
+},
+  {
+    path: '/rough-outline-c',
+     component: () => import('../components/toolbox/RoughOutlineC.vue'),
+     meta: { requiresAuth: true },
   },
-  { path: '/rough-outline-b', component: () => import('../components/toolbox/RoughOutlineB.vue'), meta: { requiresAuth: true } },
+  {
+    path: '/rough-outline-b',
+     component: () => import('../components/toolbox/RoughOutlineB.vue'),
+     meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
