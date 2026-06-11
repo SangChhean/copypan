@@ -205,6 +205,11 @@ const routes = [
      component: () => import('../components/toolbox/RoughOutlineB.vue'),
      meta: { requiresAuth: true },
   },
+  {
+    path: '/ministerialize-b',
+    component: () => import('../components/toolbox/MinisterializeB.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
