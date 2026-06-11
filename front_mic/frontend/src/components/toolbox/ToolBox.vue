@@ -113,6 +113,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/rough-outline-a')">
           <span class="card_text">毛胚纲目</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/ministerialize-a')">
+          <span class="card_text">纲目职事化</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
