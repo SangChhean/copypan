@@ -220,6 +220,7 @@ async def step4_generate(question: str, chunks: list[dict]) -> str:
 - 先用一两句话直接回答问题，再用引用原文展开说明
 - 如果参考段落不足以回答，直接说明未在参考段落中找到相关内容
 - 用简洁清晰的中文回答
+- 用纯文本输出，禁止使用任何 Markdown 语法（不要 **加粗**、# 标题、- 列表符号）；小标题直接用「一、」「二、」编号加换行即可
 - 控制篇幅：选取最相关的 3~5 处原文引用展开，不必罗列所有相关段落
 
 问题：{question}
@@ -269,12 +270,12 @@ async def shutdown() -> None:
         es.close()
 
 
-@app.get("/testc-qa/liveness")
+@app.get("/api/testc/qa/liveness")
 async def liveness():
     return {"status": "ok", "concepts_loaded": len(CONCEPT_NAMES)}
 
 
-@app.post("/testc-qa/query")
+@app.post("/api/testc/qa/query")
 async def qa_query(req: QARequest):
     t0 = time.perf_counter()
     try:
