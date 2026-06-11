@@ -1,0 +1,6 @@
+from ai_search.ai_service import ai_service
+
+translate_outline = ai_service.translate_outline
+translate_outline_en2zh = ai_service.translate_outline_en2zh
+translate_outline_zh2ko = ai_service.translate_outline_zh2ko
+translate_outline_en2es = ai_service.translate_outline_en2es

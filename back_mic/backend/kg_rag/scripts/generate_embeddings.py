@@ -28,7 +28,7 @@ def _batches(items, batch_size):
 
 async def _get_embeddings_kg_rag(texts):
     """调用 embedding_adapter.get_embeddings(texts, profile='kg_rag')。"""
-    from embedding_adapter import get_embeddings
+    from kg_rag.embedding_adapter import get_embeddings
     return await get_embeddings(texts, profile="kg_rag")
 
 

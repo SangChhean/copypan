@@ -1,0 +1,5 @@
+from ai_search.ai_service import ai_service
+
+outline_to_traditional = ai_service.outline_to_traditional
+traditional_to_simplified = ai_service.traditional_to_simplified
+check_error_chars = ai_service.check_error_chars

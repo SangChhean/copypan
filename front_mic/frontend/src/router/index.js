@@ -39,7 +39,7 @@ const routes = [
   },
   {
     path: "/bibco",
-    component: () => import("../components/toolbox/BibleCo.vue"),
+    component: () => import("@/features/bible_co/BibleCo.vue"),
   },
   {
     path: "/cws",
@@ -47,11 +47,11 @@ const routes = [
   },
   {
     path: "/info-retrieval",
-    component: () => import("../components/toolbox/InfoRetrieval.vue"),
+    component: () => import("@/features/info_retrieval/InfoRetrieval.vue"),
   },
   {
     path: "/outline-translate",
-    component: () => import("../components/toolbox/OutlineTranslate.vue"),
+    component: () => import("@/features/outline_translate/OutlineTranslate.vue"),
   },
   {
     path: "/enhanced-translate",
@@ -61,7 +61,7 @@ const routes = [
   },
   {
     path: "/enhanced-translate-official",
-    component: () => import("../components/toolbox/EnhancedTranslate.vue"),
+    component: () => import("@/features/enhanced_translate/EnhancedTranslate.vue"),
     meta: { requiresAuth: true },
   },
   {
@@ -102,39 +102,39 @@ const routes = [
   },
   {
     path: "/zh-convert",
-    component: () => import("../components/toolbox/ZhConvert.vue"),
+    component: () => import("@/features/zh_convert/ZhConvert.vue"),
   },
   {
     path: "/article-polish",
-    component: () => import("../components/toolbox/ArticlePolish.vue"),
+    component: () => import("@/features/article_polish/ArticlePolish.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/rough-outline",
-    component: () => import("../components/toolbox/RoughOutline.vue"),
+    component: () => import("@/features/rough_outline/RoughOutline.vue"),
   },
   {
     path: "/feast-outline",
-    component: () => import("../components/toolbox/FeastOutline.vue"),
+    component: () => import("@/features/feast_outline/FeastOutline.vue"),
   },
   {
     path: "/ministerialize-outline",
     name: "MinisterializeOutline",
-    component: () => import("../components/toolbox/MinisterializeOutline.vue"),
+    component: () => import("@/features/outline_translate/MinisterializeOutline.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/bird-view-outline",
-    component: () => import("../components/toolbox/BirdViewOutline.vue"),
+    component: () => import("@/features/outline_translate/BirdViewOutline.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/feast-outline-maker",
-    component: () => import("../components/toolbox/FeastOutlineMaker.vue"),
+    component: () => import("@/features/feast_outline_maker/FeastOutlineMaker.vue"),
     meta: { requiresAuth: true },
   },
-  { path: "/roundtable", component: () => import("../components/toolbox/RoundTable.vue") },
-  { path: "/roundtable/:id", component: () => import("../components/toolbox/RoundTableDetail.vue") },
+  { path: "/roundtable", component: () => import("@/features/roundtable/RoundTable.vue") },
+  { path: "/roundtable/:id", component: () => import("@/features/roundtable/RoundTableDetail.vue") },
   {
     path: "/kg-rag-test",
     name: "KgRagTest",
@@ -204,11 +204,21 @@ const routes = [
     path: '/rough-outline-b',
      component: () => import('../components/toolbox/RoughOutlineB.vue'),
      meta: { requiresAuth: true },
-  },
+},
   {
     path: '/ministerialize-b',
-    component: () => import('../components/toolbox/MinisterializeB.vue'),
-    meta: { requiresAuth: true },
+     component: () => import('../components/toolbox/MinisterializeB.vue'),
+     meta: { requiresAuth: true },
+  },
+  {
+    path: '/rough-outline-a',
+     component: () => import('../components/toolbox/RoughOutlineA.vue'),
+     meta: { requiresAuth: true },
+  },
+  {
+    path: '/ministerialize-a',
+     component: () => import('../components/toolbox/MinisterializeA.vue'),
+     meta: { requiresAuth: true },
   },
 ];
 

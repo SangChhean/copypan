@@ -220,6 +220,18 @@ async def generate_burden(req: BurdenRequest):
 async def generate_outline_35(req: Query35Request):
     logger.info(f'[3.5] query={req.query}')
 
+    # ── Neo4j 自动重连 ────────────────────────────────────
+    global concept_list_text
+    if not concept_list_text:
+        logger.warning('[3.5] concept_list_text 为空，尝试重连 Neo4j...')
+        try:
+            neo4j_client.startup()
+            names = neo4j_client.get_concept_names()
+            concept_list_text = '、'.join(names)
+            logger.info(f'[3.5] 重连成功，概念数：{len(names)}')
+        except Exception as e:
+            logger.error(f'[3.5] Neo4j 重连失败：{e}')
+
     # ── Step1 + Query Rewrite 并发 ────────────────────────
     use_preset = bool(req.preset_revelation or req.preset_experience or req.preset_practice)
     if use_preset:
@@ -274,6 +286,7 @@ async def generate_outline_35(req: Query35Request):
             key_verses_text=_format_key_verses_text(key_verses),
         )
         raw_skeleton = await call_claude(step2_prompt, system=None, max_tokens=2048, temperature=0)
+        logger.info(f'[3.5] Step2 raw: {repr(raw_skeleton[:800])}')
         skeleton = _parse_step2_skeleton(raw_skeleton)
     logger.info(f'[3.5] has_skeleton={skeleton is not None}, steps={len(skeleton) if skeleton else 0}')
 
