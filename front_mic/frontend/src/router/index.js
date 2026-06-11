@@ -221,6 +221,11 @@ const routes = [
      meta: { requiresAuth: true },
   },
   {
+    path: '/qa-simple-a',
+    component: () => import('../components/toolbox/QaSimpleA.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/ministerialize-c',
     component: () => import('../components/toolbox/MinisterializeC.vue'),
     meta: { requiresAuth: true },
