@@ -269,7 +269,7 @@ def _write_cache(redis_client, key: str, value: dict) -> None:
 # 监控写入
 # ---------------------------------------------------------------------------
 
-_MONITOR_KEY = "qa:monitor:records"
+_MONITOR_KEY = os.getenv("QA_MONITOR_KEY", "qa:monitor:records")
 _MONITOR_MAX = 5000  # 最多保留最近 N 条
 
 

@@ -37,10 +37,11 @@ PRICE_INPUT_PER_MILLION = 3.0
 PRICE_OUTPUT_PER_MILLION = 15.0
 
 # Redis 键前缀与常量
-KEY_STATS = "ai_monitoring:stats"  # 全局统计 hash
-KEY_DAILY_PREFIX = "ai_monitoring:daily:"  # 每日统计 hash，格式 ai_monitoring:daily:YYYY-MM-DD
-KEY_ERRORS = "ai_monitoring:errors"  # 最近错误 list
-KEY_RETRIEVAL_LOG = "ai_monitoring:retrieval_log"  # 检索统计日志 list
+_MONITORING_PREFIX = os.getenv("AI_MONITORING_PREFIX", "ai_monitoring:")
+KEY_STATS = f"{_MONITORING_PREFIX}stats"  # 全局统计 hash
+KEY_DAILY_PREFIX = f"{_MONITORING_PREFIX}daily:"  # 每日统计 hash
+KEY_ERRORS = f"{_MONITORING_PREFIX}errors"  # 最近错误 list
+KEY_RETRIEVAL_LOG = f"{_MONITORING_PREFIX}retrieval_log"  # 检索统计日志 list
 MAX_ERRORS = 200  # 最多保留错误条数
 MAX_RETRIEVAL_LOG = 100  # 检索日志最多保留条数
 DAILY_TTL_DAYS = 30  # 每日统计保留天数
