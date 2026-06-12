@@ -64,6 +64,10 @@ export default defineConfig({
         target: 'http://localhost:8022',
         changeOrigin: true,
       },
+      '/api/testd': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
