@@ -1,0 +1,65 @@
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { getToken } from '@/utils/auth.js'
+
+const routes = [
+  {
+    path: '/login',
+    component: () => import('@/components/LoginPage.vue'),
+  },
+  {
+    path: '/',
+    component: () => import('@/components/HomePage.vue'),
+  },
+  {
+    path: '/qa',
+    component: () => import('@/components/QAPage.vue'),
+  },
+  {
+    path: '/admin',
+    component: () => import('@/components/AdminPage.vue'),
+  },
+  {
+    path: '/outline',
+    component: () => import('@/components/PlaceholderPage.vue'),
+    props: { title: '纲目制作', building: true },
+  },
+  {
+    path: '/bibco',
+    component: () => import('@/components/PlaceholderPage.vue'),
+    props: { title: '经文汇集', building: true },
+  },
+  {
+    path: '/outline-translate',
+    component: () => import('@/components/PlaceholderPage.vue'),
+    props: { title: '纲目翻译', building: true },
+  },
+  {
+    path: '/zh-convert',
+    component: () => import('@/components/PlaceholderPage.vue'),
+    props: { title: '简繁互转', building: true },
+  },
+  {
+    path: '/downloads',
+    component: () => import('@/components/PlaceholderPage.vue'),
+    props: { title: '资料下载', building: true },
+  },
+]
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
+})
+
+router.beforeEach((to, _from, next) => {
+  if (to.path === '/login') {
+    next()
+    return
+  }
+  if (!getToken()) {
+    next('/login')
+    return
+  }
+  next()
+})
+
+export default router

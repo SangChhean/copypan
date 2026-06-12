@@ -1,0 +1,37 @@
+/* Pansearch 中国站 —— 全局样式 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #faf8f5;
+  --color-surface: #ffffff;
+  --color-primary: #8b6914;
+  --color-primary-hover: #6d5210;
+  --color-text: #1a1714;
+  --color-text-secondary: #6b6560;
+  --color-border: #e8e2d9;
+  --color-disclaimer: #8b8278;
+  --color-link: #5a7a96;
+  --color-link-hover: #466275;
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.ant-btn-primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+.ant-btn-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
