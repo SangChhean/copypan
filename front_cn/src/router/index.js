@@ -25,18 +25,15 @@ const routes = [
   },
   {
     path: '/bibco',
-    component: () => import('@/components/PlaceholderPage.vue'),
-    props: { title: '经文汇集', building: true },
+    component: () => import('@/components/BibleCo.vue'),
   },
   {
     path: '/outline-translate',
-    component: () => import('@/components/PlaceholderPage.vue'),
-    props: { title: '纲目翻译', building: true },
+    component: () => import('@/components/OutlineTranslate.vue'),
   },
   {
     path: '/zh-convert',
-    component: () => import('@/components/PlaceholderPage.vue'),
-    props: { title: '简繁互转', building: true },
+    component: () => import('@/components/ZhConvert.vue'),
   },
   {
     path: '/downloads',
