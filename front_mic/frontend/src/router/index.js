@@ -230,6 +230,11 @@ const routes = [
     component: () => import('../components/toolbox/MinisterializeC.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/qa-practice-c',
+    component: () => import('../components/toolbox/QaPracticeC.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
