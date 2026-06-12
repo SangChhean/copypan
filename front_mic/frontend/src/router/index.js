@@ -231,6 +231,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/enhanced-translate-a',
+    component: () => import('../components/toolbox/EnhancedTranslateA.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/ministerialize-c',
     component: () => import('../components/toolbox/MinisterializeC.vue'),
     meta: { requiresAuth: true },
