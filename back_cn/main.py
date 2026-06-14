@@ -121,11 +121,13 @@ from back_cn.routers.auth_router import router as auth_router
 from back_cn.routers.qa_router import router as qa_router
 from back_cn.routers.bible_router import router as bible_router
 from back_cn.routers.tools_router import router as tools_router
+from back_cn.routers.panai_router import router as panai_router
 
 app.include_router(auth_router)
 app.include_router(qa_router, prefix="/api/qa")
 app.include_router(bible_router, prefix="/api/qa")
 app.include_router(tools_router)
+app.include_router(panai_router)
 
 
 @app.get("/api/cn/liveness")

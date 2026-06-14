@@ -20,8 +20,7 @@ const routes = [
   },
   {
     path: '/outline',
-    component: () => import('@/components/PlaceholderPage.vue'),
-    props: { title: '纲目制作', building: true },
+    component: () => import('@/components/OutlinePage.vue'),
   },
   {
     path: '/bibco',

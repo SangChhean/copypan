@@ -42,7 +42,7 @@ const usage = ref(null)
 
 const features = [
   { key: 'qa', title: 'QA问答', desc: '职事信息智能问答', path: '/qa', building: false },
-  { key: 'outline', title: '纲目制作', desc: 'AI 纲目制作', path: '/outline', building: true },
+  { key: 'outline', title: '纲目制作', desc: 'AI 纲目制作', path: '/outline', building: false },
   { key: 'bibco', title: '经文汇集', desc: '经文查询与汇集', path: '/bibco', building: false },
   { key: 'translate', title: '纲目翻译', desc: '纲目中英互译', path: '/outline-translate', building: false },
   { key: 'zh', title: '简繁互转', desc: '简繁文本转换', path: '/zh-convert', building: false },
