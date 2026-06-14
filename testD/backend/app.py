@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""testD 本地调试入口（方式 B），默认端口 8010。上线仍依赖主站 main.py 挂载路由。"""
+"""testD 本地调试入口（方式 B），默认端口 8050。上线仍依赖主站 main.py 挂载路由。"""
 import os
 import sys
 from pathlib import Path
@@ -27,5 +27,12 @@ app.include_router(retrieve_test_router)
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.environ.get("TESTD_PORT", "8010"))
-    uvicorn.run("testD.backend.app:app", host="0.0.0.0", port=port, reload=True)
+    port = int(os.environ.get("TESTD_PORT", "8050"))
+    testd_backend = Path(__file__).resolve().parent
+    uvicorn.run(
+        "testD.backend.app:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        reload_dirs=[str(testd_backend), str(_REPO / "testD" / "backend")],
+    )

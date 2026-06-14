@@ -2,7 +2,8 @@
 import { ref, computed } from "vue";
 import { toastError } from "@main/components/utils/Dialog.js";
 
-const apiBase = "http://localhost:8010";
+// 与主站其它工具一致：默认同源（nginx/8000）；仅单独起 testD 时在 .env 设 VITE_API_BASE=http://localhost:8050
+const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const MAX_CONTENT_CHARS = 100_000;
 
 const content = ref("");
@@ -67,13 +68,26 @@ function normalizeDedupedRef(r, lineIndex) {
   };
 }
 
+function lineTypeLabel(group) {
+  const t = group.line_type || "reference";
+  if (t === "outline") return "outline";
+  if (t === "title") return "title";
+  if (t === "bible-reading") return "bible-reading";
+  return "reference";
+}
+
 function lineTypeClass(group) {
   const t = group.line_type || "reference";
-  return t === "outline" ? "line-type-outline" : "line-type-reference";
+  if (t === "outline") return "line-type-outline";
+  if (t === "title") return "line-type-title";
+  if (t === "bible-reading") return "line-type-bible";
+  return "line-type-reference";
 }
 
 function hitLayerClass(layer) {
   if (layer === "层1·Additional Pool") return "layer-1";
+  if (layer === "篇题·Pool" || layer === "篇题·无参考") return "layer-title";
+  if (layer === "读经·跳过检索") return "layer-bible";
   if (layer === "层2·ES Pool") return "layer-2";
   if (layer === "层3·Feasts") return "layer-3";
   if (layer === "层4·检索") return "layer-4";
@@ -209,7 +223,7 @@ async function runRetrieve() {
           class="ref-line-group"
         >
           <div class="ref-line-title" :class="lineTypeClass(group)">
-            <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
+            <span class="line-type-tag">{{ lineTypeLabel(group) }}</span>
             <span
               v-if="group.hit_layer"
               class="hit-layer-tag"
@@ -389,6 +403,14 @@ async function runRetrieve() {
   background: rgba(114, 46, 209, 0.1);
   color: #722ed1;
 }
+.line-type-title .line-type-tag {
+  background: rgba(19, 194, 194, 0.12);
+  color: #08979c;
+}
+.line-type-bible .line-type-tag {
+  background: rgba(47, 84, 235, 0.1);
+  color: #2f54eb;
+}
 .hit-layer-tag {
   font-size: 0.75em;
   font-weight: 600;
@@ -414,6 +436,14 @@ async function runRetrieve() {
 .layer-4-fail {
   background: rgba(207, 19, 34, 0.1);
   color: #cf1322;
+}
+.layer-title {
+  background: rgba(19, 194, 194, 0.12);
+  color: #08979c;
+}
+.layer-bible {
+  background: rgba(47, 84, 235, 0.1);
+  color: #2f54eb;
 }
 .pool-tag {
   font-size: 0.75em;
