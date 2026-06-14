@@ -216,6 +216,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/enhanced-translate-b',
+    component: () => import('../components/toolbox/EnhancedTranslateB.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/rough-outline-a',
      component: () => import('../components/toolbox/RoughOutlineA.vue'),
      meta: { requiresAuth: true },
