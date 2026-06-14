@@ -56,10 +56,6 @@ export default defineConfig({
         target: 'http://localhost:8006',
         changeOrigin: true,
       },
-      '/api/testc/qa': {
-        target: 'http://localhost:8042',
-        changeOrigin: true,
-      },
       '/api/practice/kg_rag/format_download': {
         target: 'http://localhost:8009',
         changeOrigin: true,
@@ -68,8 +64,8 @@ export default defineConfig({
         target: 'http://localhost:8022',
         changeOrigin: true,
       },
-      '/api/testc/enhanced-translate': {
-        target: 'http://localhost:8062',
+      '/api/testd': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/api': {
