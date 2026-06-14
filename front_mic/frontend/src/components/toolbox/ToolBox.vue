@@ -97,6 +97,9 @@ const openZh2tw = () => {
         <a-card-grid class="card c2" @click="go('/qa-practice-c')">
           <span class="card_text">职事信息问答练习</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/enhanced-translate-c')">
+          <span class="card_text">增强式翻译练习</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
@@ -128,6 +131,9 @@ const openZh2tw = () => {
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/qa-simple-a')">
           <span class="card_text">QA 问答</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/enhanced-translate-a')">
+          <span class="card_text">增强式翻译</span>
         </a-card-grid>
       </a-card>
     </div>
@@ -164,6 +170,9 @@ const openZh2tw = () => {
         </a-card-grid>
         <a-card-grid class="card c2" @click="go('/ministry-qa-b')">
           <span class="card_text">职事问答测试</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/enhanced-translate-b')">
+          <span class="card_text">增强式翻译测试</span>
         </a-card-grid>
       </a-card>
     </div>
