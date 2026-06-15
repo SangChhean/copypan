@@ -1,32 +1,10 @@
 <template>
   <div class="qa-root">
-    <!-- 页头 -->
-    <header class="qa-header">
-      <div class="qa-header-inner">
-        <div class="qa-logo">
-          <span class="qa-logo-text">职事信息问答</span>
-        </div>
-        <div class="qa-header-right">
-          <span
-            v-if="dailyUsage.limit > 0 || dailyUsage.limit === -1"
-            class="qa-daily-usage"
-            :class="usageLevelClass"
-          >{{ usageDisplayText }}</span>
-          <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
-          <a-dropdown placement="bottomRight">
-            <a-avatar class="qa-user-avatar">{{ avatarText }}</a-avatar>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item disabled>{{ currentUsername || '未登录' }}</a-menu-item>
-                <a-menu-divider />
-                <a-menu-item v-if="isAdmin()" @click="goAdmin">管理后台</a-menu-item>
-                <a-menu-item class="qa-logout-item" @click="logout">退出登录</a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </div>
-      </div>
-    </header>
+    <div class="cn-page-header qa-sub-header">
+      <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
+      <span class="cn-page-title">职事问答</span>
+      <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
+    </div>
 
     <!-- 主体：对话区可滚动 -->
     <main class="qa-main" ref="historyRef">
@@ -1666,76 +1644,31 @@ async function scrollToMessageTop(messageId) {
 .qa-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: var(--color-bg);
+  flex: 1;
+  min-height: 0;
+  background: var(--cn-bg-page);
 }
 
-/* 页头 */
-.qa-header {
+.qa-sub-header {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  margin-bottom: 0;
 }
-.qa-header-inner {
-  max-width: min(860px, 90vw);
-  margin: 0 auto;
-  padding: 14px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.qa-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.qa-daily-usage {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  user-select: none;
-}
-.qa-daily-usage--warn {
-  color: #e6a23c;
-}
-.qa-daily-usage--danger {
-  color: #f5222d;
-}
+
 .qa-new-chat-btn {
-  border: 1px solid var(--color-border);
-  background: #fff;
+  border: 1px solid var(--cn-border);
+  background: var(--cn-bg-card);
   border-radius: 16px;
   padding: 4px 12px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: var(--cn-text-secondary);
   cursor: pointer;
   line-height: 1.5;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
   &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: #fdf8ee;
+    border-color: var(--cn-gold);
+    color: var(--cn-gold);
+    background: var(--cn-gold-light);
   }
-}
-.qa-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.qa-logo-text {
-  font-size: 30px;
-  font-weight: 400;
-  color: var(--color-primary);
-  letter-spacing: 0.05em;
-  font-family: 'KaiTi', 'Kaiti SC', 'STKaiti', serif;
-}
-.qa-user-avatar {
-  cursor: pointer;
-  background-color: #8b6914;
-  user-select: none;
-}
-:deep(.qa-logout-item) {
-  color: #ff4d4f;
 }
 
 /* 主体：中间可滚动 */
@@ -1816,16 +1749,17 @@ async function scrollToMessageTop(messageId) {
 }
 .qa-bubble-user {
   max-width: 78%;
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--cn-gold-light);
+  color: var(--cn-text-primary);
+  border: 0.5px solid var(--cn-border);
   border-bottom-right-radius: 2px;
   word-break: break-word;
 }
 .qa-bubble-assistant {
   max-width: 92%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow);
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  box-shadow: none;
   border-bottom-left-radius: 2px;
   word-break: break-word;
 }
@@ -2071,8 +2005,8 @@ async function scrollToMessageTop(messageId) {
 /* 输入区 */
 .qa-footer {
   flex-shrink: 0;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-top: 0.5px solid var(--cn-border);
+  background: var(--cn-bg-card);
   padding: 16px 24px 20px;
 }
 .qa-input-wrap {

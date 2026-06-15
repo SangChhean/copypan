@@ -138,22 +138,24 @@ async function downloadFormatZh() {
 
 <template>
   <ToolsHeader title="经文汇集" />
-  <div class="box">
+  <div class="cn-page-body bibco-body">
     <a-space class="lang-switch">
       <a-button
         :type="lang === 'zh' ? 'primary' : 'default'"
+        :class="{ 'cn-btn-ghost': lang !== 'zh' }"
         @click="lang = 'zh'"
       >中文</a-button>
       <a-button
         :type="lang === 'en' ? 'primary' : 'default'"
+        :class="{ 'cn-btn-ghost': lang !== 'en' }"
         @click="lang = 'en'"
       >English</a-button>
     </a-space>
-    <a-divider :style="{ margin: '5px 0' }"></a-divider>
+    <a-divider :style="{ margin: '12px 0' }" />
     <a-textarea v-model:value="input" placeholder="请输入内容" :rows="12" />
-    <a-divider :style="{ margin: '5px 0' }"></a-divider>
+    <a-divider :style="{ margin: '12px 0' }" />
     <a-space>
-      <a-button type="primary" @click="input = ''" danger>清空</a-button>
+      <a-button danger @click="input = ''">清空</a-button>
       <a-button type="primary" @click="search">汇集</a-button>
       <a-button
         v-if="hasResults && lang === 'en'"
@@ -168,11 +170,11 @@ async function downloadFormatZh() {
         @click="downloadFormatZh"
       >刷格式下载</a-button>
     </a-space>
-    <a-divider :style="{ margin: '5px 0' }"></a-divider>
-    <div class="res">
-      <div v-for="item in showData">
+    <a-divider :style="{ margin: '12px 0' }" />
+    <div class="cn-result bibco-result">
+      <div v-for="item in showData" :key="item.text">
         <div v-text="item.text" class="outline" v-if="item.text.trim()"></div>
-        <div v-for="ver in item.vers">
+        <div v-for="ver in item.vers" :key="ver.source + ver.text">
           <span class="ver_s">{{ ver.source }}　</span>
           <span class="ver_t">{{ ver.text }}</span>
         </div>
@@ -182,24 +184,23 @@ async function downloadFormatZh() {
 </template>
 
 <style scoped>
-.box {
-  padding: 1em;
+.bibco-body {
+  padding-top: 20px;
 }
 
-.lang-switch {
-  margin-bottom: 0;
+.bibco-result {
+  margin-top: 8px;
 }
 
 .outline {
-  padding: 1em;
-  margin: 1em 0;
-  border-radius: 5px;
-  background: #fff;
-  font-weight: bold;
+  padding: 0.5em 0;
+  margin: 0.5em 0;
+  font-weight: 500;
+  color: var(--cn-text-primary);
 }
 
 .ver_s {
-  font-weight: bold;
-  color: tomato;
+  font-weight: 500;
+  color: var(--cn-gold);
 }
 </style>

@@ -1,30 +1,25 @@
 <template>
   <div class="home-root">
-    <header class="home-header">
-      <div class="brand">Pansearch 中国站</div>
-      <div class="usage-bar" v-if="usage">
-        <span>纲目 {{ usage.outline?.used ?? 0 }}/{{ usage.outline?.limit ?? 0 }}</span>
-        <span>翻译 {{ usage.translate?.used ?? 0 }}/{{ usage.translate?.limit ?? 0 }}</span>
-        <span>问答 {{ usage.qa?.used ?? 0 }}/{{ usage.qa?.limit ?? 0 }}</span>
-      </div>
-      <div class="user">{{ username }}</div>
-    </header>
-
     <main class="home-main">
-      <h1 class="home-title">功能导航</h1>
       <div class="card-grid">
-        <a-card
+        <div
           v-for="item in features"
           :key="item.key"
           class="feature-card"
           :class="{ disabled: item.building }"
-          hoverable
           @click="go(item)"
         >
+          <div class="card-top">
+            <div class="card-icon">
+              <component :is="item.icon" />
+            </div>
+            <span v-if="item.quotaKey && usage" class="card-quota">
+              {{ quotaText(item.quotaKey) }}
+            </span>
+          </div>
           <div class="card-title">{{ item.title }}</div>
           <div class="card-desc">{{ item.desc }}</div>
-          <a-tag v-if="item.building" color="default">建设中</a-tag>
-        </a-card>
+        </div>
       </div>
     </main>
   </div>
@@ -33,21 +28,79 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  CommentOutlined,
+  FileTextOutlined,
+  BookOutlined,
+  SwapOutlined,
+  FontSizeOutlined,
+  CloudDownloadOutlined,
+} from '@ant-design/icons-vue'
 import http from '@/utils/http.js'
-import { getUsername } from '@/utils/auth.js'
 
 const router = useRouter()
-const username = ref(getUsername())
 const usage = ref(null)
 
 const features = [
-  { key: 'qa', title: 'QA问答', desc: '职事信息智能问答', path: '/qa', building: false },
-  { key: 'outline', title: '纲目制作', desc: 'AI 纲目制作', path: '/outline', building: false },
-  { key: 'bibco', title: '经文汇集', desc: '经文查询与汇集', path: '/bibco', building: false },
-  { key: 'translate', title: '纲目翻译', desc: '纲目中英互译', path: '/outline-translate', building: false },
-  { key: 'zh', title: '简繁互转', desc: '简繁文本转换', path: '/zh-convert', building: false },
-  { key: 'downloads', title: '资料下载', desc: 'LSM 资料下载', path: '/materials', building: false },
+  {
+    key: 'qa',
+    title: '职事问答',
+    desc: '基于职事信息的智能问答',
+    path: '/qa',
+    icon: CommentOutlined,
+    quotaKey: 'qa',
+    building: false,
+  },
+  {
+    key: 'outline',
+    title: '纲目制作',
+    desc: '生成职事纲目与负担说明',
+    path: '/outline',
+    icon: FileTextOutlined,
+    quotaKey: 'outline',
+    building: false,
+  },
+  {
+    key: 'bibco',
+    title: '经文汇集',
+    desc: '中英文经文查询与下载',
+    path: '/bibco',
+    icon: BookOutlined,
+    building: false,
+  },
+  {
+    key: 'translate',
+    title: '纲目翻译',
+    desc: '中英双向纲目互译',
+    path: '/outline-translate',
+    icon: SwapOutlined,
+    quotaKey: 'translate',
+    building: false,
+  },
+  {
+    key: 'zh',
+    title: '简繁互转',
+    desc: '简繁转换与易错字检查',
+    path: '/zh-convert',
+    icon: FontSizeOutlined,
+    building: false,
+  },
+  {
+    key: 'downloads',
+    title: '资料下载',
+    desc: '职事相关资料浏览下载',
+    path: '/materials',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
 ]
+
+function quotaText(key) {
+  const u = usage.value?.[key]
+  if (!u) return ''
+  const lim = u.limit === -1 ? '不限' : u.limit
+  return `${u.used ?? 0}/${lim}`
+}
 
 function go(item) {
   if (item.building) return
@@ -70,46 +123,14 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .home-root {
-  min-height: 100vh;
-  background: var(--color-bg);
-}
-
-.home-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.brand {
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.usage-bar {
-  display: flex;
-  gap: 12px;
-  margin-left: auto;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.user {
-  color: var(--color-text-secondary);
-  font-size: 14px;
+  flex: 1;
+  background: var(--cn-bg-page);
 }
 
 .home-main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 32px 24px;
-}
-
-.home-title {
-  margin: 0 0 24px;
-  font-size: 20px;
+  padding: 32px 24px 48px;
 }
 
 .card-grid {
@@ -119,22 +140,62 @@ onMounted(() => {
 }
 
 .feature-card {
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-radius: var(--cn-radius-lg);
+  padding: 18px 16px;
   cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover:not(.disabled) {
+    border-color: var(--cn-gold);
+    box-shadow: var(--shadow);
+  }
 }
 
 .feature-card.disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cn-gold-light);
+  border-radius: var(--cn-radius-md);
+  color: var(--cn-gold);
+  font-size: 16px;
+}
+
+.card-quota {
+  background: var(--cn-gold-light);
+  color: var(--cn-gold);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.6;
+}
+
 .card-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--cn-text-primary);
+  margin-bottom: 6px;
 }
 
 .card-desc {
-  color: var(--color-text-secondary);
-  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--cn-text-secondary);
+  line-height: 1.5;
 }
 </style>

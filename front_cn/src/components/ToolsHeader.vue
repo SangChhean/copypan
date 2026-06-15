@@ -1,39 +1,24 @@
 <script setup>
-import { ArrowLeftOutlined } from "@ant-design/icons-vue";
-const go = (val = "/") => {
-  window.location.hash = val;
-};
+import { useRouter } from 'vue-router'
 
 defineProps({
   title: String,
-});
+})
+
+const router = useRouter()
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
+}
 </script>
 
 <template>
-  <div class="header-pg">
-    <div @click="go()" class="back"><ArrowLeftOutlined /></div>
-    <div style="text-align: center; width: 100%">{{ title }}</div>
+  <div class="cn-page-header">
+    <button type="button" class="cn-back" @click="goBack">← 返回</button>
+    <span class="cn-page-title">{{ title }}</span>
   </div>
 </template>
-
-<style scoped>
-.header-pg {
-  padding: 10px 20px;
-  display: flex;
-  flex-direction: row;
-  font-size: large;
-  font-weight: bold;
-  color: #55bbff;
-  background-color: #001529;
-  margin-bottom: 30px;
-}
-.back {
-  cursor: pointer;
-}
-
-.back:hover {
-  color: #1677ff;
-  transform: scale(1.8);
-  transition: 0.2s;
-}
-</style>

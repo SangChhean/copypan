@@ -1,16 +1,11 @@
 <template>
   <div class="outline-root">
-    <header class="outline-header">
-      <div class="outline-header-inner">
-        <button type="button" class="back-btn" @click="goHome">← 首页</button>
-        <span class="title">纲目制作</span>
-        <span v-if="outlineUsage" class="usage">
-          纲目 {{ outlineUsage.used }}/{{ outlineUsage.limit }}
-        </span>
-      </div>
-    </header>
+    <div class="cn-page-header">
+      <button type="button" class="cn-back" @click="goHome">← 返回</button>
+      <span class="cn-page-title">纲目制作</span>
+    </div>
 
-    <main class="outline-main">
+    <main class="outline-main cn-page-body">
       <section class="section">
         <h2>输入</h2>
         <a-form layout="vertical">
@@ -29,6 +24,7 @@
 
           <a-form-item label="负担点">
             <div v-for="(pt, idx) in burdenPoints" :key="idx" class="burden-row">
+              <span class="burden-num">{{ idx + 1 }}</span>
               <a-input
                 v-model:value="burdenPoints[idx]"
                 :placeholder="idx === 0 ? '请输入负担点，如：祷告是生命的呼吸' : '请输入负担点'"
@@ -53,7 +49,7 @@
           </a-form-item>
 
           <a-button
-            type="primary"
+            class="cn-btn-ghost"
             :loading="burdenLoading"
             :disabled="!canGenerateBurden"
             @click="onGenerateBurden"
@@ -90,7 +86,7 @@
         <h2>生成纲目</h2>
         <a-button
           type="primary"
-          size="large"
+          class="outline-gen-btn"
           :loading="outlineLoading"
           :disabled="!canGenerateOutline"
           @click="onGenerateOutline"
@@ -103,21 +99,21 @@
 
         <div v-if="outlineAnswer" class="result-box">
           <div class="toolbar">
-            <a-button size="small" @click="copyOutline">复制</a-button>
-            <a-button size="small" :loading="tradLoading" @click="toTraditional">繁体</a-button>
-            <a-button size="small" :loading="enLoading" @click="toEnglish">英文</a-button>
-            <a-button size="small" :loading="docxLoading" @click="downloadDocx">DOCX 下载</a-button>
+            <a-button size="small" class="toolbar-btn" @click="copyOutline">复制</a-button>
+            <a-button size="small" class="toolbar-btn" :loading="tradLoading" @click="toTraditional">繁体</a-button>
+            <a-button size="small" class="toolbar-btn" :loading="enLoading" @click="toEnglish">英文</a-button>
+            <a-button size="small" class="toolbar-btn" :loading="docxLoading" @click="downloadDocx">DOCX 下载</a-button>
           </div>
 
           <a-tabs v-model:activeKey="resultTab">
             <a-tab-pane key="zh" tab="简体">
-              <pre class="outline-text">{{ outlineAnswer }}</pre>
+              <pre class="outline-text cn-result">{{ outlineAnswer }}</pre>
             </a-tab-pane>
             <a-tab-pane key="tw" tab="繁体" :disabled="!traditionalOutline">
-              <pre class="outline-text">{{ traditionalOutline }}</pre>
+              <pre class="outline-text cn-result">{{ traditionalOutline }}</pre>
             </a-tab-pane>
             <a-tab-pane key="en" tab="英文" :disabled="!englishOutline">
-              <pre class="outline-text">{{ englishOutline }}</pre>
+              <pre class="outline-text cn-result">{{ englishOutline }}</pre>
             </a-tab-pane>
           </a-tabs>
 
@@ -423,59 +419,27 @@ onMounted(() => {
 
 <style scoped>
 .outline-root {
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-
-.outline-header {
-  background: #001529;
-  color: #fff;
-  padding: 12px 20px;
-}
-
-.outline-header-inner {
-  max-width: 960px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #55bbff;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.title {
-  font-weight: 600;
   flex: 1;
-}
-
-.usage {
-  font-size: 13px;
-  color: #aaa;
+  background: var(--cn-bg-page);
 }
 
 .outline-main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding-top: 20px;
 }
 
 .section {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-radius: var(--cn-radius-lg);
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .section h2 {
   margin: 0 0 16px;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--cn-text-primary);
 }
 
 .burden-row {
@@ -485,19 +449,33 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.burden-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cn-gold);
+  color: var(--cn-charcoal);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .remove-btn {
   border: none;
-  background: #ff4d4f;
+  background: var(--cn-danger);
   color: #fff;
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--cn-radius-sm);
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .char-warn {
-  color: #ff4d4f;
+  color: var(--cn-danger);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -521,13 +499,13 @@ onMounted(() => {
 
 .hit-preview {
   font-size: 13px;
-  color: #666;
+  color: var(--cn-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
 }
 
 .hit-empty {
-  color: #999;
+  color: var(--cn-text-muted);
 }
 
 .outline-loading {
@@ -535,11 +513,16 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   margin-top: 20px;
-  color: #666;
+  color: var(--cn-text-secondary);
 }
 
 .result-box {
   margin-top: 20px;
+}
+
+.outline-gen-btn {
+  padding: 8px 24px !important;
+  height: auto !important;
 }
 
 .toolbar {
@@ -549,16 +532,23 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
+.toolbar-btn {
+  border: 0.5px solid var(--cn-border) !important;
+  background: var(--cn-bg-page) !important;
+  color: var(--cn-text-secondary) !important;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-gold) !important;
+}
+
 .outline-text {
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
   font-size: 14px;
-  line-height: 1.7;
   margin: 0;
-  padding: 12px;
-  background: #fafafa;
-  border-radius: 6px;
   max-height: 520px;
   overflow: auto;
 }
@@ -566,6 +556,6 @@ onMounted(() => {
 .meta-tag {
   margin-top: 8px;
   font-size: 12px;
-  color: #52c41a;
+  color: var(--cn-success);
 }
 </style>

@@ -335,7 +335,7 @@ async function downloadFormatted() {
 
 <template>
   <ToolsHeader title="简繁互转" />
-  <div class="box">
+  <div class="cn-page-body zh-body">
     <a-card>
       <p class="hint">
         选择转换方向后，粘贴纲目全文（含标题则一起粘贴），点击「转换」按钮完成转换，然后选择下载格式并点击「下载」按钮。
@@ -496,14 +496,14 @@ async function downloadFormatted() {
 </template>
 
 <style scoped>
-.box {
-  padding: 1em;
+.zh-body {
+  padding-top: 20px;
   max-width: 720px;
-  margin: 0 auto;
 }
 
-.box :deep(.ant-card) {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+.zh-body :deep(.ant-card) {
+  box-shadow: var(--shadow);
+  border-color: var(--cn-border) !important;
 }
 
 .hint {
@@ -788,7 +788,8 @@ async function downloadFormatted() {
 }
 
 .hit-context :deep(.hit-word-mark) {
-  background: #ffbb96;
+  background: #FEF3C7;
+  color: #92400E;
   padding: 0 2px;
   border-radius: 2px;
   font-weight: 500;

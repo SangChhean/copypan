@@ -1,11 +1,11 @@
 <template>
   <div class="materials-root">
-    <header class="materials-header">
-      <a class="materials-back" href="#/">← 返回首页</a>
-      <span class="materials-title">资料下载</span>
-    </header>
+    <div class="cn-page-header">
+      <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
+      <span class="cn-page-title">资料下载</span>
+    </div>
 
-    <div class="materials-body">
+    <div class="materials-body cn-page-body">
       <aside class="materials-sidebar">
         <a-spin :spinning="categoriesLoading">
           <a-menu
@@ -28,6 +28,7 @@
         <a-spin :spinning="filesLoading">
           <a-table
             v-if="selectedCategoryId"
+            class="cn-table-hover"
             :columns="columns"
             :data-source="files"
             :pagination="false"
@@ -42,7 +43,7 @@
                 {{ formatDate(record.created_at) }}
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-button type="link" size="small" @click="downloadFile(record)">
+                <a-button type="primary" size="small" class="mat-dl-btn" @click="downloadFile(record)">
                   下载
                 </a-button>
               </template>
@@ -60,10 +61,12 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 import { authHeaders } from '@/utils/auth.js'
 
+const router = useRouter()
 const categories = ref([])
 const categoriesLoading = ref(false)
 const files = ref([])
@@ -124,7 +127,6 @@ async function loadFiles() {
     files.value = res.data || []
   } catch (e) {
     message.error(`加载文件失败（${e.response?.status || '网络错误'}）`)
-    files.value = []
   } finally {
     filesLoading.value = false
   }
@@ -139,10 +141,6 @@ watch(selectedCategoryId, () => {
   loadFiles()
 })
 
-/**
- * 使用 fetch + blob + Authorization 下载（JWT 在 localStorage，无法靠 window.location.href 带鉴权）。
- * 生产环境若启用 Nginx X-Accel-Redirect 且响应体为空，需配置 CN_MATERIALS_DIRECT_DOWNLOAD 或 Nginx auth。
- */
 async function downloadFile(record) {
   try {
     const res = await fetch(`/api/cn/materials/${record.id}/download`, {
@@ -178,67 +176,51 @@ onMounted(async () => {
 
 <style lang="less" scoped>
 .materials-root {
-  min-height: 100vh;
-  background: var(--color-bg);
-}
-
-.materials-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 24px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.materials-back {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  &:hover {
-    color: var(--color-primary);
-  }
-}
-
-.materials-title {
-  font-size: 15px;
-  font-weight: 600;
+  flex: 1;
+  background: var(--cn-bg-page);
 }
 
 .materials-body {
   display: flex;
   max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px;
-  gap: 24px;
+  padding-top: 20px;
+  gap: 0;
 }
 
 .materials-sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-right: 0.5px solid var(--cn-border);
+  border-radius: var(--cn-radius-lg) 0 0 var(--cn-radius-lg);
   padding: 8px 0;
 }
 
 .materials-menu {
   border: none;
+  background: transparent;
 }
 
 .materials-main {
   flex: 1;
   min-width: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-left: none;
+  border-radius: 0 var(--cn-radius-lg) var(--cn-radius-lg) 0;
   padding: 16px;
+}
+
+.mat-dl-btn {
+  padding: 4px 12px !important;
+  height: auto !important;
 }
 
 .materials-empty-side,
 .materials-empty-main {
   padding: 24px;
-  color: var(--color-text-secondary);
+  color: var(--cn-text-secondary);
   font-size: 13px;
   text-align: center;
 }

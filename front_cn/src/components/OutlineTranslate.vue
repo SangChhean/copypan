@@ -161,18 +161,18 @@ async function downloadFormatted() {
 
 <template>
   <ToolsHeader title="纲目翻译" />
-  <div class="usage-bar">
-    翻译用量：{{ translateUsage.used }}/{{ translateUsage.limit === -1 ? '不限' : translateUsage.limit }}
-  </div>
-  <div class="box">
-    <a-radio-group v-model:value="sourceLang" button-style="solid">
+  <div class="cn-page-body translate-body">
+    <a-radio-group v-model:value="sourceLang" button-style="solid" class="dir-switch">
       <a-radio-button value="zh">中文 → 英文</a-radio-button>
       <a-radio-button value="en">英文 → 中文</a-radio-button>
     </a-radio-group>
 
     <a-divider :style="{ margin: '12px 0' }" />
 
-    <a-textarea v-model:value="content" :placeholder="inputPlaceholder" :rows="14" />
+    <div class="cn-result translate-pane">
+      <div class="cn-label">输入</div>
+      <a-textarea v-model:value="content" :placeholder="inputPlaceholder" :rows="14" :bordered="false" />
+    </div>
     <div v-if="inputError" class="err">{{ inputError }}</div>
 
     <a-space :style="{ marginTop: '12px' }">
@@ -180,12 +180,12 @@ async function downloadFormatted() {
         <LoadingOutlined v-if="loading" />
         翻译
       </a-button>
-      <a-button @click="content = ''">清空</a-button>
+      <a-button class="cn-btn-ghost" @click="content = ''">清空</a-button>
     </a-space>
 
     <div v-if="error" class="err">{{ error }}</div>
 
-    <div v-if="result" class="result-panel">
+    <div v-if="result" class="cn-result translate-pane result-out">
       <div class="result-meta">
         <span v-if="durationMs != null">{{ formatDuration(durationMs) }}</span>
         <a-button type="link" size="small" @click="copyText"><CopyOutlined /> 复制</a-button>
@@ -205,36 +205,40 @@ async function downloadFormatted() {
 </template>
 
 <style scoped>
-.usage-bar {
-  text-align: center;
-  padding: 8px;
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+.translate-body {
+  padding-top: 20px;
 }
-.box {
-  padding: 1em;
-  max-width: 960px;
-  margin: 0 auto;
+.dir-switch :deep(.ant-radio-button-wrapper-checked) {
+  background: var(--cn-charcoal) !important;
+  border-color: var(--cn-charcoal) !important;
+  color: var(--cn-gold) !important;
+}
+.dir-switch :deep(.ant-radio-button-wrapper) {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-gold) !important;
+}
+.translate-pane {
+  margin-bottom: 12px;
+}
+.translate-pane :deep(.ant-input) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 .err {
-  color: #cf1322;
+  color: var(--cn-danger);
   margin-top: 8px;
 }
-.result-panel {
+.result-out {
   margin-top: 20px;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
 }
 .result-meta {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  color: var(--color-text-secondary);
+  color: var(--cn-text-secondary);
   font-size: 13px;
 }
 .result-text {
@@ -242,5 +246,6 @@ async function downloadFormatted() {
   word-break: break-word;
   font-family: inherit;
   margin: 0 0 12px;
+  line-height: 2;
 }
 </style>

@@ -1,13 +1,11 @@
 <template>
   <div class="admin-root">
-    <header class="admin-header">
-      <div class="admin-header-inner">
-        <a class="admin-back" href="#/qa">← 返回问答</a>
-        <span class="admin-title">管理后台</span>
-      </div>
-    </header>
+    <div class="cn-page-header">
+      <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
+      <span class="cn-page-title">管理后台</span>
+    </div>
 
-    <main class="admin-main">
+    <main class="admin-main cn-page-body">
       <div class="admin-content">
 
         <section class="admin-section">
@@ -21,7 +19,7 @@
         </section>
 
         <section v-if="stats" class="admin-section">
-          <a-tabs v-model:activeKey="activeTab">
+          <a-tabs v-model:activeKey="activeTab" class="cn-admin-tabs">
             <a-tab-pane key="stats" tab="统计">
               <div class="admin-stat-grid">
                 <div class="admin-stat-card">
@@ -141,7 +139,7 @@
               </div>
 
               <div class="admin-table-wrap">
-                <table class="admin-table">
+                <table class="admin-table cn-admin-table">
                   <thead>
                     <tr>
                       <th>邀请码</th>
@@ -174,7 +172,7 @@
 
             <a-tab-pane key="limits" tab="限额设置">
               <div class="admin-table-wrap">
-                <table class="admin-table">
+                <table class="admin-table cn-admin-table">
                   <thead>
                     <tr>
                       <th>用户名</th>
@@ -281,7 +279,7 @@
 
             <a-tab-pane key="users" tab="用户">
               <div class="admin-table-wrap">
-                <table class="admin-table">
+                <table class="admin-table cn-admin-table">
                   <thead>
                     <tr>
                       <th>用户名</th>
@@ -355,10 +353,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 import DebugPanel from '@/components/DebugPanel.vue'
 
+const router = useRouter()
 const stats = ref(null)
 const statsLoading = ref(false)
 const clearLoading = ref(false)
@@ -731,37 +731,13 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .admin-root {
-  min-height: 100vh;
-  background: var(--color-bg);
+  flex: 1;
+  background: var(--cn-bg-page);
 }
 
-/* 页头 */
-.admin-header {
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+.admin-main {
+  padding-top: 20px;
 }
-.admin-header-inner {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 14px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.admin-back {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  &:hover { color: var(--color-primary); }
-}
-.admin-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-/* 主体 */
-.admin-main { padding: 32px 24px; }
 .admin-content {
   max-width: 760px;
   margin: 0 auto;
@@ -932,15 +908,15 @@ onMounted(() => {
   border-collapse: collapse;
   th,
   td {
-    border: 1px solid var(--color-border);
+    border: 0.5px solid var(--cn-border);
     padding: 8px 10px;
     font-size: 12px;
-    color: var(--color-text);
+    color: var(--cn-text-primary);
     text-align: left;
   }
   th {
-    background: #fafafa;
-    font-weight: 600;
+    background: var(--cn-bg-page);
+    font-weight: 500;
   }
 }
 .admin-table-empty {

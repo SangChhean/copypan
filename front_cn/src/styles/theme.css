@@ -1,0 +1,301 @@
+:root {
+  /* 背景 */
+  --cn-bg-page: #F5F2EC;
+  --cn-bg-card: #FDFAF5;
+  --cn-bg-nav: #2C2C2C;
+
+  /* 主色 */
+  --cn-gold: #C9A96E;
+  --cn-gold-light: #F0EAE0;
+  --cn-charcoal: #2C2C2C;
+
+  /* 文字 */
+  --cn-text-primary: #2C2C2C;
+  --cn-text-secondary: #8A7D6E;
+  --cn-text-muted: #6A6258;
+  --cn-text-nav: #E8E0D0;
+
+  /* 边框 */
+  --cn-border: #DDD6C8;
+  --cn-border-focus: #C9A96E;
+
+  /* 功能色 */
+  --cn-danger: #C0392B;
+  --cn-success: #2E7D32;
+
+  /* 圆角 */
+  --cn-radius-sm: 4px;
+  --cn-radius-md: 6px;
+  --cn-radius-lg: 8px;
+
+  /* 字体 */
+  --cn-font: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* 兼容旧变量名 */
+  --color-bg: var(--cn-bg-page);
+  --color-surface: var(--cn-bg-card);
+  --color-primary: var(--cn-gold);
+  --color-primary-hover: #B89858;
+  --color-text: var(--cn-text-primary);
+  --color-text-secondary: var(--cn-text-secondary);
+  --color-border: var(--cn-border);
+  --color-disclaimer: var(--cn-text-muted);
+  --color-link: var(--cn-gold);
+  --color-link-hover: #B89858;
+  --radius: var(--cn-radius-lg);
+  --shadow: 0 2px 8px rgba(44, 44, 44, 0.06);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cn-bg-page);
+  font-family: var(--cn-font);
+  color: var(--cn-text-primary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* 统一输入框 */
+.cn-input,
+.ant-input,
+.ant-select-selector,
+.ant-input-affix-wrapper,
+.ant-picker {
+  background: var(--cn-bg-card) !important;
+  border-color: var(--cn-border) !important;
+  font-family: var(--cn-font) !important;
+  border-radius: var(--cn-radius-md) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--cn-border-focus) !important;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15) !important;
+}
+
+/* 主按钮：炭黑底 + 金字 */
+.ant-btn-primary {
+  background: var(--cn-charcoal) !important;
+  border-color: var(--cn-charcoal) !important;
+  color: var(--cn-gold) !important;
+  font-family: var(--cn-font) !important;
+  border-radius: var(--cn-radius-sm) !important;
+}
+
+.ant-btn-primary:hover:not(:disabled) {
+  background: #3E3E3E !important;
+  border-color: #3E3E3E !important;
+  color: var(--cn-gold) !important;
+}
+
+.ant-btn-primary:disabled {
+  opacity: 0.55;
+}
+
+/* 次级按钮：透明底 + 金边 */
+.ant-btn-default.cn-btn-ghost,
+.cn-btn-ghost.ant-btn {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-gold) !important;
+  background: transparent !important;
+}
+
+.ant-btn-default.cn-btn-ghost:hover:not(:disabled),
+.cn-btn-ghost.ant-btn:hover:not(:disabled) {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-charcoal) !important;
+  background: var(--cn-gold-light) !important;
+}
+
+/* 卡片 */
+.ant-card {
+  background: var(--cn-bg-card) !important;
+  border-color: var(--cn-border) !important;
+  border-radius: var(--cn-radius-lg) !important;
+}
+
+/* 标签文字 */
+.cn-label {
+  font-size: 12px;
+  color: var(--cn-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+/* 结果展示区 */
+.cn-result {
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-radius: var(--cn-radius-lg);
+  padding: 16px;
+  line-height: 2;
+}
+
+/* 功能页顶栏 */
+.cn-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 12px;
+  border-bottom: 0.5px solid var(--cn-border);
+  background: var(--cn-bg-card);
+  margin-bottom: 0;
+}
+
+.cn-back {
+  font-size: 12px;
+  color: var(--cn-text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.cn-back:hover {
+  color: var(--cn-gold);
+}
+
+.cn-page-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--cn-text-primary);
+  flex: 1;
+}
+
+.cn-page-body {
+  padding: 0 24px 40px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* 顶栏 NavBar */
+.cn-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 24px;
+  background: var(--cn-bg-nav);
+  flex-shrink: 0;
+}
+
+.cn-navbar-brand {
+  color: var(--cn-gold);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.cn-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cn-navbar-usage {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.cn-navbar-usage-item {
+  color: #6A6258;
+}
+
+.cn-navbar-usage-item em {
+  font-style: normal;
+  color: var(--cn-gold);
+  font-weight: 500;
+}
+
+.cn-navbar-admin {
+  background: var(--cn-gold);
+  color: var(--cn-charcoal);
+  border: none;
+  border-radius: var(--cn-radius-sm);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: var(--cn-font);
+  cursor: pointer;
+}
+
+.cn-navbar-admin:hover {
+  background: #D4B87E;
+}
+
+.cn-navbar-logout {
+  background: none;
+  border: none;
+  color: #9A9080;
+  font-size: 12px;
+  font-family: var(--cn-font);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.cn-navbar-logout:hover {
+  color: var(--cn-text-nav);
+}
+
+/* Admin tabs */
+.cn-admin-tabs .ant-tabs-nav::before {
+  border-bottom-color: var(--cn-border) !important;
+}
+
+.cn-admin-tabs .ant-tabs-tab {
+  color: var(--cn-text-secondary) !important;
+}
+
+.cn-admin-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--cn-gold) !important;
+}
+
+.cn-admin-tabs .ant-tabs-ink-bar {
+  background: var(--cn-gold) !important;
+}
+
+/* Admin 表格 */
+.cn-admin-table th {
+  background: var(--cn-bg-page) !important;
+}
+
+.cn-admin-table tbody tr:hover td {
+  background: var(--cn-gold-light) !important;
+}
+
+/* 危险按钮 */
+.ant-btn-dangerous,
+.ant-btn-danger {
+  color: var(--cn-danger) !important;
+  border-color: var(--cn-danger) !important;
+}
+
+.ant-btn-dangerous.ant-btn-primary,
+.ant-btn-danger.ant-btn-primary {
+  background: var(--cn-danger) !important;
+  color: #fff !important;
+}
+
+.materials-menu.ant-menu-light .ant-menu-item-selected {
+  color: var(--cn-gold) !important;
+  background: var(--cn-gold-light) !important;
+  border-right: 2px solid var(--cn-gold);
+}
+
+.materials-menu.ant-menu-light .ant-menu-item:hover {
+  color: var(--cn-gold) !important;
+}
+
+/* 表格行 hover（资料页） */
+.cn-table-hover .ant-table-tbody > tr:hover > td {
+  background: var(--cn-gold-light) !important;
+}
