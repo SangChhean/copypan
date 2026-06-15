@@ -254,12 +254,17 @@ const routes = [
     path: '/enhanced-translate-c',
     component: () => import('../components/toolbox/EnhancedTranslateC.vue'),
     meta: { requiresAuth: true },
-  },
-  {
-    path: '/bible-co-a',
-    component: () => import('../components/toolbox/BibleCoA.vue'),
-    meta: { requiresAuth: true },
-  },
+},
+    {
+        path: '/bible-co-c',
+        component: () => import('../components/toolbox/BibleCoC.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/bible-co-a',
+        component: () => import('../components/toolbox/BibleCoA.vue'),
+        meta: { requiresAuth: true },
+    },
 ];
 
 const router = createRouter({
