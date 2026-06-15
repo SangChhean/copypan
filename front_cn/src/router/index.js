@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { getToken } from '@/utils/auth.js'
+import { getToken, isAdmin } from '@/utils/auth.js'
 
 const routes = [
   {
@@ -35,9 +35,8 @@ const routes = [
     component: () => import('@/components/ZhConvert.vue'),
   },
   {
-    path: '/downloads',
-    component: () => import('@/components/PlaceholderPage.vue'),
-    props: { title: '资料下载', building: true },
+    path: '/materials',
+    component: () => import('@/components/MaterialsPage.vue'),
   },
 ]
 
@@ -53,6 +52,10 @@ router.beforeEach((to, _from, next) => {
   }
   if (!getToken()) {
     next('/login')
+    return
+  }
+  if (to.path === '/admin' && !isAdmin()) {
+    next('/')
     return
   }
   next()

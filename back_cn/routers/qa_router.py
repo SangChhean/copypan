@@ -19,6 +19,8 @@ from back_cn.auth import (
     check_and_increment_daily_usage,
     get_current_user,
     quota_exceeded_message,
+    _check_admin_access,
+    verify_admin_access,
 )
 
 router = APIRouter()
@@ -239,7 +241,7 @@ async def query(req: QueryRequest, request: Request):
     from back_qa.qa.dependencies import get_redis_client
 
     get_current_user(request)
-    _require_query_admin(request)
+    _check_admin_access(request)
     if not check_rate_limit(request, get_redis_client()):
         raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
     if not check_prompt_injection(req.question):
@@ -265,7 +267,7 @@ async def stream_answer(req: QueryRequest, request: Request):
     from back_qa.qa.qa_service import stream_query
     from back_qa.qa.dependencies import get_redis_client
 
-    username = get_current_user(request)
+    username = get_current_user(request)["username"]
     usage = check_and_increment_daily_usage(username, "qa")
     if not usage["allowed"]:
         raise HTTPException(
@@ -532,7 +534,7 @@ async def tts_elevenlabs(request: TTSRequest, current_user=Depends(get_current_u
 @router.post("/feedback")
 async def submit_feedback(req: FeedbackRequest, request: Request):
     """提交答案质量反馈（需登录）。"""
-    username = get_current_user(request)
+    username = get_current_user(request)["username"]
     if req.rating not in (1, -1):
         raise HTTPException(status_code=400, detail="rating 只能是 1 或 -1")
 
@@ -549,38 +551,12 @@ async def submit_feedback(req: FeedbackRequest, request: Request):
 
 
 # ---------------------------------------------------------------------------
-# 管理接口（需 X-Admin-Token 验证）
+# 管理接口（X-Admin-Token 或 is_admin JWT）
 # ---------------------------------------------------------------------------
 
 
-def _check_admin(request: Request):
-    """管理员 token 验证（CN_ADMIN_TOKEN）。"""
-    token = os.environ.get("CN_ADMIN_TOKEN", "")
-    if not token:
-        raise HTTPException(status_code=503, detail="管理接口未配置 CN_ADMIN_TOKEN")
-    provided = request.headers.get("X-Admin-Token", "")
-    if provided != token:
-        raise HTTPException(status_code=401, detail="无效的管理员 Token")
-
-
-def _require_admin(request: Request):
-    _check_admin(request)
-
-
-def _require_query_admin(request: Request):
-    """非流式 /query 需额外携带 X-Admin-Token（防免配额后门）。"""
-    token = os.environ.get("CN_ADMIN_TOKEN", "")
-    if not token:
-        raise HTTPException(status_code=503, detail="管理接口未配置 CN_ADMIN_TOKEN")
-    provided = request.headers.get("X-Admin-Token", "")
-    if provided != token:
-        raise HTTPException(status_code=403, detail="需要管理员 Token 才能调用调试接口")
-
-
 @router.post("/cache/clear")
-async def cache_clear(request: Request):
-    """清理所有 qa:cache:* 缓存，返回删除条数。"""
-    _check_admin(request)
+async def cache_clear(_: bool = Depends(verify_admin_access)):
     from back_qa.qa.dependencies import get_redis_client
 
     r = get_redis_client()
@@ -595,9 +571,7 @@ async def cache_clear(request: Request):
 
 
 @router.post("/stats/clear")
-async def stats_clear(request: Request):
-    """清空监控统计数据（管理员）"""
-    _require_admin(request)
+async def stats_clear(request: Request, _: bool = Depends(verify_admin_access)):
     from back_qa.qa.dependencies import get_redis_client
     from back_qa.qa.qa_service import _MONITOR_KEY
 
@@ -609,9 +583,7 @@ async def stats_clear(request: Request):
 
 
 @router.get("/stats")
-async def stats(request: Request):
-    """查看用量与监控统计。"""
-    _check_admin(request)
+async def stats(_: bool = Depends(verify_admin_access)):
     from back_qa.qa.dependencies import get_redis_client
     from back_qa.qa.qa_service import _MONITOR_KEY
 
@@ -651,8 +623,7 @@ async def stats(request: Request):
 
 
 @router.get("/feedback/stats")
-async def feedback_stats(request: Request):
-    _require_admin(request)
+async def feedback_stats(_: bool = Depends(verify_admin_access)):
     from back_qa.qa.auth import get_feedback_stats
 
     return get_feedback_stats()
@@ -664,7 +635,7 @@ async def asr_transcribe(
     file: UploadFile = File(...),
     _: HTTPAuthorizationCredentials = Depends(_bearer),
 ):
-    username = get_current_user(request)
+    username = get_current_user(request)["username"]
     usage = check_and_increment_daily_usage(username, "asr")
     if not usage["allowed"]:
         raise HTTPException(

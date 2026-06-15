@@ -19,7 +19,7 @@
               <a-menu>
                 <a-menu-item disabled>{{ currentUsername || '未登录' }}</a-menu-item>
                 <a-menu-divider />
-                <a-menu-item @click="goAdmin">管理后台</a-menu-item>
+                <a-menu-item v-if="isAdmin()" @click="goAdmin">管理后台</a-menu-item>
                 <a-menu-item class="qa-logout-item" @click="logout">退出登录</a-menu-item>
               </a-menu>
             </template>
@@ -389,7 +389,7 @@ import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
-import { clearAuth, getToken, getUsername } from '@/utils/auth.js'
+import { clearAuth, getToken, getUsername, isAdmin } from '@/utils/auth.js'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
 const SHOW_POLLY_TTS = false

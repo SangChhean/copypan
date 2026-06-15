@@ -26,3 +26,17 @@ export function authHeaders() {
   const token = getToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
+
+export function isAdmin() {
+  const token = getToken()
+  if (!token) return false
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2) return false
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(base64))
+    return !!payload.is_admin
+  } catch {
+    return false
+  }
+}

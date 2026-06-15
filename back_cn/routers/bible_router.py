@@ -44,7 +44,7 @@ def _ensure_bible_loaded() -> None:
 @router.post("/bible/query")
 async def bible_query(req: BibleQueryRequest, request: Request):
     """SSE：先推送经文 JSON，再经文问答流水线（token / done / error）。"""
-    username = get_current_user(request)
+    username = get_current_user(request)["username"]
     usage = check_and_increment_daily_usage(username, "qa")
     if not usage["allowed"]:
         raise HTTPException(

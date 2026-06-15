@@ -46,7 +46,7 @@ const features = [
   { key: 'bibco', title: '经文汇集', desc: '经文查询与汇集', path: '/bibco', building: false },
   { key: 'translate', title: '纲目翻译', desc: '纲目中英互译', path: '/outline-translate', building: false },
   { key: 'zh', title: '简繁互转', desc: '简繁文本转换', path: '/zh-convert', building: false },
-  { key: 'downloads', title: '资料下载', desc: 'LSM 资料下载', path: '/downloads', building: true },
+  { key: 'downloads', title: '资料下载', desc: 'LSM 资料下载', path: '/materials', building: false },
 ]
 
 function go(item) {

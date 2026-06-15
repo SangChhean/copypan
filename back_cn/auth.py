@@ -10,6 +10,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import bcrypt
+from fastapi import Request
 from jose import JWTError, jwt
 
 DB_PATH = Path(__file__).resolve().parent / "cn_users.db"
@@ -83,7 +84,8 @@ def init_db() -> None:
                 count_burden INTEGER NOT NULL DEFAULT 0,
                 limit_burden INTEGER NOT NULL DEFAULT {limits['burden']},
                 count_asr INTEGER NOT NULL DEFAULT 0,
-                limit_asr INTEGER NOT NULL DEFAULT {limits['asr']}
+                limit_asr INTEGER NOT NULL DEFAULT {limits['asr']},
+                is_admin INTEGER NOT NULL DEFAULT 0
             )
             """
         )
@@ -98,7 +100,37 @@ def init_db() -> None:
             )
             """
         )
+        try:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS material_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                dir_name TEXT NOT NULL UNIQUE,
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS materials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category_id INTEGER NOT NULL REFERENCES material_categories(id),
+                display_name TEXT NOT NULL,
+                stored_name TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
         conn.commit()
+    print("[CN] materials tables ready")
 
 
 def check_and_increment_daily_usage(username: str, feature: str) -> dict:
@@ -237,25 +269,49 @@ def use_invite_code(code: str, username: str) -> bool:
         return cur.rowcount > 0
 
 
-def create_user(username: str, password: str) -> bool:
+def get_user(username: str) -> dict[str, Any] | None:
+    username = (username or "").strip()
+    if not username:
+        return None
+    with _connect() as conn:
+        row = conn.execute(
+            """
+            SELECT id, username, created_at, is_admin
+            FROM users WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "created_at": row["created_at"],
+        "is_admin": bool(row["is_admin"]),
+    }
+
+
+def create_user(username: str, password: str, *, is_admin: bool = False) -> bool:
     username = (username or "").strip()
     password = password or ""
     if not username or not password:
         return False
     limits = _default_limits()
     hashed = _hash_password(password)
+    admin_flag = 1 if is_admin else 0
     try:
         with _connect() as conn:
             conn.execute(
                 """
                 INSERT INTO users(
-                    username, hashed_password,
+                    username, hashed_password, is_admin,
                     limit_outline, limit_translate, limit_qa, limit_burden, limit_asr
-                ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     username,
                     hashed,
+                    admin_flag,
                     limits["outline"],
                     limits["translate"],
                     limits["qa"],
@@ -267,6 +323,19 @@ def create_user(username: str, password: str) -> bool:
         return True
     except sqlite3.IntegrityError:
         return False
+
+
+def set_admin(username: str, is_admin: bool) -> bool:
+    username = (username or "").strip()
+    if not username:
+        return False
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE users SET is_admin = ? WHERE username = ?",
+            (1 if is_admin else 0, username),
+        )
+        conn.commit()
+        return cur.rowcount > 0
 
 
 def set_user_daily_limit(username: str, feature: str, daily_limit: int) -> bool:
@@ -302,39 +371,93 @@ def create_token(username: str) -> str:
     username = (username or "").strip()
     if not username:
         raise ValueError("username 不能为空")
+    user = get_user(username)
+    if not user:
+        raise ValueError("用户不存在")
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
         "sub": username,
+        "is_admin": user["is_admin"],
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(days=TOKEN_EXPIRE_DAYS)).timestamp()),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
-def verify_token(token: str) -> str | None:
+def verify_token(token: str) -> dict[str, Any] | None:
+    """解析 JWT 并返回当前用户对象（is_admin 以数据库为准）。"""
     token = (token or "").strip()
     if not token:
         return None
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         sub = payload.get("sub")
-        return str(sub) if isinstance(sub, str) and sub.strip() else None
+        if not isinstance(sub, str) or not sub.strip():
+            return None
+        return get_user(sub.strip())
     except JWTError:
         return None
 
 
-def get_current_user(request) -> str:
-    """FastAPI 依赖：从 Authorization Bearer 解析 CN JWT，返回用户名。"""
-    from fastapi import HTTPException
-
+def get_current_user_optional(request: Request) -> dict[str, Any] | None:
+    """FastAPI 依赖：JWT 可选，无效或缺失时返回 None。"""
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未登录或 token 格式错误")
+        return None
     token = auth.split(" ", 1)[1].strip()
-    username = verify_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="token 无效或已过期")
-    return username
+    return verify_token(token)
+
+
+def get_current_user(request: Request) -> dict[str, Any]:
+    """FastAPI 依赖：从 Authorization Bearer 解析 CN JWT，返回用户 dict。"""
+    from fastapi import HTTPException
+
+    user = get_current_user_optional(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="未登录或 token 无效或已过期")
+    return user
+
+
+def _check_admin_access(
+    request: Request,
+    x_admin_token: str | None = None,
+    current_user: dict[str, Any] | None = None,
+) -> bool:
+    """管理员鉴权核心：X-Admin-Token 或 is_admin JWT 二选一（OR）。"""
+    from fastapi import HTTPException
+
+    if current_user is None:
+        current_user = get_current_user_optional(request)
+    if x_admin_token is None:
+        x_admin_token = request.headers.get("X-Admin-Token")
+
+    admin_token = os.environ.get("CN_ADMIN_TOKEN", "")
+    if x_admin_token and admin_token and x_admin_token == admin_token:
+        return True
+    if current_user and current_user.get("is_admin"):
+        return True
+    raise HTTPException(status_code=403, detail="需要管理员权限")
+
+
+def _make_verify_admin_access_dep():
+    from fastapi import Depends, Header
+
+    def _dep(
+        request: Request,
+        x_admin_token: str | None = Header(None),
+        current_user: dict[str, Any] | None = Depends(get_current_user_optional),
+    ) -> bool:
+        return _check_admin_access(
+            request,
+            x_admin_token=x_admin_token,
+            current_user=current_user,
+        )
+
+    return _dep
+
+
+# FastAPI 路由使用 Depends(verify_admin_access)
+verify_admin_access = _make_verify_admin_access_dep()
 
 
 def quota_exceeded_message(feature: str, limit: int) -> str:
@@ -346,12 +469,44 @@ def list_users() -> list[dict]:
     with _connect() as conn:
         rows = conn.execute(
             """
-            SELECT id, username, created_at
+            SELECT id, username, created_at, is_admin
             FROM users
             ORDER BY id DESC
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def get_user_feature_limits(username: str) -> dict[str, Any] | None:
+    """返回指定用户五组功能的 limit 与当日 usage（管理员用）。"""
+    username = (username or "").strip()
+    if not username:
+        return None
+    today = _today()
+    with _connect() as conn:
+        row = conn.execute(
+            """
+            SELECT daily_date,
+                   count_outline, limit_outline,
+                   count_translate, limit_translate,
+                   count_qa, limit_qa,
+                   count_burden, limit_burden,
+                   count_asr, limit_asr
+            FROM users WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+    if not row:
+        return None
+    reset = row["daily_date"] != today
+    limits: dict[str, int] = {}
+    usage: dict[str, dict[str, int]] = {}
+    for feat in FEATURES:
+        lim = row[f"limit_{feat}"]
+        used = 0 if reset else row[f"count_{feat}"]
+        limits[feat] = lim
+        usage[feat] = {"used": used, "limit": lim}
+    return {"username": username, "limits": limits, "usage": usage}
 
 
 def delete_user(username: str) -> bool:

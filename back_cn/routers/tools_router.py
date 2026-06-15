@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api", tags=["cn-tools"])
 
 
 def _require_user(request: Request) -> str:
-    return get_current_user(request)
+    return get_current_user(request)["username"]
 
 
 # ---------- 经文汇集 ----------

@@ -2,9 +2,7 @@
 """CN 站用户注册/登录与管理员用户管理接口。"""
 from __future__ import annotations
 
-import os
-
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, field_validator
 
 from back_cn.auth import (
@@ -13,12 +11,16 @@ from back_cn.auth import (
     create_token,
     create_user,
     delete_user,
+    get_current_user,
     get_daily_usage,
+    get_user,
+    get_user_feature_limits,
     list_invite_codes,
     list_users,
+    set_admin,
     set_user_daily_limit,
     use_invite_code,
-    verify_token,
+    verify_admin_access,
     verify_user,
 )
 
@@ -77,24 +79,8 @@ class SetLimitRequest(BaseModel):
         return v
 
 
-def _require_user(request: Request) -> str:
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未登录或 token 格式错误")
-    token = auth.split(" ", 1)[1].strip()
-    username = verify_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="token 无效或已过期")
-    return username
-
-
-def _check_admin(request: Request) -> None:
-    token = os.environ.get("CN_ADMIN_TOKEN", "")
-    if not token:
-        raise HTTPException(status_code=503, detail="管理接口未配置 CN_ADMIN_TOKEN")
-    provided = request.headers.get("X-Admin-Token", "")
-    if provided != token:
-        raise HTTPException(status_code=401, detail="无效的管理员 Token")
+class SetAdminRequest(BaseModel):
+    is_admin: bool
 
 
 @router.post("/register")
@@ -111,52 +97,67 @@ async def login(req: LoginRequest):
     if not verify_user(req.username, req.password):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     token = create_token(req.username)
-    return {"token": token, "username": req.username}
+    user = get_user(req.username) or {}
+    return {
+        "token": token,
+        "username": req.username,
+        "is_admin": bool(user.get("is_admin")),
+    }
 
 
 @router.get("/me")
 async def me(request: Request):
-    username = _require_user(request)
-    return {"username": username}
+    user = get_current_user(request)
+    return {"username": user["username"], "is_admin": user["is_admin"]}
 
 
 @router.get("/usage")
 async def get_usage(request: Request):
-    username = _require_user(request)
-    return get_daily_usage(username)
+    user = get_current_user(request)
+    return get_daily_usage(user["username"])
 
 
 @router.post("/invite")
-async def create_invite(req: InviteRequest, request: Request):
-    _check_admin(request)
+async def create_invite(
+    req: InviteRequest,
+    _: bool = Depends(verify_admin_access),
+):
     if not create_invite_code(req.code):
         raise HTTPException(status_code=400, detail="邀请码已存在")
     return {"ok": True, "code": req.code}
 
 
 @router.get("/users")
-async def users(request: Request):
-    _check_admin(request)
+async def users(_: bool = Depends(verify_admin_access)):
     return {"items": list_users()}
 
 
+@router.get("/users/{username}/limits")
+async def user_limits(username: str, _: bool = Depends(verify_admin_access)):
+    data = get_user_feature_limits(username)
+    if not data:
+        raise HTTPException(status_code=404, detail=f"用户 {username!r} 不存在")
+    return data
+
+
 @router.delete("/users/{username}")
-async def delete_user_api(username: str, request: Request):
-    _check_admin(request)
+async def delete_user_api(username: str, _: bool = Depends(verify_admin_access)):
     if not delete_user(username):
         raise HTTPException(status_code=404, detail="用户不存在")
     return {"ok": True}
 
 
 @router.get("/invites")
-async def invites(request: Request):
-    _check_admin(request)
+async def invites(_: bool = Depends(verify_admin_access)):
     return {"items": list_invite_codes()}
 
 
 @router.post("/users/{username}/limit")
-async def set_limit(username: str, req: SetLimitRequest, request: Request):
-    _check_admin(request)
+async def set_limit(
+    username: str,
+    req: SetLimitRequest,
+    _: bool = Depends(verify_admin_access),
+):
     if req.daily_limit < -1:
         raise HTTPException(status_code=400, detail="daily_limit 不能小于 -1")
     try:
@@ -166,3 +167,14 @@ async def set_limit(username: str, req: SetLimitRequest, request: Request):
     if not ok:
         raise HTTPException(status_code=404, detail=f"用户 {username!r} 不存在")
     return {"ok": True, "username": username, "feature": req.feature, "daily_limit": req.daily_limit}
+
+
+@router.post("/users/{username}/admin")
+async def set_user_admin(
+    username: str,
+    req: SetAdminRequest,
+    _: bool = Depends(verify_admin_access),
+):
+    if not set_admin(username, req.is_admin):
+        raise HTTPException(status_code=404, detail="用户不存在")
+    return {"username": username, "is_admin": req.is_admin}
