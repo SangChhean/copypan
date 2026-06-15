@@ -221,6 +221,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/bible-co-b',
+    component: () => import('../components/toolbox/BibleCoB.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/rough-outline-a',
      component: () => import('../components/toolbox/RoughOutlineA.vue'),
      meta: { requiresAuth: true },
