@@ -1,3 +1,60 @@
+<template>
+  <ToolsHeader title="经文汇集" />
+  <div class="cn-page-body cn-page-body--wide bibco-body">
+    <div class="direction-row">
+      <span class="dir-label">语言：</span>
+      <div class="cn-dir-toggle">
+        <button
+          type="button"
+          class="cn-dir-btn"
+          :class="{ active: lang === 'zh' }"
+          @click="lang = 'zh'"
+        >中文</button>
+        <button
+          type="button"
+          class="cn-dir-btn"
+          :class="{ active: lang === 'en' }"
+          @click="lang = 'en'"
+        >English</button>
+      </div>
+    </div>
+    <a-divider :style="{ margin: '12px 0' }" />
+    <a-textarea
+      v-model:value="input"
+      placeholder="请输入内容"
+      :rows="8"
+      class="bibco-input"
+    />
+    <a-divider :style="{ margin: '12px 0' }" />
+    <div class="action-row">
+      <a-button class="cn-btn-ghost clear-btn" @click="input = ''">清空</a-button>
+      <a-button type="primary" @click="search">汇集</a-button>
+      <a-button
+        v-if="hasResults && lang === 'en'"
+        type="primary"
+        :loading="formatDownloading"
+        @click="downloadFormat"
+      >刷格式下载</a-button>
+      <a-button
+        v-if="hasResults && lang === 'zh'"
+        type="primary"
+        :loading="formatDownloadingZh"
+        @click="downloadFormatZh"
+      >刷格式下载</a-button>
+    </div>
+    <a-divider :style="{ margin: '12px 0' }" />
+    <div class="cn-result bibco-result">
+      <div v-for="item in showData" :key="item.text">
+        <div v-text="item.text" class="outline" v-if="item.text.trim()"></div>
+        <div v-for="ver in item.vers" :key="ver.source + ver.text">
+          <span class="ver_s">{{ ver.source }}　</span>
+          <span class="ver_t">{{ ver.text }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import ToolsHeader from "@/components/ToolsHeader.vue";
 import { ref, computed } from "vue";
@@ -136,59 +193,51 @@ async function downloadFormatZh() {
 }
 </script>
 
-<template>
-  <ToolsHeader title="经文汇集" />
-  <div class="cn-page-body bibco-body">
-    <a-space class="lang-switch">
-      <a-button
-        :type="lang === 'zh' ? 'primary' : 'default'"
-        :class="{ 'cn-btn-ghost': lang !== 'zh' }"
-        @click="lang = 'zh'"
-      >中文</a-button>
-      <a-button
-        :type="lang === 'en' ? 'primary' : 'default'"
-        :class="{ 'cn-btn-ghost': lang !== 'en' }"
-        @click="lang = 'en'"
-      >English</a-button>
-    </a-space>
-    <a-divider :style="{ margin: '12px 0' }" />
-    <a-textarea v-model:value="input" placeholder="请输入内容" :rows="12" />
-    <a-divider :style="{ margin: '12px 0' }" />
-    <a-space>
-      <a-button danger @click="input = ''">清空</a-button>
-      <a-button type="primary" @click="search">汇集</a-button>
-      <a-button
-        v-if="hasResults && lang === 'en'"
-        type="primary"
-        :loading="formatDownloading"
-        @click="downloadFormat"
-      >刷格式下载</a-button>
-      <a-button
-        v-if="hasResults && lang === 'zh'"
-        type="primary"
-        :loading="formatDownloadingZh"
-        @click="downloadFormatZh"
-      >刷格式下载</a-button>
-    </a-space>
-    <a-divider :style="{ margin: '12px 0' }" />
-    <div class="cn-result bibco-result">
-      <div v-for="item in showData" :key="item.text">
-        <div v-text="item.text" class="outline" v-if="item.text.trim()"></div>
-        <div v-for="ver in item.vers" :key="ver.source + ver.text">
-          <span class="ver_s">{{ ver.source }}　</span>
-          <span class="ver_t">{{ ver.text }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .bibco-body {
   padding-top: 20px;
 }
 
+.direction-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dir-label {
+  font-size: 14px;
+  color: var(--cn-text-primary);
+}
+
+.bibco-input {
+  width: 100%;
+}
+
+.bibco-input :deep(textarea.ant-input) {
+  min-height: 160px;
+  width: 100%;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.clear-btn {
+  border: 0.5px solid var(--cn-border) !important;
+  color: var(--cn-text-secondary) !important;
+  background: transparent !important;
+}
+
+.clear-btn:hover:not(:disabled) {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-gold) !important;
+}
+
 .bibco-result {
+  width: 100%;
+  min-height: 320px;
   margin-top: 8px;
 }
 

@@ -1,3 +1,68 @@
+<template>
+  <ToolsHeader title="纲目翻译" />
+  <div class="cn-page-body cn-page-body--wide translate-body">
+    <div class="cn-dir-toggle">
+      <button
+        type="button"
+        :class="['cn-dir-btn', sourceLang === 'zh' ? 'active' : '']"
+        @click="sourceLang = 'zh'"
+      >中文 → 英文</button>
+      <button
+        type="button"
+        :class="['cn-dir-btn', sourceLang === 'en' ? 'active' : '']"
+        @click="sourceLang = 'en'"
+      >英文 → 中文</button>
+    </div>
+
+    <a-divider :style="{ margin: '12px 0' }" />
+
+    <div class="translate-grid" :class="{ 'translate-grid--dual': !!result }">
+      <div class="cn-result translate-pane translate-input">
+        <div class="cn-label">输入</div>
+        <a-textarea
+          v-model:value="content"
+          :placeholder="inputPlaceholder"
+          :rows="14"
+          :bordered="false"
+          class="translate-textarea"
+        />
+      </div>
+
+      <div v-if="result" class="cn-result translate-pane translate-output">
+        <div class="result-meta">
+          <span class="cn-label">翻译结果</span>
+          <span v-if="durationMs != null" class="result-duration">{{ formatDuration(durationMs) }}</span>
+          <button type="button" class="copy-btn" @click="copyText">
+            <CopyOutlined /> 复制
+          </button>
+        </div>
+        <pre class="result-text">{{ result }}</pre>
+        <a-checkbox-group v-model:value="downloadFormats" :options="['docx', 'pdf']" />
+        <a-button
+          type="primary"
+          :loading="downloading"
+          class="download-btn"
+          @click="downloadFormatted"
+        >
+          <DownloadOutlined /> 刷格式下载
+        </a-button>
+      </div>
+    </div>
+
+    <div v-if="inputError" class="err">{{ inputError }}</div>
+
+    <div class="action-row">
+      <a-button type="primary" :loading="loading" @click="translate">
+        <LoadingOutlined v-if="loading" />
+        翻译
+      </a-button>
+      <a-button class="cn-btn-ghost clear-btn" @click="content = ''">清空</a-button>
+    </div>
+
+    <div v-if="error" class="err">{{ error }}</div>
+  </div>
+</template>
+
 <script setup>
 /**
  * 来源：front_mic/frontend/src/features/outline_translate/OutlineTranslate.vue
@@ -159,93 +224,116 @@ async function downloadFormatted() {
 }
 </script>
 
-<template>
-  <ToolsHeader title="纲目翻译" />
-  <div class="cn-page-body translate-body">
-    <a-radio-group v-model:value="sourceLang" button-style="solid" class="dir-switch">
-      <a-radio-button value="zh">中文 → 英文</a-radio-button>
-      <a-radio-button value="en">英文 → 中文</a-radio-button>
-    </a-radio-group>
-
-    <a-divider :style="{ margin: '12px 0' }" />
-
-    <div class="cn-result translate-pane">
-      <div class="cn-label">输入</div>
-      <a-textarea v-model:value="content" :placeholder="inputPlaceholder" :rows="14" :bordered="false" />
-    </div>
-    <div v-if="inputError" class="err">{{ inputError }}</div>
-
-    <a-space :style="{ marginTop: '12px' }">
-      <a-button type="primary" :loading="loading" @click="translate">
-        <LoadingOutlined v-if="loading" />
-        翻译
-      </a-button>
-      <a-button class="cn-btn-ghost" @click="content = ''">清空</a-button>
-    </a-space>
-
-    <div v-if="error" class="err">{{ error }}</div>
-
-    <div v-if="result" class="cn-result translate-pane result-out">
-      <div class="result-meta">
-        <span v-if="durationMs != null">{{ formatDuration(durationMs) }}</span>
-        <a-button type="link" size="small" @click="copyText"><CopyOutlined /> 复制</a-button>
-      </div>
-      <pre class="result-text">{{ result }}</pre>
-      <a-checkbox-group v-model:value="downloadFormats" :options="['docx', 'pdf']" />
-      <a-button
-        type="primary"
-        :loading="downloading"
-        :style="{ marginTop: '8px' }"
-        @click="downloadFormatted"
-      >
-        <DownloadOutlined /> 刷格式下载
-      </a-button>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .translate-body {
   padding-top: 20px;
 }
-.dir-switch :deep(.ant-radio-button-wrapper-checked) {
-  background: var(--cn-charcoal) !important;
-  border-color: var(--cn-charcoal) !important;
-  color: var(--cn-gold) !important;
+
+.translate-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
-.dir-switch :deep(.ant-radio-button-wrapper) {
-  border-color: var(--cn-gold) !important;
-  color: var(--cn-gold) !important;
+
+.translate-grid--dual {
+  grid-template-columns: 1fr 1fr;
 }
+
 .translate-pane {
-  margin-bottom: 12px;
+  width: 100%;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
 }
-.translate-pane :deep(.ant-input) {
+
+.translate-pane :deep(.ant-input),
+.translate-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 280px;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  resize: vertical;
 }
-.err {
-  color: var(--cn-danger);
-  margin-top: 8px;
-}
-.result-out {
-  margin-top: 20px;
-}
-.result-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: var(--cn-text-secondary);
-  font-size: 13px;
-}
+
 .result-text {
+  flex: 1;
+  width: 100%;
+  min-height: 280px;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
   margin: 0 0 12px;
   line-height: 2;
+  overflow: auto;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.result-duration {
+  color: var(--cn-text-secondary);
+  font-size: 13px;
+}
+
+.copy-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: var(--cn-radius-sm);
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
+  color: var(--cn-text-secondary);
+  cursor: pointer;
+  font-family: var(--cn-font);
+}
+
+.copy-btn:hover {
+  border-color: var(--cn-gold);
+  color: var(--cn-gold);
+}
+
+.download-btn {
+  margin-top: 8px;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.clear-btn {
+  border: 0.5px solid var(--cn-border) !important;
+  color: var(--cn-text-secondary) !important;
+  background: transparent !important;
+}
+
+.clear-btn:hover:not(:disabled) {
+  border-color: var(--cn-gold) !important;
+  color: var(--cn-gold) !important;
+}
+
+.err {
+  color: var(--cn-danger);
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .translate-grid--dual {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

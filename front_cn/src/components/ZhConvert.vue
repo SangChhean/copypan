@@ -343,14 +343,20 @@ async function downloadFormatted() {
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="direction-row">
         <span class="label">转换方向：</span>
-        <a-segmented
-          v-model:value="direction"
-          class="direction-segmented"
-          :options="[
-            { label: '简体 → 繁体', value: 'zh_cn2tw' },
-            { label: '繁体 → 简体', value: 'zh_tw2cn' },
-          ]"
-        />
+        <div class="cn-dir-toggle">
+          <button
+            type="button"
+            class="cn-dir-btn"
+            :class="{ active: direction === 'zh_cn2tw' }"
+            @click="direction = 'zh_cn2tw'"
+          >简体 → 繁体</button>
+          <button
+            type="button"
+            class="cn-dir-btn"
+            :class="{ active: direction === 'zh_tw2cn' }"
+            @click="direction = 'zh_tw2cn'"
+          >繁体 → 简体</button>
+        </div>
       </div>
       <a-divider :style="{ margin: '12px 0' }" />
       <div class="textarea-wrap">
@@ -364,7 +370,7 @@ async function downloadFormatted() {
         />
         <button
           type="button"
-          class="clear-btn"
+          class="cn-btn-secondary-inline clear-btn"
           :disabled="!content || loading"
           @click="content = ''"
         >
@@ -374,7 +380,7 @@ async function downloadFormatted() {
       <div class="action-row">
         <button
           type="button"
-          class="action-btn"
+          class="cn-btn-main-inline action-btn"
           :disabled="loading || !content.trim()"
           @click="convert"
         >
@@ -398,7 +404,7 @@ async function downloadFormatted() {
         <div class="action-row" style="margin-top: 12px;">
           <button
             type="button"
-            class="action-btn"
+            class="cn-btn-main-inline action-btn"
             :disabled="downloading || downloadFormats.length === 0"
             @click="downloadFormatted"
           >
@@ -498,7 +504,6 @@ async function downloadFormatted() {
 <style scoped>
 .zh-body {
   padding-top: 20px;
-  max-width: 720px;
 }
 
 .zh-body :deep(.ant-card) {
@@ -507,7 +512,7 @@ async function downloadFormatted() {
 }
 
 .hint {
-  color: #555;
+  color: var(--cn-text-secondary);
   margin: 0;
   font-size: 0.95em;
   line-height: 1.5;
@@ -521,35 +526,9 @@ async function downloadFormatted() {
 }
 
 .direction-row .label {
-  font-weight: 600;
-  color: #333;
-  font-size: 1em;
-}
-
-/* 转换方向分段控件：更醒目，选中项绿色 */
-.direction-segmented :deep(.ant-segmented-group) {
-  gap: 4px;
-}
-.direction-segmented :deep(.ant-segmented-item) {
-  padding: 8px 20px;
   font-weight: 500;
-  font-size: 15px;
-  border: 2px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fafafa;
-}
-.direction-segmented :deep(.ant-segmented-item:hover) {
-  border-color: #52c41a;
-  color: #389e0d;
-}
-.direction-segmented :deep(.ant-segmented-item-selected) {
-  background: #52c41a !important;
-  border-color: #52c41a !important;
-  color: #fff !important;
-}
-.direction-segmented :deep(.ant-segmented-thumb) {
-  background: #52c41a !important;
-  border-radius: 4px;
+  color: var(--cn-text-primary);
+  font-size: 1em;
 }
 
 .textarea-wrap {
@@ -559,57 +538,26 @@ async function downloadFormatted() {
 
 .content-area {
   display: block;
+  width: 100%;
 }
 
 .content-area :deep(.ant-input) {
-  border-radius: 8px;
+  border-radius: var(--cn-radius-md);
   font-family: inherit;
 }
 
-/* 明显的清空按钮 */
 .clear-btn {
   margin-top: 10px;
-  padding: 6px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.clear-btn:hover:not(:disabled) {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-  background: #fff1f0;
-}
-.clear-btn:disabled {
-  color: #bbb;
-  cursor: not-allowed;
-  background: #fafafa;
 }
 
 .action-row {
   margin-top: 16px;
   padding: 12px 0;
-  border-top: 1px solid #f0f0f0;
+  border-top: 0.5px solid var(--cn-border);
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 24px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: none;
-  background: #1890ff;
-  color: #fff;
-  cursor: pointer;
 }
 
 .action-btn .btn-icon {
@@ -625,25 +573,15 @@ async function downloadFormatted() {
   to { transform: rotate(360deg); }
 }
 
-.action-btn:hover:not(:disabled) {
-  background: #40a9ff;
-}
-
-.action-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
 .loading-hint {
   margin: 8px 0 0;
-  color: #8c8c8c;
+  color: var(--cn-text-muted);
   font-size: 0.9em;
-  text-align: center;
 }
 
 .error {
   margin-top: 12px;
-  color: #cf1322;
+  color: var(--cn-danger);
   font-size: 0.95em;
 }
 
@@ -664,16 +602,17 @@ async function downloadFormatted() {
   gap: 4px;
   padding: 4px 10px;
   font-size: 13px;
-  border-radius: 4px;
-  border: 1px solid #d9d9d9;
-  background: #fff;
+  border-radius: var(--cn-radius-sm);
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
   cursor: pointer;
-  color: #555;
+  color: var(--cn-text-secondary);
+  font-family: var(--cn-font);
 }
 
 .copy-btn:hover {
-  color: #1890ff;
-  border-color: #1890ff;
+  color: var(--cn-gold);
+  border-color: var(--cn-gold);
 }
 
 .result-body {
@@ -688,13 +627,14 @@ async function downloadFormatted() {
 
 .result-textarea {
   display: block;
+  width: 100%;
 }
 
 .result-textarea :deep(.ant-input) {
   font-family: inherit;
   font-size: 0.95em;
   line-height: 1.6;
-  border-radius: 8px;
+  border-radius: var(--cn-radius-md);
 }
 
 .error-check-toolbar {
@@ -710,51 +650,53 @@ async function downloadFormatted() {
   gap: 6px;
   padding: 6px 16px;
   font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #333;
+  border-radius: var(--cn-radius-md);
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
+  color: var(--cn-text-secondary);
   cursor: pointer;
+  font-family: var(--cn-font);
 }
 
 .check-err-btn:hover:not(:disabled) {
-  color: #1890ff;
-  border-color: #1890ff;
+  color: var(--cn-gold);
+  border-color: var(--cn-gold);
 }
 
 .check-err-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .accept-all-btn {
   padding: 6px 16px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: var(--cn-radius-md);
   border: none;
-  background: #52c41a;
-  color: #fff;
+  background: var(--cn-charcoal);
+  color: var(--cn-gold);
   cursor: pointer;
+  font-family: var(--cn-font);
 }
 
 .accept-all-btn:hover:not(:disabled) {
-  background: #73d13d;
+  background: #3E3E3E;
 }
 
 .accept-all-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .check-ok {
   margin: 10px 0 0;
-  color: #389e0d;
+  color: var(--cn-success);
   font-size: 0.95em;
 }
 
 .check-err-msg {
   margin: 10px 0 0;
-  color: #cf1322;
+  color: var(--cn-danger);
   font-size: 0.9em;
 }
 
@@ -772,9 +714,9 @@ async function downloadFormatted() {
   flex-direction: column;
   gap: 8px;
   padding: 8px 12px;
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  border-radius: 6px;
+  background: var(--cn-gold-light);
+  border: 0.5px solid var(--cn-border);
+  border-radius: var(--cn-radius-md);
   font-size: 0.9em;
 }
 
@@ -783,7 +725,7 @@ async function downloadFormatted() {
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;
-  color: #333;
+  color: var(--cn-text-primary);
   font-size: 0.95em;
 }
 
@@ -819,19 +761,22 @@ async function downloadFormatted() {
   flex-shrink: 0;
   padding: 4px 12px;
   font-size: 13px;
-  border-radius: 4px;
-  border: 1px solid #52c41a;
-  background: #fff;
-  color: #389e0d;
+  border-radius: var(--cn-radius-sm);
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
+  color: var(--cn-text-secondary);
   cursor: pointer;
+  font-family: var(--cn-font);
 }
 
 .accept-btn:hover:not(:disabled) {
-  background: #f6ffed;
+  border-color: var(--cn-gold);
+  color: var(--cn-gold);
+  background: var(--cn-gold-light);
 }
 
 .accept-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -839,21 +784,21 @@ async function downloadFormatted() {
   flex-shrink: 0;
   padding: 4px 12px;
   font-size: 13px;
-  border-radius: 4px;
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #666;
+  border-radius: var(--cn-radius-sm);
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
+  color: var(--cn-text-secondary);
   cursor: pointer;
+  font-family: var(--cn-font);
 }
 
 .reject-btn:hover:not(:disabled) {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-  background: #fff1f0;
+  color: var(--cn-danger);
+  border-color: var(--cn-danger);
 }
 
 .reject-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 </style>

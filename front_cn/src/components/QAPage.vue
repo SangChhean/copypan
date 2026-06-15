@@ -1744,7 +1744,7 @@ async function scrollToMessageTop(messageId) {
 .qa-bubble {
   border-radius: var(--radius);
   padding: 14px 18px;
-  line-height: 1.8;
+  line-height: 1.9;
   font-size: 15px;
 }
 .qa-bubble-user {

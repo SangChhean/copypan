@@ -13,12 +13,12 @@
             <div class="card-icon">
               <component :is="item.icon" />
             </div>
-            <span v-if="item.quotaKey && usage" class="card-quota">
+            <span v-if="item.quotaKey && usage" class="card-quota cn-card-badge">
               {{ quotaText(item.quotaKey) }}
             </span>
           </div>
-          <div class="card-title">{{ item.title }}</div>
-          <div class="card-desc">{{ item.desc }}</div>
+          <div class="card-title cn-card-title">{{ item.title }}</div>
+          <div class="card-desc cn-card-desc">{{ item.desc }}</div>
         </div>
       </div>
     </main>
@@ -180,21 +180,18 @@ onMounted(() => {
 .card-quota {
   background: var(--cn-gold-light);
   color: var(--cn-gold);
-  font-size: 10px;
   padding: 2px 8px;
   border-radius: 10px;
   line-height: 1.6;
 }
 
 .card-title {
-  font-size: 14px;
   font-weight: 500;
   color: var(--cn-text-primary);
   margin-bottom: 6px;
 }
 
 .card-desc {
-  font-size: 11px;
   color: var(--cn-text-secondary);
   line-height: 1.5;
 }

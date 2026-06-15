@@ -99,10 +99,10 @@
 
         <div v-if="outlineAnswer" class="result-box">
           <div class="toolbar">
-            <a-button size="small" class="toolbar-btn" @click="copyOutline">复制</a-button>
-            <a-button size="small" class="toolbar-btn" :loading="tradLoading" @click="toTraditional">繁体</a-button>
-            <a-button size="small" class="toolbar-btn" :loading="enLoading" @click="toEnglish">英文</a-button>
-            <a-button size="small" class="toolbar-btn" :loading="docxLoading" @click="downloadDocx">DOCX 下载</a-button>
+            <a-button size="small" class="toolbar-btn cn-tool-btn" @click="copyOutline">复制</a-button>
+            <a-button size="small" class="toolbar-btn cn-tool-btn" :loading="tradLoading" @click="toTraditional">繁体</a-button>
+            <a-button size="small" class="toolbar-btn cn-tool-btn" :loading="enLoading" @click="toEnglish">英文</a-button>
+            <a-button size="small" class="toolbar-btn cn-tool-btn" :loading="docxLoading" @click="downloadDocx">DOCX 下载</a-button>
           </div>
 
           <a-tabs v-model:activeKey="resultTab">
