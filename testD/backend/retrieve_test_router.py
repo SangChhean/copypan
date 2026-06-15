@@ -16,36 +16,39 @@ from testD.backend._bootstrap import ensure_main_backend_path
 ensure_main_backend_path()
 
 from user.token import test_token
-from testD.backend.additional_pool import lookup_line_en, normalize_zh, zh_eq
+from testD.backend.additional_pool import lookup_line_en
 from testD.backend.enhanced_translate_service import (
     MAX_CONTENT_CHARS,
     _INDICES_DENSE,
     _RetrievalCtx,
     _build_line_ref_group,
     _build_summary,
+    _precompute_line_types,
     _prep_cached_line,
     _probe_es,
     _retrieve_line,
 )
-from testD.backend.source_translator import _strip_paragraph_suffix
+from testD.backend.source_translator import (
+    _kg_rag_source_lookup,
+    bracket_has_star,
+    format_source_en,
+)
 
 router = APIRouter(prefix="/api/testd", tags=["testd"])
 
 
-def _resolve_source_en_no_gemini(source_zh: str, line_refs: list) -> str:
-    """仅路1：normalize_zh 验证，不走 Gemini。"""
-    if not source_zh:
+async def _resolve_source_en_no_gemini(
+    source_list: list[str],
+    reference_source_zh: str,
+) -> str:
+    """仅路1：kg-rag 出处查询，不走 Gemini 硬翻。"""
+    if not source_list:
         return ""
-    for ref in line_refs:
-        zh_src = (ref.get("ch_source") or ref.get("source") or "").strip()
-        if not zh_src:
-            continue
-        stripped = _strip_paragraph_suffix(zh_src)
-        if zh_eq(stripped, source_zh):
-            en_src = (ref.get("en_source") or "").strip()
-            if en_src:
-                return en_src
-    return ""
+    en_parts: list[str] = []
+    for src in source_list:
+        hit_en, _ = await _kg_rag_source_lookup(src)
+        en_parts.append(hit_en)
+    return format_source_en(en_parts, bracket_has_star(reference_source_zh))
 
 
 class RetrieveTestRequest(BaseModel):
@@ -66,6 +69,7 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
         }
 
     lines = [ln for ln in outline.splitlines() if ln.strip()]
+    line_types = _precompute_line_types(lines)
 
     ctx = _RetrievalCtx.create(_INDICES_DENSE)
     if any(not lookup_line_en(line) for line in lines):
@@ -78,15 +82,17 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
         ctx.warnings,
     )
 
-    async def _prep_one(i: int, line: str) -> dict[str, Any]:
+    async def _prep_one(i: int, line: str, lt: str) -> dict[str, Any]:
         cached = lookup_line_en(line)
         if cached:
-            return _prep_cached_line(i, line, cached)
-        prep = await _retrieve_line(i, line, ctx)
+            return _prep_cached_line(i, line, cached, line_type=lt)
+        prep = await _retrieve_line(i, line, ctx, line_type=lt)
         prep["line_cached_en"] = ""
         return prep
 
-    preps = await asyncio.gather(*[_prep_one(i, line) for i, line in enumerate(lines)])
+    preps = await asyncio.gather(
+        *[_prep_one(i, line, line_types[i]) for i, line in enumerate(lines)]
+    )
 
     for prep in preps:
         logger.info(
@@ -100,9 +106,9 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
         )
 
     for prep in preps:
-        source_zh = prep.get("reference_source_zh") or ""
-        prep["reference_source_en"] = _resolve_source_en_no_gemini(
-            source_zh, prep.get("line_refs") or []
+        source_list = prep.get("reference_source_zh_list") or []
+        prep["reference_source_en"] = await _resolve_source_en_no_gemini(
+            source_list, prep.get("reference_source_zh") or ""
         )
 
     line_ref_groups: list[dict[str, Any]] = []
@@ -120,8 +126,15 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
             reference_source_zh=prep.get("reference_source_zh") or "",
             reference_source_en=prep.get("reference_source_en") or "",
         )
+        lt = prep.get("line_type") or ""
         if prep.get("line_cached_en"):
             group["hit_layer"] = "层1·Additional Pool"
+        elif lt == "bible-reading":
+            group["hit_layer"] = "读经·跳过检索"
+        elif lt == "title" and prep.get("deduped_refs"):
+            group["hit_layer"] = "篇题·Pool"
+        elif lt == "title":
+            group["hit_layer"] = "篇题·无参考"
         elif prep.get("pool_line_en"):
             group["hit_layer"] = "层2·ES Pool"
         elif prep.get("feasts_line"):
@@ -142,4 +155,5 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
         "summary": summary,
         "error": None,
         "warnings": list(dict.fromkeys(ctx.warnings)),
+        "engine": "testD-title-bible-reading-v1",
     }

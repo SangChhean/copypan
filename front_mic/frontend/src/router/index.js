@@ -216,6 +216,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/enhanced-translate-b',
+    component: () => import('../components/toolbox/EnhancedTranslateB.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/rough-outline-a',
      component: () => import('../components/toolbox/RoughOutlineA.vue'),
      meta: { requiresAuth: true },
@@ -228,6 +233,11 @@ const routes = [
   {
     path: '/qa-simple-a',
     component: () => import('../components/toolbox/QaSimpleA.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/enhanced-translate-a',
+    component: () => import('../components/toolbox/EnhancedTranslateA.vue'),
     meta: { requiresAuth: true },
   },
   {
@@ -244,12 +254,17 @@ const routes = [
     path: '/enhanced-translate-c',
     component: () => import('../components/toolbox/EnhancedTranslateC.vue'),
     meta: { requiresAuth: true },
-  },
-  {
-    path: '/bible-co-c',
-    component: () => import('../components/toolbox/BibleCoC.vue'),
-    meta: { requiresAuth: true },
-  },
+},
+    {
+        path: '/bible-co-c',
+        component: () => import('../components/toolbox/BibleCoC.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/bible-co-a',
+        component: () => import('../components/toolbox/BibleCoA.vue'),
+        meta: { requiresAuth: true },
+    },
 ];
 
 const router = createRouter({

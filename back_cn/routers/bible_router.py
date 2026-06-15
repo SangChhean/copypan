@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+"""CN 站经文查询 SSE 路由（路径 /api/qa/bible/query，鉴权走 back_cn.auth）。"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from sse_starlette.sse import EventSourceResponse
+
+from back_cn.auth import (
+    check_and_increment_daily_usage,
+    get_current_user,
+    quota_exceeded_message,
+)
+from back_qa.qa import bible_service
+from back_qa.qa.bible_ref_parser import parse_bible_ref
+
+router = APIRouter(tags=["bible"])
+
+_repo_root = Path(__file__).resolve().parents[2]
+_BIBLE_DATA_DIR = _repo_root / "back_qa" / "bible_data"
+
+
+class BibleQueryRequest(BaseModel):
+    book: int | None = None
+    chapter: int | None = None
+    verse: int | None = None
+    question: str = ""
+    history: list = Field(default_factory=list)
+
+
+def _sse_line(event: str, data) -> dict:
+    """与 qa_router `/stream` 一致：仅使用 `data` 字段，内容为 JSON 字符串。"""
+    return {"data": json.dumps({"event": event, "data": data}, ensure_ascii=False)}
+
+
+def _ensure_bible_loaded() -> None:
+    if not bible_service._bible:
+        bible_service.load_bible_data(str(_BIBLE_DATA_DIR))
+
+
+@router.post("/bible/query")
+async def bible_query(req: BibleQueryRequest, request: Request):
+    """SSE：先推送经文 JSON，再经文问答流水线（token / done / error）。"""
+    username = get_current_user(request)["username"]
+    usage = check_and_increment_daily_usage(username, "qa")
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail=quota_exceeded_message("qa", usage["limit"]),
+        )
+
+    async def event_generator():
+        try:
+            _ensure_bible_loaded()
+            if req.book is not None and req.chapter is not None and req.verse is not None:
+                verse = bible_service.get_verse(req.book, req.chapter, req.verse)
+                verse_sse = verse
+            else:
+                parsed = parse_bible_ref(req.question)
+                if parsed is None:
+                    yield _sse_line(
+                        "error",
+                        "无法从问题中识别经文，请使用「腓一1」或「Phil 1:1」等格式",
+                    )
+                    return
+                t = parsed.get("type", "verse")
+                if t == "verse":
+                    verse = bible_service.get_verse(
+                        parsed["book"], parsed["chapter"], parsed["verse"]
+                    )
+                    verse_sse = verse
+                elif t == "range":
+                    rows = bible_service.get_verse_range(
+                        parsed["book"],
+                        parsed["chapter"],
+                        parsed["verse_start"],
+                        parsed["verse_end"],
+                    )
+                    verse = bible_service.composite_verses(rows)
+                    verse_sse = (
+                        {"verses": rows, "query_type": "range"} if rows else None
+                    )
+                elif t == "chapter":
+                    rows = bible_service.get_verse_range(
+                        parsed["book"], parsed["chapter"], None, None
+                    )
+                    verse = bible_service.composite_verses(rows)
+                    verse_sse = (
+                        {"verses": rows, "query_type": "chapter"} if rows else None
+                    )
+                else:
+                    verse = None
+                    verse_sse = None
+            if verse is None:
+                yield _sse_line("error", "找不到指定经文，请检查卷章节是否有误")
+                return
+            yield _sse_line("verse_data", verse_sse)
+            async for ev in bible_service.run_bible_pipeline(
+                verse,
+                (req.question or "").strip(),
+                req.history or [],
+            ):
+                yield _sse_line(ev["event"], ev["data"])
+        except Exception as e:
+            yield _sse_line("error", str(e))
+
+    return EventSourceResponse(event_generator())

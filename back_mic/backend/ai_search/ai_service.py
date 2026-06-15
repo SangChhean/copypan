@@ -104,7 +104,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # 纲目翻译：默认 gemini-2.5-pro 保证可用；若 3.1 不可用(404) 会自动用 GEMINI_TRANSLATION_FALLBACK_MODEL
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 # 与主模型不同才能在主模型 404/空响应/过载时真正切换到备用（若与 GEMINI_MODEL 相同则代码会跳过备用分支）
-GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-flash")
+GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv("GEMINI_TRANSLATION_FALLBACK_MODEL", "gemini-2.5-pro")
 # 毛胚纲目：首次 gemini-3.1-pro-preview，失败重试 gemini-2.5-pro（官方预览 ID，见 ai.google.dev/models/gemini-3.1-pro-preview）
 ROUGH_OUTLINE_GEMINI_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_MODEL", "gemini-3.1-pro-preview")
 ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL = os.getenv("ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
@@ -831,9 +831,11 @@ class AISearchService:
                             _cache_title_retryable = [False]
                             _cache_title_empty = [False]
 
-                            def _title_cfg_cache():
+                            def _title_cfg_cache(model_name: str):
                                 if gemini_translation_generate_config:
-                                    return gemini_translation_generate_config(_gemini_system_instruction)
+                                    return gemini_translation_generate_config(
+                                        _gemini_system_instruction, model_name=model_name
+                                    )
                                 return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
                             def _translate_title_for_cache(
@@ -845,7 +847,7 @@ class AISearchService:
                                         title_response = gemini_client.models.generate_content(
                                             model=use_model,
                                             contents=topic,
-                                            config=_title_cfg_cache(),
+                                            config=_title_cfg_cache(use_model),
                                         )
                                         log_tc = f"[Gemini翻译-缓存标题] model={use_model}"
                                         if extract_translatable_text:
@@ -930,9 +932,11 @@ class AISearchService:
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
 
-        def _zh2en_config():
+        def _zh2en_config(model_name: str):
             if gemini_translation_generate_config:
-                return gemini_translation_generate_config(_gemini_system_instruction)
+                return gemini_translation_generate_config(
+                    _gemini_system_instruction, model_name=model_name
+                )
             return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
@@ -942,7 +946,7 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_zh2en,
-                        config=_zh2en_config(),
+                        config=_zh2en_config(use_model),
                     )
                     log_p = f"[Gemini翻译] model={use_model}"
                     if extract_translatable_text:
@@ -1018,9 +1022,11 @@ class AISearchService:
             _title_retryable = [False]
             _title_empty = [False]
 
-            def _title_cfg_main():
+            def _title_cfg_main(model_name: str):
                 if gemini_translation_generate_config:
-                    return gemini_translation_generate_config(_gemini_system_instruction)
+                    return gemini_translation_generate_config(
+                        _gemini_system_instruction, model_name=model_name
+                    )
                 return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
 
             def _translate_title(retry_count: int = 0, model: Optional[str] = None) -> Optional[str]:
@@ -1031,7 +1037,7 @@ class AISearchService:
                         title_response = gemini_client.models.generate_content(
                             model=use_model,
                             contents=topic,
-                            config=_title_cfg_main(),
+                            config=_title_cfg_main(use_model),
                         )
                         log_tm = f"[Gemini标题] model={use_model}"
                         if extract_translatable_text:
@@ -1132,9 +1138,11 @@ class AISearchService:
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
 
-        def _en2zh_config():
+        def _en2zh_config(model_name: str):
             if gemini_translation_generate_config:
-                return gemini_translation_generate_config(_gemini_system_instruction_en2zh)
+                return gemini_translation_generate_config(
+                    _gemini_system_instruction_en2zh, model_name=model_name
+                )
             return types.GenerateContentConfig(system_instruction=_gemini_system_instruction_en2zh)
 
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
@@ -1144,7 +1152,7 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_en2zh,
-                        config=_en2zh_config(),
+                        config=_en2zh_config(use_model),
                     )
                     log_p = f"[Gemini英翻中] model={use_model}"
                     if extract_translatable_text:
@@ -1242,9 +1250,11 @@ class AISearchService:
         zh2ko_api_errors: List[str] = []
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
-        def _zh2ko_config():
+        def _zh2ko_config(model_name: str):
             if gemini_translation_generate_config:
-                return gemini_translation_generate_config(_gemini_system_instruction)
+                return gemini_translation_generate_config(
+                    _gemini_system_instruction, model_name=model_name
+                )
             return types.GenerateContentConfig(system_instruction=_gemini_system_instruction)
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
             use_model = model or GEMINI_MODEL
@@ -1253,7 +1263,7 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_zh2ko,
-                        config=_zh2ko_config(),
+                        config=_zh2ko_config(use_model),
                     )
                     log_p = f"[Gemini中翻韩] model={use_model}"
                     if extract_translatable_text:
@@ -1351,9 +1361,11 @@ class AISearchService:
         def _is_model_not_found(err: str) -> bool:
             return "404" in err or "NOT_FOUND" in err or "is not found" in err.lower()
 
-        def _en2es_config():
+        def _en2es_config(model_name: str):
             if gemini_translation_generate_config:
-                return gemini_translation_generate_config(_gemini_system_instruction_en2es)
+                return gemini_translation_generate_config(
+                    _gemini_system_instruction_en2es, model_name=model_name
+                )
             return types.GenerateContentConfig(system_instruction=_gemini_system_instruction_en2es)
 
         def _call_gemini(retry_count: int = 0, model: Optional[str] = None) -> Optional[tuple]:
@@ -1363,7 +1375,7 @@ class AISearchService:
                     response = gemini_client.models.generate_content(
                         model=use_model,
                         contents=contents_en2es,
-                        config=_en2es_config(),
+                        config=_en2es_config(use_model),
                     )
                     log_p = f"[Gemini英翻西] model={use_model}"
                     if extract_translatable_text:

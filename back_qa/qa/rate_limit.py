@@ -12,6 +12,7 @@ logger = logging.getLogger("qa")
 
 # 每分钟允许的最大请求数，可通过环境变量调整
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("QA_RATE_LIMIT_PER_MINUTE", "15"))
+_RATELIMIT_PREFIX = os.getenv("QA_RATELIMIT_PREFIX", "qa:ratelimit:")
 
 
 def _get_client_ip(request) -> str:
@@ -35,7 +36,7 @@ def check_rate_limit(request, redis_client) -> bool:
     window = 60  # 秒
     limit = RATE_LIMIT_PER_MINUTE
 
-    key = f"qa:ratelimit:{ip}"
+    key = f"{_RATELIMIT_PREFIX}{ip}"
     try:
         pipe = redis_client.pipeline()
         now = int(time.time())

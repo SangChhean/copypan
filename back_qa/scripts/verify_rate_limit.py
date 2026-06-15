@@ -34,7 +34,8 @@ def main() -> None:
         return
 
     test_ip = "127.0.0.1"
-    key = f"qa:ratelimit:{test_ip}"
+    prefix = os.getenv("QA_RATELIMIT_PREFIX", "qa:ratelimit:")
+    key = f"{prefix}{test_ip}"
     r.delete(key)
 
     class FakeClient:

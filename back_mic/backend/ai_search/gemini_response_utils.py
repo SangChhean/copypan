@@ -34,10 +34,10 @@ except ImportError:
     genai_types = None
 
 
-def gemini_translation_generate_config(system_instruction: Any) -> Any:
+def gemini_translation_generate_config(system_instruction: Any, model_name: str = "") -> Any:
     """
     纲目翻译专用 GenerateContentConfig：关闭 AFC、显式 max_output_tokens（见 translation_max_output_tokens）。
-    若 SDK 支持则设置 thinking_level=MINIMAL，降低思考 token 消耗。
+    若 SDK 支持则按模型设置 thinking_level（3.1 Pro→LOW，2.5→不传，其它→MINIMAL）。
     """
     if genai_types is None:
         raise RuntimeError("google.genai 未安装")
@@ -50,9 +50,20 @@ def gemini_translation_generate_config(system_instruction: Any) -> Any:
     )
 
     if hasattr(genai_types, "ThinkingConfig") and hasattr(genai_types, "ThinkingLevel"):
-        kwargs["thinking_config"] = genai_types.ThinkingConfig(
-            thinking_level=genai_types.ThinkingLevel.MINIMAL
-        )
+        mn = (model_name or "").lower()
+        if "3.1" in mn and "pro" in mn:
+            # 3.1 Pro：不能关闭 thinking，LOW 是最低档
+            kwargs["thinking_config"] = genai_types.ThinkingConfig(
+                thinking_level=genai_types.ThinkingLevel.LOW
+            )
+        elif "2.5" in mn:
+            # 2.5 系列：不支持 thinkingLevel，不传 thinkingConfig 走模型默认
+            pass
+        else:
+            # 其它（3.5-flash 等）：支持 MINIMAL
+            kwargs["thinking_config"] = genai_types.ThinkingConfig(
+                thinking_level=genai_types.ThinkingLevel.MINIMAL
+            )
 
     return genai_types.GenerateContentConfig(**kwargs)
 

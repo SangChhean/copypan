@@ -27,3 +27,13 @@ stop_qa.bat
 新建*.txt
 
 back_mic/backend/user/users.json
+
+# back_cn 本地密钥与用户库
+back_cn/.env
+back_cn/cn_users.db
+back_cn/cn_users.db-shm
+back_cn/cn_users.db-wal
+
+# LSM PDF（移至服务器共享目录 /opt/pansearch/data/lsm/，不进仓库）
+front_qa/public/lsm/*.pdf
+front_cn/public/lsm/*.pdf
