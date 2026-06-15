@@ -1,12 +1,13 @@
 <template>
   <div class="outline-root">
-    <div class="cn-page-header">
+    <div class="cn-page-head">
       <button type="button" class="cn-back" @click="goHome">← 返回</button>
       <span class="cn-page-title">纲目制作</span>
     </div>
 
-    <main class="outline-main cn-page-body">
-      <section class="section">
+    <div class="cn-content-wrap">
+      <div class="cn-content-card">
+        <section class="section">
         <h2>输入</h2>
         <a-form layout="vertical">
           <a-form-item label="纲目主题" required>
@@ -120,7 +121,8 @@
           <div v-if="outlineMeta.cached" class="meta-tag">已命中缓存</div>
         </div>
       </section>
-    </main>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -420,24 +422,22 @@ onMounted(() => {
 <style scoped>
 .outline-root {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background: var(--cn-bg-page);
 }
 
-.outline-main {
-  padding-top: 20px;
+.section {
+  margin-bottom: 28px;
 }
 
-.section {
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
-  border-radius: var(--cn-radius-lg);
-  padding: 20px;
-  margin-bottom: 20px;
+.section:last-child {
+  margin-bottom: 0;
 }
 
 .section h2 {
   margin: 0 0 16px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 500;
   color: var(--cn-text-primary);
 }

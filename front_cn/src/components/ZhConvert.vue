@@ -335,9 +335,9 @@ async function downloadFormatted() {
 
 <template>
   <ToolsHeader title="简繁互转" />
-  <div class="cn-page-body zh-body">
-    <a-card>
-      <p class="hint">
+  <div class="cn-content-wrap">
+    <div class="cn-content-card">
+    <p class="hint">
         选择转换方向后，粘贴纲目全文（含标题则一起粘贴），点击「转换」按钮完成转换，然后选择下载格式并点击「下载」按钮。
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
@@ -416,18 +416,16 @@ async function downloadFormatted() {
         </div>
         <p v-if="downloading" class="loading-hint">请耐心等待 1～2 分钟</p>
       </div>
-    </a-card>
 
     <div v-if="error" class="error">{{ error }}</div>
 
-    <a-card v-if="result" class="result-card">
-      <template #title>
+    <div v-if="result" class="result-section">
+      <div class="result-head">
         <span>{{ isCn2Tw ? "繁体纲目" : "简体纲目" }}</span>
         <button type="button" class="copy-btn" @click="copyResult">
           <CopyOutlined /> 复制
         </button>
-      </template>
-
+      </div>
       <template v-if="isCn2Tw">
         <a-textarea
           v-model:value="result"
@@ -497,25 +495,17 @@ async function downloadFormatted() {
         </ul>
       </template>
       <pre v-else class="result-body">{{ result }}</pre>
-    </a-card>
+    </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.zh-body {
-  padding-top: 20px;
-}
-
-.zh-body :deep(.ant-card) {
-  box-shadow: var(--shadow);
-  border-color: var(--cn-border) !important;
-}
-
 .hint {
   color: var(--cn-text-secondary);
   margin: 0;
-  font-size: 0.95em;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .direction-row {
@@ -583,6 +573,21 @@ async function downloadFormatted() {
   margin-top: 12px;
   color: var(--cn-danger);
   font-size: 0.95em;
+}
+
+.result-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 0.5px solid var(--cn-border);
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--cn-text-primary);
 }
 
 .result-card {

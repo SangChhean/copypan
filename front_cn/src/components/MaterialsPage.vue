@@ -1,60 +1,64 @@
 <template>
   <div class="materials-root">
-    <div class="cn-page-header">
+    <div class="cn-page-head">
       <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
       <span class="cn-page-title">资料下载</span>
     </div>
 
-    <div class="materials-body cn-page-body">
-      <aside class="materials-sidebar">
-        <a-spin :spinning="categoriesLoading">
-          <a-menu
-            v-model:selectedKeys="selectedKeys"
-            mode="inline"
-            class="materials-menu"
-            @click="onCategoryClick"
-          >
-            <a-menu-item v-for="cat in categories" :key="String(cat.id)">
-              {{ cat.name }}（{{ cat.files_count ?? 0 }}个文件）
-            </a-menu-item>
-          </a-menu>
-          <div v-if="!categoriesLoading && !categories.length" class="materials-empty-side">
-            暂无分类
-          </div>
-        </a-spin>
-      </aside>
+    <div class="cn-content-wrap">
+      <div class="cn-content-card">
+        <div class="materials-layout">
+          <aside class="materials-sidebar">
+            <a-spin :spinning="categoriesLoading">
+              <a-menu
+                v-model:selectedKeys="selectedKeys"
+                mode="inline"
+                class="materials-menu"
+                @click="onCategoryClick"
+              >
+                <a-menu-item v-for="cat in categories" :key="String(cat.id)">
+                  {{ cat.name }}（{{ cat.files_count ?? 0 }}个文件）
+                </a-menu-item>
+              </a-menu>
+              <div v-if="!categoriesLoading && !categories.length" class="materials-empty-side">
+                暂无分类
+              </div>
+            </a-spin>
+          </aside>
 
-      <main class="materials-main">
-        <a-spin :spinning="filesLoading">
-          <a-table
-            v-if="selectedCategoryId"
-            class="cn-table-hover"
-            :columns="columns"
-            :data-source="files"
-            :pagination="false"
-            row-key="id"
-            size="middle"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'size_bytes'">
-                {{ formatSize(record.size_bytes) }}
-              </template>
-              <template v-else-if="column.key === 'created_at'">
-                {{ formatDate(record.created_at) }}
-              </template>
-              <template v-else-if="column.key === 'action'">
-                <a-button type="primary" size="small" class="mat-dl-btn" @click="downloadFile(record)">
-                  下载
-                </a-button>
-              </template>
-            </template>
-            <template #emptyText>
-              <a-empty description="该分类下暂无文件" />
-            </template>
-          </a-table>
-          <div v-else class="materials-empty-main">请选择左侧分类</div>
-        </a-spin>
-      </main>
+          <main class="materials-main">
+            <a-spin :spinning="filesLoading">
+              <a-table
+                v-if="selectedCategoryId"
+                class="cn-table-hover"
+                :columns="columns"
+                :data-source="files"
+                :pagination="false"
+                row-key="id"
+                size="middle"
+              >
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'size_bytes'">
+                    {{ formatSize(record.size_bytes) }}
+                  </template>
+                  <template v-else-if="column.key === 'created_at'">
+                    {{ formatDate(record.created_at) }}
+                  </template>
+                  <template v-else-if="column.key === 'action'">
+                    <a-button type="primary" size="small" class="mat-dl-btn" @click="downloadFile(record)">
+                      下载
+                    </a-button>
+                  </template>
+                </template>
+                <template #emptyText>
+                  <a-empty description="该分类下暂无文件" />
+                </template>
+              </a-table>
+              <div v-else class="materials-empty-main">请选择左侧分类</div>
+            </a-spin>
+          </main>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -177,23 +181,21 @@ onMounted(async () => {
 <style lang="less" scoped>
 .materials-root {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background: var(--cn-bg-page);
 }
 
-.materials-body {
+.materials-layout {
   display: flex;
-  max-width: 1100px;
-  padding-top: 20px;
   gap: 0;
+  min-height: 360px;
 }
 
 .materials-sidebar {
-  width: 240px;
+  width: 200px;
   flex-shrink: 0;
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
   border-right: 0.5px solid var(--cn-border);
-  border-radius: var(--cn-radius-lg) 0 0 var(--cn-radius-lg);
   padding: 8px 0;
 }
 
@@ -205,11 +207,7 @@ onMounted(async () => {
 .materials-main {
   flex: 1;
   min-width: 0;
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
-  border-left: none;
-  border-radius: 0 var(--cn-radius-lg) var(--cn-radius-lg) 0;
-  padding: 16px;
+  padding: 8px 0 8px 20px;
 }
 
 .mat-dl-btn {
@@ -221,7 +219,7 @@ onMounted(async () => {
 .materials-empty-main {
   padding: 24px;
   color: var(--cn-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   text-align: center;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="login-root">
-    <div class="login-card">
+    <div class="login-card cn-content-card">
       <div class="login-title">文字AI服事</div>
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane key="login" tab="登录">
@@ -105,18 +105,15 @@ async function onRegister() {
 
 .login-card {
   width: 100%;
-  max-width: 380px;
-  background: var(--cn-bg-card);
-  border: 1px solid var(--cn-border);
-  border-radius: var(--cn-radius-lg);
-  padding: 32px 28px 16px;
+  max-width: 400px;
+  padding: 36px 32px 20px;
 }
 
 .login-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   color: var(--cn-gold);
   letter-spacing: 0.08em;
 }

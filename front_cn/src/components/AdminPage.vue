@@ -1,11 +1,12 @@
 <template>
   <div class="admin-root">
-    <div class="cn-page-header">
+    <div class="cn-page-head">
       <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
       <span class="cn-page-title">管理后台</span>
     </div>
 
-    <main class="admin-main cn-page-body">
+    <div class="cn-content-wrap">
+      <div class="cn-content-card cn-content-card--wide">
       <div class="admin-content">
 
         <section class="admin-section">
@@ -323,7 +324,8 @@
         </section>
 
       </div>
-    </main>
+      </div>
+    </div>
 
     <a-modal
       v-model:open="limitModalOpen"
@@ -732,15 +734,13 @@ onMounted(() => {
 <style lang="less" scoped>
 .admin-root {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background: var(--cn-bg-page);
 }
 
-.admin-main {
-  padding-top: 20px;
-}
 .admin-content {
-  max-width: 760px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 32px;

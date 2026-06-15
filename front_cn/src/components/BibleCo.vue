@@ -1,6 +1,7 @@
 <template>
   <ToolsHeader title="经文汇集" />
-  <div class="cn-page-body cn-page-body--wide bibco-body">
+  <div class="cn-content-wrap">
+    <div class="cn-content-card">
     <div class="direction-row">
       <span class="dir-label">语言：</span>
       <div class="cn-dir-toggle">
@@ -51,6 +52,7 @@
           <span class="ver_t">{{ ver.text }}</span>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -194,10 +196,6 @@ async function downloadFormatZh() {
 </script>
 
 <style scoped>
-.bibco-body {
-  padding-top: 20px;
-}
-
 .direction-row {
   display: flex;
   align-items: center;

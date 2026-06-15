@@ -1,11 +1,12 @@
 <template>
   <div class="home-root">
     <main class="home-main">
+      <div class="home-section-label">功能入口</div>
       <div class="card-grid">
         <div
           v-for="item in features"
           :key="item.key"
-          class="feature-card"
+          class="feature-card cn-home-card"
           :class="{ disabled: item.building }"
           @click="go(item)"
         >
@@ -128,28 +129,34 @@ onMounted(() => {
 }
 
 .home-main {
-  max-width: 960px;
+  max-width: var(--cn-content-max-width);
   margin: 0 auto;
   padding: 32px 24px 48px;
 }
 
+.home-section-label {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--cn-text-muted);
+  margin-bottom: 16px;
+}
+
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .feature-card {
   background: var(--cn-bg-card);
   border: 0.5px solid var(--cn-border);
-  border-radius: var(--cn-radius-lg);
-  padding: 18px 16px;
+  border-radius: 12px;
+  padding: 28px 26px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:hover:not(.disabled) {
     border-color: var(--cn-gold);
-    box-shadow: var(--shadow);
   }
 }
 
@@ -162,19 +169,19 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .card-icon {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--cn-gold-light);
   border-radius: var(--cn-radius-md);
   color: var(--cn-gold);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .card-quota {
@@ -186,13 +193,18 @@ onMounted(() => {
 }
 
 .card-title {
-  font-weight: 500;
   color: var(--cn-text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .card-desc {
   color: var(--cn-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

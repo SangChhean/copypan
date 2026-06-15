@@ -31,6 +31,10 @@
   /* 字体 */
   --cn-font: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
+  /* 布局 */
+  --cn-card-shadow: 0 2px 12px rgba(44, 44, 44, 0.06);
+  --cn-content-max-width: 860px;
+
   /* 兼容旧变量名 */
   --color-bg: var(--cn-bg-page);
   --color-surface: var(--cn-bg-card);
@@ -43,20 +47,42 @@
   --color-link: var(--cn-gold);
   --color-link-hover: #B89858;
   --radius: var(--cn-radius-lg);
-  --shadow: 0 2px 8px rgba(44, 44, 44, 0.06);
+  --shadow: var(--cn-card-shadow);
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  background: var(--cn-bg-page);
+  font-size: 16px;
   font-family: var(--cn-font);
+  background: var(--cn-bg-page);
   color: var(--cn-text-primary);
-  font-size: 15px;
   line-height: 1.7;
+}
+
+/* 全局 Ant Design 字体覆盖 */
+.ant-btn,
+.ant-input,
+.ant-select,
+.ant-select-selector,
+.ant-tabs,
+.ant-table,
+.ant-form-item-label,
+.ant-typography,
+.ant-modal,
+.ant-message,
+.ant-collapse,
+.ant-card,
+.ant-upload,
+textarea,
+input,
+select {
+  font-family: var(--cn-font) !important;
+  font-size: 15px !important;
 }
 
 /* 统一输入框 */
@@ -64,13 +90,10 @@ body {
 .ant-input,
 .ant-select-selector,
 .ant-input-affix-wrapper,
-.ant-picker,
-textarea {
+.ant-picker {
   background: var(--cn-bg-card) !important;
   border-color: var(--cn-border) !important;
-  font-family: var(--cn-font) !important;
   border-radius: var(--cn-radius-md) !important;
-  font-size: 15px !important;
 }
 
 .ant-input:focus,
@@ -81,13 +104,14 @@ textarea {
   box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15) !important;
 }
 
-/* 主按钮：炭黑底 + 金字 */
-.ant-btn-primary {
+/* 主按钮 */
+.ant-btn-primary,
+.cn-btn-primary {
   background: var(--cn-charcoal) !important;
   border-color: var(--cn-charcoal) !important;
   color: var(--cn-gold) !important;
-  font-family: var(--cn-font) !important;
   border-radius: var(--cn-radius-sm) !important;
+  font-size: 15px !important;
 }
 
 .ant-btn-primary:hover:not(:disabled) {
@@ -100,22 +124,12 @@ textarea {
   opacity: 0.55;
 }
 
-.ant-btn,
-button {
-  font-size: 14px;
-}
-
-.ant-typography,
-.ant-form-item-label > label {
-  font-size: 15px !important;
-}
-
-/* 次级按钮：透明底 + 金边 */
 .ant-btn-default.cn-btn-ghost,
 .cn-btn-ghost.ant-btn {
   border-color: var(--cn-gold) !important;
   color: var(--cn-gold) !important;
   background: transparent !important;
+  font-size: 14px !important;
 }
 
 .ant-btn-default.cn-btn-ghost:hover:not(:disabled),
@@ -125,47 +139,85 @@ button {
   background: var(--cn-gold-light) !important;
 }
 
-/* 卡片 */
 .ant-card {
   background: var(--cn-bg-card) !important;
   border-color: var(--cn-border) !important;
   border-radius: var(--cn-radius-lg) !important;
+  box-shadow: none !important;
 }
 
-/* 标签文字 */
+/* 表单标签 */
 .cn-label,
 .cn-field-label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--cn-text-muted);
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
+  letter-spacing: 0.02em;
 }
 
-/* 结果展示区 */
 .cn-result {
-  background: var(--cn-bg-card);
+  background: var(--cn-bg-page);
   border: 0.5px solid var(--cn-border);
   border-radius: var(--cn-radius-lg);
   padding: 16px;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 2.1;
 }
 
-/* 功能页顶栏 */
+/* 内页居中白卡 */
+.cn-content-wrap {
+  background: var(--cn-bg-page);
+  padding: 32px 24px 48px;
+  min-height: calc(100vh - 108px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.cn-content-wrap--qa {
+  padding-bottom: 32px;
+}
+
+.cn-content-card {
+  background: var(--cn-bg-card);
+  border: 0.5px solid var(--cn-border);
+  border-radius: 12px;
+  padding: 36px 40px;
+  width: 100%;
+  max-width: var(--cn-content-max-width);
+  box-shadow: var(--cn-card-shadow);
+}
+
+.cn-content-card--wide {
+  max-width: 1000px;
+}
+
+.cn-content-card--qa {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 页头（白卡外、顶栏下） */
+.cn-page-head,
 .cn-page-header {
+  background: var(--cn-bg-card);
+  border-bottom: 0.5px solid var(--cn-border);
+  padding: 15px 28px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px 12px;
-  border-bottom: 0.5px solid var(--cn-border);
-  background: var(--cn-bg-card);
-  margin-bottom: 0;
+  box-shadow: 0 1px 4px rgba(44, 44, 44, 0.04);
+  flex-shrink: 0;
 }
 
 .cn-back {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--cn-text-secondary);
   cursor: pointer;
+  user-select: none;
   text-decoration: none;
   border: none;
   background: none;
@@ -184,26 +236,14 @@ button {
   flex: 1;
 }
 
-.cn-page-body {
-  padding: 0 24px 40px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.cn-page-body--wide {
-  max-width: none;
-  width: 100%;
-}
-
-/* 方向切换按钮组 */
+/* 方向切换 */
 .cn-dir-toggle {
   display: flex;
 }
 
-.cn-dir-btn,
-.cn-dir-toggle-btn {
+.cn-dir-btn {
   padding: 7px 18px;
-  font-size: 14px;
+  font-size: 14px !important;
   cursor: pointer;
   border: 1px solid var(--cn-border);
   background: transparent;
@@ -213,62 +253,55 @@ button {
   transition: all 0.15s;
 }
 
-.cn-dir-btn:first-child,
-.cn-dir-toggle-btn--left {
+.cn-dir-btn:first-child {
   border-radius: var(--cn-radius-sm) 0 0 var(--cn-radius-sm);
 }
 
-.cn-dir-btn:last-child,
-.cn-dir-toggle-btn--right {
+.cn-dir-btn:last-child {
   border-radius: 0 var(--cn-radius-sm) var(--cn-radius-sm) 0;
   border-left: none;
-  margin-left: 0;
 }
 
-.cn-dir-btn:not(.active):hover,
-.cn-dir-toggle-btn:hover:not(.active) {
+.cn-dir-btn:not(.active):hover {
   border-color: var(--cn-gold);
   color: var(--cn-gold);
 }
 
-.cn-dir-btn.active,
-.cn-dir-toggle-btn.active {
+.cn-dir-btn.active {
   background: var(--cn-charcoal);
   color: var(--cn-gold);
   border-color: var(--cn-charcoal);
 }
 
-/* 首页卡片字号 */
+/* 首页卡片 */
+.cn-home-card {
+  box-shadow: var(--cn-card-shadow);
+}
+
 .cn-card-title {
-  font-size: 15px;
+  font-size: 17px;
+  font-weight: 500;
 }
 
 .cn-card-desc {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .cn-card-badge {
   font-size: 11px;
 }
 
-/* 工具栏小按钮 */
 .cn-tool-btn {
-  font-size: 12px;
+  font-size: 13px !important;
 }
 
-/* QA 对话气泡（QAPage 根元素在 app 内，类名全局匹配） */
-.qa-bubble {
-  font-size: 15px;
-  line-height: 1.9;
-}
-
-/* 页面内主/次级按钮（非 ant-design） */
+/* 页面内原生按钮 */
 .cn-btn-main-inline {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 24px;
-  font-size: 16px;
+  font-size: 15px;
   font-family: var(--cn-font);
   border-radius: var(--cn-radius-md);
   border: none;
@@ -307,6 +340,7 @@ button {
   cursor: not-allowed;
 }
 
+/* 顶栏 */
 .cn-navbar {
   display: flex;
   align-items: center;
@@ -320,7 +354,7 @@ button {
 .cn-navbar-brand,
 .cn-nav-brand {
   color: var(--cn-gold);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-decoration: none;
@@ -335,7 +369,6 @@ button {
 .cn-navbar-usage {
   display: flex;
   gap: 14px;
-  font-size: 12px;
 }
 
 .cn-navbar-usage-item,
@@ -349,7 +382,7 @@ button {
   font-style: normal;
   color: var(--cn-gold);
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .cn-navbar-admin {
@@ -357,8 +390,8 @@ button {
   color: var(--cn-charcoal);
   border: none;
   border-radius: var(--cn-radius-sm);
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 7px 16px;
+  font-size: 14px;
   font-family: var(--cn-font);
   cursor: pointer;
 }
@@ -371,7 +404,7 @@ button {
   background: none;
   border: none;
   color: #9A9080;
-  font-size: 12px;
+  font-size: 14px;
   font-family: var(--cn-font);
   cursor: pointer;
   padding: 4px 0;
@@ -381,7 +414,13 @@ button {
   color: var(--cn-text-nav);
 }
 
-/* Admin tabs */
+/* QA 气泡 */
+.qa-bubble {
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* Admin */
 .cn-admin-tabs .ant-tabs-nav::before {
   border-bottom-color: var(--cn-border) !important;
 }
@@ -398,7 +437,6 @@ button {
   background: var(--cn-gold) !important;
 }
 
-/* Admin 表格 */
 .cn-admin-table th {
   background: var(--cn-bg-page) !important;
 }
@@ -407,7 +445,6 @@ button {
   background: var(--cn-gold-light) !important;
 }
 
-/* 危险按钮 */
 .ant-btn-dangerous,
 .ant-btn-danger {
   color: var(--cn-danger) !important;
@@ -430,7 +467,6 @@ button {
   color: var(--cn-gold) !important;
 }
 
-/* 表格行 hover（资料页） */
 .cn-table-hover .ant-table-tbody > tr:hover > td {
   background: var(--cn-gold-light) !important;
 }

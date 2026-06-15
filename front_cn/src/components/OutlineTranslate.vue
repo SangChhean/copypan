@@ -1,6 +1,7 @@
 <template>
   <ToolsHeader title="纲目翻译" />
-  <div class="cn-page-body cn-page-body--wide translate-body">
+  <div class="cn-content-wrap">
+    <div class="cn-content-card">
     <div class="cn-dir-toggle">
       <button
         type="button"
@@ -60,6 +61,7 @@
     </div>
 
     <div v-if="error" class="err">{{ error }}</div>
+    </div>
   </div>
 </template>
 
@@ -225,10 +227,6 @@ async function downloadFormatted() {
 </script>
 
 <style scoped>
-.translate-body {
-  padding-top: 20px;
-}
-
 .translate-grid {
   width: 100%;
   display: grid;

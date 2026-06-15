@@ -1,11 +1,13 @@
 <template>
   <div class="qa-root">
-    <div class="cn-page-header qa-sub-header">
+    <div class="cn-page-head qa-sub-header">
       <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
       <span class="cn-page-title">职事问答</span>
       <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
     </div>
 
+    <div class="cn-content-wrap cn-content-wrap--qa">
+      <div class="cn-content-card cn-content-card--qa">
     <!-- 主体：对话区可滚动 -->
     <main class="qa-main" ref="historyRef">
       <div v-if="messages.length === 0" class="qa-welcome">
@@ -358,6 +360,8 @@
         >问</a-button>
       </div>
     </footer>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1651,7 +1655,6 @@ async function scrollToMessageTop(messageId) {
 
 .qa-sub-header {
   flex-shrink: 0;
-  margin-bottom: 0;
 }
 
 .qa-new-chat-btn {
@@ -1676,7 +1679,8 @@ async function scrollToMessageTop(messageId) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px;
+  padding: 24px 28px;
+  max-height: calc(100vh - 220px);
 }
 
 /* 欢迎区 */
@@ -1705,17 +1709,17 @@ async function scrollToMessageTop(messageId) {
 }
 .qa-example-chip {
   padding: 8px 16px;
-  border: 1px solid var(--color-border);
+  border: 0.5px solid var(--cn-border);
   border-radius: 20px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
+  font-size: 14px;
+  color: var(--cn-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
-  background: var(--color-surface);
+  background: var(--cn-bg-page);
   &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: #fdf8ee;
+    border-color: var(--cn-gold);
+    color: var(--cn-gold);
+    background: var(--cn-gold-light);
   }
 }
 
@@ -2007,11 +2011,9 @@ async function scrollToMessageTop(messageId) {
   flex-shrink: 0;
   border-top: 0.5px solid var(--cn-border);
   background: var(--cn-bg-card);
-  padding: 16px 24px 20px;
+  padding: 14px 20px 18px;
 }
 .qa-input-wrap {
-  max-width: min(860px, 90vw);
-  margin: 0 auto;
   display: flex;
   flex-direction: row;
   gap: 8px;
@@ -2020,21 +2022,26 @@ async function scrollToMessageTop(messageId) {
 .qa-textarea {
   flex: 1;
   min-width: 0;
-  border-radius: var(--radius) !important;
+  border-radius: 20px !important;
+  background: var(--cn-bg-page) !important;
   font-family: inherit !important;
   font-size: 15px !important;
   resize: none;
 }
 .qa-submit-btn {
+  width: 40px;
   height: 40px;
-  min-width: 80px;
-  padding: 0 18px;
-  border-radius: var(--radius) !important;
-  font-size: 16px;
-  font-weight: 600;
+  min-width: 40px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: 15px;
+  font-weight: 500;
   flex-shrink: 0;
   align-self: center;
   margin-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .qa-mic-btn {
   flex-shrink: 0;

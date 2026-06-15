@@ -17,7 +17,7 @@ function goBack() {
 </script>
 
 <template>
-  <div class="cn-page-header">
+  <div class="cn-page-head">
     <button type="button" class="cn-back" @click="goBack">← 返回</button>
     <span class="cn-page-title">{{ title }}</span>
   </div>
