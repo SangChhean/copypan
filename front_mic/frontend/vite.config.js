@@ -60,6 +60,10 @@ export default defineConfig({
         target: 'http://localhost:8042',
         changeOrigin: true,
       },
+      '/api/testc/bible_co': {
+        target: 'http://127.0.0.1:8035',
+        changeOrigin: true,
+      },
       '/api/practice/kg_rag/format_download': {
         target: 'http://localhost:8009',
         changeOrigin: true,

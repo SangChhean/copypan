@@ -240,6 +240,16 @@ const routes = [
     component: () => import('../components/toolbox/QaPracticeC.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/enhanced-translate-c',
+    component: () => import('../components/toolbox/EnhancedTranslateC.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/bible-co-c',
+    component: () => import('../components/toolbox/BibleCoC.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
