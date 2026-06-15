@@ -6,9 +6,7 @@
       <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
     </div>
 
-    <div class="cn-content-wrap cn-content-wrap--qa">
-      <div class="cn-content-card cn-content-card--qa">
-    <!-- 主体：对话区可滚动 -->
+    <div class="qa-dialog">
     <main class="qa-main" ref="historyRef">
       <div v-if="messages.length === 0" class="qa-welcome">
         <div class="qa-welcome-title">真理必叫你们得以自由</div>
@@ -262,6 +260,7 @@
         </div>
       </div>
     </main>
+    </div>
 
     <!-- 输入区 -->
     <footer class="qa-footer">
@@ -360,8 +359,6 @@
         >问</a-button>
       </div>
     </footer>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -1657,6 +1654,17 @@ async function scrollToMessageTop(messageId) {
   flex-shrink: 0;
 }
 
+.qa-dialog {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+  min-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .qa-new-chat-btn {
   border: 1px solid var(--cn-border);
   background: var(--cn-bg-card);
@@ -1674,13 +1682,12 @@ async function scrollToMessageTop(messageId) {
   }
 }
 
-/* 主体：中间可滚动 */
+/* 主体：消息列表可滚动 */
 .qa-main {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px 28px;
-  max-height: calc(100vh - 220px);
+  padding-bottom: 80px;
 }
 
 /* 欢迎区 */
@@ -1725,12 +1732,10 @@ async function scrollToMessageTop(messageId) {
 
 /* 对话流 */
 .qa-chat {
-  max-width: min(860px, 90vw);
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 8px;
 }
 
 .qa-msg-row {
@@ -2008,15 +2013,22 @@ async function scrollToMessageTop(messageId) {
 
 /* 输入区 */
 .qa-footer {
-  flex-shrink: 0;
-  border-top: 0.5px solid var(--cn-border);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: var(--cn-bg-card);
-  padding: 14px 20px 18px;
+  border-top: 0.5px solid var(--cn-border);
+  padding: 14px 0;
+  z-index: 100;
 }
 .qa-input-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 .qa-textarea {
@@ -2191,57 +2203,24 @@ async function scrollToMessageTop(messageId) {
 }
 
 @media (max-width: 768px) {
-  /* 顶栏固定：与底栏输入区对称，中间主区域单独滚动 */
-  .qa-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 101;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    /* 刘海屏安全区 */
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .qa-header-inner {
-    padding: 10px 16px;
-    min-height: 48px;
-    box-sizing: border-box;
-  }
-
-  .qa-logo-text {
-    font-size: 22px;
-    line-height: 1.25;
+  .qa-dialog {
+    padding: 16px 16px 0;
+    min-height: calc(100vh - 140px);
   }
 
   .qa-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: var(--color-bg);
-    padding: 12px 16px;
+    padding: 12px 0;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--color-border);
   }
 
-  /*
-   * 主区域预留：必须 ≥ 实际固定顶栏/底栏高度，否则首尾文字会被遮住。
-   * 底栏含多行输入时会变高，故底部留白加大并用 min 兜底。
-   */
+  .qa-input-wrap {
+    padding: 0 16px;
+  }
+
   .qa-main {
-    box-sizing: border-box;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px) + 56px);
-    padding-bottom: calc(max(140px, 32vh) + env(safe-area-inset-bottom, 0px));
-    scroll-padding-top: calc(8px + env(safe-area-inset-top, 0px) + 56px);
-    scroll-padding-bottom: calc(max(140px, 32vh) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* 欢迎区原先 margin-top 较大，与顶栏留白叠加后首屏过空，略收紧 */
   .qa-welcome {
     margin-top: 24px;
   }
