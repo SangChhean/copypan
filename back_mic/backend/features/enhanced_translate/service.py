@@ -25,9 +25,6 @@ from ai_search.ai_service import (
 )
 
 GEMINI_MODEL = os.getenv("ENHANCED_TRANSLATE_GEMINI_MODEL", "gemini-3.5-flash")
-GEMINI_TRANSLATION_FALLBACK_MODEL = os.getenv(
-    "ENHANCED_TRANSLATE_GEMINI_FALLBACK", "gemini-2.5-flash"
-)
 
 from ai_search.gemini_translation_instruction import GEMINI_TRANSLATION_SYSTEM_INSTRUCTION
 from ai_search.gemini_response_utils import (
@@ -867,9 +864,11 @@ def _build_summary(
     }
 
 
-def _gemini_config():
+def _gemini_config(model_name: str):
     if gemini_translation_generate_config:
-        return gemini_translation_generate_config(GEMINI_TRANSLATION_SYSTEM_INSTRUCTION)
+        return gemini_translation_generate_config(
+            GEMINI_TRANSLATION_SYSTEM_INSTRUCTION, model_name=model_name
+        )
     from google.genai import types
 
     return types.GenerateContentConfig(system_instruction=GEMINI_TRANSLATION_SYSTEM_INSTRUCTION)
@@ -891,7 +890,7 @@ def _call_gemini_sync(
             response = gemini_client.models.generate_content(
                 model=use_model,
                 contents=contents,
-                config=_gemini_config(),
+                config=_gemini_config(use_model),
             )
             log_p = f"[enhanced_translate] model={use_model}"
             text = None
@@ -970,10 +969,6 @@ async def _translate_batch(
     indexed = [(line_i, zh) for line_i, zh, _, _ in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
     text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
-    if not text and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
-        text, _ = await asyncio.to_thread(
-            _call_gemini_sync, contents, 0, GEMINI_TRANSLATION_FALLBACK_MODEL, cumulative_usage
-        )
 
     if not text:
         return {line_i: zh for line_i, zh in indexed}, cumulative_usage
@@ -1000,10 +995,6 @@ async def _translate_batch_feasts(
     indexed = [(line_i, feasts_line) for line_i, feasts_line in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
     text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
-    if not text and GEMINI_TRANSLATION_FALLBACK_MODEL != GEMINI_MODEL:
-        text, _ = await asyncio.to_thread(
-            _call_gemini_sync, contents, 0, GEMINI_TRANSLATION_FALLBACK_MODEL, cumulative_usage
-        )
 
     if not text:
         return {line_i: feasts_line for line_i, feasts_line in indexed}, cumulative_usage
