@@ -255,6 +255,11 @@ const routes = [
     component: () => import('../components/toolbox/EnhancedTranslateC.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/bible-co-a',
+    component: () => import('../components/toolbox/BibleCoA.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
