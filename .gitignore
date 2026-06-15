@@ -33,3 +33,7 @@ back_cn/.env
 back_cn/cn_users.db
 back_cn/cn_users.db-shm
 back_cn/cn_users.db-wal
+
+# LSM PDF（移至服务器共享目录 /opt/pansearch/data/lsm/，不进仓库）
+front_qa/public/lsm/*.pdf
+front_cn/public/lsm/*.pdf
