@@ -1,14 +1,11 @@
 <template>
   <div class="app-shell">
     <header v-if="showTopBar" class="cn-navbar">
-      <router-link to="/" class="cn-navbar-brand cn-nav-brand">文字AI服事</router-link>
+      <div class="cn-navbar-brand cn-nav-brand">全备供应</div>
       <div class="cn-navbar-right">
         <div v-if="usage" class="cn-navbar-usage">
           <span class="cn-navbar-usage-item cn-usage-label">
             纲目制作 <em class="cn-usage-val">{{ usage.outline?.used ?? 0 }}/{{ fmtLimit(usage.outline?.limit) }}</em>
-          </span>
-          <span class="cn-navbar-usage-item cn-usage-label">
-            纲目翻译 <em class="cn-usage-val">{{ usage.translate?.used ?? 0 }}/{{ fmtLimit(usage.translate?.limit) }}</em>
           </span>
           <span class="cn-navbar-usage-item cn-usage-label">
             职事问答 <em class="cn-usage-val">{{ usage.qa?.used ?? 0 }}/{{ fmtLimit(usage.qa?.limit) }}</em>

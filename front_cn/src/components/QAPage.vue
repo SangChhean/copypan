@@ -1,7 +1,7 @@
 <template>
   <div class="qa-root">
     <div class="cn-page-head qa-sub-header">
-      <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
+      <button type="button" class="cn-back" @click="router.push('/')">‹‹ 返回</button>
       <span class="cn-page-title">职事问答</span>
       <button type="button" class="qa-new-chat-btn" @click="newConversation">+ 新对话</button>
     </div>
@@ -1675,6 +1675,10 @@ async function scrollToMessageTop(messageId) {
   cursor: pointer;
   line-height: 1.5;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
+  width: auto !important;
+  min-width: unset !important;
+  padding: 6px 16px !important;
+  justify-self: end;
   &:hover {
     border-color: var(--cn-gold);
     color: var(--cn-gold);

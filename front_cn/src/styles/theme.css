@@ -206,15 +206,16 @@ select {
   background: var(--cn-bg-card);
   border-bottom: 0.5px solid var(--cn-border);
   padding: 15px 28px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 12px;
   box-shadow: 0 1px 4px rgba(44, 44, 44, 0.04);
   flex-shrink: 0;
 }
 
 .cn-back {
-  font-size: 14px;
+  font-size: 18px;
+  font-weight: 500;
   color: var(--cn-text-secondary);
   cursor: pointer;
   user-select: none;
@@ -223,6 +224,9 @@ select {
   background: none;
   padding: 0;
   font-family: inherit;
+  flex-shrink: 0;
+  grid-column: 1;
+  justify-self: start;
 }
 
 .cn-back:hover {
@@ -234,6 +238,14 @@ select {
   font-weight: 500;
   color: var(--cn-text-primary);
   flex: 1;
+  text-align: center;
+  grid-column: 2;
+  justify-self: center;
+}
+
+.cn-page-head > :last-child:not(.cn-page-title):not(.cn-back) {
+  grid-column: 3;
+  justify-self: end;
 }
 
 /* 方向切换 */
@@ -342,9 +354,9 @@ select {
 
 /* 顶栏 */
 .cn-navbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   height: 56px;
   padding: 0 24px;
   background: var(--cn-bg-nav);
@@ -354,16 +366,21 @@ select {
 .cn-navbar-brand,
 .cn-nav-brand {
   color: var(--cn-gold);
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
   text-decoration: none;
+  grid-column: 2;
+  justify-self: center;
 }
 
 .cn-navbar-right {
   display: flex;
   align-items: center;
   gap: 16px;
+  grid-column: 3;
+  justify-self: end;
 }
 
 .cn-navbar-usage {
@@ -373,8 +390,9 @@ select {
 
 .cn-navbar-usage-item,
 .cn-usage-label {
-  color: #6A6258;
-  font-size: 12px;
+  color: var(--cn-gold);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .cn-navbar-usage-item em,
