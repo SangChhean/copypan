@@ -4,14 +4,6 @@ import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined, Fil
 const go = (val = "/") => {
   window.location.hash = val;
 };
-
-const openZh2tw = () => {
-  go('/zh2tw-vannak');
-};
-
-const openProgressOutline = () => {
-  window.open('http://localhost:8052', '_blank');
-};
 </script>
 
 <template>
@@ -48,6 +40,9 @@ const openProgressOutline = () => {
         <a-card-grid class="card c2" @click="go('/feast-outline-maker')">
           <span class="card_text">节期-数据制作</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/progress-outline')">
+          <span class="card_text">主恢复的神圣启示进展</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
@@ -71,137 +66,6 @@ const openProgressOutline = () => {
           <div class="card_title"><ApartmentOutlined /> 图谱测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/kg-rag-test')"><span class="card_text">KG-RAG 测试工作台</span></a-card-grid>
-      </a-card>
-    </div>
-    <br />
-    <br />
-    <div class="cards">
-      <a-card>
-        <template #title>
-          <div class="card_title">Vichhet &amp; Chom Pei 测试</div>
-        </template>
-        <a-card-grid class="card c2" @click="go('/practice-translate')"><span class="card_text">纲目翻译练习</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/zh2tw-practice')"><span class="card_text">简繁互转练习</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/practice-kg-rag')">
-          <span class="card_text">AI纲目制作练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/article-polish-c')"><span class="card_text">文章润色练习</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bird-view-c')">
-          <span class="card_text">词典-鸟瞰纲目练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/feast-outline-c')">
-          <span class="card_text">节期纲目制作练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/rough-outline-c')">
-          <span class="card_text">毛胚纲目制作练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/ministerialize-c')">
-          <span class="card_text">纲目职事化练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/qa-practice-c')">
-          <span class="card_text">职事信息问答练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/enhanced-translate-c')">
-          <span class="card_text">增强式翻译练习</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bible-co-c')">
-          <span class="card_text">经文汇集练习</span>
-        </a-card-grid>
-      </a-card>
-    </div>
-    <br />
-    <br />
-    <div class="cards">
-      <a-card>
-        <template #title>
-          <div class="card_title">Vannak &amp; Sila 测试</div>
-        </template>
-        <a-card-grid class="card c2" @click="go('/test-translate-vannak')"><span class="card_text">翻译工具</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bird-view-a')">
-          <span class="card_text">鸟瞰纲目</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="openZh2tw()"><span class="card_text">简繁互转</span></a-card-grid>
-        <a-card-grid class="card c2" @click="go('/generate-outline-vannak')">
-          <span class="card_text">PanAI 纲目生成</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/article-polish-vannak')">
-          <span class="card_text">文章润色</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/feast-outline-a')">
-          <span class="card_text">节期纲目</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/rough-outline-a')">
-          <span class="card_text">毛胚纲目</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/ministerialize-a')">
-          <span class="card_text">纲目职事化</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/qa-simple-a')">
-          <span class="card_text">QA 问答</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/enhanced-translate-a')">
-          <span class="card_text">增强式翻译</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bible-co-a')">
-          <span class="card_text">经文汇集</span>
-        </a-card-grid>
-      </a-card>
-    </div>
-    <br />
-    <br />
-    <div class="cards">
-      <a-card>
-        <template #title>
-          <div class="card_title">Piseth &amp; Sopheap 测试</div>
-        </template>
-        <a-card-grid class="card c2" @click="go('/outline-translate-test')">
-          <span class="card_text">纲目翻译测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/testb-zh2tw')">
-          <span class="card_text">简繁互转测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/panai2-test')">
-          <span class="card_text">AI纲目制作</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/article-polish-hub')">
-          <span class="card_text">文章润色测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bird-view-b')">
-          <span class="card_text">词典-鸟瞰纲目测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/feast-outline-b')">
-          <span class="card_text">节期纲目测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/rough-outline-b')">
-          <span class="card_text">毛胚纲目测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/ministerialize-b')">
-          <span class="card_text">职事化测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/ministry-qa-b')">
-          <span class="card_text">职事问答测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/enhanced-translate-b')">
-          <span class="card_text">增强式翻译测试</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="go('/bible-co-b')">
-          <span class="card_text">经文汇集</span>
-        </a-card-grid>
-      </a-card>
-    </div>
-    <br />
-    <br />
-    <div class="cards">
-      <a-card>
-        <template #title>
-          <div class="card_title">Sotchea 测试</div>
-        </template>
-        <a-card-grid class="card c2" @click="go('/enhanced-translate')">
-          <span class="card_text">增强式翻译</span>
-        </a-card-grid>
-        <a-card-grid class="card c2" @click="openProgressOutline">
-          <span class="card_text">主恢复的神圣启示进展</span>
-        </a-card-grid>
       </a-card>
     </div>
   </div>

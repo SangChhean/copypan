@@ -7,8 +7,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@testd': resolve(__dirname, '../../testD/frontend/src'),
-      '@main': resolve(__dirname, 'src'),
     }
   },
   // 默认即带 content hash；显式写出便于确认 index.html 引用 [name]-[hash].js
@@ -31,50 +29,6 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true
         // No rewrite - backend expects /api/ai_search
-      },
-      '/api/testa/generate_outline': {
-        target: 'http://localhost:8007',
-        changeOrigin: true,
-      },
-      '/api/testa': {
-        target: 'http://localhost:8004',
-        changeOrigin: true,
-      },
-      '/api/practice/kg_rag': {
-        target: 'http://localhost:8009',
-        changeOrigin: true,
-      },
-      '/api/testc/rough_outline': {
-        target: 'http://localhost:8029',
-        changeOrigin: true,
-      },
-      '/api/testc/zh_convert': {
-        target: 'http://localhost:8006',
-        changeOrigin: true,
-      },
-      '/api/testc/format_download': {
-        target: 'http://localhost:8006',
-        changeOrigin: true,
-      },
-      '/api/testc/qa': {
-        target: 'http://localhost:8042',
-        changeOrigin: true,
-      },
-      '/api/testc/bible_co': {
-        target: 'http://127.0.0.1:8035',
-        changeOrigin: true,
-      },
-      '/api/practice/kg_rag/format_download': {
-        target: 'http://localhost:8009',
-        changeOrigin: true,
-      },
-      '/api/testb/bird_view': {
-        target: 'http://localhost:8022',
-        changeOrigin: true,
-      },
-      '/api/testd': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
       },
       '/api': {
         target: 'http://localhost:8000',

@@ -28,6 +28,9 @@ _cache_mtime: float = 0.0
 
 _T2S = _opencc.OpenCC("t2s")
 
+# 异体字/繁简混用归一化：仅用于生成匹配键，不影响存储与展示文本。
+# OpenCC 是词组级转换，单字残留（如「藉一个」「显著/显着」）由此表兜底。
+# 注意：不收 祢/祂（神学专用）、甚/祇（简体有独立含义，误映射风险高）。
 _VARIANT_MAP = str.maketrans({
     "藉": "借",
     "著": "着",
@@ -39,6 +42,8 @@ _VARIANT_MAP = str.maketrans({
     "牠": "它",
     "那": "哪",
     "豫": "预",
+    "题": "提",
+    "唯": "惟",
 })
 
 
@@ -57,6 +62,124 @@ def zh_eq(a: str, b: str) -> bool:
 def zh_contains(sub: str, s: str) -> bool:
     ns, nh = normalize_zh(sub), normalize_zh(s)
     return bool(ns) and bool(nh) and ns in nh
+
+
+def levenshtein_distance(a: str, b: str) -> int:
+    """标准 Levenshtein 编辑距离（双层循环 DP）。"""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        curr = [i]
+        for j, cb in enumerate(b, 1):
+            curr.append(
+                min(
+                    curr[j - 1] + 1,
+                    prev[j] + 1,
+                    prev[j - 1] + (ca != cb),
+                )
+            )
+        prev = curr
+    return prev[-1]
+
+
+def _edit_positions_in_a(a: str, b: str) -> list[int]:
+    """回溯 Levenshtein，返回字符串 a 中参与编辑的 0-based 下标。"""
+    m, n = len(a), len(b)
+    if m == 0 and n == 0:
+        return []
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            dp[i][j] = min(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost,
+            )
+    positions: set[int] = set()
+    i, j = m, n
+    while i > 0 or j > 0:
+        if i > 0 and j > 0:
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            if dp[i][j] == dp[i - 1][j - 1] + cost:
+                if cost == 1:
+                    positions.add(i - 1)
+                i -= 1
+                j -= 1
+                continue
+        if i > 0 and dp[i][j] == dp[i - 1][j] + 1:
+            positions.add(i - 1)
+            i -= 1
+        elif j > 0 and dp[i][j] == dp[i][j - 1] + 1:
+            positions.add(max(i - 1, 0))
+            j -= 1
+        else:
+            break
+    return sorted(positions)
+
+
+def _max_consecutive_run(indices: list[int]) -> int:
+    if not indices:
+        return 0
+    indices = sorted(indices)
+    best = run = 1
+    for k in range(1, len(indices)):
+        if indices[k] == indices[k - 1] + 1:
+            run += 1
+            best = max(best, run)
+        else:
+            run = 1
+    return best
+
+
+def _edits_non_consecutive(a: str, b: str) -> bool:
+    """编辑位点在 a 上不得连续（仅允许分散的单点差异）。"""
+    positions = _edit_positions_in_a(a, b)
+    if not positions:
+        return True
+    return _max_consecutive_run(positions) <= 1
+
+
+def _fuzzy_threshold(ref_len: int) -> tuple[int, bool]:
+    if ref_len > 30:
+        return 8, False
+    if ref_len <= 20:
+        return 3, True
+    return 4, True
+
+
+def zh_fuzzy_eq(a: str, b: str) -> bool:
+    """
+    reference 行专用模糊全等（整行 Pool 全等，非子串）：
+    1. 先 ``zh_eq``
+    2. normalize 后 ≤ 20 字：编辑距离 ≤ 3，且编辑位点不连续
+    3. normalize 后 21～30 字：编辑距离 ≤ 4，且编辑位点不连续
+    4. normalize 后 > 30 字：编辑距离 ≤ 8
+    """
+    if zh_eq(a, b):
+        return True
+    na, nb = normalize_zh(a), normalize_zh(b)
+    if not na or not nb:
+        return False
+    ref_len = max(len(na), len(nb))
+    threshold, require_non_consecutive = _fuzzy_threshold(ref_len)
+    if abs(len(na) - len(nb)) > threshold:
+        return False
+    dist = levenshtein_distance(na, nb)
+    if dist > threshold:
+        return False
+    if require_non_consecutive and not _edits_non_consecutive(na, nb):
+        return False
+    return True
 
 
 def _load_pool_file() -> dict[str, dict[str, Any]]:
@@ -78,6 +201,7 @@ def _load_pool_file() -> dict[str, dict[str, Any]]:
             en = (rec.get("en") or "").strip()
             if not zh or not en:
                 continue
+            # 忽略记录里预存的 norm_zh（可能由旧规则生成），总是按当前规则现算
             norm = normalize_zh(zh)
             if not norm:
                 continue
@@ -99,6 +223,41 @@ def reload_pool(force: bool = False) -> int:
     _cache_mtime = mtime
     logger.info("[enhanced_translate_pool] 已加载 %s 条", len(_cache_by_norm))
     return len(_cache_by_norm)
+
+
+def recall_local_pool_hits(query: str, *, body_prefix: str = "") -> list[dict[str, Any]]:
+    """
+    本地 Additional Pool 子串召回，供篇题行第二轮补充 ES 未覆盖条目。
+    body_prefix 非空时优先保留 normalize_zh(hit) 以 normalize_zh(body_prefix) 开头的命中。
+    """
+    query = (query or "").strip()
+    body_prefix = (body_prefix or "").strip()
+    if not query and not body_prefix:
+        return []
+    reload_pool()
+    nq = normalize_zh(query) if query else ""
+    nbp = normalize_zh(body_prefix) if body_prefix else ""
+    hits: list[dict[str, Any]] = []
+    for rec in _cache_by_norm.values():
+        zh = (rec.get("zh") or "").strip()
+        if not zh:
+            continue
+        nz = normalize_zh(zh)
+        if nbp and nz.startswith(nbp):
+            matched = True
+        elif nq and nq in nz:
+            matched = True
+        else:
+            matched = False
+        if not matched:
+            continue
+        hits.append({
+            "zh": zh,
+            "text": zh,
+            "en": (rec.get("en") or "").strip(),
+            "retrieval_route": "local_pool",
+        })
+    return hits
 
 
 def lookup_line_en(zh_line: str) -> str | None:

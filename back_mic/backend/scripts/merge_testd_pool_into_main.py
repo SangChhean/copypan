@@ -18,8 +18,7 @@ from features.enhanced_translate.pool import zh_eq, normalize_zh
 
 MAIN_POOL = _BACKEND / "data" / "enhanced_translate" / "pool.jsonl"
 TESTD_POOL = _BACKEND.parent.parent / "testD" / "backend" / "Additional-pool" / "pool.jsonl"
-CUTOFF = "2026-06-10"
-BACKUP = MAIN_POOL.parent / "pool.jsonl.backup-20260611"
+BACKUP = MAIN_POOL.parent / "pool.jsonl.backup-20260616"
 
 
 def _load_lines(path: Path) -> list[dict]:
@@ -37,13 +36,19 @@ def _load_lines(path: Path) -> list[dict]:
     return out
 
 
+def _safe_print(*args, **kwargs) -> None:
+    text = " ".join(str(a) for a in args)
+    enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        print(text, **kwargs)
+    except UnicodeEncodeError:
+        print(text.encode(enc, errors="replace").decode(enc, errors="replace"), **kwargs)
+
+
 def main() -> None:
     main_rows = _load_lines(MAIN_POOL)
     testd_rows = _load_lines(TESTD_POOL)
-    candidates = [
-        r for r in testd_rows
-        if (r.get("saved_at") or "")[:10] >= CUTOFF
-    ]
+    candidates = testd_rows
 
     merged_norms = {normalize_zh(r.get("zh") or "") for r in main_rows}
     to_add: list[dict] = []
@@ -69,30 +74,30 @@ def main() -> None:
         merged_norms.add(norm)
         row = {**rec, "zh": zh, "en": en, "norm_zh": norm}
         to_add.append(row)
-        print(
+        _safe_print(
             f"ADD norm={norm[:40]}{'…' if len(norm) > 40 else ''} "
             f"saved_at={rec.get('saved_at', '')[:19]}"
         )
 
-    print(f"candidates={len(candidates)} skipped_dup={skipped} to_add={len(to_add)}")
+    _safe_print(f"candidates={len(candidates)} skipped_dup={skipped} to_add={len(to_add)}")
     if skip_log:
-        print("--- skip detail ---")
+        _safe_print("--- skip detail ---")
         for line in skip_log:
-            print(line)
+            _safe_print(line)
     if not to_add:
-        print(f"main_pool_lines={len(main_rows)} (no changes)")
+        _safe_print(f"main_pool_lines={len(main_rows)} (no changes)")
         return
 
     if MAIN_POOL.is_file():
         shutil.copy2(MAIN_POOL, BACKUP)
-        print(f"backup={BACKUP}")
+        _safe_print(f"backup={BACKUP}")
 
     with MAIN_POOL.open("a", encoding="utf-8", newline="\n") as f:
         for row in to_add:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     final = len(_load_lines(MAIN_POOL))
-    print(f"main_pool_final_lines={final}")
+    _safe_print(f"main_pool_final_lines={final}")
 
 
 if __name__ == "__main__":

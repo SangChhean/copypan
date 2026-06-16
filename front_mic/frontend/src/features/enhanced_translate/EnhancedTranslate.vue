@@ -9,6 +9,7 @@ const MAX_CONTENT_CHARS = 100_000;
 
 const activeView = ref("translate");
 const content = ref("");
+const direction = ref("zh2en");
 const promptOverride = ref("");
 const inputError = ref(null);
 const loading = ref(false);
@@ -79,7 +80,8 @@ async function translate() {
   refsFilter.value = "all";
 
   if (!text) {
-    inputError.value = "请先粘贴简体中文纲目";
+    inputError.value =
+      direction.value === "en2zh" ? "请先粘贴英文纲目" : "请先粘贴简体中文纲目";
     return;
   }
   if (text.length > MAX_CONTENT_CHARS) {
@@ -93,10 +95,15 @@ async function translate() {
     return;
   }
 
+  const endpoint =
+    direction.value === "en2zh"
+      ? "/api/ai_search/enhanced_translate/en2zh"
+      : "/api/ai_search/enhanced_translate/translate";
+
   loading.value = true;
   const start = Date.now();
   try {
-    const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/translate`, {
+    const res = await fetch(`${apiBase}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -135,6 +142,16 @@ async function translate() {
   } finally {
     loading.value = false;
   }
+}
+
+function translateZh2en() {
+  direction.value = "zh2en";
+  translate();
+}
+
+function translateEn2zh() {
+  direction.value = "en2zh";
+  translate();
 }
 
 function getEditedResultText() {
@@ -219,7 +236,7 @@ async function downloadFormatted() {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          direction: "zh2en",
+          direction: direction.value,
           translated_text: editedText,
           output_format: format,
           is_outline: true,
@@ -453,14 +470,40 @@ function downloadRefsTxt() {
       </p>
       <a-divider :style="{ margin: '12px 0' }" />
 
-      <p class="direction-fixed">翻译方向：简体中文 → 英文</p>
+      <p class="direction-fixed">
+        翻译方向：{{ direction === "en2zh" ? "英文 → 简体中文" : "简体中文 → 英文" }}
+      </p>
+      <div class="direction-actions">
+        <button
+          type="button"
+          class="action-btn"
+          :class="{ 'action-btn-primary': direction === 'zh2en' }"
+          :disabled="!canTranslate || loading"
+          @click="translateZh2en"
+        >
+          {{ loading && direction === "zh2en" ? "翻译中…" : "中翻英" }}
+        </button>
+        <button
+          type="button"
+          class="action-btn"
+          :class="{ 'action-btn-primary': direction === 'en2zh' }"
+          :disabled="!canTranslate || loading"
+          @click="translateEn2zh"
+        >
+          {{ loading && direction === "en2zh" ? "翻译中…" : "英翻中" }}
+        </button>
+      </div>
       <a-divider :style="{ margin: '12px 0' }" />
 
       <div class="textarea-wrap">
         <a-textarea
           v-model:value="content"
           :rows="12"
-          placeholder="请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）"
+          :placeholder="
+            direction === 'en2zh'
+              ? '请粘贴英文纲目全文（可含分号子句与行末读经标注，如 —John 3:16:）'
+              : '请粘贴简体中文纲目全文（可含分号子句与行末读经标注，如 —约三16：）'
+          "
           class="content-area"
           :disabled="loading"
           :maxlength="MAX_CONTENT_CHARS"
@@ -479,15 +522,6 @@ function downloadRefsTxt() {
       </div>
 
       <div class="action-row">
-        <button
-          type="button"
-          class="action-btn"
-          :disabled="!canTranslate || loading"
-          @click="translate"
-        >
-          <span v-if="loading">翻译中…</span>
-          <span v-else>增强式翻译</span>
-        </button>
         <button type="button" class="clear-btn" :disabled="loading" @click="clearAll">清空</button>
       </div>
       <p v-if="loading" class="loading-hint">请耐心等待，逐行检索与翻译可能需要 1～2 分钟</p>
@@ -518,7 +552,7 @@ function downloadRefsTxt() {
       <a-card v-if="result" class="result-card">
         <template #title>
           <div class="result-title-row">
-            <span>英文纲目</span>
+            <span>{{ direction === "en2zh" ? "中文纲目" : "英文纲目" }}</span>
             <span v-if="durationMs" class="dur">{{ formatDuration(durationMs) }}</span>
             <button type="button" class="link-btn" @click="copyText(result)">复制</button>
             <button type="button" class="link-btn" :disabled="downloading" @click="downloadFormatted">
@@ -580,13 +614,27 @@ function downloadRefsTxt() {
               <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
             </div>
             <div
-              v-if="group.reference_source_zh"
+              v-if="group.reference_source_zh_list?.length || group.reference_source_zh"
               class="ref-source-block"
             >
-              <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
-              <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
-              <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
-              <span v-else class="ref-source-pending">（待翻译）</span>
+              <template v-if="group.reference_source_zh_list?.length">
+                <div
+                  v-for="(srcZh, si) in group.reference_source_zh_list"
+                  :key="si"
+                  class="ref-source-pair"
+                >
+                  <span class="ref-source-zh">{{ srcZh }}</span>
+                </div>
+                <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
+                <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
+                <span v-else class="ref-source-pending">（待翻译）</span>
+              </template>
+              <template v-else>
+                <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
+                <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
+                <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
+                <span v-else class="ref-source-pending">（待翻译）</span>
+              </template>
             </div>
             <a-textarea
               v-model:value="editedTranslations[group.line_index]"
@@ -681,10 +729,26 @@ function downloadRefsTxt() {
 }
 
 .direction-fixed {
-  margin: 0;
+  margin: 0 0 8px;
   font-weight: 600;
   color: #333;
   font-size: 1em;
+}
+
+.direction-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.action-btn-primary {
+  background: #1677ff;
+  color: #fff;
+  border-color: #1677ff;
+}
+
+.ref-source-pair {
+  margin-bottom: 2px;
 }
 
 .textarea-wrap {

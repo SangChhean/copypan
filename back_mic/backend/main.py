@@ -400,37 +400,17 @@ app.include_router(bible_co_router)
 app.include_router(article_polish_router)
 # 增强式翻译（主站副本，中→英）
 app.include_router(enhanced_translate_official_router)
+from features.progress_outline.router import router as progress_outline_router
+
+app.include_router(progress_outline_router)
 # AI 圆桌路由
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）
 app.include_router(kg_rag_router)
 app.include_router(feast_router)
-_repo_root = pt(__file__).resolve().parents[2]
-if str(_repo_root) not in sys.path:
-    sys.path.insert(0, str(_repo_root))
-from testC.translate.backend.translate_router_practice import router as practice_router
-app.include_router(practice_router, prefix="/api")
 
 # 注册API路由器
 app.include_router(api_router)
-
-# test_B 练习路由（临时学生测试）
-_test_b_translate_backend = _repo_root / "test_B" / "translate" / "backend"
-_test_b_zh2tw_backend = _repo_root / "test_B" / "zh2tw" / "backend"
-for _p in (_test_b_translate_backend, _test_b_zh2tw_backend):
-    if str(_p) not in sys.path:
-        sys.path.append(str(_p))
-from test_B.translate.backend.translate_router import router as test_b_translate_router
-from test_B.zh2tw.backend.zh_router import router as test_b_zh_router
-app.include_router(test_b_translate_router)
-app.include_router(test_b_zh_router)
-
-# testD 增强式翻译（业务在 testD/，此处仅挂载路由）
-from testD.backend.enhanced_translate_router import router as enhanced_translate_router
-from testD.backend.retrieve_test_router import router as retrieve_test_router
-
-app.include_router(enhanced_translate_router)
-app.include_router(retrieve_test_router)
 
 # 前端构建产物（Vite dist）；须在所有 API 路由注册之后挂载，避免覆盖 /api
 _FRONTEND_DIST = pt(__file__).resolve().parents[2] / "front_mic" / "frontend" / "dist"

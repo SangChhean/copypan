@@ -70,13 +70,24 @@ function normalizeDedupedRef(r, lineIndex) {
 
 function lineTypeClass(group) {
   const t = group.line_type || "reference";
+  if (t === "bible-reading") return "line-type-bible";
+  if (t === "title") return "line-type-title";
   return t === "outline" ? "line-type-outline" : "line-type-reference";
+}
+
+function lineTypeLabel(group) {
+  const t = group.line_type || "reference";
+  if (t === "bible-reading") return "bible-reading";
+  if (t === "title") return "title";
+  return t === "outline" ? "outline" : "reference";
 }
 
 function hitLayerClass(layer) {
   if (layer === "层1·Additional Pool") return "layer-1";
   if (layer === "层2·ES Pool") return "layer-2";
   if (layer === "层3·Feasts") return "layer-3";
+  if (layer === "篇题·Pool" || layer === "篇题·无参考") return "layer-title";
+  if (layer === "读经·跳过检索") return "layer-bible";
   if (layer === "层4·检索") return "layer-4";
   if (layer === "层4·检索失败") return "layer-4-fail";
   return "";
@@ -224,7 +235,7 @@ async function runRetrieve() {
             class="ref-line-group"
           >
             <div class="ref-line-title" :class="lineTypeClass(group)">
-              <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
+              <span class="line-type-tag">{{ lineTypeLabel(group) }}</span>
               <span
                 v-if="group.hit_layer"
                 class="hit-layer-tag"
@@ -450,8 +461,23 @@ async function runRetrieve() {
 }
 
 .line-type-outline .line-type-tag {
+  background: rgba(22, 119, 255, 0.1);
+  color: #1677ff;
+}
+
+.line-type-bible .line-type-tag {
   background: rgba(114, 46, 209, 0.1);
   color: #722ed1;
+}
+
+.line-type-title .line-type-tag {
+  background: rgba(250, 140, 22, 0.12);
+  color: #d46b08;
+}
+
+.line-type-reference .line-type-tag {
+  background: #f0f0f0;
+  color: #595959;
 }
 
 .hit-layer-tag {
@@ -484,6 +510,16 @@ async function runRetrieve() {
 .layer-4-fail {
   background: rgba(207, 19, 34, 0.1);
   color: #cf1322;
+}
+
+.layer-title {
+  background: rgba(250, 140, 22, 0.12);
+  color: #d46b08;
+}
+
+.layer-bible {
+  background: rgba(19, 194, 194, 0.12);
+  color: #08979c;
 }
 
 .pool-tag {
