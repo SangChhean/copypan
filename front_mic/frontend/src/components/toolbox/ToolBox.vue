@@ -8,6 +8,10 @@ const go = (val = "/") => {
 const openZh2tw = () => {
   go('/zh2tw-vannak');
 };
+
+const openProgressOutline = () => {
+  window.open('http://localhost:8052', '_blank');
+};
 </script>
 
 <template>
@@ -191,6 +195,9 @@ const openZh2tw = () => {
         </template>
         <a-card-grid class="card c2" @click="go('/enhanced-translate')">
           <span class="card_text">增强式翻译</span>
+        </a-card-grid>
+        <a-card-grid class="card c2" @click="openProgressOutline">
+          <span class="card_text">主恢复的神圣启示进展</span>
         </a-card-grid>
       </a-card>
     </div>
