@@ -400,9 +400,15 @@ app.include_router(bible_co_router)
 app.include_router(article_polish_router)
 # 增强式翻译（主站副本，中→英）
 app.include_router(enhanced_translate_official_router)
-from features.progress_outline.router import router as progress_outline_router
+from features.progress_outline.router import (
+    router as progress_outline_router,
+    pano_router as progress_outline_pano_router,
+    entry_router as progress_outline_entry_router,
+)
 
 app.include_router(progress_outline_router)
+app.include_router(progress_outline_pano_router)
+app.include_router(progress_outline_entry_router)
 # AI 圆桌路由
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）

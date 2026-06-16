@@ -272,25 +272,6 @@ def apply_style(para, style_name: str, doc):
         pass
 
 
-def prepend_theme_before_scripture(text: str, theme: str) -> str:
-    """在「读经」行之前插入主题（用于 Word 篇题区）。"""
-    theme = (theme or "").strip()
-    if not theme:
-        return text
-    lines = text.splitlines()
-    for i, line in enumerate(lines):
-        if "读经：" in line or "讀經：" in line:
-            return "\n".join(lines[:i] + [theme] + lines[i:])
-    if not text.strip():
-        return theme
-    return theme + "\n" + text
-
-
-def _safe_docx_filename(title: str, *, index: int = 0) -> str:
-    name = re.sub(r'[\\/:*?"<>|]', "", (title or "").strip()) or f"纲目_{index + 1}"
-    return f"{name}.docx"
-
-
 def generate_filename(lines_list: list, scripture_idx: int | None, lang: str) -> str:
     """根据篇题行生成文件名"""
     import re as _re
@@ -413,17 +394,76 @@ def make_zh_docx(text: str) -> bytes:
     return buf.getvalue()
 
 
+def make_en_docx(text: str, lang: str = "en") -> bytes:
+    if lang == "es":
+        scripture_marker = "Lectura bíblica:"
+        excerpts_marker = "Extractos del ministerio:"
+    else:
+        scripture_marker = "Scripture Reading:"
+        excerpts_marker = "Excerpts from the Ministry:"
+
+    doc = Document(str(EN_TEMPLATE))
+    for para in doc.paragraphs:
+        p = para._element
+        p.getparent().remove(p)
+
+    lines_list = [l for l in text.splitlines() if l.strip()]
+
+    scripture_idx = None
+    for i, line in enumerate(lines_list):
+        if line.strip().lower().startswith(scripture_marker.lower()):
+            scripture_idx = i
+            break
+
+    for i, line in enumerate(lines_list):
+        para = doc.add_paragraph(line)
+        text_s = line.strip()
+
+        if scripture_idx is not None and i < scripture_idx:
+            diff = scripture_idx - i
+            if diff == 1:
+                apply_style(para, "11篇题", doc)
+            elif diff >= 2:
+                apply_style(para, "11大标题", doc)
+            continue
+
+        if text_s.lower().startswith(scripture_marker.lower()):
+            apply_style(para, "1读经", doc)
+            continue
+
+        if text_s.lower().startswith(excerpts_marker.lower()):
+            apply_style(para, "B1职事信息摘录", doc)
+            continue
+
+        matched = False
+        for pattern, style_name in ROMAN_STYLE_MAP:
+            if re.match(pattern, text_s):
+                apply_style(para, style_name, doc)
+                matched = True
+                break
+        if not matched:
+            if re.match(r"^[A-H]\.", text_s):
+                apply_style(para, "3中点", doc)
+            elif re.match(r"^[1-9]\.", text_s):
+                apply_style(para, "4小点", doc)
+            elif re.match(r"^[a-k]\.", text_s):
+                apply_style(para, "5小小点", doc)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
 # ════════════════════════════════════════════════════════════
 #  接口
 # ════════════════════════════════════════════════════════════
 
 
-def format_zh_docx(text: str, *, header_title: str | None = None, file_index: int = 0) -> tuple[bytes, str]:
-    """处理中文纲目文本并返回 (docx_bytes, filename)。header_title 插入在读经行之前。"""
+def format_zh_docx(text: str) -> tuple[bytes, str]:
+    """处理中文纲目文本并返回 (docx_bytes, filename)。"""
     if not text.strip():
         raise ValueError("文字内容不能为空")
-    raw = prepend_theme_before_scripture(text, header_title or "")
-    processed = process_zh_text(raw)
+    processed = process_zh_text(text)
     lines_list = [l for l in processed.splitlines() if l.strip()]
     scripture_idx = None
     for i, line in enumerate(lines_list):
@@ -431,36 +471,5 @@ def format_zh_docx(text: str, *, header_title: str | None = None, file_index: in
             scripture_idx = i
             break
     docx_bytes = make_zh_docx(processed)
-    if header_title and (scripture_idx is None or scripture_idx < 1):
-        filename = _safe_docx_filename(header_title, index=file_index)
-    else:
-        filename = generate_filename(lines_list, scripture_idx, "zh")
+    filename = generate_filename(lines_list, scripture_idx, "zh")
     return docx_bytes, filename
-
-
-def format_zh_docx_zip(items: list[dict[str, str]]) -> tuple[bytes, str]:
-    """多组纲目打包为 zip，每组一个 docx。"""
-    if not items:
-        raise ValueError("没有可导出的纲目")
-    buf = io.BytesIO()
-    used_names: dict[str, int] = {}
-    written = 0
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for i, item in enumerate(items):
-            text = (item.get("text") or "").strip()
-            if not text:
-                continue
-            title = (item.get("title") or "").strip()
-            docx_bytes, filename = format_zh_docx(text, header_title=title, file_index=i)
-            base = filename
-            if base in used_names:
-                used_names[base] += 1
-                stem, ext = base.rsplit(".", 1) if "." in base else (base, "docx")
-                filename = f"{stem}_{used_names[base]}.{ext}"
-            else:
-                used_names[base] = 1
-            zf.writestr(filename, docx_bytes)
-            written += 1
-    if written == 0:
-        raise ValueError("没有可导出的纲目")
-    return buf.getvalue(), "分段纲目.zip"
