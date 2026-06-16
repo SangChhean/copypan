@@ -43,6 +43,9 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/progress-outline')">
           <span class="card_text">主恢复的神圣启示进展</span>
         </a-card-grid>
+        <a-card-grid class="card c2" @click="go('/es-claude-test')">
+          <span class="card_text">ES + Claude 测试</span>
+        </a-card-grid>
       </a-card>
     </div>
     <br />

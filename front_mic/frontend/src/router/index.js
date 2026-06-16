@@ -64,6 +64,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/es-claude-test",
+    component: () => import("@/features/es_claude_test/EsClaudeTest.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/zh-convert",
     component: () => import("@/features/zh_convert/ZhConvert.vue"),
   },
