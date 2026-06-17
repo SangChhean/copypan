@@ -83,6 +83,24 @@ class SetAdminRequest(BaseModel):
     is_admin: bool
 
 
+class ChangePasswordRequest(BaseModel):
+    username: str
+    old_password: str
+    new_password: str
+
+    @field_validator("username", "old_password", "new_password")
+    @classmethod
+    def _not_empty(cls, v: str) -> str:
+        v = (v or "").strip() if isinstance(v, str) else v
+        if not v:
+            raise ValueError("字段不能为空")
+        return v
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+
+
 @router.post("/register")
 async def register(req: RegisterRequest):
     if not use_invite_code(req.invite_code, req.username):
@@ -178,3 +196,48 @@ async def set_user_admin(
     if not set_admin(username, req.is_admin):
         raise HTTPException(status_code=404, detail="用户不存在")
     return {"username": username, "is_admin": req.is_admin}
+
+
+@router.post("/change_password")
+async def change_password(req: ChangePasswordRequest):
+    if not verify_user(req.username, req.old_password):
+        raise HTTPException(status_code=401, detail="用户名或旧密码错误")
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="新密码不能少于6位")
+    from back_cn.auth import DB_PATH
+    import sqlite3
+    import bcrypt
+
+    hashed = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE users SET hashed_password = ? WHERE username = ?",
+            (hashed, req.username),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.post("/users/{username}/reset_password")
+async def reset_password(
+    username: str,
+    req: ResetPasswordRequest,
+    _: bool = Depends(verify_admin_access),
+):
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="新密码不能少于6位")
+    user = get_user(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    import sqlite3
+    import bcrypt
+    from back_cn.auth import DB_PATH
+
+    hashed = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE users SET hashed_password = ? WHERE username = ?",
+            (hashed, username),
+        )
+        conn.commit()
+    return {"ok": True}

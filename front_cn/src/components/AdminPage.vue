@@ -342,15 +342,26 @@
                         <a-button size="small" class="admin-user-limit-btn" @click="openLimitModal(row.username)">
                           设置限额
                         </a-button>
+                        <a-button size="small" class="admin-user-limit-btn" @click="openResetPwdModal(row.username)">
+                          重置密码
+                        </a-button>
+                        <a-button
+                          v-if="row.username !== currentUsername"
+                          size="small"
+                          class="admin-user-limit-btn"
+                          :style="row.is_admin ? 'border-color:#E24B4A;color:#E24B4A' : 'border-color:#C9A96E;color:#C9A96E'"
+                          @click="toggleAdmin(row.username, row.is_admin)"
+                        >
+                          {{ row.is_admin ? '取消管理员' : '设为管理员' }}
+                        </a-button>
                         <a-popconfirm
+                          v-if="row.username !== currentUsername"
                           title="确认删除该用户？"
                           ok-text="确认"
                           cancel-text="取消"
                           @confirm="deleteUser(row.username)"
                         >
-                          <a-button danger size="small" :loading="deletingUser === row.username">
-                            删除
-                          </a-button>
+                          <a-button danger size="small" :loading="deletingUser === row.username">删除</a-button>
                         </a-popconfirm>
                       </td>
                     </tr>
@@ -388,6 +399,21 @@
         </div>
       </div>
     </a-modal>
+
+    <a-modal
+      v-model:open="resetPwdModalOpen"
+      :title="`重置 ${resetPwdUser} 的密码`"
+      ok-text="确认重置"
+      cancel-text="取消"
+      :confirm-loading="resetPwdSaving"
+      @ok="saveResetPwd"
+    >
+      <a-input-password
+        v-model:value="resetPwdValue"
+        placeholder="请输入新密码（不少于6位）"
+        @pressEnter="saveResetPwd"
+      />
+    </a-modal>
   </div>
 </template>
 
@@ -396,6 +422,7 @@ import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
+import { getUsername } from '@/utils/auth.js'
 import DebugPanel from '@/components/DebugPanel.vue'
 
 const AdminCatNode = defineComponent({
@@ -600,6 +627,13 @@ const invitesLoading = ref(false)
 const usersLoading = ref(false)
 const deletingUser = ref('')
 
+const currentUsername = computed(() => getUsername())
+
+const resetPwdModalOpen = ref(false)
+const resetPwdUser = ref('')
+const resetPwdValue = ref('')
+const resetPwdSaving = ref(false)
+
 const limitModalOpen = ref(false)
 const limitModalUser = ref('')
 const limitModalLoading = ref(false)
@@ -703,6 +737,10 @@ async function loadUsers() {
 
 async function deleteUser(username) {
   if (!username) return
+  if (username === getUsername()) {
+    message.warning('不能删除自己的账号')
+    return
+  }
   deletingUser.value = username
   apiError.value = ''
   try {
@@ -815,6 +853,48 @@ async function saveAllLimits() {
     message.error(e.response?.data?.detail || '保存失败')
   } finally {
     limitSaving.value = false
+  }
+}
+
+function openResetPwdModal(username) {
+  resetPwdUser.value = username
+  resetPwdValue.value = ''
+  resetPwdModalOpen.value = true
+}
+
+async function saveResetPwd() {
+  if (!resetPwdValue.value || resetPwdValue.value.length < 6) {
+    message.warning('新密码不能少于6位')
+    return
+  }
+  resetPwdSaving.value = true
+  try {
+    await http.post(`/api/cn/auth/users/${encodeURIComponent(resetPwdUser.value)}/reset_password`, {
+      new_password: resetPwdValue.value,
+    })
+    message.success('密码已重置')
+    resetPwdModalOpen.value = false
+  } catch (e) {
+    message.error(e?.response?.data?.detail || '重置失败')
+  } finally {
+    resetPwdSaving.value = false
+  }
+}
+
+async function toggleAdmin(username, currentIsAdmin) {
+  const currentUser = getUsername()
+  if (username === currentUser && currentIsAdmin) {
+    message.warning('不能取消自己的管理员权限')
+    return
+  }
+  try {
+    await http.post(`/api/cn/auth/users/${encodeURIComponent(username)}/admin`, {
+      is_admin: !currentIsAdmin,
+    })
+    message.success(currentIsAdmin ? '已取消管理员' : '已设为管理员')
+    await loadUsers()
+  } catch (e) {
+    message.error(e?.response?.data?.detail || '操作失败')
   }
 }
 
