@@ -203,6 +203,10 @@
             </a-tab-pane>
 
             <a-tab-pane key="materials" tab="资料管理">
+              <a-tabs v-model:activeKey="matTypeTab" class="cn-admin-tabs" style="margin-bottom:16px">
+                <a-tab-pane key="pastoral" tab="牧养材料" />
+                <a-tab-pane key="conference" tab="节期特会相关纲目" />
+              </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
                   <a-input v-model:value="newCatName" placeholder="分类名称" class="admin-mat-input" />
@@ -612,6 +616,7 @@ const limitFields = [
 ]
 
 const matCategories = ref([])
+const matTypeTab = ref('pastoral')
 const matCategoriesLoading = ref(false)
 const matFiles = ref([])
 const matFilesLoading = ref(false)
@@ -832,7 +837,9 @@ function formatMatDate(iso) {
 async function loadMatCategories() {
   matCategoriesLoading.value = true
   try {
-    const res = await http.get('/api/cn/materials/categories')
+    const res = await http.get('/api/cn/materials/categories', {
+      params: { type: matTypeTab.value },
+    })
     matCategories.value = res.data || []
     if (matCategories.value.length && !matSelectedCategoryId.value) {
       matSelectedCategoryId.value = matCategories.value[0].id
@@ -871,6 +878,7 @@ async function createCategory() {
       name,
       parent_id: newCatParentId.value || null,
       sort_order: 0,
+      type: matTypeTab.value,
     })
     newCatName.value = ''
     newCatParentId.value = null
@@ -1000,6 +1008,12 @@ watch(activeTab, (tab) => {
   if (tab === 'materials') {
     loadMatCategories().then(loadMatFiles)
   }
+})
+
+watch(matTypeTab, () => {
+  matSelectedCategoryId.value = null
+  matFiles.value = []
+  loadMatCategories()
 })
 
 onMounted(() => {

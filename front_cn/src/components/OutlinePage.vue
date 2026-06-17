@@ -8,7 +8,6 @@
     <div class="cn-content-wrap">
       <div class="cn-content-card">
         <section class="section">
-        <h2>输入</h2>
         <a-form layout="vertical">
           <a-form-item label="纲目主题" required>
             <a-input
@@ -48,43 +47,8 @@
               @click="addBurdenPoint"
             >+ 添加负担点</a-button>
           </a-form-item>
-
-          <a-button
-            class="cn-btn-ghost"
-            :loading="burdenLoading"
-            :disabled="!canGenerateBurden"
-            @click="onGenerateBurden"
-          >生成负担说明</a-button>
         </a-form>
 
-        <a-form-item label="负担说明" class="burden-desc-item">
-          <a-textarea
-            v-model:value="burdenDescription"
-            :auto-size="{ minRows: 4, maxRows: 12 }"
-            placeholder="可手动填写，或由 AI 生成后预填"
-          />
-        </a-form-item>
-
-        <a-collapse v-if="burdenHits.length" class="hits-collapse">
-          <a-collapse-panel
-            v-for="(hit, i) in burdenHits"
-            :key="i"
-            :header="`负担点：${hit.point}`"
-          >
-            <div v-if="hit.rewritten_query" class="hit-line">
-              <strong>检索式：</strong>{{ hit.rewritten_query }}
-            </div>
-            <div v-if="hit.top1" class="hit-line">
-              <strong>出处：</strong>{{ hit.top1.source_zh }}
-            </div>
-            <div v-if="hit.top1" class="hit-preview">{{ hit.top1.text_preview }}</div>
-            <div v-else class="hit-empty">未找到相关段落</div>
-          </a-collapse-panel>
-        </a-collapse>
-      </section>
-
-      <section class="section">
-        <h2>生成纲目</h2>
         <a-button
           type="primary"
           class="outline-gen-btn"
@@ -108,12 +72,15 @@
 
           <a-tabs v-model:activeKey="resultTab">
             <a-tab-pane key="zh" tab="简体">
+              <div v-if="topic.trim()" class="outline-topic-title">{{ topic.trim() }}</div>
               <pre class="outline-text cn-result">{{ outlineAnswer }}</pre>
             </a-tab-pane>
             <a-tab-pane key="tw" tab="繁体" :disabled="!traditionalOutline">
+              <div v-if="topic.trim()" class="outline-topic-title">{{ topic.trim() }}</div>
               <pre class="outline-text cn-result">{{ traditionalOutline }}</pre>
             </a-tab-pane>
             <a-tab-pane key="en" tab="英文" :disabled="!englishOutline">
+              <div v-if="topic.trim()" class="outline-topic-title">{{ topic.trim() }}</div>
               <pre class="outline-text cn-result">{{ englishOutline }}</pre>
             </a-tab-pane>
           </a-tabs>
@@ -139,8 +106,6 @@ const topic = ref('')
 const outlineNature = ref('一般性')
 const burdenPoints = ref([''])
 const burdenDescription = ref('')
-const burdenHits = ref([])
-const burdenLoading = ref(false)
 const outlineLoading = ref(false)
 const outlineAnswer = ref('')
 const traditionalOutline = ref('')
@@ -162,11 +127,6 @@ const natureOptions = [
 const nonEmptyBurdenPoints = computed(() =>
   burdenPoints.value.map((p) => (p || '').trim()).filter(Boolean)
 )
-
-const canGenerateBurden = computed(() => {
-  if (nonEmptyBurdenPoints.value.length === 0) return false
-  return burdenPoints.value.every((p) => (p || '').length <= 60)
-})
 
 const canGenerateOutline = computed(() => (topic.value || '').trim().length > 0 && !outlineLoading.value)
 
@@ -200,39 +160,6 @@ async function refreshUsage() {
   }
 }
 
-async function onGenerateBurden() {
-  if (!canGenerateBurden.value) return
-  if (!getToken()) {
-    router.push('/login')
-    return
-  }
-  burdenLoading.value = true
-  try {
-    const res = await http.post('/api/cn/panai/generate_burden', {
-      query: topic.value.trim(),
-      outline_nature: outlineNature.value,
-      burden_points: nonEmptyBurdenPoints.value,
-    })
-    const data = res.data || {}
-    burdenDescription.value = data.burden_description || ''
-    burdenHits.value = data.points || []
-    if (data.warnings?.length) {
-      toastWarning(data.warnings.join('；'))
-    }
-    toastSuccess('负担说明已生成')
-  } catch (err) {
-    const status = err?.response?.status
-    const msg = parseApiError(err)
-    if (status === 429) {
-      toastWarning(msg || '今日负担说明生成次数已达上限，请明天再来')
-    } else {
-      toastError(msg)
-    }
-  } finally {
-    burdenLoading.value = false
-  }
-}
-
 async function onGenerateOutline() {
   const q = topic.value.trim()
   if (!q) return
@@ -248,6 +175,21 @@ async function onGenerateOutline() {
   outlineMeta.value = { cached: false, cacheKey: null }
 
   try {
+    // 阶段0：自动生成负担说明（后台静默执行，用户无感知）
+    if (nonEmptyBurdenPoints.value.length > 0) {
+      try {
+        const burdenRes = await http.post('/api/cn/panai/generate_burden', {
+          query: topic.value.trim(),
+          outline_nature: outlineNature.value,
+          burden_points: nonEmptyBurdenPoints.value,
+        })
+        burdenDescription.value = burdenRes.data?.burden_description || ''
+      } catch {
+        // 阶段0失败不阻断，继续用空负担说明生成纲目
+        burdenDescription.value = ''
+      }
+    }
+    // 阶段1：生成纲目
     const res = await http.post(
       '/api/kg_rag/query',
       {
@@ -293,11 +235,13 @@ async function onGenerateOutline() {
 }
 
 async function copyOutline() {
-  const text = resultTab.value === 'tw'
+  const t = topic.value.trim()
+  const body = resultTab.value === 'tw'
     ? traditionalOutline.value
     : resultTab.value === 'en'
       ? englishOutline.value
       : outlineAnswer.value
+  const text = t ? `${t}\n\n${body}` : body
   if (!text) return
   try {
     await navigator.clipboard.writeText(text)
@@ -382,8 +326,8 @@ async function downloadDocx() {
     return
   }
 
-  const title = topic.value.trim()
-  const fullText = title ? `${title}\n\n${payloadText}` : payloadText
+  const t = topic.value.trim()
+  const fullText = t ? `${t}\n\n${payloadText}` : payloadText
 
   docxLoading.value = true
   try {
@@ -484,30 +428,6 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-.burden-desc-item {
-  margin-top: 20px;
-}
-
-.hits-collapse {
-  margin-top: 16px;
-}
-
-.hit-line {
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-
-.hit-preview {
-  font-size: 13px;
-  color: var(--cn-text-secondary);
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.hit-empty {
-  color: var(--cn-text-muted);
-}
-
 .outline-loading {
   display: flex;
   align-items: center;
@@ -518,6 +438,15 @@ onMounted(() => {
 
 .result-box {
   margin-top: 20px;
+}
+
+.outline-topic-title {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--cn-text-primary);
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
 }
 
 .outline-gen-btn {
