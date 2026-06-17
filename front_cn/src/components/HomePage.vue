@@ -1,25 +1,45 @@
 <template>
   <div class="home-root">
     <main class="home-main">
-      <div class="home-section-label">功能入口</div>
-      <div class="card-grid">
+      <div class="home-section">
+        <div class="home-section-label">工具箱</div>
+        <div class="card-grid">
+          <div
+            v-for="item in toolboxFeatures"
+            :key="item.key"
+            class="feature-card cn-home-card"
+            :class="{ disabled: item.building }"
+            @click="go(item)"
+          >
+            <div class="card-top">
+              <div class="card-icon">
+                <component :is="item.icon" />
+              </div>
+              <span v-if="item.quotaKey && usage" class="card-quota cn-card-badge">
+                {{ quotaText(item.quotaKey) }}
+              </span>
+            </div>
+            <div class="card-title cn-card-title">{{ item.title }}</div>
+            <div class="card-desc cn-card-desc">{{ item.desc }}</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="home-divider" />
+
+      <div class="home-section">
+        <div class="home-section-label">资料库</div>
         <div
-          v-for="item in features"
-          :key="item.key"
-          class="feature-card cn-home-card"
-          :class="{ disabled: item.building }"
-          @click="go(item)"
+          class="feature-card feature-card-wide cn-home-card"
+          @click="go(materialsFeature)"
         >
           <div class="card-top">
             <div class="card-icon">
-              <component :is="item.icon" />
+              <component :is="materialsFeature.icon" />
             </div>
-            <span v-if="item.quotaKey && usage" class="card-quota cn-card-badge">
-              {{ quotaText(item.quotaKey) }}
-            </span>
           </div>
-          <div class="card-title cn-card-title">{{ item.title }}</div>
-          <div class="card-desc cn-card-desc">{{ item.desc }}</div>
+          <div class="card-title cn-card-title">{{ materialsFeature.title }}</div>
+          <div class="card-desc cn-card-desc">{{ materialsFeature.desc }}</div>
         </div>
       </div>
     </main>
@@ -33,7 +53,6 @@ import {
   CommentOutlined,
   FileTextOutlined,
   BookOutlined,
-  SwapOutlined,
   FontSizeOutlined,
   CloudDownloadOutlined,
 } from '@ant-design/icons-vue'
@@ -55,7 +74,7 @@ const features = [
   {
     key: 'outline',
     title: '纲目制作',
-    desc: '生成职事纲目与负担说明',
+    desc: '基于纲目主题、性质及负担点生成职事纲目',
     path: '/outline',
     icon: FileTextOutlined,
     quotaKey: 'outline',
@@ -70,15 +89,6 @@ const features = [
     building: false,
   },
   {
-    key: 'translate',
-    title: '纲目翻译',
-    desc: '中英双向纲目互译',
-    path: '/outline-translate',
-    icon: SwapOutlined,
-    quotaKey: 'translate',
-    building: false,
-  },
-  {
     key: 'zh',
     title: '简繁互转',
     desc: '简繁转换与易错字检查',
@@ -89,12 +99,15 @@ const features = [
   {
     key: 'downloads',
     title: '资料下载',
-    desc: '职事相关资料浏览下载',
+    desc: '职事信息浏览与下载',
     path: '/materials',
     icon: CloudDownloadOutlined,
     building: false,
   },
 ]
+
+const toolboxFeatures = features.filter(f => f.key !== 'downloads')
+const materialsFeature = features.find(f => f.key === 'downloads')
 
 function quotaText(key) {
   const u = usage.value?.[key]
@@ -132,13 +145,6 @@ onMounted(() => {
   max-width: var(--cn-content-max-width);
   margin: 0 auto;
   padding: 32px 24px 48px;
-}
-
-.home-section-label {
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: var(--cn-text-muted);
-  margin-bottom: 16px;
 }
 
 .card-grid {
@@ -200,6 +206,25 @@ onMounted(() => {
 .card-desc {
   color: var(--cn-text-secondary);
   line-height: 1.55;
+}
+
+.home-section {
+  margin-bottom: 0;
+}
+.home-section-label {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--cn-text-primary);
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+.home-divider {
+  border: none;
+  border-top: 0.5px solid var(--cn-border);
+  margin: 32px 0;
+}
+.feature-card-wide {
+  max-width: 100%;
 }
 
 @media (max-width: 640px) {

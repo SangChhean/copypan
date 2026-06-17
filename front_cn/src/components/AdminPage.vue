@@ -1,7 +1,7 @@
 <template>
   <div class="admin-root">
     <div class="cn-page-head">
-      <button type="button" class="cn-back" @click="router.push('/')">← 返回</button>
+      <button type="button" class="cn-back" @click="router.push('/')">‹‹ 返回</button>
       <span class="cn-page-title">管理后台</span>
     </div>
 
@@ -206,31 +206,45 @@
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
                   <a-input v-model:value="newCatName" placeholder="分类名称" class="admin-mat-input" />
-                  <a-input
-                    v-model:value="newCatDir"
-                    placeholder="目录名（仅限英文字母数字下划线横线）"
-                    class="admin-mat-input"
+                  <a-select
+                    v-model:value="newCatParentId"
+                    placeholder="父分类（留空为根分类）"
+                    :options="[{ label: '（根分类）', value: null }, ...flatMatOptions]"
+                    allow-clear
+                    style="min-width:200px"
                   />
-                  <a-button type="primary" :loading="catCreating" @click="createCategory">
-                    新建
-                  </a-button>
+                  <a-button type="primary" :loading="catCreating" @click="createCategory">新建</a-button>
                 </div>
-                <a-table
-                  :columns="catColumns"
-                  :data-source="matCategories"
-                  :loading="matCategoriesLoading"
-                  row-key="id"
-                  size="small"
-                  :pagination="false"
-                >
-                  <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'action'">
-                      <a-button danger size="small" @click="deleteCategory(record)">
-                        删除
-                      </a-button>
-                    </template>
-                  </template>
-                </a-table>
+                <div class="admin-mat-tree">
+                  <table class="admin-cat-table">
+                    <thead>
+                      <tr>
+                        <th>分类名</th>
+                        <th>目录名</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <AdminCatRow
+                        v-for="node in matCategories"
+                        :key="node.id"
+                        :node="node"
+                        :depth="0"
+                        :renaming-id="renamingCatId"
+                        :rename-value="renameCatName"
+                        @start-rename="startRename"
+                        @save-rename="saveRename"
+                        @cancel-rename="cancelRename"
+                        @update-rename="renameCatName = $event"
+                        @delete="deleteCategory"
+                      />
+                      <tr v-if="!matCategories.length && !matCategoriesLoading">
+                        <td colspan="4" class="admin-mat-empty">暂无分类</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </a-card>
 
               <a-card title="文件管理" size="small" class="admin-mat-card">
@@ -239,19 +253,39 @@
                   <a-select
                     v-model:value="matSelectedCategoryId"
                     placeholder="选择分类"
-                    style="min-width: 200px"
-                    :options="matCategoryOptions"
+                    style="min-width:220px"
+                    :options="flatMatOptions"
                     @change="loadMatFiles"
                   />
                 </div>
-                <a-upload
-                  :show-upload-list="false"
-                  :before-upload="beforeMatUpload"
-                  :custom-request="customMatUpload"
-                  accept=".pdf,application/pdf"
-                >
-                  <a-button type="primary" :disabled="!matSelectedCategoryId">上传 PDF</a-button>
-                </a-upload>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+                  <a-upload
+                    :show-upload-list="false"
+                    :before-upload="beforeMatUpload"
+                    :custom-request="customMatUpload"
+                    accept=".pdf,application/pdf"
+                  >
+                    <a-button type="primary" :disabled="!matSelectedCategoryId">上传 PDF</a-button>
+                  </a-upload>
+                  <input
+                    ref="folderInputRef"
+                    type="file"
+                    webkitdirectory
+                    multiple
+                    accept=".pdf"
+                    style="display:none"
+                    @change="onFolderSelected"
+                  />
+                  <a-button type="primary" :loading="batchUploading" @click="folderInputRef.click()">
+                    批量上传
+                  </a-button>
+                  <span v-if="batchResult" style="font-size:13px;color:#389e0d">
+                    已上传 {{ batchResult.uploaded }} 个文件
+                    <span v-if="batchResult.errors?.length" style="color:#cf1322">
+                      ，{{ batchResult.errors.length }} 个失败
+                    </span>
+                  </span>
+                </div>
                 <a-table
                   :columns="matFileColumns"
                   :data-source="matFiles"
@@ -354,11 +388,196 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 import DebugPanel from '@/components/DebugPanel.vue'
+
+const AdminCatNode = defineComponent({
+  name: 'AdminCatNode',
+  props: {
+    node: { type: Object, required: true },
+    renamingId: { type: Number, default: null },
+    renameValue: { type: String, default: '' },
+    depth: { type: Number, default: 0 },
+  },
+  emits: ['start-rename', 'save-rename', 'cancel-rename', 'update-rename', 'delete'],
+  setup(props, { emit }) {
+    const open = ref(true)
+    return () => {
+      const node = props.node
+      const indent = props.depth * 16
+      const isRenaming = props.renamingId === node.id
+      const hasChildren = node.children && node.children.length > 0
+
+      const rowContent = isRenaming
+        ? [
+            h('input', {
+              value: props.renameValue,
+              class: 'admin-rename-input',
+              onInput: (e) => emit('update-rename', e.target.value),
+              onKeydown: (e) => {
+                if (e.key === 'Enter') emit('save-rename', node.id)
+                if (e.key === 'Escape') emit('cancel-rename')
+              },
+            }),
+            h('button', {
+              class: 'admin-rename-btn admin-rename-btn--ok',
+              onClick: () => emit('save-rename', node.id),
+            }, '✓'),
+            h('button', {
+              class: 'admin-rename-btn',
+              onClick: () => emit('cancel-rename'),
+            }, '✕'),
+          ]
+        : [
+            h('span', { class: 'admin-cat-name' }, [
+              hasChildren
+                ? h('span', {
+                    class: ['admin-cat-arrow', open.value && 'admin-cat-arrow--open'],
+                    onClick: () => { open.value = !open.value },
+                  }, '▶ ')
+                : h('span', { style: 'margin-right:14px' }, ''),
+              node.name,
+            ]),
+            h('div', { class: 'admin-cat-actions' }, [
+              h('button', {
+                class: 'admin-cat-btn',
+                onClick: () => emit('start-rename', node),
+              }, '改名'),
+              h('button', {
+                class: 'admin-cat-btn admin-cat-btn--danger',
+                onClick: () => emit('delete', node),
+              }, '删除'),
+            ]),
+          ]
+
+      const children = hasChildren && open.value
+        ? h('div', {},
+            node.children.map((child) =>
+              h(AdminCatNode, {
+                key: child.id,
+                node: child,
+                renamingId: props.renamingId,
+                renameValue: props.renameValue,
+                depth: props.depth + 1,
+                onStartRename: (n) => emit('start-rename', n),
+                onSaveRename: (id) => emit('save-rename', id),
+                onCancelRename: () => emit('cancel-rename'),
+                onUpdateRename: (v) => emit('update-rename', v),
+                onDelete: (n) => emit('delete', n),
+              })
+            )
+          )
+        : null
+
+      return h('div', { style: { paddingLeft: `${indent}px` } }, [
+        h('div', { class: 'admin-mat-tree-node' }, rowContent),
+        children,
+      ])
+    }
+  },
+})
+
+const AdminCatRow = defineComponent({
+  name: 'AdminCatRow',
+  props: {
+    node: { type: Object, required: true },
+    depth: { type: Number, default: 0 },
+    renamingId: { type: Number, default: null },
+    renameValue: { type: String, default: '' },
+  },
+  emits: ['start-rename', 'save-rename', 'cancel-rename', 'update-rename', 'delete'],
+  setup(props, { emit }) {
+    const open = ref(true)
+    return () => {
+      const node = props.node
+      const hasChildren = node.children && node.children.length > 0
+      const isRenaming = props.renamingId === node.id
+      const indent = props.depth * 16
+
+      const nameCell = isRenaming
+        ? h('td', [
+            h('input', {
+              value: props.renameValue,
+              class: 'admin-rename-input',
+              onInput: (e) => emit('update-rename', e.target.value),
+              onKeydown: (e) => {
+                if (e.key === 'Enter') emit('save-rename', node.id)
+                if (e.key === 'Escape') emit('cancel-rename')
+              },
+            }),
+            h('button', {
+              class: 'admin-rename-btn admin-rename-btn--ok',
+              onClick: () => emit('save-rename', node.id),
+            }, '✓'),
+            h('button', {
+              class: 'admin-rename-btn',
+              onClick: () => emit('cancel-rename'),
+            }, '✕'),
+          ])
+        : h('td', [
+            h('span', { style: { paddingLeft: `${indent}px` } }, [
+              hasChildren
+                ? h('span', {
+                    style: {
+                      cursor: 'pointer',
+                      marginRight: '4px',
+                      fontSize: '10px',
+                      display: 'inline-block',
+                      transform: open.value ? 'rotate(90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                    },
+                    onClick: () => { open.value = !open.value },
+                  }, '▶')
+                : h('span', { style: { marginRight: '14px' } }, ''),
+            ]),
+            node.name,
+          ])
+
+      const dirCell = h('td', { class: 'admin-cat-dir' }, node.dir_name || '-')
+
+      const dateCell = h('td', { class: 'admin-cat-meta' },
+        node.created_at
+          ? new Date(node.created_at).toLocaleString('zh-CN', { hour12: false }).slice(0, 10)
+          : '-'
+      )
+
+      const actionCell = h('td', [
+        h('button', {
+          class: 'admin-cat-btn',
+          onClick: () => emit('start-rename', node),
+        }, '改名'),
+        h('button', {
+          class: 'admin-cat-btn admin-cat-btn--danger',
+          onClick: () => emit('delete', node),
+        }, '删除'),
+      ])
+
+      const rows = [h('tr', { class: 'admin-cat-tr' }, [nameCell, dirCell, dateCell, actionCell])]
+
+      if (hasChildren && open.value) {
+        node.children.forEach((child) => {
+          rows.push(h(AdminCatRow, {
+            key: child.id,
+            node: child,
+            depth: props.depth + 1,
+            renamingId: props.renamingId,
+            renameValue: props.renameValue,
+            onStartRename: (n) => emit('start-rename', n),
+            onSaveRename: (id) => emit('save-rename', id),
+            onCancelRename: () => emit('cancel-rename'),
+            onUpdateRename: (v) => emit('update-rename', v),
+            onDelete: (n) => emit('delete', n),
+          }))
+        })
+      }
+
+      return rows
+    }
+  },
+})
 
 const router = useRouter()
 const stats = ref(null)
@@ -398,15 +617,13 @@ const matFiles = ref([])
 const matFilesLoading = ref(false)
 const matSelectedCategoryId = ref(null)
 const newCatName = ref('')
-const newCatDir = ref('')
 const catCreating = ref(false)
-
-const catColumns = [
-  { title: '名称', dataIndex: 'name', key: 'name' },
-  { title: '目录名', dataIndex: 'dir_name', key: 'dir_name' },
-  { title: '文件数', dataIndex: 'files_count', key: 'files_count', width: 80 },
-  { title: '操作', key: 'action', width: 80 },
-]
+const newCatParentId = ref(null)
+const renamingCatId = ref(null)
+const renameCatName = ref('')
+const folderInputRef = ref(null)
+const batchUploading = ref(false)
+const batchResult = ref(null)
 
 const matFileColumns = [
   { title: '文件名', dataIndex: 'display_name', key: 'display_name' },
@@ -415,9 +632,16 @@ const matFileColumns = [
   { title: '操作', key: 'action', width: 80 },
 ]
 
-const matCategoryOptions = computed(() =>
-  matCategories.value.map((c) => ({ label: c.name, value: c.id }))
-)
+function flattenCategories(nodes, prefix = '') {
+  const result = []
+  for (const n of nodes) {
+    const label = prefix ? `${prefix} / ${n.name}` : n.name
+    result.push({ label, value: n.id })
+    if (n.children?.length) result.push(...flattenCategories(n.children, label))
+  }
+  return result
+}
+const flatMatOptions = computed(() => flattenCategories(matCategories.value))
 
 const MAX_MAT_MB = 200
 
@@ -640,16 +864,16 @@ async function loadMatFiles() {
 
 async function createCategory() {
   const name = newCatName.value.trim()
-  const dir_name = newCatDir.value.trim()
-  if (!name || !dir_name) {
-    message.warning('请填写分类名称与目录名')
-    return
-  }
+  if (!name) { message.warning('请填写分类名称'); return }
   catCreating.value = true
   try {
-    await http.post('/api/cn/materials/categories', { name, dir_name, sort_order: 0 })
+    await http.post('/api/cn/materials/categories', {
+      name,
+      parent_id: newCatParentId.value || null,
+      sort_order: 0,
+    })
     newCatName.value = ''
-    newCatDir.value = ''
+    newCatParentId.value = null
     message.success('分类已创建')
     await loadMatCategories()
   } catch (e) {
@@ -660,16 +884,68 @@ async function createCategory() {
 }
 
 async function deleteCategory(record) {
+  if (!window.confirm(`确认删除分类「${record.name}」及其所有子分类？`)) return
   try {
     await http.delete(`/api/cn/materials/categories/${record.id}`)
     message.success('分类已删除')
-    if (matSelectedCategoryId.value === record.id) {
-      matSelectedCategoryId.value = matCategories.value.find((c) => c.id !== record.id)?.id ?? null
-    }
+    if (matSelectedCategoryId.value === record.id) matSelectedCategoryId.value = null
     await loadMatCategories()
     await loadMatFiles()
   } catch (e) {
     message.error(e.response?.data?.detail || '删除失败')
+  }
+}
+
+function startRename(node) {
+  renamingCatId.value = node.id
+  renameCatName.value = node.name
+}
+function cancelRename() {
+  renamingCatId.value = null
+  renameCatName.value = ''
+}
+async function saveRename(id) {
+  const name = renameCatName.value.trim()
+  if (!name) { message.warning('请输入分类名称'); return }
+  try {
+    await http.patch(`/api/cn/materials/categories/${id}`, { name })
+    message.success('已更新')
+    cancelRename()
+    await loadMatCategories()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '保存失败')
+  }
+}
+async function onFolderSelected(e) {
+  const allFiles = Array.from(e.target.files || [])
+  const pdfs = allFiles.filter(f =>
+    f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+  )
+  if (!pdfs.length) { message.warning('文件夹内没有 PDF 文件'); e.target.value = ''; return }
+  batchUploading.value = true
+  batchResult.value = null
+  const formData = new FormData()
+  for (const f of pdfs) {
+    const relPath = f.webkitRelativePath || f.name
+    formData.append('files', f, relPath)
+  }
+  try {
+    const res = await http.post('/api/cn/materials/batch_upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    batchResult.value = res.data
+    if (res.data.errors?.length) {
+      message.warning(`上传完成，${res.data.errors.length} 个文件失败`)
+    } else {
+      message.success(`已上传 ${res.data.uploaded} 个文件`)
+    }
+    await loadMatCategories()
+    await loadMatFiles()
+  } catch (err) {
+    message.error(err.response?.data?.detail || '批量上传失败')
+  } finally {
+    batchUploading.value = false
+    e.target.value = ''
   }
 }
 
@@ -951,6 +1227,28 @@ onMounted(() => {
 }
 .admin-mat-file-table {
   margin-top: 12px;
+  :deep(.ant-table) {
+    background: transparent !important;
+  }
+  :deep(.ant-table-container) {
+    background: transparent !important;
+  }
+  :deep(.ant-table-thead > tr > th) {
+    background: var(--cn-bg-page) !important;
+    color: var(--cn-text-secondary) !important;
+    font-weight: 500 !important;
+    border-bottom: 0.5px solid var(--cn-border) !important;
+    font-size: 13px !important;
+  }
+  :deep(.ant-table-tbody > tr > td) {
+    font-size: 13px !important;
+    padding: 9px 12px !important;
+    border-bottom: 0.5px solid var(--cn-border) !important;
+    background: var(--cn-bg-card) !important;
+  }
+  :deep(.ant-table-tbody > tr:hover > td) {
+    background: var(--cn-gold-light) !important;
+  }
 }
 .admin-limit-loading {
   padding: 24px;
@@ -983,5 +1281,126 @@ onMounted(() => {
 .admin-limit-note {
   font-size: 12px;
   color: var(--color-text-secondary);
+}
+.admin-mat-tree {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 0.5px solid var(--cn-border);
+  border-radius: 6px;
+  padding: 6px 0;
+  margin-bottom: 12px;
+}
+.admin-mat-tree-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  margin: 1px 4px;
+  &:hover { background: var(--cn-gold-light); }
+}
+.admin-cat-name {
+  flex: 1;
+  color: var(--cn-text-primary);
+}
+.admin-cat-count {
+  color: var(--cn-text-muted);
+  font-size: 12px;
+  margin-left: 4px;
+}
+.admin-cat-arrow {
+  font-size: 9px;
+  display: inline-block;
+  transition: transform 0.2s;
+  cursor: pointer;
+  &.admin-cat-arrow--open { transform: rotate(90deg); }
+}
+.admin-cat-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  .admin-mat-tree-node:hover & { opacity: 1; }
+}
+.admin-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--cn-font);
+  margin-left: 6px;
+  background: transparent;
+  border: 0.5px solid var(--cn-text-primary);
+  color: var(--cn-text-primary);
+  &:hover {
+    border-color: var(--cn-gold);
+    color: var(--cn-gold);
+  }
+  &.admin-cat-btn--danger {
+    border: 0.5px solid #C0392B !important;
+    color: #C0392B !important;
+    background: transparent !important;
+    &:hover {
+      background: #FCEBEB !important;
+    }
+  }
+}
+.admin-rename-input {
+  flex: 1;
+  padding: 2px 8px;
+  font-size: 13px;
+  border: 0.5px solid var(--cn-border-focus);
+  border-radius: 4px;
+  font-family: var(--cn-font);
+  outline: none;
+  margin-right: 6px;
+}
+.admin-rename-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 0.5px solid var(--cn-border);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--cn-font);
+  &.admin-rename-btn--ok { border-color: var(--cn-gold); color: var(--cn-gold); }
+}
+.admin-mat-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--cn-text-muted);
+}
+.admin-cat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--cn-text-secondary);
+    font-weight: 500;
+    border-bottom: 0.5px solid var(--cn-border);
+    background: var(--cn-bg-page);
+  }
+  td {
+    padding: 9px 12px;
+    color: var(--cn-text-primary);
+    border-bottom: 0.5px solid var(--cn-border);
+    vertical-align: middle;
+  }
+  .admin-cat-tr:last-child td { border-bottom: none; }
+  .admin-cat-tr:hover td { background: var(--cn-gold-light); }
+}
+.admin-cat-dir {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--cn-text-secondary) !important;
+}
+.admin-cat-meta {
+  font-size: 12px;
+  color: var(--cn-text-secondary) !important;
 }
 </style>

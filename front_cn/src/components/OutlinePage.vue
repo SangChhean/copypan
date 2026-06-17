@@ -1,7 +1,7 @@
 <template>
   <div class="outline-root">
     <div class="cn-page-head">
-      <button type="button" class="cn-back" @click="goHome">← 返回</button>
+      <button type="button" class="cn-back" @click="goHome">‹‹ 返回</button>
       <span class="cn-page-title">纲目制作</span>
     </div>
 
