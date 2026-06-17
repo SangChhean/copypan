@@ -41,6 +41,7 @@ from features.feast_outline.router import router as feast_outline_router
 from features.info_retrieval.router import router as info_retrieval_router
 from features.bible_co.router import router as bible_co_router
 from features.article_polish.router import router as article_polish_router
+from features.es_claude_test.router import router as es_claude_test_router
 from ai_search.monitoring import get_monitoring
 from ai_search.ai_service import redis_client
 import asyncio
@@ -398,6 +399,7 @@ app.include_router(feast_outline_router)
 app.include_router(info_retrieval_router)
 app.include_router(bible_co_router)
 app.include_router(article_polish_router)
+app.include_router(es_claude_test_router)
 # 增强式翻译（主站副本，中→英）
 app.include_router(enhanced_translate_official_router)
 from features.progress_outline.router import (
