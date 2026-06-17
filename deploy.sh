@@ -21,6 +21,7 @@ echo "✅ 代码更新完成"
 echo "[3/7] 安装 Python 依赖..."
 if [ -f "$CODE_DIR/back_mic/backend/requirements.txt" ]; then
     pip install -r "$CODE_DIR/back_mic/backend/requirements.txt" -q
+    pip install pypinyin tzdata -q
     echo "✅ 依赖已更新"
 fi
 echo "[4/7] 构建前端..."
@@ -91,7 +92,9 @@ echo "✅ Nginx 已重启"
 echo ""
 echo "=========================================="
 echo "✅ 部署完成！"
-echo "🌐 网站: https://aipansearch.org"
+echo "🌐 主站: https://aipansearch.org"
+echo "🌐 QA站: https://qa.aipansearch.org"
+echo "🌐 CN站: https://quanbeigongying.com"
 echo "📋 查看日志: tail -f $LOG_DIR/backend.log"
 echo "📋 QA 日志: tail -f /opt/pansearch/logs/qa_backend.log"
 echo "📋 CN 日志: tail -f /opt/pansearch/logs/cn_backend.log"

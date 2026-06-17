@@ -28,18 +28,22 @@
       <hr class="home-divider" />
 
       <div class="home-section">
-        <div class="home-section-label">资料库</div>
-        <div
-          class="feature-card feature-card-wide cn-home-card"
-          @click="go(materialsFeature)"
-        >
-          <div class="card-top">
-            <div class="card-icon">
-              <component :is="materialsFeature.icon" />
+        <div class="home-section-label">资料下载</div>
+        <div class="card-grid">
+          <div
+            v-for="item in materialsFeatures"
+            :key="item.key"
+            class="feature-card cn-home-card"
+            @click="go(item)"
+          >
+            <div class="card-top">
+              <div class="card-icon">
+                <component :is="item.icon" />
+              </div>
             </div>
+            <div class="card-title cn-card-title">{{ item.title }}</div>
+            <div class="card-desc cn-card-desc">{{ item.desc }}</div>
           </div>
-          <div class="card-title cn-card-title">{{ materialsFeature.title }}</div>
-          <div class="card-desc cn-card-desc">{{ materialsFeature.desc }}</div>
         </div>
       </div>
     </main>
@@ -97,17 +101,25 @@ const features = [
     building: false,
   },
   {
-    key: 'downloads',
-    title: '资料下载',
-    desc: '职事信息浏览与下载',
-    path: '/materials',
+    key: 'conference',
+    title: '节期特会相关纲目',
+    desc: '一年七次特会相关纲目',
+    path: '/materials?type=conference',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
+    key: 'pastoral',
+    title: '牧养材料',
+    desc: '新人牧养和排聚会材料',
+    path: '/materials?type=pastoral',
     icon: CloudDownloadOutlined,
     building: false,
   },
 ]
 
-const toolboxFeatures = features.filter(f => f.key !== 'downloads')
-const materialsFeature = features.find(f => f.key === 'downloads')
+const toolboxFeatures = features.filter(f => !['pastoral', 'conference'].includes(f.key))
+const materialsFeatures = features.filter(f => ['pastoral', 'conference'].includes(f.key))
 
 function quotaText(key) {
   const u = usage.value?.[key]

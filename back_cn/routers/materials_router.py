@@ -113,8 +113,8 @@ def _ensure_category_path(path_parts: list[str], conn) -> int:
             try:
                 cur = conn.execute(
                     """
-                    INSERT INTO material_categories(name, dir_name, parent_id, sort_order, created_at)
-                    VALUES (?, ?, ?, 0, ?)
+                    INSERT INTO material_categories(name, dir_name, parent_id, sort_order, created_at, type)
+                    VALUES (?, ?, ?, 0, ?, 'pastoral')
                     """,
                     (part, dir_name, parent_id, _utc_now()),
                 )
@@ -133,19 +133,34 @@ def _ensure_category_path(path_parts: list[str], conn) -> int:
 
 
 @router.get("/categories")
-def list_categories(_user: dict = Depends(_require_user)):
+def list_categories(type: str | None = None, _user: dict = Depends(_require_user)):
     with _connect() as conn:
-        rows = conn.execute(
-            """
-            SELECT mc.id, mc.name, mc.dir_name, mc.parent_id, mc.sort_order,
-                   mc.created_at,
-                   COUNT(m.id) AS files_count
-            FROM material_categories mc
-            LEFT JOIN materials m ON m.category_id = mc.id
-            GROUP BY mc.id
-            ORDER BY mc.sort_order, mc.id
-            """
-        ).fetchall()
+        if type:
+            rows = conn.execute(
+                """
+                SELECT mc.id, mc.name, mc.dir_name, mc.parent_id, mc.sort_order,
+                       mc.created_at, mc.type,
+                       COUNT(m.id) AS files_count
+                FROM material_categories mc
+                LEFT JOIN materials m ON m.category_id = mc.id
+                WHERE mc.type = ?
+                GROUP BY mc.id
+                ORDER BY mc.sort_order, mc.id
+                """,
+                (type,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT mc.id, mc.name, mc.dir_name, mc.parent_id, mc.sort_order,
+                       mc.created_at, mc.type,
+                       COUNT(m.id) AS files_count
+                FROM material_categories mc
+                LEFT JOIN materials m ON m.category_id = mc.id
+                GROUP BY mc.id
+                ORDER BY mc.sort_order, mc.id
+                """
+            ).fetchall()
     flat = [dict(r) for r in rows]
     return _build_tree(flat)
 
@@ -256,6 +271,7 @@ class CategoryCreate(BaseModel):
     dir_name: str = Field("", max_length=100)
     parent_id: int | None = None
     sort_order: int = 0
+    type: str = "pastoral"
 
 
 class CategoryRename(BaseModel):
@@ -273,10 +289,10 @@ def create_category(body: CategoryCreate, _: bool = Depends(verify_admin_access)
         with _connect() as conn:
             cur = conn.execute(
                 """
-                INSERT INTO material_categories(name, dir_name, parent_id, sort_order, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO material_categories(name, dir_name, parent_id, sort_order, created_at, type)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (name, dir_name, body.parent_id, body.sort_order, created_at),
+                (name, dir_name, body.parent_id, body.sort_order, created_at, body.type),
             )
             conn.commit()
             cat_id = cur.lastrowid

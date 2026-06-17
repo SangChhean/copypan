@@ -2,7 +2,7 @@
   <div class="materials-root">
     <div class="cn-page-head">
       <button type="button" class="cn-back" @click="router.push('/')">‹‹ 返回</button>
-      <span class="cn-page-title">资料库下载</span>
+      <span class="cn-page-title">{{ pageTitle }}</span>
     </div>
     <div class="cn-content-wrap">
       <div class="cn-content-card cn-content-card--wide">
@@ -70,13 +70,24 @@
 </template>
 
 <script setup>
-import { defineComponent, h, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 import { authHeaders } from '@/utils/auth.js'
 
 const router = useRouter()
+const route = useRoute()
+const materialsType = computed(() => route.query.type || 'pastoral')
+watch(materialsType, () => {
+  selectedCategoryId.value = null
+  selectedCategoryName.value = ''
+  files.value = []
+  loadCategories()
+})
+const pageTitle = computed(() =>
+  materialsType.value === 'conference' ? '节期特会相关纲目' : '牧养材料'
+)
 const categories = ref([])
 const categoriesLoading = ref(false)
 const files = ref([])
@@ -167,7 +178,9 @@ function formatDate(iso) {
 async function loadCategories() {
   categoriesLoading.value = true
   try {
-    const res = await http.get('/api/cn/materials/categories')
+    const res = await http.get('/api/cn/materials/categories', {
+      params: { type: materialsType.value },
+    })
     categories.value = res.data || []
   } catch (e) {
     message.error(`加载分类失败（${e.response?.status || '网络错误'}）`)
