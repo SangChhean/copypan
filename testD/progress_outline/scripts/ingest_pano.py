@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 将「主恢复中神圣启示的进展」Word 纲目批量解析并写入 Elasticsearch。
-解析目标：「纲目带出处」版本（文件名含「纲目带出处」，或内容防火墙判定）。
 
 用法：
-  cd back_mic/backend
-  python scripts/progress_outline/ingest_pano.py --source-dir <Word 根目录>
-  python scripts/progress_outline/ingest_pano.py --source-dir <dir> --export [FILE]
-  python scripts/progress_outline/ingest_pano.py --import-json progress_pano.json
-  python scripts/progress_outline/ingest_pano.py --source-dir <dir> --doc-id progress_pano-1-1-1
+  cd testD/progress_outline/scripts
+  python ingest_pano.py                    # 本机 Word → ES 全量入库
+  python ingest_pano.py --export           # 本机 Word → progress_pano.json（不需 ES）
+  python ingest_pano.py --import-json progress_pano.json   # JSON → ES 全量导入
+  python ingest_pano.py --doc-id progress_pano-1-1-1       # 单篇重入库
 """
 from __future__ import annotations
 
-import argparse
 import json
 import re
 import sys
@@ -21,52 +19,40 @@ from pathlib import Path
 from typing import Any, Iterator, TextIO
 
 from docx import Document
-from dotenv import load_dotenv
 from natsort import natsorted
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-BACKEND_DIR = SCRIPT_DIR.parents[1]
-sys.path.insert(0, str(BACKEND_DIR))
-load_dotenv(BACKEND_DIR / ".env")
+TESTD_BACKEND = SCRIPT_DIR.parents[1] / "backend"
+if str(TESTD_BACKEND) not in sys.path:
+    sys.path.insert(0, str(TESTD_BACKEND))
 
-from es_config import es  # noqa: E402
+from _bootstrap import ensure_main_backend_path  # noqa: E402
 
+# ── 配置 ────────────────────────────────────────────────────────────────────
+ROOT_DIR = Path(r"C:\Users\nysot\Downloads\48　主恢复中神圣启示的进展——4781篇")
 ES_INDEX = "progress_pano"
 EXPORT_JSON = SCRIPT_DIR / "progress_pano.json"
 BULK_CHUNK = 200
 LOG_FILE = SCRIPT_DIR / "ingest_pano.log"
 
+_es = None
 _log_fp: TextIO | None = None
-_root_dir: Path | None = None
 
 SOURCE_GROUP_MAP: dict[str, int] = {
     "倪柝声弟兄职事": 1,
     "李常受弟兄职事第一阶段": 2,
-    "李常受弟兄职事第二阶段": 2,
-    "李常受弟兄职事第三阶段": 3,
-    "李常受弟兄职事第四阶段": 4,
-    "李常受弟兄职事高峰阶段": 5,
-}
-
-SOURCE_GROUP_TITLE_CANONICAL: dict[int, str] = {
-    1: "倪柝声弟兄职事",
-    2: "李常受弟兄职事第一阶段",
-    3: "李常受弟兄职事第三阶段",
-    4: "李常受弟兄职事第四阶段",
-    5: "李常受弟兄职事高峰阶段",
+    "李常受弟兄职事第二阶段": 3,
+    "李常受弟兄职事第三阶段": 4,
+    "李常受弟兄职事第四阶段": 5,
+    "李常受弟兄职事高峰阶段": 6,
 }
 
 SERIES_FOLDER_RE = re.compile(r"^(\d+)\s+(.+?)(?:——|—)\d+篇")
-MSG_FILE_RE = re.compile(
-    r"^msg\.\s*(\d+)\s+(.+?)"
-    r"(?:[\s_]*(?:[（(]\s*)?纲目带出处(?:\s*[）)])?[\s_]*)?\.docx$",
-    re.IGNORECASE,
-)
-SOURCE_FILE_TAG = "纲目带出处"
-RED_PARA_THRESHOLD = 4
+MSG_FILE_RE = re.compile(r"^msg\.\s*(\d+)\s+(.+?)\.docx$", re.IGNORECASE)
+SKIP_FILE_TAG = "纲目带出处"
 
 READING_MARKERS = ("读经：", "讀經：")
 MINISTRY_MARKERS = ("职事信息摘录", "職事信息摘錄")
@@ -96,7 +82,6 @@ INDEX_MAPPING = {
                 "properties": {
                     "type": {"type": "keyword"},
                     "text": {"type": "text"},
-                    "source": {"type": "keyword"},
                 },
             },
             "ministry_excerpt": {
@@ -108,7 +93,21 @@ INDEX_MAPPING = {
 }
 
 
+def get_es():
+    """延迟加载 ES 客户端（导出 JSON 时不需要连接）。"""
+    global _es
+    if _es is None:
+        from dotenv import load_dotenv
+
+        load_dotenv(ensure_main_backend_path() / ".env")
+        from es_config import es as client
+
+        _es = client
+    return _es
+
+
 def arabic_to_chinese(n: int) -> str:
+    """阿拉伯数字转中文数字，支持 1-999。"""
     if not 1 <= n <= 999:
         raise ValueError(f"article_no 超出 1-999 范围: {n}")
     digits = "零一二三四五六七八九"
@@ -145,10 +144,12 @@ def parse_series_folder(name: str) -> dict[str, Any] | None:
 
 
 def normalize_for_match(name: str) -> str:
+    """统一「弟兄的职事」等写法以便模糊匹配。"""
     return name.replace("弟兄的职事", "弟兄职事")
 
 
 def match_source_group(folder_name: str) -> dict[str, Any] | None:
+    """模糊匹配来源分组固定映射，优先最长关键词。"""
     normalized = normalize_for_match(folder_name)
     best_len = 0
     best: dict[str, Any] | None = None
@@ -156,8 +157,6 @@ def match_source_group(folder_name: str) -> dict[str, Any] | None:
         if title in normalized and len(title) > best_len:
             best_len = len(title)
             best = {"no": no, "title": title}
-    if best:
-        best["title"] = SOURCE_GROUP_TITLE_CANONICAL[best["no"]]
     return best
 
 
@@ -173,34 +172,8 @@ def parse_msg_file(name: str) -> dict[str, Any] | None:
     }
 
 
-def _has_red_font(path: Path) -> bool:
-    try:
-        doc = Document(str(path))
-        count = 0
-        for para in doc.paragraphs:
-            for run in para.runs:
-                try:
-                    rgb = run.font.color.rgb
-                    if rgb is not None and str(rgb) == "FF0000":
-                        count += 1
-                        break
-                except Exception:
-                    pass
-            if count >= RED_PARA_THRESHOLD:
-                return True
-        return False
-    except Exception:
-        return False
-
-
-def is_source_file(path: Path) -> bool:
-    if SOURCE_FILE_TAG in path.name:
-        return True
-    return _has_red_font(path)
-
-
 def should_skip_file(path: Path) -> bool:
-    return not is_source_file(path)
+    return SKIP_FILE_TAG in path.name
 
 
 def _contains_marker(text: str, markers: tuple[str, ...]) -> bool:
@@ -217,25 +190,56 @@ def _outline_type(text: str) -> str:
     return "ot2"
 
 
-def _split_para_by_color(para) -> tuple[str, str | None]:
-    text_parts: list[str] = []
-    source_parts: list[str] = []
-    for run in para.runs:
-        content = run.text
-        if not content:
+def _normalize_ministry_text(text: str) -> str:
+    """多行标题/正文内的换行统一为空格。"""
+    return re.sub(r"\s+", " ", text.replace("\n", " ").replace("\r", " ")).strip()
+
+
+def _paragraph_is_bold(paragraph) -> bool:
+    """职事摘录小标题：段落内所有非空 run 均为加粗。"""
+    runs = [r for r in paragraph.runs if r.text and r.text.strip()]
+    if not runs:
+        return False
+    return all(r.bold is True for r in runs)
+
+
+def _parse_ministry_excerpt(paragraphs) -> list[dict[str, str]]:
+    """
+    职事信息摘录：加粗段为小标题，与后续正文合并为一条；
+    连续加粗段合并为一个标题（空格连接）。
+    """
+    result: list[dict[str, str]] = []
+    title_parts: list[str] = []
+    body_parts: list[str] = []
+
+    def flush() -> None:
+        nonlocal title_parts, body_parts
+        chunks: list[str] = []
+        if title_parts:
+            chunks.append(_normalize_ministry_text(" ".join(title_parts)))
+        if body_parts:
+            chunks.append(_normalize_ministry_text(" ".join(body_parts)))
+        text = " ".join(c for c in chunks if c).strip()
+        if text:
+            result.append({"text": text})
+        title_parts = []
+        body_parts = []
+
+    for para in paragraphs:
+        raw = para.text.strip()
+        if not raw:
             continue
-        try:
-            rgb = run.font.color.rgb
-            is_red = rgb is not None and str(rgb) == "FF0000"
-        except Exception:
-            is_red = False
-        if is_red:
-            source_parts.append(content)
+        text = _normalize_ministry_text(raw)
+        if _paragraph_is_bold(para):
+            if body_parts:
+                flush()
+                title_parts = [text]
+            else:
+                title_parts.append(text)
         else:
-            text_parts.append(content)
-    text = "".join(text_parts).strip()
-    source = "".join(source_parts).strip() or None
-    return text, source
+            body_parts.append(text)
+    flush()
+    return result
 
 
 def parse_docx(path: Path) -> dict[str, Any]:
@@ -254,34 +258,29 @@ def parse_docx(path: Path) -> dict[str, Any]:
             ministry_idx = idx
 
     metadata: list[str] = []
-    outline: list[dict[str, Any]] = []
+    outline: list[dict[str, str]] = []
+    ministry_excerpt: list[dict[str, str]] = []
 
     if reading_idx is None:
         metadata = [t for t in paragraphs if t]
     else:
         metadata = [t for t in paragraphs[:reading_idx] if t]
-        outline_end = ministry_idx if ministry_idx is not None else len(para_objs)
-        for para in para_objs[reading_idx:outline_end]:
-            raw = para.text.strip()
-            if not raw:
-                continue
-            text, source = _split_para_by_color(para)
-            if not text:
-                continue
-            outline.append({
-                "type": _outline_type(text),
-                "text": text,
-                "source": source,
-            })
+        outline_end = ministry_idx if ministry_idx is not None else len(paragraphs)
+        for text in paragraphs[reading_idx:outline_end]:
+            if text:
+                outline.append({"type": _outline_type(text), "text": text})
+        if ministry_idx is not None:
+            ministry_excerpt = _parse_ministry_excerpt(para_objs[ministry_idx + 1 :])
 
     return {
         "metadata": metadata,
         "outline": outline,
-        "ministry_excerpt": [],
+        "ministry_excerpt": ministry_excerpt,
     }
 
 
 def iter_docx_leaf_dirs(group_dir: Path) -> list[Path]:
+    """来源分组下递归定位含 .docx 的目录（中间层忽略；父子可同时含文件）。"""
     leaves: list[Path] = []
     if any(group_dir.glob("*.docx")):
         leaves.append(group_dir)
@@ -291,6 +290,7 @@ def iter_docx_leaf_dirs(group_dir: Path) -> list[Path]:
 
 
 def collect_group_docx(group_dir: Path) -> list[Path]:
+    """收集来源分组内全部待入库 docx（自然排序）。"""
     files: list[Path] = []
     for leaf in natsorted(iter_docx_leaf_dirs(group_dir), key=lambda p: str(p)):
         for docx_path in natsorted(leaf.glob("*.docx"), key=lambda p: p.name):
@@ -304,7 +304,7 @@ def collect_group_docx(group_dir: Path) -> list[Path]:
 
 def iter_articles(root: Path) -> Iterator[dict[str, Any]]:
     if not root.is_dir():
-        raise FileNotFoundError(f"source-dir 不存在: {root}")
+        raise FileNotFoundError(f"ROOT_DIR 不存在: {root}")
 
     for series_dir in natsorted([p for p in root.iterdir() if p.is_dir()], key=lambda p: p.name):
         series = parse_series_folder(series_dir.name)
@@ -350,6 +350,7 @@ def iter_articles(root: Path) -> Iterator[dict[str, Any]]:
 
 
 def ensure_index(recreate: bool = False) -> None:
+    es = get_es()
     if recreate and es.indices.exists(index=ES_INDEX):
         es.indices.delete(index=ES_INDEX)
         log(f"已删除索引: {ES_INDEX}")
@@ -363,6 +364,7 @@ def ensure_index(recreate: bool = False) -> None:
 def bulk_index(docs: list[dict[str, Any]]) -> None:
     if not docs:
         return
+    es = get_es()
     operations: list[dict[str, Any]] = []
     for doc in docs:
         payload = dict(doc)
@@ -373,18 +375,18 @@ def bulk_index(docs: list[dict[str, Any]]) -> None:
 
 
 def log(msg: str) -> None:
+    """同时输出到终端和日志文件。"""
     print(msg)
     if _log_fp is not None:
         _log_fp.write(msg + "\n")
         _log_fp.flush()
 
 
-def open_log(source_dir: Path | None = None) -> None:
+def open_log() -> None:
     global _log_fp
     _log_fp = LOG_FILE.open("w", encoding="utf-8")
     log(f"# ingest_pano {datetime.now().isoformat(timespec='seconds')}")
-    if source_dir is not None:
-        log(f"# source-dir: {source_dir}")
+    log(f"# ROOT_DIR: {ROOT_DIR}")
     log(f"# LOG_FILE: {LOG_FILE}")
     log("")
 
@@ -407,25 +409,27 @@ def print_series_summary(series_counts: dict[int, tuple[str, int]]) -> None:
     log("")
 
 
-def reindex_doc(source_dir: Path, doc_id: str) -> dict[str, Any]:
+def reindex_doc(doc_id: str) -> dict[str, Any]:
+    """重新解析并写入单篇文档（不重建索引）。"""
     target: dict[str, Any] | None = None
-    for doc in iter_articles(source_dir):
+    for doc in iter_articles(ROOT_DIR):
         if doc["_id"] == doc_id:
             target = doc
             break
     if not target:
         raise ValueError(f"未找到文档: {doc_id}")
     bulk_index([target])
-    es.indices.refresh(index=ES_INDEX)
+    get_es().indices.refresh(index=ES_INDEX)
     return target
 
 
-def export_to_json(source_dir: Path, out_path: Path) -> int:
+def export_to_json(out_path: Path) -> int:
+    """解析本机 Word，写入单个 JSON 文件（不连接 ES）。"""
     log(f"开始导出 → {out_path}")
     documents: list[dict[str, Any]] = []
     series_counts: dict[int, tuple[str, int]] = {}
 
-    for doc in iter_articles(source_dir):
+    for doc in iter_articles(ROOT_DIR):
         log(f"✓ {doc['_id']} {doc['title']}")
         documents.append(doc)
         sno = doc["series_no"]
@@ -437,7 +441,7 @@ def export_to_json(source_dir: Path, out_path: Path) -> int:
     payload = {
         "index": ES_INDEX,
         "exported_at": datetime.now().isoformat(timespec="seconds"),
-        "root_dir": str(source_dir),
+        "root_dir": str(ROOT_DIR),
         "mapping": INDEX_MAPPING,
         "count": len(documents),
         "documents": documents,
@@ -454,6 +458,7 @@ def export_to_json(source_dir: Path, out_path: Path) -> int:
 
 
 def import_from_json(json_path: Path, recreate: bool = True) -> int:
+    """从 JSON 文件 bulk 导入 ES。"""
     if not json_path.is_file():
         raise FileNotFoundError(f"JSON 不存在: {json_path}")
 
@@ -470,6 +475,7 @@ def import_from_json(json_path: Path, recreate: bool = True) -> int:
         log(f"警告: JSON index={index_name}，将写入 {ES_INDEX}")
 
     mapping = payload.get("mapping") or INDEX_MAPPING
+    es = get_es()
     if recreate:
         if es.indices.exists(index=ES_INDEX):
             es.indices.delete(index=ES_INDEX)
@@ -502,17 +508,15 @@ def import_from_json(json_path: Path, recreate: bool = True) -> int:
     return total
 
 
-def run_ingest(source_dir: Path, *, recreate: bool = True) -> None:
-    global _root_dir
-    _root_dir = source_dir
-    open_log(source_dir)
+def main() -> None:
+    open_log()
     try:
-        ensure_index(recreate=recreate)
+        ensure_index(recreate=True)
         total = 0
         batch: list[dict[str, Any]] = []
         series_counts: dict[int, tuple[str, int]] = {}
 
-        for doc in iter_articles(source_dir):
+        for doc in iter_articles(ROOT_DIR):
             log(f"✓ {doc['_id']} {doc['title']}")
             batch.append(doc)
             total += 1
@@ -528,7 +532,7 @@ def run_ingest(source_dir: Path, *, recreate: bool = True) -> None:
         if batch:
             bulk_index(batch)
 
-        es.indices.refresh(index=ES_INDEX)
+        get_es().indices.refresh(index=ES_INDEX)
         log("")
         print_series_summary(series_counts)
         log(f"总计入库 {total} 篇")
@@ -537,74 +541,39 @@ def run_ingest(source_dir: Path, *, recreate: bool = True) -> None:
         close_log()
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="进展75系列：纲目带出处 Word 入库 / JSON 导出 / JSON 导入"
-    )
-    parser.add_argument(
-        "--source-dir",
-        type=Path,
-        help="Word 纲目根目录（含系列子文件夹）",
-    )
-    parser.add_argument(
-        "--export",
-        nargs="?",
-        const=str(EXPORT_JSON),
-        metavar="FILE",
-        help=f"导出 JSON（默认 {EXPORT_JSON.name}），不需连接 ES",
-    )
-    parser.add_argument("--import-json", metavar="FILE", help="从 JSON 导入 ES")
-    parser.add_argument(
-        "--no-recreate",
-        action="store_true",
-        help="全量入库/导入时不删除已有索引",
-    )
-    parser.add_argument(
-        "--doc-id",
-        help="仅重新入库指定 _id，如 progress_pano-1-1-1（需 --source-dir）",
-    )
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="progress_pano 纲目：Word 入库 / JSON 导出 / JSON 导入")
+    parser.add_argument("--export", nargs="?", const=str(EXPORT_JSON), metavar="FILE",
+                        help=f"导出 JSON（默认 {EXPORT_JSON.name}），不需连接 ES")
+    parser.add_argument("--import-json", metavar="FILE", help="从 JSON 导入 ES（默认重建索引）")
+    parser.add_argument("--no-recreate", action="store_true", help="导入时不删除已有索引，仅追加/覆盖同 _id")
+    parser.add_argument("--doc-id", help="仅重新入库指定 _id，如 progress_pano-1-1-1")
     args = parser.parse_args()
 
     if args.export is not None:
-        if not args.source_dir:
-            parser.error("--export 需要同时指定 --source-dir")
         out = Path(args.export)
-        open_log(args.source_dir)
+        open_log()
         try:
-            export_to_json(args.source_dir, out)
+            export_to_json(out)
             log(f"日志: {LOG_FILE}")
         finally:
             close_log()
-        return
-
-    if args.import_json:
+    elif args.import_json:
         open_log()
         try:
             import_from_json(Path(args.import_json), recreate=not args.no_recreate)
             log(f"日志: {LOG_FILE}")
         finally:
             close_log()
-        return
-
-    if args.doc_id:
-        if not args.source_dir:
-            parser.error("--doc-id 需要同时指定 --source-dir")
-        open_log(args.source_dir)
+    elif args.doc_id:
+        open_log()
         try:
             ensure_index(recreate=False)
-            doc = reindex_doc(args.source_dir, args.doc_id)
-            log(
-                f"✓ 已重新入库 {args.doc_id} "
-                f"outline={len(doc.get('outline', []))} 条"
-            )
+            doc = reindex_doc(args.doc_id)
+            log(f"✓ 已重新入库 {args.doc_id} ministry_excerpt={len(doc.get('ministry_excerpt', []))} 条")
         finally:
             close_log()
-        return
-
-    if not args.source_dir:
-        parser.error("请指定 --source-dir，或使用 --import-json / --help")
-    run_ingest(args.source_dir, recreate=not args.no_recreate)
-
-
-if __name__ == "__main__":
-    main()
+    else:
+        main()
