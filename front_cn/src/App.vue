@@ -30,7 +30,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import http from '@/utils/http.js'
-import { clearAuth, getToken, isAdmin } from '@/utils/auth.js'
+import { clearAuth, getToken, isAdmin, setIsAdmin } from '@/utils/auth.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -50,8 +50,12 @@ async function loadUsage() {
     return
   }
   try {
-    const res = await http.get('/api/cn/auth/usage')
-    usage.value = res.data || null
+    const [usageRes, meRes] = await Promise.all([
+      http.get('/api/cn/auth/usage'),
+      http.get('/api/cn/auth/me'),
+    ])
+    usage.value = usageRes.data || null
+    setIsAdmin(!!meRes.data?.is_admin)
   } catch {
     usage.value = null
   }
