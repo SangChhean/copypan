@@ -317,7 +317,10 @@ const totalDedupedCount = computed(() =>
 
 function lineTypeClass(group) {
   const t = group.line_type || "reference";
-  return t === "outline" ? "line-type-outline" : "line-type-reference";
+  if (t === "outline") return "line-type-outline";
+  if (t === "title") return "line-type-title";
+  if (t === "bible-reading") return "line-type-bible-reading";
+  return "line-type-reference";
 }
 
 function formatCost(usd) {
@@ -607,7 +610,7 @@ function downloadRefsTxt() {
             class="ref-line-group"
           >
             <div class="ref-line-title" :class="lineTypeClass(group)">
-              <span class="line-type-tag">{{ group.line_type === "outline" ? "outline" : "reference" }}</span>
+              <span class="line-type-tag">{{ group.line_type || "reference" }}</span>
               Line {{ group.line_index + 1 }}：{{ group.original_line }}
               <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
               <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
