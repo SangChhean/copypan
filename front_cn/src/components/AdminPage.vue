@@ -262,33 +262,52 @@
                     @change="loadMatFiles"
                   />
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-                  <a-upload
-                    :show-upload-list="false"
-                    :before-upload="beforeMatUpload"
-                    :custom-request="customMatUpload"
-                    accept=".pdf,application/pdf"
-                  >
-                    <a-button type="primary" :disabled="!matSelectedCategoryId">上传 PDF</a-button>
-                  </a-upload>
-                  <input
-                    ref="folderInputRef"
-                    type="file"
-                    webkitdirectory
-                    multiple
-                    accept=".pdf"
-                    style="display:none"
-                    @change="onFolderSelected"
-                  />
-                  <a-button type="primary" :loading="batchUploading" @click="folderInputRef.click()">
-                    批量上传
-                  </a-button>
-                  <span v-if="batchResult" style="font-size:13px;color:#389e0d">
-                    已上传 {{ batchResult.uploaded }} 个文件
-                    <span v-if="batchResult.errors?.length" style="color:#cf1322">
-                      ，{{ batchResult.errors.length }} 个失败
+                <div class="admin-mat-file-toolbar">
+                  <div class="admin-mat-file-toolbar-left">
+                    <a-upload
+                      :show-upload-list="false"
+                      :before-upload="beforeMatUpload"
+                      :custom-request="customMatUpload"
+                      accept=".pdf,application/pdf"
+                    >
+                      <a-button type="primary" :disabled="!matSelectedCategoryId">上传 PDF</a-button>
+                    </a-upload>
+                    <input
+                      ref="folderInputRef"
+                      type="file"
+                      webkitdirectory
+                      multiple
+                      accept=".pdf"
+                      style="display:none"
+                      @change="onFolderSelected"
+                    />
+                    <a-button type="primary" :loading="batchUploading" @click="folderInputRef.click()">
+                      批量上传
+                    </a-button>
+                    <span v-if="batchResult" class="admin-mat-batch-result">
+                      已上传 {{ batchResult.uploaded }} 个文件
+                      <span v-if="batchResult.errors?.length" class="admin-mat-batch-errors">
+                        ，{{ batchResult.errors.length }} 个失败
+                      </span>
                     </span>
-                  </span>
+                  </div>
+                  <div class="admin-mat-file-toolbar-action">
+                    <a-popconfirm
+                      title="确认删除该分类下所有文件？此操作不可恢复。"
+                      ok-text="确认删除"
+                      cancel-text="取消"
+                      ok-type="danger"
+                      @confirm="deleteAllFiles"
+                    >
+                      <a-button
+                        danger
+                        size="small"
+                        :disabled="!matSelectedCategoryId || matFiles.length === 0"
+                      >
+                        删除全部
+                      </a-button>
+                    </a-popconfirm>
+                  </div>
                 </div>
                 <a-table
                   :columns="matFileColumns"
@@ -668,7 +687,7 @@ const matFileColumns = [
   { title: '文件名', dataIndex: 'display_name', key: 'display_name' },
   { title: '大小', key: 'size_bytes', width: 90 },
   { title: '上传时间', key: 'created_at', width: 160 },
-  { title: '操作', key: 'action', width: 80 },
+  { title: '操作', key: 'action', width: 80, align: 'center' },
 ]
 
 function flattenCategories(nodes, prefix = '') {
@@ -923,6 +942,7 @@ async function loadMatCategories() {
     matCategories.value = res.data || []
     if (matCategories.value.length && !matSelectedCategoryId.value) {
       matSelectedCategoryId.value = matCategories.value[0].id
+      await loadMatFiles()
     }
   } catch (e) {
     message.error(`分类加载失败（${e.response?.status || '网络错误'}）`)
@@ -1081,6 +1101,22 @@ async function deleteMaterial(id) {
     await loadMatCategories()
   } catch (e) {
     message.error(e.response?.data?.detail || '删除失败')
+  }
+}
+
+async function deleteAllFiles() {
+  if (!matSelectedCategoryId.value || matFiles.value.length === 0) return
+  try {
+    await Promise.all(
+      matFiles.value.map(f =>
+        http.delete(`/api/cn/materials/${f.id}`)
+      )
+    )
+    message.success('已删除全部文件')
+    await loadMatFiles()
+    await loadMatCategories()
+  } catch (e) {
+    message.error(e?.response?.data?.detail || '删除失败')
   }
 }
 
@@ -1276,17 +1312,17 @@ onMounted(() => {
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  th,
-  td {
-    border: 0.5px solid var(--cn-border);
+  th, td {
+    border: 0.5px solid #CCE4F5;
     padding: 8px 10px;
     font-size: 12px;
-    color: var(--cn-text-primary);
+    color: #1A2A3A;
     text-align: left;
   }
   th {
-    background: var(--cn-bg-page);
-    font-weight: 500;
+    background: #EBF4FB;
+    font-weight: 600;
+    color: #4A6A84;
   }
 }
 .admin-table-empty {
@@ -1319,8 +1355,35 @@ onMounted(() => {
   gap: 8px;
   margin-bottom: 12px;
 }
+.admin-mat-file-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.admin-mat-file-toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.admin-mat-file-toolbar-action {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+.admin-mat-batch-result {
+  font-size: 13px;
+  color: #389e0d;
+}
+.admin-mat-batch-errors {
+  color: #cf1322;
+}
 .admin-mat-file-table {
-  margin-top: 12px;
+  margin-top: 0;
   :deep(.ant-table) {
     background: transparent !important;
   }
@@ -1392,7 +1455,7 @@ onMounted(() => {
   font-size: 13px;
   border-radius: 4px;
   margin: 1px 4px;
-  &:hover { background: var(--cn-gold-light); }
+  &:hover { background: #EBF4FB; }
 }
 .admin-cat-name {
   flex: 1;
@@ -1425,20 +1488,19 @@ onMounted(() => {
   cursor: pointer;
   font-family: var(--cn-font);
   margin-left: 6px;
-  background: transparent;
-  border: 0.5px solid var(--cn-text-primary);
-  color: var(--cn-text-primary);
+  background: #ffffff;
+  border: 1px solid #CCE4F5;
+  color: #4A6A84;
   &:hover {
-    border-color: var(--cn-gold);
-    color: var(--cn-gold);
+    border-color: #1B6CA8;
+    color: #1B6CA8;
+    background: #EBF4FB;
   }
   &.admin-cat-btn--danger {
-    border: 0.5px solid #C0392B !important;
-    color: #C0392B !important;
-    background: transparent !important;
-    &:hover {
-      background: #FCEBEB !important;
-    }
+    border: 1px solid #E24B4A !important;
+    color: #E24B4A !important;
+    background: #ffffff !important;
+    &:hover { background: #FEF2F2 !important; }
   }
 }
 .admin-rename-input {
@@ -1474,19 +1536,19 @@ onMounted(() => {
   th {
     text-align: left;
     padding: 8px 12px;
-    color: var(--cn-text-secondary);
-    font-weight: 500;
-    border-bottom: 0.5px solid var(--cn-border);
-    background: var(--cn-bg-page);
+    color: #4A6A84;
+    font-weight: 600;
+    border-bottom: 1px solid #CCE4F5;
+    background: #EBF4FB;
   }
   td {
     padding: 9px 12px;
-    color: var(--cn-text-primary);
-    border-bottom: 0.5px solid var(--cn-border);
+    color: #1A2A3A;
+    border-bottom: 1px solid #E0EDF6;
     vertical-align: middle;
   }
   .admin-cat-tr:last-child td { border-bottom: none; }
-  .admin-cat-tr:hover td { background: var(--cn-gold-light); }
+  .admin-cat-tr:hover td { background: #EBF4FB; }
 }
 .admin-cat-dir {
   font-family: monospace;

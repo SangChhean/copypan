@@ -140,7 +140,7 @@ async function onChangePassword() {
 <style lang="less" scoped>
 .login-root {
   min-height: 100vh;
-  background: var(--cn-bg-page);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,7 +158,7 @@ async function onChangePassword() {
   font-weight: 500;
   text-align: center;
   margin-bottom: 28px;
-  color: var(--cn-gold);
+  color: #1B6CA8;
   letter-spacing: 0.08em;
 }
 
