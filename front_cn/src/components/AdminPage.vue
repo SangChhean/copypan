@@ -257,7 +257,7 @@
                   <a-select
                     v-model:value="matSelectedCategoryId"
                     placeholder="选择分类"
-                    style="min-width:220px"
+                    style="min-width:520px"
                     :options="flatMatOptions"
                     @change="loadMatFiles"
                   />
