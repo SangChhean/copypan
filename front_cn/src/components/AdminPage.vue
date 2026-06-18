@@ -257,7 +257,7 @@
                   <a-select
                     v-model:value="matSelectedCategoryId"
                     placeholder="选择分类"
-                    style="min-width:220px"
+                    style="min-width:520px"
                     :options="flatMatOptions"
                     @change="loadMatFiles"
                   />
@@ -1033,6 +1033,7 @@ async function onFolderSelected(e) {
   batchUploading.value = true
   batchResult.value = null
   const formData = new FormData()
+  formData.append('type', matTypeTab.value)
   for (const f of pdfs) {
     const relPath = f.webkitRelativePath || f.name
     formData.append('files', f, relPath)

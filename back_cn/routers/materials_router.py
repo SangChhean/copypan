@@ -89,7 +89,7 @@ def _get_all_descendant_ids(category_id: int, conn) -> list[int]:
     return result
 
 
-def _ensure_category_path(path_parts: list[str], conn) -> int:
+def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral") -> int:
     """
     按路径层级递归确保分类存在，返回最末层分类 id。
     path_parts: 如 ["旧约", "诗篇"]
@@ -114,9 +114,9 @@ def _ensure_category_path(path_parts: list[str], conn) -> int:
                 cur = conn.execute(
                     """
                     INSERT INTO material_categories(name, dir_name, parent_id, sort_order, created_at, type)
-                    VALUES (?, ?, ?, 0, ?, 'pastoral')
+                    VALUES (?, ?, ?, 0, ?, ?)
                     """,
-                    (part, dir_name, parent_id, _utc_now()),
+                    (part, dir_name, parent_id, _utc_now(), type),
                 )
                 conn.commit()
                 cat_id = cur.lastrowid
@@ -412,6 +412,7 @@ async def upload_material(
 @router.post("/batch_upload")
 async def batch_upload_materials(
     files: list[UploadFile] = File(...),
+    type: str = Form("pastoral"),
     _: bool = Depends(verify_admin_access),
 ):
     """按 webkitRelativePath 还原完整路径层级，自动建立所有中间层分类。"""
@@ -438,7 +439,7 @@ async def batch_upload_materials(
                 errors.append({"file": filename, "error": f"超过 {MAX_MB}MB，已跳过"})
                 continue
             try:
-                cat_id = _ensure_category_path(path_parts, conn)
+                cat_id = _ensure_category_path(path_parts, conn, type)
                 cat_row = conn.execute(
                     "SELECT dir_name FROM material_categories WHERE id = ?", (cat_id,)
                 ).fetchone()
