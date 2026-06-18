@@ -1033,6 +1033,7 @@ async function onFolderSelected(e) {
   batchUploading.value = true
   batchResult.value = null
   const formData = new FormData()
+  formData.append('type', matTypeTab.value)
   for (const f of pdfs) {
     const relPath = f.webkitRelativePath || f.name
     formData.append('files', f, relPath)
