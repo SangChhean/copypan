@@ -89,12 +89,11 @@ def _get_all_descendant_ids(category_id: int, conn) -> list[int]:
     return result
 
 
-def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral") -> int:
+def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", parent_id: int | None = None) -> int:
     """
     按路径层级递归确保分类存在，返回最末层分类 id。
     path_parts: 如 ["旧约", "诗篇"]
     """
-    parent_id = None
     cat_id = None
     for part in path_parts:
         part = part.strip()
@@ -145,7 +144,7 @@ def list_categories(type: str | None = None, _user: dict = Depends(_require_user
                 LEFT JOIN materials m ON m.category_id = mc.id
                 WHERE mc.type = ?
                 GROUP BY mc.id
-                ORDER BY mc.sort_order, mc.id
+                ORDER BY mc.sort_order, mc.name COLLATE NOCASE, mc.id
                 """,
                 (type,),
             ).fetchall()
@@ -158,7 +157,7 @@ def list_categories(type: str | None = None, _user: dict = Depends(_require_user
                 FROM material_categories mc
                 LEFT JOIN materials m ON m.category_id = mc.id
                 GROUP BY mc.id
-                ORDER BY mc.sort_order, mc.id
+                ORDER BY mc.sort_order, mc.name COLLATE NOCASE, mc.id
                 """
             ).fetchall()
     flat = [dict(r) for r in rows]
@@ -182,7 +181,10 @@ def list_materials(category_id: int, _user: dict = Depends(_require_user)):
             """,
             (category_id,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    import re as _re
+    rows_list = [dict(r) for r in rows]
+    rows_list.sort(key=lambda x: [int(c) if c.isdigit() else c.lower() for c in _re.split(r'(\d+)', x.get('display_name', ''))])
+    return rows_list
 
 
 @router.get("/{material_id}/download")
@@ -340,18 +342,28 @@ def delete_category(category_id: int, _: bool = Depends(verify_admin_access)):
         if not cat:
             raise HTTPException(status_code=404, detail="分类不存在")
         all_ids = _get_all_descendant_ids(category_id, conn)
-        cnt = conn.execute(
-            f"SELECT COUNT(*) AS n FROM materials WHERE category_id IN ({','.join('?'*len(all_ids))})",
-            all_ids,
-        ).fetchone()["n"]
-        if cnt > 0:
-            raise HTTPException(status_code=400, detail="请先删除该分类及子分类下的所有文件")
+        # 删除所有子分类下的文件（磁盘 + 数据库）
+        for cid in all_ids:
+            file_rows = conn.execute(
+                "SELECT dir_name, stored_name FROM materials m "
+                "JOIN material_categories mc ON mc.id = m.category_id "
+                "WHERE m.category_id = ?", (cid,)
+            ).fetchall()
+            for f in file_rows:
+                try:
+                    (MATERIALS_DIR / f["dir_name"] / f["stored_name"]).unlink(missing_ok=True)
+                except Exception:
+                    pass
+            conn.execute("DELETE FROM materials WHERE category_id = ?", (cid,))
+        # 从子到父依次删除分类记录
         for cid in reversed(all_ids):
             conn.execute("DELETE FROM material_categories WHERE id = ?", (cid,))
         conn.commit()
+    # 尝试删除磁盘目录
     try:
-        (MATERIALS_DIR / cat["dir_name"]).rmdir()
-    except OSError:
+        import shutil
+        shutil.rmtree(MATERIALS_DIR / cat["dir_name"], ignore_errors=True)
+    except Exception:
         pass
     return {"deleted": True}
 
@@ -413,6 +425,7 @@ async def upload_material(
 async def batch_upload_materials(
     files: list[UploadFile] = File(...),
     type: str = Form("pastoral"),
+    parent_category_id: int | None = Form(None),
     _: bool = Depends(verify_admin_access),
 ):
     """按 webkitRelativePath 还原完整路径层级，自动建立所有中间层分类。"""
@@ -439,7 +452,7 @@ async def batch_upload_materials(
                 errors.append({"file": filename, "error": f"超过 {MAX_MB}MB，已跳过"})
                 continue
             try:
-                cat_id = _ensure_category_path(path_parts, conn, type)
+                cat_id = _ensure_category_path(path_parts, conn, type, parent_id=parent_category_id)
                 cat_row = conn.execute(
                     "SELECT dir_name FROM material_categories WHERE id = ?", (cat_id,)
                 ).fetchone()

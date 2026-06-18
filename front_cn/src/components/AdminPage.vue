@@ -256,10 +256,11 @@
                   <span>分类：</span>
                   <a-select
                     v-model:value="matSelectedCategoryId"
-                    placeholder="选择分类"
+                    placeholder="不选（按文件夹路径自动建分类）"
                     style="min-width:520px"
-                    :options="flatMatOptions"
-                    @change="loadMatFiles"
+                    :options="[{ label: '── 不选（批量上传自动建分类）──', value: null }, ...flatMatOptions]"
+                    :allow-clear="true"
+                    @change="onMatCategoryChange"
                   />
                 </div>
                 <div class="admin-mat-file-toolbar">
@@ -951,6 +952,12 @@ async function loadMatCategories() {
   }
 }
 
+function onMatCategoryChange(val) {
+  matSelectedCategoryId.value = val ?? null
+  if (val) loadMatFiles()
+  else matFiles.value = []
+}
+
 async function loadMatFiles() {
   if (!matSelectedCategoryId.value) {
     matFiles.value = []
@@ -1034,6 +1041,9 @@ async function onFolderSelected(e) {
   batchResult.value = null
   const formData = new FormData()
   formData.append('type', matTypeTab.value)
+  if (matSelectedCategoryId.value) {
+    formData.append('parent_category_id', String(matSelectedCategoryId.value))
+  }
   for (const f of pdfs) {
     const relPath = f.webkitRelativePath || f.name
     formData.append('files', f, relPath)
