@@ -6,7 +6,38 @@
     </div>
     <div class="cn-content-wrap">
       <div class="cn-content-card cn-content-card--wide">
-        <div class="materials-layout">
+        <!-- 手机版：下拉选择器 -->
+        <div v-if="isMobile" class="materials-mobile">
+          <div class="materials-mobile-select">
+            <select
+              class="mat-mobile-select"
+              :value="selectedCategoryId ?? ''"
+              @change="onMobileSelectChange"
+            >
+              <option value="">请选择分类</option>
+              <template v-for="cat in flatCategories" :key="cat.id">
+                <option :value="cat.id">{{ cat.depth > 0 ? '　' + cat.name : cat.name }}</option>
+              </template>
+            </select>
+          </div>
+          <div v-if="selectedCategoryId" class="materials-mobile-head">
+            <span class="materials-main-title">{{ selectedCategoryName }}</span>
+            <a-button size="small" class="mat-dl-btn" @click="downloadZip">批量下载</a-button>
+          </div>
+          <div v-if="filesLoading" class="materials-empty-main"><a-spin /></div>
+          <div v-else-if="!selectedCategoryId" class="materials-empty-main">请选择上方分类</div>
+          <div v-else-if="files.length === 0" class="materials-empty-main">暂无文件</div>
+          <div v-else class="mat-file-list">
+            <div v-for="f in files" :key="f.id" class="mat-file-row">
+              <span class="mat-file-name">{{ f.display_name }}</span>
+              <span class="mat-file-size">{{ formatSize(f.size_bytes) }}</span>
+              <a-button size="small" class="mat-dl-btn" @click="downloadFile(f)">下载</a-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 电脑版：左右分栏 -->
+        <div v-else class="materials-layout">
           <aside class="materials-sidebar">
             <a-spin :spinning="categoriesLoading">
               <div v-if="!categoriesLoading && !categories.length" class="materials-empty-side">
@@ -30,7 +61,7 @@
               <div v-if="selectedCategoryId">
                 <div class="materials-main-head">
                   <span class="materials-main-title">{{ selectedCategoryName }}</span>
-                  <a-button type="primary" size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">
+                  <a-button size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">
                     批量下载
                   </a-button>
                 </div>
@@ -50,7 +81,7 @@
                       {{ formatDate(record.created_at) }}
                     </template>
                     <template v-else-if="column.key === 'action'">
-                      <a-button type="primary" size="small" class="mat-dl-btn" @click="downloadFile(record)">
+                      <a-button size="small" class="mat-dl-btn" @click="downloadFile(record)">
                         下载
                       </a-button>
                     </template>
@@ -70,7 +101,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
@@ -96,6 +127,38 @@ const zipLoading = ref(false)
 const selectedCategoryId = ref(null)
 const openRootId = ref(null)
 const selectedCategoryName = ref('')
+
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
+const isMobile = computed(() => windowWidth.value <= 640)
+
+function onResize() {
+  windowWidth.value = window.innerWidth
+}
+
+const flatCategories = computed(() => {
+  const result = []
+  function flatten(nodes, depth = 0) {
+    for (const node of nodes) {
+      result.push({ ...node, depth })
+      if (node.children?.length) flatten(node.children, depth + 1)
+    }
+  }
+  flatten(categories.value)
+  return result
+})
+
+function onMobileSelectChange(e) {
+  const id = e.target.value ? Number(e.target.value) : null
+  selectedCategoryId.value = id
+  const cat = flatCategories.value.find(c => c.id === id)
+  selectedCategoryName.value = cat?.name || ''
+  if (id) loadFiles()
+  else files.value = []
+}
+
+function downloadZip() {
+  if (selectedCategoryId.value) onDownloadZip(selectedCategoryId.value)
+}
 
 const columns = [
   { title: '文件名', dataIndex: 'display_name', key: 'display_name' },
@@ -269,8 +332,13 @@ async function downloadFile(record) {
   }
 }
 
-onMounted(async () => {
-  await loadCategories()
+onMounted(() => {
+  window.addEventListener('resize', onResize)
+  loadCategories()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
 })
 </script>
 
@@ -301,32 +369,32 @@ onMounted(async () => {
   }
   .mat-cat-block {
     border-radius: 10px;
-    border: 1.5px solid var(--cn-border);
+    border: 1.5px solid #CCE4F5;
     overflow: hidden;
     transition: border-color 0.2s;
     &.mat-cat-block--active {
-      border-color: var(--cn-gold);
+      border-color: #1B6CA8;
     }
   }
   .mat-cat-root {
     padding: 14px 18px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    background: #EDE3CC;
-    color: var(--cn-text-primary);
+    background: #EBF4FB;
+    color: #1A2A3A;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     text-align: center;
     transition: background 0.15s, color 0.15s;
-    &:hover { background: #E4D8BE; }
+    &:hover { background: #D6E8F5; }
     &.mat-cat-root--active {
-      background: var(--cn-charcoal);
-      color: var(--cn-gold);
+      background: #1B6CA8;
+      color: #ffffff;
     }
-    &.mat-cat-root--active:hover { background: #3E3E3E; }
+    &.mat-cat-root--active:hover { background: #1559A0; }
   }
   .mat-cat-arrow {
     font-size: 14px;
@@ -334,27 +402,27 @@ onMounted(async () => {
     display: inline-block;
     &.mat-cat-arrow--open { transform: rotate(90deg); }
   }
-  .mat-cat-children { background: #F5EFE0; }
+  .mat-cat-children { background: #F0F7FC; }
   .mat-cat-child {
     padding: 10px 18px 10px 32px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--cn-text-secondary);
+    color: #4A6A84;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    border-top: 1px solid var(--cn-border);
+    border-top: 1px solid #CCE4F5;
     transition: background 0.15s, color 0.15s;
-    &:hover { background: #EDE3CC; color: var(--cn-text-primary); }
+    &:hover { background: #EBF4FB; color: #1A2A3A; }
     &.mat-cat-child--active {
-      background: var(--cn-charcoal);
-      color: var(--cn-gold);
+      background: #1B6CA8;
+      color: #ffffff;
       font-weight: 700;
     }
   }
   .mat-cat-l {
-    color: #B0A898;
+    color: #94A3B8;
     font-size: 12px;
     flex-shrink: 0;
   }
@@ -375,8 +443,24 @@ onMounted(async () => {
     color: var(--cn-text-primary);
   }
   .mat-dl-btn {
-    padding: 4px 12px !important;
-    height: auto !important;
+    background: #1677ff !important;
+    color: #ffffff !important;
+    border: 1px solid #1677ff !important;
+    border-radius: 6px !important;
+    padding: 4px 15px !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    font-family: inherit !important;
+    cursor: pointer;
+    height: 32px !important;
+    line-height: 1.5714285714285714 !important;
+    flex-shrink: 0;
+    box-shadow: none !important;
+  }
+  .mat-dl-btn:hover {
+    background: #4096ff !important;
+    border-color: #4096ff !important;
+    color: #ffffff !important;
   }
   .materials-empty-side,
   .materials-empty-main {
@@ -384,6 +468,63 @@ onMounted(async () => {
     color: var(--cn-text-secondary);
     font-size: 14px;
     text-align: center;
+  }
+  .materials-mobile {
+    padding: 12px 14px;
+    background: #ffffff;
+  }
+  .materials-mobile-select {
+    margin-bottom: 12px;
+  }
+  .mat-mobile-select {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #CCE4F5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #1A2A3A;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231B6CA8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  .materials-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .mat-file-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .mat-file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 0;
+    border-bottom: 1px solid #E0EDF6;
+    background: #ffffff;
+  }
+  .mat-file-row:last-child {
+    border-bottom: none;
+  }
+  .mat-file-name {
+    flex: 1;
+    font-size: 13px;
+    color: #1A2A3A;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mat-file-size {
+    font-size: 11px;
+    color: #94A3B8;
+    flex-shrink: 0;
   }
 }
 </style>

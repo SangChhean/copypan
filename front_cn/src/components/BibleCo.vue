@@ -250,4 +250,22 @@ async function downloadFormatZh() {
   font-weight: 500;
   color: var(--cn-gold);
 }
+
+:deep(.ant-radio-button-wrapper) {
+  background: #ffffff !important;
+  border-color: #CCE4F5 !important;
+  color: #4A6A84 !important;
+}
+:deep(.ant-radio-button-wrapper-checked) {
+  background: #EBF4FB !important;
+  border-color: #1B6CA8 !important;
+  color: #1B6CA8 !important;
+}
+:deep(.ant-radio-button-wrapper:hover) {
+  color: #1B6CA8 !important;
+}
+:deep(.ant-radio-button-wrapper-checked::before),
+:deep(.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before) {
+  background: #CCE4F5 !important;
+}
 </style>

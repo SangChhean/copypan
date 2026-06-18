@@ -1666,23 +1666,21 @@ async function scrollToMessageTop(messageId) {
 }
 
 .qa-new-chat-btn {
-  border: 1px solid var(--cn-border);
-  background: var(--cn-bg-card);
+  border: 1px solid #CCE4F5;
+  background: #EBF4FB;
   border-radius: 16px;
-  padding: 4px 12px;
+  padding: 6px 16px !important;
   font-size: 12px;
-  color: var(--cn-text-secondary);
+  color: #4A6A84;
   cursor: pointer;
-  line-height: 1.5;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition: border-color 0.2s, color 0.2s;
   width: auto !important;
   min-width: unset !important;
-  padding: 6px 16px !important;
   justify-self: end;
   &:hover {
-    border-color: var(--cn-gold);
-    color: var(--cn-gold);
-    background: var(--cn-gold-light);
+    border-color: #1B6CA8;
+    color: #1B6CA8;
+    background: #D6E8F5;
   }
 }
 
@@ -1720,17 +1718,17 @@ async function scrollToMessageTop(messageId) {
 }
 .qa-example-chip {
   padding: 8px 16px;
-  border: 0.5px solid var(--cn-border);
+  border: 1px solid #CCE4F5;
   border-radius: 20px;
   font-size: 14px;
-  color: var(--cn-text-secondary);
+  color: #4A6A84;
   cursor: pointer;
   transition: all 0.2s;
-  background: var(--cn-bg-page);
+  background: #EBF4FB;
   &:hover {
-    border-color: var(--cn-gold);
-    color: var(--cn-gold);
-    background: var(--cn-gold-light);
+    border-color: #1B6CA8;
+    color: #1B6CA8;
+    background: #D6E8F5;
   }
 }
 
@@ -1762,17 +1760,16 @@ async function scrollToMessageTop(messageId) {
 }
 .qa-bubble-user {
   max-width: 78%;
-  background: var(--cn-gold-light);
-  color: var(--cn-text-primary);
-  border: 0.5px solid var(--cn-border);
+  background: #EBF4FB;
+  color: #1A2A3A;
+  border: 1px solid #CCE4F5;
   border-bottom-right-radius: 2px;
   word-break: break-word;
 }
 .qa-bubble-assistant {
   max-width: 92%;
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
-  box-shadow: none;
+  background: #ffffff;
+  border: 1px solid #CCE4F5;
   border-bottom-left-radius: 2px;
   word-break: break-word;
 }
@@ -2021,8 +2018,8 @@ async function scrollToMessageTop(messageId) {
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--cn-bg-card);
-  border-top: 0.5px solid var(--cn-border);
+  background: #EBF4FB;
+  border-top: 1px solid #CCE4F5;
   padding: 14px 0;
   z-index: 100;
 }
