@@ -6,6 +6,10 @@ import io
 import logging
 import os
 import re
+
+def _natural_sort_key(s: str):
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", s)]
+
 import sqlite3
 import uuid
 import zipfile
@@ -177,13 +181,18 @@ def list_materials(category_id: int, _user: dict = Depends(_require_user)):
             SELECT id, display_name, size_bytes, created_at
             FROM materials
             WHERE category_id = ?
-            ORDER BY created_at DESC
+            ORDER BY display_name COLLATE NOCASE ASC
             """,
             (category_id,),
         ).fetchall()
+<<<<<<< Updated upstream
     import re as _re
     rows_list = [dict(r) for r in rows]
     rows_list.sort(key=lambda x: [int(c) if c.isdigit() else c.lower() for c in _re.split(r'(\d+)', x.get('display_name', ''))])
+=======
+    rows_list = [dict(r) for r in rows]
+    rows_list.sort(key=lambda x: [int(c) if c.isdigit() else c.lower() for c in __import__("re").split(r"(\d+)", x.get("display_name", ""))])
+>>>>>>> Stashed changes
     return rows_list
 
 
