@@ -400,11 +400,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cn-gold);
-  color: var(--cn-charcoal);
+  background: #1B6CA8;
+  color: #ffffff;
   border-radius: 50%;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .remove-btn {
@@ -450,8 +450,14 @@ onMounted(() => {
 }
 
 .outline-gen-btn {
-  padding: 8px 24px !important;
+  display: block !important;
+  margin: 4px auto 0 !important;
+  padding: 14px 56px !important;
   height: auto !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  border-radius: 10px !important;
 }
 
 .toolbar {
@@ -462,14 +468,14 @@ onMounted(() => {
 }
 
 .toolbar-btn {
-  border: 0.5px solid var(--cn-border) !important;
-  background: var(--cn-bg-page) !important;
-  color: var(--cn-text-secondary) !important;
+  border: 1px solid #CCE4F5 !important;
+  background: #ffffff !important;
+  color: #4A6A84 !important;
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  border-color: var(--cn-gold) !important;
-  color: var(--cn-gold) !important;
+  border-color: #1B6CA8 !important;
+  color: #1B6CA8 !important;
 }
 
 .outline-text {
