@@ -1,22 +1,22 @@
 :root {
   /* 背景 */
-  --cn-bg-page: #F5F2EC;
-  --cn-bg-card: #FDFAF5;
-  --cn-bg-nav: #2C2C2C;
+  --cn-bg-page: #ffffff;
+  --cn-bg-card: #EBF4FB;
+  --cn-bg-nav: #1B6CA8;
 
   /* 主色 */
-  --cn-gold: #C9A96E;
-  --cn-gold-light: #F0EAE0;
-  --cn-charcoal: #2C2C2C;
+  --cn-gold: #1B6CA8;
+  --cn-gold-light: #EBF4FB;
+  --cn-charcoal: #1A2A3A;
 
   /* 文字 */
-  --cn-text-primary: #2C2C2C;
-  --cn-text-secondary: #8A7D6E;
-  --cn-text-muted: #6A6258;
-  --cn-text-nav: #E8E0D0;
+  --cn-text-primary: #1A2A3A;
+  --cn-text-secondary: #4A6A84;
+  --cn-text-muted: #94A3B8;
+  --cn-text-nav: #ffffff;
 
   /* 边框 */
-  --cn-border: #DDD6C8;
+  --cn-border: #CCE4F5;
   --cn-border-focus: #C9A96E;
 
   /* 功能色 */
@@ -85,58 +85,54 @@ select {
   font-size: 15px !important;
 }
 
-/* 统一输入框 */
-.cn-input,
-.ant-input,
-.ant-select-selector,
-.ant-input-affix-wrapper,
-.ant-picker {
-  background: var(--cn-bg-card) !important;
-  border-color: var(--cn-border) !important;
+/* 输入框、选择框统一白色背景 */
+.cn-input {
   border-radius: var(--cn-radius-md) !important;
 }
-
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-input-password,
+.ant-input-number,
+.ant-picker {
+  background-color: #ffffff !important;
+  border-color: #CCE4F5 !important;
+  border-radius: var(--cn-radius-md) !important;
+}
 .ant-input:focus,
 .ant-input-focused,
+.ant-input-affix-wrapper:focus,
 .ant-input-affix-wrapper-focused,
 .ant-select-focused .ant-select-selector {
-  border-color: var(--cn-border-focus) !important;
-  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15) !important;
+  border-color: #1B6CA8 !important;
+  box-shadow: 0 0 0 2px rgba(27,108,168,0.12) !important;
+}
+.ant-input::placeholder {
+  color: #94A3B8 !important;
 }
 
 /* 主按钮 */
-.ant-btn-primary,
-.cn-btn-primary {
-  background: var(--cn-charcoal) !important;
-  border-color: var(--cn-charcoal) !important;
-  color: var(--cn-gold) !important;
-  border-radius: var(--cn-radius-sm) !important;
-  font-size: 15px !important;
+.cn-btn-primary,
+.cn-btn-primary.ant-btn-primary {
+  background: #1B6CA8 !important;
+  border-color: #1B6CA8 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 8px;
 }
-
-.ant-btn-primary:hover:not(:disabled) {
-  background: #3E3E3E !important;
-  border-color: #3E3E3E !important;
-  color: var(--cn-gold) !important;
+.cn-btn-primary:hover {
+  background: #1559A0 !important;
+  border-color: #1559A0 !important;
 }
-
-.ant-btn-primary:disabled {
-  opacity: 0.55;
+.cn-btn-ghost {
+  background: #ffffff !important;
+  border: 1.5px solid #1B6CA8 !important;
+  color: #1B6CA8 !important;
+  font-weight: 600;
+  border-radius: 8px;
 }
-
-.ant-btn-default.cn-btn-ghost,
-.cn-btn-ghost.ant-btn {
-  border-color: var(--cn-gold) !important;
-  color: var(--cn-gold) !important;
-  background: transparent !important;
-  font-size: 14px !important;
-}
-
-.ant-btn-default.cn-btn-ghost:hover:not(:disabled),
-.cn-btn-ghost.ant-btn:hover:not(:disabled) {
-  border-color: var(--cn-gold) !important;
-  color: var(--cn-charcoal) !important;
-  background: var(--cn-gold-light) !important;
+.cn-btn-ghost:hover {
+  background: #EBF4FB !important;
 }
 
 .ant-card {
@@ -180,10 +176,10 @@ select {
 }
 
 .cn-content-card {
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
-  border-radius: 12px;
-  padding: 36px 40px;
+  background: #EBF4FB;
+  border: 1px solid #CCE4F5;
+  border-radius: 14px;
+  padding: 24px;
   width: 100%;
   max-width: var(--cn-content-max-width);
   box-shadow: var(--cn-card-shadow);
@@ -214,31 +210,29 @@ select {
 }
 
 .cn-back {
-  font-size: 18px;
+  color: #1B6CA8;
+  background: none;
+  border: none;
+  font-size: 16px;
   font-weight: 500;
-  color: var(--cn-text-secondary);
   cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
   user-select: none;
   text-decoration: none;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
   flex-shrink: 0;
   grid-column: 1;
   justify-self: start;
 }
 
 .cn-back:hover {
-  color: var(--cn-gold);
+  color: #1559A0;
 }
 
 .cn-page-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--cn-text-primary);
-  flex: 1;
-  text-align: center;
+  color: #1A2A3A;
+  font-size: 17px;
+  font-weight: 600;
   grid-column: 2;
   justify-self: center;
 }
@@ -251,38 +245,32 @@ select {
 /* 方向切换 */
 .cn-dir-toggle {
   display: flex;
+  border: 1px solid #CCE4F5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
 }
-
 .cn-dir-btn {
+  border: none;
+  background: #ffffff;
+  color: #4A6A84;
   padding: 7px 18px;
-  font-size: 14px !important;
+  font-size: 14px;
+  font-family: inherit;
   cursor: pointer;
-  border: 1px solid var(--cn-border);
-  background: transparent;
-  color: var(--cn-text-secondary);
-  font-family: var(--cn-font);
-  line-height: 1.5;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-
-.cn-dir-btn:first-child {
-  border-radius: var(--cn-radius-sm) 0 0 var(--cn-radius-sm);
+.cn-dir-btn:not(:last-child) {
+  border-right: 1px solid #CCE4F5;
 }
-
-.cn-dir-btn:last-child {
-  border-radius: 0 var(--cn-radius-sm) var(--cn-radius-sm) 0;
-  border-left: none;
+.cn-dir-btn:hover {
+  color: #1B6CA8;
+  background: #EBF4FB;
 }
-
-.cn-dir-btn:not(.active):hover {
-  border-color: var(--cn-gold);
-  color: var(--cn-gold);
-}
-
 .cn-dir-btn.active {
-  background: var(--cn-charcoal);
-  color: var(--cn-gold);
-  border-color: var(--cn-charcoal);
+  background: #EBF4FB;
+  color: #1B6CA8;
+  font-weight: 600;
 }
 
 /* 首页卡片 */
@@ -309,23 +297,23 @@ select {
 
 /* 页面内原生按钮 */
 .cn-btn-main-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 24px;
-  font-size: 15px;
-  font-family: var(--cn-font);
-  border-radius: var(--cn-radius-md);
-  border: none;
-  background: var(--cn-charcoal);
-  color: var(--cn-gold);
+  background: #1677ff;
+  color: #ffffff;
+  border: 1px solid #1677ff;
+  border-radius: 8px;
+  padding: 4px 15px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1.5714285714285714;
+  height: 32px;
 }
-
 .cn-btn-main-inline:hover:not(:disabled) {
-  background: #3E3E3E;
+  background: #4096ff;
+  border-color: #4096ff;
 }
-
 .cn-btn-main-inline:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -359,78 +347,70 @@ select {
   align-items: center;
   height: 56px;
   padding: 0 24px;
-  background: var(--cn-bg-nav);
+  background: #1B6CA8;
   flex-shrink: 0;
+  position: relative;
 }
-
 .cn-navbar-brand,
 .cn-nav-brand {
-  color: var(--cn-gold);
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-family: -apple-system, 'Inter', 'Noto Sans SC', sans-serif;
   text-decoration: none;
   grid-column: 2;
   justify-self: center;
 }
-
 .cn-navbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   grid-column: 3;
   justify-self: end;
 }
-
 .cn-navbar-usage {
   display: flex;
-  gap: 14px;
+  gap: 12px;
 }
-
 .cn-navbar-usage-item,
 .cn-usage-label {
-  color: var(--cn-gold);
+  color: #ffffff;
   font-size: 13px;
   font-weight: 500;
+  font-family: -apple-system, 'Inter', 'Noto Sans SC', sans-serif;
 }
-
 .cn-navbar-usage-item em,
 .cn-usage-val {
   font-style: normal;
-  color: var(--cn-gold);
-  font-weight: 500;
-  font-size: 14px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
 }
-
 .cn-navbar-admin {
-  background: var(--cn-gold);
-  color: var(--cn-charcoal);
+  background: #ffffff;
+  color: #1B6CA8;
   border: none;
-  border-radius: var(--cn-radius-sm);
-  padding: 7px 16px;
-  font-size: 14px;
-  font-family: var(--cn-font);
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, 'Inter', 'Noto Sans SC', sans-serif;
   cursor: pointer;
 }
-
-.cn-navbar-admin:hover {
-  background: #D4B87E;
-}
-
+.cn-navbar-admin:hover { background: #EBF4FB; }
 .cn-navbar-logout {
-  background: none;
+  background: #ffffff;
+  color: #1B6CA8;
   border: none;
-  color: #9A9080;
-  font-size: 14px;
-  font-family: var(--cn-font);
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, 'Inter', 'Noto Sans SC', sans-serif;
   cursor: pointer;
-  padding: 4px 0;
 }
-
-.cn-navbar-logout:hover {
-  color: var(--cn-text-nav);
-}
+.cn-navbar-logout:hover { background: #EBF4FB; }
 
 /* QA 气泡 */
 .qa-bubble {

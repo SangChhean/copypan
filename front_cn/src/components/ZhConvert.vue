@@ -678,14 +678,14 @@ async function downloadFormatted() {
   font-size: 14px;
   border-radius: var(--cn-radius-md);
   border: none;
-  background: var(--cn-charcoal);
-  color: var(--cn-gold);
+  background: #1B6CA8;
+  color: #ffffff;
   cursor: pointer;
   font-family: var(--cn-font);
 }
 
 .accept-all-btn:hover:not(:disabled) {
-  background: #3E3E3E;
+  background: #1559A0;
 }
 
 .accept-all-btn:disabled {
@@ -719,8 +719,8 @@ async function downloadFormatted() {
   flex-direction: column;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--cn-gold-light);
-  border: 0.5px solid var(--cn-border);
+  background: #EBF4FB;
+  border: 1px solid #CCE4F5;
   border-radius: var(--cn-radius-md);
   font-size: 0.9em;
 }
@@ -767,17 +767,17 @@ async function downloadFormatted() {
   padding: 4px 12px;
   font-size: 13px;
   border-radius: var(--cn-radius-sm);
-  border: 0.5px solid var(--cn-border);
-  background: transparent;
-  color: var(--cn-text-secondary);
+  border: 1px solid #CCE4F5;
+  background: #ffffff;
+  color: #4A6A84;
   cursor: pointer;
   font-family: var(--cn-font);
 }
 
 .accept-btn:hover:not(:disabled) {
-  border-color: var(--cn-gold);
-  color: var(--cn-gold);
-  background: var(--cn-gold-light);
+  border-color: #1B6CA8;
+  color: #1B6CA8;
+  background: #EBF4FB;
 }
 
 .accept-btn:disabled {
@@ -805,5 +805,23 @@ async function downloadFormatted() {
 .reject-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+:deep(.ant-radio-button-wrapper) {
+  background: #ffffff !important;
+  border-color: #CCE4F5 !important;
+  color: #4A6A84 !important;
+}
+:deep(.ant-radio-button-wrapper-checked) {
+  background: #EBF4FB !important;
+  border-color: #1B6CA8 !important;
+  color: #1B6CA8 !important;
+}
+:deep(.ant-radio-button-wrapper:hover) {
+  color: #1B6CA8 !important;
+}
+:deep(.ant-radio-button-wrapper-checked::before),
+:deep(.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before) {
+  background: #CCE4F5 !important;
 }
 </style>

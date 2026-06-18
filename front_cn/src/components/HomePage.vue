@@ -2,6 +2,28 @@
   <div class="home-root">
     <main class="home-main">
       <div class="home-section">
+        <div class="home-section-label">资料下载</div>
+        <div class="card-grid">
+          <div
+            v-for="item in materialsFeatures"
+            :key="item.key"
+            class="feature-card cn-home-card"
+            @click="go(item)"
+          >
+            <div class="card-top">
+              <div class="card-icon">
+                <component :is="item.icon" />
+              </div>
+            </div>
+            <div class="card-title cn-card-title">{{ item.title }}</div>
+            <div class="card-desc cn-card-desc">{{ item.desc }}</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="home-divider" />
+
+      <div class="home-section">
         <div class="home-section-label">工具箱</div>
         <div class="card-grid">
           <div
@@ -18,28 +40,6 @@
               <span v-if="item.quotaKey && usage" class="card-quota cn-card-badge">
                 {{ quotaText(item.quotaKey) }}
               </span>
-            </div>
-            <div class="card-title cn-card-title">{{ item.title }}</div>
-            <div class="card-desc cn-card-desc">{{ item.desc }}</div>
-          </div>
-        </div>
-      </div>
-
-      <hr class="home-divider" />
-
-      <div class="home-section">
-        <div class="home-section-label">资料下载</div>
-        <div class="card-grid">
-          <div
-            v-for="item in materialsFeatures"
-            :key="item.key"
-            class="feature-card cn-home-card"
-            @click="go(item)"
-          >
-            <div class="card-top">
-              <div class="card-icon">
-                <component :is="item.icon" />
-              </div>
             </div>
             <div class="card-title cn-card-title">{{ item.title }}</div>
             <div class="card-desc cn-card-desc">{{ item.desc }}</div>
@@ -166,15 +166,16 @@ onMounted(() => {
 }
 
 .feature-card {
-  background: var(--cn-bg-card);
-  border: 0.5px solid var(--cn-border);
+  background: #EBF4FB;
+  border: 1px solid #CCE4F5;
   border-radius: 12px;
   padding: 28px 26px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:hover:not(.disabled) {
-    border-color: var(--cn-gold);
+    border-color: #1B6CA8;
+    box-shadow: 0 4px 16px rgba(27,108,168,0.1);
   }
 }
 
@@ -196,18 +197,20 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cn-gold-light);
+  background: #fff;
   border-radius: var(--cn-radius-md);
-  color: var(--cn-gold);
+  color: #1B6CA8;
   font-size: 18px;
 }
 
 .card-quota {
-  background: var(--cn-gold-light);
-  color: var(--cn-gold);
+  background: #fff;
+  color: #1B6CA8;
   padding: 2px 8px;
   border-radius: 10px;
   line-height: 1.6;
+  font-weight: 600;
+  font-size: 11px;
 }
 
 .card-title {
