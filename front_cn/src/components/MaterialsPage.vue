@@ -49,9 +49,9 @@
                   :key="node.id"
                   :node="node"
                   :selected-id="selectedCategoryId"
-                  :open-root-id="openRootId"
+                  :open-ids="openIds"
                   @select="onSelectCategory"
-                  @toggle-root="onToggleRoot"
+                  @toggle="onToggleId"
                 />
               </div>
             </a-spin>
@@ -125,7 +125,7 @@ const files = ref([])
 const filesLoading = ref(false)
 const zipLoading = ref(false)
 const selectedCategoryId = ref(null)
-const openRootId = ref(null)
+const openIds = ref([])
 const selectedCategoryName = ref('')
 
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
@@ -173,22 +173,23 @@ const TreeNode = defineComponent({
   props: {
     node: { type: Object, required: true },
     selectedId: { type: Number, default: null },
-    openRootId: { type: Number, default: null },
+    openIds: { type: Array, default: () => [] },
   },
-  emits: ['select', 'toggle-root'],
+  emits: ['select', 'toggle'],
   setup(props, { emit }) {
     return () => {
       const node = props.node
       const hasChildren = node.children && node.children.length > 0
-      const isOpen = props.openRootId === node.id
-      const isRootSelected = props.selectedId === node.id
-      const isChildSelected = node.children?.some(c => c.id === props.selectedId)
-      const isActive = isRootSelected || isChildSelected
+      const isOpen = props.openIds.includes(node.id)
+      const isSelected = props.selectedId === node.id
+      const isActive = isSelected || (hasChildren && node.children.some(c =>
+        c.id === props.selectedId || c.children?.some(gc => gc.id === props.selectedId)
+      ))
 
       const rootRow = h('div', {
         class: ['mat-cat-root', isActive && 'mat-cat-root--active'],
         onClick: () => {
-          emit('toggle-root', node.id)
+          if (hasChildren) emit('toggle', node.id)
           emit('select', node)
         },
       }, [
@@ -200,16 +201,44 @@ const TreeNode = defineComponent({
 
       const childRows = hasChildren && isOpen
         ? h('div', { class: 'mat-cat-children' },
-            node.children.map(child =>
-              h('div', {
-                key: child.id,
-                class: ['mat-cat-child', props.selectedId === child.id && 'mat-cat-child--active'],
-                onClick: () => emit('select', child),
-              }, [
-                h('span', { class: 'mat-cat-l' }, 'L'),
-                h('span', {}, child.name),
+            node.children.map(child => {
+              const childHasChildren = child.children && child.children.length > 0
+              const childIsOpen = props.openIds.includes(child.id)
+              const childIsSelected = props.selectedId === child.id
+              const childIsActive = childIsSelected || (childHasChildren && child.children.some(gc => gc.id === props.selectedId))
+
+              return h('div', { key: child.id }, [
+                h('div', {
+                  class: ['mat-cat-child', childIsActive && 'mat-cat-child--active'],
+                  onClick: () => {
+                    if (childHasChildren) emit('toggle', child.id)
+                    emit('select', child)
+                  },
+                }, [
+                  h('span', { class: 'mat-cat-l' }, 'L'),
+                  h('span', {}, child.name),
+                  childHasChildren ? h('span', {
+                    class: ['mat-cat-arrow', childIsOpen && 'mat-cat-arrow--open'],
+                    style: 'margin-left:4px;font-size:12px'
+                  }, '›') : null,
+                ]),
+                childHasChildren && childIsOpen
+                  ? h('div', { class: 'mat-cat-children' },
+                      child.children.map(gc =>
+                        h('div', {
+                          key: gc.id,
+                          class: ['mat-cat-child', 'mat-cat-child--l2', props.selectedId === gc.id && 'mat-cat-child--active'],
+                          style: 'padding-left: 48px',
+                          onClick: () => emit('select', gc),
+                        }, [
+                          h('span', { class: 'mat-cat-l' }, 'L'),
+                          h('span', {}, gc.name),
+                        ])
+                      )
+                    )
+                  : null,
               ])
-            )
+            })
           )
         : null
 
@@ -274,8 +303,10 @@ function onSelectCategory(node) {
   loadFiles()
 }
 
-function onToggleRoot(id) {
-  openRootId.value = openRootId.value === id ? null : id
+function onToggleId(id) {
+  const idx = openIds.value.indexOf(id)
+  if (idx === -1) openIds.value.push(id)
+  else openIds.value.splice(idx, 1)
 }
 
 async function onDownloadZip(categoryId) {
