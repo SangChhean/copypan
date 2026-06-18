@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined } from "@ant-design/icons-vue";
@@ -143,12 +144,14 @@ const aiPanelVisible = ref(false);
 const aiMode = ref("3.0"); // "2.0" | "3.0" | "4.0"
 const aiModeDisplayText = computed(() => `Pan AI ${aiMode.value || "3.0"}`);
 const KG_RAG_HISTORY_KEY = "kg_rag_history";
+const EVAL_PREFILL_KEY = "eval_prefill";
+const router = useRouter();
+const route = useRoute();
 const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
   specialNeeds: "",
-  audience: ""
 });
 const aiFormValid = computed(() => {
   const outline = aiForm.outlineTopic.trim().length > 0;
@@ -186,7 +189,7 @@ watch(
 );
 
 watch(
-  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.audience, referenceExcerpt.value],
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, referenceExcerpt.value],
   () => {
     burdenPhaseReady.value = false;
     burdenGenScenario.value = null;
@@ -230,7 +233,6 @@ async function onGenerateBurden() {
     const res = await axios.post("/api/kg_rag/generate_burden", {
       query: aiForm.outlineTopic.trim(),
       outline_nature: aiForm.specialNeeds.trim(),
-      audience: aiForm.audience.trim(),
       reference_excerpt: referenceExcerpt.value.trim(),
     });
     const d = res.data || {};
@@ -304,6 +306,7 @@ const conceptSearchOpen = ref(false);
 let conceptSearchTimer = null;
 const historyDrawerOpen = ref(false);
 const historyList = ref([]);
+const currentRecordId = ref(null);
 const isMobileView = ref(false);
 
 function updateIsMobileView() {
@@ -480,7 +483,7 @@ watch(conceptSearchKeyword, (val) => {
 });
 
 watch(
-  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription, aiForm.audience],
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription],
   () => {
     if (conceptStage.value !== "idle") {
       resetAiConceptState();
@@ -508,7 +511,6 @@ async function extractConcepts() {
       query: q,
       outline_nature: aiForm.specialNeeds.trim(),
       burden_description: aiForm.burdenDescription.trim(),
-      audience: aiForm.audience.trim(),
     });
     const d = res.data || {};
     conceptCandidates.value = d;
@@ -563,6 +565,93 @@ const pendingConfirmCount = computed(
   () => historyList.value.filter((x) => x?.status === "待确认").length
 );
 
+function syncHistoryAnswerSkeleton(answerText) {
+  const query = aiForm.outlineTopic.trim();
+  const record = historyList.value.find(
+    (r) => r.id === currentRecordId.value || r.query === query
+  );
+  if (!record) return;
+
+  if (!currentRecordId.value) currentRecordId.value = record.id;
+  const idx = historyList.value.findIndex((r) => r.id === record.id);
+  if (idx < 0) return;
+
+  historyList.value = historyList.value.map((item, i) =>
+    i === idx
+      ? {
+          ...item,
+          answer: answerText ?? aiResult.value?.answer ?? "",
+          skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+        }
+      : item
+  );
+  persistHistory();
+}
+
+function buildEvalHistoryPayload(evalData) {
+  if (!evalData) return null;
+  return {
+    scored_at: new Date().toLocaleString("zh-CN"),
+    total_score: evalData.total_score,
+    pansai_layer: evalData.pansai_layer ?? {
+      F1: evalData.F1,
+      F2: evalData.F2,
+      F3: evalData.F3,
+      F4: evalData.F4,
+    },
+    theology_layer: evalData.theology_layer ?? {
+      T1: evalData.T1,
+      T2: evalData.T2,
+      T3: evalData.T3,
+      T4: evalData.T4,
+    },
+  };
+}
+
+function writeEvalToHistory() {
+  if (!evalResult.value) return;
+
+  let targetId = currentRecordId.value
+    ?? historyList.value.find((r) => r.query === aiForm.outlineTopic.trim())?.id
+    ?? null;
+
+  if (!targetId) {
+    const cand = conceptCandidates.value || {};
+    const record = {
+      id: Date.now(),
+      createdAt: formatHistoryTime(Date.now()),
+      status: "已生成",
+      query: aiForm.outlineTopic.trim(),
+      outline_nature: aiForm.specialNeeds.trim(),
+      burden_description: aiForm.burdenDescription.trim(),
+      revelation: getConceptListForEval("revelation"),
+      experience: getConceptListForEval("experience"),
+      practice: getConceptListForEval("practice"),
+      answer: aiResult.value?.answer ?? "",
+      skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+      eval: null,
+    };
+    currentRecordId.value = record.id;
+    historyList.value = [record, ...historyList.value];
+    targetId = record.id;
+  }
+
+  const idx = historyList.value.findIndex((r) => r.id === targetId);
+  if (idx < 0) return;
+
+  currentRecordId.value = targetId;
+  const prev = historyList.value[idx];
+  const next = {
+    ...prev,
+    status: "已生成",
+    answer: aiResult.value?.answer ?? prev.answer ?? "",
+    skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : prev.skeleton ?? [],
+    eval: buildEvalHistoryPayload(evalResult.value),
+  };
+  historyList.value = historyList.value.map((item, i) => (i === idx ? next : item));
+  persistHistory();
+}
+
 function saveCurrentToHistory() {
   const cand = conceptCandidates.value || {};
   // 保存 AI 推荐的完整三层，而非仅勾选项（载入后可在手工重点里看到全部）
@@ -572,15 +661,387 @@ function saveCurrentToHistory() {
     status: "待确认",
     query: aiForm.outlineTopic.trim(),
     outline_nature: aiForm.specialNeeds.trim(),
-    audience: aiForm.audience.trim(),
     burden_description: aiForm.burdenDescription.trim(),
     revelation: Array.isArray(cand.revelation) ? [...cand.revelation] : [],
     experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
     practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
+    answer: aiResult.value?.answer ?? "",
+    skeleton: aiMeta.skeleton ?? [],
+    eval: evalResult.value ? buildEvalHistoryPayload(evalResult.value) : null,
   };
+  currentRecordId.value = record.id;
   historyList.value = [record, ...historyList.value];
   persistHistory();
   message.success("已保存全部推荐重点到历史记录");
+}
+
+// ---------- 纲目品质评估 ----------
+const evalLoading = ref(false);
+const evalResult = ref(null);
+const evalV1 = ref(null);
+const answerV1 = ref("");
+const skeletonSnapshot = ref([]);
+const outlineEditing = ref(false);
+const outlineEditVisible = ref(false);
+const outlineEditReadonly = ref(false);
+const editableAnswer = ref("");
+const highlightLineIdx = ref(-1);
+let highlightLineTimer = null;
+
+const F_EVAL_META = [
+  { key: "F1", title: "F1 重点覆盖度" },
+  { key: "F2", title: "F2 负担吻合度" },
+  { key: "F3", title: "F3 骨架吻合度" },
+  { key: "F4", title: "F4 逻辑连贯性" },
+];
+
+const T2_Q_KEYS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
+const T3_D_KEYS = ["D1", "D2", "D3", "D4"];
+
+const SUGGESTED_CONCEPT_LABELS = {
+  revelation: "启示层",
+  experience: "经历层",
+  practice: "实行层",
+};
+
+function getConceptListForEval(layer) {
+  if (aiMeta[layer]?.length) return [...aiMeta[layer]];
+  if (conceptMode.value === "manual") {
+    if (layer === "revelation") return [...manualRevelation.value];
+    if (layer === "experience") return [...manualExperience.value];
+    return [...manualPractice.value];
+  }
+  if (layer === "revelation") return [...selectedRevelation.value];
+  if (layer === "experience") return [...selectedExperience.value];
+  return [...selectedPractice.value];
+}
+
+function buildEvalPayload(overrides = {}) {
+  const nature = aiForm.specialNeeds.trim();
+  const natureMap = { 应用实行: "实行应用" };
+  return {
+    answer: editableAnswer.value || aiResult.value?.answer || "",
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: natureMap[nature] || nature || "一般性",
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: getConceptListForEval("revelation"),
+    experience: getConceptListForEval("experience"),
+    practice: getConceptListForEval("practice"),
+    skeleton: skeletonSnapshot.value.length
+      ? [...skeletonSnapshot.value]
+      : Array.isArray(aiMeta.skeleton)
+        ? [...aiMeta.skeleton]
+        : [],
+    ...overrides,
+  };
+}
+
+const showReEvalBtn = computed(
+  () => outlineEditReadonly.value && !!evalV1.value && !outlineEditing.value
+);
+
+const evalImprovementEntries = computed(() => {
+  const notes = evalResult.value?.improvement_notes;
+  if (notes && typeof notes === "object") {
+    return Object.entries(notes)
+      .filter(([, v]) => v != null && String(v).trim())
+      .map(([dim, note]) => ({ dim, note: String(note) }));
+  }
+  const dims = ["F1", "F2", "F3", "F4", "T1", "T2", "T3", "T4"];
+  return dims
+    .map((dim) => ({ dim, note: evalResult.value?.[dim]?.improvement_note }))
+    .filter((x) => x.note != null && String(x.note).trim());
+});
+
+const outlineLineHighlightStyle = computed(() => {
+  if (highlightLineIdx.value < 0) return { display: "none" };
+  const lineHeight = 24;
+  const paddingTop = 6;
+  return {
+    top: `${paddingTop + highlightLineIdx.value * lineHeight}px`,
+    height: `${lineHeight}px`,
+  };
+});
+
+function formatScore10(value, divisor = 1) {
+  if (value == null || value === "" || Number.isNaN(Number(value))) return "—/10";
+  const n = Number(value) / divisor;
+  const rounded = Math.round(n * 10) / 10;
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${display}/10`;
+}
+
+function evalFScore10(key) {
+  const block = evalResult.value?.[key];
+  if (!block || block.error || block.score == null) return "—/10";
+  return formatScore10(block.score, 0.5);
+}
+
+function evalT1Score10() {
+  const t1 = evalResult.value?.T1;
+  if (!t1 || t1.error) return "—/10";
+  return formatScore10(t1.total, 5);
+}
+
+function evalT2Score10() {
+  const t2 = evalResult.value?.T2;
+  if (!t2 || t2.error) return "—/10";
+  let total = t2.total;
+  if (total == null) {
+    total = T2_Q_KEYS.reduce((sum, q) => sum + (Number(t2[q]?.score) || 0), 0);
+    if (!total) return "—/10";
+  }
+  return formatScore10(total, 5);
+}
+
+function evalT3Score10() {
+  const t3 = evalResult.value?.T3;
+  if (!t3 || t3.error) return "—/10";
+  return formatScore10(t3.organic_index, 10);
+}
+
+function evalT4Score10() {
+  const t4 = evalResult.value?.T4;
+  if (!t4 || t4.error) return "—/10";
+  return formatScore10(t4.weighted_score, 10);
+}
+
+function evalDimScore(key) {
+  return evalFScore10(key);
+}
+
+function evalHasBlock(key) {
+  const block = evalResult.value?.[key];
+  return block && !block.error;
+}
+
+async function runOutlineEval(isReEval = false) {
+  const answerText = isReEval
+    ? editableAnswer.value
+    : aiResult.value?.answer;
+  if (!answerText) {
+    tip("请先生成纲目");
+    return;
+  }
+  syncHistoryAnswerSkeleton(answerText);
+  evalLoading.value = true;
+  try {
+    const token = localStorage.getItem("token");
+    if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const payload = isReEval
+      ? buildEvalPayload({
+          answer: editableAnswer.value,
+          answer_v1: answerV1.value,
+          eval_v1: evalV1.value,
+        })
+      : buildEvalPayload({ answer: aiResult.value?.answer ?? "" });
+    const res = await axios.post("/api/eval/outline", payload, { timeout: 600000 });
+    evalResult.value = res.data;
+    if (!isReEval) {
+      answerV1.value = aiResult.value?.answer ?? "";
+      skeletonSnapshot.value = Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [];
+      evalV1.value = res.data;
+    }
+    writeEvalToHistory();
+    message.success(isReEval ? "再次评估完成" : "纲目评估完成");
+  } catch (e) {
+    const detail = e?.response?.data?.detail || e?.message || "评估失败";
+    tip(typeof detail === "string" ? detail : JSON.stringify(detail));
+  } finally {
+    evalLoading.value = false;
+  }
+}
+
+function toggleOutlineEdit() {
+  if (outlineEditing.value) {
+    outlineEditing.value = false;
+    outlineEditReadonly.value = true;
+    if (aiResult.value) {
+      aiResult.value = { ...aiResult.value, answer: editableAnswer.value };
+    }
+    return;
+  }
+  outlineEditVisible.value = true;
+  outlineEditing.value = true;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = editableAnswer.value || aiResult.value?.answer || "";
+  nextTick(() => {
+    document.getElementById("outline-edit-textarea")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+async function runReEval() {
+  if (!evalV1.value) {
+    tip("请先完成首次评估");
+    return;
+  }
+  await runOutlineEval(true);
+}
+
+function ensureOutlineEditorVisible() {
+  if (!outlineEditVisible.value) {
+    outlineEditVisible.value = true;
+    outlineEditReadonly.value = true;
+    editableAnswer.value = editableAnswer.value || aiResult.value?.answer || "";
+  }
+}
+
+function clearLineHighlight() {
+  highlightLineIdx.value = -1;
+  if (highlightLineTimer) {
+    clearTimeout(highlightLineTimer);
+    highlightLineTimer = null;
+  }
+}
+
+function flashOutlineLine(lineIdx) {
+  clearLineHighlight();
+  highlightLineIdx.value = lineIdx;
+  highlightLineTimer = setTimeout(() => {
+    highlightLineIdx.value = -1;
+    highlightLineTimer = null;
+  }, 2000);
+}
+
+function locateAndAnnotate(suggestion) {
+  ensureOutlineEditorVisible();
+  outlineEditing.value = true;
+  outlineEditReadonly.value = false;
+
+  const currentVerse = String(suggestion?.current_verse || "").trim();
+  if (!currentVerse) return;
+
+  const lines = editableAnswer.value.split("\n");
+  let targetIndex = lines.findIndex((line) => line.includes(currentVerse));
+  if (targetIndex < 0) return;
+
+  const parts = formatEvalSuggestions(suggestion);
+  const suggestionsText = parts.map((p) => `${p.text}（${p.tag}）`).join("／");
+  const reason = String(suggestion?.reason || "").trim();
+  const annotationLine = reason
+    ? `【建议替换】${suggestionsText}｜理由：${reason}`
+    : `【建议替换】${suggestionsText}`;
+
+  if (lines[targetIndex - 1]?.startsWith("【建议替换】")) {
+    lines[targetIndex - 1] = annotationLine;
+  } else {
+    lines.splice(targetIndex, 0, annotationLine);
+    targetIndex += 1;
+  }
+  editableAnswer.value = lines.join("\n");
+
+  nextTick(() => {
+    const textarea = document.getElementById("outline-edit-textarea");
+    if (!textarea) return;
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight, 10) || 22;
+    textarea.scrollTop = Math.max(0, targetIndex * lineHeight - 100);
+    textarea.focus();
+  });
+}
+
+function buildCurrentEvalRecord() {
+  return {
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: aiForm.specialNeeds.trim(),
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: getConceptListForEval("revelation"),
+    experience: getConceptListForEval("experience"),
+    practice: getConceptListForEval("practice"),
+  };
+}
+
+function getF1SuggestedConcepts() {
+  return (
+    evalResult.value?.pansai_layer?.F1?.suggested_concepts
+    ?? evalResult.value?.F1?.suggested_concepts
+    ?? null
+  );
+}
+
+function pickConceptLayer(suggested, layer, fallback) {
+  const fromSuggested = suggested?.[layer];
+  if (Array.isArray(fromSuggested) && fromSuggested.length > 0) {
+    return [...fromSuggested];
+  }
+  return Array.isArray(fallback) ? [...fallback] : [];
+}
+
+async function applyEvalPrefill() {
+  const raw = sessionStorage.getItem(EVAL_PREFILL_KEY);
+  if (!raw) return false;
+  sessionStorage.removeItem(EVAL_PREFILL_KEY);
+
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+
+  aiResult.value = null;
+  evalResult.value = null;
+  evalV1.value = null;
+  answerV1.value = "";
+  skeletonSnapshot.value = [];
+  outlineEditing.value = false;
+  outlineEditVisible.value = false;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = "";
+  clearLineHighlight();
+  showInfo.value = 1;
+
+  referenceExcerpt.value = "";
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenHiddenBySkip.value = false;
+  burdenSkipTopicSnapshot.value = "";
+
+  aiForm.outlineTopic = data.query || "";
+  aiForm.specialNeeds = data.outline_nature || "";
+  aiForm.burdenDescription = data.burden_description || "";
+  burdenPhaseReady.value = true;
+
+  resetConceptState();
+  conceptMode.value = "manual";
+  manualRevelation.value = [...(data.revelation || [])];
+  manualExperience.value = [...(data.experience || [])];
+  manualPractice.value = [...(data.practice || [])];
+
+  aiPanelVisible.value = true;
+  inputVar.value = "";
+  status.value = "";
+
+  await nextTick();
+  document.querySelector(".ai-meta-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+function onRegenerateWithConcepts() {
+  const currentRecord = buildCurrentEvalRecord();
+  const suggested = getF1SuggestedConcepts();
+  const prefillData = {
+    query: currentRecord.query,
+    outline_nature: currentRecord.outline_nature,
+    burden_description: currentRecord.burden_description,
+    revelation: pickConceptLayer(suggested, "revelation", currentRecord.revelation),
+    experience: pickConceptLayer(suggested, "experience", currentRecord.experience),
+    practice: pickConceptLayer(suggested, "practice", currentRecord.practice),
+  };
+  sessionStorage.setItem(EVAL_PREFILL_KEY, JSON.stringify(prefillData));
+  router.push({ path: "/", query: { prefill: "true" } });
+}
+
+function formatEvalSuggestions(item) {
+  const parts = [];
+  if (item?.skeleton_recommendation) {
+    parts.push({ tag: "骨架推荐", text: item.skeleton_recommendation });
+  }
+  if (item?.ai_suggestion) {
+    parts.push({ tag: "AI推荐", text: item.ai_suggestion });
+  }
+  return parts;
 }
 
 function setHistoryStatus(id, status) {
@@ -597,7 +1058,6 @@ function deleteHistoryRecord(id) {
 
 async function loadHistoryRecord(item) {
   aiForm.outlineTopic = "";
-  aiForm.audience = "";
   aiForm.specialNeeds = "";
   aiForm.burdenDescription = "";
   referenceExcerpt.value = "";
@@ -611,9 +1071,9 @@ async function loadHistoryRecord(item) {
   resetConceptState();
   conceptMode.value = "manual";
   aiForm.outlineTopic = item.query || "";
-  aiForm.audience = item.audience || "";
   aiForm.specialNeeds = item.outline_nature || "";
   aiForm.burdenDescription = item.burden_description || "";
+  currentRecordId.value = item.id;
   historyDrawerOpen.value = false;
   await nextTick();
   burdenPhaseReady.value = true;
@@ -635,10 +1095,27 @@ onMounted(() => {
   updateIsMobileView();
   window.addEventListener("resize", updateIsMobileView);
   loadHistory();
+  if (sessionStorage.getItem(EVAL_PREFILL_KEY)) {
+    applyEvalPrefill();
+    if (route.query.prefill) {
+      router.replace({ path: "/", query: {} });
+    }
+  }
 });
+
+watch(
+  () => route.query.prefill,
+  (val) => {
+    if (val === "true" || val === true) {
+      applyEvalPrefill();
+      router.replace({ path: "/", query: {} });
+    }
+  }
+);
 
 onUnmounted(() => {
   window.removeEventListener("resize", updateIsMobileView);
+  clearLineHighlight();
 });
 
 // AI 回答复制（包含标题）
@@ -1063,7 +1540,6 @@ const toggleAiPanel = () => {
 const buildKgRagParams = () => ({
   outline_nature: aiForm.specialNeeds.trim(),
   burden_description: aiForm.burdenDescription.trim(),
-  audience: "",
   depth: "general",
 });
 
@@ -1245,6 +1721,7 @@ function parseKgRagResponse(data) {
     result.totalElapsedMs = usage.total_elapsed_ms ?? null;
     result.totalCostUsd = (usage.totals || {}).cost_usd ?? null;
   }
+  console.log("parsed answer:", result?.answer, "raw data keys:", Object.keys(data));
   return result;
 }
 
@@ -1264,6 +1741,15 @@ const onAISearch = async () => {
   loadingAI.value = true;
   showInfo.value = 6;
   aiResult.value = null;
+  evalResult.value = null;
+  evalV1.value = null;
+  answerV1.value = "";
+  skeletonSnapshot.value = [];
+  outlineEditing.value = false;
+  outlineEditVisible.value = false;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = "";
+  clearLineHighlight();
   answerEn.value = null;
   errorEnglish.value = null;
   answerZhTw.value = null;
@@ -1818,6 +2304,185 @@ const onAISearch = async () => {
             {{ downloadingZh ? "格式化并下载中…" : "刷格式并下载" }}
           </a-button>
         </div>
+        <div v-if="aiResult?.answer" class="eval-section">
+          <div class="eval-action-row">
+            <a-button type="primary" size="small" :loading="evalLoading" :disabled="evalLoading" @click="() => runOutlineEval()">
+              <LoadingOutlined v-if="evalLoading" spin />
+              {{ evalLoading ? "评估中…" : "评估纲目" }}
+            </a-button>
+            <span v-if="evalResult && !evalLoading" class="eval-stats">
+              耗时 {{ (evalResult.elapsed_ms / 1000).toFixed(1) }}s · 费用 ${{ Number(evalResult.cost_usd).toFixed(4) }}
+            </span>
+          </div>
+
+          <div v-if="evalResult" class="eval-report">
+            <div v-if="evalImprovementEntries.length" class="eval-improvement-banner">
+              <div class="eval-improvement-title">相较上轮改善说明</div>
+              <div v-for="entry in evalImprovementEntries" :key="entry.dim" class="eval-improvement-item">
+                <strong>{{ entry.dim }}</strong>：{{ entry.note }}
+              </div>
+            </div>
+            <div class="eval-total-score-card">
+              <div class="eval-total-score-label">综合得分</div>
+              <div class="eval-total-score-value">{{ evalResult.total_score ?? "—" }}<span class="eval-total-score-unit"> / 100</span></div>
+            </div>
+            <div class="eval-section-block">
+              <div class="eval-section-title">纲目结构层</div>
+              <div v-for="item in F_EVAL_META" :key="item.key" class="eval-dim-card">
+                <div class="eval-dim-header">
+                  <strong>{{ item.title }}</strong>
+                  <span class="eval-dim-score">{{ evalDimScore(item.key) }}</span>
+                </div>
+                <div v-if="evalResult[item.key]?.error" class="eval-error">{{ evalResult[item.key].error }}</div>
+                <template v-else-if="evalHasBlock(item.key)">
+                  <div class="eval-comment">{{ evalResult[item.key].comment }}</div>
+                  <div v-if="evalResult[item.key].strength" class="eval-strength">亮点：{{ evalResult[item.key].strength }}</div>
+                  <div v-if="evalResult[item.key].prescription" class="eval-prescription">建议：{{ evalResult[item.key].prescription }}</div>
+                  <div v-if="evalResult[item.key]?.improvement_note" class="eval-improvement-note">
+                    改善：{{ evalResult[item.key].improvement_note }}
+                  </div>
+                  <div v-if="item.key === 'F1' && evalResult.F1?.suggested_concepts" class="eval-suggested-concepts">
+                    <div class="eval-suggested-title">建议补充概念</div>
+                    <div
+                      v-for="layer in ['revelation', 'experience', 'practice']"
+                      :key="layer"
+                      v-show="(evalResult.F1.suggested_concepts[layer] || []).length"
+                      class="eval-suggested-row"
+                    >
+                      <span class="eval-suggested-label">{{ SUGGESTED_CONCEPT_LABELS[layer] }}：</span>
+                      <span>{{ (evalResult.F1.suggested_concepts[layer] || []).join("、") }}</span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="eval-section-block">
+              <div class="eval-section-title">神学深度层</div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T1 经文对齐层次</strong><span>{{ evalT1Score10() }}</span></div>
+                <template v-if="evalHasBlock('T1')">
+                  <div class="eval-meta-tags">
+                    <a-tag v-if="evalResult.T1.apex_level">{{ evalResult.T1.apex_level }}</a-tag>
+                    <a-tag v-if="evalResult.T1.alignment_profile" color="blue">{{ evalResult.T1.alignment_profile }}</a-tag>
+                  </div>
+                  <div class="eval-comment">{{ evalResult.T1.summary }}</div>
+                  <div v-if="(evalResult.scripture_suggestions || []).length" class="eval-hint">
+                    经文替换建议：{{ evalResult.scripture_suggestions.length }}处，见下方
+                  </div>
+                </template>
+              </div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T2 Q五步评分</strong><span>{{ evalT2Score10() }}</span></div>
+                <div v-if="evalResult.T2?.error" class="eval-error">{{ evalResult.T2.error }}</div>
+                <template v-if="evalHasBlock('T2')">
+                  <div class="eval-meta-tags">
+                    <a-tag v-if="evalResult.T2.grade" color="purple">{{ evalResult.T2.grade }}</a-tag>
+                  </div>
+                  <div class="eval-q-dots">
+                    <span v-for="q in T2_Q_KEYS" :key="q" class="eval-dot-wrap" :title="`${q}: ${evalResult.T2[q]?.score ?? '—'}`">
+                      <span class="eval-dot" :class="{ filled: (evalResult.T2[q]?.score ?? 0) >= 7 }"></span>
+                      <span class="eval-dot-label">{{ q }}</span>
+                    </span>
+                  </div>
+                  <div class="eval-comment">{{ evalResult.T2.summary }}</div>
+                </template>
+              </div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T3 四维有机框架</strong><span>{{ evalT3Score10() }}</span></div>
+                <template v-if="evalHasBlock('T3')">
+                  <div class="eval-meta-tags">
+                    <a-tag v-if="evalResult.T3.profile" color="green">{{ evalResult.T3.profile }}</a-tag>
+                  </div>
+                  <div class="eval-d-rubric">
+                    <div v-for="d in T3_D_KEYS" :key="d" class="eval-d-row">
+                      <span class="eval-d-label">{{ d }}</span>
+                      <span
+                        v-for="(ok, ri) in (evalResult.T3[d]?.rubric || [])"
+                        :key="ri"
+                        class="eval-dot small"
+                        :class="{ filled: ok }"
+                      ></span>
+                    </div>
+                  </div>
+                  <div class="eval-comment">{{ evalResult.T3.summary }}</div>
+                </template>
+              </div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T4 黄金路径分析</strong><span>{{ evalT4Score10() }}</span></div>
+                <template v-if="evalHasBlock('T4')">
+                  <div v-if="evalResult.T4.golden_path_summary" class="eval-golden-summary">{{ evalResult.T4.golden_path_summary }}</div>
+                  <div v-if="(evalResult.T4.strengths || []).length" class="eval-list-block">
+                    <div class="eval-list-title">优点</div>
+                    <ul><li v-for="(s, i) in evalResult.T4.strengths" :key="i">{{ s }}</li></ul>
+                  </div>
+                  <div v-if="(evalResult.T4.suggestions || []).length" class="eval-list-block">
+                    <div class="eval-list-title">建议</div>
+                    <ul><li v-for="(s, i) in evalResult.T4.suggestions" :key="i">{{ s }}</li></ul>
+                  </div>
+                  <div v-if="evalResult.T4.overall_comment" class="eval-comment">{{ evalResult.T4.overall_comment }}</div>
+                </template>
+              </div>
+            </div>
+
+            <div v-if="(evalResult.scripture_suggestions || []).length" class="eval-section-block">
+              <div class="eval-section-title">经文替换建议</div>
+              <div v-for="(s, i) in evalResult.scripture_suggestions" :key="i" class="eval-scripture-card">
+                <div class="eval-scripture-loc">{{ s.location }}</div>
+                <div>当前经节：{{ s.current_verse }}</div>
+                <div>论述主题：{{ s.topic }}</div>
+                <div class="eval-scripture-suggestions">
+                  <span v-for="(part, pi) in formatEvalSuggestions(s)" :key="pi" class="eval-suggestion-tag">
+                    <a-tag :color="part.tag === '骨架推荐' ? 'green' : 'blue'">{{ part.tag }}</a-tag>
+                    {{ part.text }}
+                  </span>
+                </div>
+                <div v-if="s.reason" class="eval-scripture-reason">理由：{{ s.reason }}</div>
+                <a-button size="small" class="eval-locate-btn" @click="locateAndAnnotate(s)">在编辑框定位</a-button>
+              </div>
+            </div>
+
+            <div class="eval-bottom-actions">
+              <a-button @click="toggleOutlineEdit">{{ outlineEditing ? "修改完成" : "修改纲目" }}</a-button>
+              <a-button
+                v-if="showReEvalBtn"
+                type="primary"
+                :loading="evalLoading"
+                :disabled="evalLoading"
+                @click="runReEval"
+              >
+                再次评估
+              </a-button>
+              <a-button @click="onRegenerateWithConcepts">调整概念后重新生成</a-button>
+            </div>
+            <div v-if="outlineEditVisible" class="outline-edit-wrap report-outline-edit">
+              <div
+                v-if="(evalResult.scripture_suggestions || []).length"
+                class="eval-annotate-hint"
+              >
+                💡 带【建议替换】前缀的行是经文替换建议，确认后请手动删除该行
+              </div>
+              <div class="outline-edit-highlight-wrap">
+                <div
+                  v-show="highlightLineIdx >= 0"
+                  class="outline-line-highlight"
+                  :style="outlineLineHighlightStyle"
+                ></div>
+                <a-textarea
+                  id="outline-edit-textarea"
+                  v-model:value="editableAnswer"
+                  :readonly="outlineEditReadonly"
+                  :auto-size="{ minRows: 12, maxRows: 28 }"
+                  class="outline-edit-textarea editable-answer-textarea"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </transition>
 
@@ -1935,12 +2600,17 @@ const onAISearch = async () => {
             <a-tag :color="item.status === '待确认' ? 'orange' : item.status === '待生成' ? 'blue' : 'green'">
               {{ item.status }}
             </a-tag>
+            <span
+              v-if="item.status === '已生成' && item.eval?.total_score != null"
+              class="history-eval-score"
+            >
+              评估：{{ item.eval.total_score }} / 100
+            </span>
             <span class="history-item-time">{{ item.createdAt }}</span>
           </div>
         </template>
         <div class="history-item-body">
           <div>纲目性质：{{ item.outline_nature || "—" }}</div>
-          <div>面对对象：{{ item.audience || "—" }}</div>
           <div>负担说明：{{ item.burden_description || "—" }}</div>
           <div>真理启示：{{ (item.revelation || []).join("、") || "—" }}</div>
           <div>生命经历：{{ (item.experience || []).join("、") || "—" }}</div>
@@ -2479,6 +3149,11 @@ const onAISearch = async () => {
   color: #999;
   font-size: 12px;
 }
+.history-eval-score {
+  color: #999;
+  font-size: 12px;
+  white-space: nowrap;
+}
 .history-item-body {
   display: flex;
   flex-direction: column;
@@ -2772,6 +3447,278 @@ const onAISearch = async () => {
 .ai-download-row .ant-checkbox-group {
   display: inline-flex;
   gap: 8px;
+}
+
+.outline-edit-wrap {
+  margin-top: 12px;
+}
+.report-outline-edit {
+  margin-top: 10px;
+}
+.outline-edit-highlight-wrap {
+  position: relative;
+}
+.outline-line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(255, 229, 143, 0.65);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+.outline-edit-textarea {
+  font-family: inherit;
+  line-height: 24px;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+.eval-improvement-banner {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.eval-improvement-title {
+  font-weight: 700;
+  color: #ad6800;
+  margin-bottom: 8px;
+}
+.eval-improvement-item {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #614700;
+  margin-top: 4px;
+}
+.eval-improvement-note {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #ad6800;
+  background: #fffbe6;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.eval-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(102, 126, 234, 0.25);
+}
+.eval-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.eval-stats {
+  color: #666;
+  font-size: 13px;
+}
+.eval-report {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.eval-section-block {
+  background: #fafbff;
+  border: 1px solid #e8ecf7;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.eval-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4c5fd7;
+  margin-bottom: 12px;
+}
+.eval-total-score-card {
+  background: linear-gradient(135deg, #667eea12 0%, #764ba212 100%);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.eval-total-score-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.eval-total-score-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #4c5fd7;
+  line-height: 1.2;
+}
+.eval-total-score-unit {
+  font-size: 18px;
+  font-weight: 600;
+  color: #888;
+}
+.eval-annotate-hint {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.eval-total-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 14px;
+}
+.eval-dim-card {
+  background: #fff;
+  border: 1px solid #eef1f8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.eval-dim-card:last-child {
+  margin-bottom: 0;
+}
+.eval-dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.eval-dim-score {
+  color: #667eea;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eval-comment,
+.eval-prescription,
+.eval-strength,
+.eval-hint,
+.eval-golden-summary,
+.eval-scripture-reason {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+  margin-top: 6px;
+}
+.eval-prescription {
+  color: #c05621;
+}
+.eval-strength {
+  color: #237804;
+}
+.eval-error {
+  color: #c41e3a;
+  font-size: 13px;
+}
+.eval-suggested-concepts {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f6ffed;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.eval-suggested-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.eval-suggested-row {
+  margin-top: 4px;
+}
+.eval-suggested-label {
+  color: #666;
+}
+.eval-meta-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.eval-q-dots,
+.eval-d-rubric {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.eval-dot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.eval-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+  background: transparent;
+}
+.eval-dot.small {
+  width: 10px;
+  height: 10px;
+}
+.eval-dot.filled {
+  background: #667eea;
+}
+.eval-dot-label,
+.eval-d-label {
+  font-size: 11px;
+  color: #888;
+}
+.eval-d-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.eval-list-block {
+  margin-top: 8px;
+  font-size: 14px;
+}
+.eval-list-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.eval-list-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.eval-scripture-card {
+  background: #fff;
+  border: 1px solid #eef1f8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.eval-scripture-loc {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+.eval-scripture-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.eval-suggestion-tag {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.eval-locate-btn {
+  margin-top: 8px;
+}
+.eval-bottom-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 .ai-sources {

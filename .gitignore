@@ -22,7 +22,8 @@ status.bat
 status_qa.bat
 stop_all.bat
 stop_qa.bat
-
+pool.jsonl
+pool.jsonl.bak
 # 本地笔记/临时文档（可能含密钥，勿提交）
 新建*.txt
 
