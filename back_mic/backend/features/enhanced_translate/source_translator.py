@@ -11,8 +11,11 @@ import logging
 from typing import Any
 
 from es_config import es as es_client
-from features.enhanced_translate.pool import levenshtein_distance, normalize_zh, zh_eq
-from features.enhanced_translate.prompts import REFERENCE_SOURCE_TRANSLATE_PROMPT
+from features.enhanced_translate.pool import levenshtein_distance, normalize_en, normalize_zh, zh_eq
+from features.enhanced_translate.prompts import (
+    REFERENCE_SOURCE_TRANSLATE_PROMPT,
+    REFERENCE_SOURCE_TRANSLATE_PROMPT_EN2ZH,
+)
 
 logger = logging.getLogger("ai_search.enhanced_translate_source")
 
@@ -180,6 +183,96 @@ def parse_source_from_line(line: str) -> tuple[str, list[str]]:
             stripped_line = (line[:start] + line[end:]).strip()
             return stripped_line, sources
     return line, []
+
+
+# ── 英文出处识别 ──────────────────────────────────────────────────────────────
+
+_EN_SOURCE_ANCHORS: list[str] = [
+    "Holy Bible",
+    "Life-study of",
+    "Crystallization-study of",
+    "CWWN",
+    "CWWL",
+]
+_EN_SOURCE_YEAR_RE = re.compile(r"^\d{4}\s+\w")
+
+
+def _is_en_source_like(inner: str) -> bool:
+    """判断括号内容是否像英文出处。"""
+    inner = inner.strip()
+    if _EN_SOURCE_YEAR_RE.match(inner):
+        return True
+    return any(inner.startswith(a) for a in _EN_SOURCE_ANCHORS)
+
+
+def _outer_bracket_spans_en(line: str) -> list[tuple[int, int]]:
+    """返回行内各最外层半角括号 (...) 的 (start, end)，按出现顺序。"""
+    spans: list[tuple[int, int]] = []
+    depth = 0
+    start: int | None = None
+    for i, ch in enumerate(line):
+        if ch == "(":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == ")":
+            if depth == 0:
+                continue
+            depth -= 1
+            if depth == 0 and start is not None:
+                spans.append((start, i + 1))
+                start = None
+    return spans
+
+
+def _split_sources_en(inner: str) -> list[str]:
+    """
+    切分同一括号内的多条英文出处，用 ; 分隔。
+    每条出处必须以 anchor 开头；; 后若不紧跟 anchor 则认为是出处内容的一部分。
+    """
+    inner = inner.strip()
+    if not inner:
+        return []
+    # 找所有候选切分点：; 后面紧跟 anchor
+    cut_points: list[int] = [0]
+    i = 0
+    while i < len(inner):
+        if inner[i] == ";":
+            rest = inner[i + 1:].lstrip()
+            offset = len(inner[i + 1:]) - len(rest)
+            candidate_pos = i + 1 + offset
+            if _is_en_source_like(rest):
+                cut_points.append(candidate_pos)
+        i += 1
+    # 第一段必须以 anchor 开头，否则整体不认为是出处
+    if not _is_en_source_like(inner[cut_points[0]:]):
+        return []
+    pieces: list[str] = []
+    for k, start in enumerate(cut_points):
+        end = cut_points[k + 1] if k + 1 < len(cut_points) else len(inner)
+        seg = inner[start:end].strip().strip(";").strip()
+        if seg:
+            pieces.append(seg)
+    return pieces
+
+
+def parse_source_from_line_en(line: str) -> tuple[str, list[str]]:
+    """
+    从英文纲目行中识别并剥离行末出处标注（半角括号）。
+    只取最后一个最外层半角括号，内容必须以 anchor 开头才认为是出处。
+    返回：(剥离后的行内容, 出处列表)
+    """
+    spans = _outer_bracket_spans_en(line)
+    if not spans:
+        return line, []
+    # 只取最后一个最外层括号
+    start, end = spans[-1]
+    inner = line[start + 1: end - 1]
+    sources = _split_sources_en(inner)
+    if not sources:
+        return line, []
+    stripped_line = (line[:start] + line[end:]).strip()
+    return stripped_line, sources
 
 
 # ── 2. 出处查询预处理与 kg-rag 路1 ─────────────────────────────
@@ -519,6 +612,175 @@ async def _feasts_pool_lookup(base: str) -> str:
             if nzh == nqv or nzh == normalize_zh(variant):
                 return en
     return ""
+
+
+_EN_PARA_SUFFIX_RE = re.compile(r",\s*pp?\.\s*[\d\-]+\.?\s*$")
+_EN_SOURCE_YEAR_PREFIX_RE = re.compile(r"^\d{4}\s+\w")
+
+
+def _strip_en_paragraph_suffix(source_en: str) -> str:
+    """剥离英文出处末尾段号（, p. 5 / , pp. 99-100.），返回剥离后的串。"""
+    s = (source_en or "").strip().strip("()")
+    m = _EN_PARA_SUFFIX_RE.search(s)
+    if m:
+        return s[: m.start()].strip()
+    return s
+
+
+async def _feasts_pool_lookup_en(source_en: str) -> str:
+    """从 feasts pool 索引反向匹配英文出处，返回对应中文出处（不含括号和段号）。"""
+    base = _strip_en_paragraph_suffix(source_en)
+    if not base:
+        return ""
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index=_FEASTS_POOL_INDEX,
+            body={
+                "query": {"match_phrase": {"source": base}},
+                "size": 15,
+                "_source": ["source", "title"],
+            },
+            request_timeout=8,
+        )
+    except Exception as e:
+        logger.warning("[source_translator] feasts pool en2zh 检索失败: %s", e)
+        return ""
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = (hit.get("_source") or {}).get("source") or []
+        if len(src) < 2:
+            continue
+        en_raw = (src[1] or "").strip().strip("()")
+        if normalize_en(en_raw) == normalize_en(base):
+            zh_raw = (src[0] or "").strip().strip("（）")
+            zh_base, _ = _strip_paragraph_suffix(zh_raw)
+            zh_base = re.sub(r"，篇题$", "", zh_base).strip()
+            if zh_base:
+                return zh_base
+    return ""
+
+
+def _ref_block_from_line_refs_en2zh(line_refs: list[dict[str, Any]]) -> str:
+    """从 line_refs 取第一条同时有 en_source 和 ch_source 的记录，构建参考语料块。"""
+    for ref in line_refs:
+        en_src = (ref.get("en_source") or "").strip()
+        zh_src = (ref.get("ch_source") or ref.get("source") or "").strip()
+        if en_src and zh_src:
+            return (
+                f"\nParagraph 1"
+                f"\nen_source: {en_src}"
+                f"\nzh_source: {zh_src}"
+            )
+    return ""
+
+
+async def _gemini_translate_sources_en2zh(
+    numbered_sources: list[tuple[int, str]],
+    line_refs: list[dict[str, Any]],
+) -> tuple[dict[int, str], float]:
+    """批量将英文出处翻译为中文，Gemini 兜底。"""
+    if not numbered_sources:
+        return {}, 0.0
+    ref_block = _ref_block_from_line_refs_en2zh(line_refs)
+    blocks: list[str] = []
+    for pos, (_, source_en) in enumerate(numbered_sources, 1):
+        blocks.append(
+            f"Source {pos}: {source_en}"
+            + (f"\n参考语料：{ref_block}" if ref_block else "")
+        )
+    contents = (
+        REFERENCE_SOURCE_TRANSLATE_PROMPT_EN2ZH
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\n请逐条输出中文出处，格式：\n"
+        + "\n".join(f"Source {pos}: {{中文出处}}" for pos in range(1, len(numbered_sources) + 1))
+    )
+    out: dict[int, str] = {}
+    cost_usd = 0.0
+    try:
+        from features.enhanced_translate.service import _call_gemini_sync
+
+        cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
+        text, cumulative = await asyncio.to_thread(
+            _call_gemini_sync, contents, 0, None, cumulative
+        )
+        cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
+        if text:
+            pattern = re.compile(r"^Source\s+(\d+)\s*:\s*(.+)$", re.MULTILINE)
+            for m in pattern.finditer(text):
+                pos = int(m.group(1)) - 1
+                if 0 <= pos < len(numbered_sources):
+                    src_idx = numbered_sources[pos][0]
+                    out[src_idx] = m.group(2).strip()
+    except Exception as e:
+        logger.warning("[source_translator] Gemini en2zh 出处翻译失败: %s", e)
+    for src_idx, source_en in numbered_sources:
+        if src_idx not in out:
+            out[src_idx] = source_en
+    return out, cost_usd
+
+
+async def translate_source_en_batch(
+    items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
+) -> tuple[dict[int, str], float]:
+    """
+    批量翻译英文出处为中文。
+    items: [(prep_index, source_en_list, line_refs, has_star), ...]
+    返回：({prep_index: source_zh}, 出处翻译 Gemini 费用 USD)
+    路1：节期类 feasts pool 反向匹配
+    路2：Gemini 批量兜底
+    """
+    if not items:
+        return {}, 0.0
+    results: dict[int, str] = {}
+    total_cost_usd = 0.0
+    gemini_tasks: list[
+        tuple[int, list[tuple[int, str]], list[dict[str, Any]], list[str], bool]
+    ] = []
+    for prep_idx, source_list, line_refs, has_star in items:
+        if not source_list:
+            continue
+        zh_parts = [""] * len(source_list)
+        miss: list[tuple[int, str]] = []
+        for i, source_en in enumerate(source_list):
+            base = _strip_en_paragraph_suffix(source_en)
+            if _EN_SOURCE_YEAR_PREFIX_RE.match(base):
+                hit_zh = await _feasts_pool_lookup_en(source_en)
+                if hit_zh:
+                    zh_parts[i] = f"（{hit_zh}）"
+                    logger.info("[source_translator] 路1命中: %s → %s", source_en, zh_parts[i])
+                else:
+                    miss.append((i, source_en))
+            else:
+                miss.append((i, source_en))
+        if miss:
+            gemini_tasks.append((prep_idx, miss, line_refs, zh_parts, has_star))
+        else:
+            results[prep_idx] = "；".join(p for p in zh_parts if p)
+    async def _run_line(
+        prep_idx: int,
+        miss: list[tuple[int, str]],
+        line_refs: list[dict[str, Any]],
+        zh_parts: list[str],
+        has_star: bool,
+    ) -> tuple[int, str, float]:
+        gemini_map, gemini_cost = await _gemini_translate_sources_en2zh(miss, line_refs)
+        for i, source_en in miss:
+            zh_parts[i] = gemini_map.get(i, source_en)
+            logger.info("[source_translator] 路2命中: %s → %s", source_en, zh_parts[i])
+        formatted = "；".join(p for p in zh_parts if p)
+        return prep_idx, formatted, gemini_cost
+    if gemini_tasks:
+        outcomes = await asyncio.gather(
+            *[
+                _run_line(prep_idx, miss, line_refs, zh_parts, has_star)
+                for prep_idx, miss, line_refs, zh_parts, has_star in gemini_tasks
+            ]
+        )
+        for prep_idx, source_zh, gemini_cost in outcomes:
+            total_cost_usd += gemini_cost
+            results[prep_idx] = source_zh
+    return results, total_cost_usd
 
 
 async def _gemini_infer_source_en(

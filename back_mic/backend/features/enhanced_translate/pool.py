@@ -54,6 +54,17 @@ def normalize_zh(s: str) -> str:
     return re.sub(r"[\W_]+", "", s, flags=re.UNICODE)
 
 
+_EN_PUNCT_RE = re.compile(r"[^\w\s]")
+
+
+def normalize_en(text: str) -> str:
+    """英文正文归一化：只去标点，保留大小写和空白。"""
+    text = (text or "").strip()
+    text = _EN_PUNCT_RE.sub("", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def zh_eq(a: str, b: str) -> bool:
     na, nb = normalize_zh(a), normalize_zh(b)
     return bool(na) and na == nb
@@ -210,16 +221,18 @@ def _load_pool_file() -> dict[str, dict[str, Any]]:
 
 
 def reload_pool(force: bool = False) -> int:
-    global _cache_by_norm, _cache_mtime
+    global _cache_mtime
     path = _POOL_FILE
     if not path.is_file():
-        _cache_by_norm = {}
+        _cache_by_norm.clear()
         _cache_mtime = 0.0
         return 0
     mtime = path.stat().st_mtime
     if not force and mtime == _cache_mtime and _cache_by_norm:
         return len(_cache_by_norm)
-    _cache_by_norm = _load_pool_file()
+    # 原地更新，避免 ``from pool import _cache_by_norm`` 拿到过期空 dict
+    _cache_by_norm.clear()
+    _cache_by_norm.update(_load_pool_file())
     _cache_mtime = mtime
     logger.info("[enhanced_translate_pool] 已加载 %s 条", len(_cache_by_norm))
     return len(_cache_by_norm)
@@ -272,6 +285,38 @@ def lookup_line_en(zh_line: str) -> str | None:
     return en or None
 
 
+def lookup_line_zh(en_line: str, norm_en_body: str) -> str | None:
+    """
+    按归一化英文 body 在本地 Pool 查找中文译文。
+    norm_en_body 须与写入时的 norm_en 使用相同规则（_strip_en_scripture_suffix + normalize_en）。
+    旧记录无 norm_en 时回退到对 en 字段做同样剥离后比对。
+    """
+    target = (norm_en_body or "").strip()
+    if not target:
+        return None
+    reload_pool()
+    for rec in _cache_by_norm.values():
+        zh = (rec.get("zh") or "").strip()
+        if not zh:
+            continue
+        norm_stored = (rec.get("norm_en") or "").strip()
+        if norm_stored:
+            if norm_stored == target:
+                return zh
+            continue
+        en = (rec.get("en") or "").strip()
+        if not en:
+            continue
+        try:
+            from features.enhanced_translate.service import _strip_en_scripture_suffix
+        except ImportError:
+            continue
+        _, en_body, _ = _strip_en_scripture_suffix(en)
+        if normalize_en(en_body) == target:
+            return zh
+    return None
+
+
 def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tuple[int, int]:
     if not records:
         return 0, 0
@@ -297,6 +342,9 @@ def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tup
             "prompt_version": rec.get("prompt_version") or "",
             "source": rec.get("source") or "enhanced_translate",
         }
+        norm_en = (rec.get("norm_en") or "").strip()
+        if norm_en:
+            existing[norm]["norm_en"] = norm_en
         added += 1
 
     if added == 0:
@@ -329,6 +377,45 @@ def collect_auto_append_rows(
             "norm_zh": normalize_zh(zh),
             "source": "enhanced_translate",
         })
+    return rows
+
+
+def collect_auto_append_rows_en2zh(
+    line_ref_groups: list[dict[str, Any]],
+    out_lines: list[str],
+) -> list[dict[str, Any]]:
+    """英翻中方向：en 是输入，zh 是译文，存入 Pool 格式不变 {zh, en}。"""
+    rows: list[dict[str, Any]] = []
+    for i, group in enumerate(line_ref_groups):
+        st = group.get("stats") or {}
+        if st.get("additional_pool_line"):
+            continue
+        if not (group.get("gemini_translate") or "").strip():
+            continue
+        en = (group.get("original_line") or "").strip()
+        zh = (out_lines[i] if i < len(out_lines) else "").strip()
+        src_zh = (group.get("reference_source_zh") or "").strip()
+        if src_zh and zh.endswith(src_zh):
+            zh = zh[: -len(src_zh)].rstrip()
+        if not zh or not en:
+            continue
+        if zh == en:
+            continue
+        row: dict[str, Any] = {
+            "zh": zh,
+            "en": en,
+            "norm_zh": normalize_zh(zh),
+            "source": "enhanced_translate_en2zh",
+        }
+        try:
+            from features.enhanced_translate.service import _strip_en_scripture_suffix
+            _, en_body, _ = _strip_en_scripture_suffix(en)
+            norm_en = normalize_en(en_body)
+            if norm_en:
+                row["norm_en"] = norm_en
+        except ImportError:
+            pass
+        rows.append(row)
     return rows
 
 
