@@ -24,6 +24,8 @@ stop_all.bat
 stop_qa.bat
 pool.jsonl
 pool.jsonl.bak
+progress_pano.json
+
 # 本地笔记/临时文档（可能含密钥，勿提交）
 新建*.txt
 
