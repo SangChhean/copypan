@@ -685,8 +685,7 @@ const outlineEditing = ref(false);
 const outlineEditVisible = ref(false);
 const outlineEditReadonly = ref(false);
 const editableAnswer = ref("");
-const highlightLineIdx = ref(-1);
-let highlightLineTimer = null;
+const scriptureReplaceStats = ref(null);
 
 const F_EVAL_META = [
   { key: "F1", title: "F1 重点覆盖度" },
@@ -697,6 +696,35 @@ const F_EVAL_META = [
 
 const T2_Q_KEYS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
 const T3_D_KEYS = ["D1", "D2", "D3", "D4"];
+const T1_L_KEYS = ["L1", "L2", "L3", "L4", "L5"];
+
+const T1_L_META = [
+  { key: "L1", label: "L1 字句层" },
+  { key: "L2", label: "L2 语境层" },
+  { key: "L3", label: "L3 正典层" },
+  { key: "L4", label: "L4 经纶层" },
+  { key: "L5", label: "L5 异象层" },
+];
+const T2_Q_META = [
+  { key: "Q1", label: "Q1 负担定锚" },
+  { key: "Q2", label: "Q2 圣经根基" },
+  { key: "Q3", label: "Q3 神圣经纶" },
+  { key: "Q4", label: "Q4 主观经历" },
+  { key: "Q5", label: "Q5 建造终局" },
+];
+const T3_D_META = [
+  { key: "D1", label: "D1 生命有机性" },
+  { key: "D2", label: "D2 三一神经纶" },
+  { key: "D3", label: "D3 人灵主观性" },
+  { key: "D4", label: "D4 召会建造性" },
+];
+const T4_Q_META = [
+  { key: "Q1", label: "Q1 负担与起点" },
+  { key: "Q2", label: "Q2 真理路径的铺展" },
+  { key: "Q3", label: "Q3 主观经历的深度" },
+  { key: "Q4", label: "Q4 落实到召会生活" },
+  { key: "Q5", label: "Q5 终极异象的照耀" },
+];
 
 const SUGGESTED_CONCEPT_LABELS = {
   revelation: "启示层",
@@ -753,15 +781,89 @@ const evalImprovementEntries = computed(() => {
     .filter((x) => x.note != null && String(x.note).trim());
 });
 
-const outlineLineHighlightStyle = computed(() => {
-  if (highlightLineIdx.value < 0) return { display: "none" };
-  const lineHeight = 24;
-  const paddingTop = 6;
-  return {
-    top: `${paddingTop + highlightLineIdx.value * lineHeight}px`,
-    height: `${lineHeight}px`,
-  };
-});
+function formatSubScore(score) {
+  if (score == null || score === "" || Number.isNaN(Number(score))) return "—/10";
+  const n = Number(score);
+  const rounded = Math.round(n * 10) / 10;
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${display}/10`;
+}
+
+function evalGapText(gap) {
+  if (gap == null) return null;
+  const s = String(gap).trim();
+  if (!s || s.toLowerCase() === "null" || s === "无") return null;
+  return s;
+}
+
+function extractVerseRef(text) {
+  const s = String(text || "").trim();
+  if (!s) return "";
+  const m = s.match(/[\u4e00-\u9fff]{1,8}[\d一二三四五六七八九十百千两〇零]+[\d:：\-—]*\d*/);
+  if (m) return m[0];
+  return s.split(/[「『《"\s(（]/)[0] || s;
+}
+
+function normalizeScriptureSuggestionItem(item) {
+  if (Array.isArray(item?.suggestions) && item.suggestions.length > 0) {
+    return item;
+  }
+  const suggestions = [];
+  if (item?.skeleton_recommendation) {
+    suggestions.push({
+      source: "骨架推荐",
+      verse: extractVerseRef(item.skeleton_recommendation),
+    });
+  }
+  if (item?.ai_suggestion) {
+    suggestions.push({
+      source: "AI推荐",
+      verse: extractVerseRef(item.ai_suggestion),
+    });
+  }
+  return { ...item, suggestions };
+}
+
+function applyScriptureReplacements(suggestions, answer) {
+  if (!suggestions || suggestions.length === 0) {
+    return { answer, replaced: 0 };
+  }
+
+  let result = answer;
+  let replaced = 0;
+
+  for (const raw of suggestions) {
+    const s = normalizeScriptureSuggestionItem(raw);
+    if (!s.current_verse || !s.suggestions || s.suggestions.length === 0) continue;
+
+    const replacement =
+      s.suggestions.find((x) => x.source === "骨架推荐") ?? s.suggestions[0];
+    if (!replacement?.verse) continue;
+
+    const escaped = s.current_verse.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "g");
+    const next = result.replace(regex, replacement.verse);
+    if (next !== result) {
+      replaced += 1;
+      result = next;
+    }
+  }
+
+  return { answer: result, replaced };
+}
+
+function clearOutdatedGaps(evalData) {
+  const t1 = evalData?.theology_layer?.T1 ?? evalData?.T1;
+  if (!t1) return;
+  const obsoleteKeywords = ["建议替换", "建议改用", "宜换用", "可换用", "建议用"];
+  const layers = ["L1", "L2", "L3", "L4", "L5"];
+  for (const layer of layers) {
+    if (t1[layer]?.gap) {
+      const hasObsolete = obsoleteKeywords.some((kw) => t1[layer].gap.includes(kw));
+      if (hasObsolete) t1[layer].gap = null;
+    }
+  }
+}
 
 function formatScore10(value, divisor = 1) {
   if (value == null || value === "" || Number.isNaN(Number(value))) return "—/10";
@@ -780,7 +882,12 @@ function evalFScore10(key) {
 function evalT1Score10() {
   const t1 = evalResult.value?.T1;
   if (!t1 || t1.error) return "—/10";
-  return formatScore10(t1.total, 5);
+  let total = t1.total;
+  if (total == null) {
+    total = T1_L_KEYS.reduce((sum, k) => sum + (Number(t1[k]?.score) || 0), 0);
+    if (!total) return "—/10";
+  }
+  return formatScore10(total, 5);
 }
 
 function evalT2Score10() {
@@ -797,7 +904,20 @@ function evalT2Score10() {
 function evalT3Score10() {
   const t3 = evalResult.value?.T3;
   if (!t3 || t3.error) return "—/10";
-  return formatScore10(t3.organic_index, 10);
+  let idx = t3.organic_index;
+  if (idx == null) {
+    const scores = [];
+    T3_D_KEYS.forEach((d) => {
+      if (t3[d]?.score != null) scores.push(Number(t3[d].score));
+    });
+    if (t3.coherence != null) scores.push(Number(t3.coherence));
+    if (t3.eschatological_tension != null) scores.push(Number(t3.eschatological_tension));
+    if (scores.length >= 6) {
+      idx = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10);
+    }
+  }
+  if (idx == null) return "—/10";
+  return formatScore10(idx, 10);
 }
 
 function evalT4Score10() {
@@ -837,6 +957,28 @@ async function runOutlineEval(isReEval = false) {
       : buildEvalPayload({ answer: aiResult.value?.answer ?? "" });
     const res = await axios.post("/api/eval/outline", payload, { timeout: 600000 });
     evalResult.value = res.data;
+    scriptureReplaceStats.value = null;
+
+    const suggestions = res.data?.scripture_suggestions || [];
+    if (suggestions.length > 0) {
+      const baseAnswer = isReEval
+        ? editableAnswer.value
+        : aiResult.value?.answer ?? "";
+      const { answer, replaced } = applyScriptureReplacements(
+        suggestions,
+        baseAnswer
+      );
+      if (replaced > 0) {
+        editableAnswer.value = answer;
+        if (aiResult.value) {
+          aiResult.value = { ...aiResult.value, answer };
+        }
+        scriptureReplaceStats.value = { replaced };
+        clearOutdatedGaps(evalResult.value);
+        syncHistoryAnswerSkeleton(answer);
+      }
+    }
+
     if (!isReEval) {
       answerV1.value = aiResult.value?.answer ?? "";
       skeletonSnapshot.value = Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [];
@@ -876,67 +1018,6 @@ async function runReEval() {
     return;
   }
   await runOutlineEval(true);
-}
-
-function ensureOutlineEditorVisible() {
-  if (!outlineEditVisible.value) {
-    outlineEditVisible.value = true;
-    outlineEditReadonly.value = true;
-    editableAnswer.value = editableAnswer.value || aiResult.value?.answer || "";
-  }
-}
-
-function clearLineHighlight() {
-  highlightLineIdx.value = -1;
-  if (highlightLineTimer) {
-    clearTimeout(highlightLineTimer);
-    highlightLineTimer = null;
-  }
-}
-
-function flashOutlineLine(lineIdx) {
-  clearLineHighlight();
-  highlightLineIdx.value = lineIdx;
-  highlightLineTimer = setTimeout(() => {
-    highlightLineIdx.value = -1;
-    highlightLineTimer = null;
-  }, 2000);
-}
-
-function locateAndAnnotate(suggestion) {
-  ensureOutlineEditorVisible();
-  outlineEditing.value = true;
-  outlineEditReadonly.value = false;
-
-  const currentVerse = String(suggestion?.current_verse || "").trim();
-  if (!currentVerse) return;
-
-  const lines = editableAnswer.value.split("\n");
-  let targetIndex = lines.findIndex((line) => line.includes(currentVerse));
-  if (targetIndex < 0) return;
-
-  const parts = formatEvalSuggestions(suggestion);
-  const suggestionsText = parts.map((p) => `${p.text}（${p.tag}）`).join("／");
-  const reason = String(suggestion?.reason || "").trim();
-  const annotationLine = reason
-    ? `【建议替换】${suggestionsText}｜理由：${reason}`
-    : `【建议替换】${suggestionsText}`;
-
-  if (lines[targetIndex - 1]?.startsWith("【建议替换】")) {
-    lines[targetIndex - 1] = annotationLine;
-  } else {
-    lines.splice(targetIndex, 0, annotationLine);
-    targetIndex += 1;
-  }
-  editableAnswer.value = lines.join("\n");
-
-  nextTick(() => {
-    const textarea = document.getElementById("outline-edit-textarea");
-    if (!textarea) return;
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight, 10) || 22;
-    textarea.scrollTop = Math.max(0, targetIndex * lineHeight - 100);
-    textarea.focus();
-  });
 }
 
 function buildCurrentEvalRecord() {
@@ -980,6 +1061,7 @@ async function applyEvalPrefill() {
 
   aiResult.value = null;
   evalResult.value = null;
+  scriptureReplaceStats.value = null;
   evalV1.value = null;
   answerV1.value = "";
   skeletonSnapshot.value = [];
@@ -987,7 +1069,6 @@ async function applyEvalPrefill() {
   outlineEditVisible.value = false;
   outlineEditReadonly.value = false;
   editableAnswer.value = "";
-  clearLineHighlight();
   showInfo.value = 1;
 
   referenceExcerpt.value = "";
@@ -1031,17 +1112,6 @@ function onRegenerateWithConcepts() {
   };
   sessionStorage.setItem(EVAL_PREFILL_KEY, JSON.stringify(prefillData));
   router.push({ path: "/", query: { prefill: "true" } });
-}
-
-function formatEvalSuggestions(item) {
-  const parts = [];
-  if (item?.skeleton_recommendation) {
-    parts.push({ tag: "骨架推荐", text: item.skeleton_recommendation });
-  }
-  if (item?.ai_suggestion) {
-    parts.push({ tag: "AI推荐", text: item.ai_suggestion });
-  }
-  return parts;
 }
 
 function setHistoryStatus(id, status) {
@@ -1115,7 +1185,6 @@ watch(
 
 onUnmounted(() => {
   window.removeEventListener("resize", updateIsMobileView);
-  clearLineHighlight();
 });
 
 // AI 回答复制（包含标题）
@@ -1742,6 +1811,7 @@ const onAISearch = async () => {
   showInfo.value = 6;
   aiResult.value = null;
   evalResult.value = null;
+  scriptureReplaceStats.value = null;
   evalV1.value = null;
   answerV1.value = "";
   skeletonSnapshot.value = [];
@@ -1749,7 +1819,6 @@ const onAISearch = async () => {
   outlineEditVisible.value = false;
   outlineEditReadonly.value = false;
   editableAnswer.value = "";
-  clearLineHighlight();
   answerEn.value = null;
   errorEnglish.value = null;
   answerZhTw.value = null;
@@ -2322,6 +2391,9 @@ const onAISearch = async () => {
                 <strong>{{ entry.dim }}</strong>：{{ entry.note }}
               </div>
             </div>
+            <div v-if="scriptureReplaceStats" class="eval-scripture-auto-banner">
+              已自动替换 {{ scriptureReplaceStats.replaced }} 处经文引用
+            </div>
             <div class="eval-total-score-card">
               <div class="eval-total-score-label">综合得分</div>
               <div class="eval-total-score-value">{{ evalResult.total_score ?? "—" }}<span class="eval-total-score-unit"> / 100</span></div>
@@ -2337,7 +2409,9 @@ const onAISearch = async () => {
                 <template v-else-if="evalHasBlock(item.key)">
                   <div class="eval-comment">{{ evalResult[item.key].comment }}</div>
                   <div v-if="evalResult[item.key].strength" class="eval-strength">亮点：{{ evalResult[item.key].strength }}</div>
-                  <div v-if="evalResult[item.key].prescription" class="eval-prescription">建议：{{ evalResult[item.key].prescription }}</div>
+                  <div v-if="evalResult[item.key].prescription" class="eval-prescription">
+                    ⚠ {{ evalResult[item.key].prescription }}
+                  </div>
                   <div v-if="evalResult[item.key]?.improvement_note" class="eval-improvement-note">
                     改善：{{ evalResult[item.key].improvement_note }}
                   </div>
@@ -2367,9 +2441,32 @@ const onAISearch = async () => {
                     <a-tag v-if="evalResult.T1.apex_level">{{ evalResult.T1.apex_level }}</a-tag>
                     <a-tag v-if="evalResult.T1.alignment_profile" color="blue">{{ evalResult.T1.alignment_profile }}</a-tag>
                   </div>
-                  <div class="eval-comment">{{ evalResult.T1.summary }}</div>
-                  <div v-if="(evalResult.scripture_suggestions || []).length" class="eval-hint">
-                    经文替换建议：{{ evalResult.scripture_suggestions.length }}处，见下方
+                  <div
+                    v-for="layer in T1_L_META"
+                    :key="layer.key"
+                    class="eval-sub-dim-block"
+                  >
+                    <div class="eval-sub-dim-header">
+                      <span class="eval-sub-dim-label">{{ layer.label }}</span>
+                      <span class="eval-sub-dim-score">{{ formatSubScore(evalResult.T1[layer.key]?.score) }}</span>
+                    </div>
+                    <div v-if="evalResult.T1[layer.key]?.comment" class="eval-sub-dim-comment">
+                      「{{ evalResult.T1[layer.key].comment }}」
+                    </div>
+                    <div v-if="evalGapText(evalResult.T1[layer.key]?.gap)" class="eval-sub-dim-gap">
+                      ⚠ {{ evalGapText(evalResult.T1[layer.key].gap) }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="evalResult.T1.progression != null || evalResult.T1.density != null"
+                    class="eval-extra-metrics"
+                  >
+                    <span v-if="evalResult.T1.progression != null">层次递进性 {{ formatSubScore(evalResult.T1.progression) }}</span>
+                    <span v-if="evalResult.T1.progression != null && evalResult.T1.density != null"> · </span>
+                    <span v-if="evalResult.T1.density != null">经文密度 {{ formatSubScore(evalResult.T1.density) }}</span>
+                  </div>
+                  <div v-if="evalResult.T1.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalResult.T1.summary }}
                   </div>
                 </template>
               </div>
@@ -2381,13 +2478,25 @@ const onAISearch = async () => {
                   <div class="eval-meta-tags">
                     <a-tag v-if="evalResult.T2.grade" color="purple">{{ evalResult.T2.grade }}</a-tag>
                   </div>
-                  <div class="eval-q-dots">
-                    <span v-for="q in T2_Q_KEYS" :key="q" class="eval-dot-wrap" :title="`${q}: ${evalResult.T2[q]?.score ?? '—'}`">
-                      <span class="eval-dot" :class="{ filled: (evalResult.T2[q]?.score ?? 0) >= 7 }"></span>
-                      <span class="eval-dot-label">{{ q }}</span>
-                    </span>
+                  <div
+                    v-for="q in T2_Q_META"
+                    :key="q.key"
+                    class="eval-sub-dim-block"
+                  >
+                    <div class="eval-sub-dim-header">
+                      <span class="eval-sub-dim-label">{{ q.label }}</span>
+                      <span class="eval-sub-dim-score">{{ formatSubScore(evalResult.T2[q.key]?.score) }}</span>
+                    </div>
+                    <div v-if="evalResult.T2[q.key]?.comment" class="eval-sub-dim-comment">
+                      「{{ evalResult.T2[q.key].comment }}」
+                    </div>
+                    <div v-if="evalGapText(evalResult.T2[q.key]?.gap)" class="eval-sub-dim-gap">
+                      ⚠ {{ evalGapText(evalResult.T2[q.key].gap) }}
+                    </div>
                   </div>
-                  <div class="eval-comment">{{ evalResult.T2.summary }}</div>
+                  <div v-if="evalResult.T2.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalResult.T2.summary }}
+                  </div>
                 </template>
               </div>
 
@@ -2397,18 +2506,33 @@ const onAISearch = async () => {
                   <div class="eval-meta-tags">
                     <a-tag v-if="evalResult.T3.profile" color="green">{{ evalResult.T3.profile }}</a-tag>
                   </div>
-                  <div class="eval-d-rubric">
-                    <div v-for="d in T3_D_KEYS" :key="d" class="eval-d-row">
-                      <span class="eval-d-label">{{ d }}</span>
-                      <span
-                        v-for="(ok, ri) in (evalResult.T3[d]?.rubric || [])"
-                        :key="ri"
-                        class="eval-dot small"
-                        :class="{ filled: ok }"
-                      ></span>
+                  <div
+                    v-for="d in T3_D_META"
+                    :key="d.key"
+                    class="eval-sub-dim-block"
+                  >
+                    <div class="eval-sub-dim-header">
+                      <span class="eval-sub-dim-label">{{ d.label }}</span>
+                      <span class="eval-sub-dim-score">{{ formatSubScore(evalResult.T3[d.key]?.score) }}</span>
+                    </div>
+                    <div v-if="evalResult.T3[d.key]?.comment" class="eval-sub-dim-comment">
+                      「{{ evalResult.T3[d.key].comment }}」
+                    </div>
+                    <div v-if="evalGapText(evalResult.T3[d.key]?.gap)" class="eval-sub-dim-gap">
+                      ⚠ {{ evalGapText(evalResult.T3[d.key].gap) }}
                     </div>
                   </div>
-                  <div class="eval-comment">{{ evalResult.T3.summary }}</div>
+                  <div
+                    v-if="evalResult.T3.coherence != null || evalResult.T3.eschatological_tension != null"
+                    class="eval-extra-metrics"
+                  >
+                    <span v-if="evalResult.T3.coherence != null">有机连贯度 {{ formatSubScore(evalResult.T3.coherence) }}</span>
+                    <span v-if="evalResult.T3.coherence != null && evalResult.T3.eschatological_tension != null"> · </span>
+                    <span v-if="evalResult.T3.eschatological_tension != null">终末张力度 {{ formatSubScore(evalResult.T3.eschatological_tension) }}</span>
+                  </div>
+                  <div v-if="evalResult.T3.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalResult.T3.summary }}
+                  </div>
                 </template>
               </div>
 
@@ -2416,6 +2540,19 @@ const onAISearch = async () => {
                 <div class="eval-dim-header"><strong>T4 黄金路径分析</strong><span>{{ evalT4Score10() }}</span></div>
                 <template v-if="evalHasBlock('T4')">
                   <div v-if="evalResult.T4.golden_path_summary" class="eval-golden-summary">{{ evalResult.T4.golden_path_summary }}</div>
+                  <div
+                    v-for="q in T4_Q_META"
+                    :key="q.key"
+                    class="eval-sub-dim-block"
+                  >
+                    <div class="eval-sub-dim-header">
+                      <span class="eval-sub-dim-label">{{ q.label }}</span>
+                      <span class="eval-sub-dim-score">{{ formatSubScore(evalResult.T4[q.key]?.score) }}</span>
+                    </div>
+                    <div v-if="evalResult.T4[q.key]?.comment" class="eval-sub-dim-comment">
+                      「{{ evalResult.T4[q.key].comment }}」
+                    </div>
+                  </div>
                   <div v-if="(evalResult.T4.strengths || []).length" class="eval-list-block">
                     <div class="eval-list-title">优点</div>
                     <ul><li v-for="(s, i) in evalResult.T4.strengths" :key="i">{{ s }}</li></ul>
@@ -2424,25 +2561,10 @@ const onAISearch = async () => {
                     <div class="eval-list-title">建议</div>
                     <ul><li v-for="(s, i) in evalResult.T4.suggestions" :key="i">{{ s }}</li></ul>
                   </div>
-                  <div v-if="evalResult.T4.overall_comment" class="eval-comment">{{ evalResult.T4.overall_comment }}</div>
+                  <div v-if="evalResult.T4.overall_comment" class="eval-comment eval-summary-line">
+                    总结：{{ evalResult.T4.overall_comment }}
+                  </div>
                 </template>
-              </div>
-            </div>
-
-            <div v-if="(evalResult.scripture_suggestions || []).length" class="eval-section-block">
-              <div class="eval-section-title">经文替换建议</div>
-              <div v-for="(s, i) in evalResult.scripture_suggestions" :key="i" class="eval-scripture-card">
-                <div class="eval-scripture-loc">{{ s.location }}</div>
-                <div>当前经节：{{ s.current_verse }}</div>
-                <div>论述主题：{{ s.topic }}</div>
-                <div class="eval-scripture-suggestions">
-                  <span v-for="(part, pi) in formatEvalSuggestions(s)" :key="pi" class="eval-suggestion-tag">
-                    <a-tag :color="part.tag === '骨架推荐' ? 'green' : 'blue'">{{ part.tag }}</a-tag>
-                    {{ part.text }}
-                  </span>
-                </div>
-                <div v-if="s.reason" class="eval-scripture-reason">理由：{{ s.reason }}</div>
-                <a-button size="small" class="eval-locate-btn" @click="locateAndAnnotate(s)">在编辑框定位</a-button>
               </div>
             </div>
 
@@ -2460,26 +2582,13 @@ const onAISearch = async () => {
               <a-button @click="onRegenerateWithConcepts">调整概念后重新生成</a-button>
             </div>
             <div v-if="outlineEditVisible" class="outline-edit-wrap report-outline-edit">
-              <div
-                v-if="(evalResult.scripture_suggestions || []).length"
-                class="eval-annotate-hint"
-              >
-                💡 带【建议替换】前缀的行是经文替换建议，确认后请手动删除该行
-              </div>
-              <div class="outline-edit-highlight-wrap">
-                <div
-                  v-show="highlightLineIdx >= 0"
-                  class="outline-line-highlight"
-                  :style="outlineLineHighlightStyle"
-                ></div>
-                <a-textarea
-                  id="outline-edit-textarea"
-                  v-model:value="editableAnswer"
-                  :readonly="outlineEditReadonly"
-                  :auto-size="{ minRows: 12, maxRows: 28 }"
-                  class="outline-edit-textarea editable-answer-textarea"
-                />
-              </div>
+              <a-textarea
+                id="outline-edit-textarea"
+                v-model:value="editableAnswer"
+                :readonly="outlineEditReadonly"
+                :auto-size="{ minRows: 12, maxRows: 28 }"
+                class="outline-edit-textarea editable-answer-textarea"
+              />
             </div>
           </div>
         </div>
@@ -3455,24 +3564,9 @@ const onAISearch = async () => {
 .report-outline-edit {
   margin-top: 10px;
 }
-.outline-edit-highlight-wrap {
-  position: relative;
-}
-.outline-line-highlight {
-  position: absolute;
-  left: 0;
-  right: 0;
-  background: rgba(255, 229, 143, 0.65);
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 1;
-}
 .outline-edit-textarea {
   font-family: inherit;
   line-height: 24px;
-  position: relative;
-  z-index: 2;
-  background: transparent;
 }
 .eval-improvement-banner {
   background: #fffbe6;
@@ -3558,10 +3652,14 @@ const onAISearch = async () => {
   font-weight: 600;
   color: #888;
 }
-.eval-annotate-hint {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 8px;
+.eval-scripture-auto-banner {
+  font-size: 13px;
+  color: #237804;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
   line-height: 1.6;
 }
 .eval-total-score {
@@ -3605,6 +3703,59 @@ const onAISearch = async () => {
 }
 .eval-prescription {
   color: #c05621;
+  font-weight: 500;
+}
+.eval-sub-dim-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #eef1f8;
+}
+.eval-sub-dim-block:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.eval-sub-dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.eval-sub-dim-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+.eval-sub-dim-score {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eval-sub-dim-comment {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #555;
+  margin-top: 4px;
+}
+.eval-sub-dim-gap {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c05621;
+  margin-top: 4px;
+  padding-left: 2px;
+}
+.eval-extra-metrics {
+  font-size: 13px;
+  color: #666;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eef1f8;
+}
+.eval-summary-line {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #eef1f8;
+  font-weight: 500;
 }
 .eval-strength {
   color: #237804;
@@ -3684,35 +3835,6 @@ const onAISearch = async () => {
 .eval-list-block ul {
   margin: 0;
   padding-left: 18px;
-}
-.eval-scripture-card {
-  background: #fff;
-  border: 1px solid #eef1f8;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  line-height: 1.7;
-}
-.eval-scripture-loc {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-}
-.eval-scripture-suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-}
-.eval-suggestion-tag {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.eval-locate-btn {
-  margin-top: 8px;
 }
 .eval-bottom-actions {
   display: flex;

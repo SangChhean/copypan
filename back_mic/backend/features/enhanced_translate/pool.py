@@ -75,6 +75,15 @@ def zh_contains(sub: str, s: str) -> bool:
     return bool(ns) and bool(nh) and ns in nh
 
 
+def en_contains(clause: str, text: str) -> bool:
+    """判断 normalize_en(clause) 是否包含在 normalize_en(text) 里。"""
+    nc = normalize_en((clause or "").strip())
+    nt = normalize_en((text or "").strip())
+    if not nc or not nt:
+        return False
+    return nc in nt
+
+
 def levenshtein_distance(a: str, b: str) -> int:
     """标准 Levenshtein 编辑距离（双层循环 DP）。"""
     if a == b:
@@ -285,13 +294,13 @@ def lookup_line_en(zh_line: str) -> str | None:
     return en or None
 
 
-def lookup_line_zh(en_line: str, norm_en_body: str) -> str | None:
+def lookup_line_zh(en_line: str, norm_en_line: str) -> str | None:
     """
-    按归一化英文 body 在本地 Pool 查找中文译文。
-    norm_en_body 须与写入时的 norm_en 使用相同规则（_strip_en_scripture_suffix + normalize_en）。
-    旧记录无 norm_en 时回退到对 en 字段做同样剥离后比对。
+    按归一化英文整行在本地 Pool 查找中文译文。
+    norm_en_line 须与写入时的 norm_en 使用相同规则（normalize_en 整行）。
+    旧记录无 norm_en 时回退到对 en 字段整行 normalize_en 比对。
     """
-    target = (norm_en_body or "").strip()
+    target = normalize_en((norm_en_line or en_line or "").strip())
     if not target:
         return None
     reload_pool()
@@ -307,12 +316,7 @@ def lookup_line_zh(en_line: str, norm_en_body: str) -> str | None:
         en = (rec.get("en") or "").strip()
         if not en:
             continue
-        try:
-            from features.enhanced_translate.service import _strip_en_scripture_suffix
-        except ImportError:
-            continue
-        _, en_body, _ = _strip_en_scripture_suffix(en)
-        if normalize_en(en_body) == target:
+        if normalize_en(en) == target:
             return zh
     return None
 
@@ -334,6 +338,16 @@ def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tup
         if norm in existing and not force:
             skipped += 1
             continue
+        # 英翻中记录：额外检查英文唯一键
+        norm_en_new = (rec.get("norm_en") or "").strip() or normalize_en(en)
+        if norm_en_new and rec.get("source", "").startswith("enhanced_translate_en2zh"):
+            en_already_exists = any(
+                (r.get("norm_en") or normalize_en(r.get("en") or "")) == norm_en_new
+                for r in existing.values()
+            )
+            if en_already_exists:
+                skipped += 1
+                continue
         existing[norm] = {
             "zh": zh,
             "en": en,
@@ -342,7 +356,7 @@ def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tup
             "prompt_version": rec.get("prompt_version") or "",
             "source": rec.get("source") or "enhanced_translate",
         }
-        norm_en = (rec.get("norm_en") or "").strip()
+        norm_en = (rec.get("norm_en") or "").strip() or normalize_en(en)
         if norm_en:
             existing[norm]["norm_en"] = norm_en
         added += 1
@@ -367,6 +381,12 @@ def collect_auto_append_rows(
             continue
         zh = (group.get("original_line") or "").strip()
         en = (out_lines[i] if i < len(out_lines) else "").strip()
+        try:
+            from features.enhanced_translate.source_translator import parse_source_from_line_en
+            en_stripped, _ = parse_source_from_line_en(en)
+            en = en_stripped.strip() or en
+        except Exception:
+            pass
         if not zh or not en:
             continue
         if zh == en:
@@ -392,11 +412,21 @@ def collect_auto_append_rows_en2zh(
             continue
         if not (group.get("gemini_translate") or "").strip():
             continue
-        en = (group.get("original_line") or "").strip()
+        en_raw = (group.get("original_line") or "").strip()
         zh = (out_lines[i] if i < len(out_lines) else "").strip()
-        src_zh = (group.get("reference_source_zh") or "").strip()
-        if src_zh and zh.endswith(src_zh):
-            zh = zh[: -len(src_zh)].rstrip()
+        try:
+            from features.enhanced_translate.source_translator import parse_source_from_line
+            zh_stripped, _ = parse_source_from_line(zh)
+            zh = zh_stripped.strip() or zh
+        except Exception:
+            pass
+        # 剥英文出处，与检索时的 line_for_retrieval 对齐
+        try:
+            from features.enhanced_translate.source_translator import parse_source_from_line_en
+            en, _ = parse_source_from_line_en(en_raw)
+            en = en.strip() or en_raw
+        except Exception:
+            en = en_raw
         if not zh or not en:
             continue
         if zh == en:
@@ -407,14 +437,9 @@ def collect_auto_append_rows_en2zh(
             "norm_zh": normalize_zh(zh),
             "source": "enhanced_translate_en2zh",
         }
-        try:
-            from features.enhanced_translate.service import _strip_en_scripture_suffix
-            _, en_body, _ = _strip_en_scripture_suffix(en)
-            norm_en = normalize_en(en_body)
-            if norm_en:
-                row["norm_en"] = norm_en
-        except ImportError:
-            pass
+        norm_en = normalize_en(en)
+        if norm_en:
+            row["norm_en"] = norm_en
         rows.append(row)
     return rows
 
@@ -458,4 +483,59 @@ def update_record(zh: str, new_en: str) -> bool:
     }
     _write_pool(existing)
     logger.info("[enhanced_translate_pool] 已更新 norm_zh=%s", norm)
+    return True
+
+
+def update_record_en2zh(en_line: str, new_zh: str) -> bool:
+    """
+    英翻中方向：用 normalize_en(en_line) 定位记录，更新 zh 字段。
+    同时更新字典 key（删旧中文 key，插入新中文 key）。
+    """
+    en_line = (en_line or "").strip()
+    new_zh = (new_zh or "").strip()
+    if not en_line or not new_zh:
+        return False
+    if not any(c.isascii() and c.isalpha() for c in en_line):
+        return False
+    # 剥出处后再归一化，与 Pool 存入时的 en 字段对齐
+    try:
+        from features.enhanced_translate.source_translator import parse_source_from_line_en
+
+        en_line_stripped, _ = parse_source_from_line_en(en_line)
+        en_line_stripped = en_line_stripped.strip() or en_line
+    except Exception:
+        en_line_stripped = en_line
+    reload_pool(force=True)
+    target_norm_en = normalize_en(en_line_stripped)
+    if not target_norm_en:
+        return False
+    existing = dict(_cache_by_norm)
+    found_old_norm_zh: str | None = None
+    found_old_rec: dict[str, Any] | None = None
+    for norm_zh, rec in existing.items():
+        norm_en_stored = (rec.get("norm_en") or "").strip()
+        if not norm_en_stored:
+            norm_en_stored = normalize_en((rec.get("en") or "").strip())
+        if norm_en_stored == target_norm_en:
+            found_old_norm_zh = norm_zh
+            found_old_rec = rec
+            break
+    if found_old_norm_zh is None or found_old_rec is None:
+        return False
+    new_norm_zh = normalize_zh(new_zh)
+    if not new_norm_zh:
+        return False
+    now = datetime.now(timezone.utc).isoformat()
+    existing.pop(found_old_norm_zh)
+    existing[new_norm_zh] = {
+        "zh": new_zh,
+        "en": (found_old_rec.get("en") or "").strip(),
+        "norm_zh": new_norm_zh,
+        "norm_en": target_norm_en,
+        "saved_at": now,
+        "prompt_version": found_old_rec.get("prompt_version") or "",
+        "source": found_old_rec.get("source") or "enhanced_translate_en2zh",
+    }
+    _write_pool(existing)
+    logger.info("[enhanced_translate_pool] en2zh 已更新 norm_en=%s", target_norm_en)
     return True
