@@ -20,16 +20,16 @@ STAGE_CONFIG: dict[int, dict[str, Any]] = {
     1: {"index": "kg-rag_cwwn", "year_range": None},
     2: {"index": "kg-rag_cwwl", "year_range": (1932, 1973)},
     3: {"index": "kg-rag_cwwl", "year_range": (1974, 1984)},
-    4: {"index": "kg-rag_cwwl", "year_range": (1984, 1990)},
-    5: {"index": "kg-rag_cwwl", "year_range": (1990, 1997)},
+    4: {"index": "kg-rag_cwwl", "year_range": (1985, 1990)},
+    5: {"index": "kg-rag_cwwl", "year_range": (1991, 1997)},
 }
 
 SOURCE_GROUP_LABELS = {
     1: "倪柝声弟兄职事",
     2: "李常受弟兄职事第一阶段（1932-1973）",
     3: "李常受弟兄职事第三阶段（1974-1984）",
-    4: "李常受弟兄职事第四阶段（1984-1990）",
-    5: "李常受弟兄职事高峰阶段（1990-1997）",
+    4: "李常受弟兄职事第四阶段（1985-1990）",
+    5: "李常受弟兄职事高峰阶段（1991-1997）",
 }
 
 

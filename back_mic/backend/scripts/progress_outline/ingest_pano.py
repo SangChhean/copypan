@@ -68,7 +68,7 @@ MSG_FILE_RE = re.compile(
 SOURCE_FILE_TAG = "纲目带出处"
 RED_PARA_THRESHOLD = 4
 
-READING_MARKERS = ("读经：", "讀經：")
+READING_MARKERS = ("读经：", "讀經：", "读经∶", "讀經∶")
 MINISTRY_MARKERS = ("职事信息摘录", "職事信息摘錄")
 
 OUTLINE_TYPE_RULES: list[tuple[str, re.Pattern[str]]] = [
@@ -235,6 +235,14 @@ def _split_para_by_color(para) -> tuple[str, str | None]:
             text_parts.append(content)
     text = "".join(text_parts).strip()
     source = "".join(source_parts).strip() or None
+
+    # fallback：若无红字出处，尝试从行末括号提取
+    if not source:
+        m = re.search(r"[（(]([^（(）)]{4,})[）)]$", text.strip())
+        if m:
+            source = m.group(1).strip()
+            text = text[: m.start()].strip()
+
     return text, source
 
 

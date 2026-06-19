@@ -13,13 +13,11 @@ from pydantic import BaseModel, Field
 from user.token import test_token
 
 from features.progress_outline import format_service, group_edit_service, llm_client, new_entry_service, pano_series_service
+from features.progress_outline import ministerialize_service
 from features.progress_outline.prompts import (
-    ENTRY_OVERVIEW_PROMPT,
-    PANO_OVERVIEW_PROMPT,
     build_entry_segment_prompt,
     build_pano_segment_prompt,
 )
-from features.progress_outline.token_utils import estimate_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -146,33 +144,6 @@ async def entry_search_alias(req: EntrySearchRequest):
     return await entry_search(req)
 
 
-@router.post("/upload-text")
-async def upload_text(file: UploadFile = File(...)):
-    name = (file.filename or "").lower()
-    data = await file.read()
-    if not data:
-        raise HTTPException(status_code=400, detail="文件为空")
-    try:
-        if name.endswith(".docx"):
-            from docx import Document
-
-            doc = Document(io.BytesIO(data))
-            text = "\n".join(p.text for p in doc.paragraphs if p.text and p.text.strip())
-        elif name.endswith(".txt"):
-            text = data.decode("utf-8", errors="ignore")
-        else:
-            raise HTTPException(status_code=400, detail="仅支持 .docx / .txt")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"解析失败: {e}") from e
-    tokens = estimate_tokens(text)
-    return {
-        "text": text,
-        "estimated_tokens": tokens,
-    }
-
-
 async def _generate_json(prompt: str) -> dict:
     try:
         return await llm_client.call_claude("", prompt)
@@ -287,14 +258,6 @@ async def pano_generate_segment(req: GenerateRequest):
     }
 
 
-@router.post("/pano/generate/overview")
-async def pano_generate_overview(req: GenerateRequest):
-    if not (req.content or "").strip():
-        raise HTTPException(status_code=400, detail="content 不能为空")
-    prompt = PANO_OVERVIEW_PROMPT.format(content=req.content)
-    return await _generate_json(prompt)
-
-
 @router.post("/entry/generate/segment")
 async def entry_generate_segment(req: GenerateRequest):
     if req.groups:
@@ -326,17 +289,6 @@ async def entry_generate_segment(req: GenerateRequest):
         if text
         else [],
     }
-
-
-@router.post("/entry/generate/overview")
-async def entry_generate_overview(req: GenerateRequest):
-    if not (req.content or "").strip():
-        raise HTTPException(status_code=400, detail="content 不能为空")
-    prompt = ENTRY_OVERVIEW_PROMPT.format(
-        content=req.content,
-        term=req.term or "（未命名词条）",
-    )
-    return await _generate_json(prompt)
 
 
 @router.post("/format_download")
@@ -375,3 +327,105 @@ async def format_download_batch(req: FormatBatchRequest):
         media_type="application/zip",
         headers={"Content-Disposition": disposition},
     )
+
+
+class MinisterializeSegmentArticle(BaseModel):
+    title: str = ""
+    text: str = ""
+
+
+class MinisterializeSegmentRequest(BaseModel):
+    group_results: list[MinisterializeSegmentArticle] = Field(default_factory=list)
+    series_title: str = ""
+    stage_no: int = Field(ge=1, le=5)
+    outline_sources: list[dict] = Field(default_factory=list)
+    is_pano: bool = False
+    series_no: int | None = None
+    active_stage_no: int | None = None
+    global_article_offset: int | None = None
+
+
+@router.post("/ministerialize_segment")
+async def ministerialize_segment(req: MinisterializeSegmentRequest):
+    valid = [g for g in req.group_results if (g.text or "").strip()]
+    if not valid:
+        raise HTTPException(status_code=400, detail="没有有效的纲目文本，无法职事化")
+    try:
+        result = await ministerialize_service.ministerialize_segment(
+            group_results=[g.model_dump() for g in valid],
+            series_title=req.series_title or "",
+            stage_no=req.stage_no,
+            outline_sources=req.outline_sources or [],
+            is_pano=req.is_pano,
+            series_no=req.series_no,
+            active_stage_no=req.active_stage_no,
+            global_article_offset=req.global_article_offset,
+        )
+        return result
+    except Exception as e:
+        logger.exception("[progress] ministerialize_segment 失败")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+class MinisterializeDownloadLine(BaseModel):
+    text: str = ""
+    footnote_no: int | None = None
+
+
+class MinisterializeDownloadRequest(BaseModel):
+    header_lines: list[str] = Field(default_factory=list)
+    outline_lines: list[MinisterializeDownloadLine] = Field(default_factory=list)
+    footnotes: list[dict] = Field(default_factory=list)
+    article_title: str = ""
+
+
+@router.post("/ministerialize_download")
+async def ministerialize_download(req: MinisterializeDownloadRequest):
+    try:
+        docx_bytes, filename = format_service.format_ministerialize_docx(
+            header_lines=req.header_lines,
+            outline_lines=[l.model_dump() for l in req.outline_lines],
+            footnotes=req.footnotes,
+            article_title=req.article_title,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    ascii_name = filename.encode("ascii", "ignore").decode() or "ministerialize.docx"
+    disposition = (
+        f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(filename)}'
+    )
+    return StreamingResponse(
+        io.BytesIO(docx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": disposition},
+    )
+
+
+@router.post("/parse_docx_text")
+async def parse_docx_text(file: UploadFile = File(...)):
+    """
+    解析上传的 DOCX 文件，提取纯文字纲目内容。
+    跳过页眉行（读经行之前的 00篇题 样式段落），
+    从读经行开始提取。
+    """
+    try:
+        from docx import Document
+
+        contents = await file.read()
+        doc = Document(io.BytesIO(contents))
+        lines = []
+        found_reading = False
+        reading_markers = ("读经：", "讀經：", "读经∶", "讀經∶")
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                continue
+            if not found_reading:
+                if any(text.startswith(m) for m in reading_markers):
+                    found_reading = True
+                    lines.append(para.text)
+                continue
+            lines.append(para.text)
+        return {"text": "\n".join(lines), "found_reading": found_reading}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"DOCX 解析失败：{e}") from e
