@@ -24,13 +24,25 @@ from features.outline_eval.prompts import (
 )
 
 _DEFAULT_MODEL = "claude-sonnet-4-6"
-_INPUT_PRICE = 0.000003
-_OUTPUT_PRICE = 0.000015
+_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+
+# 各模型单价（per token）
+_MODEL_PRICING = {
+    "claude-haiku-4-5-20251001": {
+        "input": 0.80 / 1_000_000,
+        "output": 4.00 / 1_000_000,
+    },
+    "claude-sonnet-4-6": {
+        "input": 3.00 / 1_000_000,
+        "output": 15.00 / 1_000_000,
+    },
+}
 
 _SYSTEM_PROMPT = (
     "你只能以合法的 JSON 对象格式回复，"
     "不得包含任何前缀文字、解释说明或 Markdown 代码块。"
     "直接输出 JSON，第一个字符必须是 '{'，最后一个字符必须是 '}'。"
+    "JSON 字符串值内禁止使用英文双引号，引用短语请用「」或『』。"
 )
 
 _GENRE_MAP = {
@@ -49,7 +61,26 @@ _SECOND_EVAL_SUFFIX = """
 
 _DIM_KEYS = ("F1", "F2", "F3", "F4", "T1", "T2", "T3", "T4")
 
+_T1_LAYER_KEYS = ("L1", "L2", "L3", "L4", "L5")
+_T2_Q_KEYS = ("Q1", "Q2", "Q3", "Q4", "Q5")
+_T3_D_KEYS = ("D1", "D2", "D3", "D4")
+
 logger = logging.getLogger(__name__)
+
+
+def _repair_unescaped_quotes_in_json(s: str) -> str:
+    """修复模型在 JSON 字符串值内用 ASCII 双引号引用短语导致的非法 JSON。"""
+    pattern = (
+        r'([\u4e00-\u9fff，。、；：！？])'
+        r'"([^"\\]{1,120})"'
+        r'([\u4e00-\u9fff，。、；：！？])'
+    )
+    prev = None
+    result = s
+    while prev != result:
+        prev = result
+        result = re.sub(pattern, r"\1「\2」\3", result)
+    return result
 
 
 def _parse_json_dict(text: str) -> dict[str, Any]:
@@ -64,24 +95,134 @@ def _parse_json_dict(text: str) -> dict[str, Any]:
             s = match.group(1).strip()
 
     # 尝试直接解析
-    try:
-        obj = json.loads(s)
-        return obj if isinstance(obj, dict) else {"error": "响应非 JSON 对象"}
-    except json.JSONDecodeError:
-        pass
+    for candidate in (s, _repair_unescaped_quotes_in_json(s)):
+        try:
+            obj = json.loads(candidate)
+            return obj if isinstance(obj, dict) else {"error": "响应非 JSON 对象"}
+        except json.JSONDecodeError:
+            pass
 
     # 提取第一个 { 到最后一个 } 之间的内容
     first = s.find("{")
     last = s.rfind("}")
     if first >= 0 and last > first:
-        try:
-            obj = json.loads(s[first : last + 1])
-            return obj if isinstance(obj, dict) else {"error": "响应非 JSON 对象"}
-        except json.JSONDecodeError:
-            pass
+        chunk = s[first : last + 1]
+        for candidate in (chunk, _repair_unescaped_quotes_in_json(chunk)):
+            try:
+                obj = json.loads(candidate)
+                return obj if isinstance(obj, dict) else {"error": "响应非 JSON 对象"}
+            except json.JSONDecodeError:
+                pass
+
+    # 截断 JSON 补全：未闭合的花括号补齐后再解析
+    if first >= 0:
+        truncated = s[first:]
+        open_count = truncated.count("{") - truncated.count("}")
+        if open_count > 0:
+            padded = (
+                truncated
+                + ('"' if truncated.rstrip()[-1] not in '"}]' else "")
+                + "}" * open_count
+            )
+            try:
+                obj = json.loads(padded)
+                return obj if isinstance(obj, dict) else {"error": "响应非 JSON 对象"}
+            except json.JSONDecodeError:
+                pass
 
     logger.warning(f"[outline_eval] JSON 解析失败，原始内容前800字：{s[:800]}")
     return {"error": "JSON 解析失败", "raw": s[:500]}
+
+
+def _normalize_gap(value: Any) -> str | None:
+    if value is None:
+        return None
+    s = str(value).strip()
+    if not s or s.lower() in ("null", "none", "无", "n/a"):
+        return None
+    return s
+
+
+def _sub_score(result: dict[str, Any], key: str) -> float | None:
+    block = result.get(key)
+    if not isinstance(block, dict) or block.get("score") is None:
+        return None
+    try:
+        return float(block["score"])
+    except (TypeError, ValueError):
+        return None
+
+
+def _sum_sub_scores(result: dict[str, Any], keys: tuple[str, ...]) -> float | None:
+    if "error" in result:
+        return None
+    scores = [_sub_score(result, k) for k in keys]
+    valid = [s for s in scores if s is not None]
+    return sum(valid) if valid else None
+
+
+def _normalize_sub_dims(
+    result: dict[str, Any],
+    keys: tuple[str, ...],
+) -> None:
+    for k in keys:
+        block = result.get(k)
+        if isinstance(block, dict) and "gap" in block:
+            block["gap"] = _normalize_gap(block.get("gap"))
+
+
+def _normalize_t1(result: dict[str, Any]) -> dict[str, Any]:
+    if "error" in result:
+        return result
+    _normalize_sub_dims(result, _T1_LAYER_KEYS)
+    if result.get("total") is None:
+        total = _sum_sub_scores(result, _T1_LAYER_KEYS)
+        if total is not None:
+            result["total"] = total
+    return result
+
+
+def _normalize_t2(result: dict[str, Any]) -> dict[str, Any]:
+    if "error" in result:
+        return result
+    _normalize_sub_dims(result, _T2_Q_KEYS)
+    if result.get("total") is None:
+        total = _sum_sub_scores(result, _T2_Q_KEYS)
+        if total is not None:
+            result["total"] = total
+    return result
+
+
+def _calc_t3_organic_index(result: dict[str, Any]) -> int | None:
+    values: list[float] = []
+    for k in _T3_D_KEYS:
+        score = _sub_score(result, k)
+        if score is not None:
+            values.append(score)
+    for k in ("coherence", "eschatological_tension"):
+        try:
+            if result.get(k) is not None:
+                values.append(float(result[k]))
+        except (TypeError, ValueError):
+            pass
+    if len(values) < 6:
+        return None
+    return round(sum(values) / len(values) * 10)
+
+
+def _normalize_t3(result: dict[str, Any]) -> dict[str, Any]:
+    if "error" in result:
+        return result
+    _normalize_sub_dims(result, _T3_D_KEYS)
+    if result.get("total") is None:
+        total = _sum_sub_scores(result, _T3_D_KEYS)
+        if total is not None:
+            result["total"] = total
+    if result.get("organic_index") is None:
+        organic_index = _calc_t3_organic_index(result)
+        if organic_index is not None:
+            result["organic_index"] = organic_index
+    return result
 
 
 def _substitute_prompt(template: str, **kwargs: str) -> str:
@@ -92,8 +233,13 @@ def _substitute_prompt(template: str, **kwargs: str) -> str:
     return result
 
 
-def _calc_call_cost(input_tokens: int, output_tokens: int) -> float:
-    return input_tokens * _INPUT_PRICE + output_tokens * _OUTPUT_PRICE
+def _calc_call_cost(
+    input_tokens: int,
+    output_tokens: int,
+    model: str = "claude-sonnet-4-6",
+) -> float:
+    pricing = _MODEL_PRICING.get(model, _MODEL_PRICING["claude-sonnet-4-6"])
+    return input_tokens * pricing["input"] + output_tokens * pricing["output"]
 
 
 def _pop_usage(result: dict[str, Any]) -> tuple[dict[str, Any], int, int, float]:
@@ -248,7 +394,7 @@ async def _call_claude(
         parsed = _parse_json_dict(text)
         parsed["_input_tokens"] = input_tokens
         parsed["_output_tokens"] = output_tokens
-        parsed["_cost_usd"] = _calc_call_cost(input_tokens, output_tokens)
+        parsed["_cost_usd"] = _calc_call_cost(input_tokens, output_tokens, model)
         return parsed
 
     try:
@@ -277,7 +423,7 @@ async def eval_F1(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
 
 
 async def eval_F2(
@@ -298,7 +444,7 @@ async def eval_F2(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
 
 
 async def eval_F3(
@@ -317,7 +463,7 @@ async def eval_F3(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
 
 
 async def eval_F4(
@@ -330,18 +476,20 @@ async def eval_F4(
         _substitute_prompt(PROMPT_F4, outline_nature=outline_nature, answer=answer),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
 
 
 async def eval_T1(answer: str, *, prev_comment: str | None = None) -> dict[str, Any]:
     user = _append_second_eval(PROMPT_T1 + f"\n\n纲目正文：\n{answer}", prev_comment)
-    return await _call_claude(_SYSTEM_PROMPT, user, max_tokens=2500)
+    result = await _call_claude(_SYSTEM_PROMPT, user, max_tokens=8000)
+    return _normalize_t1(result)
 
 
 async def eval_T2(answer: str, *, prev_comment: str | None = None) -> dict[str, Any]:
     # PROMPT_T2 含 JSON 示例花括号，使用字符串拼接而非 .format()
     user = _append_second_eval(PROMPT_T2 + f"\n\n纲目正文：\n{answer}", prev_comment)
     result = await _call_claude(_SYSTEM_PROMPT, user, max_tokens=4000)
+    result = _normalize_t2(result)
     if result.get("error"):
         logger.warning("[outline_eval] T2 error: %s", result.get("error"))
     elif result.get("total") is None:
@@ -349,9 +497,24 @@ async def eval_T2(answer: str, *, prev_comment: str | None = None) -> dict[str, 
     return result
 
 
-async def eval_T3(answer: str, *, prev_comment: str | None = None) -> dict[str, Any]:
-    user = _append_second_eval(PROMPT_T3 + f"\n\n纲目正文：\n{answer}", prev_comment)
-    return await _call_claude(_SYSTEM_PROMPT, user, max_tokens=2500)
+async def eval_T3(
+    answer: str,
+    outline_nature: str = "一般性",
+    *,
+    prev_comment: str | None = None,
+) -> dict[str, Any]:
+    user = _append_second_eval(
+        _substitute_prompt(PROMPT_T3, outline_nature=outline_nature)
+        + f"\n\n纲目正文：\n{answer}",
+        prev_comment,
+    )
+    result = await _call_claude(
+        _SYSTEM_PROMPT,
+        user,
+        model=_DEFAULT_MODEL,
+        max_tokens=4000,
+    )
+    return _normalize_t3(result)
 
 
 async def eval_T4(
@@ -364,7 +527,7 @@ async def eval_T4(
         _substitute_prompt(PROMPT_T4, genre=genre) + f"\n\n纲目正文：\n{answer}",
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, max_tokens=2000)
+    return await _call_claude(_SYSTEM_PROMPT, user, max_tokens=3000)
 
 
 async def run_evaluation(
@@ -398,7 +561,7 @@ async def run_evaluation(
         eval_F4(answer, outline_nature, prev_comment=_prev("F4")),
         eval_T1(answer, prev_comment=_prev("T1")),
         eval_T2(answer, prev_comment=_prev("T2")),
-        eval_T3(answer, prev_comment=_prev("T3")),
+        eval_T3(answer, outline_nature, prev_comment=_prev("T3")),
         eval_T4(answer, genre, prev_comment=_prev("T4")),
         return_exceptions=True,
     )
