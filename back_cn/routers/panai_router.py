@@ -26,13 +26,13 @@ def _require_user(request: Request) -> str:
 class GenerateBurdenBody(BaseModel):
     query: str = Field(..., min_length=1, max_length=500)
     outline_nature: str = Field(default="一般性", max_length=50)
-    burden_points: list[str] = Field(..., min_length=1, max_length=5)
+    burden_points: list[str] = Field(..., min_length=1, max_length=10)
 
     @field_validator("burden_points")
     @classmethod
     def validate_points(cls, v: list[str]) -> list[str]:
-        if not (1 <= len(v) <= 5):
-            raise ValueError("burden_points 数量须在 1~5 之间")
+        if not (1 <= len(v) <= 10):
+            raise ValueError("burden_points 数量须在 1~10 之间")
         cleaned: list[str] = []
         for p in v:
             s = (p or "").strip()
