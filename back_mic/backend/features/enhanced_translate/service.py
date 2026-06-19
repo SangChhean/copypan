@@ -33,10 +33,12 @@ from ai_search.gemini_response_utils import (
 )
 
 from features.enhanced_translate.pool import (
+    _edits_non_consecutive,
     append_records,
     auto_append_enabled,
     collect_auto_append_rows,
     collect_auto_append_rows_en2zh,
+    en_contains,
     levenshtein_distance,
     lookup_line_en,
     lookup_line_zh,
@@ -338,6 +340,18 @@ _EN_TITLE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_ZH_SOURCE_HEADER_RE = re.compile(r"^参考与参读资料[：:]")
+_EN_SOURCE_HEADER_RE = re.compile(r"^References and Further Reading[：:]", re.IGNORECASE)
+_SOURCE_PREFIX_RE = re.compile(r"^(\[?\d+\]?\.?\s+)")
+
+
+def _strip_source_prefix(line: str) -> tuple[str, str]:
+    """剥离 source 行序号前缀（中英文通用），返回 (prefix, content)。"""
+    m = _SOURCE_PREFIX_RE.match(line)
+    if m:
+        return m.group(1), line[m.end():]
+    return "", line
+
 
 def _detect_line_type_en(
     body: str,
@@ -361,7 +375,13 @@ def _detect_line_type_en(
 
 def _precompute_line_types(lines: list[str]) -> list[str]:
     types: list[str] = []
+    in_source_section = False
     for line in lines:
+        if _ZH_SOURCE_HEADER_RE.match(line.strip()):
+            in_source_section = True
+        if in_source_section:
+            types.append("source")
+            continue
         line_for_retrieval, _ = parse_source_from_line(line)
         prefix, body, _ = _strip_scripture_suffix(line_for_retrieval)
         prev = types[-1] if types else ""
@@ -371,7 +391,13 @@ def _precompute_line_types(lines: list[str]) -> list[str]:
 
 def _precompute_line_types_en(lines: list[str]) -> list[str]:
     types: list[str] = []
+    in_source_section = False
     for line in lines:
+        if _EN_SOURCE_HEADER_RE.match(line.strip()):
+            in_source_section = True
+        if in_source_section:
+            types.append("source")
+            continue
         line_for_retrieval, _ = parse_source_from_line_en(line)
         prefix, body, _ = _strip_en_scripture_suffix(line_for_retrieval)
         prev = types[-1] if types else ""
@@ -382,6 +408,23 @@ def _precompute_line_types_en(lines: list[str]) -> list[str]:
 def _strip_title_prefix(body: str) -> str:
     s = (body or "").lstrip()
     return _TITLE_PREFIX_RE.sub("", s, count=1).strip()
+
+
+def _strip_title_prefix_en(body: str) -> str:
+    """剥离英文篇题前缀（Message One / Topic Three / Lesson 5 等），返回纯标题词。"""
+    s = (body or "").lstrip()
+    return _EN_TITLE_RE.sub("", s, count=1).strip()
+
+
+def _split_body_en(body: str) -> list[str]:
+    """按英文半角分号切子句。"""
+    body = (body or "").strip()
+    if not body:
+        return []
+    if ";" in body:
+        parts = [p.strip() for p in body.split(";")]
+        return [p for p in parts if p]
+    return [body]
 
 
 def _dedupe_hits_by_zh(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -838,8 +881,7 @@ async def _pool_lookup_en2zh(clause: str) -> str | None:
     clause = (clause or "").strip()
     if not clause:
         return None
-    _, clause_body, _ = _strip_en_scripture_suffix(clause)
-    norm_clause = normalize_en(clause_body)
+    norm_clause = normalize_en(clause)
     if not norm_clause:
         return None
     return lookup_line_zh(clause, norm_clause)
@@ -868,6 +910,225 @@ async def _enrich_hit_en(hit: dict[str, Any], ctx: _RetrievalCtx) -> dict[str, A
         else:
             logger.debug("[enhanced_translate] enrich en 失败 %s: %s", cid, e)
     return hit
+
+
+async def _pool_exact_match_en(line: str) -> str | None:
+    """
+    在 ES Pool 8个索引里用 match en 召回300条，
+    对每条 en 字段做 normalize_en 整行全等比对，命中返回 zh 字段。
+    """
+    line = (line or "").strip()
+    if not line:
+        return None
+    norm_line = normalize_en(line)
+    if not norm_line:
+        return None
+    body = {
+        "query": {"match": {"en": {"query": line, "operator": "or"}}},
+        "size": 300,
+        "_source": ["zh", "en", "text", "chunk_id"],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index=_INDICES_BM25,
+            body=body,
+            request_timeout=8,
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate] pool_exact_match_en 失败: %s", e)
+        return None
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = hit.get("_source") or {}
+        hit_en = (src.get("en") or "").strip()
+        if normalize_en(hit_en) == norm_line:
+            zh = (src.get("zh") or src.get("text") or "").strip()
+            if zh:
+                return zh
+    return None
+
+
+async def _pool_contains_match_en(line: str) -> dict[str, Any] | None:
+    """
+    在 ES Pool 8个索引里召回300条，
+    找 normalize_en(line) 包含在 normalize_en(hit_en) 里的最短命中。
+    返回完整 hit dict 或 None。
+    """
+    line = (line or "").strip()
+    if not line:
+        return None
+    body = {
+        "query": {"match": {"en": {"query": line, "operator": "or"}}},
+        "size": 300,
+        "_source": ["zh", "en", "text", "chunk_id", "source_zh", "source_en", "book_title"],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index=_INDICES_BM25,
+            body=body,
+            request_timeout=8,
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate] pool_contains_match_en 失败: %s", e)
+        return None
+    candidates = []
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = (hit.get("_source") or {}).copy()
+        hit_en = (src.get("en") or "").strip()
+        if en_contains(line, hit_en) and (src.get("zh") or src.get("text") or "").strip():
+            src["_index"] = hit.get("_index") or ""
+            src.setdefault("chunk_id", hit.get("_id", ""))
+            src["match_kind"] = "exact"
+            candidates.append(src)
+    if not candidates:
+        return None
+    return min(candidates, key=lambda h: len(normalize_en(h.get("en") or "")))
+
+
+def _en_fuzzy_eq(a: str, b: str) -> bool:
+    """
+    英文模糊全等：normalize_en 后按长度比例设编辑距离阈值。
+    短文本（≤80字符）额外要求编辑位点不连续。
+    """
+    na = normalize_en((a or "").strip())
+    nb = normalize_en((b or "").strip())
+    if not na or not nb:
+        return False
+    if na == nb:
+        return True
+    length = max(len(na), len(nb))
+    if length <= 80:
+        threshold = max(4, length // 6)
+        check_consecutive = True
+    elif length <= 150:
+        threshold = max(8, length // 10)
+        check_consecutive = False
+    else:
+        threshold = max(15, length // 10)
+        check_consecutive = False
+    if abs(len(na) - len(nb)) > threshold:
+        return False
+    dist = levenshtein_distance(na, nb)
+    if dist > threshold:
+        return False
+    if check_consecutive and abs(len(na) - len(nb)) <= 1 and not _edits_non_consecutive(na, nb):
+        return False
+    return True
+
+
+async def _pool_fuzzy_match_en(line: str) -> str | None:
+    """
+    在 ES Pool 8个索引里召回300条，
+    逐条做 _en_fuzzy_eq 模糊全等比对，命中返回 zh 字段。
+    """
+    line = (line or "").strip()
+    if not line:
+        return None
+    body = {
+        "query": {"match": {"en": {"query": line, "operator": "or"}}},
+        "size": 300,
+        "_source": ["zh", "en", "text", "chunk_id"],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            es_client.search,
+            index=_INDICES_BM25,
+            body=body,
+            request_timeout=8,
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate] pool_fuzzy_match_en 失败: %s", e)
+        return None
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = hit.get("_source") or {}
+        hit_en = (src.get("en") or "").strip()
+        if _en_fuzzy_eq(hit_en, line):
+            zh = (src.get("zh") or src.get("text") or "").strip()
+            if zh:
+                return zh
+    return None
+
+
+async def _enrich_hit_zh(hit: dict[str, Any], ctx: _RetrievalCtx) -> dict[str, Any]:
+    """
+    命中条目缺少 zh 字段时，按 chunk_id 回查 ES 补全。
+    与 _enrich_hit_en 平行。
+    """
+    zh_val = (hit.get("zh") or hit.get("text") or "").strip()
+    if zh_val:
+        if not (hit.get("text") or "").strip():
+            hit["text"] = zh_val
+        if not (hit.get("zh") or "").strip():
+            hit["zh"] = zh_val
+        return hit
+    chunk_id = (hit.get("chunk_id") or "").strip()
+    if not chunk_id or not ctx.es_enabled:
+        return hit
+    try:
+        resp = await asyncio.to_thread(
+            es_client.get,
+            index=ctx.bm25_index.split(",")[0],
+            id=chunk_id,
+        )
+        src = resp.get("_source") or {}
+        zh_val = (src.get("zh") or src.get("text") or "").strip()
+        hit["zh"] = zh_val
+        if not (hit.get("text") or "").strip():
+            hit["text"] = zh_val
+    except Exception:
+        pass
+    return hit
+
+
+_EN_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
+
+
+def _split_sentences_en(body: str) -> list[str]:
+    """
+    按英文句子切分，过短片段（少于4个词）合并到下一句。
+    """
+    body = (body or "").strip()
+    if not body:
+        return []
+    raw = _EN_SENTENCE_SPLIT_RE.split(body)
+    result: list[str] = []
+    buffer = ""
+    for seg in raw:
+        seg = seg.strip()
+        if not seg:
+            continue
+        combined = (buffer + " " + seg).strip() if buffer else seg
+        if len(combined.split()) < 4:
+            buffer = combined
+        else:
+            if buffer:
+                result.append(buffer)
+            buffer = seg
+    if buffer:
+        result.append(buffer)
+    return [s for s in result if len(s.split()) >= 3]
+
+
+async def _clause_retrieval_en_bm25(
+    clause: str,
+    ctx: _RetrievalCtx,
+    existing_chunk_ids: set[str],
+    main_ref_en: str,
+) -> dict[str, Any] | None:
+    """每个子句取 BM25 top1，过滤已在主参考里的内容。"""
+    clause = (clause or "").strip()
+    if not clause:
+        return None
+    hits = await _bm25_hits_en(clause, ctx.bm25_index, 1)
+    for h in hits:
+        chunk_id = (h.get("chunk_id") or "").strip()
+        if chunk_id in existing_chunk_ids:
+            continue
+        if en_contains(clause, main_ref_en):
+            continue
+        return h
+    return None
 
 
 def _extract_source(hit: dict) -> str:
@@ -1144,14 +1405,26 @@ def _build_summary(
     }
 
 
-def _gemini_config(model_name: str):
+def chunk_with_tail_merge(items: list, size: int = 10, min_tail: int = 5) -> list:
+    """按 size 切批；若最后一批 < min_tail 行则并入前一批（单批可 > size 行）。"""
+    if not items:
+        return []
+    chunks = [items[i : i + size] for i in range(0, len(items), size)]
+    if len(chunks) >= 2 and len(chunks[-1]) < min_tail:
+        chunks[-2].extend(chunks[-1])
+        chunks.pop()
+    return chunks
+
+
+def _gemini_config(model_name: str, *, use_terminology: bool = True):
+    system_instruction = GEMINI_TRANSLATION_SYSTEM_INSTRUCTION if use_terminology else None
     if gemini_translation_generate_config:
         return gemini_translation_generate_config(
-            GEMINI_TRANSLATION_SYSTEM_INSTRUCTION, model_name=model_name
+            system_instruction, model_name=model_name
         )
     from google.genai import types
 
-    return types.GenerateContentConfig(system_instruction=GEMINI_TRANSLATION_SYSTEM_INSTRUCTION)
+    return types.GenerateContentConfig(system_instruction=system_instruction)
 
 
 def _call_gemini_sync(
@@ -1159,6 +1432,8 @@ def _call_gemini_sync(
     retry_count: int = 0,
     model: str | None = None,
     cumulative_usage: dict | None = None,
+    *,
+    use_terminology: bool = True,
 ) -> tuple[str | None, dict[str, int]]:
     if cumulative_usage is None:
         cumulative_usage = {"in_tok": 0, "out_tok": 0}
@@ -1170,7 +1445,7 @@ def _call_gemini_sync(
             response = gemini_client.models.generate_content(
                 model=use_model,
                 contents=contents,
-                config=_gemini_config(use_model),
+                config=_gemini_config(use_model, use_terminology=use_terminology),
             )
             log_p = f"[enhanced_translate] model={use_model}"
             text = None
@@ -1191,8 +1466,9 @@ def _call_gemini_sync(
                 call_in, call_out + call_think, use_model
             )
             logger.info(
-                "[enhanced_translate] gemini call: model=%s in_tok=%d out_tok=%d think_tok=%d",
-                use_model, call_in, call_out, call_think
+                "[enhanced_translate] gemini call: model=%s in_tok=%d out_tok=%d "
+                "think_tok=%d use_terminology=%s",
+                use_model, call_in, call_out, call_think, use_terminology,
             )
             return text, cumulative_usage
         except Exception as e:
@@ -1205,6 +1481,7 @@ def _call_gemini_sync(
                     retry_count=1,
                     model=use_model,
                     cumulative_usage=cumulative_usage,
+                    use_terminology=use_terminology,
                 )
             logger.warning("[enhanced_translate] Gemini 失败: %s", e)
     return None, cumulative_usage
@@ -1228,6 +1505,8 @@ def _parse_batch_translations(
 
 async def _translate_batch(
     items: list[tuple[int, str, list[dict[str, Any]], str]],
+    *,
+    use_terminology: bool = True,
 ) -> tuple[dict[int, str], dict[str, int]]:
     """items: (line_i, zh_line, deduped_refs, prompt_extra)"""
     if not items:
@@ -1248,7 +1527,14 @@ async def _translate_batch(
 
     indexed = [(line_i, zh) for line_i, zh, _, _ in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
-    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=use_terminology,
+    )
 
     if not text:
         return {line_i: zh for line_i, zh in indexed}, cumulative_usage
@@ -1274,11 +1560,48 @@ async def _translate_batch_feasts(
 
     indexed = [(line_i, feasts_line) for line_i, feasts_line in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
-    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=False,
+    )
 
     if not text:
         return {line_i: feasts_line for line_i, feasts_line in indexed}, cumulative_usage
 
+    parsed = _parse_batch_translations(text, indexed)
+    return parsed, cumulative_usage
+
+
+async def _translate_batch_reading(
+    items: list[tuple[int, str]],
+) -> tuple[dict[int, str], dict[str, int]]:
+    """读经整行或「英文正文+中文读经后缀」一次校对/翻译。"""
+    if not items:
+        return {}, {}
+    blocks = [f"Line {pos}: {text}" for pos, (_, text) in enumerate(items, 1)]
+    contents = (
+        ENHANCED_TRANSLATE_PROMPT_FEASTS
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\nProofread each line above. Output ONLY in this exact format:\n"
+        + "\n".join(f"Line {pos}: {{corrected english text}}" for pos in range(1, len(items) + 1))
+    )
+    indexed = [(line_i, text) for line_i, text in items]
+    cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=False,
+    )
+    if not text:
+        return {line_i: t for line_i, t in indexed}, cumulative_usage
     parsed = _parse_batch_translations(text, indexed)
     return parsed, cumulative_usage
 
@@ -1299,15 +1622,54 @@ async def _translate_batch_feasts_zh(
     )
     indexed = [(line_i, feasts_line) for line_i, feasts_line in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
-    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=False,
+    )
     if not text:
         return {line_i: feasts_line for line_i, feasts_line in indexed}, cumulative_usage
     parsed = _parse_batch_translations(text, indexed)
     return parsed, cumulative_usage
 
 
+async def _translate_batch_reading_zh(
+    items: list[tuple[int, str]],
+) -> tuple[dict[int, str], dict[str, int]]:
+    """英翻中：读经整行或「中文正文+英文读经后缀」一次校对。"""
+    if not items:
+        return {}, {}
+    blocks = [f"Line {pos}: {text}" for pos, (_, text) in enumerate(items, 1)]
+    contents = (
+        ENHANCED_TRANSLATE_PROMPT_FEASTS_ZH
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\nProofread each line above. Output ONLY in this exact format:\n"
+        + "\n".join(f"Line {pos}: {{corrected chinese text}}" for pos in range(1, len(items) + 1))
+    )
+    indexed = [(line_i, text) for line_i, text in items]
+    cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=False,
+    )
+    if not text:
+        return {line_i: t for line_i, t in indexed}, cumulative_usage
+    parsed = _parse_batch_translations(text, indexed)
+    return parsed, cumulative_usage
+
+
 async def _translate_batch_en2zh(
     items: list[tuple[int, str, list[dict[str, Any]], str]],
+    *,
+    use_terminology: bool = True,
 ) -> tuple[dict[int, str], dict[str, int]]:
     """items: (line_i, en_line, deduped_refs, prompt_extra)"""
     if not items:
@@ -1328,7 +1690,14 @@ async def _translate_batch_en2zh(
 
     indexed = [(line_i, en) for line_i, en, _, _ in items]
     cumulative_usage: dict[str, int] = {"in_tok": 0, "out_tok": 0}
-    text, _ = await asyncio.to_thread(_call_gemini_sync, contents, 0, None, cumulative_usage)
+    text, _ = await asyncio.to_thread(
+        _call_gemini_sync,
+        contents,
+        0,
+        None,
+        cumulative_usage,
+        use_terminology=use_terminology,
+    )
 
     if not text:
         return {line_i: en for line_i, en in indexed}, cumulative_usage
@@ -1362,6 +1731,9 @@ def _prep_cached_line(
         "reference_source_zh": reference_source_zh,
         "reference_source_zh_list": reference_source_zh_list,
         "reference_source_en": "",
+        "source_content": "",
+        "source_prefix": "",
+        "source_is_empty": False,
     }
 
 
@@ -1488,6 +1860,38 @@ async def _retrieve_title_line(
     )
 
 
+async def _retrieve_source_line(
+    line_i: int,
+    line: str,
+) -> dict[str, Any]:
+    """source 行：空行直接跳过，非空行剥序号备用，出处翻译在主流程统一处理。"""
+    stripped = line.strip()
+    prefix, content = _strip_source_prefix(stripped) if stripped else ("", "")
+    _src = {
+        "line_for_retrieval": line,
+        "reference_source_zh": "",
+        "reference_source_zh_list": [],
+        "reference_source_en": "",
+        "reference_source_en_list": [],
+        "reference_source_zh_result": "",
+    }
+    return {
+        "line_i": line_i,
+        "line": line,
+        "body": stripped,
+        "line_type": "source",
+        "line_refs": [],
+        "deduped_refs": [],
+        "needs_batch": False,
+        "line_cached_en": "",
+        "pool_line_en": "",
+        "source_content": content,
+        "source_prefix": prefix,
+        "source_is_empty": not stripped,
+        **_src,
+    }
+
+
 async def _retrieve_line(
     line_i: int,
     line: str,
@@ -1495,6 +1899,9 @@ async def _retrieve_line(
     *,
     line_type: str,
 ) -> dict[str, Any]:
+    if line_type == "source":
+        return await _retrieve_source_line(line_i, line)
+
     line_for_retrieval, reference_source_zh_list = parse_source_from_line(line)
     prefix, body, _ = _strip_scripture_suffix(line_for_retrieval)
     reference_source_zh = format_source_zh(reference_source_zh_list)
@@ -1869,6 +2276,167 @@ async def _retrieve_line(
     }
 
 
+def _enrich_prep_schedule_fields(prep: dict[str, Any], *, en2zh: bool = False) -> None:
+    lfr = (prep.get("line_for_retrieval") or prep.get("line") or "").strip()
+    if en2zh:
+        prefix, body, suffix = _strip_en_scripture_suffix(lfr)
+    else:
+        prefix, body, suffix = _strip_scripture_suffix(lfr)
+    prep["schedule_body"] = (f"{prefix}{body}".strip() or lfr)
+    prep["schedule_suffix"] = suffix
+
+
+def _feasts_body_without_suffix(feasts_line: str, suffix: str) -> str:
+    fl = (feasts_line or "").strip()
+    sfx = (suffix or "").strip()
+    if sfx and fl.endswith(sfx):
+        return fl[: -len(sfx)].rstrip()
+    return fl
+
+
+def _prep_has_pool_shortcut(prep: dict[str, Any]) -> bool:
+    return bool(
+        (prep.get("line_cached_en") or "").strip()
+        or (prep.get("pool_line_en") or "").strip()
+    )
+
+
+def _split_body_batch_items(
+    items: list[tuple[int, str, list[dict[str, Any]], str]],
+    preps_by_i: dict[int, dict[str, Any]],
+) -> tuple[list, list]:
+    with_refs: list = []
+    without_refs: list = []
+    for item in items:
+        line_i, _, deduped_refs, _ = item
+        prep = preps_by_i.get(line_i, {})
+        if prep.get("degraded_no_refs") or not deduped_refs:
+            without_refs.append(item)
+        else:
+            with_refs.append(item)
+    return with_refs, without_refs
+
+
+def _merge_usage_totals(
+    total_in: int,
+    total_out: int,
+    total_cost: float,
+    usage: dict[str, Any],
+) -> tuple[int, int, float]:
+    return (
+        total_in + int(usage.get("in_tok", 0) or 0),
+        total_out + int(usage.get("out_tok", 0) or 0),
+        total_cost + float(usage.get("cost_usd", 0.0) or 0.0),
+    )
+
+
+async def _run_body_translation_batches(
+    items: list[tuple[int, str, list[dict[str, Any]], str]],
+    preps_by_i: dict[int, dict[str, Any]],
+    *,
+    en2zh: bool = False,
+    batch_sem: asyncio.Semaphore,
+) -> tuple[dict[int, str], int, int, float]:
+    if not items:
+        return {}, 0, 0, 0.0
+    with_refs, without_refs = _split_body_batch_items(items, preps_by_i)
+    translate_fn = _translate_batch_en2zh if en2zh else _translate_batch
+    jobs: list[tuple[list, bool]] = []
+    for group, use_term in ((with_refs, False), (without_refs, True)):
+        for chunk in chunk_with_tail_merge(group):
+            jobs.append((chunk, use_term))
+
+    async def _run(chunk: list, use_term: bool) -> tuple[dict[int, str], dict]:
+        async with batch_sem:
+            return await translate_fn(chunk, use_terminology=use_term)
+
+    outcomes = await asyncio.gather(*[_run(c, ut) for c, ut in jobs])
+    translate_by_line: dict[int, str] = {}
+    total_in = total_out = 0
+    total_cost = 0.0
+    for trans, usage in outcomes:
+        translate_by_line.update(trans)
+        total_in, total_out, total_cost = _merge_usage_totals(
+            total_in, total_out, total_cost, usage
+        )
+    return translate_by_line, total_in, total_out, total_cost
+
+
+async def _run_simple_translation_batches(
+    item_chunks: list[list[tuple[int, str]]],
+    translate_fn: Any,
+    batch_sem: asyncio.Semaphore,
+) -> tuple[dict[int, str], int, int, float]:
+    if not item_chunks:
+        return {}, 0, 0, 0.0
+
+    async def _run(chunk: list) -> tuple[dict[int, str], dict]:
+        async with batch_sem:
+            return await translate_fn(chunk)
+
+    outcomes = await asyncio.gather(*[_run(c) for c in item_chunks])
+    out: dict[int, str] = {}
+    total_in = total_out = 0
+    total_cost = 0.0
+    for trans, usage in outcomes:
+        out.update(trans)
+        total_in, total_out, total_cost = _merge_usage_totals(
+            total_in, total_out, total_cost, usage
+        )
+    return out, total_in, total_out, total_cost
+
+
+def _build_reading_batch_items(
+    preps: list[dict[str, Any]],
+    translate_by_line: dict[int, str],
+    *,
+    en2zh: bool = False,
+) -> list[tuple[int, str]]:
+    items: list[tuple[int, str]] = []
+    for prep in preps:
+        if _prep_has_pool_shortcut(prep):
+            continue
+        line_i = prep["line_i"]
+        suffix = (prep.get("schedule_suffix") or "").strip()
+        if prep.get("line_type") == "bible-reading":
+            if not prep.get("needs_batch"):
+                continue
+            text = (prep.get("line_for_retrieval") or prep.get("line") or "").strip()
+            if text:
+                items.append((line_i, text))
+            continue
+        if not suffix:
+            continue
+        body_part = (translate_by_line.get(line_i) or "").strip()
+        if not body_part:
+            continue
+        items.append((line_i, f"{body_part}{suffix}"))
+    return items
+
+
+def _split_reading_batch_results(
+    reading_items: list[tuple[int, str]],
+    reading_out: dict[int, str],
+    translate_by_line: dict[int, str],
+    preps_by_i: dict[int, dict[str, Any]],
+) -> tuple[dict[int, str], dict[int, str]]:
+    """返回 (读经整行结果, 读经后缀片段)。"""
+    full_by_line: dict[int, str] = {}
+    suffix_by_line: dict[int, str] = {}
+    for line_i, input_text in reading_items:
+        full = (reading_out.get(line_i) or input_text).strip()
+        prep = preps_by_i.get(line_i, {})
+        if prep.get("line_type") == "bible-reading":
+            full_by_line[line_i] = full
+            continue
+        body_part = (translate_by_line.get(line_i) or "").strip()
+        if body_part and full.startswith(body_part):
+            suffix_by_line[line_i] = full[len(body_part) :]
+        else:
+            suffix_by_line[line_i] = full
+    return full_by_line, suffix_by_line
+
+
 def _append_source_en(body_en: str, prep: dict[str, Any]) -> str:
     text = (body_en or "").strip()
     source_en = (prep.get("reference_source_en") or "").strip()
@@ -1894,7 +2462,7 @@ def _source_group_kwargs(prep: dict[str, Any], *, en2zh: bool = False) -> dict[s
         return {
             "reference_source_zh": prep.get("reference_source_zh_result") or "",
             "reference_source_zh_list": prep.get("reference_source_en_list") or [],
-            "reference_source_en": prep.get("reference_source_en") or "",
+            "reference_source_en": prep.get("reference_source_zh_result") or "",
         }
     return {
         "reference_source_zh": prep.get("reference_source_zh") or "",
@@ -1909,10 +2477,25 @@ async def _assemble_line(
     translate_by_line: dict[int, str],
     *,
     en2zh: bool = False,
+    reading_full_by_line: dict[int, str] | None = None,
+    suffix_by_line: dict[int, str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     line_i = prep["line_i"]
     line = prep["line"]
+
+    if prep.get("line_type") == "source":
+        if prep.get("source_is_empty"):
+            return "", _build_line_ref_group(
+                line_i, line, [], line_type="source", gemini_translate=""
+            )
+        out = (prep.get("pool_line_en") or line).strip()
+        return out, _build_line_ref_group(
+            line_i, line, [], line_type="source", gemini_translate=out
+        )
+
     src_kw = _source_group_kwargs(prep, en2zh=en2zh)
+    reading_full = reading_full_by_line or {}
+    suffix_map = suffix_by_line or {}
 
     def _append_source(body: str) -> str:
         if en2zh:
@@ -1965,8 +2548,14 @@ async def _assemble_line(
             **src_kw,
         )
 
-    translate_line = (prep.get("line_for_retrieval") or line).strip()
-    body = (translate_by_line.get(line_i) or translate_line).strip()
+    if prep.get("line_type") == "bible-reading" and line_i in reading_full:
+        body = reading_full[line_i]
+    else:
+        translate_line = (prep.get("schedule_body") or prep.get("line_for_retrieval") or line).strip()
+        body = (translate_by_line.get(line_i) or translate_line).strip()
+        suffix_part = suffix_map.get(line_i, "")
+        if suffix_part:
+            body = f"{body}{suffix_part}"
     body = _append_source(body)
     is_feasts = bool(prep.get("feasts_line"))
     return body, _build_line_ref_group(
@@ -1978,6 +2567,86 @@ async def _assemble_line(
         feasts_line=is_feasts,
         **src_kw,
     )
+
+
+async def _run_gemini_translation_phases(
+    preps: list[dict[str, Any]],
+    prompt_extra: str,
+    *,
+    en2zh: bool = False,
+) -> tuple[dict[int, str], dict[int, str], dict[int, str], int, int, float]:
+    """正文 / Feasts 正文 / 读经 batch；返回 translate、读经整行、后缀及 token 统计。"""
+    for prep in preps:
+        _enrich_prep_schedule_fields(prep, en2zh=en2zh)
+
+    preps_by_i = {p["line_i"]: p for p in preps}
+    batch_sem = asyncio.Semaphore(10)
+    translate_by_line: dict[int, str] = {}
+    total_in = total_out = 0
+    total_cost = 0.0
+
+    body_items = [
+        (
+            prep["line_i"],
+            prep["schedule_body"],
+            prep.get("deduped_refs") or [],
+            prompt_extra,
+        )
+        for prep in preps
+        if prep["needs_batch"]
+        and not prep.get("feasts_line")
+        and not _prep_has_pool_shortcut(prep)
+        and prep.get("line_type") != "bible-reading"
+    ]
+    body_trans, ti, to, tc = await _run_body_translation_batches(
+        body_items,
+        preps_by_i,
+        en2zh=en2zh,
+        batch_sem=batch_sem,
+    )
+    translate_by_line.update(body_trans)
+    total_in, total_out, total_cost = ti, to, tc
+
+    feasts_items = [
+        (
+            prep["line_i"],
+            _feasts_body_without_suffix(
+                prep["feasts_line"],
+                prep.get("schedule_suffix") or "",
+            ),
+        )
+        for prep in preps
+        if prep.get("feasts_line")
+    ]
+    feasts_fn = _translate_batch_feasts_zh if en2zh else _translate_batch_feasts
+    feasts_trans, ti, to, tc = await _run_simple_translation_batches(
+        chunk_with_tail_merge(feasts_items),
+        feasts_fn,
+        batch_sem,
+    )
+    translate_by_line.update(feasts_trans)
+    total_in, total_out, total_cost = _merge_usage_totals(
+        total_in, total_out, total_cost,
+        {"in_tok": ti, "out_tok": to, "cost_usd": tc},
+    )
+
+    reading_items = _build_reading_batch_items(
+        preps, translate_by_line, en2zh=en2zh
+    )
+    reading_fn = _translate_batch_reading_zh if en2zh else _translate_batch_reading
+    reading_trans, ti, to, tc = await _run_simple_translation_batches(
+        chunk_with_tail_merge(reading_items),
+        reading_fn,
+        batch_sem,
+    )
+    reading_full, suffix_map = _split_reading_batch_results(
+        reading_items, reading_trans, translate_by_line, preps_by_i
+    )
+    total_in, total_out, total_cost = _merge_usage_totals(
+        total_in, total_out, total_cost,
+        {"in_tok": ti, "out_tok": to, "cost_usd": tc},
+    )
+    return translate_by_line, reading_full, suffix_map, total_in, total_out, total_cost
 
 
 async def enhanced_translate(
@@ -2041,53 +2710,14 @@ async def enhanced_translate(
                 f"第 {line_no} 行检索未命中参考语料，已降级为无参考纯翻译"
             )
 
-    batch_items = [
-        (
-            prep["line_i"],
-            prep.get("line_for_retrieval") or prep["line"],
-            prep["deduped_refs"],
-            prompt_extra,
-        )
-        for prep in preps
-        if prep["needs_batch"] and not prep.get("line_cached_en") and not prep.get("feasts_line")
-    ]
-
-    feasts_items = [
-        (prep["line_i"], prep["feasts_line"])
-        for prep in preps
-        if prep.get("feasts_line")
-    ]
-
-    chunks = [batch_items[i : i + 10] for i in range(0, len(batch_items), 10)]
-    batch_sem = asyncio.Semaphore(10)
-
-    async def _run_batch_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
-        async with batch_sem:
-            return await _translate_batch(chunk)
-
-    batch_outcomes = await asyncio.gather(*[_run_batch_chunk(c) for c in chunks]) if chunks else []
-    translate_by_line: dict[int, str] = {}
-    total_in_tok = 0
-    total_out_tok = 0
-    total_cost_usd = 0.0
-    for trans, usage in batch_outcomes:
-        translate_by_line.update(trans)
-        total_in_tok += usage.get("in_tok", 0)
-        total_out_tok += usage.get("out_tok", 0)
-        total_cost_usd += usage.get("cost_usd", 0.0)
-
-    feasts_chunks = [feasts_items[i : i + 10] for i in range(0, len(feasts_items), 10)]
-
-    async def _run_feasts_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
-        async with batch_sem:
-            return await _translate_batch_feasts(chunk)
-
-    feasts_outcomes = await asyncio.gather(*[_run_feasts_chunk(c) for c in feasts_chunks]) if feasts_chunks else []
-    for trans, usage in feasts_outcomes:
-        translate_by_line.update(trans)
-        total_in_tok += usage.get("in_tok", 0)
-        total_out_tok += usage.get("out_tok", 0)
-        total_cost_usd += usage.get("cost_usd", 0.0)
+    (
+        translate_by_line,
+        reading_full_by_line,
+        suffix_by_line,
+        total_in_tok,
+        total_out_tok,
+        total_cost_usd,
+    ) = await _run_gemini_translation_phases(preps, prompt_extra, en2zh=False)
 
     source_items = [
         (
@@ -2104,9 +2734,45 @@ async def enhanced_translate(
     for i, prep in enumerate(preps):
         prep["reference_source_en"] = source_en_map.get(i, "")
 
+    # source 行出处翻译
+    all_source_preps = [
+        p for p in preps
+        if p.get("line_type") == "source" and not p.get("source_is_empty")
+    ]
+    # 已有 Pool 缓存的 source 行直接用 line_cached_en
+    for p in all_source_preps:
+        cached = (p.get("line_cached_en") or "").strip()
+        if cached:
+            p["pool_line_en"] = cached
+    # 需要翻译的 source 行：有 source_content 且没有缓存
+    source_preps = [
+        p for p in all_source_preps
+        if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
+    ]
+    if source_preps:
+        source_items = [
+            (p["line_i"], [p["source_content"]], [], False)
+            for p in source_preps
+        ]
+        source_map, source_cost = await translate_source_zh_batch(source_items)
+        total_cost_usd += source_cost
+        for p in source_preps:
+            translated = source_map.get(p["line_i"], "")
+            if translated:
+                inner = translated.strip("（）()")
+                p["pool_line_en"] = p["source_prefix"] + inner
+            else:
+                p["pool_line_en"] = p["line"].strip()
+
     results = await asyncio.gather(
-        *[
-            _assemble_line(prep, prompt_extra, translate_by_line)
+            *[
+            _assemble_line(
+                prep,
+                prompt_extra,
+                translate_by_line,
+                reading_full_by_line=reading_full_by_line,
+                suffix_by_line=suffix_by_line,
+            )
             for prep in preps
         ]
     )
@@ -2148,6 +2814,9 @@ async def _retrieve_line_en2zh(
     *,
     line_type: str,
 ) -> dict[str, Any]:
+    if line_type == "source":
+        return await _retrieve_source_line(line_i, line)
+
     line_for_retrieval, reference_source_en_list = parse_source_from_line_en(line)
     prefix, body, suffix = _strip_en_scripture_suffix(line_for_retrieval)
     _src_en = {
@@ -2157,7 +2826,7 @@ async def _retrieve_line_en2zh(
     }
 
     if line.strip():
-        pool_zh = await _pool_lookup_en2zh(line)
+        pool_zh = await _pool_lookup_en2zh(line_for_retrieval)
         if pool_zh is not None:
             return {
                 "line_i": line_i,
@@ -2172,7 +2841,7 @@ async def _retrieve_line_en2zh(
                 **_src_en,
             }
 
-    if line_type in ("bible-reading", "title"):
+    if line_type == "bible-reading":
         return {
             "line_i": line_i,
             "line": line,
@@ -2186,10 +2855,192 @@ async def _retrieve_line_en2zh(
             **_src_en,
         }
 
+    if line_type == "title":
+        pool_exact = await _pool_exact_match_en(line_for_retrieval)
+        if pool_exact is not None:
+            return {
+                "line_i": line_i,
+                "line": line,
+                "body": body,
+                "line_type": line_type,
+                "line_refs": [],
+                "deduped_refs": [],
+                "needs_batch": False,
+                "line_cached_en": "",
+                "pool_line_en": pool_exact,
+                **_src_en,
+            }
+        title_part = _strip_title_prefix_en(body)
+        if title_part:
+            norm_title = normalize_en(title_part)
+            hits1 = await _bm25_hits_en(title_part, ctx.bm25_index, 300)
+            hits2 = []
+            if title_part != body:
+                hits2 = await _bm25_hits_en(body, ctx.bm25_index, 300)
+            candidates = _dedupe_hits_by_zh(hits1 + hits2)
+            if candidates:
+                scored = []
+                for h in candidates:
+                    hit_en = (h.get("en") or "").strip()
+                    nh = normalize_en(hit_en)
+                    dist = levenshtein_distance(nh, norm_title)
+                    scored.append(((dist, len(nh)), h))
+                scored.sort(key=lambda x: x[0])
+                dist = scored[0][0][0]
+                ratio = dist / len(norm_title) if norm_title else 1.0
+                pick_n = 1 if ratio < 0.2 else min(2, len(scored))
+                picked = [h for _, h in scored[:pick_n]]
+                line_refs = []
+                for ci, h in enumerate(picked):
+                    enriched = await _enrich_hit_zh(dict(h), ctx)
+                    enriched["match_kind"] = "retrieved"
+                    enriched["source_type"] = "main" if ci == 0 else "clause"
+                    enriched["clauses"] = []
+                    line_refs.append(_build_ref_entry(line_i, ci, body, enriched))
+                deduped_refs = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
+                return {
+                    "line_i": line_i,
+                    "line": line,
+                    "body": body,
+                    "line_type": line_type,
+                    "line_refs": line_refs,
+                    "deduped_refs": deduped_refs,
+                    "needs_batch": True,
+                    "line_cached_en": "",
+                    "pool_line_en": "",
+                    **_src_en,
+                }
+        return {
+            "line_i": line_i,
+            "line": line,
+            "body": body,
+            "line_type": line_type,
+            "line_refs": [],
+            "deduped_refs": [],
+            "needs_batch": True,
+            "line_cached_en": "",
+            "pool_line_en": "",
+            "degraded_no_refs": True,
+            **_src_en,
+        }
+
     if line_type == "outline":
         clauses = _split_body(body)
     else:
         clauses = [body] if body.strip() else []
+
+    if line_type == "reference":
+        if line_for_retrieval.strip():
+            pool_zh = await _pool_lookup_en2zh(line_for_retrieval)
+            if pool_zh is not None:
+                return {
+                    "line_i": line_i,
+                    "line": line,
+                    "body": body,
+                    "line_type": line_type,
+                    "line_refs": [],
+                    "deduped_refs": [],
+                    "needs_batch": False,
+                    "line_cached_en": "",
+                    "pool_line_en": pool_zh,
+                    **_src_en,
+                }
+            fuzzy_zh = await _pool_fuzzy_match_en(line_for_retrieval)
+            if fuzzy_zh is not None:
+                return {
+                    "line_i": line_i,
+                    "line": line,
+                    "body": body,
+                    "line_type": line_type,
+                    "line_refs": [],
+                    "deduped_refs": [],
+                    "needs_batch": False,
+                    "line_cached_en": "",
+                    "pool_line_en": fuzzy_zh,
+                    **_src_en,
+                }
+            contains_hit = await _pool_contains_match_en(line_for_retrieval)
+            if contains_hit is not None:
+                enriched = await _enrich_hit_zh(contains_hit, ctx)
+                enriched["match_kind"] = "exact"
+                line_refs = [_build_ref_entry(line_i, 0, body, enriched)]
+                deduped_refs = _assign_paragraph_numbers(line_refs)
+                return {
+                    "line_i": line_i,
+                    "line": line,
+                    "body": body,
+                    "line_type": line_type,
+                    "line_refs": line_refs,
+                    "deduped_refs": deduped_refs,
+                    "needs_batch": True,
+                    "line_cached_en": "",
+                    "pool_line_en": "",
+                    **_src_en,
+                }
+
+        main_hit_r: dict[str, Any] | None = None
+        whole_hits = await _bm25_hits_en(line_for_retrieval, ctx.bm25_index, 1)
+        if whole_hits:
+            main_hit_r = await _enrich_hit_zh(dict(whole_hits[0]), ctx)
+            main_hit_r["match_kind"] = "retrieved"
+            main_hit_r["source_type"] = "main"
+            main_hit_r["clauses"] = []
+
+        ref_clauses = _split_sentences_en(body or line_for_retrieval)
+        existing_ids: set[str] = set()
+        if main_hit_r:
+            cid = _hit_chunk_id(main_hit_r)
+            if cid:
+                existing_ids.add(cid)
+        main_ref_en = (main_hit_r.get("en") or "") if main_hit_r else ""
+        clause_hits: list[dict[str, Any]] = []
+        for cl in ref_clauses:
+            ch = await _clause_retrieval_en_bm25(cl, ctx, existing_ids, main_ref_en)
+            if ch:
+                enriched_ch = await _enrich_hit_zh(dict(ch), ctx)
+                enriched_ch["match_kind"] = "retrieved"
+                enriched_ch["source_type"] = "clause"
+                clause_hits.append(enriched_ch)
+                cid = _hit_chunk_id(enriched_ch)
+                if cid:
+                    existing_ids.add(cid)
+            if len(clause_hits) >= 2:
+                break
+
+        if not main_hit_r and not clause_hits:
+            return {
+                "line_i": line_i,
+                "line": line,
+                "body": body,
+                "line_type": line_type,
+                "line_refs": [],
+                "deduped_refs": [],
+                "needs_batch": True,
+                "line_cached_en": "",
+                "pool_line_en": "",
+                "degraded_no_refs": True,
+                **_src_en,
+            }
+
+        ref_clause = body.strip() or line_for_retrieval.strip()
+        line_refs: list[dict[str, Any]] = []
+        if main_hit_r:
+            line_refs.append(_build_ref_entry(line_i, 0, ref_clause, main_hit_r))
+        for ci, ch in enumerate(clause_hits, 1):
+            line_refs.append(_build_ref_entry(line_i, ci, ref_clause, ch))
+        deduped_refs = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
+        return {
+            "line_i": line_i,
+            "line": line,
+            "body": body,
+            "line_type": line_type,
+            "line_refs": line_refs,
+            "deduped_refs": deduped_refs,
+            "needs_batch": True,
+            "line_cached_en": "",
+            "pool_line_en": "",
+            **_src_en,
+        }
 
     if line_type == "outline" and body.strip():
         feasts_hits = await _outline_body_pool_exact_en(body)
@@ -2253,15 +3104,17 @@ async def _retrieve_line_en2zh(
     line_exact = gather_results[0]
     body_bm25 = gather_results[1]
     clause_groups = gather_results[2:]
-    clause_hits = [h for group in clause_groups for h in group]
+    clause_hits_flat = [h for group in clause_groups for h in group]
 
-    merged_hits = _dedupe_hits_by_chunk_id(line_exact + body_bm25 + clause_hits)
+    merged_hits = _dedupe_hits_by_chunk_id(line_exact + body_bm25 + clause_hits_flat)
 
     if not merged_hits:
         feasts_raw = await _bm25_hits_en(line, "feasts", 50)
         if feasts_raw:
             async with _RERANK_SEM:
-                feasts_reranked, rerank_warn = await rerank(feasts_raw, body.strip() or line.strip(), 1)
+                feasts_reranked, rerank_warn = await rerank(
+                    feasts_raw, body.strip() or line.strip(), 1
+                )
             if rerank_warn:
                 ctx.warnings.append(rerank_warn)
             if feasts_reranked:
@@ -2308,20 +3161,37 @@ async def _retrieve_line_en2zh(
             **_src_en,
         }
 
-    top = dict(reranked_main[0])
-    if top.get("match_kind") != "exact":
-        top["match_kind"] = "retrieved"
+    clauses_en = _split_body_en(body)
+    existing_ids = {_hit_chunk_id(h) for h in reranked_main if _hit_chunk_id(h)}
+    main_ref_en = (reranked_main[0].get("en") or "") if reranked_main else ""
+    clause_hits: list[dict[str, Any]] = []
+    for cl in clauses_en:
+        ch = await _clause_retrieval_en_bm25(cl, ctx, existing_ids, main_ref_en)
+        if ch:
+            enriched_ch = await _enrich_hit_zh(dict(ch), ctx)
+            enriched_ch["match_kind"] = "retrieved"
+            enriched_ch["source_type"] = "clause"
+            clause_hits.append(enriched_ch)
+            cid = _hit_chunk_id(enriched_ch)
+            if cid:
+                existing_ids.add(cid)
+        if len(clause_hits) >= 2:
+            break
 
-    ref_clause = body.strip() or line.strip()
-    line_refs = [_build_ref_entry(line_i, 0, ref_clause, top)]
-    deduped_refs = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
+    top = await _enrich_hit_zh(dict(reranked_main[0]), ctx)
+    top["match_kind"] = "retrieved" if top.get("match_kind") != "exact" else "exact"
+    top["source_type"] = "main"
+    all_refs = [_build_ref_entry(line_i, 0, body, top)]
+    for ci, ch in enumerate(clause_hits, 1):
+        all_refs.append(_build_ref_entry(line_i, ci, body, ch))
+    deduped_refs = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(all_refs))
 
     return {
         "line_i": line_i,
         "line": line,
         "body": body,
         "line_type": line_type,
-        "line_refs": line_refs,
+        "line_refs": all_refs,
         "deduped_refs": deduped_refs,
         "needs_batch": True,
         "line_cached_en": "",
@@ -2382,56 +3252,14 @@ async def enhanced_translate_en2zh(
                 f"第 {line_no} 行检索未命中参考语料，已降级为无参考纯翻译"
             )
 
-    batch_items = [
-        (
-            prep["line_i"],
-            prep.get("line_for_retrieval") or prep["line"],
-            prep["deduped_refs"],
-            prompt_extra,
-        )
-        for prep in preps
-        if prep["needs_batch"] and not prep.get("line_cached_en") and not prep.get("feasts_line")
-    ]
-
-    feasts_zh_items = [
-        (prep["line_i"], prep["feasts_line"])
-        for prep in preps
-        if prep.get("feasts_line")
-    ]
-
-    chunks = [batch_items[i : i + 10] for i in range(0, len(batch_items), 10)]
-    batch_sem = asyncio.Semaphore(10)
-
-    async def _run_batch_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
-        async with batch_sem:
-            return await _translate_batch_en2zh(chunk)
-
-    batch_outcomes = await asyncio.gather(*[_run_batch_chunk(c) for c in chunks]) if chunks else []
-    translate_by_line: dict[int, str] = {}
-    total_in_tok = 0
-    total_out_tok = 0
-    total_cost_usd = 0.0
-    for trans, usage in batch_outcomes:
-        translate_by_line.update(trans)
-        total_in_tok += usage.get("in_tok", 0)
-        total_out_tok += usage.get("out_tok", 0)
-        total_cost_usd += usage.get("cost_usd", 0.0)
-
-    feasts_zh_chunks = [feasts_zh_items[i : i + 10] for i in range(0, len(feasts_zh_items), 10)]
-
-    async def _run_feasts_zh_chunk(chunk: list) -> tuple[dict[int, str], dict[str, int]]:
-        async with batch_sem:
-            return await _translate_batch_feasts_zh(chunk)
-
-    feasts_zh_outcomes = (
-        await asyncio.gather(*[_run_feasts_zh_chunk(c) for c in feasts_zh_chunks])
-        if feasts_zh_chunks else []
-    )
-    for trans, usage in feasts_zh_outcomes:
-        translate_by_line.update(trans)
-        total_in_tok += usage.get("in_tok", 0)
-        total_out_tok += usage.get("out_tok", 0)
-        total_cost_usd += usage.get("cost_usd", 0.0)
+    (
+        translate_by_line,
+        reading_full_by_line,
+        suffix_by_line,
+        total_in_tok,
+        total_out_tok,
+        total_cost_usd,
+    ) = await _run_gemini_translation_phases(preps, prompt_extra, en2zh=True)
 
     source_items = [
         (
@@ -2448,8 +3276,48 @@ async def enhanced_translate_en2zh(
     for i, prep in enumerate(preps):
         prep["reference_source_zh_result"] = source_zh_map.get(i, "")
 
+    # source 行出处翻译（英翻中）
+    all_source_preps = [
+        p for p in preps
+        if p.get("line_type") == "source" and not p.get("source_is_empty")
+    ]
+    # 已有 Pool 缓存的 source 行直接用 line_cached_en
+    for p in all_source_preps:
+        cached = (p.get("line_cached_en") or "").strip()
+        if cached:
+            p["pool_line_en"] = cached
+    # 需要翻译的 source 行：有 source_content 且没有缓存
+    source_preps = [
+        p for p in all_source_preps
+        if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
+    ]
+    if source_preps:
+        source_items = [
+            (p["line_i"], [p["source_content"]], [], False)
+            for p in source_preps
+        ]
+        source_map, source_cost = await translate_source_en_batch(source_items)
+        total_cost_usd += source_cost
+        for p in source_preps:
+            translated = source_map.get(p["line_i"], "")
+            if translated:
+                inner = translated.strip("（）()")
+                p["pool_line_en"] = p["source_prefix"] + inner
+            else:
+                p["pool_line_en"] = p["line"].strip()
+
     results = await asyncio.gather(
-        *[_assemble_line(prep, prompt_extra, translate_by_line, en2zh=True) for prep in preps]
+        *[
+            _assemble_line(
+                prep,
+                prompt_extra,
+                translate_by_line,
+                en2zh=True,
+                reading_full_by_line=reading_full_by_line,
+                suffix_by_line=suffix_by_line,
+            )
+            for prep in preps
+        ]
     )
 
     out_lines: list[str] = []

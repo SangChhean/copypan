@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from user.token import test_token
-from features.enhanced_translate.pool import lookup_line_en, update_record
+from features.enhanced_translate.pool import lookup_line_en, update_record, update_record_en2zh
 from features.enhanced_translate.service import (
     MAX_CONTENT_CHARS,
     _INDICES_DENSE,
@@ -47,6 +47,7 @@ class EnhancedTranslateRequest(BaseModel):
 class UpdateTranslationRequest(BaseModel):
     original_line: str = Field(..., min_length=1, max_length=10_000)
     new_translation: str = Field(..., min_length=1, max_length=10_000)
+    direction: str = Field(default="zh2en")  # "zh2en" 或 "en2zh"
 
 
 @router.post(
@@ -78,7 +79,15 @@ async def api_enhanced_translate_en2zh(req: EnhancedTranslateRequest):
     dependencies=[Depends(test_token)],
 )
 async def api_update_translation(req: UpdateTranslationRequest):
-    updated = update_record(req.original_line, req.new_translation)
+    if req.direction == "en2zh":
+        if not any(c.isascii() and c.isalpha() for c in req.original_line):
+            return {
+                "success": False,
+                "error": "英翻中方向的 original_line 必须是英文",
+            }
+        updated = update_record_en2zh(req.original_line, req.new_translation)
+    else:
+        updated = update_record(req.original_line, req.new_translation)
     if not updated:
         return {
             "success": False,
@@ -100,7 +109,7 @@ async def _resolve_source_en_no_gemini(
         return ""
     en_parts: list[str] = []
     for src in source_list:
-        hit_en, _, _ = await _kg_rag_source_lookup(src)
+        hit_en, _, _, _ = await _kg_rag_source_lookup(src)
         en_parts.append(hit_en)
     return format_source_en(en_parts, bracket_has_star(reference_source_zh))
 

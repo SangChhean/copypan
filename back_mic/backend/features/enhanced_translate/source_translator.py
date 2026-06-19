@@ -5,9 +5,11 @@ reference_source_zh 解析与翻译。
 """
 from __future__ import annotations
 
+import json
 import re
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 from es_config import es as es_client
@@ -18,6 +20,75 @@ from features.enhanced_translate.prompts import (
 )
 
 logger = logging.getLogger("ai_search.enhanced_translate_source")
+
+
+# ── source_pairs.json 出处对照表 ──────────────────────────────────────────────
+
+import os as _os
+
+_SOURCE_PAIRS_PATH = _os.path.join(
+    _os.path.dirname(__file__), "..", "..", "data", "enhanced_translate", "source_pairs.json"
+)
+
+# 中翻英：norm_zh → source_en（带半角括号）
+_SOURCE_ZH_TO_EN: dict[str, str] = {}
+# 英翻中：norm_en(source_en去括号) → source_zh（带全角括号）
+_SOURCE_EN_TO_ZH: dict[str, str] = {}
+
+
+def _load_source_pairs() -> None:
+    global _SOURCE_ZH_TO_EN, _SOURCE_EN_TO_ZH
+    try:
+        with open(_SOURCE_PAIRS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        zh_to_en: dict[str, str] = {}
+        en_to_zh: dict[str, str] = {}
+        for index_name, index_data in data.items():
+            if index_name == "meta":
+                continue
+            for v in index_data.values():
+                source_zh = (v.get("source_zh") or "").strip()
+                source_en = (v.get("source_en") or "").strip()
+                norm_zh = (v.get("norm_zh") or "").strip()
+                if source_zh and source_en and norm_zh:
+                    zh_to_en[norm_zh] = source_en
+                    en_inner = source_en.strip("()")
+                    norm_en = normalize_en(en_inner)
+                    if norm_en:
+                        en_to_zh[norm_en] = source_zh
+        _SOURCE_ZH_TO_EN = zh_to_en
+        _SOURCE_EN_TO_ZH = en_to_zh
+        logger.info(
+            "[source_translator] source_pairs 加载完成：zh→en %d 条，en→zh %d 条",
+            len(_SOURCE_ZH_TO_EN), len(_SOURCE_EN_TO_ZH),
+        )
+    except Exception as e:
+        logger.warning("[source_translator] source_pairs 加载失败: %s", e)
+
+
+_load_source_pairs()
+
+
+def lookup_source_en(source_zh_base: str) -> str:
+    """
+    中翻英：用中文出处（已剥段号，无括号）查英文出处。
+    命中返回带半角括号的英文出处，未命中返回空字符串。
+    """
+    if not source_zh_base:
+        return ""
+    key = normalize_zh(source_zh_base)
+    return _SOURCE_ZH_TO_EN.get(key, "")
+
+
+def lookup_source_zh(source_en_base: str) -> str:
+    """
+    英翻中：用英文出处（已剥段号和括号）查中文出处。
+    命中返回带全角括号的中文出处，未命中返回空字符串。
+    """
+    if not source_en_base:
+        return ""
+    key = normalize_en(source_en_base)
+    return _SOURCE_EN_TO_ZH.get(key, "")
 
 
 # ── 1. 解析剥离 ──────────────────────────────────────────────
@@ -701,8 +772,14 @@ async def _gemini_translate_sources_en2zh(
         from features.enhanced_translate.service import _call_gemini_sync
 
         cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
+        use_terminology = not bool(ref_block)
         text, cumulative = await asyncio.to_thread(
-            _call_gemini_sync, contents, 0, None, cumulative
+            _call_gemini_sync,
+            contents,
+            0,
+            None,
+            cumulative,
+            use_terminology=use_terminology,
         )
         cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
         if text:
@@ -726,60 +803,57 @@ async def translate_source_en_batch(
     """
     批量翻译英文出处为中文。
     items: [(prep_index, source_en_list, line_refs, has_star), ...]
-    返回：({prep_index: source_zh}, 出处翻译 Gemini 费用 USD)
-    路1：节期类 feasts pool 反向匹配
-    路2：Gemini 批量兜底
+    整单一次 Gemini 处理所有路2 未命中出处。
     """
     if not items:
         return {}, 0.0
     results: dict[int, str] = {}
     total_cost_usd = 0.0
-    gemini_tasks: list[
-        tuple[int, list[tuple[int, str]], list[dict[str, Any]], list[str], bool]
-    ] = []
-    for prep_idx, source_list, line_refs, has_star in items:
+    road2_tasks: list[_SourceRoad2TaskEn2zh] = []
+    pending: dict[int, tuple[list[str], list[str]]] = {}
+
+    for prep_idx, source_list, line_refs, _has_star in items:
         if not source_list:
             continue
         zh_parts = [""] * len(source_list)
-        miss: list[tuple[int, str]] = []
         for i, source_en in enumerate(source_list):
             base = _strip_en_paragraph_suffix(source_en)
             if _EN_SOURCE_YEAR_PREFIX_RE.match(base):
                 hit_zh = await _feasts_pool_lookup_en(source_en)
                 if hit_zh:
-                    zh_parts[i] = f"（{hit_zh}）"
-                    logger.info("[source_translator] 路1命中: %s → %s", source_en, zh_parts[i])
-                else:
-                    miss.append((i, source_en))
-            else:
-                miss.append((i, source_en))
-        if miss:
-            gemini_tasks.append((prep_idx, miss, line_refs, zh_parts, has_star))
-        else:
-            results[prep_idx] = "；".join(p for p in zh_parts if p)
-    async def _run_line(
-        prep_idx: int,
-        miss: list[tuple[int, str]],
-        line_refs: list[dict[str, Any]],
-        zh_parts: list[str],
-        has_star: bool,
-    ) -> tuple[int, str, float]:
-        gemini_map, gemini_cost = await _gemini_translate_sources_en2zh(miss, line_refs)
-        for i, source_en in miss:
-            zh_parts[i] = gemini_map.get(i, source_en)
-            logger.info("[source_translator] 路2命中: %s → %s", source_en, zh_parts[i])
-        formatted = "；".join(p for p in zh_parts if p)
-        return prep_idx, formatted, gemini_cost
-    if gemini_tasks:
-        outcomes = await asyncio.gather(
-            *[
-                _run_line(prep_idx, miss, line_refs, zh_parts, has_star)
-                for prep_idx, miss, line_refs, zh_parts, has_star in gemini_tasks
-            ]
-        )
-        for prep_idx, source_zh, gemini_cost in outcomes:
-            total_cost_usd += gemini_cost
-            results[prep_idx] = source_zh
+                    zh_parts[i] = hit_zh
+                    logger.info("[source_translator] 路1a命中: %s → %s", source_en, zh_parts[i])
+                    continue
+            table_zh = lookup_source_zh(base)
+            if table_zh:
+                zh_parts[i] = table_zh.strip("（）")
+                logger.info("[source_translator] 路1b表命中: %s → %s", source_en, table_zh)
+                continue
+            road2_tasks.append(
+                _SourceRoad2TaskEn2zh(
+                    prep_idx=prep_idx,
+                    src_idx=i,
+                    source_en=source_en,
+                    line_refs=line_refs,
+                )
+            )
+        pending[prep_idx] = (zh_parts, source_list)
+
+    if road2_tasks:
+        logger.info("[source_translator] en2zh 出处整单 Gemini: road2=%d", len(road2_tasks))
+        gemini_map, gemini_cost = await _gemini_sources_once_en2zh(road2_tasks)
+        total_cost_usd += gemini_cost
+        for (prep_idx, src_idx), translated in gemini_map.items():
+            zh_parts, _ = pending[prep_idx]
+            zh_parts[src_idx] = translated.strip().strip("（）")
+
+    for prep_idx, (zh_parts, source_list) in pending.items():
+        for i, source_en in enumerate(source_list):
+            if not zh_parts[i]:
+                zh_parts[i] = source_en
+        parts = [p for p in zh_parts if p]
+        results[prep_idx] = "（" + "；".join(parts) + "）" if parts else ""
+
     return results, total_cost_usd
 
 
@@ -807,7 +881,12 @@ async def _gemini_infer_source_en(
 
         cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
         text, cumulative = await asyncio.to_thread(
-            _call_gemini_sync, contents, 0, None, cumulative
+            _call_gemini_sync,
+            contents,
+            0,
+            None,
+            cumulative,
+            use_terminology=False,
         )
         cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
         if text:
@@ -821,10 +900,15 @@ async def _gemini_infer_source_en(
     return "", 0.0
 
 
-async def _kg_rag_source_lookup(source_zh: str) -> tuple[str, str, float]:
+async def _kg_rag_source_lookup(
+    source_zh: str,
+    *,
+    defer_infer: bool = False,
+) -> tuple[str, str, float, dict[str, Any] | None]:
     """
     新路1：查 kg-rag 索引 source_zh/source_en。
-    返回 (英文出处, 段号英文如 p. 3, Gemini 费用 USD)；均未命中时首项为空串。
+    返回 (英文出处, 段号英文如 p. 3, Gemini 费用 USD, 推迟推算元数据)；
+    第四项非空时表示需 Gemini 距离推算（batch 模式 defer_infer=True）。
     """
     cost_usd = 0.0
     raw = (source_zh or "").strip()
@@ -840,7 +924,7 @@ async def _kg_rag_source_lookup(source_zh: str) -> tuple[str, str, float]:
         for variant in _lookup_variants(base):
             feast_en = await _feasts_pool_lookup(variant)
             if feast_en:
-                return f"{feast_en}{para_append}", para_display, cost_usd
+                return f"{feast_en}{para_append}", para_display, cost_usd, None
 
     hits = await _kg_rag_bm25_recall(base, top_k=20)
     candidates = _dedupe_source_candidates(hits, nq)
@@ -850,17 +934,17 @@ async def _kg_rag_source_lookup(source_zh: str) -> tuple[str, str, float]:
         if nz == nq or levenshtein_distance(nz, nq) <= 1:
             en = cand["source_en"]
             if en:
-                return f"{en}{para_append}", para_display, cost_usd
+                return f"{en}{para_append}", para_display, cost_usd, None
             if _YEAR_TRAINING_RE.match(base) or "训练" in base or "感恩节" in base:
                 feast_en = await _feasts_pool_lookup(base)
                 if feast_en:
-                    return f"{feast_en}{para_append}", para_display, cost_usd
+                    return f"{feast_en}{para_append}", para_display, cost_usd, None
 
     if not candidates:
         feast_en = await _feasts_pool_lookup(base)
         if feast_en:
-            return f"{feast_en}{para_append}", para_display, cost_usd
-        return "", para_display, cost_usd
+            return f"{feast_en}{para_append}", para_display, cost_usd, None
+        return "", para_display, cost_usd, None
 
     ranked = sorted(
         candidates,
@@ -869,11 +953,17 @@ async def _kg_rag_source_lookup(source_zh: str) -> tuple[str, str, float]:
             len(normalize_zh(c["source_zh"])),
         ),
     )[:6]
+    if defer_infer:
+        return "", para_display, cost_usd, {
+            "raw": raw,
+            "ranked": ranked,
+            "para_append": para_append,
+        }
     inferred, infer_cost = await _gemini_infer_source_en(raw, ranked)
     cost_usd += infer_cost
     if inferred:
-        return f"{inferred}{para_append}", para_display, cost_usd
-    return "", para_display, cost_usd
+        return f"{inferred}{para_append}", para_display, cost_usd, None
+    return "", para_display, cost_usd, None
 
 
 class SourceLookupResult:
@@ -1022,6 +1112,153 @@ def _ref_block_from_line_refs(line_refs: list[dict[str, Any]]) -> str:
     return ""
 
 
+@dataclass
+class _SourceInferTask:
+    prep_idx: int
+    src_idx: int
+    source_zh: str
+    ranked: list[dict[str, Any]]
+    para_append: str
+
+
+@dataclass
+class _SourceRoad2Task:
+    prep_idx: int
+    src_idx: int
+    source_zh: str
+    line_refs: list[dict[str, Any]]
+
+
+@dataclass
+class _SourceRoad2TaskEn2zh:
+    prep_idx: int
+    src_idx: int
+    source_en: str
+    line_refs: list[dict[str, Any]]
+
+
+async def _gemini_sources_once(
+    infer_tasks: list[_SourceInferTask],
+    road2_tasks: list[_SourceRoad2Task],
+) -> tuple[dict[tuple[int, int], str], float]:
+    """整单一次 Gemini：路1 距离推算 + 路2 未命中出处。"""
+    if not infer_tasks and not road2_tasks:
+        return {}, 0.0
+
+    blocks: list[str] = []
+    keys: list[tuple[int, int, str, str]] = []
+    pos = 1
+    for task in infer_tasks:
+        ref_lines = [
+            f"参考 {i}:\nzh_source: {pair['source_zh']}\nen_source: {pair['source_en']}"
+            for i, pair in enumerate(task.ranked[:6], 1)
+        ]
+        blocks.append(
+            f"Source {pos}:\n待译出处：{task.source_zh}\n" + "\n".join(ref_lines)
+        )
+        keys.append((task.prep_idx, task.src_idx, task.para_append, "infer"))
+        pos += 1
+    for task in road2_tasks:
+        ref_block = _ref_block_from_line_refs(task.line_refs)
+        blocks.append(
+            f"Source {pos}: {task.source_zh}"
+            + (f"\n参考语料：{ref_block}" if ref_block else "")
+        )
+        keys.append((task.prep_idx, task.src_idx, "", "road2"))
+        pos += 1
+
+    contents = (
+        REFERENCE_SOURCE_TRANSLATE_PROMPT
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\n请逐条输出英文出处，格式：\n"
+        + "\n".join(f"Source {pos_i}: {{英文出处}}" for pos_i in range(1, len(keys) + 1))
+        + "\n不要在外层再加括号。"
+    )
+    use_terminology = not infer_tasks and all(
+        not _ref_block_from_line_refs(t.line_refs) for t in road2_tasks
+    )
+    out: dict[tuple[int, int], str] = {}
+    cost_usd = 0.0
+    try:
+        from features.enhanced_translate.service import _call_gemini_sync
+
+        cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
+        text, cumulative = await asyncio.to_thread(
+            _call_gemini_sync,
+            contents,
+            0,
+            None,
+            cumulative,
+            use_terminology=use_terminology,
+        )
+        cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
+        if text:
+            pattern = re.compile(r"^Source\s+(\d+)\s*:\s*(.+)$", re.MULTILINE)
+            for m in pattern.finditer(text):
+                idx = int(m.group(1)) - 1
+                if 0 <= idx < len(keys):
+                    prep_idx, src_idx, para_append, kind = keys[idx]
+                    translated = _clean_source_en(m.group(2).strip())
+                    if kind == "infer" and para_append:
+                        translated = f"{translated}{para_append}"
+                    out[(prep_idx, src_idx)] = translated
+    except Exception as e:
+        logger.warning("[source_translator] 出处整单 Gemini 失败: %s", e)
+    return out, cost_usd
+
+
+async def _gemini_sources_once_en2zh(
+    road2_tasks: list[_SourceRoad2TaskEn2zh],
+) -> tuple[dict[tuple[int, int], str], float]:
+    """英翻中：整单一次 Gemini 翻译未命中英文出处。"""
+    if not road2_tasks:
+        return {}, 0.0
+    blocks: list[str] = []
+    keys: list[tuple[int, int]] = []
+    for pos, task in enumerate(road2_tasks, 1):
+        ref_block = _ref_block_from_line_refs_en2zh(task.line_refs)
+        blocks.append(
+            f"Source {pos}: {task.source_en}"
+            + (f"\n参考语料：{ref_block}" if ref_block else "")
+        )
+        keys.append((task.prep_idx, task.src_idx))
+    contents = (
+        REFERENCE_SOURCE_TRANSLATE_PROMPT_EN2ZH
+        + "\n\n"
+        + "\n\n".join(blocks)
+        + "\n\n请逐条输出中文出处，格式：\n"
+        + "\n".join(f"Source {pos}: {{中文出处}}" for pos in range(1, len(keys) + 1))
+    )
+    use_terminology = all(
+        not _ref_block_from_line_refs_en2zh(t.line_refs) for t in road2_tasks
+    )
+    out: dict[tuple[int, int], str] = {}
+    cost_usd = 0.0
+    try:
+        from features.enhanced_translate.service import _call_gemini_sync
+
+        cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
+        text, cumulative = await asyncio.to_thread(
+            _call_gemini_sync,
+            contents,
+            0,
+            None,
+            cumulative,
+            use_terminology=use_terminology,
+        )
+        cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
+        if text:
+            pattern = re.compile(r"^Source\s+(\d+)\s*:\s*(.+)$", re.MULTILINE)
+            for m in pattern.finditer(text):
+                idx = int(m.group(1)) - 1
+                if 0 <= idx < len(keys):
+                    out[keys[idx]] = m.group(2).strip()
+    except Exception as e:
+        logger.warning("[source_translator] en2zh 出处整单 Gemini 失败: %s", e)
+    return out, cost_usd
+
+
 async def _gemini_translate_sources(
     numbered_sources: list[tuple[int, str]],
     line_refs: list[dict[str, Any]],
@@ -1052,8 +1289,14 @@ async def _gemini_translate_sources(
         from features.enhanced_translate.service import _call_gemini_sync
 
         cumulative: dict[str, Any] = {"in_tok": 0, "out_tok": 0, "cost_usd": 0.0}
+        use_terminology = not bool(ref_block)
         text, cumulative = await asyncio.to_thread(
-            _call_gemini_sync, contents, 0, None, cumulative
+            _call_gemini_sync,
+            contents,
+            0,
+            None,
+            cumulative,
+            use_terminology=use_terminology,
         )
         cost_usd = float(cumulative.get("cost_usd", 0.0) or 0.0)
         if text:
@@ -1092,7 +1335,7 @@ async def translate_source_zh(
     cost_usd = 0.0
 
     for i, source_zh in enumerate(source_list):
-        hit_en, _, lookup_cost = await _kg_rag_source_lookup(source_zh)
+        hit_en, _, lookup_cost, _ = await _kg_rag_source_lookup(source_zh)
         cost_usd += lookup_cost
         if hit_en:
             en_parts[i] = hit_en
@@ -1123,82 +1366,90 @@ async def translate_source_zh_batch(
     """
     批量翻译 reference_source_zh 列表。
     items: [(prep_index, source_list, line_refs, has_star), ...]
-    返回：({prep_index: source_en}, 出处翻译 Gemini 费用 USD)
-    方案 A：每条纲目内未命中路1的出处合并一次 Gemini（省 token）。
+    整单一次 Gemini 处理所有路1推算 + 路2 未命中出处。
     """
     if not items:
         return {}, 0.0
 
     results: dict[int, str] = {}
     total_cost_usd = 0.0
-    gemini_tasks: list[
-        tuple[int, list[tuple[int, str]], list[dict[str, Any]], list[str], bool]
-    ] = []
+    infer_tasks: list[_SourceInferTask] = []
+    road2_tasks: list[_SourceRoad2Task] = []
+    pending: dict[int, tuple[list[str], bool, list[str]]] = {}
 
     for prep_idx, source_list, line_refs, has_star in items:
         if not source_list:
             continue
 
         en_parts = [""] * len(source_list)
-        miss: list[tuple[int, str]] = []
 
         for i, source_zh in enumerate(source_list):
-            hit_en, _, lookup_cost = await _kg_rag_source_lookup(source_zh)
+            base, _ = _strip_paragraph_suffix(source_zh)
+            base = base.strip().strip("（）")
+            table_en = lookup_source_en(base)
+            if table_en:
+                en_parts[i] = table_en
+                logger.info("[source_translator] 路1b表命中: %s → %s", source_zh, table_en)
+                continue
+            hit_en, _, lookup_cost, infer_meta = await _kg_rag_source_lookup(
+                source_zh, defer_infer=True
+            )
             total_cost_usd += lookup_cost
             if hit_en:
                 en_parts[i] = hit_en
-                logger.info("[source_translator] 路1命中: %s → %s", source_zh, hit_en)
+                logger.info("[source_translator] 路1a命中: %s → %s", source_zh, hit_en)
+            elif infer_meta:
+                infer_tasks.append(
+                    _SourceInferTask(
+                        prep_idx=prep_idx,
+                        src_idx=i,
+                        source_zh=source_zh,
+                        ranked=infer_meta["ranked"],
+                        para_append=infer_meta.get("para_append") or "",
+                    )
+                )
             else:
-                miss.append((i, source_zh))
+                road2_tasks.append(
+                    _SourceRoad2Task(
+                        prep_idx=prep_idx,
+                        src_idx=i,
+                        source_zh=source_zh,
+                        line_refs=line_refs,
+                    )
+                )
 
-        if miss:
-            gemini_tasks.append((prep_idx, miss, line_refs, en_parts, has_star))
-        else:
-            results[prep_idx] = format_source_en(en_parts, has_star)
+        pending[prep_idx] = (en_parts, has_star, source_list)
+
+    if infer_tasks or road2_tasks:
+        logger.info(
+            "[source_translator] 出处整单 Gemini: infer=%d road2=%d",
+            len(infer_tasks),
+            len(road2_tasks),
+        )
+        gemini_map, gemini_cost = await _gemini_sources_once(infer_tasks, road2_tasks)
+        total_cost_usd += gemini_cost
+        for (prep_idx, src_idx), translated in gemini_map.items():
+            en_parts, _, _ = pending[prep_idx]
+            en_parts[src_idx] = translated
             logger.info(
-                "[source_translator] 出处译文 prep=%s %s | debug %s",
+                "[source_translator] Gemini出处: prep=%s idx=%s → %s",
                 prep_idx,
-                results[prep_idx],
-                format_source_en_analysis(en_parts, has_star),
+                src_idx,
+                translated,
             )
 
-    if gemini_tasks:
-        logger.info("[source_translator] 路2批量: %d 条纲目", len(gemini_tasks))
-
-    async def _run_line(
-        prep_idx: int,
-        miss: list[tuple[int, str]],
-        line_refs: list[dict[str, Any]],
-        en_parts: list[str],
-        has_star: bool,
-    ) -> tuple[int, str, float]:
-        gemini_map, gemini_cost = await _gemini_translate_sources(miss, line_refs)
-        for i, source_zh in miss:
-            en_parts[i] = gemini_map.get(i, source_zh)
-            logger.info(
-                "[source_translator] 路2命中: %s → %s",
-                source_zh,
-                en_parts[i],
-            )
+    for prep_idx, (en_parts, has_star, source_list) in pending.items():
+        for i, source_zh in enumerate(source_list):
+            if not en_parts[i]:
+                en_parts[i] = source_zh
         formatted = format_source_en(en_parts, has_star)
+        results[prep_idx] = formatted
         logger.info(
             "[source_translator] 出处译文 prep=%s %s | debug %s",
             prep_idx,
             formatted,
             format_source_en_analysis(en_parts, has_star),
         )
-        return prep_idx, formatted, gemini_cost
-
-    if gemini_tasks:
-        outcomes = await asyncio.gather(
-            *[
-                _run_line(prep_idx, miss, line_refs, en_parts, has_star)
-                for prep_idx, miss, line_refs, en_parts, has_star in gemini_tasks
-            ]
-        )
-        for prep_idx, source_en, gemini_cost in outcomes:
-            total_cost_usd += gemini_cost
-            results[prep_idx] = source_en
 
     return results, total_cost_usd
 

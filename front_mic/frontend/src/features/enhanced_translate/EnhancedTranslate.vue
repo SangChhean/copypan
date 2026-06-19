@@ -190,6 +190,7 @@ async function saveTranslation(group) {
       body: JSON.stringify({
         original_line: originalLine,
         new_translation: newTranslation,
+        direction: direction.value,
       }),
     });
     const data = await res.json().catch(() => ({}));
