@@ -40,7 +40,7 @@
               >×</button>
             </div>
             <a-button
-              v-if="burdenPoints.length < 5"
+              v-if="burdenPoints.length < 10"
               type="dashed"
               block
               class="add-btn"
@@ -135,7 +135,7 @@ function goHome() {
 }
 
 function addBurdenPoint() {
-  if (burdenPoints.value.length < 5) burdenPoints.value.push('')
+  if (burdenPoints.value.length < 10) burdenPoints.value.push('')
 }
 
 function removeBurdenPoint(idx) {
