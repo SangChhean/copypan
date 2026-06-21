@@ -34,15 +34,20 @@ _SOURCE_PAIRS_PATH = _os.path.join(
 _SOURCE_ZH_TO_EN: dict[str, str] = {}
 # 英翻中：norm_en(source_en去括号) → source_zh（带全角括号）
 _SOURCE_EN_TO_ZH: dict[str, str] = {}
+# 书名子表（从 source_pairs.json 加载时提取）
+_BOOK_TITLE_ZH_TO_EN: dict[str, str] = {}
+_BOOK_TITLE_EN_TO_ZH: dict[str, str] = {}
 
 
 def _load_source_pairs() -> None:
-    global _SOURCE_ZH_TO_EN, _SOURCE_EN_TO_ZH
+    global _SOURCE_ZH_TO_EN, _SOURCE_EN_TO_ZH, _BOOK_TITLE_ZH_TO_EN, _BOOK_TITLE_EN_TO_ZH
     try:
         with open(_SOURCE_PAIRS_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
         zh_to_en: dict[str, str] = {}
         en_to_zh: dict[str, str] = {}
+        book_zh_to_en: dict[str, str] = {}
+        book_en_to_zh: dict[str, str] = {}
         for index_name, index_data in data.items():
             if index_name == "meta":
                 continue
@@ -56,11 +61,24 @@ def _load_source_pairs() -> None:
                     norm_en = normalize_en(en_inner)
                     if norm_en:
                         en_to_zh[norm_en] = source_zh
+                # 提取书名子表（引号之间的英文书名 ↔ 对应中文书名）
+                en_title_m = re.search(r'"([^"]+)"', source_en)
+                if en_title_m:
+                    en_title = en_title_m.group(1).strip().rstrip(",")
+                    zh_inner = source_zh.strip().strip("（）")
+                    zh_parts = zh_inner.split("，")
+                    if len(zh_parts) >= 3:
+                        zh_title = zh_parts[1].strip()
+                        if zh_title and en_title:
+                            book_zh_to_en[zh_title] = en_title
+                            book_en_to_zh[en_title] = zh_title
         _SOURCE_ZH_TO_EN = zh_to_en
         _SOURCE_EN_TO_ZH = en_to_zh
+        _BOOK_TITLE_ZH_TO_EN = book_zh_to_en
+        _BOOK_TITLE_EN_TO_ZH = book_en_to_zh
         logger.info(
-            "[source_translator] source_pairs 加载完成：zh→en %d 条，en→zh %d 条",
-            len(_SOURCE_ZH_TO_EN), len(_SOURCE_EN_TO_ZH),
+            "[source_translator] source_pairs 加载完成：zh→en %d 条，en→zh %d 条，书名 %d 条",
+            len(_SOURCE_ZH_TO_EN), len(_SOURCE_EN_TO_ZH), len(_BOOK_TITLE_ZH_TO_EN),
         )
     except Exception as e:
         logger.warning("[source_translator] source_pairs 加载失败: %s", e)
@@ -121,14 +139,43 @@ _SOURCE_ANCHORS_LITERAL = [
     "彼得前书生命读经", "彼得后书生命读经",
     "约翰书信生命读经", "约翰一书生命读经", "约翰二书生命读经", "约翰三书生命读经",
     "犹大书生命读经", "启示录生命读经",
+    # 结晶读经（63卷，含上下合并卷）
+    "创世记结晶读经", "出埃及记结晶读经", "利未记结晶读经", "民数记结晶读经",
+    "申命记结晶读经", "约书亚记结晶读经", "士师记结晶读经", "路得记结晶读经",
+    "撒母耳记上下结晶读经", "撒母耳记上结晶读经", "撒母耳记下结晶读经",
+    "列王纪上下结晶读经", "列王纪上结晶读经", "列王纪下结晶读经",
+    "历代志上下结晶读经", "历代志上结晶读经", "历代志下结晶读经",
+    "历代志结晶读经",
+    "以斯拉记结晶读经", "尼希米记结晶读经", "以斯帖记结晶读经",
+    "约伯记结晶读经", "诗篇结晶读经", "箴言结晶读经", "传道书结晶读经",
+    "雅歌结晶读经", "以赛亚书结晶读经", "耶利米书结晶读经",
+    "耶利米哀歌结晶读经", "以西结书结晶读经", "但以理书结晶读经",
+    "何西阿书结晶读经", "约珥书结晶读经", "阿摩司书结晶读经",
+    "俄巴底亚书结晶读经", "约拿书结晶读经", "弥迦书结晶读经",
+    "那鸿书结晶读经", "哈巴谷书结晶读经", "西番雅书结晶读经",
+    "哈该书结晶读经", "撒迦利亚书结晶读经", "玛拉基书结晶读经",
+    "马太福音结晶读经", "马可福音结晶读经", "路加福音结晶读经",
+    "约翰福音结晶读经", "使徒行传结晶读经", "罗马书结晶读经",
+    "哥林多前书结晶读经", "哥林多后书结晶读经", "加拉太书结晶读经",
+    "以弗所书结晶读经", "腓立比书结晶读经", "歌罗西书结晶读经",
+    "帖撒罗尼迦前书结晶读经", "帖撒罗尼迦后书结晶读经",
+    "提摩太前书结晶读经", "提摩太后书结晶读经", "提多书结晶读经",
+    "腓利门书结晶读经", "希伯来书结晶读经", "雅各书结晶读经",
+    "彼得前书结晶读经", "彼得后书结晶读经",
+    "约翰书信结晶读经", "约翰一书结晶读经", "约翰二书结晶读经", "约翰三书结晶读经",
+    "犹大书结晶读经", "启示录结晶读经",
+    # 不分上下合并卷（生命读经）
+    "撒母耳记生命读经", "列王纪生命读经", "历代志生命读经",
+    # 不分上下合并卷（结晶读经）
+    "撒母耳记结晶读经", "列王纪结晶读经", "历代志结晶读经",
     # 文集
     "倪柝声文集", "李常受文集",
     # 其他
-    "新约总论", "真理课程", "圣经恢复本", "诗歌", "今时代神圣启示的先见",
+    "新约总论", "真理课程", "圣经恢复本", "诗歌", "今时代神圣启示的先见", "恢复本圣经",
 ]
 
 _LITERAL_ANCHORS_SORTED = sorted(_SOURCE_ANCHORS_LITERAL, key=len, reverse=True)
-_YEAR_ANCHOR_RE = re.compile(r"\d{4}年")
+_YEAR_ANCHOR_RE = re.compile(r"(?:\d{4}|[一二三四五六七八九〇]{4})年")
 
 
 def _anchor_len_at(inner: str, pos: int) -> int:
@@ -259,13 +306,113 @@ def parse_source_from_line(line: str) -> tuple[str, list[str]]:
 # ── 英文出处识别 ──────────────────────────────────────────────────────────────
 
 _EN_SOURCE_ANCHORS: list[str] = [
-    "Holy Bible",
+    "Holy Bible Recovery Version",
+    "The Conclusion of the New Testament",
+    "Conclusion of the New Testament",
+    "The Collected Works of Witness Lee",
+    "The Collected Works of Watchman Nee",
     "Life-study of",
     "Crystallization-study of",
     "CWWN",
     "CWWL",
 ]
 _EN_SOURCE_YEAR_RE = re.compile(r"^\d{4}\s+\w")
+
+# ── 路1c 规则翻译常量 ──────────────────────────────────────────────────────────
+
+# 书卷全称对照表（生命读经/结晶读经用）
+_LIFE_STUDY_BOOK_ZH_TO_EN: dict[str, str] = {
+    "创世记": "Genesis", "出埃及记": "Exodus", "利未记": "Leviticus",
+    "民数记": "Numbers", "申命记": "Deuteronomy", "约书亚记": "Joshua",
+    "士师记": "Judges", "路得记": "Ruth",
+    "撒母耳记上": "1 Samuel", "撒母耳记下": "2 Samuel",
+    "撒母耳记上下": "1 and 2 Samuel", "撒母耳记": "Samuel",
+    "列王纪上": "1 Kings", "列王纪下": "2 Kings",
+    "列王纪上下": "1 and 2 Kings", "列王纪": "Kings",
+    "历代志上": "1 Chronicles", "历代志下": "2 Chronicles",
+    "历代志上下": "1 and 2 Chronicles", "历代志": "Chronicles",
+    "以斯拉记": "Ezra", "尼希米记": "Nehemiah", "以斯帖记": "Esther",
+    "约伯记": "Job", "诗篇": "Psalms", "箴言": "Proverbs",
+    "传道书": "Ecclesiastes", "雅歌": "Song of Songs",
+    "以赛亚书": "Isaiah", "耶利米书": "Jeremiah",
+    "耶利米哀歌": "Lamentations", "以西结书": "Ezekiel",
+    "但以理书": "Daniel", "何西阿书": "Hosea", "约珥书": "Joel",
+    "阿摩司书": "Amos", "俄巴底亚书": "Obadiah", "约拿书": "Jonah",
+    "弥迦书": "Micah", "那鸿书": "Nahum", "哈巴谷书": "Habakkuk",
+    "西番雅书": "Zephaniah", "哈该书": "Haggai",
+    "撒迦利亚书": "Zechariah", "玛拉基书": "Malachi",
+    "马太福音": "Matthew", "马可福音": "Mark", "路加福音": "Luke",
+    "约翰福音": "John", "使徒行传": "Acts", "罗马书": "Romans",
+    "哥林多前书": "1 Corinthians", "哥林多后书": "2 Corinthians",
+    "加拉太书": "Galatians", "以弗所书": "Ephesians",
+    "腓立比书": "Philippians", "歌罗西书": "Colossians",
+    "帖撒罗尼迦前书": "1 Thessalonians", "帖撒罗尼迦后书": "2 Thessalonians",
+    "提摩太前书": "1 Timothy", "提摩太后书": "2 Timothy",
+    "提多书": "Titus", "腓利门书": "Philemon", "希伯来书": "Hebrews",
+    "雅各书": "James", "彼得前书": "1 Peter", "彼得后书": "2 Peter",
+    "约翰书信": "John's Epistles",
+    "约翰一书": "1 John", "约翰二书": "2 John", "约翰三书": "3 John",
+    "犹大书": "Jude", "启示录": "Revelation",
+}
+_LIFE_STUDY_BOOK_EN_TO_ZH: dict[str, str] = {
+    v: k for k, v in _LIFE_STUDY_BOOK_ZH_TO_EN.items()
+    if k not in ("撒母耳记上下", "列王纪上下", "历代志上下")
+}
+
+# 书卷缩写对照表（圣经/注解用）
+_BIBLE_ABBR_ZH_TO_EN: dict[str, str] = {
+    "创": "Gen.", "出": "Exo.", "利": "Lev.", "民": "Num.", "申": "Deut.",
+    "书": "Josh.", "士": "Judg.", "得": "Ruth",
+    "撒上": "1 Sam.", "撒下": "2 Sam.",
+    "王上": "1 Kings", "王下": "2 Kings",
+    "代上": "1 Chron.", "代下": "2 Chron.",
+    "拉": "Ezra", "尼": "Neh.", "斯": "Esth.", "伯": "Job",
+    "诗": "Psa.", "箴": "Prov.", "传": "Eccl.", "歌": "S. S.",
+    "赛": "Isa.", "耶": "Jer.", "哀": "Lam.", "结": "Ezek.", "但": "Dan.",
+    "何": "Hosea", "珥": "Joel", "摩": "Amos", "俄": "Obad.",
+    "拿": "Jonah", "弥": "Micah", "鸿": "Nahum", "哈": "Hab.",
+    "番": "Zeph.", "该": "Hag.", "亚": "Zech.", "玛": "Mal.",
+    "太": "Matt.", "可": "Mark", "路": "Luke", "约": "John",
+    "徒": "Acts", "罗": "Rom.",
+    "林前": "1 Cor.", "林后": "2 Cor.",
+    "加": "Gal.", "弗": "Eph.", "腓": "Phil.", "西": "Col.",
+    "帖前": "1 Thes.", "帖后": "2 Thes.",
+    "提前": "1 Tim.", "提后": "2 Tim.",
+    "多": "Titus", "门": "Philem.", "来": "Heb.", "雅": "James",
+    "彼前": "1 Pet.", "彼后": "2 Pet.",
+    "约壹": "1 John", "约贰": "2 John", "约叁": "3 John",
+    "犹": "Jude", "启": "Rev.",
+}
+# 反向：优先匹配长缩写（如 1 Cor. 而不是误匹配 Cor.）
+_BIBLE_ABBR_EN_TO_ZH: dict[str, str] = {
+    v: k for k, v in sorted(
+        _BIBLE_ABBR_ZH_TO_EN.items(), key=lambda x: len(x[1]), reverse=True
+    )
+}
+
+# 节期对照表
+_CONFERENCE_ZH_TO_EN: dict[str, str] = {
+    "国际华语特会": "ICSC",
+    "春季长老训练": "ITERO-Spring",
+    "秋季长老训练": "ITERO-Fall",
+    "国殇节特会": "MDC",
+    "夏训": "ST", "夏季训练": "ST",
+    "感恩节特会": "TGC",
+    "冬训": "WT", "冬季训练": "WT",
+    "安那翰春季全时间训练": "FTTA-Spring",
+    "安那翰秋季全时间训练": "FTTA-Fall",
+}
+_CONFERENCE_EN_TO_ZH: dict[str, str] = {
+    "ICSC": "国际华语特会",
+    "ITERO-Spring": "春季长老训练",
+    "ITERO-Fall": "秋季长老训练",
+    "MDC": "国殇节特会",
+    "ST": "夏训",
+    "TGC": "感恩节特会",
+    "WT": "冬训",
+    "FTTA-Spring": "安那翰春季全时间训练",
+    "FTTA-Fall": "安那翰秋季全时间训练",
+}
 
 
 def _is_en_source_like(inner: str) -> bool:
@@ -352,6 +499,10 @@ _CN_DIGIT = {
     "零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
     "五": 5, "六": 6, "七": 7, "八": 8, "九": 9,
 }
+_CN_DIGIT_REV: dict[int, str] = {
+    1: "一", 2: "二", 3: "三", 4: "四", 5: "五",
+    6: "六", 7: "七", 8: "八", 9: "九",
+}
 
 
 def _chinese_numeral_to_int(text: str) -> int:
@@ -378,6 +529,127 @@ def _chinese_numeral_to_int(text: str) -> int:
         else:
             raise ValueError(f"unsupported chinese numeral: {ch!r}")
     return total + current
+
+
+def _int_to_chinese_numeral(n: int) -> str:
+    """阿拉伯数字 → 系统A中文数字（位值式），用于篇数/章数。"""
+    if n <= 0:
+        return ""
+    result = ""
+    if n >= 1000:
+        result += _CN_DIGIT_REV[n // 1000] + "千"
+        n %= 1000
+    if n >= 100:
+        result += _CN_DIGIT_REV[n // 100] + "百"
+        n %= 100
+    if n >= 20:
+        result += _CN_DIGIT_REV[n // 10] + "十"
+        n %= 10
+    elif n >= 10:
+        result += "十"
+        n %= 10
+    if n > 0:
+        result += _CN_DIGIT_REV[n]
+    return result
+
+
+def _parse_bible_chapter_zh(text: str) -> int:
+    """系统B+整十例外：中文章节数 → 阿拉伯数字。"""
+    text = (text or "").strip()
+    if not text:
+        return 0
+    if text == "十":
+        return 10
+    m = re.match(r"^([二三四五六七八九])十$", text)
+    if m:
+        return _CN_DIGIT.get(m.group(1), 0) * 10
+    # 十+个位（如十一=11，十二=12）
+    m = re.match(r"^十([一二三四五六七八九])$", text)
+    if m:
+        return 10 + _CN_DIGIT.get(m.group(1), 0)
+    result = 0
+    for ch in text:
+        if ch == "〇":
+            result = result * 10
+        elif ch in _CN_DIGIT:
+            result = result * 10 + _CN_DIGIT[ch]
+        else:
+            return 0
+    return result
+
+
+def _int_to_bible_chapter_zh(n: int) -> str:
+    """系统B+整十例外：阿拉伯数字 → 中文章节数字符串。"""
+    if n <= 0:
+        return ""
+    if n % 10 == 0 and n <= 90:
+        tens = n // 10
+        return ("" if tens == 1 else _CN_DIGIT_REV.get(tens, "")) + "十"
+    if 10 < n < 20:
+        return "十" + _CN_DIGIT_REV[n - 10]
+    s = str(n)
+    result = ""
+    for ch in s:
+        d = int(ch)
+        if d == 0:
+            result += "〇"
+        else:
+            result += _CN_DIGIT_REV.get(d, ch)
+    return result
+
+
+_MSG_ZH_SINGLE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)$")
+_MSG_ZH_RANGE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)[至到～]第([一二三四五六七八九十百千\d]+)(篇|章)$")
+_MSG_ZH_MULTI_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)[、，,]第([一二三四五六七八九十百千\d]+)(篇|章)$")
+
+
+def _parse_msg_zh(text: str) -> str | None:
+    """中文篇/章数 → 英文 msg./ch. 格式，失败返回 None。"""
+    text = (text or "").strip()
+    m = _MSG_ZH_SINGLE_RE.match(text)
+    if m:
+        n = _chinese_numeral_to_int(m.group(1))
+        unit = "msg." if m.group(2) == "篇" else "ch."
+        return f"{unit} {n}"
+    m = _MSG_ZH_RANGE_RE.match(text)
+    if m:
+        n1 = _chinese_numeral_to_int(m.group(1))
+        n2 = _chinese_numeral_to_int(m.group(3))
+        unit = "msgs." if m.group(2) == "篇" else "chs."
+        return f"{unit} {n1}-{n2}"
+    m = _MSG_ZH_MULTI_RE.match(text)
+    if m:
+        n1 = _chinese_numeral_to_int(m.group(1))
+        n2 = _chinese_numeral_to_int(m.group(3))
+        unit = "msgs." if m.group(2) == "篇" else "chs."
+        return f"{unit} {n1}, {n2}"
+    return None
+
+
+_MSG_EN_SINGLE_RE = re.compile(r"^(msg|ch)\.\s*(\d+)$")
+_MSG_EN_RANGE_RE = re.compile(r"^(msgs|chs)\.\s*(\d+)-(\d+)$")
+_MSG_EN_MULTI_RE = re.compile(r"^(msgs|chs)\.\s*(\d+),\s*(\d+)$")
+
+
+def _parse_msg_en(text: str) -> str | None:
+    """英文 msg./ch. 格式 → 中文篇/章数，失败返回 None。"""
+    text = (text or "").strip()
+    m = _MSG_EN_SINGLE_RE.match(text)
+    if m:
+        n = int(m.group(2))
+        unit = "篇" if m.group(1) == "msg" else "章"
+        return f"第{_int_to_chinese_numeral(n)}{unit}"
+    m = _MSG_EN_RANGE_RE.match(text)
+    if m:
+        n1, n2 = int(m.group(2)), int(m.group(3))
+        unit = "篇" if m.group(1) == "msgs" else "章"
+        return f"第{_int_to_chinese_numeral(n1)}{unit}至第{_int_to_chinese_numeral(n2)}{unit}"
+    m = _MSG_EN_MULTI_RE.match(text)
+    if m:
+        n1, n2 = int(m.group(2)), int(m.group(3))
+        unit = "篇" if m.group(1) == "msgs" else "章"
+        return f"第{_int_to_chinese_numeral(n1)}{unit}、第{_int_to_chinese_numeral(n2)}{unit}"
+    return None
 
 
 _PARA_SUFFIX_END_RE = re.compile(r"，第([^，）\*]+)段\**$")
@@ -829,14 +1101,20 @@ async def translate_source_en_batch(
                 zh_parts[i] = table_zh.strip("（）")
                 logger.info("[source_translator] 路1b表命中: %s → %s", source_en, table_zh)
                 continue
-            road2_tasks.append(
-                _SourceRoad2TaskEn2zh(
-                    prep_idx=prep_idx,
-                    src_idx=i,
-                    source_en=source_en,
-                    line_refs=line_refs,
+            # 路1c：规则翻译兜底
+            rule_zh = _rule_translate_source_en(source_en)
+            if rule_zh:
+                zh_parts[i] = rule_zh
+                logger.info("[source_translator] 路1c规则命中: %s → %s", source_en, rule_zh)
+            else:
+                road2_tasks.append(
+                    _SourceRoad2TaskEn2zh(
+                        prep_idx=prep_idx,
+                        src_idx=i,
+                        source_en=source_en,
+                        line_refs=line_refs,
+                    )
                 )
-            )
         pending[prep_idx] = (zh_parts, source_list)
 
     if road2_tasks:
@@ -1360,6 +1638,350 @@ async def translate_source_zh(
     return formatted
 
 
+# ── 路1c 规则解析辅助 ──────────────────────────────────────────────────────────
+
+_ZH_YEAR_RE = re.compile(r"^([一二三四五六七八九〇]{4}|\d{4})年")
+_ZH_VOL_RE = re.compile(r"第([一二三四五六七八九十百千\d]+)册")
+_ZH_CWWL_RE = re.compile(r"^李常受文集([一二三四五六七八九〇]{4})年第([一二三四五六七八九十百千\d]+)册")
+_ZH_CWWN_RE = re.compile(r"^倪柝声文集第([一二三四五六七八九十百千\d]+)辑第([一二三四五六七八九十百千\d]+)册")
+_ZH_BIBLE_RE = re.compile(r"^(?:恢复本圣经|圣经恢复本)")
+_ZH_FOOTNOTE_RE = re.compile(r"注(\d+)$")
+
+# 纲目分段标记（大贰、大叁、大肆等），出处翻译时直接忽略
+_ZH_SECTION_MARK_RE = re.compile(r"[，,]\s*大[一二三四五六七八九十壹贰叁肆伍陆柒捌玖拾]+$")
+
+_EN_YEAR_RE = re.compile(r"^(\d{4})\s+(\S+)")
+_EN_CWWL_RE = re.compile(r"^(?:CWWL|The Collected Works of Witness Lee),?\s*(\d{4}),\s*vol\.\s*(\d+)")
+_EN_CWWN_RE = re.compile(r"^(?:CWWN|The Collected Works of Watchman Nee),?\s*vol\.\s*(\d+)")
+_EN_BIBLE_RE = re.compile(r"^Holy Bible Recovery Version,?\s*")
+_EN_BOOK_RE = re.compile(r"^([1-3]\s+\w+\.?|\w+\.?)\s+(\d+):(\d+)")
+_EN_FOOTNOTE_RE = re.compile(r",?\s*(?:footnote|note)\s*(\d+)$", re.IGNORECASE)
+
+
+def _year_zh_to_en(year_zh: str) -> str:
+    """中文四位年份 → 阿拉伯数字字符串，如 一九六五 → 1965。"""
+    mapping = {"〇": "0", "一": "1", "二": "2", "三": "3", "四": "4",
+               "五": "5", "六": "6", "七": "7", "八": "8", "九": "9"}
+    return "".join(mapping.get(c, c) for c in year_zh)
+
+
+def _year_en_to_zh(year_en: str) -> str:
+    """阿拉伯数字年份 → 中文四位，如 1965 → 一九六五。"""
+    mapping = {"0": "〇", "1": "一", "2": "二", "3": "三", "4": "四",
+               "5": "五", "6": "六", "7": "七", "8": "八", "9": "九"}
+    return "".join(mapping.get(c, c) for c in str(year_en))
+
+
+def _cwwn_zh_to_vol(ji: int, ce: int) -> int:
+    """倪柝声文集辑册 → 卷号。第一辑X册→X，第二辑X册→20+X，第三辑X册→46+X。"""
+    if ji == 1:
+        return ce
+    elif ji == 2:
+        return 20 + ce
+    elif ji == 3:
+        return 46 + ce
+    return ce
+
+
+def _cwwn_vol_to_zh(vol: int) -> tuple[int, int]:
+    """卷号 → 倪柝声文集辑册 (ji, ce)。"""
+    if vol <= 20:
+        return 1, vol
+    elif vol <= 46:
+        return 2, vol - 20
+    else:
+        return 3, vol - 46
+
+
+def _rule_translate_source_zh(source_zh: str) -> str | None:
+    """
+    路1c：中翻英规则解析出处。
+    成功返回英文出处字符串（不带外层括号），失败返回 None。
+    """
+    s = (source_zh or "").strip().strip("（）")
+    if not s:
+        return None
+
+    # 先剥段号
+    base, _ = _strip_paragraph_suffix(s)
+    base = base.strip()
+    # 剥分段标记（大贰、大叁等）
+    base = _ZH_SECTION_MARK_RE.sub("", base).strip()
+
+    # 按第一个逗号切分
+    parts = base.split("，", 1)
+    head = parts[0].strip()
+    tail = parts[1].strip() if len(parts) > 1 else ""
+
+    # ── 圣经/注解 ─────────────────────────────────────────────────────────────
+    if _ZH_BIBLE_RE.match(head) or _ZH_BIBLE_RE.match(base):
+        # 去掉所有逗号，重新解析
+        body = re.sub(r"[，,]", "", base)
+        body = _ZH_BIBLE_RE.sub("", body).strip()
+        # 提取注解
+        footnote = ""
+        fn_m = _ZH_FOOTNOTE_RE.search(body)
+        if fn_m:
+            footnote = f", footnote {fn_m.group(1)}"
+            body = body[: fn_m.start()].strip()
+        # 解析书卷+章节：优先匹配长缩写
+        book_en = None
+        rest = body
+        for abbr_zh in sorted(_BIBLE_ABBR_ZH_TO_EN, key=len, reverse=True):
+            if rest.startswith(abbr_zh):
+                book_en = _BIBLE_ABBR_ZH_TO_EN[abbr_zh]
+                rest = rest[len(abbr_zh):].strip()
+                break
+        if not book_en:
+            return None
+        # 解析章节：章（系统B）+ 节（阿拉伯数字）
+        ch_m = re.match(r"^([一二三四五六七八九十〇百千\d]+?)(\d+)$", rest)
+        if not ch_m:
+            return None
+        ch_zh = ch_m.group(1).strip()
+        verse = ch_m.group(2)
+        ch_num = _parse_bible_chapter_zh(ch_zh)
+        if not ch_num:
+            return None
+        return f"Holy Bible Recovery Version, {book_en} {ch_num}:{verse}{footnote}"
+
+    # ── 生命读经 ────────────────────────────────────────────────────────────────
+    if "生命读经" in head:
+        book_zh = head.replace("生命读经", "").strip()
+        book_en = _LIFE_STUDY_BOOK_ZH_TO_EN.get(book_zh)
+        if not book_en:
+            return None
+        if not tail:
+            return None
+        msg = _parse_msg_zh(tail)
+        if not msg:
+            return None
+        return f"Life-study of {book_en}, {msg}"
+
+    # ── 结晶读经 ────────────────────────────────────────────────────────────────
+    if "结晶读经" in head:
+        book_zh = head.replace("结晶读经", "").strip()
+        book_en = _LIFE_STUDY_BOOK_ZH_TO_EN.get(book_zh)
+        if not book_en:
+            return None
+        if not tail:
+            return None
+        msg = _parse_msg_zh(tail)
+        if not msg:
+            return None
+        return f"Crystallization-study of {book_en}, {msg}"
+
+    # ── 新约总论 ────────────────────────────────────────────────────────────────
+    if head == "新约总论":
+        msg = _parse_msg_zh(tail)
+        if not msg:
+            return None
+        return f"The Conclusion of the New Testament, {msg}"
+
+    # ── 李常受文集 ──────────────────────────────────────────────────────────────
+    m = _ZH_CWWL_RE.match(head)
+    if m:
+        year_en = _year_zh_to_en(m.group(1))
+        vol = _chinese_numeral_to_int(m.group(2))
+        prefix = f"CWWL, {year_en}, vol. {vol}"
+        if not tail:
+            return prefix
+        # 按逗号切分尾部，最后一段是篇/章数
+        tail_parts = tail.split("，")
+        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        if not msg_str:
+            return None  # 篇数后有其他内容，降级
+        if len(tail_parts) == 1:
+            # 只有篇/章，无书名
+            return f"{prefix}, {msg_str}"
+        # 中间部分是书名
+        book_zh = "，".join(tail_parts[:-1]).strip()
+        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)  # 未命中保留原文
+        return f'{prefix}, "{book_en}," {msg_str}'
+
+    # ── 倪柝声文集 ──────────────────────────────────────────────────────────────
+    m = _ZH_CWWN_RE.match(head)
+    if m:
+        ji = _chinese_numeral_to_int(m.group(1))
+        ce = _chinese_numeral_to_int(m.group(2))
+        vol = _cwwn_zh_to_vol(ji, ce)
+        prefix = f"CWWN, vol. {vol}"
+        if not tail:
+            return prefix
+        tail_parts = tail.split("，")
+        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        if not msg_str:
+            return None
+        if len(tail_parts) == 1:
+            return f"{prefix}, {msg_str}"
+        book_zh = "，".join(tail_parts[:-1]).strip()
+        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)
+        return f'{prefix}, "{book_en}," {msg_str}'
+
+    # ── 节期类 ──────────────────────────────────────────────────────────────────
+    m = _ZH_YEAR_RE.match(head)
+    if m:
+        year_raw = m.group(1)
+        year_en = year_raw if year_raw.isdigit() else _year_zh_to_en(year_raw)
+        conf_zh = head[m.end():].strip()
+        conf_en = _CONFERENCE_ZH_TO_EN.get(conf_zh)
+        if not conf_en:
+            return None
+        tail_parts = tail.split("，")
+        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        if not msg_str:
+            return None
+        if len(tail_parts) == 1:
+            return f"{year_en} {conf_en}, {msg_str}"
+        book_zh = "，".join(tail_parts[:-1]).strip().strip('"“"')
+        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)
+        return f'{year_en} {conf_en}, "{book_en}," {msg_str}'
+
+    return None
+
+
+def _rule_translate_source_en(source_en: str) -> str | None:
+    """
+    路1c：英翻中规则解析出处。
+    成功返回中文出处字符串（不带外层括号），失败返回 None。
+    """
+    s = (source_en or "").strip().strip("()")
+    if not s:
+        return None
+
+    base = _strip_en_paragraph_suffix(s).strip()
+    parts = base.split(",", 2)
+    head = parts[0].strip()
+
+    # ── 圣经/注解 ─────────────────────────────────────────────────────────────
+    if head == "Holy Bible Recovery Version":
+        rest = base[len("Holy Bible Recovery Version"):].lstrip(",").strip()
+        fn_m = _EN_FOOTNOTE_RE.search(rest)
+        footnote = ""
+        if fn_m:
+            footnote = f"，注{fn_m.group(1)}"
+            rest = rest[: fn_m.start()].strip().rstrip(",").strip()
+        # 解析书卷+章:节
+        bk_m = re.match(
+            r"^([1-3]\s+\w+\.?|\w+\.?)\s+(\d+):(\d+)$", rest
+        )
+        if not bk_m:
+            return None
+        book_en = bk_m.group(1).strip()
+        ch_num = int(bk_m.group(2))
+        verse = bk_m.group(3)
+        book_zh = _BIBLE_ABBR_EN_TO_ZH.get(book_en)
+        if not book_zh:
+            return None
+        ch_zh = _int_to_bible_chapter_zh(ch_num)
+        return f"恢复本圣经{book_zh}{ch_zh}{verse}{footnote}"
+
+    # ── 生命读经 ────────────────────────────────────────────────────────────────
+    if head.startswith("Life-study of"):
+        book_en = head[len("Life-study of"):].strip()
+        book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
+        if not book_zh:
+            return None
+        tail = base[base.index(",") + 1:].strip() if "," in base else ""
+        if not tail:
+            return None
+        msg = _parse_msg_en(tail)
+        if not msg:
+            return None
+        return f"{book_zh}生命读经，{msg}"
+
+    # ── 结晶读经 ────────────────────────────────────────────────────────────────
+    if head.startswith("Crystallization-study of"):
+        book_en = head[len("Crystallization-study of"):].strip()
+        book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
+        if not book_zh:
+            return None
+        tail = base[base.index(",") + 1:].strip() if "," in base else ""
+        if not tail:
+            return None
+        msg = _parse_msg_en(tail)
+        if not msg:
+            return None
+        return f"{book_zh}结晶读经，{msg}"
+
+    # ── 新约总论 ────────────────────────────────────────────────────────────────
+    if head in ("The Conclusion of the New Testament",
+                "Conclusion of the New Testament"):
+        tail = base[base.index(",") + 1:].strip() if "," in base else ""
+        msg = _parse_msg_en(tail)
+        if not msg:
+            return None
+        return f"新约总论，{msg}"
+
+    # ── 李常受文集 ──────────────────────────────────────────────────────────────
+    if head in ("CWWL", "The Collected Works of Witness Lee"):
+        m = _EN_CWWL_RE.match(base)
+        if not m:
+            return None
+        year_zh = _year_en_to_zh(m.group(1))
+        vol = int(m.group(2))
+        prefix = f"李常受文集{year_zh}年第{_int_to_chinese_numeral(vol)}册"
+        rest = base[m.end():].lstrip(",").strip()
+        if not rest:
+            return prefix
+        # 提取书名（引号之间）和篇/章
+        title_m = re.match(r'^"([^"]+)",?\s*(.*)$', rest)
+        if title_m:
+            book_en = title_m.group(1).strip().rstrip(",")
+            msg_str = title_m.group(2).strip()
+            book_zh = _BOOK_TITLE_EN_TO_ZH.get(book_en, book_en)
+            msg = _parse_msg_en(msg_str)
+            if not msg:
+                return None
+            return f"{prefix}，{book_zh}，{msg}"
+        # 无书名，直接是篇/章
+        msg = _parse_msg_en(rest)
+        if not msg:
+            return None
+        return f"{prefix}，{msg}"
+
+    # ── 倪柝声文集 ──────────────────────────────────────────────────────────────
+    if head in ("CWWN", "The Collected Works of Watchman Nee"):
+        m = _EN_CWWN_RE.match(base)
+        if not m:
+            return None
+        vol = int(m.group(1))
+        ji, ce = _cwwn_vol_to_zh(vol)
+        prefix = f"倪柝声文集第{_int_to_chinese_numeral(ji)}辑第{_int_to_chinese_numeral(ce)}册"
+        rest = base[m.end():].lstrip(",").strip()
+        if not rest:
+            return prefix
+        title_m = re.match(r'^"([^"]+)",?\s*(.*)$', rest)
+        if title_m:
+            book_en = title_m.group(1).strip().rstrip(",")
+            msg_str = title_m.group(2).strip()
+            book_zh = _BOOK_TITLE_EN_TO_ZH.get(book_en, book_en)
+            msg = _parse_msg_en(msg_str)
+            if not msg:
+                return None
+            return f"{prefix}，{book_zh}，{msg}"
+        msg = _parse_msg_en(rest)
+        if not msg:
+            return None
+        return f"{prefix}，{msg}"
+
+    # ── 节期类 ──────────────────────────────────────────────────────────────────
+    m = _EN_YEAR_RE.match(base)
+    if m:
+        year_en = m.group(1)
+        conf_en = m.group(2).strip().rstrip(",")
+        conf_zh = _CONFERENCE_EN_TO_ZH.get(conf_en)
+        if not conf_zh:
+            return None
+        tail = base[m.end():].lstrip(",").strip()
+        msg = _parse_msg_en(tail)
+        if not msg:
+            return None
+        return f"{year_en}年{conf_zh}，{msg}"
+
+    return None
+
+
 async def translate_source_zh_batch(
     items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
 ) -> tuple[dict[int, str], float]:
@@ -1398,25 +2020,31 @@ async def translate_source_zh_batch(
             if hit_en:
                 en_parts[i] = hit_en
                 logger.info("[source_translator] 路1a命中: %s → %s", source_zh, hit_en)
-            elif infer_meta:
-                infer_tasks.append(
-                    _SourceInferTask(
-                        prep_idx=prep_idx,
-                        src_idx=i,
-                        source_zh=source_zh,
-                        ranked=infer_meta["ranked"],
-                        para_append=infer_meta.get("para_append") or "",
-                    )
-                )
             else:
-                road2_tasks.append(
-                    _SourceRoad2Task(
-                        prep_idx=prep_idx,
-                        src_idx=i,
-                        source_zh=source_zh,
-                        line_refs=line_refs,
+                # 路1c：规则翻译兜底
+                rule_en = _rule_translate_source_zh(source_zh)
+                if rule_en:
+                    en_parts[i] = rule_en
+                    logger.info("[source_translator] 路1c规则命中: %s → %s", source_zh, rule_en)
+                elif infer_meta:
+                    infer_tasks.append(
+                        _SourceInferTask(
+                            prep_idx=prep_idx,
+                            src_idx=i,
+                            source_zh=source_zh,
+                            ranked=infer_meta["ranked"],
+                            para_append=infer_meta.get("para_append") or "",
+                        )
                     )
-                )
+                else:
+                    road2_tasks.append(
+                        _SourceRoad2Task(
+                            prep_idx=prep_idx,
+                            src_idx=i,
+                            source_zh=source_zh,
+                            line_refs=line_refs,
+                        )
+                    )
 
         pending[prep_idx] = (en_parts, has_star, source_list)
 

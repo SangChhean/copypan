@@ -2719,50 +2719,48 @@ async def enhanced_translate(
         total_cost_usd,
     ) = await _run_gemini_translation_phases(preps, prompt_extra, en2zh=False)
 
-    source_items = [
+    # 正文行末出处（用 line_i 作为 key）
+    source_items: list[tuple[int, list[str], list[dict[str, Any]], bool]] = [
         (
-            i,
+            prep["line_i"],
             prep.get("reference_source_zh_list") or [],
             prep.get("line_refs") or [],
             bracket_has_star(prep.get("reference_source_zh") or ""),
         )
-        for i, prep in enumerate(preps)
+        for prep in preps
         if prep.get("reference_source_zh_list")
     ]
-    source_en_map, source_cost_usd = await translate_source_zh_batch(source_items)
-    total_cost_usd += source_cost_usd
-    for i, prep in enumerate(preps):
-        prep["reference_source_en"] = source_en_map.get(i, "")
-
-    # source 行出处翻译
+    # source 行出处（合并进同一列表）
     all_source_preps = [
         p for p in preps
         if p.get("line_type") == "source" and not p.get("source_is_empty")
     ]
-    # 已有 Pool 缓存的 source 行直接用 line_cached_en
     for p in all_source_preps:
         cached = (p.get("line_cached_en") or "").strip()
         if cached:
             p["pool_line_en"] = cached
-    # 需要翻译的 source 行：有 source_content 且没有缓存
     source_preps = [
         p for p in all_source_preps
         if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
     ]
-    if source_preps:
-        source_items = [
+    for p in source_preps:
+        source_items.append(
             (p["line_i"], [p["source_content"]], [], False)
-            for p in source_preps
-        ]
-        source_map, source_cost = await translate_source_zh_batch(source_items)
-        total_cost_usd += source_cost
-        for p in source_preps:
-            translated = source_map.get(p["line_i"], "")
-            if translated:
-                inner = translated.strip("（）()")
-                p["pool_line_en"] = p["source_prefix"] + inner
-            else:
-                p["pool_line_en"] = p["line"].strip()
+        )
+    # 整单一次调用
+    source_en_map, source_cost_usd = await translate_source_zh_batch(source_items)
+    total_cost_usd += source_cost_usd
+    # 分发结果
+    for prep in preps:
+        if prep.get("line_type") != "source":
+            prep["reference_source_en"] = source_en_map.get(prep["line_i"], "")
+    for p in source_preps:
+        translated = source_en_map.get(p["line_i"], "")
+        if translated:
+            inner = translated.strip("（）()")
+            p["pool_line_en"] = p["source_prefix"] + inner
+        else:
+            p["pool_line_en"] = p["line"].strip()
 
     results = await asyncio.gather(
             *[
@@ -3261,50 +3259,48 @@ async def enhanced_translate_en2zh(
         total_cost_usd,
     ) = await _run_gemini_translation_phases(preps, prompt_extra, en2zh=True)
 
-    source_items = [
+    # 正文行末出处（用 line_i 作为 key）
+    source_items: list[tuple[int, list[str], list[dict[str, Any]], bool]] = [
         (
-            i,
+            prep["line_i"],
             prep.get("reference_source_en_list") or [],
             prep.get("line_refs") or [],
             False,
         )
-        for i, prep in enumerate(preps)
+        for prep in preps
         if prep.get("reference_source_en_list")
     ]
-    source_zh_map, source_cost_usd = await translate_source_en_batch(source_items)
-    total_cost_usd += source_cost_usd
-    for i, prep in enumerate(preps):
-        prep["reference_source_zh_result"] = source_zh_map.get(i, "")
-
-    # source 行出处翻译（英翻中）
+    # source 行出处（合并进同一列表）
     all_source_preps = [
         p for p in preps
         if p.get("line_type") == "source" and not p.get("source_is_empty")
     ]
-    # 已有 Pool 缓存的 source 行直接用 line_cached_en
     for p in all_source_preps:
         cached = (p.get("line_cached_en") or "").strip()
         if cached:
             p["pool_line_en"] = cached
-    # 需要翻译的 source 行：有 source_content 且没有缓存
     source_preps = [
         p for p in all_source_preps
         if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
     ]
-    if source_preps:
-        source_items = [
+    for p in source_preps:
+        source_items.append(
             (p["line_i"], [p["source_content"]], [], False)
-            for p in source_preps
-        ]
-        source_map, source_cost = await translate_source_en_batch(source_items)
-        total_cost_usd += source_cost
-        for p in source_preps:
-            translated = source_map.get(p["line_i"], "")
-            if translated:
-                inner = translated.strip("（）()")
-                p["pool_line_en"] = p["source_prefix"] + inner
-            else:
-                p["pool_line_en"] = p["line"].strip()
+        )
+    # 整单一次调用
+    source_zh_map, source_cost_usd = await translate_source_en_batch(source_items)
+    total_cost_usd += source_cost_usd
+    # 分发结果
+    for prep in preps:
+        if prep.get("line_type") != "source":
+            prep["reference_source_zh_result"] = source_zh_map.get(prep["line_i"], "")
+    for p in source_preps:
+        translated = source_zh_map.get(p["line_i"], "")
+        if translated:
+            inner = translated.strip("（）()")
+            p["pool_line_en"] = p["source_prefix"] + inner
+        else:
+            p["pool_line_en"] = p["line"].strip()
 
     results = await asyncio.gather(
         *[
