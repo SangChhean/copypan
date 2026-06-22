@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined, FileTextOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, SearchOutlined, ToolOutlined, ApartmentOutlined, FileTextOutlined, AuditOutlined } from "@ant-design/icons-vue";
 
 const go = (val = "/") => {
   window.location.hash = val;
@@ -59,6 +59,10 @@ const go = (val = "/") => {
         <a-card-grid class="card c2" @click="go('/feast-outline')"><span class="card_text">节期纲目</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/ministerialize-outline')"><span class="card_text">纲目职事化</span></a-card-grid>
         <a-card-grid class="card c2" @click="go('/bird-view-outline')"><span class="card_text">词典-鸟瞰纲目</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/outline-eval')">
+          <div class="card_text"><AuditOutlined /> 纲目品质评估</div>
+          <div class="card_desc">评估纲目的神学深度与属灵冲击力</div>
+        </a-card-grid>
       </a-card>
     </div>
     <br />
@@ -100,6 +104,13 @@ const go = (val = "/") => {
 .card_text {
   font-weight: bold;
   font-size: large;
+}
+.card_desc {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  color: #888;
+  line-height: 1.4;
 }
 /* 覆盖 a-card-grid 默认 33.33% 宽度；:deep 使样式作用到子组件根节点 */
 :deep(.c1) {

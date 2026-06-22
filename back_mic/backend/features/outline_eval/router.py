@@ -46,6 +46,14 @@ async def evaluate_outline(
     body: EvalRequest,
     _user: dict = Depends(get_current_user),
 ) -> dict[str, Any]:
+    """返回结构说明：
+    - synthesis（新增）：高/低优先级修改建议 + overall_note
+    - theology_layer 子字段：
+      T1: L1-L4 + nature_fit + weak_citations
+      T2: S1-S6 + weighted_score
+      T3: R系/E系/P系 四维 + framework_type + structural_tension
+      T4: score + sharpness_type + comment + summary
+    """
     try:
         is_second_eval = body.eval_v1 is not None
         return await run_evaluation(

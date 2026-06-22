@@ -12,7 +12,7 @@ from typing import Any
 
 import anthropic
 
-from features.outline_eval.prompts import (
+from .prompts import (
     PROMPT_F1,
     PROMPT_F2,
     PROMPT_F3,
@@ -21,10 +21,11 @@ from features.outline_eval.prompts import (
     PROMPT_T2,
     PROMPT_T3,
     PROMPT_T4,
+    PROMPT_SYNTHESIS,
 )
 
-_DEFAULT_MODEL = "claude-sonnet-4-6"
-_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+_MODEL_F = "claude-haiku-4-5-20251001"
+_MODEL_T = "claude-sonnet-4-6"
 
 # 各模型单价（per token）
 _MODEL_PRICING = {
@@ -45,13 +46,6 @@ _SYSTEM_PROMPT = (
     "JSON 字符串值内禁止使用英文双引号，引用短语请用「」或『』。"
 )
 
-_GENRE_MAP = {
-    "一般性": "均衡",
-    "真理启示": "重启示",
-    "生命经历": "重经历",
-    "实行应用": "重实行",
-}
-
 _SECOND_EVAL_SUFFIX = """
 
 【上轮评估评语】
@@ -61,9 +55,18 @@ _SECOND_EVAL_SUFFIX = """
 
 _DIM_KEYS = ("F1", "F2", "F3", "F4", "T1", "T2", "T3", "T4")
 
-_T1_LAYER_KEYS = ("L1", "L2", "L3", "L4", "L5")
-_T2_Q_KEYS = ("Q1", "Q2", "Q3", "Q4", "Q5")
-_T3_D_KEYS = ("D1", "D2", "D3", "D4")
+_T1_LAYER_KEYS = ("L1", "L2", "L3", "L4")
+_T2_S_KEYS = ("S1", "S2", "S3", "S4", "S5", "S6")
+_T3_R_KEYS = ("R1", "R2", "R3", "R4")
+_T3_E_KEYS = ("E1", "E2", "E3", "E4")
+_T3_P_KEYS = ("P1", "P2", "P3", "P4")
+_T3_FRAMEWORK_KEYS: dict[str, tuple[str, ...]] = {
+    "R系": _T3_R_KEYS,
+    "E系": _T3_E_KEYS,
+    "P系": _T3_P_KEYS,
+}
+_DEFAULT_STEP_DIM = {"score": 5, "comment": "解析失败", "gap": None}
+_DEFAULT_T3_DIM = {"score": 5, "comment": "解析失败", "gap": None}
 
 logger = logging.getLogger(__name__)
 
@@ -179,49 +182,89 @@ def _normalize_t1(result: dict[str, Any]) -> dict[str, Any]:
         total = _sum_sub_scores(result, _T1_LAYER_KEYS)
         if total is not None:
             result["total"] = total
+        else:
+            result["total"] = 20
+    nature_fit = result.get("nature_fit")
+    if not isinstance(nature_fit, dict):
+        result["nature_fit"] = {"fit": False, "note": "解析失败"}
+    else:
+        if "fit" not in nature_fit:
+            nature_fit["fit"] = False
+        if not str(nature_fit.get("note") or "").strip():
+            nature_fit["note"] = "解析失败"
+    weak_citations = result.get("weak_citations")
+    if isinstance(weak_citations, list):
+        for item in weak_citations:
+            if isinstance(item, dict) and item.get("original_text") is None:
+                item["original_text"] = ""
     return result
 
 
-def _normalize_t2(result: dict[str, Any]) -> dict[str, Any]:
-    if "error" in result:
-        return result
-    _normalize_sub_dims(result, _T2_Q_KEYS)
-    if result.get("total") is None:
-        total = _sum_sub_scores(result, _T2_Q_KEYS)
-        if total is not None:
-            result["total"] = total
+def _normalize_t2(raw: dict[str, Any]) -> dict[str, Any]:
+    if "error" in raw:
+        return raw
+    result = dict(raw)
+    for k in _T2_S_KEYS:
+        block = result.get(k)
+        if not isinstance(block, dict) or block.get("score") is None:
+            result[k] = dict(_DEFAULT_STEP_DIM)
+        else:
+            if "gap" in block:
+                block["gap"] = _normalize_gap(block.get("gap"))
+    if result.get("summary") is None:
+        result["summary"] = ""
     return result
 
 
-def _calc_t3_organic_index(result: dict[str, Any]) -> int | None:
-    values: list[float] = []
-    for k in _T3_D_KEYS:
-        score = _sub_score(result, k)
-        if score is not None:
-            values.append(score)
-    for k in ("coherence", "eschatological_tension"):
-        try:
-            if result.get(k) is not None:
-                values.append(float(result[k]))
-        except (TypeError, ValueError):
-            pass
-    if len(values) < 6:
-        return None
-    return round(sum(values) / len(values) * 10)
+def _detect_t3_framework(result: dict[str, Any]) -> str:
+    framework_type = str(result.get("framework_type") or "").strip()
+    if framework_type in _T3_FRAMEWORK_KEYS:
+        return framework_type
+    for fw, keys in _T3_FRAMEWORK_KEYS.items():
+        if any(isinstance(result.get(k), dict) for k in keys):
+            return fw
+    return "R系"
 
 
-def _normalize_t3(result: dict[str, Any]) -> dict[str, Any]:
-    if "error" in result:
-        return result
-    _normalize_sub_dims(result, _T3_D_KEYS)
+def _normalize_t3(raw: dict[str, Any]) -> dict[str, Any]:
+    if "error" in raw:
+        return raw
+    result = dict(raw)
+    framework_type = _detect_t3_framework(result)
+    result["framework_type"] = framework_type
+    dim_keys = _T3_FRAMEWORK_KEYS[framework_type]
+    for k in dim_keys:
+        block = result.get(k)
+        if not isinstance(block, dict) or block.get("score") is None:
+            result[k] = dict(_DEFAULT_T3_DIM)
+        else:
+            if "gap" in block:
+                block["gap"] = _normalize_gap(block.get("gap"))
+    if result.get("coherence") is None:
+        result["coherence"] = 5
+    if result.get("structural_tension") is None:
+        result["structural_tension"] = 5
     if result.get("total") is None:
-        total = _sum_sub_scores(result, _T3_D_KEYS)
+        total = _sum_sub_scores(result, dim_keys)
         if total is not None:
             result["total"] = total
-    if result.get("organic_index") is None:
-        organic_index = _calc_t3_organic_index(result)
-        if organic_index is not None:
-            result["organic_index"] = organic_index
+    if result.get("summary") is None:
+        result["summary"] = ""
+    return result
+
+
+def _normalize_t4(raw: dict[str, Any]) -> dict[str, Any]:
+    if "error" in raw:
+        return raw
+    result = dict(raw)
+    if result.get("score") is None:
+        result["score"] = 5
+    if not str(result.get("sharpness_type") or "").strip():
+        result["sharpness_type"] = "启示深度"
+    if result.get("comment") is None:
+        result["comment"] = ""
+    if result.get("supply_paragraph") is None:
+        result["supply_paragraph"] = ""
     return result
 
 
@@ -236,9 +279,9 @@ def _substitute_prompt(template: str, **kwargs: str) -> str:
 def _calc_call_cost(
     input_tokens: int,
     output_tokens: int,
-    model: str = "claude-sonnet-4-6",
+    model: str = _MODEL_T,
 ) -> float:
-    pricing = _MODEL_PRICING.get(model, _MODEL_PRICING["claude-sonnet-4-6"])
+    pricing = _MODEL_PRICING.get(model, _MODEL_PRICING[_MODEL_T])
     return input_tokens * pricing["input"] + output_tokens * pricing["output"]
 
 
@@ -266,14 +309,19 @@ def _format_skeleton(skeleton: list[dict[str, Any]] | None) -> tuple[str, str]:
     return "\n".join(steps), "\n".join(paths)
 
 
-def _map_genre(outline_nature: str) -> str:
-    return _GENRE_MAP.get(outline_nature, "均衡")
-
-
 def _prev_comment(eval_v1: dict[str, Any] | None, dim: str) -> str | None:
     if not eval_v1:
         return None
     block = eval_v1.get(dim)
+    if not isinstance(block, dict):
+        if dim.startswith("F"):
+            pansai = eval_v1.get("pansai_layer")
+            if isinstance(pansai, dict):
+                block = pansai.get(dim)
+        elif dim.startswith("T"):
+            theology = eval_v1.get("theology_layer")
+            if isinstance(theology, dict):
+                block = theology.get(dim)
     if not isinstance(block, dict):
         return None
     return block.get("comment") or block.get("summary") or block.get("overall_comment")
@@ -329,23 +377,15 @@ def _merge_scripture_suggestions(
 
 
 def _calc_total_score(
-    f1: dict[str, Any],
-    f2: dict[str, Any],
-    f3: dict[str, Any],
-    f4: dict[str, Any],
     t1: dict[str, Any],
     t2: dict[str, Any],
     t3: dict[str, Any],
     t4: dict[str, Any],
+    f1: dict[str, Any],
+    f2: dict[str, Any],
+    f3: dict[str, Any],
+    f4: dict[str, Any],
 ) -> float:
-    def _f_score(result: dict[str, Any]) -> float:
-        if "error" in result:
-            return 0.0
-        try:
-            return float(result.get("score") or 0)
-        except (TypeError, ValueError):
-            return 0.0
-
     def _num(result: dict[str, Any], key: str, default: float = 0.0) -> float:
         if "error" in result:
             return default
@@ -354,23 +394,18 @@ def _calc_total_score(
         except (TypeError, ValueError):
             return default
 
-    f1_s = (_f_score(f1) * 20) * 0.10
-    f2_s = (_f_score(f2) * 20) * 0.10
-    f3_s = (_f_score(f3) * 20) * 0.10
-    f4_s = (_f_score(f4) * 20) * 0.10
+    t1_s = (_num(t1, "total") / 40 * 100) * 0.10
+    t2_s = _num(t2, "weighted_score") * 0.40
+    t3_s = (_num(t3, "total") / 40 * 100) * 0.35
+    t4_s = (_num(t4, "score") / 10 * 100) * 0.15
 
-    t1_s = (_num(t1, "total") / 50 * 100) * 0.12
-    t2_s = (_num(t2, "total") / 50 * 100) * 0.15
-    t3_s = _num(t3, "organic_index") * 0.15
-    t4_s = _num(t4, "weighted_score") * 0.18
-
-    return round(f1_s + f2_s + f3_s + f4_s + t1_s + t2_s + t3_s + t4_s, 1)
+    return round(t1_s + t2_s + t3_s + t4_s, 1)
 
 
 async def _call_claude(
     system: str,
     user: str,
-    model: str = _DEFAULT_MODEL,
+    model: str = _MODEL_T,
     max_tokens: int = 1500,
 ) -> dict[str, Any]:
     api_key = (os.environ.get("CLAUDE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or "").strip()
@@ -423,7 +458,7 @@ async def eval_F1(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_F, max_tokens=3000)
 
 
 async def eval_F2(
@@ -444,7 +479,7 @@ async def eval_F2(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_F, max_tokens=3000)
 
 
 async def eval_F3(
@@ -463,7 +498,7 @@ async def eval_F3(
         ),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_F, max_tokens=3000)
 
 
 async def eval_F4(
@@ -476,24 +511,41 @@ async def eval_F4(
         _substitute_prompt(PROMPT_F4, outline_nature=outline_nature, answer=answer),
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, model=_HAIKU_MODEL, max_tokens=3000)
+    return await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_F, max_tokens=3000)
 
 
-async def eval_T1(answer: str, *, prev_comment: str | None = None) -> dict[str, Any]:
-    user = _append_second_eval(PROMPT_T1 + f"\n\n纲目正文：\n{answer}", prev_comment)
-    result = await _call_claude(_SYSTEM_PROMPT, user, max_tokens=8000)
+async def eval_T1(
+    answer: str,
+    outline_nature: str,
+    *,
+    prev_comment: str | None = None,
+) -> dict[str, Any]:
+    user = _append_second_eval(
+        _substitute_prompt(PROMPT_T1, outline_nature=outline_nature)
+        + f"\n\n纲目正文：\n{answer}",
+        prev_comment,
+    )
+    result = await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_F, max_tokens=8000)
     return _normalize_t1(result)
 
 
-async def eval_T2(answer: str, *, prev_comment: str | None = None) -> dict[str, Any]:
-    # PROMPT_T2 含 JSON 示例花括号，使用字符串拼接而非 .format()
-    user = _append_second_eval(PROMPT_T2 + f"\n\n纲目正文：\n{answer}", prev_comment)
-    result = await _call_claude(_SYSTEM_PROMPT, user, max_tokens=4000)
+async def eval_T2(
+    answer: str,
+    outline_nature: str,
+    *,
+    prev_comment: str | None = None,
+) -> dict[str, Any]:
+    user = _append_second_eval(
+        _substitute_prompt(PROMPT_T2, outline_nature=outline_nature)
+        + f"\n\n纲目正文：\n{answer}",
+        prev_comment,
+    )
+    result = await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_T, max_tokens=4000)
     result = _normalize_t2(result)
     if result.get("error"):
         logger.warning("[outline_eval] T2 error: %s", result.get("error"))
-    elif result.get("total") is None:
-        logger.warning("[outline_eval] T2 missing total, keys=%s", list(result.keys()))
+    elif result.get("weighted_score") is None:
+        logger.warning("[outline_eval] T2 missing weighted_score, keys=%s", list(result.keys()))
     return result
 
 
@@ -508,26 +560,48 @@ async def eval_T3(
         + f"\n\n纲目正文：\n{answer}",
         prev_comment,
     )
-    result = await _call_claude(
-        _SYSTEM_PROMPT,
-        user,
-        model=_DEFAULT_MODEL,
-        max_tokens=4000,
-    )
+    result = await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_T, max_tokens=4000)
     return _normalize_t3(result)
 
 
 async def eval_T4(
     answer: str,
-    genre: str,
+    outline_nature: str,
     *,
     prev_comment: str | None = None,
 ) -> dict[str, Any]:
     user = _append_second_eval(
-        _substitute_prompt(PROMPT_T4, genre=genre) + f"\n\n纲目正文：\n{answer}",
+        _substitute_prompt(PROMPT_T4, outline_nature=outline_nature)
+        + f"\n\n纲目正文：\n{answer}",
         prev_comment,
     )
-    return await _call_claude(_SYSTEM_PROMPT, user, max_tokens=3000)
+    result = await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_T, max_tokens=3000)
+    return _normalize_t4(result)
+
+
+async def eval_SYNTHESIS(
+    answer: str,
+    outline_nature: str,
+    t2: dict[str, Any],
+    t3: dict[str, Any],
+    t4: dict[str, Any],
+) -> dict[str, Any]:
+    user = _substitute_prompt(
+        PROMPT_SYNTHESIS,
+        outline_nature=outline_nature,
+        t2_result=json.dumps(t2, ensure_ascii=False),
+        t3_result=json.dumps(t3, ensure_ascii=False),
+        t4_result=json.dumps(t4, ensure_ascii=False),
+        answer=answer,
+    )
+    result = await _call_claude(_SYSTEM_PROMPT, user, model=_MODEL_T, max_tokens=4000)
+    if "error" in result:
+        return {
+            "high_priority": [],
+            "low_priority": [],
+            "overall_note": "综合建议生成失败",
+        }
+    return result
 
 
 async def run_evaluation(
@@ -545,7 +619,6 @@ async def run_evaluation(
     skeleton = request_data.get("skeleton")
     if skeleton is not None and not isinstance(skeleton, list):
         skeleton = None
-    genre = _map_genre(outline_nature)
 
     def _prev(dim: str) -> str | None:
         if not is_second_eval:
@@ -559,14 +632,12 @@ async def run_evaluation(
         eval_F2(answer, query, outline_nature, burden_description, prev_comment=_prev("F2")),
         eval_F3(answer, skeleton, prev_comment=_prev("F3")),
         eval_F4(answer, outline_nature, prev_comment=_prev("F4")),
-        eval_T1(answer, prev_comment=_prev("T1")),
-        eval_T2(answer, prev_comment=_prev("T2")),
+        eval_T1(answer, outline_nature, prev_comment=_prev("T1")),
+        eval_T2(answer, outline_nature, prev_comment=_prev("T2")),
         eval_T3(answer, outline_nature, prev_comment=_prev("T3")),
-        eval_T4(answer, genre, prev_comment=_prev("T4")),
+        eval_T4(answer, outline_nature, prev_comment=_prev("T4")),
         return_exceptions=True,
     )
-
-    elapsed_ms = int((time.perf_counter() - started) * 1000)
 
     dim_results: dict[str, dict[str, Any]] = {}
     cost_usd = 0.0
@@ -593,26 +664,33 @@ async def run_evaluation(
     t3 = dim_results["T3"]
     t4 = dim_results["T4"]
 
-    total_score = _calc_total_score(f1, f2, f3, f4, t1, t2, t3, t4)
+    synthesis_raw = await eval_SYNTHESIS(answer, outline_nature, t2, t3, t4)
+    synthesis, _, _, synthesis_cost = _pop_usage(synthesis_raw)
+    cost_usd += synthesis_cost
+
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+
+    total_score = _calc_total_score(t1, t2, t3, t4, f1, f2, f3, f4)
     scripture_suggestions = _merge_scripture_suggestions(t1, skeleton)
 
-    result: dict[str, Any] = {
-        "F1": f1,
-        "F2": f2,
-        "F3": f3,
-        "F4": f4,
-        "T1": t1,
-        "T2": t2,
-        "T3": t3,
-        "T4": t4,
+    return {
         "total_score": total_score,
+        "pansai_layer": {
+            "F1": f1,
+            "F2": f2,
+            "F3": f3,
+            "F4": f4,
+        },
+        "theology_layer": {
+            "T1": t1,
+            "T2": t2,
+            "T3": t3,
+            "T4": t4,
+        },
+        "synthesis": synthesis,
+        "scripture_suggestions": scripture_suggestions,
+        "is_second_eval": is_second_eval,
+        "improvement_note": improvement_notes if is_second_eval else {},
         "elapsed_ms": elapsed_ms,
         "cost_usd": round(cost_usd, 6),
-        "scripture_suggestions": scripture_suggestions,
-        "genre": genre,
     }
-
-    if is_second_eval:
-        result["improvement_notes"] = improvement_notes
-
-    return result
