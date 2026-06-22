@@ -413,6 +413,136 @@ def make_zh_docx(text: str) -> bytes:
     return buf.getvalue()
 
 
+def _add_superscript_run(para, number: int):
+    """在段落末尾追加一个上标数字 run（Word XML superscript）。"""
+    run = para.add_run(str(number))
+    rPr = OxmlElement("w:rPr")
+    vertAlign = OxmlElement("w:vertAlign")
+    vertAlign.set(qn("w:val"), "superscript")
+    rPr.append(vertAlign)
+    run._r.insert(0, rPr)
+
+
+def make_zh_docx_with_headers(
+    header_lines: list[str],
+    outline_lines: list[dict],
+    footnotes: list[dict],
+) -> bytes:
+    """
+    生成含出处版 DOCX：
+    - header_lines: 四行页眉（前三行居中，第四行读经行）
+    - outline_lines: 每项含 {"text": str, "footnote_no": int|None}
+    - footnotes: [{"no": int, "source_zh": str}]
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document(str(ZH_TEMPLATE))
+    for para in doc.paragraphs:
+        p = para._element
+        p.getparent().remove(p)
+
+    center_styles = ["0系列", "11111西列", "00篇题"]
+
+    for i, hline in enumerate(header_lines or []):
+        if not hline.strip():
+            continue
+        if i == 1:
+            sublines = hline.split("\n")
+            sublines = [s.strip() for s in sublines if s.strip()]
+            if sublines:
+                p = doc.add_paragraph()
+                apply_style(p, "11111西列", doc)
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for j, subline in enumerate(sublines):
+                    run = p.add_run(subline)
+                    if j < len(sublines) - 1:
+                        br = OxmlElement("w:br")
+                        run._r.append(br)
+        elif i < 3:
+            p = doc.add_paragraph(hline.strip())
+            apply_style(p, center_styles[i], doc)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        else:
+            p = doc.add_paragraph(hline.strip())
+            apply_style(p, "11读经", doc)
+
+    for item in outline_lines or []:
+        text = (item.get("text") or "").strip()
+        fn_no = item.get("footnote_no")
+        if not text:
+            continue
+
+        style_name = None
+        for pattern, sname in ZH_PATTERN_STYLES:
+            if re.match(pattern, text):
+                style_name = sname
+                break
+
+        para = doc.add_paragraph()
+        if style_name:
+            apply_style(para, style_name, doc)
+
+        para.add_run(text)
+
+        if fn_no:
+            _add_superscript_run(para, fn_no)
+
+    doc.add_paragraph("")
+
+    if footnotes:
+        title_para = doc.add_paragraph("参考与参读资料：")
+        _apply_footnote_title_style(title_para, doc)
+
+        for fn in footnotes:
+            content = (fn.get("source_zh") or "").strip()
+            if not content:
+                continue
+            item_para = doc.add_paragraph()
+            _apply_footnote_item_style(item_para, doc, fn["no"], content)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def _apply_footnote_title_style(para, doc):
+    """参考与参读资料标题行：方正楷体_GBK，小四（12pt）。"""
+    from docx.shared import Pt
+
+    run = para.runs[0] if para.runs else para.add_run(para.text)
+    run.font.name = "方正楷体_GBK"
+    run.font.size = Pt(12)
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.get_or_add_rFonts()
+    rFonts.set(qn("w:eastAsia"), "方正楷体_GBK")
+    rFonts.set(qn("w:hint"), "eastAsia")
+
+
+def _apply_footnote_item_style(para, doc, no: int, content: str):
+    """
+    脚注条目：[数字].[Tab][内容]
+    方正楷体_GBK，小四，左缩进2字符，悬挂缩进1字符，末尾无标点。
+    """
+    from docx.shared import Pt
+
+    content = content.rstrip("。，；、.,:;!?！？，；")
+
+    pPr = para._p.get_or_add_pPr()
+    ind = OxmlElement("w:ind")
+    ind.set(qn("w:left"), "480")
+    ind.set(qn("w:hanging"), "240")
+    pPr.append(ind)
+
+    text = f"{no}.\t{content}"
+    run = para.add_run(text)
+    run.font.name = "方正书宋_GBK"
+    run.font.size = Pt(12)
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.get_or_add_rFonts()
+    rFonts.set(qn("w:eastAsia"), "方正书宋_GBK")
+    rFonts.set(qn("w:hint"), "eastAsia")
+
+
 # ════════════════════════════════════════════════════════════
 #  接口
 # ════════════════════════════════════════════════════════════
@@ -464,3 +594,22 @@ def format_zh_docx_zip(items: list[dict[str, str]]) -> tuple[bytes, str]:
     if written == 0:
         raise ValueError("没有可导出的纲目")
     return buf.getvalue(), "分段纲目.zip"
+
+
+def format_ministerialize_docx(
+    header_lines: list[str],
+    outline_lines: list[dict],
+    footnotes: list[dict],
+    article_title: str = "",
+) -> tuple[bytes, str]:
+    """
+    生成含出处版 DOCX，返回 (bytes, filename)。
+    outline_lines: [{"text": str, "footnote_no": int|None}]
+    footnotes: [{"no": int, "source_zh": str}]
+    """
+    if not outline_lines:
+        raise ValueError("没有纲目内容")
+    docx_bytes = make_zh_docx_with_headers(header_lines, outline_lines, footnotes)
+    filename = f"{article_title}.docx" if article_title else "纲目.docx"
+    filename = re.sub(r'[\\/:*?"<>|]', "", filename)
+    return docx_bytes, filename
