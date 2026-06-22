@@ -65,10 +65,11 @@ def _load_source_pairs() -> None:
                 en_title_m = re.search(r'"([^"]+)"', source_en)
                 if en_title_m:
                     en_title = en_title_m.group(1).strip().rstrip(",")
+                    en_title = en_title.replace('\u201c', '"').replace('\u201d', '"').replace('\u2018', "'").replace('\u2019', "'")
                     zh_inner = source_zh.strip().strip("（）")
                     zh_parts = zh_inner.split("，")
                     if len(zh_parts) >= 3:
-                        zh_title = zh_parts[1].strip()
+                        zh_title = "，".join(zh_parts[1:-1]).strip()
                         if zh_title and en_title:
                             book_zh_to_en[zh_title] = en_title
                             book_en_to_zh[en_title] = zh_title
@@ -108,6 +109,15 @@ def lookup_source_zh(source_en_base: str) -> str:
     key = normalize_en(source_en_base)
     return _SOURCE_EN_TO_ZH.get(key, "")
 
+
+# 出处翻译路径标签
+SOURCE_PATH_POOL = "pool"       # source_pool / Additional Pool 命中（T7）
+SOURCE_PATH_RAG = "rag"         # 路1a kg-rag / feasts pool ES 命中
+SOURCE_PATH_TABLE = "table"     # 路1b source_pairs 查表命中
+SOURCE_PATH_RULE = "rule"       # 路1c 规则解析（书名也走规则）
+SOURCE_PATH_RULE_AI = "rule+ai" # 路1c 规则识别类型，书名未命中子表
+SOURCE_PATH_INFER = "infer"     # 路1 infer（Gemini 基于候选推算）
+SOURCE_PATH_AI = "ai"           # 路2 Gemini 直译
 
 # ── 1. 解析剥离 ──────────────────────────────────────────────
 # 纲目行出处格式：（***）没有「，第***段」
@@ -207,17 +217,34 @@ def _trim_source_segment(seg: str) -> str:
 
 def _split_sources(inner: str) -> list[str]:
     """
-    对括号内容正向扫描，用起始词识别每条出处位置，切分成 1～N 条。
-    inner 为已去掉最外层括号的内容；未找到任何起始词返回 []。
+    对括号内容按分号切分出处，与英文方向逻辑对齐。
+    分号（全角；或半角;）后紧跟 anchor 才切，否则视为出处内容的一部分。
+    第一段必须以 anchor 开头，否则返回 []。
     """
     inner = inner.strip()
-    starts = _find_source_starts(inner)
-    if not starts or starts[0] != 0:
+    if not inner:
+        return []
+
+    # 找候选切割点：; 或 ； 后面紧跟 anchor
+    cut_points: list[int] = [0]
+    i = 0
+    while i < len(inner):
+        if inner[i] in (";", "；"):
+            rest = inner[i + 1:]
+            rest_stripped = rest.lstrip()
+            offset = len(rest) - len(rest_stripped)
+            candidate_pos = i + 1 + offset
+            if candidate_pos < len(inner) and _anchor_len_at(inner, candidate_pos) > 0:
+                cut_points.append(candidate_pos)
+        i += 1
+
+    # 第一段必须以 anchor 开头
+    if _anchor_len_at(inner, cut_points[0]) == 0:
         return []
 
     pieces: list[str] = []
-    for k, start in enumerate(starts):
-        end = starts[k + 1] if k + 1 < len(starts) else len(inner)
+    for k, start in enumerate(cut_points):
+        end = cut_points[k + 1] if k + 1 < len(cut_points) else len(inner)
         seg = _trim_source_segment(inner[start:end])
         if seg:
             pieces.append(seg)
@@ -313,6 +340,8 @@ _EN_SOURCE_ANCHORS: list[str] = [
     "The Collected Works of Watchman Nee",
     "Life-study of",
     "Crystallization-study of",
+    "Truth Lessons",
+    "Hymns",
     "CWWN",
     "CWWL",
 ]
@@ -358,6 +387,16 @@ _LIFE_STUDY_BOOK_EN_TO_ZH: dict[str, str] = {
     v: k for k, v in _LIFE_STUDY_BOOK_ZH_TO_EN.items()
     if k not in ("撒母耳记上下", "列王纪上下", "历代志上下")
 }
+# 合并卷别名
+for _combo, _zh in [
+    ("1 and 2 Chronicles", "历代志上下"),
+    ("1 & 2 Chronicles", "历代志上下"),
+    ("1 and 2 Samuel", "撒母耳记上下"),
+    ("1 & 2 Samuel", "撒母耳记上下"),
+    ("1 and 2 Kings", "列王纪上下"),
+    ("1 & 2 Kings", "列王纪上下"),
+]:
+    _LIFE_STUDY_BOOK_EN_TO_ZH[_combo] = _zh
 
 # 书卷缩写对照表（圣经/注解用）
 _BIBLE_ABBR_ZH_TO_EN: dict[str, str] = {
@@ -477,20 +516,21 @@ def _split_sources_en(inner: str) -> list[str]:
 def parse_source_from_line_en(line: str) -> tuple[str, list[str]]:
     """
     从英文纲目行中识别并剥离行末出处标注（半角括号）。
-    只取最后一个最外层半角括号，内容必须以 anchor 开头才认为是出处。
+    从右向左逐个尝试最外层括号，直到 _split_sources_en 成功。
     返回：(剥离后的行内容, 出处列表)
     """
     spans = _outer_bracket_spans_en(line)
     if not spans:
         return line, []
-    # 只取最后一个最外层括号
-    start, end = spans[-1]
-    inner = line[start + 1: end - 1]
-    sources = _split_sources_en(inner)
-    if not sources:
-        return line, []
-    stripped_line = (line[:start] + line[end:]).strip()
-    return stripped_line, sources
+
+    for start, end in reversed(spans):
+        inner = line[start + 1: end - 1]
+        sources = _split_sources_en(inner)
+        if sources:
+            stripped_line = (line[:start] + line[end:]).strip()
+            return stripped_line, sources
+
+    return line, []
 
 
 # ── 2. 出处查询预处理与 kg-rag 路1 ─────────────────────────────
@@ -598,57 +638,104 @@ def _int_to_bible_chapter_zh(n: int) -> str:
     return result
 
 
-_MSG_ZH_SINGLE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)$")
-_MSG_ZH_RANGE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)[至到～]第([一二三四五六七八九十百千\d]+)(篇|章)$")
-_MSG_ZH_MULTI_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章)[、，,]第([一二三四五六七八九十百千\d]+)(篇|章)$")
+_MSG_ZH_SINGLE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章|课)$")
+_MSG_ZH_RANGE_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章|课)[至到～]第([一二三四五六七八九十百千\d]+)(篇|章|课)$")
+_MSG_ZH_MULTI_RE = re.compile(r"^第([一二三四五六七八九十百千\d]+)(篇|章|课)[、，,]第([一二三四五六七八九十百千\d]+)(篇|章|课)$")
+_MSG_ZH_LIST_RE = re.compile(
+    r"^(第[一二三四五六七八九十百千\d]+(篇|章|课))"
+    r"(?:[、，,]第[一二三四五六七八九十百千\d]+(?:篇|章|课)){2,}$"
+)
 
 
 def _parse_msg_zh(text: str) -> str | None:
     """中文篇/章数 → 英文 msg./ch. 格式，失败返回 None。"""
     text = (text or "").strip()
+    text = text.rstrip(".。")
     m = _MSG_ZH_SINGLE_RE.match(text)
     if m:
         n = _chinese_numeral_to_int(m.group(1))
-        unit = "msg." if m.group(2) == "篇" else "ch."
-        return f"{unit} {n}"
+        unit_map = {"篇": "msg.", "章": "ch.", "课": "lsn."}
+        return f"{unit_map[m.group(2)]} {n}"
     m = _MSG_ZH_RANGE_RE.match(text)
     if m:
         n1 = _chinese_numeral_to_int(m.group(1))
         n2 = _chinese_numeral_to_int(m.group(3))
-        unit = "msgs." if m.group(2) == "篇" else "chs."
-        return f"{unit} {n1}-{n2}"
+        unit_map_plural = {"篇": "msgs.", "章": "chs.", "课": "lsns."}
+        return f"{unit_map_plural[m.group(2)]} {n1}-{n2}"
     m = _MSG_ZH_MULTI_RE.match(text)
     if m:
         n1 = _chinese_numeral_to_int(m.group(1))
         n2 = _chinese_numeral_to_int(m.group(3))
-        unit = "msgs." if m.group(2) == "篇" else "chs."
-        return f"{unit} {n1}, {n2}"
+        unit_map_plural = {"篇": "msgs.", "章": "chs.", "课": "lsns."}
+        return f"{unit_map_plural[m.group(2)]} {n1}, {n2}"
+    m = _MSG_ZH_LIST_RE.match(text)
+    if m:
+        unit = m.group(2)
+        unit_map_plural = {"篇": "msgs.", "章": "chs.", "课": "lsns."}
+        nums = re.findall(r"第([一二三四五六七八九十百千\d]+)(?:篇|章|课)", text)
+        ns = [str(_chinese_numeral_to_int(n)) for n in nums]
+        return f"{unit_map_plural[unit]} {', '.join(ns)}"
     return None
 
 
-_MSG_EN_SINGLE_RE = re.compile(r"^(msg|ch)\.\s*(\d+)$")
-_MSG_EN_RANGE_RE = re.compile(r"^(msgs|chs)\.\s*(\d+)-(\d+)$")
-_MSG_EN_MULTI_RE = re.compile(r"^(msgs|chs)\.\s*(\d+),\s*(\d+)$")
+def _split_tail_book_and_msgs(tail_parts: list[str]) -> tuple[str, str | None]:
+    """
+    从 tail_parts 末尾开始，连续能被 _parse_msg_zh 解析的段为篇/章，
+    其余为书名。返回 (book_zh, msg_combined_str)。
+    msg_combined_str 是拼合后可送 _parse_msg_zh 的字符串，或 None。
+    """
+    msg_indices: list[int] = []
+    i = len(tail_parts) - 1
+    while i >= 0:
+        if _parse_msg_zh(tail_parts[i].strip()):
+            msg_indices.insert(0, i)
+            i -= 1
+        else:
+            break
+    if not msg_indices:
+        return "，".join(tail_parts), None
+    book_parts = tail_parts[: msg_indices[0]]
+    book_zh = "，".join(book_parts).strip()
+    msg_parts = [tail_parts[j].strip() for j in msg_indices]
+    if len(msg_parts) == 1:
+        msg_combined = msg_parts[0]
+    else:
+        msg_combined = "、".join(msg_parts)
+    return book_zh, msg_combined
+
+
+_MSG_EN_SINGLE_RE = re.compile(r"^(msg|ch|lsn)\.\s*(\d+)$")
+_MSG_EN_RANGE_RE = re.compile(r"^(msgs?|chs?|lsns?)\.\s*(\d+)-(\d+)$")
+_MSG_EN_MULTI_RE = re.compile(r"^(msgs?|chs?|lsns?)\.\s*(\d+),\s*(\d+)$")
+_MSG_EN_LIST_RE = re.compile(r"^(msgs?|chs?|lsns?)\.\s*\d+(?:,\s*\d+){2,}$")
 
 
 def _parse_msg_en(text: str) -> str | None:
     """英文 msg./ch. 格式 → 中文篇/章数，失败返回 None。"""
     text = (text or "").strip()
+    text = text.rstrip(".")
     m = _MSG_EN_SINGLE_RE.match(text)
     if m:
         n = int(m.group(2))
-        unit = "篇" if m.group(1) == "msg" else "章"
+        unit = "篇" if m.group(1) == "msg" else ("课" if m.group(1) == "lsn" else "章")
         return f"第{_int_to_chinese_numeral(n)}{unit}"
     m = _MSG_EN_RANGE_RE.match(text)
     if m:
         n1, n2 = int(m.group(2)), int(m.group(3))
-        unit = "篇" if m.group(1) == "msgs" else "章"
+        unit = "篇" if m.group(1).startswith("msg") else ("课" if m.group(1).startswith("lsn") else "章")
         return f"第{_int_to_chinese_numeral(n1)}{unit}至第{_int_to_chinese_numeral(n2)}{unit}"
     m = _MSG_EN_MULTI_RE.match(text)
     if m:
         n1, n2 = int(m.group(2)), int(m.group(3))
-        unit = "篇" if m.group(1) == "msgs" else "章"
+        unit = "篇" if m.group(1).startswith("msg") else ("课" if m.group(1).startswith("lsn") else "章")
         return f"第{_int_to_chinese_numeral(n1)}{unit}、第{_int_to_chinese_numeral(n2)}{unit}"
+    m = _MSG_EN_LIST_RE.match(text)
+    if m:
+        unit_key = m.group(1)
+        unit = "篇" if unit_key.startswith("msg") else ("课" if unit_key.startswith("lsn") else "章")
+        nums = re.findall(r"\d+", text)
+        parts = [f"第{_int_to_chinese_numeral(int(n))}{unit}" for n in nums]
+        return "、".join(parts)
     return None
 
 
@@ -957,7 +1044,7 @@ async def _feasts_pool_lookup(base: str) -> str:
     return ""
 
 
-_EN_PARA_SUFFIX_RE = re.compile(r",\s*pp?\.\s*[\d\-]+\.?\s*$")
+_EN_PARA_SUFFIX_RE = re.compile(r",\s*pp?\.\s*[\d\s\-]+\.?\s*$")
 _EN_SOURCE_YEAR_PREFIX_RE = re.compile(r"^\d{4}\s+\w")
 
 
@@ -1071,42 +1158,62 @@ async def _gemini_translate_sources_en2zh(
 
 async def translate_source_en_batch(
     items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
-) -> tuple[dict[int, str], float]:
+) -> tuple[dict[int, str], dict[int, list[str]], float]:
     """
     批量翻译英文出处为中文。
     items: [(prep_index, source_en_list, line_refs, has_star), ...]
     整单一次 Gemini 处理所有路2 未命中出处。
+    返回：(译文 map, 路径标签 map, 费用 USD)
     """
     if not items:
-        return {}, 0.0
+        return {}, {}, 0.0
     results: dict[int, str] = {}
+    paths_map: dict[int, list[str]] = {}
     total_cost_usd = 0.0
     road2_tasks: list[_SourceRoad2TaskEn2zh] = []
-    pending: dict[int, tuple[list[str], list[str]]] = {}
+    road2_keys: set[tuple[int, int]] = set()
+    pending: dict[int, tuple[list[str], list[str], list[str]]] = {}
 
     for prep_idx, source_list, line_refs, _has_star in items:
         if not source_list:
             continue
         zh_parts = [""] * len(source_list)
+        path_parts = [""] * len(source_list)
         for i, source_en in enumerate(source_list):
             base = _strip_en_paragraph_suffix(source_en)
             if _EN_SOURCE_YEAR_PREFIX_RE.match(base):
                 hit_zh = await _feasts_pool_lookup_en(source_en)
                 if hit_zh:
                     zh_parts[i] = hit_zh
+                    path_parts[i] = SOURCE_PATH_RAG
                     logger.info("[source_translator] 路1a命中: %s → %s", source_en, zh_parts[i])
                     continue
             table_zh = lookup_source_zh(base)
             if table_zh:
                 zh_parts[i] = table_zh.strip("（）")
+                path_parts[i] = SOURCE_PATH_TABLE
                 logger.info("[source_translator] 路1b表命中: %s → %s", source_en, table_zh)
                 continue
             # 路1c：规则翻译兜底
-            rule_zh = _rule_translate_source_en(source_en)
+            rule_zh, rule_path = _rule_translate_source_en(source_en)
             if rule_zh:
-                zh_parts[i] = rule_zh
+                if rule_path == SOURCE_PATH_RULE_AI:
+                    road2_tasks.append(
+                        _SourceRoad2TaskEn2zh(
+                            prep_idx=prep_idx,
+                            src_idx=i,
+                            source_en=rule_zh,
+                            line_refs=[],
+                        )
+                    )
+                    road2_keys.add((prep_idx, i))
+                    path_parts[i] = SOURCE_PATH_RULE_AI
+                else:
+                    zh_parts[i] = rule_zh
+                    path_parts[i] = rule_path
                 logger.info("[source_translator] 路1c规则命中: %s → %s", source_en, rule_zh)
             else:
+                road2_keys.add((prep_idx, i))
                 road2_tasks.append(
                     _SourceRoad2TaskEn2zh(
                         prep_idx=prep_idx,
@@ -1115,24 +1222,29 @@ async def translate_source_en_batch(
                         line_refs=line_refs,
                     )
                 )
-        pending[prep_idx] = (zh_parts, source_list)
+        pending[prep_idx] = (zh_parts, source_list, path_parts)
 
     if road2_tasks:
         logger.info("[source_translator] en2zh 出处整单 Gemini: road2=%d", len(road2_tasks))
         gemini_map, gemini_cost = await _gemini_sources_once_en2zh(road2_tasks)
         total_cost_usd += gemini_cost
         for (prep_idx, src_idx), translated in gemini_map.items():
-            zh_parts, _ = pending[prep_idx]
+            zh_parts, _, path_parts = pending[prep_idx]
             zh_parts[src_idx] = translated.strip().strip("（）")
+            if (prep_idx, src_idx) in road2_keys:
+                if not path_parts[src_idx]:
+                    path_parts[src_idx] = SOURCE_PATH_AI
 
-    for prep_idx, (zh_parts, source_list) in pending.items():
+    for prep_idx, (zh_parts, source_list, path_parts) in pending.items():
         for i, source_en in enumerate(source_list):
             if not zh_parts[i]:
                 zh_parts[i] = source_en
+                path_parts[i] = ""
         parts = [p for p in zh_parts if p]
         results[prep_idx] = "（" + "；".join(parts) + "）" if parts else ""
+        paths_map[prep_idx] = path_parts
 
-    return results, total_cost_usd
+    return results, paths_map, total_cost_usd
 
 
 async def _gemini_infer_source_en(
@@ -1642,20 +1754,29 @@ async def translate_source_zh(
 
 _ZH_YEAR_RE = re.compile(r"^([一二三四五六七八九〇]{4}|\d{4})年")
 _ZH_VOL_RE = re.compile(r"第([一二三四五六七八九十百千\d]+)册")
-_ZH_CWWL_RE = re.compile(r"^李常受文集([一二三四五六七八九〇]{4})年第([一二三四五六七八九十百千\d]+)册")
+_ZH_CWWL_RE = re.compile(r"^李常受文集([一二三四五六七八九〇]{4})(?:至[一二三四五六七八九〇]{4})?年第([一二三四五六七八九十百千\d]+)册")
 _ZH_CWWN_RE = re.compile(r"^倪柝声文集第([一二三四五六七八九十百千\d]+)辑第([一二三四五六七八九十百千\d]+)册")
 _ZH_BIBLE_RE = re.compile(r"^(?:恢复本圣经|圣经恢复本)")
-_ZH_FOOTNOTE_RE = re.compile(r"注(\d+)$")
+_ZH_FOOTNOTE_RE = re.compile(r"注(\d+)[.。]?$")
 
 # 纲目分段标记（大贰、大叁、大肆等），出处翻译时直接忽略
 _ZH_SECTION_MARK_RE = re.compile(r"[，,]\s*大[一二三四五六七八九十壹贰叁肆伍陆柒捌玖拾]+$")
 
 _EN_YEAR_RE = re.compile(r"^(\d{4})\s+(\S+)")
-_EN_CWWL_RE = re.compile(r"^(?:CWWL|The Collected Works of Witness Lee),?\s*(\d{4}),\s*vol\.\s*(\d+)")
+_EN_CWWL_RE = re.compile(r"^(?:CWWL|The Collected Works of Witness Lee),?\s*(\d{4})(?:-\d{4})?,\s*vol\.\s*(\d+)")
+_EN_CWWL_LG_RE = re.compile(
+    r"^(?:CWWL|The Collected Works of Witness Lee),\s*Letters\s*&\s*Gleanings,\s*vol\.\s*(\d+)"
+)
+_EN_TRUTH_LESSONS_RE = re.compile(
+    r"^Truth Lessons,\s*Level\s*(\d+),\s*vol\.\s*(\d+)"
+)
+_ZH_TRUTH_LESSONS_RE = re.compile(
+    r"^真理课程，?第?([一二三四五六七八九十\d]+)级[，]?(?:第?([一二三四五六七八九十\d]+)[册卷]|卷([一二三四五六七八九十\d]+))$"
+)
 _EN_CWWN_RE = re.compile(r"^(?:CWWN|The Collected Works of Watchman Nee),?\s*vol\.\s*(\d+)")
 _EN_BIBLE_RE = re.compile(r"^Holy Bible Recovery Version,?\s*")
 _EN_BOOK_RE = re.compile(r"^([1-3]\s+\w+\.?|\w+\.?)\s+(\d+):(\d+)")
-_EN_FOOTNOTE_RE = re.compile(r",?\s*(?:footnote|note)\s*(\d+)$", re.IGNORECASE)
+_EN_FOOTNOTE_RE = re.compile(r",?\s*(?:footnote|note)\s*(\d+)\.?$", re.IGNORECASE)
 
 
 def _year_zh_to_en(year_zh: str) -> str:
@@ -1693,14 +1814,29 @@ def _cwwn_vol_to_zh(vol: int) -> tuple[int, int]:
         return 3, vol - 46
 
 
-def _rule_translate_source_zh(source_zh: str) -> str | None:
+def _zh_book_title_to_en(book_zh: str) -> tuple[str, str]:
+    mapped = _BOOK_TITLE_ZH_TO_EN.get(book_zh)
+    if mapped is not None:
+        return mapped, SOURCE_PATH_RULE
+    return book_zh, SOURCE_PATH_RULE_AI
+
+
+def _en_book_title_to_zh(book_en: str) -> tuple[str, str]:
+    mapped = _BOOK_TITLE_EN_TO_ZH.get(book_en)
+    if mapped is not None:
+        return mapped, SOURCE_PATH_RULE
+    return book_en, SOURCE_PATH_RULE_AI
+
+
+def _rule_translate_source_zh(source_zh: str) -> tuple[str | None, str]:
     """
     路1c：中翻英规则解析出处。
-    成功返回英文出处字符串（不带外层括号），失败返回 None。
+    成功返回 (英文出处, 路径标签)，失败返回 (None, "")。
     """
     s = (source_zh or "").strip().strip("（）")
+    s = s.replace('\u201c', '"').replace('\u201d', '"').replace('\u2018', "'").replace('\u2019', "'")
     if not s:
-        return None
+        return None, ""
 
     # 先剥段号
     base, _ = _strip_paragraph_suffix(s)
@@ -1733,50 +1869,74 @@ def _rule_translate_source_zh(source_zh: str) -> str | None:
                 rest = rest[len(abbr_zh):].strip()
                 break
         if not book_en:
-            return None
+            return None, ""
         # 解析章节：章（系统B）+ 节（阿拉伯数字）
-        ch_m = re.match(r"^([一二三四五六七八九十〇百千\d]+?)(\d+)$", rest)
+        ch_m = re.match(r"^([一二三四五六七八九十〇百千\d]+?)(\d+)[.。]?$", rest)
         if not ch_m:
-            return None
+            return None, ""
         ch_zh = ch_m.group(1).strip()
         verse = ch_m.group(2)
         ch_num = _parse_bible_chapter_zh(ch_zh)
         if not ch_num:
-            return None
-        return f"Holy Bible Recovery Version, {book_en} {ch_num}:{verse}{footnote}"
+            return None, ""
+        return (
+            f"Holy Bible Recovery Version, {book_en} {ch_num}:{verse}{footnote}",
+            SOURCE_PATH_RULE,
+        )
 
     # ── 生命读经 ────────────────────────────────────────────────────────────────
     if "生命读经" in head:
         book_zh = head.replace("生命读经", "").strip()
         book_en = _LIFE_STUDY_BOOK_ZH_TO_EN.get(book_zh)
         if not book_en:
-            return None
+            return None, ""
         if not tail:
-            return None
+            return None, ""
         msg = _parse_msg_zh(tail)
         if not msg:
-            return None
-        return f"Life-study of {book_en}, {msg}"
+            return None, ""
+        return f"Life-study of {book_en}, {msg}", SOURCE_PATH_RULE
 
     # ── 结晶读经 ────────────────────────────────────────────────────────────────
     if "结晶读经" in head:
         book_zh = head.replace("结晶读经", "").strip()
         book_en = _LIFE_STUDY_BOOK_ZH_TO_EN.get(book_zh)
         if not book_en:
-            return None
+            return None, ""
         if not tail:
-            return None
+            return None, ""
         msg = _parse_msg_zh(tail)
         if not msg:
-            return None
-        return f"Crystallization-study of {book_en}, {msg}"
+            return None, ""
+        return f"Crystallization-study of {book_en}, {msg}", SOURCE_PATH_RULE
 
     # ── 新约总论 ────────────────────────────────────────────────────────────────
     if head == "新约总论":
         msg = _parse_msg_zh(tail)
         if not msg:
-            return None
-        return f"The Conclusion of the New Testament, {msg}"
+            return None, ""
+        return f"The Conclusion of the New Testament, {msg}", SOURCE_PATH_RULE
+
+    # ── 李常受文集·信函与拾遗 ─────────────────────────────────────────────────
+    if head.startswith("李常受文集信函与拾遗"):
+        vol_m = re.match(r"^李常受文集信函与拾遗第([一二三四五六七八九十百千\d]+)册$", head)
+        if not vol_m:
+            return None, ""
+        vol = _chinese_numeral_to_int(vol_m.group(1))
+        prefix = f"CWWL, Letters & Gleanings, vol. {vol}"
+        if not tail:
+            return prefix, SOURCE_PATH_RULE
+        tail_parts = tail.split("，")
+        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        if not msg_str:
+            return None, ""
+        if len(tail_parts) == 1:
+            return f"{prefix}, {msg_str}", SOURCE_PATH_RULE
+        book_zh = "，".join(tail_parts[:-1]).strip()
+        book_en, book_path = _zh_book_title_to_en(book_zh)
+        if book_path == SOURCE_PATH_RULE_AI:
+            return f'{prefix}, "{book_en}," {msg_str}', SOURCE_PATH_RULE_AI
+        return f'{prefix}, "{book_en}," {msg_str}', SOURCE_PATH_RULE
 
     # ── 李常受文集 ──────────────────────────────────────────────────────────────
     m = _ZH_CWWL_RE.match(head)
@@ -1785,19 +1945,19 @@ def _rule_translate_source_zh(source_zh: str) -> str | None:
         vol = _chinese_numeral_to_int(m.group(2))
         prefix = f"CWWL, {year_en}, vol. {vol}"
         if not tail:
-            return prefix
+            return prefix, SOURCE_PATH_RULE
         # 按逗号切分尾部，最后一段是篇/章数
         tail_parts = tail.split("，")
-        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        book_zh, msg_combined = _split_tail_book_and_msgs(tail_parts)
+        if not msg_combined:
+            return None, ""
+        msg_str = _parse_msg_zh(msg_combined)
         if not msg_str:
-            return None  # 篇数后有其他内容，降级
-        if len(tail_parts) == 1:
-            # 只有篇/章，无书名
-            return f"{prefix}, {msg_str}"
-        # 中间部分是书名
-        book_zh = "，".join(tail_parts[:-1]).strip()
-        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)  # 未命中保留原文
-        return f'{prefix}, "{book_en}," {msg_str}'
+            return None, ""
+        if not book_zh:
+            return f"{prefix}, {msg_str}", SOURCE_PATH_RULE
+        book_en, book_path = _zh_book_title_to_en(book_zh)
+        return f'{prefix}, "{book_en}," {msg_str}', book_path
 
     # ── 倪柝声文集 ──────────────────────────────────────────────────────────────
     m = _ZH_CWWN_RE.match(head)
@@ -1807,16 +1967,18 @@ def _rule_translate_source_zh(source_zh: str) -> str | None:
         vol = _cwwn_zh_to_vol(ji, ce)
         prefix = f"CWWN, vol. {vol}"
         if not tail:
-            return prefix
+            return prefix, SOURCE_PATH_RULE
         tail_parts = tail.split("，")
-        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        book_zh, msg_combined = _split_tail_book_and_msgs(tail_parts)
+        if not msg_combined:
+            return None, ""
+        msg_str = _parse_msg_zh(msg_combined)
         if not msg_str:
-            return None
-        if len(tail_parts) == 1:
-            return f"{prefix}, {msg_str}"
-        book_zh = "，".join(tail_parts[:-1]).strip()
-        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)
-        return f'{prefix}, "{book_en}," {msg_str}'
+            return None, ""
+        if not book_zh:
+            return f"{prefix}, {msg_str}", SOURCE_PATH_RULE
+        book_en, book_path = _zh_book_title_to_en(book_zh)
+        return f'{prefix}, "{book_en}," {msg_str}', book_path
 
     # ── 节期类 ──────────────────────────────────────────────────────────────────
     m = _ZH_YEAR_RE.match(head)
@@ -1826,28 +1988,59 @@ def _rule_translate_source_zh(source_zh: str) -> str | None:
         conf_zh = head[m.end():].strip()
         conf_en = _CONFERENCE_ZH_TO_EN.get(conf_zh)
         if not conf_en:
-            return None
+            return None, ""
         tail_parts = tail.split("，")
-        msg_str = _parse_msg_zh(tail_parts[-1].strip())
+        book_zh, msg_combined = _split_tail_book_and_msgs(tail_parts)
+        if not msg_combined:
+            return None, ""
+        msg_str = _parse_msg_zh(msg_combined)
         if not msg_str:
-            return None
-        if len(tail_parts) == 1:
-            return f"{year_en} {conf_en}, {msg_str}"
-        book_zh = "，".join(tail_parts[:-1]).strip().strip('"“"')
-        book_en = _BOOK_TITLE_ZH_TO_EN.get(book_zh, book_zh)
-        return f'{year_en} {conf_en}, "{book_en}," {msg_str}'
+            return None, ""
+        if not book_zh:
+            return f"{year_en} {conf_en}, {msg_str}", SOURCE_PATH_RULE
+        book_zh = book_zh.strip('"“"')
+        book_en, book_path = _zh_book_title_to_en(book_zh)
+        return f'{year_en} {conf_en}, "{book_en}," {msg_str}', book_path
 
-    return None
+    # ── 真理课程 ────────────────────────────────────────────────────────────────
+    if head == "真理课程":
+        tl_m = _ZH_TRUTH_LESSONS_RE.match(base)
+        if not tl_m and tail:
+            tp = tail.split("，")
+            if tp:
+                tl_m = _ZH_TRUTH_LESSONS_RE.match(f"真理课程，{tp[0]}")
+            if not tl_m and len(tp) >= 2:
+                tl_m = _ZH_TRUTH_LESSONS_RE.match(f"真理课程，{tp[0]}，{tp[1]}")
+        if not tl_m:
+            return None, ""
+        g1 = tl_m.group(1)
+        g2 = tl_m.group(2) or tl_m.group(3)
+        level = int(g1) if g1.isdigit() else _chinese_numeral_to_int(g1)
+        vol = int(g2) if g2.isdigit() else _chinese_numeral_to_int(g2)
+        prefix = f"Truth Lessons, Level {level}, vol. {vol}"
+        if not tail:
+            return prefix, SOURCE_PATH_RULE
+        tail_parts = tail.split("，")
+        _, msg_combined = _split_tail_book_and_msgs(tail_parts)
+        if not msg_combined:
+            return None, ""
+        msg_str = _parse_msg_zh(msg_combined)
+        if not msg_str:
+            return None, ""
+        return f"{prefix}, {msg_str}", SOURCE_PATH_RULE
+
+    return None, ""
 
 
-def _rule_translate_source_en(source_en: str) -> str | None:
+def _rule_translate_source_en(source_en: str) -> tuple[str | None, str]:
     """
     路1c：英翻中规则解析出处。
-    成功返回中文出处字符串（不带外层括号），失败返回 None。
+    成功返回 (中文出处, 路径标签)，失败返回 (None, "")。
     """
     s = (source_en or "").strip().strip("()")
+    s = s.replace('\u201c', '"').replace('\u201d', '"').replace('\u2018', "'").replace('\u2019', "'")
     if not s:
-        return None
+        return None, ""
 
     base = _strip_en_paragraph_suffix(s).strip()
     parts = base.split(",", 2)
@@ -1863,46 +2056,46 @@ def _rule_translate_source_en(source_en: str) -> str | None:
             rest = rest[: fn_m.start()].strip().rstrip(",").strip()
         # 解析书卷+章:节
         bk_m = re.match(
-            r"^([1-3]\s+\w+\.?|\w+\.?)\s+(\d+):(\d+)$", rest
+            r"^([1-3]\s+\w+\.?|\w+\.?)\s+(\d+):(\d+)\.?$", rest
         )
         if not bk_m:
-            return None
+            return None, ""
         book_en = bk_m.group(1).strip()
         ch_num = int(bk_m.group(2))
         verse = bk_m.group(3)
         book_zh = _BIBLE_ABBR_EN_TO_ZH.get(book_en)
         if not book_zh:
-            return None
+            return None, ""
         ch_zh = _int_to_bible_chapter_zh(ch_num)
-        return f"恢复本圣经{book_zh}{ch_zh}{verse}{footnote}"
+        return f"恢复本圣经{book_zh}{ch_zh}{verse}{footnote}", SOURCE_PATH_RULE
 
     # ── 生命读经 ────────────────────────────────────────────────────────────────
     if head.startswith("Life-study of"):
         book_en = head[len("Life-study of"):].strip()
         book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
         if not book_zh:
-            return None
+            return None, ""
         tail = base[base.index(",") + 1:].strip() if "," in base else ""
         if not tail:
-            return None
+            return None, ""
         msg = _parse_msg_en(tail)
         if not msg:
-            return None
-        return f"{book_zh}生命读经，{msg}"
+            return None, ""
+        return f"{book_zh}生命读经，{msg}", SOURCE_PATH_RULE
 
     # ── 结晶读经 ────────────────────────────────────────────────────────────────
     if head.startswith("Crystallization-study of"):
         book_en = head[len("Crystallization-study of"):].strip()
         book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
         if not book_zh:
-            return None
+            return None, ""
         tail = base[base.index(",") + 1:].strip() if "," in base else ""
         if not tail:
-            return None
+            return None, ""
         msg = _parse_msg_en(tail)
         if not msg:
-            return None
-        return f"{book_zh}结晶读经，{msg}"
+            return None, ""
+        return f"{book_zh}结晶读经，{msg}", SOURCE_PATH_RULE
 
     # ── 新约总论 ────────────────────────────────────────────────────────────────
     if head in ("The Conclusion of the New Testament",
@@ -1910,60 +2103,101 @@ def _rule_translate_source_en(source_en: str) -> str | None:
         tail = base[base.index(",") + 1:].strip() if "," in base else ""
         msg = _parse_msg_en(tail)
         if not msg:
-            return None
-        return f"新约总论，{msg}"
+            return None, ""
+        return f"新约总论，{msg}", SOURCE_PATH_RULE
 
     # ── 李常受文集 ──────────────────────────────────────────────────────────────
     if head in ("CWWL", "The Collected Works of Witness Lee"):
+        lg_m = _EN_CWWL_LG_RE.match(base)
+        if lg_m:
+            vol = int(lg_m.group(1))
+            prefix = f"李常受文集信函与拾遗第{_int_to_chinese_numeral(vol)}册"
+            rest = base[lg_m.end():].lstrip(",").strip()
+            if not rest:
+                return prefix, SOURCE_PATH_RULE
+            msg_kw_m = re.search(r"(msgs?\.|chs?\.)\s*\d", rest)
+            if msg_kw_m:
+                book_part = rest[: msg_kw_m.start()].strip().strip('",').strip()
+                msg_str = rest[msg_kw_m.start() :].strip()
+                msg = _parse_msg_en(msg_str)
+                if not msg:
+                    return None, ""
+                if book_part:
+                    book_zh, book_path = _en_book_title_to_zh(book_part)
+                    return f"{prefix}，{book_zh}，{msg}", book_path
+                return f"{prefix}，{msg}", SOURCE_PATH_RULE
+            return None, ""
         m = _EN_CWWL_RE.match(base)
         if not m:
-            return None
+            return None, ""
         year_zh = _year_en_to_zh(m.group(1))
         vol = int(m.group(2))
         prefix = f"李常受文集{year_zh}年第{_int_to_chinese_numeral(vol)}册"
         rest = base[m.end():].lstrip(",").strip()
         if not rest:
-            return prefix
-        # 提取书名（引号之间）和篇/章
-        title_m = re.match(r'^"([^"]+)",?\s*(.*)$', rest)
-        if title_m:
-            book_en = title_m.group(1).strip().rstrip(",")
-            msg_str = title_m.group(2).strip()
-            book_zh = _BOOK_TITLE_EN_TO_ZH.get(book_en, book_en)
+            return prefix, SOURCE_PATH_RULE
+        # 用篇/章关键词从右定位，兼容有引号、无引号、缺引号
+        msg_kw_m = re.search(r"(msgs?\.|chs?\.)\s*\d", rest)
+        if msg_kw_m:
+            book_part = rest[: msg_kw_m.start()].strip().strip('",').strip()
+            msg_str = rest[msg_kw_m.start() :].strip()
             msg = _parse_msg_en(msg_str)
             if not msg:
-                return None
-            return f"{prefix}，{book_zh}，{msg}"
-        # 无书名，直接是篇/章
+                return None, ""
+            if book_part:
+                book_zh, book_path = _en_book_title_to_zh(book_part)
+                return f"{prefix}，{book_zh}，{msg}", book_path
+            return f"{prefix}，{msg}", SOURCE_PATH_RULE
+        # 无书名无篇章关键词，尝试直接解析
         msg = _parse_msg_en(rest)
         if not msg:
-            return None
-        return f"{prefix}，{msg}"
+            return None, ""
+        return f"{prefix}，{msg}", SOURCE_PATH_RULE
 
     # ── 倪柝声文集 ──────────────────────────────────────────────────────────────
     if head in ("CWWN", "The Collected Works of Watchman Nee"):
         m = _EN_CWWN_RE.match(base)
         if not m:
-            return None
+            return None, ""
         vol = int(m.group(1))
         ji, ce = _cwwn_vol_to_zh(vol)
         prefix = f"倪柝声文集第{_int_to_chinese_numeral(ji)}辑第{_int_to_chinese_numeral(ce)}册"
         rest = base[m.end():].lstrip(",").strip()
         if not rest:
-            return prefix
-        title_m = re.match(r'^"([^"]+)",?\s*(.*)$', rest)
-        if title_m:
-            book_en = title_m.group(1).strip().rstrip(",")
-            msg_str = title_m.group(2).strip()
-            book_zh = _BOOK_TITLE_EN_TO_ZH.get(book_en, book_en)
+            return prefix, SOURCE_PATH_RULE
+        msg_kw_m = re.search(r"(msgs?\.|chs?\.)\s*\d", rest)
+        if msg_kw_m:
+            book_part = rest[: msg_kw_m.start()].strip().strip('",').strip()
+            msg_str = rest[msg_kw_m.start() :].strip()
             msg = _parse_msg_en(msg_str)
             if not msg:
-                return None
-            return f"{prefix}，{book_zh}，{msg}"
+                return None, ""
+            if book_part:
+                book_zh, book_path = _en_book_title_to_zh(book_part)
+                return f"{prefix}，{book_zh}，{msg}", book_path
+            return f"{prefix}，{msg}", SOURCE_PATH_RULE
         msg = _parse_msg_en(rest)
         if not msg:
-            return None
-        return f"{prefix}，{msg}"
+            return None, ""
+        return f"{prefix}，{msg}", SOURCE_PATH_RULE
+
+    # ── 真理课程 ────────────────────────────────────────────────────────────────
+    if head == "Truth Lessons":
+        tl_m = _EN_TRUTH_LESSONS_RE.match(base)
+        if not tl_m:
+            return None, ""
+        level = int(tl_m.group(1))
+        vol = int(tl_m.group(2))
+        level_zh = _int_to_chinese_numeral(level)
+        vol_zh = _int_to_chinese_numeral(vol)
+        prefix = f"真理课程，{level_zh}级卷{vol_zh}"
+        rest = base[tl_m.end():].lstrip(",").strip()
+        if not rest:
+            return prefix, SOURCE_PATH_RULE
+        msg = _parse_msg_en(rest)
+        if not msg:
+            return None, ""
+        return f"{prefix}，{msg}", SOURCE_PATH_RULE
 
     # ── 节期类 ──────────────────────────────────────────────────────────────────
     m = _EN_YEAR_RE.match(base)
@@ -1972,38 +2206,43 @@ def _rule_translate_source_en(source_en: str) -> str | None:
         conf_en = m.group(2).strip().rstrip(",")
         conf_zh = _CONFERENCE_EN_TO_ZH.get(conf_en)
         if not conf_zh:
-            return None
+            return None, ""
         tail = base[m.end():].lstrip(",").strip()
         msg = _parse_msg_en(tail)
         if not msg:
-            return None
-        return f"{year_en}年{conf_zh}，{msg}"
+            return None, ""
+        return f"{year_en}年{conf_zh}，{msg}", SOURCE_PATH_RULE
 
-    return None
+    return None, ""
 
 
 async def translate_source_zh_batch(
     items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
-) -> tuple[dict[int, str], float]:
+) -> tuple[dict[int, str], dict[int, list[str]], float]:
     """
     批量翻译 reference_source_zh 列表。
     items: [(prep_index, source_list, line_refs, has_star), ...]
     整单一次 Gemini 处理所有路1推算 + 路2 未命中出处。
+    返回：(译文 map, 路径标签 map, 费用 USD)
     """
     if not items:
-        return {}, 0.0
+        return {}, {}, 0.0
 
     results: dict[int, str] = {}
+    paths_map: dict[int, list[str]] = {}
     total_cost_usd = 0.0
     infer_tasks: list[_SourceInferTask] = []
     road2_tasks: list[_SourceRoad2Task] = []
-    pending: dict[int, tuple[list[str], bool, list[str]]] = {}
+    infer_keys: set[tuple[int, int]] = set()
+    road2_keys: set[tuple[int, int]] = set()
+    pending: dict[int, tuple[list[str], bool, list[str], list[str]]] = {}
 
     for prep_idx, source_list, line_refs, has_star in items:
         if not source_list:
             continue
 
         en_parts = [""] * len(source_list)
+        path_parts = [""] * len(source_list)
 
         for i, source_zh in enumerate(source_list):
             base, _ = _strip_paragraph_suffix(source_zh)
@@ -2011,6 +2250,7 @@ async def translate_source_zh_batch(
             table_en = lookup_source_en(base)
             if table_en:
                 en_parts[i] = table_en
+                path_parts[i] = SOURCE_PATH_TABLE
                 logger.info("[source_translator] 路1b表命中: %s → %s", source_zh, table_en)
                 continue
             hit_en, _, lookup_cost, infer_meta = await _kg_rag_source_lookup(
@@ -2019,14 +2259,29 @@ async def translate_source_zh_batch(
             total_cost_usd += lookup_cost
             if hit_en:
                 en_parts[i] = hit_en
+                path_parts[i] = SOURCE_PATH_RAG
                 logger.info("[source_translator] 路1a命中: %s → %s", source_zh, hit_en)
             else:
                 # 路1c：规则翻译兜底
-                rule_en = _rule_translate_source_zh(source_zh)
+                rule_en, rule_path = _rule_translate_source_zh(source_zh)
                 if rule_en:
-                    en_parts[i] = rule_en
+                    if rule_path == SOURCE_PATH_RULE_AI:
+                        road2_tasks.append(
+                            _SourceRoad2Task(
+                                prep_idx=prep_idx,
+                                src_idx=i,
+                                source_zh=rule_en,
+                                line_refs=[],
+                            )
+                        )
+                        road2_keys.add((prep_idx, i))
+                        path_parts[i] = SOURCE_PATH_RULE_AI
+                    else:
+                        en_parts[i] = rule_en
+                        path_parts[i] = rule_path
                     logger.info("[source_translator] 路1c规则命中: %s → %s", source_zh, rule_en)
                 elif infer_meta:
+                    infer_keys.add((prep_idx, i))
                     infer_tasks.append(
                         _SourceInferTask(
                             prep_idx=prep_idx,
@@ -2037,6 +2292,7 @@ async def translate_source_zh_batch(
                         )
                     )
                 else:
+                    road2_keys.add((prep_idx, i))
                     road2_tasks.append(
                         _SourceRoad2Task(
                             prep_idx=prep_idx,
@@ -2046,7 +2302,7 @@ async def translate_source_zh_batch(
                         )
                     )
 
-        pending[prep_idx] = (en_parts, has_star, source_list)
+        pending[prep_idx] = (en_parts, has_star, source_list, path_parts)
 
     if infer_tasks or road2_tasks:
         logger.info(
@@ -2057,8 +2313,13 @@ async def translate_source_zh_batch(
         gemini_map, gemini_cost = await _gemini_sources_once(infer_tasks, road2_tasks)
         total_cost_usd += gemini_cost
         for (prep_idx, src_idx), translated in gemini_map.items():
-            en_parts, _, _ = pending[prep_idx]
-            en_parts[src_idx] = translated
+            en_parts, _, _, path_parts = pending[prep_idx]
+            en_parts[src_idx] = _clean_source_en(translated) if translated else ""
+            if (prep_idx, src_idx) in infer_keys:
+                path_parts[src_idx] = SOURCE_PATH_INFER
+            elif (prep_idx, src_idx) in road2_keys:
+                if not path_parts[src_idx]:
+                    path_parts[src_idx] = SOURCE_PATH_AI
             logger.info(
                 "[source_translator] Gemini出处: prep=%s idx=%s → %s",
                 prep_idx,
@@ -2066,12 +2327,14 @@ async def translate_source_zh_batch(
                 translated,
             )
 
-    for prep_idx, (en_parts, has_star, source_list) in pending.items():
+    for prep_idx, (en_parts, has_star, source_list, path_parts) in pending.items():
         for i, source_zh in enumerate(source_list):
             if not en_parts[i]:
                 en_parts[i] = source_zh
+                path_parts[i] = ""
         formatted = format_source_en(en_parts, has_star)
         results[prep_idx] = formatted
+        paths_map[prep_idx] = path_parts
         logger.info(
             "[source_translator] 出处译文 prep=%s %s | debug %s",
             prep_idx,
@@ -2079,7 +2342,7 @@ async def translate_source_zh_batch(
             format_source_en_analysis(en_parts, has_star),
         )
 
-    return results, total_cost_usd
+    return results, paths_map, total_cost_usd
 
 
 async def verify_source_lines(lines: list[str]) -> None:
