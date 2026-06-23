@@ -10,7 +10,14 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from user.token import test_token
-from features.enhanced_translate.pool import lookup_line_en, update_record, update_record_en2zh
+from features.enhanced_translate.pool import (
+    append_source_pool_records,
+    lookup_line_en,
+    update_record,
+    update_record_en2zh,
+    update_source_pool_record,
+    update_source_pool_record_en2zh,
+)
 from features.enhanced_translate.service import (
     MAX_CONTENT_CHARS,
     _INDICES_DENSE,
@@ -23,6 +30,7 @@ from features.enhanced_translate.service import (
     _retrieve_bible_reading_line,
     _retrieve_line,
     _retrieve_title_line,
+    _strip_source_prefix,
     enhanced_translate,
     enhanced_translate_en2zh,
 )
@@ -32,6 +40,7 @@ from features.enhanced_translate.source_translator import (
     format_source_en,
     format_source_zh,
     parse_source_from_line,
+    parse_source_from_line_en,
 )
 
 logger = logging.getLogger("ai_search.enhanced_translate")
@@ -48,6 +57,31 @@ class UpdateTranslationRequest(BaseModel):
     original_line: str = Field(..., min_length=1, max_length=10_000)
     new_translation: str = Field(..., min_length=1, max_length=10_000)
     direction: str = Field(default="zh2en")  # "zh2en" 或 "en2zh"
+    line_type: str = Field(default="")
+
+
+def _sync_source_pool_from_translation(
+    original_line: str,
+    new_translation: str,
+    direction: str,
+) -> None:
+    """从正文行末出处解析并写回 source_pool（best effort）。"""
+    if direction == "en2zh":
+        _, en_sources = parse_source_from_line_en(original_line)
+        _, zh_sources = parse_source_from_line(new_translation)
+        for en_src, zh_src in zip(en_sources, zh_sources):
+            en_clean = en_src.strip().strip("()")
+            zh_clean = zh_src.strip().strip("（）")
+            if en_clean and zh_clean:
+                update_source_pool_record_en2zh(en_clean, zh_clean)
+    else:
+        _, zh_sources = parse_source_from_line(original_line)
+        _, en_sources = parse_source_from_line_en(new_translation)
+        for zh_src, en_src in zip(zh_sources, en_sources):
+            zh_clean = zh_src.strip().strip("（）")
+            en_clean = en_src.strip().strip("()")
+            if zh_clean and en_clean:
+                update_source_pool_record(zh_clean, en_clean)
 
 
 @router.post(
@@ -79,6 +113,34 @@ async def api_enhanced_translate_en2zh(req: EnhancedTranslateRequest):
     dependencies=[Depends(test_token)],
 )
 async def api_update_translation(req: UpdateTranslationRequest):
+    if req.line_type == "source":
+        if req.direction == "en2zh":
+            if not any(c.isascii() and c.isalpha() for c in req.original_line):
+                return {
+                    "success": False,
+                    "error": "英翻中方向的 original_line 必须是英文",
+                }
+            _, en_content = _strip_source_prefix(req.original_line.strip())
+            _, zh_content = _strip_source_prefix(req.new_translation.strip())
+            updated = update_source_pool_record_en2zh(
+                en_content or req.original_line.strip(),
+                zh_content or req.new_translation.strip(),
+            )
+        else:
+            _, zh_content = _strip_source_prefix(req.original_line.strip())
+            _, en_content = _strip_source_prefix(req.new_translation.strip())
+            zh_val = zh_content or req.original_line.strip()
+            en_val = en_content or req.new_translation.strip()
+            updated = update_source_pool_record(zh_val, en_val)
+            if not updated:
+                added, _ = append_source_pool_records(
+                    [{"zh": zh_val, "en": en_val, "source_type": "manual"}]
+                )
+                updated = added > 0
+        if not updated:
+            return {"success": False, "error": "Source Pool 写入失败"}
+        return {"success": True}
+
     if req.direction == "en2zh":
         if not any(c.isascii() and c.isalpha() for c in req.original_line):
             return {
@@ -88,6 +150,11 @@ async def api_update_translation(req: UpdateTranslationRequest):
         updated = update_record_en2zh(req.original_line, req.new_translation)
     else:
         updated = update_record(req.original_line, req.new_translation)
+
+    _sync_source_pool_from_translation(
+        req.original_line, req.new_translation, req.direction
+    )
+
     if not updated:
         return {
             "success": False,

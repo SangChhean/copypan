@@ -374,6 +374,8 @@ def collect_auto_append_rows(
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for i, group in enumerate(line_ref_groups):
+        if group.get("line_type") == "source":
+            continue
         st = group.get("stats") or {}
         if st.get("additional_pool_line") or st.get("pool_line"):
             continue
@@ -407,6 +409,8 @@ def collect_auto_append_rows_en2zh(
     """英翻中方向：en 是输入，zh 是译文，存入 Pool 格式不变 {zh, en}。"""
     rows: list[dict[str, Any]] = []
     for i, group in enumerate(line_ref_groups):
+        if group.get("line_type") == "source":
+            continue
         st = group.get("stats") or {}
         if st.get("additional_pool_line") or st.get("pool_line"):
             continue
@@ -538,4 +542,182 @@ def update_record_en2zh(en_line: str, new_zh: str) -> bool:
     }
     _write_pool(existing)
     logger.info("[enhanced_translate_pool] en2zh 已更新 norm_en=%s", target_norm_en)
+    return True
+
+
+# ── source_pool ──────────────────────────────────────────────────────────────
+_SOURCE_POOL_PATH = _POOL_DIR / "source_pool.jsonl"
+_source_pool_by_norm_zh: dict[str, dict[str, Any]] = {}
+_source_pool_by_norm_en: dict[str, dict[str, Any]] = {}
+_source_pool_loaded = False
+
+
+def _load_source_pool() -> None:
+    global _source_pool_by_norm_zh, _source_pool_by_norm_en, _source_pool_loaded
+    _source_pool_by_norm_zh = {}
+    _source_pool_by_norm_en = {}
+    if not _SOURCE_POOL_PATH.exists():
+        _source_pool_loaded = True
+        return
+    with open(_SOURCE_POOL_PATH, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+                norm_zh = rec.get("norm_zh", "")
+                norm_en = rec.get("norm_en", "")
+                if norm_zh:
+                    _source_pool_by_norm_zh[norm_zh] = rec
+                if norm_en:
+                    _source_pool_by_norm_en[norm_en] = rec
+            except Exception:
+                pass
+    _source_pool_loaded = True
+
+
+def _ensure_source_pool_loaded() -> None:
+    global _source_pool_loaded
+    if not _source_pool_loaded:
+        _load_source_pool()
+
+
+def _normalize_source_key(s: str) -> str:
+    """剥末尾冒号（全角半角）后归一化，用于 source_pool 查询键。"""
+    return s.rstrip("：:").strip()
+
+
+def lookup_source_pool_en(source_zh: str) -> str | None:
+    """中翻英路0：用中文出处查英文出处。输入剥序号后的 source_content。"""
+    _ensure_source_pool_loaded()
+    norm = normalize_zh(_normalize_source_key(source_zh))
+    rec = _source_pool_by_norm_zh.get(norm)
+    return rec["en"] if rec else None
+
+
+def lookup_source_pool_zh(source_en: str) -> str | None:
+    """英翻中路0：用英文出处查中文出处。输入剥段号后的 base。"""
+    _ensure_source_pool_loaded()
+    norm = normalize_en(_normalize_source_key(source_en))
+    rec = _source_pool_by_norm_en.get(norm)
+    return rec["zh"] if rec else None
+
+
+def _write_source_pool() -> None:
+    _SOURCE_POOL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(_SOURCE_POOL_PATH, "w", encoding="utf-8") as f:
+        for rec in _source_pool_by_norm_zh.values():
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def append_source_pool_records(records: list[dict[str, Any]]) -> tuple[int, int]:
+    """
+    写入 source_pool，后写覆盖前写。
+    records 格式：[{zh, en, source_type}, ...]
+    zh/en 已是剥序号+剥外层括号的纯出处内容。
+    """
+    _ensure_source_pool_loaded()
+    if not records:
+        return 0, 0
+    added = 0
+    now = datetime.now(timezone.utc).isoformat()
+    for rec in records:
+        zh = _normalize_source_key((rec.get("zh") or "").strip())
+        en = _normalize_source_key((rec.get("en") or "").strip())
+        if not zh or not en:
+            continue
+        norm_zh = normalize_zh(zh)
+        norm_en = normalize_en(en)
+        if not norm_zh or not norm_en:
+            continue
+        entry = {
+            "zh": zh,
+            "en": en,
+            "norm_zh": norm_zh,
+            "norm_en": norm_en,
+            "source_type": rec.get("source_type", ""),
+            "saved_at": now,
+        }
+        old_by_zh = _source_pool_by_norm_zh.get(norm_zh)
+        if old_by_zh:
+            old_norm_en = old_by_zh.get("norm_en", "")
+            if old_norm_en and old_norm_en != norm_en:
+                _source_pool_by_norm_en.pop(old_norm_en, None)
+        old_by_en = _source_pool_by_norm_en.get(norm_en)
+        if old_by_en:
+            old_norm_zh = old_by_en.get("norm_zh", "")
+            if old_norm_zh and old_norm_zh != norm_zh:
+                _source_pool_by_norm_zh.pop(old_norm_zh, None)
+        _source_pool_by_norm_zh[norm_zh] = entry
+        _source_pool_by_norm_en[norm_en] = entry
+        added += 1
+    if added > 0:
+        _write_source_pool()
+    return added, 0
+
+
+def update_source_pool_record(zh: str, new_en: str) -> bool:
+    """中翻英手动写回：用中文出处定位，覆盖英文出处。"""
+    _ensure_source_pool_loaded()
+    zh = _normalize_source_key((zh or "").strip())
+    new_en = _normalize_source_key((new_en or "").strip())
+    if not zh or not new_en:
+        return False
+    norm_zh = normalize_zh(zh)
+    rec = _source_pool_by_norm_zh.get(norm_zh)
+    if not rec:
+        return False
+    old_norm_en = rec.get("norm_en", "")
+    if old_norm_en:
+        _source_pool_by_norm_en.pop(old_norm_en, None)
+    norm_en = normalize_en(new_en)
+    entry = {
+        **rec,
+        "en": new_en,
+        "norm_en": norm_en,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _source_pool_by_norm_zh[norm_zh] = entry
+    _source_pool_by_norm_en[norm_en] = entry
+    _write_source_pool()
+    return True
+
+
+def update_source_pool_record_en2zh(en: str, new_zh: str) -> bool:
+    """英翻中手动写回：用英文出处定位，覆盖中文出处。"""
+    _ensure_source_pool_loaded()
+    en = _normalize_source_key((en or "").strip())
+    new_zh = _normalize_source_key((new_zh or "").strip())
+    if not en or not new_zh:
+        return False
+    norm_en = normalize_en(en)
+    rec = _source_pool_by_norm_en.get(norm_en)
+    if not rec:
+        norm_zh = normalize_zh(new_zh)
+        entry = {
+            "zh": new_zh,
+            "en": en,
+            "norm_zh": norm_zh,
+            "norm_en": norm_en,
+            "source_type": "manual",
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }
+        _source_pool_by_norm_zh[norm_zh] = entry
+        _source_pool_by_norm_en[norm_en] = entry
+        _write_source_pool()
+        return True
+    old_norm_zh = rec.get("norm_zh", "")
+    if old_norm_zh:
+        _source_pool_by_norm_zh.pop(old_norm_zh, None)
+    norm_zh = normalize_zh(new_zh)
+    entry = {
+        **rec,
+        "zh": new_zh,
+        "norm_zh": norm_zh,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _source_pool_by_norm_zh[norm_zh] = entry
+    _source_pool_by_norm_en[norm_en] = entry
+    _write_source_pool()
     return True
