@@ -375,7 +375,7 @@ def collect_auto_append_rows(
     rows: list[dict[str, Any]] = []
     for i, group in enumerate(line_ref_groups):
         st = group.get("stats") or {}
-        if st.get("additional_pool_line"):
+        if st.get("additional_pool_line") or st.get("pool_line"):
             continue
         if not (group.get("gemini_translate") or "").strip():
             continue
@@ -408,7 +408,7 @@ def collect_auto_append_rows_en2zh(
     rows: list[dict[str, Any]] = []
     for i, group in enumerate(line_ref_groups):
         st = group.get("stats") or {}
-        if st.get("additional_pool_line"):
+        if st.get("additional_pool_line") or st.get("pool_line"):
             continue
         if not (group.get("gemini_translate") or "").strip():
             continue

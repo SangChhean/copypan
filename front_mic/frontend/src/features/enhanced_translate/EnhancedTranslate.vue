@@ -26,6 +26,15 @@ const downloading = ref(false);
 const downloadingRefsTxt = ref(false);
 const editedTranslations = ref({});
 
+const computedResult = computed(() => {
+  const groups = lineRefGroups.value;
+  if (!groups.length) return result.value;
+  return groups
+    .map((g) => editedTranslations.value[g.line_index] ?? g.gemini_translate ?? "")
+    .filter((line) => line.trim() !== "")
+    .join("\n");
+});
+
 const canTranslate = computed(() => !!(content.value || "").trim());
 
 function formatDuration(ms) {
@@ -155,15 +164,7 @@ function translateEn2zh() {
 }
 
 function getEditedResultText() {
-  if (!lineRefGroups.value.length) return (result.value || "").trim();
-  return lineRefGroups.value
-    .map((g, i) => {
-      const idx = g.line_index ?? i;
-      const edited = editedTranslations.value[idx];
-      if (edited !== undefined && edited !== null) return String(edited);
-      return g.gemini_translate || "";
-    })
-    .join("\n");
+  return (computedResult.value ?? "").trim();
 }
 
 const savingLineIndex = ref(null);
@@ -322,6 +323,32 @@ function lineTypeClass(group) {
   if (t === "title") return "line-type-title";
   if (t === "bible-reading") return "line-type-bible-reading";
   return "line-type-reference";
+}
+
+function sourcePathClass(path) {
+  const map = {
+    pool: "path-pool",
+    rag: "path-rag",
+    table: "path-table",
+    rule: "path-rule",
+    "rule+ai": "path-ruleai",
+    infer: "path-infer",
+    ai: "path-ai",
+  };
+  return map[path] || "path-ai";
+}
+
+function sourcePathLabel(path) {
+  const map = {
+    pool: "缓存",
+    rag: "语料",
+    table: "表",
+    rule: "规则",
+    "rule+ai": "规则+AI",
+    infer: "推算",
+    ai: "AI",
+  };
+  return map[path] || "AI";
 }
 
 function formatCost(usd) {
@@ -558,7 +585,7 @@ function downloadRefsTxt() {
           <div class="result-title-row">
             <span>{{ direction === "en2zh" ? "中文纲目" : "英文纲目" }}</span>
             <span v-if="durationMs" class="dur">{{ formatDuration(durationMs) }}</span>
-            <button type="button" class="link-btn" @click="copyText(result)">复制</button>
+            <button type="button" class="link-btn" @click="copyText(computedResult)">复制</button>
             <button type="button" class="link-btn" :disabled="downloading" @click="downloadFormatted">
               {{ downloading ? "下载中…" : "下载 DOCX" }}
             </button>
@@ -573,7 +600,7 @@ function downloadRefsTxt() {
           </div>
         </template>
         <div class="result-scroll">
-          <pre class="result-text">{{ result }}</pre>
+          <pre class="result-text">{{ computedResult }}</pre>
         </div>
       </a-card>
 
@@ -627,6 +654,13 @@ function downloadRefsTxt() {
                   :key="si"
                   class="ref-source-pair"
                 >
+                  <span
+                    v-if="group.reference_source_paths && group.reference_source_paths[si]"
+                    class="source-path-tag"
+                    :class="sourcePathClass(group.reference_source_paths[si])"
+                  >
+                    {{ sourcePathLabel(group.reference_source_paths[si]) }}
+                  </span>
                   <span class="ref-source-zh">{{ srcZh }}</span>
                 </div>
                 <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
@@ -634,11 +668,26 @@ function downloadRefsTxt() {
                 <span v-else class="ref-source-pending">（待翻译）</span>
               </template>
               <template v-else>
+                <span
+                  v-if="group.reference_source_paths && group.reference_source_paths[0]"
+                  class="source-path-tag"
+                  :class="sourcePathClass(group.reference_source_paths[0])"
+                >
+                  {{ sourcePathLabel(group.reference_source_paths[0]) }}
+                </span>
                 <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
                 <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
                 <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
                 <span v-else class="ref-source-pending">（待翻译）</span>
               </template>
+            </div>
+            <div v-if="group.source_line_path" class="source-path-row">
+              <span
+                class="source-path-tag"
+                :class="sourcePathClass(group.source_line_path)"
+              >
+                {{ sourcePathLabel(group.source_line_path) }}
+              </span>
             </div>
             <a-textarea
               v-model:value="editedTranslations[group.line_index]"
@@ -1197,5 +1246,53 @@ function downloadRefsTxt() {
 
 .ref-source-pending {
   color: #faad14;
+}
+
+.source-path-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 4px;
+  font-weight: 500;
+}
+
+.path-pool {
+  background: #d4edda;
+  color: #155724;
+}
+
+.path-rag {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.path-table {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.path-rule {
+  background: #e2d9f3;
+  color: #4a1d7e;
+}
+
+.path-ruleai {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.path-infer {
+  background: #ffe5d0;
+  color: #7a3300;
+}
+
+.path-ai {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.source-path-row {
+  margin-bottom: 0.35rem;
 }
 </style>

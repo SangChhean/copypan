@@ -50,6 +50,7 @@ from features.enhanced_translate.pool import (
     zh_fuzzy_eq,
 )
 from features.enhanced_translate.source_translator import (
+    SOURCE_PATH_POOL,
     bracket_has_star,
     format_source_zh,
     parse_source_from_line,
@@ -134,6 +135,9 @@ _PREFIX_TO_EN = {
     "三": "C.",
     "四": "D.",
     "五": "E.",
+    "六": "F.",
+    "七": "G.",
+    "八": "H.",
 }
 
 _PREFIX_TO_ZH = {v: k for k, v in _PREFIX_TO_EN.items()}
@@ -1311,6 +1315,8 @@ def _build_line_ref_group(
     reference_source_zh: str = "",
     reference_source_zh_list: list[str] | None = None,
     reference_source_en: str = "",
+    reference_source_paths: list[str] | None = None,
+    source_line_path: str = "",
 ) -> dict[str, Any]:
     deduped = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
     stats = _stats_from_line_refs(
@@ -1331,6 +1337,8 @@ def _build_line_ref_group(
         "reference_source_zh": reference_source_zh,
         "reference_source_zh_list": reference_source_zh_list or [],
         "reference_source_en": reference_source_en,
+        "reference_source_paths": reference_source_paths or [],
+        "source_line_path": source_line_path or "",
     }
 
 
@@ -2403,6 +2411,17 @@ def _build_reading_batch_items(
                 continue
             text = (prep.get("line_for_retrieval") or prep.get("line") or "").strip()
             if text:
+                if not en2zh:
+                    # 中翻英：读经 → Scripture Reading:
+                    text = re.sub(r'^读经[：:]', 'Scripture Reading:', text)
+                else:
+                    # 英翻中：Scripture Reading: → 读经：
+                    text = re.sub(
+                        r'^Scripture\s+Reading\s*[：:]',
+                        '读经：',
+                        text,
+                        flags=re.IGNORECASE,
+                    )
                 items.append((line_i, text))
             continue
         if not suffix:
@@ -2458,16 +2477,22 @@ def _append_source_zh(body_zh: str, prep: dict[str, Any]) -> str:
 
 
 def _source_group_kwargs(prep: dict[str, Any], *, en2zh: bool = False) -> dict[str, Any]:
+    paths = prep.get("reference_source_paths") or []
+    source_line_path = prep.get("source_line_path") or ""
     if en2zh:
         return {
             "reference_source_zh": prep.get("reference_source_zh_result") or "",
             "reference_source_zh_list": prep.get("reference_source_en_list") or [],
             "reference_source_en": prep.get("reference_source_zh_result") or "",
+            "reference_source_paths": paths,
+            "source_line_path": source_line_path,
         }
     return {
         "reference_source_zh": prep.get("reference_source_zh") or "",
         "reference_source_zh_list": prep.get("reference_source_zh_list") or [],
         "reference_source_en": prep.get("reference_source_en") or "",
+        "reference_source_paths": paths,
+        "source_line_path": source_line_path,
     }
 
 
@@ -2490,7 +2515,12 @@ async def _assemble_line(
             )
         out = (prep.get("pool_line_en") or line).strip()
         return out, _build_line_ref_group(
-            line_i, line, [], line_type="source", gemini_translate=out
+            line_i,
+            line,
+            [],
+            line_type="source",
+            gemini_translate=out,
+            source_line_path=prep.get("source_line_path") or "",
         )
 
     src_kw = _source_group_kwargs(prep, en2zh=en2zh)
@@ -2524,7 +2554,11 @@ async def _assemble_line(
             "gemini_translate": out,
         }
         if en2zh:
-            pool_kw["additional_pool_line"] = True
+            pool_source = prep.get("pool_source", "local")
+            if pool_source == "es":
+                pool_kw["pool_line"] = True
+            else:
+                pool_kw["additional_pool_line"] = True
             pool_kw["retrieval_skipped"] = True
         else:
             pool_kw["pool_line"] = True
@@ -2739,6 +2773,7 @@ async def enhanced_translate(
         cached = (p.get("line_cached_en") or "").strip()
         if cached:
             p["pool_line_en"] = cached
+            p["source_line_path"] = SOURCE_PATH_POOL
     source_preps = [
         p for p in all_source_preps
         if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
@@ -2748,14 +2783,16 @@ async def enhanced_translate(
             (p["line_i"], [p["source_content"]], [], False)
         )
     # 整单一次调用
-    source_en_map, source_cost_usd = await translate_source_zh_batch(source_items)
+    source_en_map, source_paths_map, source_cost_usd = await translate_source_zh_batch(source_items)
     total_cost_usd += source_cost_usd
     # 分发结果
     for prep in preps:
         if prep.get("line_type") != "source":
             prep["reference_source_en"] = source_en_map.get(prep["line_i"], "")
+            prep["reference_source_paths"] = source_paths_map.get(prep["line_i"], [])
     for p in source_preps:
         translated = source_en_map.get(p["line_i"], "")
+        p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]
         if translated:
             inner = translated.strip("（）()")
             p["pool_line_en"] = p["source_prefix"] + inner
@@ -2836,6 +2873,7 @@ async def _retrieve_line_en2zh(
                 "needs_batch": False,
                 "line_cached_en": "",
                 "pool_line_en": pool_zh,
+                "pool_source": "local",
                 **_src_en,
             }
 
@@ -2866,6 +2904,7 @@ async def _retrieve_line_en2zh(
                 "needs_batch": False,
                 "line_cached_en": "",
                 "pool_line_en": pool_exact,
+                "pool_source": "es",
                 **_src_en,
             }
         title_part = _strip_title_prefix_en(body)
@@ -2941,6 +2980,7 @@ async def _retrieve_line_en2zh(
                     "needs_batch": False,
                     "line_cached_en": "",
                     "pool_line_en": pool_zh,
+                    "pool_source": "local",
                     **_src_en,
                 }
             fuzzy_zh = await _pool_fuzzy_match_en(line_for_retrieval)
@@ -2955,6 +2995,7 @@ async def _retrieve_line_en2zh(
                     "needs_batch": False,
                     "line_cached_en": "",
                     "pool_line_en": fuzzy_zh,
+                    "pool_source": "es",
                     **_src_en,
                 }
             contains_hit = await _pool_contains_match_en(line_for_retrieval)
@@ -3279,6 +3320,7 @@ async def enhanced_translate_en2zh(
         cached = (p.get("line_cached_en") or "").strip()
         if cached:
             p["pool_line_en"] = cached
+            p["source_line_path"] = SOURCE_PATH_POOL
     source_preps = [
         p for p in all_source_preps
         if p.get("source_content") and not (p.get("line_cached_en") or "").strip()
@@ -3288,14 +3330,16 @@ async def enhanced_translate_en2zh(
             (p["line_i"], [p["source_content"]], [], False)
         )
     # 整单一次调用
-    source_zh_map, source_cost_usd = await translate_source_en_batch(source_items)
+    source_zh_map, source_paths_map, source_cost_usd = await translate_source_en_batch(source_items)
     total_cost_usd += source_cost_usd
     # 分发结果
     for prep in preps:
         if prep.get("line_type") != "source":
             prep["reference_source_zh_result"] = source_zh_map.get(prep["line_i"], "")
+            prep["reference_source_paths"] = source_paths_map.get(prep["line_i"], [])
     for p in source_preps:
         translated = source_zh_map.get(p["line_i"], "")
+        p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]
         if translated:
             inner = translated.strip("（）()")
             p["pool_line_en"] = p["source_prefix"] + inner
