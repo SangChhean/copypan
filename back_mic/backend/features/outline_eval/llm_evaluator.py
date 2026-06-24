@@ -585,10 +585,12 @@ async def eval_SYNTHESIS(
     t2: dict[str, Any],
     t3: dict[str, Any],
     t4: dict[str, Any],
+    total_score: float,
 ) -> dict[str, Any]:
     user = _substitute_prompt(
         PROMPT_SYNTHESIS,
         outline_nature=outline_nature,
+        total_score=str(total_score),
         t2_result=json.dumps(t2, ensure_ascii=False),
         t3_result=json.dumps(t3, ensure_ascii=False),
         t4_result=json.dumps(t4, ensure_ascii=False),
@@ -664,13 +666,16 @@ async def run_evaluation(
     t3 = dim_results["T3"]
     t4 = dim_results["T4"]
 
-    synthesis_raw = await eval_SYNTHESIS(answer, outline_nature, t2, t3, t4)
+    total_score = _calc_total_score(t1, t2, t3, t4, f1, f2, f3, f4)
+
+    synthesis_raw = await eval_SYNTHESIS(
+        answer, outline_nature, t2, t3, t4, total_score
+    )
     synthesis, _, _, synthesis_cost = _pop_usage(synthesis_raw)
     cost_usd += synthesis_cost
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
-    total_score = _calc_total_score(t1, t2, t3, t4, f1, f2, f3, f4)
     scripture_suggestions = _merge_scripture_suggestions(t1, skeleton)
 
     return {
