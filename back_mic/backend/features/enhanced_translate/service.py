@@ -2717,6 +2717,9 @@ async def enhanced_translate(
 
     line_cached_en: dict[int, str] = {}
     for i, line in enumerate(lines):
+        lt = line_types[i] if i < len(line_types) else "reference"
+        if lt == "source":
+            continue
         cached = lookup_line_en(line)
         if cached:
             line_cached_en[i] = cached

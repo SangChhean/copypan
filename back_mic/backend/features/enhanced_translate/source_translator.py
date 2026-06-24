@@ -13,7 +13,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from es_config import es as es_client
-from features.enhanced_translate.pool import levenshtein_distance, normalize_en, normalize_zh, zh_eq
+from features.enhanced_translate.pool import (
+    append_source_pool_records,
+    levenshtein_distance,
+    lookup_source_pool_en,
+    lookup_source_pool_zh,
+    normalize_en,
+    normalize_zh,
+    zh_eq,
+)
 from features.enhanced_translate.prompts import (
     REFERENCE_SOURCE_TRANSLATE_PROMPT,
     REFERENCE_SOURCE_TRANSLATE_PROMPT_EN2ZH,
@@ -459,7 +467,8 @@ def _is_en_source_like(inner: str) -> bool:
     inner = inner.strip()
     if _EN_SOURCE_YEAR_RE.match(inner):
         return True
-    return any(inner.startswith(a) for a in _EN_SOURCE_ANCHORS)
+    inner_lower = inner.lower()
+    return any(inner_lower.startswith(a.lower()) for a in _EN_SOURCE_ANCHORS)
 
 
 def _outer_bracket_spans_en(line: str) -> list[tuple[int, int]]:
@@ -756,6 +765,13 @@ def _strip_paragraph_suffix(source0: str) -> tuple[str, str]:
     if m2:
         return s[: m2.start()].rstrip("*").rstrip(), m2.group(1)
     return s.rstrip("*").rstrip(), ""
+
+
+def _normalize_for_source_pool(s: str) -> str:
+    """剥外层括号、段号、末尾冒号，用于 source_pool 的存取键。"""
+    s = (s or "").strip().strip("（）()")
+    s, _ = _strip_paragraph_suffix(s)
+    return s.rstrip("：:").strip()
 
 
 def _paragraph_suffix_en(para_zh: str) -> str:
@@ -1180,6 +1196,12 @@ async def translate_source_en_batch(
         zh_parts = [""] * len(source_list)
         path_parts = [""] * len(source_list)
         for i, source_en in enumerate(source_list):
+            _sp_base = _normalize_for_source_pool(source_en)
+            _sp_zh = lookup_source_pool_zh(_sp_base)
+            if _sp_zh:
+                zh_parts[i] = _sp_zh.strip("（）")
+                path_parts[i] = SOURCE_PATH_POOL
+                continue
             base = _strip_en_paragraph_suffix(source_en)
             if _EN_SOURCE_YEAR_PREFIX_RE.match(base):
                 hit_zh = await _feasts_pool_lookup_en(source_en)
@@ -1243,6 +1265,18 @@ async def translate_source_en_batch(
         parts = [p for p in zh_parts if p]
         results[prep_idx] = "（" + "；".join(parts) + "）" if parts else ""
         paths_map[prep_idx] = path_parts
+
+    _sp_rows: list[dict[str, str]] = []
+    for _prep_idx, (_zh_parts, _source_list, _path_parts) in pending.items():
+        for _i, (_zh, _path) in enumerate(zip(_zh_parts, _path_parts)):
+            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
+                continue
+            _en_clean = _normalize_for_source_pool(_source_list[_i])
+            _zh_clean = _zh.strip().strip("（）")
+            if _zh_clean and _en_clean:
+                _sp_rows.append({"zh": _zh_clean, "en": _en_clean, "source_type": _path})
+    if _sp_rows:
+        append_source_pool_records(_sp_rows)
 
     return results, paths_map, total_cost_usd
 
@@ -2070,8 +2104,8 @@ def _rule_translate_source_en(source_en: str) -> tuple[str | None, str]:
         return f"恢复本圣经{book_zh}{ch_zh}{verse}{footnote}", SOURCE_PATH_RULE
 
     # ── 生命读经 ────────────────────────────────────────────────────────────────
-    if head.startswith("Life-study of"):
-        book_en = head[len("Life-study of"):].strip()
+    if head.lower().startswith("life-study of"):
+        book_en = re.sub(r"^life-study of\s*", "", head, flags=re.IGNORECASE).strip()
         book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
         if not book_zh:
             return None, ""
@@ -2084,8 +2118,10 @@ def _rule_translate_source_en(source_en: str) -> tuple[str | None, str]:
         return f"{book_zh}生命读经，{msg}", SOURCE_PATH_RULE
 
     # ── 结晶读经 ────────────────────────────────────────────────────────────────
-    if head.startswith("Crystallization-study of"):
-        book_en = head[len("Crystallization-study of"):].strip()
+    if head.lower().startswith("crystallization-study of"):
+        book_en = re.sub(
+            r"^crystallization-study of\s*", "", head, flags=re.IGNORECASE
+        ).strip()
         book_zh = _LIFE_STUDY_BOOK_EN_TO_ZH.get(book_en)
         if not book_zh:
             return None, ""
@@ -2245,6 +2281,12 @@ async def translate_source_zh_batch(
         path_parts = [""] * len(source_list)
 
         for i, source_zh in enumerate(source_list):
+            _sp_base = _normalize_for_source_pool(source_zh)
+            _sp_en = lookup_source_pool_en(_sp_base)
+            if _sp_en:
+                en_parts[i] = f"({_sp_en})"
+                path_parts[i] = SOURCE_PATH_POOL
+                continue
             base, _ = _strip_paragraph_suffix(source_zh)
             base = base.strip().strip("（）")
             table_en = lookup_source_en(base)
@@ -2341,6 +2383,18 @@ async def translate_source_zh_batch(
             formatted,
             format_source_en_analysis(en_parts, has_star),
         )
+
+    _sp_rows: list[dict[str, str]] = []
+    for _prep_idx, (_en_parts, _has_star, _source_list, _path_parts) in pending.items():
+        for _i, (_en, _path) in enumerate(zip(_en_parts, _path_parts)):
+            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
+                continue
+            _zh_clean = _normalize_for_source_pool(_source_list[_i])
+            _en_clean = _en.strip().strip("()")
+            if _zh_clean and _en_clean:
+                _sp_rows.append({"zh": _zh_clean, "en": _en_clean, "source_type": _path})
+    if _sp_rows:
+        append_source_pool_records(_sp_rows)
 
     return results, paths_map, total_cost_usd
 

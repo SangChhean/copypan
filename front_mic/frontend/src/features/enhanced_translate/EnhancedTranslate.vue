@@ -192,13 +192,16 @@ async function saveTranslation(group) {
         original_line: originalLine,
         new_translation: newTranslation,
         direction: direction.value,
+        line_type: group.line_type || "",
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(parseApiError(res, data));
     if (data.success) {
       group.gemini_translate = newTranslation;
-      toastSuccess(`Line ${lineIndex + 1} 已更新 Additional Pool`);
+      const poolLabel =
+        group.line_type === "source" ? "Source Pool" : "Additional Pool";
+      toastSuccess(`Line ${lineIndex + 1} 已更新 ${poolLabel}`);
     } else {
       toastWarning(data.error || "Pool 中无对应条目，未写入");
     }
@@ -297,15 +300,20 @@ function lineStatus(group) {
   const kinds = (group.deduped_refs || []).map((r) => effectiveMatchKind(r));
   if (kinds.includes("exact")) return "direct";
   if (kinds.includes("retrieved")) return "reference";
+  if (group.line_type === "source") return "source";
   return "none";
 }
 
 const refsStatusCount = computed(() => {
   const c = { direct: 0, reference: 0, none: 0 };
   lineRefGroups.value.forEach((g) => {
-    c[lineStatus(g)] += 1;
+    const s = lineStatus(g);
+    if (s in c) c[s] += 1;
   });
-  return c;
+  return {
+    ...c,
+    source: lineRefGroups.value.filter((g) => lineStatus(g) === "source").length,
+  };
 });
 
 const filteredLineRefGroups = computed(() => {
@@ -322,6 +330,7 @@ function lineTypeClass(group) {
   if (t === "outline") return "line-type-outline";
   if (t === "title") return "line-type-title";
   if (t === "bible-reading") return "line-type-bible-reading";
+  if (t === "source") return "line-type-source";
   return "line-type-reference";
 }
 
@@ -629,6 +638,13 @@ function downloadRefsTxt() {
             :class="{ 'stat-active': refsFilter === 'none' }"
             @click="refsFilter = 'none'"
           >无匹配 ({{ refsStatusCount.none }})</span>
+          <button
+            type="button"
+            :class="['filter-btn', refsFilter === 'source' ? 'active' : '']"
+            @click="refsFilter = 'source'"
+          >
+            参读信息列表 ({{ refsStatusCount.source }})
+          </button>
         </div>
         <div class="refs-scroll">
         <div class="refs-list">
@@ -1023,6 +1039,24 @@ function downloadRefsTxt() {
   border-color: #8c8c8c;
 }
 
+.filter-btn {
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  color: #d97706;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+
+.filter-btn.active {
+  background: #f59e0b;
+  color: #fff;
+  border-color: #f59e0b;
+}
+
 .refs-scroll {
   max-height: 1200px;
   overflow-y: auto;
@@ -1070,6 +1104,11 @@ function downloadRefsTxt() {
 .line-type-outline .line-type-tag {
   background: rgba(114, 46, 209, 0.1);
   color: #722ed1;
+}
+
+.line-type-source {
+  border-left: 4px solid #f59e0b;
+  padding-left: 0.5rem;
 }
 
 .pool-tag {
