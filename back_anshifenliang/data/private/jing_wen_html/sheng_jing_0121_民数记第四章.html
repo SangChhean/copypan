@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0121_民数记第四章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">民数记 第 四 章</h1>
+        <div class="verse"><span class="verse-number">4:1</span><span class="verse-text">耶和华对摩西、亚伦说，</span></div>
+        <div class="verse"><span class="verse-number">4:2</span><span class="verse-text">你要从利未子孙中，计算哥辖子孙的总数；按他们的家族、宗族，</span></div>
+        <div class="verse"><span class="verse-number">4:3</span><span class="verse-text">从<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>三十岁直到五十岁，凡进来<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>事奉，在会幕里作工的，全都计算。</span></div>
+        <div class="verse"><span class="verse-number">4:4</span><span class="verse-text">哥辖子孙在会幕里搬运至圣之物，所办的事乃是这样：</span></div>
+        <div class="verse"><span class="verse-number">4:5</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>起营的时候，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>亚伦和他儿子要进去摘下遮掩柜的幔子，用以蒙盖见证的柜；</span></div>
+        <div class="verse"><span class="verse-number">4:6</span><span class="verse-text">又放上<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>海狗皮盖，再铺上全蓝色的布，并把杠穿上。</span></div>
+        <div class="verse"><span class="verse-number">4:7</span><span class="verse-text">又要用蓝色布铺在<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>陈设饼的桌子上，将盘子、调羹、<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>奠酒的壶和杯，摆在上头；桌子上也必有常设的饼。</span></div>
+        <div class="verse"><span class="verse-number">4:8</span><span class="verse-text">又要铺上朱红色布，再蒙上海狗皮盖，并把杠穿上。</span></div>
+        <div class="verse"><span class="verse-number">4:9</span><span class="verse-text">要拿蓝色布，把灯台和灯台上供职用的灯盏、灯剪、灯花盘、并一切盛油的器皿，全都遮盖。</span></div>
+        <div class="verse"><span class="verse-number">4:10</span><span class="verse-text">又要把灯台和灯台的一切器具包在海狗皮里，放在抬架上。</span></div>
+        <div class="verse"><span class="verse-number">4:11</span><span class="verse-text">在金坛上要铺蓝色布，蒙上海狗皮盖，并把杠穿上。</span></div>
+        <div class="verse"><span class="verse-number">4:12</span><span class="verse-text">又要把圣所里供职用的一切器具，包在蓝色布里，蒙上海狗皮盖，放在抬架上。</span></div>
+        <div class="verse"><span class="verse-number">4:13</span><span class="verse-text">要收去坛上的灰，把紫色布铺在坛上；</span></div>
+        <div class="verse"><span class="verse-number">4:14</span><span class="verse-text">又要把坛上供职用的一切器具，就是火盆、肉叉、铲子、盘子，一切属坛的器具都摆在坛上，又铺上海狗皮盖，并把杠穿上。</span></div>
+        <div class="verse"><span class="verse-number">4:15</span><span class="verse-text">亚伦和他儿子把圣所和圣所的一切物件遮盖完了，将要起营的时候，哥辖的子孙就要来抬，只是不可摸圣物，免得他们死亡。会幕里这些物件是哥辖子孙所当抬的。</span></div>
+        <div class="verse"><span class="verse-number">4:16</span><span class="verse-text">祭司亚伦的儿子以利亚撒所要照管的是点灯的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>油与馨香的香，并常献的素祭和膏油，也要照管全帐幕与其中所有的，就是圣所和圣所的器具。</span></div>
+        <div class="verse"><span class="verse-number">4:17</span><span class="verse-text">耶和华对摩西、亚伦说，</span></div>
+        <div class="verse"><span class="verse-number">4:18</span><span class="verse-text">你们不可将哥辖人家族的支派从利未人中剪除；</span></div>
+        <div class="verse"><span class="verse-number">4:19</span><span class="verse-text">他们挨近至圣之物的时候，亚伦和他儿子要进去<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>派他们各人所当办的，所当抬的；要这样待他们，好使他们活着，不至死亡；</span></div>
+        <div class="verse"><span class="verse-number">4:20</span><span class="verse-text">只是他们连片刻都不可进去观看圣所，免得死亡。</span></div>
+        <div class="verse"><span class="verse-number">4:21</span><span class="verse-text">耶和华对摩西说，</span></div>
+        <div class="verse"><span class="verse-number">4:22</span><span class="verse-text">你也要计算革顺子孙的总数；按他们的宗族、家族，</span></div>
+        <div class="verse"><span class="verse-number">4:23</span><span class="verse-text">从三十岁直到五十岁，凡进来事奉，在会幕里办事的，你都要数点。</span></div>
+        <div class="verse"><span class="verse-number">4:24</span><span class="verse-text">革顺人家族在办事、抬物上的事奉，乃是这样：</span></div>
+        <div class="verse"><span class="verse-number">4:25</span><span class="verse-text">他们要抬帐幕的幕幔和会幕，会幕的盖与其上的海狗皮盖，和会幕的门帘，</span></div>
+        <div class="verse"><span class="verse-number">4:26</span><span class="verse-text">院子的帷子和门帘、（院子是围着帐幕和祭坛的、）绳子，并事奉用的一切器具；这些不论该怎么处理，他们都要去办。</span></div>
+        <div class="verse"><span class="verse-number">4:27</span><span class="verse-text">革顺的子孙在抬物、办事上的一切事奉，都要照亚伦和他儿子的吩咐；他们所当抬的一切，你们要派他们看守。</span></div>
+        <div class="verse"><span class="verse-number">4:28</span><span class="verse-text">这是革顺子孙的家族在会幕里所办的事；他们的职责，要在祭司亚伦的儿子以他玛的管理下。</span></div>
+        <div class="verse"><span class="verse-number">4:29</span><span class="verse-text">至于米拉利的子孙，你要按他们的家族、宗族，数点他们；</span></div>
+        <div class="verse"><span class="verse-number">4:30</span><span class="verse-text">从三十岁直到五十岁，凡进来事奉，在会幕里办事的，你都要数点。</span></div>
+        <div class="verse"><span class="verse-number">4:31</span><span class="verse-text">按他们在会幕里的一切事奉，他们的职责是抬帐幕的板、闩、柱子和卯座，</span></div>
+        <div class="verse"><span class="verse-number">4:32</span><span class="verse-text">院子四围的柱子和卯座、橛子、绳子、和一切的器具，并办理一切有关的事；他们所当抬的器具，你们要按名指定。</span></div>
+        <div class="verse"><span class="verse-number">4:33</span><span class="verse-text">这是米拉利子孙的家族，按他们在会幕里的一切事奉，所办的事，都在祭司亚伦的儿子以他玛的管理下。</span></div>
+        <div class="verse"><span class="verse-number">4:34</span><span class="verse-text">摩西、亚伦与会众的诸首领将哥辖的子孙，按他们的家族、宗族，</span></div>
+        <div class="verse"><span class="verse-number">4:35</span><span class="verse-text">从三十岁直到五十岁，凡进来事奉，在会幕里办事的，都数点了。</span></div>
+        <div class="verse"><span class="verse-number">4:36</span><span class="verse-text">他们按家族被数点的，有二千七百五十名。</span></div>
+        <div class="verse"><span class="verse-number">4:37</span><span class="verse-text">这些是哥辖人的家族中被数点的，都是在会幕里办事的，就是摩西、亚伦照耶和华藉摩西所吩咐数点的。</span></div>
+        <div class="verse"><span class="verse-number">4:38</span><span class="verse-text">革顺的子孙，按他们家族、宗族被数点的，</span></div>
+        <div class="verse"><span class="verse-number">4:39</span><span class="verse-text">从三十岁直到五十岁，凡进来事奉，在会幕里办事的，</span></div>
+        <div class="verse"><span class="verse-number">4:40</span><span class="verse-text">就是他们按家族、宗族被数点的，有二千六百三十名。</span></div>
+        <div class="verse"><span class="verse-number">4:41</span><span class="verse-text">这些是革顺子孙的家族中被数点的，都是在会幕里办事的，就是摩西、亚伦照耶和华所吩咐数点的。</span></div>
+        <div class="verse"><span class="verse-number">4:42</span><span class="verse-text">米拉利子孙的家族中，按他们家族、宗族被数点的，</span></div>
+        <div class="verse"><span class="verse-number">4:43</span><span class="verse-text">从三十岁直到五十岁，凡进来事奉，在会幕里办事的，</span></div>
+        <div class="verse"><span class="verse-number">4:44</span><span class="verse-text">就是他们按家族被数点的，有三千二百名。</span></div>
+        <div class="verse"><span class="verse-number">4:45</span><span class="verse-text">这些是米拉利子孙的家族中被数点的，就是摩西、亚伦照耶和华藉摩西所吩咐数点的。</span></div>
+        <div class="verse"><span class="verse-number">4:46</span><span class="verse-text">凡被数点的利未人，就是摩西、亚伦并以色列众首领，按他们的家族、宗族所数点的，</span></div>
+        <div class="verse"><span class="verse-number">4:47</span><span class="verse-text">从三十岁直到五十岁，凡进来供职，在会幕里办事，作抬物之工的，</span></div>
+        <div class="verse"><span class="verse-number">4:48</span><span class="verse-text">就是那些被数点的，共有八千五百八十名。</span></div>
+        <div class="verse"><span class="verse-number">4:49</span><span class="verse-text">摩西按他们各人所办的事、所抬的物，照耶和华藉他所吩咐的，数点他们；他们这样被摩西数点，正如耶和华所吩咐他的。</span></div>
+    </div>
+</body>
+</html>

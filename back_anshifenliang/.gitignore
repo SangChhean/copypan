@@ -1,0 +1,4 @@
+node_modules/
+.env
+telegram_bot/.env
+*.log

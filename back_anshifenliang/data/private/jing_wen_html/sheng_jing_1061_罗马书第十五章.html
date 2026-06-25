@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1061_罗马书第十五章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">罗马书 第 十五 章</h1>
+        <div class="outline level-3">5　照着基督 十五1～13</div>
+        <div class="verse"><span class="verse-number">15:1</span><span class="verse-text">我们刚强的人，应该担代不刚强之人的软弱，不求自己的喜悦。</span></div>
+        <div class="verse"><span class="verse-number">15:2</span><span class="verse-text">我们各人要叫邻舍喜悦，使他得益处，被建造。</span></div>
+        <div class="verse"><span class="verse-number">15:3</span><span class="verse-text">因为基督也不求自己的喜悦，反而如经上所记：“辱骂你之人的辱骂，都落在我身上。”</span></div>
+        <div class="verse"><span class="verse-number">15:4</span><span class="verse-text">从前所写的，都是为教训我们写的，使我们藉着忍耐，并藉着经书的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>鼓励，可以得着盼望。</span></div>
+        <div class="verse"><span class="verse-number">15:5</span><span class="verse-text">但愿那赐忍耐与鼓励的神，叫你们照着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>基督耶稣，彼此思念相同的事，</span></div>
+        <div class="verse"><span class="verse-number">15:6</span><span class="verse-text">使你们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>同心合意，用同一的口，荣耀我们主耶稣基督的神与父。</span></div>
+        <div class="verse"><span class="verse-number">15:7</span><span class="verse-text">所以你们要彼此接纳，如同<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>基督接纳你们一样，使荣耀归与神。</span></div>
+        <div class="verse"><span class="verse-number">15:8</span><span class="verse-text">我说，基督是为神的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>真实，作了受割礼之人的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>执事，要证实对列祖的应许，</span></div>
+        <div class="verse"><span class="verse-number">15:9</span><span class="verse-text">并叫外邦人，因着神的怜悯荣耀神，如经上所记：“因此我要在外邦中<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>颂扬你，歌颂你的名。”</span></div>
+        <div class="verse"><span class="verse-number">15:10</span><span class="verse-text">又说，“外邦人阿，你们当与祂的百姓一同快乐。”</span></div>
+        <div class="verse"><span class="verse-number">15:11</span><span class="verse-text">又说，“万邦阿，你们都当赞美主，愿万民都称赞祂。”</span></div>
+        <div class="verse"><span class="verse-number">15:12</span><span class="verse-text">又有以赛亚说，“将来有耶西的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>根，就是那兴起来要治理外邦的，外邦人都要寄望于祂。”</span></div>
+        <div class="verse"><span class="verse-number">15:13</span><span class="verse-text">但愿那赐盼望的神，因信将一切喜乐平安充满你们，使你们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>靠圣灵的能力，充盈满溢的有盼望。</span></div>
+        <div class="outline level-1">捌　结语─福音的成就 十五14～十六27</div>
+        <div class="outline level-2">一　献上的外邦人 十五14～24</div>
+        <div class="verse"><span class="verse-number">15:14</span><span class="verse-text">我的弟兄们，我自己也深信你们是满有良善，充满了各样的知识，也能彼此劝戒。</span></div>
+        <div class="verse"><span class="verse-number">15:15</span><span class="verse-text">但在有些点上，我更加放胆的写给你们，是要题醒你们，特因神所赐我的恩典，</span></div>
+        <div class="verse"><span class="verse-number">15:16</span><span class="verse-text">使我为外邦人作基督耶稣的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>仆役，作神福音<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>勤奋的<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>祭司，叫所献上的外邦人，在圣灵里得以圣别，可蒙悦纳。</span></div>
+        <div class="verse"><span class="verse-number">15:17</span><span class="verse-text">所以论到神的事，我在基督耶稣里有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>可夸的。</span></div>
+        <div class="verse"><span class="verse-number">15:18</span><span class="verse-text">除了基督藉我作成的那些事，我什么都不敢题，只题祂藉着我的言语和行为，用神迹奇事的能力，并那灵的能力，使外邦人顺从；</span></div>
+        <div class="verse"><span class="verse-number">15:19</span><span class="verse-text">这样，我从耶路撒冷，直转到<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>以利哩古，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>到处传了基督的福音。</span></div>
+        <div class="verse"><span class="verse-number">15:20</span><span class="verse-text">我立定志向，不在基督的名被称过的地方传福音，免得建造在别人的根基上，</span></div>
+        <div class="verse"><span class="verse-number">15:21</span><span class="verse-text">就如经上所记：“未曾得知祂信息的，将要看见；未曾听过的，将要领悟。”</span></div>
+        <div class="verse"><span class="verse-number">15:22</span><span class="verse-text">因此，我也多次被拦阻，总不得到你们那里去。</span></div>
+        <div class="verse"><span class="verse-number">15:23</span><span class="verse-text">但如今这一带地方已无处可传，而且多年来我一直想望，当我去<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>西班牙的时候，可以到你们那里，</span></div>
+        <div class="verse"><span class="verse-number">15:24</span><span class="verse-text">盼望从你们那里经过，得见你们，先与你们交往，稍得满足，然后蒙你们送行到那里去。</span></div>
+        <div class="outline level-2">二　外邦与犹太圣徒的交通 十五25～33</div>
+        <div class="verse"><span class="verse-number">15:25</span><span class="verse-text">但现在我往耶路撒冷去，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>供给圣徒。</span></div>
+        <div class="verse"><span class="verse-number">15:26</span><span class="verse-text">因为马其顿和亚该亚人，乐意对耶路撒冷圣徒中的穷人有些<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>交通。</span></div>
+        <div class="verse"><span class="verse-number">15:27</span><span class="verse-text">这是他们乐意的，其实也是他们所欠的债。因外邦人既然分享犹太人属灵的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>事物，就当<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>供给他们肉身之物。</span></div>
+        <div class="verse"><span class="verse-number">15:28</span><span class="verse-text">等我办完了这事，把这果子向他们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>交付妥当，就要路过你们那里，往西班牙去。</span></div>
+        <div class="verse"><span class="verse-number">15:29</span><span class="verse-text">我也晓得，我去的时候，必<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>带着基督之福的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>丰满而去。</span></div>
+        <div class="verse"><span class="verse-number">15:30</span><span class="verse-text">弟兄们，我藉着我们的主耶稣基督，并藉着那灵的爱，恳求你们在为我向神的祷告中，与我一同竭力，</span></div>
+        <div class="verse"><span class="verse-number">15:31</span><span class="verse-text">叫我可以得救，脱离犹太地不信从的人，也叫我对耶路撒冷的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>服事，可蒙圣徒悦纳，</span></div>
+        <div class="verse"><span class="verse-number">15:32</span><span class="verse-text">并叫我藉着神的旨意，欢欢喜喜的到你们那里，与你们同得安息畅快。</span></div>
+        <div class="verse"><span class="verse-number">15:33</span><span class="verse-text">愿平安的神与你们众人同在。阿们。</span></div>
+    </div>
+</body>
+</html>

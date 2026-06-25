@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0974_路加福音第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">路加福音 第 一 章</h1>
+        <div class="book-info">著者： 路加，详见一3注1。</div>
+        <div class="book-info">著时： 约在主后六十年，在写使徒行传之前。（徒一1。）</div>
+        <div class="book-info">著地： 无法推断，可能是在该撒利亚，当保罗在该地受监禁时。（参徒二三33，二四27，二七1。）</div>
+        <div class="book-info">受者： 提阿非罗，（一1，）详见一1注1。</div>
+        <div class="theme">主题：赦罪的福音─证明耶稣基督是人救主</div>
+        <div class="outline level-1">壹　引言 一1～4</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>提阿非罗大人哪，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>因为有<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>好些人已经着手<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>作书，述说在我们中间所完全成就的<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>事，</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">是照<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>那些从起初亲眼看见，又将这<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>道<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>供应我们的人，<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>所交付我们的；</span></div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">这一切的事<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>我既从起头都详确考察了，就认为也该按着次序写给你，</span></div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">使你深知所教导你的事，都是确实的。</span></div>
+        <div class="outline level-1">贰　对在人性里带着神性之人救主的豫备 一5～四13</div>
+        <div class="outline level-2">一　祂先锋的成孕 一5～25</div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">在犹太王希律的日子，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亚比雅班里有一位祭司，名叫撒迦利亚；他妻子是亚伦的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>后代，名叫以利沙伯。</span></div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>他们二人在神面前都是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>义人，<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>遵行主的一切诫命、<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>典章，无可指摘，</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text">只是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>没有孩子，因为以利沙伯不生育，两个人又上了年纪。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">有一天，撒迦利亚按着班次，在神面前供祭司的职分，</span></div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text">照祭司职任的规矩中了签，得进主殿<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>烧香。</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">烧香的时候，全群的百姓在外面<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>祷告。</span></div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">有主的使者站在香坛的右边，向他显现。</span></div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">撒迦利亚看见，就惊慌害怕。</span></div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">天使对他说，撒迦利亚，不要害怕，因为你的祈求已蒙垂听，你的妻子以利沙伯要给你<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>生一个儿子，你要给他起名叫<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>约翰。</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">你必喜乐欢腾，有许多人因他出生，也必欢乐。</span></div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text">他在主面前将要为大，淡酒、浓酒都<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不喝，从母腹里就被<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>圣灵充溢了。</span></div>
+        <div class="verse"><span class="verse-number">1:16</span><span class="verse-text">他要使许多以色列子孙转向主他们的神。</span></div>
+        <div class="verse"><span class="verse-number">1:17</span><span class="verse-text">他必<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>凭以利亚的灵和能力，行在主的面前，叫父亲的心转向儿女，并叫悖逆的人<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>转向义人的<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>精明，为主豫备合用的百姓。</span></div>
+        <div class="verse"><span class="verse-number">1:18</span><span class="verse-text">撒迦利亚对天使说，我凭什么可以知道这事？我已经老了，我的妻子也上了年纪。</span></div>
+        <div class="verse"><span class="verse-number">1:19</span><span class="verse-text">天使回答说，我是站在神面前的加百列，奉差遣对你说话，将这些事的好信息报给你。</span></div>
+        <div class="verse"><span class="verse-number">1:20</span><span class="verse-text">到了时候，我的话必然应验；只因你<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不信，看哪，你必哑口不能说话，直到这些事成就的日子。</span></div>
+        <div class="verse"><span class="verse-number">1:21</span><span class="verse-text">百姓等候撒迦利亚，当他在殿里迟延的时候，他们都希奇。</span></div>
+        <div class="verse"><span class="verse-number">1:22</span><span class="verse-text">等他出来，不能和他们说话，他们就知道他在殿里见了异象。他直向他们打手式，竟成了哑吧。</span></div>
+        <div class="verse"><span class="verse-number">1:23</span><span class="verse-text">他供职的日子满了，就回家去了。</span></div>
+        <div class="verse"><span class="verse-number">1:24</span><span class="verse-text">这些日子以后，他的妻子以利沙伯怀了孕，就隐藏了五个月，说，</span></div>
+        <div class="verse"><span class="verse-number">1:25</span><span class="verse-text">主在眷顾的日子，这样待我，要把我在人间的羞耻除掉。</span></div>
+        <div class="outline level-2">二　祂的成孕 一26～56</div>
+        <div class="verse"><span class="verse-number">1:26</span><span class="verse-text">到了第六个月，天使加百列奉神差遣，往<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>加利利的一座城去，这城名叫拿撒勒。</span></div>
+        <div class="verse"><span class="verse-number">1:27</span><span class="verse-text">到一个童女那里，是已经许配<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>大卫家的一个人，名叫约瑟，童女的名字叫马利亚。</span></div>
+        <div class="verse"><span class="verse-number">1:28</span><span class="verse-text">天使进去，对她说，蒙大恩的女子，愿你喜乐！主与你同在了<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>。</span></div>
+        <div class="verse"><span class="verse-number">1:29</span><span class="verse-text">她因这话就很惊慌，又反覆思想这样问安是什么意思。</span></div>
+        <div class="verse"><span class="verse-number">1:30</span><span class="verse-text">天使对她说，马利亚，不要怕，你在神面前已经蒙恩了。</span></div>
+        <div class="verse"><span class="verse-number">1:31</span><span class="verse-text">看哪，你将怀孕生子，要给祂起名叫<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>耶稣。</span></div>
+        <div class="verse"><span class="verse-number">1:32</span><span class="verse-text">祂要为大，称为<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>至高者的儿子，主神要把祂祖<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>大卫的宝座给祂，</span></div>
+        <div class="verse"><span class="verse-number">1:33</span><span class="verse-text">祂要<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>作雅各家的王，直到永远，祂的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>国也没有穷尽。</span></div>
+        <div class="verse"><span class="verse-number">1:34</span><span class="verse-text">马利亚对天使说，我没有出嫁，怎么会有这事？</span></div>
+        <div class="verse"><span class="verse-number">1:35</span><span class="verse-text">天使回答说，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>圣灵要临到你<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>身上，至高者的能力要<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>覆庇你，因此所要生的<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>圣者，必称为神的儿子。</span></div>
+        <div class="verse"><span class="verse-number">1:36</span><span class="verse-text">况且你看，你的亲戚以利沙伯，就是那素来称为不生育的，在年老的时候，也怀了男胎，现在已是第六个月了。</span></div>
+        <div class="verse"><span class="verse-number">1:37</span><span class="verse-text">因为在神，没有一句话是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不可能的。</span></div>
+        <div class="verse"><span class="verse-number">1:38</span><span class="verse-text">马利亚说，看哪，我是主的婢女，情愿照你的话成就在我身上。天使就离开她去了。</span></div>
+        <div class="verse"><span class="verse-number">1:39</span><span class="verse-text">在那些日子，马利亚起身，急忙往山地里去，来到犹大的一座城，</span></div>
+        <div class="verse"><span class="verse-number">1:40</span><span class="verse-text">进了撒迦利亚的家，问以利沙伯安。</span></div>
+        <div class="verse"><span class="verse-number">1:41</span><span class="verse-text">以利沙伯一听到马利亚问安，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>所怀的胎就在腹里跳动，以利沙伯且被圣灵充溢，</span></div>
+        <div class="verse"><span class="verse-number">1:42</span><span class="verse-text">高声喊着说，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>你在妇女中是有福的，你腹中的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>果子也是有福的。</span></div>
+        <div class="verse"><span class="verse-number">1:43</span><span class="verse-text">我<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>主的母亲竟然到我这里来，这事怎么会临到我？</span></div>
+        <div class="verse"><span class="verse-number">1:44</span><span class="verse-text">看哪，你问安的声音一入我耳，我腹里的胎就欢腾跳动。</span></div>
+        <div class="verse"><span class="verse-number">1:45</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>这<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>相信的女子是有福的，因为<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>主对她所说的事，都要完成。</span></div>
+        <div class="verse"><span class="verse-number">1:46</span><span class="verse-text">马利亚说，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>我魂<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>尊主为大，</span></div>
+        <div class="verse"><span class="verse-number">1:47</span><span class="verse-text">我灵曾<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>以神我的救主为<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>乐，</span></div>
+        <div class="verse"><span class="verse-number">1:48</span><span class="verse-text">因祂顾念祂婢女的卑微。看哪，从今以后，万代要称我有福。</span></div>
+        <div class="verse"><span class="verse-number">1:49</span><span class="verse-text">那<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>有权能的为我行了大事，祂的名为圣；</span></div>
+        <div class="verse"><span class="verse-number">1:50</span><span class="verse-text">祂的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>怜悯归与敬畏祂的人，直到世世代代。</span></div>
+        <div class="verse"><span class="verse-number">1:51</span><span class="verse-text">祂用膀臂施展权能，驱散那些心里妄想的狂傲人。</span></div>
+        <div class="verse"><span class="verse-number">1:52</span><span class="verse-text">祂叫有权柄的失位，叫卑微的升高，</span></div>
+        <div class="verse"><span class="verse-number">1:53</span><span class="verse-text">叫饥饿的得饱美物，叫富足的空着回去。</span></div>
+        <div class="verse"><span class="verse-number">1:54</span><span class="verse-text">祂扶助了祂的仆人以色列，</span></div>
+        <div class="verse"><span class="verse-number">1:55</span><span class="verse-text">为要记念祂向亚伯拉罕和他后裔所施的怜悯，直到永远，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>正如祂对我们列祖所说的。</span></div>
+        <div class="verse"><span class="verse-number">1:56</span><span class="verse-text">马利亚和以利沙伯同住约有三个月，就回家去了。</span></div>
+        <div class="outline level-2">三　祂先锋的出生与幼年 一57～80</div>
+        <div class="verse"><span class="verse-number">1:57</span><span class="verse-text">以利沙伯的产期到了，就生了一个儿子。</span></div>
+        <div class="verse"><span class="verse-number">1:58</span><span class="verse-text">邻里亲族听见主向她大施怜悯，就和她一同欢乐。</span></div>
+        <div class="verse"><span class="verse-number">1:59</span><span class="verse-text">到了第八日，他们来要给孩子行割礼，并有意照他父亲的名字，叫他撒迦利亚。</span></div>
+        <div class="verse"><span class="verse-number">1:60</span><span class="verse-text">但他母亲说，不可，要叫他约翰。</span></div>
+        <div class="verse"><span class="verse-number">1:61</span><span class="verse-text">他们对她说，你亲族中没有叫这名字的。</span></div>
+        <div class="verse"><span class="verse-number">1:62</span><span class="verse-text">他们就向他父亲打手式，看他愿意叫他什么。</span></div>
+        <div class="verse"><span class="verse-number">1:63</span><span class="verse-text">他要了一块写字板，就写上说，他的名字是约翰。他们便都希奇。</span></div>
+        <div class="verse"><span class="verse-number">1:64</span><span class="verse-text">撒迦利亚的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>口立时开了，舌头也舒展了，就说出话来，颂赞神。</span></div>
+        <div class="verse"><span class="verse-number">1:65</span><span class="verse-text">住在周围的人都起了敬畏，这一切的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>事就传遍了全犹太山地。</span></div>
+        <div class="verse"><span class="verse-number">1:66</span><span class="verse-text">凡听见的人，都将这事放在心里，说，这个孩子将来会怎么样？因为主的手与他同在。</span></div>
+        <div class="verse"><span class="verse-number">1:67</span><span class="verse-text">他父亲撒迦利亚被圣灵充溢，就申言说，</span></div>
+        <div class="verse"><span class="verse-number">1:68</span><span class="verse-text">主以色列的神是当受颂赞的，因祂眷顾祂的百姓，为他们施行<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>救赎，</span></div>
+        <div class="verse"><span class="verse-number">1:69</span><span class="verse-text">在祂仆人大卫家中，为我们兴起了<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>拯救的角，</span></div>
+        <div class="verse"><span class="verse-number">1:70</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>正如祂<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>从时间起首，藉着圣申言者的口所说的，</span></div>
+        <div class="verse"><span class="verse-number">1:71</span><span class="verse-text">拯救我们脱离仇敌，和一切恨我们之人的手；</span></div>
+        <div class="verse"><span class="verse-number">1:72</span><span class="verse-text">向我们列祖施<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>怜悯，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>记念祂的圣约，</span></div>
+        <div class="verse"><span class="verse-number">1:73</span><span class="verse-text">就是祂对我们祖宗亚伯拉罕所起的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>誓，</span></div>
+        <div class="verse"><span class="verse-number">1:74</span><span class="verse-text">叫我们既从仇敌手中被救出来，</span></div>
+        <div class="verse"><span class="verse-number">1:75</span><span class="verse-text">就可以一生一世在祂面前，坦然无惧的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>用圣和义<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>事奉祂。</span></div>
+        <div class="verse"><span class="verse-number">1:76</span><span class="verse-text">孩子阿，你要称为至高者的申言者，因为你要行在<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>主的面前，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>豫备祂的道路，</span></div>
+        <div class="verse"><span class="verse-number">1:77</span><span class="verse-text">叫祂的百姓<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>因<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>罪得赦，就认识救恩。</span></div>
+        <div class="verse"><span class="verse-number">1:78</span><span class="verse-text">因我们神怜悯的心肠，叫清晨的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>日光从高天临到我们，</span></div>
+        <div class="verse"><span class="verse-number">1:79</span><span class="verse-text">要照亮坐在黑暗中死荫里的人，把我们的脚引到平安的路上。</span></div>
+        <div class="verse"><span class="verse-number">1:80</span><span class="verse-text">那孩子渐渐长大，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>灵里刚强，住在旷野，直到他向以色列人显明的日子。</span></div>
+    </div>
+</body>
+</html>

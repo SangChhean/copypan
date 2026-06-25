@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1237_加拉太书纲目</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: normal; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: normal; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: normal; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: normal; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: normal; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">加拉太书纲目</h1>
+        <div class="outline level-1">壹　引言─神的旨意要把我们从这邪恶宗教的世代救出来 一1～5</div>
+        <div class="outline level-1">贰　使徒福音的启示 一6～四31</div>
+        <div class="outline level-2">一　神的儿子与人的宗教相对 一6～二10</div>
+        <div class="outline level-2">二　基督顶替律法 二11～21</div>
+        <div class="outline level-2">三　靠信基督的那灵与靠行律法的肉体相对 三1～四31</div>
+        <div class="outline level-3">1　那灵是因信基督所得应许之福 三1～14</div>
+        <div class="outline level-3">2　律法是承受应许者的监护人 三15～29</div>
+        <div class="outline level-3">3　儿子名分的灵顶替律法的监护 四1～7</div>
+        <div class="outline level-3">4　基督需要成形在承受应许者的里面 四8～20</div>
+        <div class="outline level-3">5　按灵生的儿女，与按肉体生者相对 四21～31</div>
+        <div class="outline level-1">叁　神儿女的行事为人 五1～六17</div>
+        <div class="outline level-2">一　不要在律法下受奴役的轭挟制 五1</div>
+        <div class="outline level-2">二　不要与基督隔绝 五2～12</div>
+        <div class="outline level-2">三　不可放纵肉体，倒要凭爱服事 五13～15</div>
+        <div class="outline level-2">四　凭着灵，不凭着肉体而行 五16～26</div>
+        <div class="outline level-2">五　用温柔的灵挽回堕落者 六1</div>
+        <div class="outline level-2">六　完全满足基督的律法 六2～6</div>
+        <div class="outline level-2">七　不要为着肉体，乃要为着那灵撒种 六7～10</div>
+        <div class="outline level-2">八　向宗教世界已经钉了十字架，以活出新造 六11～16</div>
+        <div class="outline level-2">九　带着耶稣的烙印 六17</div>
+        <div class="outline level-1">肆　结语─我们主耶稣基督的恩与我们的灵同在 六18</div>
+    </div>
+</body>
+</html>
