@@ -86,6 +86,13 @@ cd /opt/pansearch/code
 nohup python3 -m uvicorn back_cn.main:app --host 0.0.0.0 --port 8014 \
   > /opt/pansearch/logs/cn_backend.log 2>&1 &
 echo "✅ CN 后端已重启"
+echo "[6d/7] 重启 Anshifenliang 后端服务..."
+pkill -f "node.*server.js" 2>/dev/null
+sleep 2
+cd /opt/pansearch/code/back_anshifenliang
+npm install --silent
+nohup node server.js > /opt/pansearch/logs/anshifenliang_backend.log 2>&1 &
+echo "✅ Anshifenliang 后端已重启 (port 8020)"
 echo "[7/7] 重启 Nginx..."
 systemctl reload nginx
 echo "✅ Nginx 已重启"
@@ -95,8 +102,10 @@ echo "✅ 部署完成！"
 echo "🌐 主站: https://aipansearch.org"
 echo "🌐 QA站: https://qa.aipansearch.org"
 echo "🌐 CN站: https://quanbeigongying.com"
+echo "🌐 按时分粮: https://chat.educationbylevel.org"
 echo "📋 查看日志: tail -f $LOG_DIR/backend.log"
 echo "📋 QA 日志: tail -f /opt/pansearch/logs/qa_backend.log"
 echo "📋 CN 日志: tail -f /opt/pansearch/logs/cn_backend.log"
+echo "📋 按时分粮日志: tail -f /opt/pansearch/logs/anshifenliang_backend.log"
 echo "📁 前端静态: $FRONT_DIR/dist（请确认 Nginx root 指向此目录）"
 echo "=========================================="
