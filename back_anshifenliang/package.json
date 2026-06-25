@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "build": "node scripts/build_foo_jie_index.js && node scripts/fix_glyph_corruption.js"
+    "build": "node scripts/build_foo_jie_index.js && node scripts/fix_glyph_corruption.js && node scripts/shorten_zhi_shi_filenames.js --verify"
   },
   "dependencies": {
     "cors": "^2.8.5",
