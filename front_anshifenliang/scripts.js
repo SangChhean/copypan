@@ -62,6 +62,20 @@ function maybeToTraditional(text) {
     return text;
 }
 
+/** jing_jie_zhu_shi 目录词（新约/旧约/圣经/目录等）精确匹配 */
+function lookupJingJieZhuShiCatalog(query, expandedQueries) {
+    const data = window.jing_jie_zhu_shi;
+    if (!data || typeof data !== 'object') return null;
+    const candidates = [...new Set([query, ...(expandedQueries || [])])].filter(Boolean);
+    for (const q of candidates) {
+        const content = data[q];
+        if (typeof content === 'string' && content.trim()) {
+            return { key: q, value: content };
+        }
+    }
+    return null;
+}
+
 const history = document.getElementById('history');
 const voiceButton = document.getElementById('voice-button');
 const userInput = document.getElementById('user-input');
@@ -1724,6 +1738,16 @@ async function handleLocalDictionaryMatch(userMessage) {
                 // ✨ 统一预处理
             const preprocessed = preprocessInput(query);
             console.log(`🧹 预处理: "${query}" ➜ "${preprocessed}"`);
+
+            // 【目录关键词优先】新约/旧约/圣经/目录 → 仅显示 jing_jie_zhu_shi 目录按钮
+            const jingJieZhuShiCatalog = lookupJingJieZhuShiCatalog(preprocessed, expandedQueries);
+            if (jingJieZhuShiCatalog) {
+                console.log(`📂 [经节] jing_jie_zhu_shi 目录关键词: ${jingJieZhuShiCatalog.key}`);
+                appendMessage("AI", formatMessage(jingJieZhuShiCatalog.value), originalInput);
+                appendCopyButton();
+                return true;
+            }
+
             // 【第一优先级】：检查章节格式（以"章"结尾）
             if (detectChapterFormat(preprocessed)) {
                 console.log("📖 检测到章节格式，进入章节处理流程");

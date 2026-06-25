@@ -9,6 +9,8 @@ const SUBDIR_BY_PREFIX = {
   life: 'read_life_v2',
 };
 
+let filenameMapCache = null;
+
 function parseZhiShiXinXi(jsText) {
   const start = jsText.indexOf('{');
   let depth = 0;
@@ -24,6 +26,29 @@ function parseZhiShiXinXi(jsText) {
   throw new Error('Failed to parse 1_zhi_shi_xin_xi.js');
 }
 
+function loadFilenameMap(dataDir) {
+  if (filenameMapCache) return filenameMapCache;
+
+  const mapPath = path.join(dataDir, 'zhi_shi_html', 'filename_map.json');
+  if (!fs.existsSync(mapPath)) {
+    filenameMapCache = { byKey: {}, byLongName: {} };
+    return filenameMapCache;
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+    filenameMapCache = {
+      byKey: parsed.byKey || {},
+      byLongName: parsed.byLongName || {},
+    };
+  } catch (err) {
+    console.warn('[zheng_pian] filename_map.json 解析失败，回退长文件名:', err.message);
+    filenameMapCache = { byKey: {}, byLongName: {} };
+  }
+
+  return filenameMapCache;
+}
+
 function loadValueToKeyMap(dataDir) {
   const jsPath = path.join(dataDir, 'private', '1_zhi_shi_xin_xi.js');
   const obj = parseZhiShiXinXi(fs.readFileSync(jsPath, 'utf8'));
@@ -32,6 +57,29 @@ function loadValueToKeyMap(dataDir) {
     valueToKey.set(value, key);
   }
   return valueToKey;
+}
+
+function resolveZhengPianPath(dataDir, key, trimmed, id, subdir) {
+  const map = loadFilenameMap(dataDir);
+  const zhiShiRoot = path.join(dataDir, 'zhi_shi_html');
+
+  const mappedRel = map.byKey[key];
+  if (mappedRel) {
+    const mappedPath = path.join(zhiShiRoot, mappedRel);
+    if (fs.existsSync(mappedPath)) return mappedPath;
+  }
+
+  const legacyName = `${id}_${trimmed}.json`;
+  const mappedLegacy = map.byLongName[legacyName];
+  if (mappedLegacy) {
+    const legacyMappedPath = path.join(zhiShiRoot, subdir, mappedLegacy);
+    if (fs.existsSync(legacyMappedPath)) return legacyMappedPath;
+  }
+
+  const legacyPath = path.join(zhiShiRoot, subdir, legacyName);
+  if (fs.existsSync(legacyPath)) return legacyPath;
+
+  return null;
 }
 
 function readLocalZhengPian(message, dataDir, valueToKey) {
@@ -45,11 +93,15 @@ function readLocalZhengPian(message, dataDir, valueToKey) {
   const id = match[1];
   const prefix = id.split('_')[0];
   const subdir = SUBDIR_BY_PREFIX[prefix] || 'read_others_v2';
-  const filename = `${id}_${trimmed}.json`;
-  const filePath = path.join(dataDir, 'zhi_shi_html', subdir, filename);
+  const filePath = resolveZhengPianPath(dataDir, key, trimmed, id, subdir);
 
-  if (!fs.existsSync(filePath)) return null;
+  if (!filePath) return null;
   return fs.readFileSync(filePath, 'utf8');
 }
 
-module.exports = { loadValueToKeyMap, readLocalZhengPian };
+module.exports = {
+  loadValueToKeyMap,
+  readLocalZhengPian,
+  loadFilenameMap,
+  resolveZhengPianPath,
+};
