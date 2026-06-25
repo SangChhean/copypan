@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1052_罗马书第六章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">罗马书 第 六 章</h1>
+        <div class="outline level-2">二　与基督的联合 六1～23</div>
+        <div class="outline level-3">1　联合 1～5</div>
+        <div class="verse"><span class="verse-number">6:1</span><span class="verse-text">这样，我们可说什么？我们可以仍留在罪中，叫恩典增多么？</span></div>
+        <div class="verse"><span class="verse-number">6:2</span><span class="verse-text">绝对不可！我们这向罪死了的人，岂可仍在罪中活着？</span></div>
+        <div class="verse"><span class="verse-number">6:3</span><span class="verse-text">岂不知我们这<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>浸入<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>基督耶稣的人，是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>浸入<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>祂的死么？</span></div>
+        <div class="verse"><span class="verse-number">6:4</span><span class="verse-text">所以我们藉着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>浸入死，和祂一同<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>埋葬，好叫我们<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>在生命的新样中生活行动，像基督藉着父的<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>荣耀，从死人中复活一样。</span></div>
+        <div class="verse"><span class="verse-number">6:5</span><span class="verse-text">我们若在祂<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>死的样式里与祂<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>联合生长，也必要<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>在祂<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>复活的样式里与祂联合生长；</span></div>
+        <div class="outline level-3">2　知道 6～10</div>
+        <div class="verse"><span class="verse-number">6:6</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>知道我们的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>旧人已经与祂同<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>钉十字架，使<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>罪的身体<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>失效，叫我们不再作罪的奴仆，</span></div>
+        <div class="verse"><span class="verse-number">6:7</span><span class="verse-text">因为已死的人，是已经从<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪开释了。</span></div>
+        <div class="verse"><span class="verse-number">6:8</span><span class="verse-text">我们若与基督<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>同死，就信也必与祂<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>同活，</span></div>
+        <div class="verse"><span class="verse-number">6:9</span><span class="verse-text">知道基督既从死人中复活，就<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不再死，死也不再作主管辖祂了。</span></div>
+        <div class="verse"><span class="verse-number">6:10</span><span class="verse-text">因为祂死，是一次永远的向罪死了；祂活，是向神活着。</span></div>
+        <div class="outline level-3">3　算 11</div>
+        <div class="verse"><span class="verse-number">6:11</span><span class="verse-text">这样，你们在基督耶稣里，向罪也当<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>算自己是死的，向神却当算自己是活的。</span></div>
+        <div class="outline level-3">4　献 12～23</div>
+        <div class="verse"><span class="verse-number">6:12</span><span class="verse-text">所以<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不要让罪在你们必死的身体里作王，使你们顺从身体的私欲，</span></div>
+        <div class="verse"><span class="verse-number">6:13</span><span class="verse-text">也不要将你们的肢体献给罪作不义的兵器；倒要像从死人中活过来的人，将自己<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>献给神，并将你们的肢体献给神作义的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>兵器。</span></div>
+        <div class="verse"><span class="verse-number">6:14</span><span class="verse-text">罪必不能<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>作主管辖你们，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>因你们<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>不在律法之下，乃在恩典之下。</span></div>
+        <div class="verse"><span class="verse-number">6:15</span><span class="verse-text">这却怎么样？因我们不在律法之下，乃在恩典之下，就可以犯罪么？绝对不可！</span></div>
+        <div class="verse"><span class="verse-number">6:16</span><span class="verse-text">岂不晓得你们将自己献给谁作奴仆，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>以至于顺从，就作了你们所顺从者的奴仆么？或作罪的奴仆，以至于死，或作顺从的奴仆，以至于义。</span></div>
+        <div class="verse"><span class="verse-number">6:17</span><span class="verse-text">感谢神，你们从前虽然作罪的奴仆，现今却从心里顺从了你们被交于其中之教训的规模。</span></div>
+        <div class="verse"><span class="verse-number">6:18</span><span class="verse-text">你们既从罪里<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>得了释放，就作了义的奴仆。</span></div>
+        <div class="verse"><span class="verse-number">6:19</span><span class="verse-text">我因你们肉体的软弱，就照着人的常情说，你们从前怎样将肢体献给不洁不法作奴仆，以至于不法，现今也要照样将肢体献给义作奴仆，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>以至于<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>圣别。</span></div>
+        <div class="verse"><span class="verse-number">6:20</span><span class="verse-text">因为你们作罪之奴仆的时候，就<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不受义的约束。</span></div>
+        <div class="verse"><span class="verse-number">6:21</span><span class="verse-text">那时你们有什么果子？不过是你们现今所看为羞耻的事，那些事的结局就是死。</span></div>
+        <div class="verse"><span class="verse-number">6:22</span><span class="verse-text">但现今你们既从罪里得了释放，作了神的奴仆，就有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>圣别的果子，结局就是永远的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>生命。</span></div>
+        <div class="verse"><span class="verse-number">6:23</span><span class="verse-text">因为罪的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>工价乃是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>死，惟有神的恩赐，在我们的主基督耶稣里，乃是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>永远的生命。</span></div>
+    </div>
+</body>
+</html>

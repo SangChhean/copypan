@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>何1章1节注</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 7px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            position: relative;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .verse-content {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #3498db;
+            padding: 5px 7px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            line-height: 1.9;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 3px;
+        }
+        
+        .verse-text {
+            color: #2c3e50;
+        }
+        
+        .verse-text sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 1px;
+        }
+        
+        .note-item {
+            margin-bottom: 7px;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+        
+        .note-item:nth-child(even) {
+            background-color: white;
+        }
+        
+        .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        /* 单段落注解样式 */
+        .note-content {
+            display: inline;
+            text-indent: 0;
+            text-align: justify;
+        }
+        
+        /* 多段落注解容器 */
+        .note-content-multi {
+            display: block;
+        }
+        
+        /* 第一段（包含注解编号）不缩进 */
+        .first-paragraph-with-number {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 0;
+        }
+        
+        .first-paragraph-with-number .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        .first-paragraph-with-number .first-paragraph-text {
+            display: inline;
+            text-indent: 0;
+        }
+        
+        /* 从第二段开始首行缩进两个字符 */
+        .indented-paragraph {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 2em;
+        }
+        
+        /* 最后一个段落去除底部边距 */
+        .note-content-multi p:last-child,
+        .indented-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 单段落内容（使用span的情况）不缩进 */
+        .note-content > span {
+            text-indent: 0;
+            text-align: justify;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">何1章1节注</h1>
+        <div class="verse-content">
+  <span class="verse-number">何1章1节</span>
+  <span class="verse-text"><sup>1</sup>当乌西雅、约坦、亚哈斯、希西家作犹大王，约阿施的儿子耶罗波安作以色列王的日子，耶和华的话临到备利的儿子<sup>2</sup>何西阿。</span>
+</div>
+<div class="note-item">
+  <div class="note-content-multi">
+    <p class="first-paragraph-with-number">
+      <span class="note-number">注1　</span>
+      <span class="first-paragraph-text">小申言者书是由何西阿书至玛拉基书这十二卷书所组成。古时这些书可能视为一卷。司提反在徒七42引用摩五25～27时所题的‘众申言者书，’可能就是指这卷汇集的书。这十二卷书完成了关于神对付祂选民（以色列）和列国之经纶的神圣启示；这神圣启示在大申言者书—以赛亚书、耶利米书、以西结书、和但以理书中曾详细的论到。主耶稣将所有大小申言者书统称为‘申言者的书’—其上记载关于祂的事。（路二四44。）因此，全部申言者书的中心点乃是基督。（参路二四27，约五39。）</span>
+    </p>
+    <p class="indented-paragraph">小申言者书就如大申言者书，揭示神在祂对以色列爱的惩治、对以色列行政的对付、并对列国的审判上的经纶，结果带进作神经纶中心与普及之基督的显现，以带进国度，就是复兴的时代，（太十九28，徒三21，）那要将老旧并毁坏的宇宙引进那有新耶路撒冷的新天新地里。（启二一1～2。）</p>
+  </div>
+</div>
+<div class="note-item">
+  <span class="note-number">注2　</span>
+  <span class="note-content">意，救恩，或拯救。（参民十三16。）何西阿尽职的对象是邪淫背道的以色列国。就以色列的光景而言，他们是邪淫的；就以色列的地位而言，他们是背道的。本书启示，无论作耶和华妻子的以色列如何邪淫，无论作耶和华百姓的以色列如何背道，耶和华仍然渴望以色列归向祂。如果以色列归向耶和华，耶和华仍会接纳她，带回她，并复兴她。</span>
+</div>
+    </div>
+</body>
+</html>

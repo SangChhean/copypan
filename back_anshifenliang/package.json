@@ -1,0 +1,17 @@
+{
+  "name": "back-anshifenliang",
+  "version": "1.0.0",
+  "description": "按时分粮搜索后端 — 内存加载 JS 数据，复用 scripts.js 搜索逻辑",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build": "node scripts/build_foo_jie_index.js && node scripts/fix_glyph_corruption.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fuse.js": "^6.6.2",
+    "jsdom": "^25.0.1"
+  }
+}

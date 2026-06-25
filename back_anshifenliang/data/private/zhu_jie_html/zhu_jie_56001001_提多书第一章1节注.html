@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多1章1节注</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 7px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            position: relative;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .verse-content {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #3498db;
+            padding: 5px 7px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            line-height: 1.9;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 3px;
+        }
+        
+        .verse-text {
+            color: #2c3e50;
+        }
+        
+        .verse-text sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 1px;
+        }
+        
+        .note-item {
+            margin-bottom: 7px;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+        
+        .note-item:nth-child(even) {
+            background-color: white;
+        }
+        
+        .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        /* 单段落注解样式 */
+        .note-content {
+            display: inline;
+            text-indent: 0;
+            text-align: justify;
+        }
+        
+        /* 多段落注解容器 */
+        .note-content-multi {
+            display: block;
+        }
+        
+        /* 第一段（包含注解编号）不缩进 */
+        .first-paragraph-with-number {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 0;
+        }
+        
+        .first-paragraph-with-number .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        .first-paragraph-with-number .first-paragraph-text {
+            display: inline;
+            text-indent: 0;
+        }
+        
+        /* 从第二段开始首行缩进两个字符 */
+        .indented-paragraph {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 2em;
+        }
+        
+        /* 最后一个段落去除底部边距 */
+        .note-content-multi p:last-child,
+        .indented-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 单段落内容（使用span的情况）不缩进 */
+        .note-content > span {
+            text-indent: 0;
+            text-align: justify;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">多1章1节注</h1>
+        <div class="verse-content">
+  <span class="verse-number">多1章1节</span>
+  <span class="verse-text"><sup>1</sup>照着神<sup>1</sup>选民的<sup>2</sup>信仰，与<sup>3</sup>合乎敬虔之真理的<sup>4</sup>知识</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注1　</span>
+  <span class="note-content">见提后二10注1。</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注2　</span>
+  <span class="note-content">保罗作使徒是照着四件东西：(一)神的命令；（提前一1；）(二)生命的应许；（提后一1；）(三)神选民的信仰；(四)合乎敬虔之真理的知识。命令是在神一边，为神说话，并为神向我们有所要求。信仰是在我们一边，响应神的要求，并接受祂的生命；这是宣告我们无法履行神的要求，但神已经为我们作成一切，我们就接受祂所作成的。神所应许的生命，就是我们从祂所接受的，使祂的要求得以完成。保罗乃是这样作了使徒，以实施神新约的经纶。</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注3　</span>
+  <span class="note-content">神永远经纶的真理，实际，是合乎敬虔的；敬虔就是神显现于人。（见提前三16注1与注3。）使徒的职分就是把这实际分赐给神信的选民，并在话和灵里藉着传讲、教导和施行，在他们当中完成这样的敬虔。（提前六3。）</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注4　</span>
+  <span class="note-content">见提前二4注2。保罗作使徒，不仅是照着信仰，也是照着真理的知识。信仰乃是接受神为我们所计划的一切、神为我们所作成的一切、以及神所赐给我们的一切。真理的知识就是对真理的透彻领略，对我们藉信所领受一切属灵、神圣事物的实际，一种完全的承认并珍赏。使徒的职分，就是照着对神永远经纶的实际，有这样的领略和珍赏。</span>
+</div>
+    </div>
+</body>
+</html>

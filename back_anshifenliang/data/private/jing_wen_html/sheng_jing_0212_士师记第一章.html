@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0212_士师记第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">士师记 第 一 章</h1>
+        <div class="book-info">著者： 也许是撒母耳。</div>
+        <div class="book-info">著时： 主前第十一世纪</div>
+        <div class="book-info">著地： 迦南</div>
+        <div class="book-info">涵盖时段: 主前约一四二五年至主前一一二○年，为时约三百零五年，从约书亚死后（一1）到参孙死时。（十六30～31，参徒十三19～20。)</div>
+        <div class="theme">主题：以色列离弃神，遭仇敌击败，渐渐腐败</div>
+        <div class="outline level-1">壹　以色列信靠神 一1～二5</div>
+        <div class="outline level-2">一　犹大的放胆与得胜 一1～21</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>约书亚死后，以色列人<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>求问耶和华说，谁要为我们先上去攻击迦南人，与他们争战？</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">耶和华说，犹大要先上去，我已将那地交在他手中。</span></div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">犹大对他哥哥西缅说，请你同我上我拈阄所得之地去，好与迦南人争战；以后我也同你到你拈阄所得之地去。于是西缅与他同去。</span></div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">犹大就上去，耶和华将迦南人和比利洗人交在他们手中；他们在比色击杀了一万人。</span></div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">他们在比色又遇见亚多尼比色，就与他争战，击杀了迦南人和比利洗人。</span></div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text">亚多尼比色逃跑；他们追赶他，把他捉住，砍断他手脚的大拇指。</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text">亚多尼比色说，从前有七十个王，手脚的大拇指都被我砍断，在我桌子底下拾取零碎食物。现在神按着我所行的报应我了。他们将亚多尼比色带到耶路撒冷，他就死在那里。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">犹大人攻打耶路撒冷，将城攻取，用刀击杀了城内的人，并且放火烧城。</span></div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text">后来犹大人下去，与住山地、南地、和低陆的迦南人争战。</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">犹大人去攻击住希伯仑的迦南人，杀了示筛、亚希幔、挞买。（希伯仑从前名叫基列亚巴。）</span></div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">他们从那里去攻击底璧的居民。（底璧从前名叫基列西弗。）</span></div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">迦勒说，谁能攻打基列西弗，将城夺取，我就把我女儿押撒给他为妻。</span></div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">迦勒弟弟基纳斯的儿子俄陀聂夺取了那城，迦勒就把女儿押撒给他为妻。</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">押撒过门的时候，劝丈夫向她父亲求一块田。押撒一下驴，迦勒问她说，你要什么？</span></div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text">她说，求你赐福给我，你既将南地给了我，求你也给我水泉。迦勒就把上泉和下泉赐给她。</span></div>
+        <div class="verse"><span class="verse-number">1:16</span><span class="verse-text">摩西的岳父是基尼人，他的子孙与犹大人一同离了棕树城，上亚拉得以南的犹大旷野去，就住在民中。</span></div>
+        <div class="verse"><span class="verse-number">1:17</span><span class="verse-text">犹大和他哥哥西缅同去，击杀了住洗法的迦南人，将城<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>尽行毁灭，给那城起名叫<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>何珥玛。</span></div>
+        <div class="verse"><span class="verse-number">1:18</span><span class="verse-text">犹大又取了迦萨和迦萨的四境，亚实基伦和亚实基伦的四境，以革伦和以革伦的四境。</span></div>
+        <div class="verse"><span class="verse-number">1:19</span><span class="verse-text">耶和华与犹大同在，犹大就得了山地为业，只是不能赶出山谷的居民，因为他们有铁车。</span></div>
+        <div class="verse"><span class="verse-number">1:20</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>犹大照摩西所说的，将希伯仑给了迦勒；迦勒就从那里赶出<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>亚衲人的三支子孙。</span></div>
+        <div class="verse"><span class="verse-number">1:21</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>便雅悯人没有赶出住耶路撒冷的耶布斯人；耶布斯人仍在耶路撒冷与便雅悯人同住，直到今日。</span></div>
+        <div class="outline level-2">二　约瑟家上去攻打伯特利，耶和华与他们同在，他们用刀击杀了城中的民 一22～26</div>
+        <div class="verse"><span class="verse-number">1:22</span><span class="verse-text">约瑟家也上去攻打伯特利；耶和华与他们同在。</span></div>
+        <div class="verse"><span class="verse-number">1:23</span><span class="verse-text">约瑟家打发人去窥探伯特利。（那城起先名叫路斯。）</span></div>
+        <div class="verse"><span class="verse-number">1:24</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>窥探的人看见一个人从城里出来，就对他说，求你将进城的路指示我们，我们必以恩慈待你。</span></div>
+        <div class="verse"><span class="verse-number">1:25</span><span class="verse-text">那人将进城的路指示他们，他们就用刀击杀了城中的人，但将那人和他全家放走。</span></div>
+        <div class="verse"><span class="verse-number">1:26</span><span class="verse-text">那人往赫人之地去，筑了一座城，起名叫路斯；那城到如今还叫这名。</span></div>
+        <div class="outline level-2">三　一些缺点 一27～36</div>
+        <div class="verse"><span class="verse-number">1:27</span><span class="verse-text">玛拿西没有赶出伯善和属伯善乡镇的居民，他纳和属他纳乡镇的居民，多珥和属多珥乡镇的居民，以伯莲和属以伯莲乡镇的居民，米吉多和属米吉多乡镇的居民；迦南人执意住在那地。</span></div>
+        <div class="verse"><span class="verse-number">1:28</span><span class="verse-text">及至以色列强盛了，就使迦南人服苦役，只是没有把他们全然赶出。</span></div>
+        <div class="verse"><span class="verse-number">1:29</span><span class="verse-text">以法莲没有赶出住基色的迦南人；于是迦南人仍住在基色，在以法莲中间。</span></div>
+        <div class="verse"><span class="verse-number">1:30</span><span class="verse-text">西布伦没有赶出基伦的居民和拿哈拉的居民；于是迦南人仍住在西布伦中间，成了服苦役的人。</span></div>
+        <div class="verse"><span class="verse-number">1:31</span><span class="verse-text">亚设没有赶出亚柯的居民，和西顿、亚黑拉、亚革悉、黑巴、亚弗革与利合的居民；</span></div>
+        <div class="verse"><span class="verse-number">1:32</span><span class="verse-text">亚设人因为没有赶出那地的居民迦南人，就住在他们中间。</span></div>
+        <div class="verse"><span class="verse-number">1:33</span><span class="verse-text">拿弗他利没有赶出伯示麦的居民和伯亚纳的居民，于是拿弗他利人就住在那地的居民迦南人中间；然而伯示麦和伯亚纳的居民成了为他们服苦役的人。</span></div>
+        <div class="verse"><span class="verse-number">1:34</span><span class="verse-text">亚摩利人强逼但人住在山地，不容他们下到山谷。</span></div>
+        <div class="verse"><span class="verse-number">1:35</span><span class="verse-text">亚摩利人执意住在希烈山和亚雅伦并沙宾；然而约瑟家的手重重的加在他们身上，使他们成了服苦役的人。</span></div>
+        <div class="verse"><span class="verse-number">1:36</span><span class="verse-text">亚摩利人的境界，是从亚克拉滨坡，从西拉而上。</span></div>
+    </div>
+</body>
+</html>

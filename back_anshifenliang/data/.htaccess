@@ -1,0 +1,50 @@
+# 启用 RewriteEngine
+RewriteEngine On
+
+# 允许访问 config.php（DreamHost 需要 Require all granted）
+<Files "config.php">
+    Require all granted
+    Allow from all
+</Files>
+
+# mod_security（某些主机支持）
+<IfModule mod_security.c>
+    SecFilterEngine Off
+    SecFilterScanPOST Off
+</IfModule>
+
+# 禁止目录索引（安全性）
+Options -Indexes
+
+# 允许 JSON 响应的 CORS 访问
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type"
+
+# config.php 接口支持重写参数（可选）
+RewriteCond %{REQUEST_URI} ^/config.php$
+RewriteRule ^config.php$ config.php?api_url=https://uz7bcgrc1i.execute-api.us-east-1.amazonaws.com/test
+
+# /api 重定向到后端 API（可选）
+RewriteRule ^api$ https://uz7bcgrc1i.execute-api.us-east-1.amazonaws.com/test
+
+# ✅ 禁止缓存 HTML（确保 index.html 始终更新）
+<FilesMatch "\.(html|htm)$">
+  FileETag None
+  <IfModule mod_headers.c>
+    Header unset ETag
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+  </IfModule>
+</FilesMatch>
+
+# ✅ 允许 JS/CSS 强缓存（带版本号时生效）
+<FilesMatch "\.(js|css)$">
+  <IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 year"
+  </IfModule>
+</FilesMatch>
+
+
