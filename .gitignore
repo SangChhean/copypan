@@ -42,24 +42,6 @@ front_qa/public/lsm/*.pdf
 front_cn/public/lsm/*.pdf
 back_qa/qa/qa_users.db
 
-# front_anshifenliang：数据来自 back_anshifenliang/data，由 setup-data.ps1 硬链接
-front_anshifenliang/private/
-front_anshifenliang/traditional_to_simplified.js
-front_anshifenliang/simplified_to_traditional.js
-front_anshifenliang/qu-bie-ci-exclusion-map.js
-front_anshifenliang/hymns.js
-front_anshifenliang/shi_ge.js
-front_anshifenliang/shi_ge_fen_lei.js
-front_anshifenliang/zhu_jie_wen_da.js
-front_anshifenliang/cha_kan_zheng_pian.js
-front_anshifenliang/jing_jie_wen_da.js
-front_anshifenliang/xiao_bai_ke.js
-front_anshifenliang/bible_verse.js
-front_anshifenliang/jing_jie_zhu_shi.js
-front_anshifenliang/styles.css
-front_anshifenliang/content_view.html
-front_anshifenliang/viewer_host.html
-front_anshifenliang/favicon.ico
 back_anshifenliang/data
  
  
