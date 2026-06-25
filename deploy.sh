@@ -93,6 +93,12 @@ cd /opt/pansearch/code/back_anshifenliang
 npm install --silent
 nohup node server.js > /opt/pansearch/logs/anshifenliang_backend.log 2>&1 &
 echo "✅ Anshifenliang 后端已重启 (port 8020)"
+echo "[6e/7] 重启 Telegram Bot..."
+pkill -f "python3 bot.py" 2>/dev/null
+sleep 1
+cd /opt/pansearch/code/back_anshifenliang/telegram_bot
+nohup python3 bot.py > /opt/pansearch/logs/telegram_bot.log 2>&1 &
+echo "✅ Telegram Bot 已启动"
 echo "[7/7] 重启 Nginx..."
 systemctl reload nginx
 echo "✅ Nginx 已重启"
@@ -107,5 +113,6 @@ echo "📋 查看日志: tail -f $LOG_DIR/backend.log"
 echo "📋 QA 日志: tail -f /opt/pansearch/logs/qa_backend.log"
 echo "📋 CN 日志: tail -f /opt/pansearch/logs/cn_backend.log"
 echo "📋 按时分粮日志: tail -f /opt/pansearch/logs/anshifenliang_backend.log"
+echo "📋 Bot 日志: tail -f /opt/pansearch/logs/telegram_bot.log"
 echo "📁 前端静态: $FRONT_DIR/dist（请确认 Nginx root 指向此目录）"
 echo "=========================================="
