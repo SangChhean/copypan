@@ -2498,6 +2498,7 @@ const onAISearch = async () => {
 
               <div class="eval-dim-card">
                 <div class="eval-dim-header"><strong>T1 经文校对</strong><span>{{ evalT1Score10 }}/10</span></div>
+                <div v-if="evalT1?.error" class="eval-error">{{ evalT1.error }}</div>
                 <template v-if="evalHasBlock('T1')">
                   <div class="eval-meta-tags">
                     <a-tag v-if="evalT1.apex_level">{{ evalT1.apex_level }}</a-tag>
@@ -2562,6 +2563,7 @@ const onAISearch = async () => {
 
               <div class="eval-dim-card">
                 <div class="eval-dim-header"><strong>T3 四维分析</strong><span>{{ evalT3Score10 }}/10</span></div>
+                <div v-if="evalT3?.error" class="eval-error">{{ evalT3.error }}</div>
                 <template v-if="evalHasBlock('T3')">
                   <div class="eval-meta-tags">
                     <span class="framework-badge">{{ frameworkTypeLabel }}</span>
