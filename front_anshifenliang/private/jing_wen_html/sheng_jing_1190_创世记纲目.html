@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1190_创世记纲目</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: normal; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: normal; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: normal; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: normal; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: normal; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">创世记纲目</h1>
+        <div class="outline level-1">壹　神的创造 一1～二25</div>
+        <div class="outline level-2">一　神的心愿和目的 一1～二3</div>
+        <div class="outline level-3">1　神原始的创造 一1</div>
+        <div class="outline level-3">2　审判与败坏 一2上</div>
+        <div class="outline level-3">3　神的恢复和进一步的创造 一2下～二3</div>
+        <div class="outline level-4">a　第一日，灵来了，话来了，光来了 一2下～5</div>
+        <div class="outline level-4">b　第二日，天空以下的水与天空以上的水分开 一6～8</div>
+        <div class="outline level-4">c　第三日，陆地与海分开，生出植物生命 一9～13</div>
+        <div class="outline level-4">d　第四日，出现光体 一14～19</div>
+        <div class="outline level-4">e　第五日，生出水中和空中的活物 一20～23</div>
+        <div class="outline level-4">f　第六日，生出地上的活物 一24～31</div>
+        <div class="outline level-5">(一)　地上的走兽 24～25</div>
+        <div class="outline level-5">(二)　人 26～28</div>
+        <div class="outline level-6">(1)　神格的会议 26</div>
+        <div class="outline level-6">(2)　神造男造女 27</div>
+        <div class="outline level-6">(3)　神赐福给人，使人繁衍 28</div>
+        <div class="outline level-5">(三)　人和其他一切活物都因神的供应得着满足 29～30</div>
+        <div class="outline level-5">(四)　神看一切都甚好 31</div>
+        <div class="outline level-4">g　第七日，神满足而安息了 二1～3</div>
+        <div class="outline level-2">二　神达成祂目的的手续 二4～25</div>
+        <div class="outline level-3">1　背景－天还没有降雨，地也没有人耕种，田间还没有长出生命，只有雾气从地上腾 4～6</div>
+        <div class="outline level-3">2　第一步－创造人作器皿，好盛装神作生命 7</div>
+        <div class="outline level-3">3　第二步－使人接受神作生命 8～17</div>
+        <div class="outline level-4">a　将人放在生命树跟前 8～9</div>
+        <div class="outline level-4">b　将人安置在有河流的园中 10～15</div>
+        <div class="outline level-4">c　让人自由选择 16～17</div>
+        <div class="outline level-3">4　第三步－将神作到人里面作生命，使人成为祂的补满 18～25</div>
+        <div class="outline level-4">a　人豫表神，需要补满 18～20</div>
+        <div class="outline level-4">b　人在生命里，并藉着生命得了补满 21～25</div>
+        <div class="outline level-1">贰　人因着撒但的败坏而堕落 三1～十一32</div>
+        <div class="outline level-2">一　第一次的堕落－从神的同在堕落到人的良心 三１～24</div>
+        <div class="outline level-3">1　蛇（撒但）的试诱与人第一次的堕落 1～7</div>
+        <div class="outline level-3">2　神对付人第一次的堕落 8～24</div>
+        <div class="outline level-4">a　寻找人 8～13</div>
+        <div class="outline level-4">b　审判蛇 14</div>
+        <div class="outline level-4">c　关于女人后裔的应许 15</div>
+        <div class="outline level-4">d　藉苦难管教人 16～19</div>
+        <div class="outline level-4">e　豫期的救赎 20～21</div>
+        <div class="outline level-4">f　封闭生命树的道路 22～24</div>
+        <div class="outline level-2">二　第二次的堕落－从人的良心堕落到人的管治 四１～26</div>
+        <div class="outline level-3">1　背景 1～2</div>
+        <div class="outline level-3">2　人的自作主张、忿怒、凶杀、谎言和傲慢 3～9</div>
+        <div class="outline level-3">3　神对付人第二次的堕落－咒诅人，使人流离飘荡 10～15</div>
+        <div class="outline level-3">4　人产生了无神文化 16～24</div>
+        <div class="outline level-3">5　人逃避第二次堕落之路－认识自己的脆弱，并呼求耶和华的名 25～26</div>
+        <div class="outline level-2">三　得救之人的谱系，启示出人堕落的最终结局与逃避之路 五1～32</div>
+        <div class="outline level-3">1　人堕落最终的结局－死 1～27</div>
+        <div class="outline level-3">2　避死之路－与神同行 22～24</div>
+        <div class="outline level-3">3　蒙拯救之家得着安慰与安息 28～32</div>
+        <div class="outline level-2">四　第三次的堕落－从人的管治堕落到人的政权 六1～八3</div>
+        <div class="outline level-3">1　邪灵与人调和，人成了肉体 六1～4</div>
+        <div class="outline level-3">2　神对付人第三次的堕落－将人从地上除灭 六5～7</div>
+        <div class="outline level-3">3　从第三次堕落蒙拯救之路 六8～八3</div>
+        <div class="outline level-4">a　与神同行 六8～10</div>
+        <div class="outline level-4">b　建造方舟 六11～七16</div>
+        <div class="outline level-5">(一)　接受启示 六11～21</div>
+        <div class="outline level-5">(二)　豫备方舟 六22</div>
+        <div class="outline level-5">(三)　进入方舟，被耶和华关在里头 七1～16</div>
+        <div class="outline level-4">c　藉水得救 七17～八3</div>
+        <div class="outline level-2">五　在复活里的生活 八4～十32</div>
+        <div class="outline level-3">1　方舟停在山上，表征与基督一同复活 八4～5</div>
+        <div class="outline level-3">2　乌鸦被放出，表征属肉体的人回到被神审判的世界 八6～7</div>
+        <div class="outline level-3">3　鸽子被放出，表征属灵的人留在召会中，顾到那灵里的生命 八8～12</div>
+        <div class="outline level-3">4　在复活里从方舟出来 八13～19</div>
+        <div class="outline level-3">5　在祭坛上向耶和华献燔祭，表征藉着十字架将基督献给神 八20～22</div>
+        <div class="outline level-3">6　完成神的定旨，彰显神并代表神 九1～7</div>
+        <div class="outline level-3">7　活在神的约之下 九8～17</div>
+        <div class="outline level-4">a　不再有藉着死水的审判 8～11</div>
+        <div class="outline level-4">b　有虹作神信实守约的记号 12～17</div>
+        <div class="outline level-3">8　首领和代表权柄的失败 九18～29</div>
+        <div class="outline level-4">a　因他工作的成功 18～21</div>
+        <div class="outline level-4">b　含揭露失败，闪和雅弗遮盖失败 22～24</div>
+        <div class="outline level-4">c　含受咒诅，闪和雅弗得祝福 25～27</div>
+        <div class="outline level-3">9　邦国的产生，以巴别为总结 十1～32</div>
+        <div class="outline level-2">六　第四次的堕落－从人的政权堕落到撒但煽动下的背叛 十一1～9</div>
+        <div class="outline level-3">1　建造一座城和一座塔，以背叛神、弃绝神、并宣扬自己的名 1～4</div>
+        <div class="outline level-3">2　神对付人第四次的堕落－使人分散居住，并变乱他们的语言 5～9</div>
+        <div class="outline level-2">七　人从藉水得救到蒙耶和华呼召的谱系 十一10～32</div>
+        <div class="outline level-4">参　耶和华的呼召 十二１～五十26</div>
+        <div class="outline level-2">一　第一方面－亚伯拉罕的经历 十二１～二五18</div>
+        <div class="outline level-3">1　神的呼召 十二1～7上</div>
+        <div class="outline level-3">2　凭信而活 十二7下～十四24</div>
+        <div class="outline level-4">a　祭坛与帐棚的生活 十二7下～8</div>
+        <div class="outline level-4">b　蒙召者的试炼 十二9～十三18</div>
+        <div class="outline level-5">(一)　饥荒 十二9～十三4</div>
+        <div class="outline level-5">(二)　弟兄之争 十三5～18</div>
+        <div class="outline level-4">c　蒙召者的得胜 十四1～24</div>
+        <div class="outline level-5">(一)　弟兄被掳 1～12</div>
+        <div class="outline level-5">(二)　为弟兄争战 13～17</div>
+        <div class="outline level-5">(三)　受麦基洗德的供应 18～20</div>
+        <div class="outline level-5">(四)　胜过地上财物的试诱 21～24</div>
+        <div class="outline level-3">3　认识恩典，为着完成神的定旨 十五1～十七27</div>
+        <div class="outline level-4">a　神与亚伯拉罕所立的约 十五1～21</div>
+        <div class="outline level-5">(一)　关于后裔 1～6</div>
+        <div class="outline level-5">(二)　关于地 7～21</div>
+        <div class="outline level-4">b　两个妇人的寓意 十六1～16</div>
+        <div class="outline level-4">c　用割礼所坚立神的约 十七1～14</div>
+        <div class="outline level-4">d　应许要生以撒 十七15～27</div>
+        <div class="outline level-3">4　活在与神的交通中 十八1～二四67</div>
+        <div class="outline level-4">a　与在人水平上的神来往 十八1～22</div>
+        <div class="outline level-4">b　一次荣耀的代求 十八23～33</div>
+        <div class="outline level-4">c　罗得消极的记载 十九1～38</div>
+        <div class="outline level-5">(一)　一个失败的义人和一根盐柱 1～29</div>
+        <div class="outline level-5">(二)　凭乱伦所生的后裔 30～38</div>
+        <div class="outline level-4">d　隐藏的软弱和羞惭的代祷 二十1～18</div>
+        <div class="outline level-4">e　以撒的出生和长大 二一1～34</div>
+        <div class="outline level-4">f　以撒的献上 二二1～24</div>
+        <div class="outline level-4">g　撒拉的死与埋葬 二三1～20</div>
+        <div class="outline level-4">h　以撒的婚娶 二四1～67</div>
+        <div class="outline level-3">5　生命没有成熟 二五1～18</div>
+        <div class="outline level-2">二　第二方面－以撒的经历 二五19～21，27～28，二六1～二七4，27～41，二八6～9</div>
+        <div class="outline level-3">1　得着孪生子 二五19～21</div>
+        <div class="outline level-2">三　第三方面－雅各（连同约瑟）的经历 二五22～26，29～34，二七5～26，二七42～二八5，二八10～五十26</div>
+        <div class="outline level-3">1　受对付 二五22～26，29～34，二七5～26，二七42～二八5，二八10～三二21</div>
+        <div class="outline level-4">a　被拣选生为次子 二五22～26</div>
+        <div class="outline level-1">（以撒的经历－续）</div>
+        <div class="outline level-3">2　活在天然生命里，像雅各一样 二五27～28，二八6～9</div>
+        <div class="outline level-1">（雅各的经历－续）</div>
+        <div class="outline level-4">b　被迫离开慈母与父家 二五29～34，二七5～26，二七42～二八5</div>
+        <div class="outline level-5">(一)　抓夺长子的名分 二五29～34</div>
+        <div class="outline level-3">3　承受他父亲所得的应许 二六1～5</div>
+        <div class="outline level-3">4　有天然的弱点，像亚伯拉罕一样 二六6～11</div>
+        <div class="outline level-3">5　有百倍的收成，成了巨富 二六12～14</div>
+        <div class="outline level-3">6　寻得活水井 二六15～22</div>
+        <div class="outline level-3">7　神在别是巴向他坚定应许 二六23～35</div>
+        <div class="outline level-3">8　生命不很成熟 二七1～4，27～41</div>
+        <div class="outline level-5">(二)　抓夺父亲的祝福 二七5～26</div>
+        <div class="outline level-3">8　生命不很成熟（续） 二七27～41</div>
+        <div class="outline level-5">(三)　受母亲指示离开 二七42～46</div>
+        <div class="outline level-5">(四)　蒙父亲祝福，并打发离开 二八1～5</div>
+        <div class="outline level-3">2　活在天然生命里，像雅各一样（续） 二八6～9</div>
+        <div class="outline level-4">c　在伯特利的梦 二八10～22</div>
+        <div class="outline level-4">d　在神主宰的带领下，遇见拉结与拉班 二九1～14</div>
+        <div class="outline level-4">e　受拉班欺骗，娶了拉班的两个女儿 二九15～30</div>
+        <div class="outline level-4">f　雅各的妻子在生子的事上争竞、嫉妒并角力 二九31～三十24</div>
+        <div class="outline level-4">g　被拉班压榨，欺弄拉班，却蒙神赐福 三十25～三一16</div>
+        <div class="outline level-4">h　逃离拉班，并被拉班追赶 三一17～55</div>
+        <div class="outline level-4">i　惧怕以扫 三二1～21</div>
+        <div class="outline level-3">2　被破碎 三二22～三四31</div>
+        <div class="outline level-4">a　与神摔跤 三二22～32</div>
+        <div class="outline level-4">b　受以扫迎接 三三1～16</div>
+        <div class="outline level-4">c　返回迦南，但仅至示剑 三三17～20</div>
+        <div class="outline level-4">d　仍需环境中的对付 三四1～31</div>
+        <div class="outline level-3">3　被变化 三五1～29</div>
+        <div class="outline level-4">a　在伯特利蒙神题醒 1～15</div>
+        <div class="outline level-4">b　更深刻、更切身的对付 16～26</div>
+        <div class="outline level-5">(一)　拉结之死 16～20</div>
+        <div class="outline level-5">(二)　雅各的妾受玷污，长子名分因而转移 21～26</div>
+        <div class="outline level-4">c　进入完满的交通 27</div>
+        <div class="outline level-4">d　得释放脱离父亲的束缚 28～29</div>
+        <div class="outline level-1">（以扫的后代 三六1～43）</div>
+        <div class="outline level-3">4　渐渐成熟 三七1～五十26</div>
+        <div class="outline level-4">a　成熟的过程－最后阶段的对付 三七1～2上，32～36，四二1～5，四二29～四三14</div>
+        <div class="outline level-5">(一)　在神主宰的手下，雅各心头的宝贝（约瑟）被夺去 三七1～2上，32～36</div>
+        <div class="outline level-4">c　成熟的以色列掌权的一面，见于约瑟 三七2下～31，三八1～四一57，四二6～28，四三15～四五24，四七11～27，五十14～26</div>
+        <div class="outline level-5">(一)　为牧人，且为父所爱 三七2下～4</div>
+        <div class="outline level-5">(二)　看他的民为生命的禾捆，为发光的太阳、月亮与众星 三七5～11</div>
+        <div class="outline level-5">(三)　照他父亲的意愿，供应他的弟兄们 三七12～17</div>
+        <div class="outline level-5">(四)　生活如生命的禾捆 三七18～31</div>
+        <div class="outline level-1">（成熟的过程－续）</div>
+        <div class="outline level-5">(一)　在神主宰的手下，雅各心头的宝贝（约瑟）被夺去（续） 三七32～36</div>
+        <div class="outline level-1">（掌权的一面，见于约瑟－续）</div>
+        <div class="outline level-5">(五)　生活如发光的星 三八1～三九12</div>
+        <div class="outline level-6">(1)　他的哥哥犹大放纵情欲 三八1～30</div>
+        <div class="outline level-6">(2)　胜过情欲，在黑暗中照耀 三九1～12</div>
+        <div class="outline level-5">(六)　被交付在死牢中 三九13～四一13</div>
+        <div class="outline level-5">(七)　从死牢里复起 四一14～39</div>
+        <div class="outline level-5">(八)　登宝座得权柄，并得着荣耀，领受恩赐 四一40～44</div>
+        <div class="outline level-5">(九)　成为世人的搭救者，生命的供应者（秘密的揭示者） 四一45～46</div>
+        <div class="outline level-5">(十)　供应人粮食 四一47～57</div>
+        <div class="outline level-5">(二)　为饥荒所迫，打发众子去埃及买粮 四二1～5</div>
+        <div class="outline level-1">(十一)　为以色列的儿子们所认 四二6～28，四三15～四五24</div>
+        <div class="outline level-6">(1)　以智慧对待他的兄长，向他们显示爱 四二6～28</div>
+        <div class="outline level-5">(三)　次子西缅被拘在埃及 四二29～38</div>
+        <div class="outline level-5">(四)　饥荒加重，被迫打发幼子便雅悯去埃及 四三1～14</div>
+        <div class="outline level-1">（掌权的一面，见于约瑟－为以色列的儿子们所认－续）</div>
+        <div class="outline level-6">(2)　进一步试验他的兄长 四三15～四四34</div>
+        <div class="outline level-6">(3)　向悔改的弟兄们揭示他的高举与荣耀 四五1～15</div>
+        <div class="outline level-6">(4)　他的弟兄们有分于他掌权的享受 四五16～24</div>
+        <div class="outline level-4">b　成熟的表显 四五25～四七10，四七28～五十13</div>
+        <div class="outline level-5">(一)　听见约瑟还活着，一无责备之言 四五25～28</div>
+        <div class="outline level-5">(二)　在别是巴献祭给神 四六1～4</div>
+        <div class="outline level-5">(三)　再见到约瑟 四六5～34</div>
+        <div class="outline level-5">(四)　随时祝福人 四七1～10，四七28～四九28</div>
+        <div class="outline level-6">(1)　祝福法老 四七1～10</div>
+        <div class="outline level-1">(十二)　掌权 四七11～27，五十14～26</div>
+        <div class="outline level-1">（成熟的表显－随时祝福人－续）</div>
+        <div class="outline level-6">(2)　祝福约瑟二子 四七28～四八22</div>
+        <div class="outline level-6">(3)　祝福自己的众子 四九1～28</div>
+        <div class="outline level-5">(五)　超特的离世 四九29～五十13</div>
+        <div class="outline level-1">(十二)　掌权（续） 五十14～26</div>
+    </div>
+</body>
+</html>

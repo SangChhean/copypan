@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0880_阿摩司书第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">阿摩司书 第 一 章</h1>
+        <div class="book-info">著者： 阿摩司。（一1下。）</div>
+        <div class="book-info">尽职时间： 约于主前七八七年。（一1上。）</div>
+        <div class="book-info">尽职地点： 北方以色列国的伯特利。（七13。）</div>
+        <div class="book-info">尽职对象： 北方以色列国。</div>
+        <div class="theme">主题：耶和华对以色列并四围列国的审判以及所产生的复兴</div>
+        <div class="outline level-1">壹　介言 一1～2</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text">当犹大王乌西雅，以色列王约阿施的儿子耶罗波安在位的日子，大地震前二年，提哥亚牧羊人中的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>阿摩司<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>得了论以色列的话。</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">他说，耶和华必从锡安吼叫，从耶路撒冷发声；牧人的草场要悲哀，迦密的山顶要枯干。</span></div>
+        <div class="outline level-1">贰　耶和华对四围列国的审判 一3～二3</div>
+        <div class="outline level-2">一　对大马色的审判 一3～5</div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">耶和华如此说，因大马色<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>三番四次的犯罪，我必不免去他们的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>刑罚；因为他们以打粮食的尖利铁器打过基列。</span></div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">我却要降火在哈薛的家中，烧灭便哈达的宫殿。</span></div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">我必折断大马色的门闩，剪除<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亚文平原的居民和伯伊甸掌握权杖的；<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>亚兰人必被掳到吉珥，这是耶和华说的。</span></div>
+        <div class="outline level-2">二　对迦萨的审判 一6～8</div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text">耶和华如此说，因迦萨三番四次的犯罪，我必不免去他们的刑罚；因为他们将掳掠的众民全然掳掠，交给以东。</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text">我却要降火在迦萨的城墙，烧灭其中的宫殿。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">我必剪除亚实突的居民，和亚实基伦掌握权杖的；也必反手攻击以革伦；非利士人所余剩的必都灭亡，这是主耶和华说的。</span></div>
+        <div class="outline level-2">三　对推罗的审判 一9～10</div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text">耶和华如此说，因推罗三番四次的犯罪，我必不免去他们的刑罚；因为他们将掳掠的众民全然掳掠，交给以东，并不记念弟兄之间的盟约。</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">我却要降火在推罗的城墙，烧灭其中的宫殿。</span></div>
+        <div class="outline level-2">四　对以东的审判 一11～12</div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">耶和华如此说，因以东三番四次的犯罪，我必不免去他的刑罚；因为他拿刀追赶兄弟，塞住怜恤，时常发怒撕裂，长怀忿怒。</span></div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">我却要降火在提幔，烧灭波斯拉的宫殿。</span></div>
+        <div class="outline level-2">五　对亚扪的审判 一13～15</div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">耶和华如此说，因<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亚扪人三番四次的犯罪，我必不免去他们的刑罚；因为他们剖开基列的孕妇，扩张自己的境界。</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">我却要在争战呐喊的日子，在暴风动荡的时候，点火在拉巴的城墙，烧灭其中的宫殿。</span></div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text">他们的王和首领必一同被掳去，这是耶和华说的。</span></div>
+    </div>
+</body>
+</html>

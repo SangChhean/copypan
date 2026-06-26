@@ -76,6 +76,11 @@ function lookupJingJieZhuShiCatalog(query, expandedQueries) {
     return null;
 }
 
+/** 关键词 ≤3 字时不做 Fuse 模糊匹配 */
+function shouldUseFuzzyMatch(query) {
+    return String(query || '').trim().length > 3;
+}
+
 const history = document.getElementById('history');
 const voiceButton = document.getElementById('voice-button');
 const userInput = document.getElementById('user-input');
@@ -1349,6 +1354,19 @@ async function handleLocalDictionaryMatch(userMessage) {
     console.log("🧪 简体转换后：", simplifiedInput);
     console.log("🎯 清洗后匹配关键词：", rawInput);
 
+    function getQaDict() {
+        return {
+            ...(window.shu_ling_wen_da || {}),
+            ...(window.xiao_bai_ke || {}),
+        };
+    }
+
+    function getQaSource(key) {
+        if (window.xiao_bai_ke && window.xiao_bai_ke[key] !== undefined) return 'xiao_bai_ke';
+        if (window.shu_ling_wen_da && window.shu_ling_wen_da[key] !== undefined) return 'shu_ling_wen_da';
+        return 'xiao_bai_ke';
+    }
+
     const categories = [
         {
             name: '诗歌',
@@ -1635,10 +1653,10 @@ async function handleLocalDictionaryMatch(userMessage) {
         },
         {
             name: '问答',
-            data: window.xiao_bai_ke,
+            data: getQaDict,
             condition: selectedCategory === '问答' || !selectedCategory,
             render: (k, v) =>
-                `<p><span class="data-title">${k}</span> <button class="view-original" data-source="xiao_bai_ke" data-title="${k}">查看全文</button></p>${v.slice(0, 180)}……`
+                `<p><span class="data-title">${k}</span> <button class="view-original" data-source="${getQaSource(k)}" data-title="${k}">查看全文</button></p>${v.slice(0, 180)}……`
         }
     ];
 
@@ -1890,8 +1908,8 @@ async function handleLocalDictionaryMatch(userMessage) {
                     }
                 }
                 
-                // 3. 模糊匹配 (如果支持)
-                if (source.supportsFuzzy) {
+                // 3. 模糊匹配 (如果支持，且关键词 >3 字)
+                if (source.supportsFuzzy && shouldUseFuzzyMatch(query)) {
                     const fuse = new Fuse(sourceKeys.map(k => ({ key: k })), {
                         keys: ['key'],
                         includeScore: true,
@@ -2032,7 +2050,8 @@ async function handleLocalDictionaryMatch(userMessage) {
                     return true;
                 });
 
-                // 模糊匹配
+                // 模糊匹配（≤3 字不做模糊）
+                if (shouldUseFuzzyMatch(query)) {
                 const fuse = new Fuse(keys.map(k => ({ key: k })), {
                     keys: ['key'],
                     includeScore: true,
@@ -2051,6 +2070,9 @@ async function handleLocalDictionaryMatch(userMessage) {
                     }
                     return true;
                 });
+                } else {
+                    fuzzyResults = [];
+                }
                 
             } catch (error) {
                 console.warn(`注解分类匹配出错:`, error);
@@ -2127,7 +2149,7 @@ async function handleLocalDictionaryMatch(userMessage) {
                     searchKey: dict[k].source === 'zhi_shi' ? cleanKeyForMatching(k) : k
                 }));
             
-            if (keysForFuzzy.length > 0) {
+            if (keysForFuzzy.length > 0 && shouldUseFuzzyMatch(query)) {
                 const fuse = new Fuse(keysForFuzzy, {
                     keys: ['searchKey'],
                     includeScore: true,
@@ -2188,7 +2210,8 @@ async function handleLocalDictionaryMatch(userMessage) {
                     return true;
                 });
 
-                // 模糊匹配
+                // 模糊匹配（≤3 字不做模糊）
+                if (shouldUseFuzzyMatch(query)) {
                 const fuse = new Fuse(keys.map(k => ({ key: k })), {
                     keys: ['key'],
                     includeScore: true,
@@ -2207,6 +2230,9 @@ async function handleLocalDictionaryMatch(userMessage) {
                     }
                     return true;
                 });
+                } else {
+                    fuzzyResults = [];
+                }
                 
             } catch (error) {
                 console.warn(`其他分类匹配出错:`, error);
@@ -2438,7 +2464,8 @@ document.addEventListener('click', function(event) {
         'zhu_jie_wen_da': window.zhu_jie_wen_da,
         'jing_jie_wen_da': window.jing_jie_wen_da,
         'bible_verse': window.bibleVerse,
-        'xiao_bai_ke': window.xiao_bai_ke
+        'xiao_bai_ke': window.xiao_bai_ke,
+        'shu_ling_wen_da': window.shu_ling_wen_da
     };
 
     const dict = dictMap[source];

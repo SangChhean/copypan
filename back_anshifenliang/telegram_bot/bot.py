@@ -5,7 +5,7 @@ import re
 import logging
 from html import escape
 from dotenv import load_dotenv
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     filters, ContextTypes
@@ -39,7 +39,6 @@ def _fix_glyph_corruption(text: str) -> str:
 
 
 LOADED_COUNT = int(os.getenv("LOADED_COUNT", "12000"))
-WEBSITE_URL = os.getenv("WEBSITE_URL", "https://chat.educationbylevel.org")
 
 USER_CATEGORY = {}
 USER_SEEN = set()
@@ -52,8 +51,9 @@ CATEGORY_DATA = {
 }
 
 CATEGORY_BUTTONS = list(CATEGORY_DATA.keys())
-ENABLED_CATEGORIES = {"📖 诗歌", "📜 经节", "📝 注解", "💡 问答"}
+ENABLED_CATEGORIES = {"📖 诗歌"}
 DEFAULT_CATEGORY = "📖 诗歌"
+CATEGORY_CLOSED_MSG = "目前暂未开放。\n\n目前仅开放【诗歌】查询。"
 
 MAX_RESULTS = 5
 MSG_CHUNK = 4000
@@ -347,12 +347,6 @@ def split_html_message(text: str, max_len: int = MSG_CHUNK) -> list[str]:
     return parts
 
 
-def build_website_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton("🌐 打开网站", url=WEBSITE_URL)
-    ]])
-
-
 async def get_item_content(item: dict, lang: str = "zh-CN") -> str:
     source = item.get("source") or ""
     title_key = item.get("titleKey") or item.get("title") or ""
@@ -384,16 +378,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     chat_id = update.effective_chat.id
     USER_SEEN.add(chat_id)
+    USER_CATEGORY[chat_id] = DEFAULT_CATEGORY
 
     await update.message.reply_text(
         f"你好 {user.first_name}! 🙏\n\n"
         f"欢迎使用「按时分粮」Bot\n"
         f"📚 已加载 {LOADED_COUNT:,} 条查经内容\n\n"
-        f"💡 目前开放【诗歌】查询，直接输入关键词即可",
-        reply_markup=build_website_keyboard(),
-    )
-    await update.message.reply_text(
-        "👇 选择分类后开始查询",
+        f"💡 目前开放【诗歌】查询\n"
+        f"👇 点底部按钮选分类，或直接输入关键词",
         reply_markup=get_main_keyboard(),
     )
 
@@ -418,12 +410,10 @@ async def send_search_results(
     header += f"：「{escape(query)}」"
 
     await chat.send_action("typing")
-    await chat.send_message(header, parse_mode="HTML")
+    await chat.send_message(header, parse_mode="HTML", reply_markup=get_main_keyboard())
 
     for idx, item in enumerate(display_items, 1):
         await send_item_full(chat, idx, item, lang)
-
-    await chat.send_message("⬇️ 操作", reply_markup=build_website_keyboard())
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -440,8 +430,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_input in CATEGORY_BUTTONS:
         if user_input not in ENABLED_CATEGORIES:
             await update.message.reply_text(
-                "该分类暂未完成，敬请期待。\n\n"
-                "目前仅开放【诗歌】查询。",
+                CATEGORY_CLOSED_MSG,
                 reply_markup=get_main_keyboard(),
             )
             return
@@ -451,7 +440,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"✅ 已切换到【{category_name}】\n\n"
             f"请输入查询内容，例如：\n"
-            f"• 三一神 / 神圣的经纶\n"
+            f"• 奉献\n"
             f"• 诗歌第1首",
             reply_markup=get_main_keyboard(),
         )
@@ -482,9 +471,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not result.get("found") or not items:
         await update.message.reply_text(
             f"😔 在【{category_name}】里没找到「{user_input}」\n\n"
-            f"试试：\n"
-            f"• 换个关键词\n"
-            f"• 点底部按钮切换到其他分类",
+            f"试试换个关键词",
             reply_markup=get_main_keyboard(),
         )
         return
@@ -494,7 +481,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_prefix = (
             f"你好 {user.first_name}! 🙏 欢迎使用「按时分粮」Bot\n"
             f"📚 已加载 {LOADED_COUNT:,} 条查经内容\n"
-            f"💡 点底部按钮切换分类，直接输入关键词查询\n"
+            f"💡 目前开放【诗歌】查询，直接输入关键词即可\n"
             f"━━━━━━━━━━━━━━━━━━\n\n"
         )
 

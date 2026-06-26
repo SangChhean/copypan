@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>该2章7节注</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 7px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            position: relative;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .verse-content {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #3498db;
+            padding: 5px 7px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            line-height: 1.9;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 3px;
+        }
+        
+        .verse-text {
+            color: #2c3e50;
+        }
+        
+        .verse-text sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 1px;
+        }
+        
+        .note-item {
+            margin-bottom: 7px;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+        
+        .note-item:nth-child(even) {
+            background-color: white;
+        }
+        
+        .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        /* 单段落注解样式 */
+        .note-content {
+            display: inline;
+            text-indent: 0;
+            text-align: justify;
+        }
+        
+        /* 多段落注解容器 */
+        .note-content-multi {
+            display: block;
+        }
+        
+        /* 第一段（包含注解编号）不缩进 */
+        .first-paragraph-with-number {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 0;
+        }
+        
+        .first-paragraph-with-number .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        .first-paragraph-with-number .first-paragraph-text {
+            display: inline;
+            text-indent: 0;
+        }
+        
+        /* 从第二段开始首行缩进两个字符 */
+        .indented-paragraph {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 2em;
+        }
+        
+        /* 最后一个段落去除底部边距 */
+        .note-content-multi p:last-child,
+        .indented-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 单段落内容（使用span的情况）不缩进 */
+        .note-content > span {
+            text-indent: 0;
+            text-align: justify;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">该2章7节注</h1>
+        <div class="verse-content">
+  <span class="verse-number">该2章7节</span>
+  <span class="verse-text">我必震动万国，<sup>1</sup>万国所羡慕的必来到；我必使这殿满了荣耀；这是万军之耶和华说的。</span>
+</div>
+<div class="note-item">
+  <div class="note-content-multi">
+    <p class="first-paragraph-with-number">
+      <span class="note-number">注1　</span>
+      <span class="first-paragraph-text">这是指基督，祂是万国所羡慕的。（玛三1下。）即使万国不认识基督，他们仍羡慕基督。所有人都羡慕和平，过美好的生活，有光、爱、忍耐、谦卑、温柔、恒忍、喜乐、公义等美德。因为基督是这一切事物的实际，所以万国羡慕这些事物，意即他们不知不觉的羡慕基督。</span>
+    </p>
+    <p class="indented-paragraph">基督是万国所羡慕的，祂的来临在于神的子民从巴比伦的被掳中归回，并恢复神殿的重建。基督在祂的成肉体里第一次来临，乃是藉着以色列中余剩的人，从巴比伦的被掳中回到耶路撒冷，重建圣殿。基督还要第二次来临，这是藉着祂新约选民中余剩的人，从他们在宗教巴比伦（启十七）的被掳中，回到召会正确的立场，恢复建造召会作神属灵的殿。（提前三15，彼前二5。）</p>
+  </div>
+</div>
+    </div>
+</body>
+</html>

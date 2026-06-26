@@ -1,0 +1,10 @@
+# 只允许同域的 AJAX 请求，禁止直接浏览器访问
+RewriteEngine On
+
+# 检查是否有 Referer 头且来自同域
+RewriteCond %{HTTP_REFERER} !^https://chat\.educationbylevel\.org/ [NC]
+RewriteRule .* - [F,L]
+
+# 或者检查 X-Requested-With 头（AJAX 请求特有）
+# RewriteCond %{HTTP_X_REQUESTED_WITH} !XMLHttpRequest [NC]
+# RewriteRule .* - [F,L]

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1093_加拉太书第二章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">加拉太书 第 二 章</h1>
+        <div class="verse"><span class="verse-number">2:1</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>过了十四年，我同巴拿巴，也带着提多，再上耶路撒冷去。</span></div>
+        <div class="verse"><span class="verse-number">2:2</span><span class="verse-text">我是照着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>启示上去的，把我在外邦人中所传的福音，对他们陈述；只是私下对那些有名望的人说；惟恐我现在，或是从前，徒然奔跑。</span></div>
+        <div class="verse"><span class="verse-number">2:3</span><span class="verse-text">但与我同去的提多，虽是希利尼人，也<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>没有被勉强受<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>割礼；</span></div>
+        <div class="verse"><span class="verse-number">2:4</span><span class="verse-text">因为有偷着引进来的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>假弟兄，他们偷着进来，要窥探我们在基督耶稣里所得的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>自由，为要强制我们作<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>奴隶；</span></div>
+        <div class="verse"><span class="verse-number">2:5</span><span class="verse-text">我们就是一刻的工夫，也没有容让服从他们，为要使<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>福音的真理存留在你们中间。</span></div>
+        <div class="verse"><span class="verse-number">2:6</span><span class="verse-text">至于那些有名望的，不论他们从前是何等人，于我都没有差别；神不以外貌取人；那些有名望的，并没有加给我什么；</span></div>
+        <div class="verse"><span class="verse-number">2:7</span><span class="verse-text">反倒看见我受托传福音给那未受割礼的人，正如彼得受托传福音给那受割礼的人，</span></div>
+        <div class="verse"><span class="verse-number">2:8</span><span class="verse-text">（因为那在彼得里面运行，叫他为受割礼之人尽使徒职分的，也在我里面运行，叫我为外邦人尽使徒的职分，）</span></div>
+        <div class="verse"><span class="verse-number">2:9</span><span class="verse-text">又知道所赐给我的恩典，那被视为柱石的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>雅各、矶法、约翰，就向我和巴拿巴伸出右手彼此相交，叫我们往外邦人那里去，他们却往受割礼的人那里去；</span></div>
+        <div class="verse"><span class="verse-number">2:10</span><span class="verse-text">只是要我们记念穷人，这也是我本来热诚去行的。</span></div>
+        <div class="outline level-2">二　基督顶替律法 二11～21</div>
+        <div class="verse"><span class="verse-number">2:11</span><span class="verse-text">但矶法来到安提阿的时候，因他有可定罪之处，我就当面抵挡他。</span></div>
+        <div class="verse"><span class="verse-number">2:12</span><span class="verse-text">因为<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>从雅各那里来的几个人，未到以先，他<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>惯常和外邦人一同吃饭；及至他们来到，他因<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>怕奉割礼的人，就开始退去，隔离自己。</span></div>
+        <div class="verse"><span class="verse-number">2:13</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>其余的犹太人，也都随着他<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>装假；甚至连<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>巴拿巴也被牵引，和他们一同装假。</span></div>
+        <div class="verse"><span class="verse-number">2:14</span><span class="verse-text">但我一看见他们不按福音的真理<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>正直而行，就在众人面前对矶法说，你既是犹太人，若是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>生活像外邦人，不像犹太人，怎么还勉强外邦人<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>犹太化？</span></div>
+        <div class="verse"><span class="verse-number">2:15</span><span class="verse-text">我们是生来的犹太人，并不是出于外邦的罪人，</span></div>
+        <div class="verse"><span class="verse-number">2:16</span><span class="verse-text">且知道人得称义，不是本于行律法，乃是藉着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>信耶稣基督，连我们也信入了基督耶稣，使我们本于信基督得称义，不是本于行律法；因为凡属<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>肉体的人，都不能本于行律法得称义。</span></div>
+        <div class="verse"><span class="verse-number">2:17</span><span class="verse-text">我们若寻求在基督里得称义，自己却也显为罪人，这样，基督岂不是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>叫人犯罪的么？绝对不是。</span></div>
+        <div class="verse"><span class="verse-number">2:18</span><span class="verse-text">因为我所<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>拆毁的，若<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>再建造，就证明自己是个有过犯的人。</span></div>
+        <div class="verse"><span class="verse-number">2:19</span><span class="verse-text">我<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>藉着律法，已经<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>向律法死了，叫我可以<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>向神活着。</span></div>
+        <div class="verse"><span class="verse-number">2:20</span><span class="verse-text">我已经<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>与基督同钉十字架；现在活着的，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>不再是我，乃是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>基督在我里面活着；并且我如今在肉身里所活的<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>生命，是我<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>在<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>神儿子的<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>信里，与祂联结所活的，祂是<sup class="clickable-sup" data-sup-text="8" tabindex="0" role="button">8</sup>爱我，为我<sup class="clickable-sup" data-sup-text="9" tabindex="0" role="button">9</sup>舍了自己。</span></div>
+        <div class="verse"><span class="verse-number">2:21</span><span class="verse-text">我不废弃<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>神的恩；因为<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>义若是藉着律法得的，基督就是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>白白死了。</span></div>
+    </div>
+</body>
+</html>
