@@ -177,6 +177,10 @@ def _normalize_sub_dims(
 def _normalize_t1(result: dict[str, Any]) -> dict[str, Any]:
     if "error" in result:
         return result
+    for k in _T1_LAYER_KEYS:
+        block = result.get(k)
+        if not isinstance(block, dict) or block.get("score") is None:
+            result[k] = {"score": 5, "comment": "", "gap": None}
     _normalize_sub_dims(result, _T1_LAYER_KEYS)
     if result.get("total") is None:
         total = _sum_sub_scores(result, _T1_LAYER_KEYS)
@@ -213,6 +217,9 @@ def _normalize_t2(raw: dict[str, Any]) -> dict[str, Any]:
                 block["gap"] = _normalize_gap(block.get("gap"))
     if result.get("summary") is None:
         result["summary"] = ""
+    if result.get("weighted_score") is None:
+        logger.warning("T2 missing weighted_score, defaulting to 0")
+        result["weighted_score"] = 0
     return result
 
 
@@ -337,6 +344,8 @@ def _merge_scripture_suggestions(
 
     anchor_entries: list[dict[str, str]] = []
     for i, step in enumerate(skeleton or [], start=1):
+        if not isinstance(step, dict):
+            continue
         anchor = step.get("scripture_anchor")
         if not anchor or not str(anchor).strip():
             continue
@@ -544,8 +553,6 @@ async def eval_T2(
     result = _normalize_t2(result)
     if result.get("error"):
         logger.warning("[outline_eval] T2 error: %s", result.get("error"))
-    elif result.get("weighted_score") is None:
-        logger.warning("[outline_eval] T2 missing weighted_score, keys=%s", list(result.keys()))
     return result
 
 
@@ -603,6 +610,12 @@ async def eval_SYNTHESIS(
             "low_priority": [],
             "overall_note": "综合建议生成失败",
         }
+    if not isinstance(result.get("high_priority"), list):
+        result["high_priority"] = []
+    if not isinstance(result.get("low_priority"), list):
+        result["low_priority"] = []
+    if not result.get("overall_note"):
+        result["overall_note"] = ""
     return result
 
 
