@@ -42,6 +42,7 @@ front_qa/public/lsm/*.pdf
 front_cn/public/lsm/*.pdf
 back_qa/qa/qa_users.db
 
-back_anshifenliang/data
+back_anshifenliang/data/private
+back_anshifenliang/data/zhi_shi_html
  
  

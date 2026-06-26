@@ -169,10 +169,25 @@ function extractVerseRef(text) {
   return s.split(/[「『《"\s(（]/)[0] || s;
 }
 
-function replaceSingleVerseInAnswer(currentVerse, replacementVerse, answer) {
+function replaceSingleVerseInAnswer(currentVerse, replacementVerse, answer, originalText = "") {
   if (!currentVerse || !replacementVerse) return answer;
-  const escaped = String(currentVerse).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return String(answer).replace(new RegExp(escaped, "g"), replacementVerse);
+  const lines = answer.split("\n");
+  let replaced = false;
+  const newLines = lines.map((line) => {
+    if (replaced) return line;
+    const hasVerse = line.includes(currentVerse);
+    if (!hasVerse) return line;
+    // 若有 originalText，要求该行也包含 originalText 的前15字（避免截断影响）
+    if (originalText) {
+      const anchor = originalText.trim().slice(0, 15);
+      if (anchor && !line.includes(anchor)) return line;
+    }
+    // 只替换第一个匹配的行，且只替换行内第一个 currentVerse
+    replaced = true;
+    return line.replace(currentVerse, replacementVerse);
+  });
+  if (!replaced) return answer; // 匹配失败，原样返回
+  return newLines.join("\n");
 }
 
 function formatScriptureReplacementItems(suggestions) {
@@ -194,7 +209,16 @@ function acceptScriptureReplacement(index) {
     extractVerseRef(item.ai_suggestion) || String(item.ai_suggestion || "").trim();
   if (!replacement) return;
   const base = editableAnswer.value || outlineText.value || "";
-  const next = replaceSingleVerseInAnswer(item.current_verse, replacement, base);
+  const next = replaceSingleVerseInAnswer(
+    item.current_verse,
+    replacement,
+    base,
+    item.original_text
+  );
+  if (next === base) {
+    tip("找不到对应经文，请手动修改纲目");
+    return;
+  }
   editableAnswer.value = next;
   outlineText.value = next;
   item.decided = true;
