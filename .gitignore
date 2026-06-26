@@ -42,7 +42,10 @@ front_qa/public/lsm/*.pdf
 front_cn/public/lsm/*.pdf
 back_qa/qa/qa_users.db
 
-back_anshifenliang/data/private
-back_anshifenliang/data/zhi_shi_html
- 
+# 按时分粮
+back_anshifenliang/node_modules/
+back_anshifenliang/.env
+back_anshifenliang/telegram_bot/.env
+back_anshifenliang/data/private/
+back_anshifenliang/data/zhi_shi_html/ 
  
