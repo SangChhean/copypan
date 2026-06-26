@@ -101,6 +101,7 @@ function getDetailFromEnv(searchEnv, source, title, lang = 'zh-CN') {
     jing_jie_wen_da: w.jing_jie_wen_da,
     bible_verse: w.bibleVerse,
     xiao_bai_ke: w.xiao_bai_ke,
+    shu_ling_wen_da: w.shu_ling_wen_da,
   };
 
   const dict = dictMap[source];

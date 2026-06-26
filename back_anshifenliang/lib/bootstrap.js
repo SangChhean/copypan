@@ -39,6 +39,7 @@ const DATA_FILES = [
   'cha_kan_zheng_pian.js',
   'jing_jie_wen_da.js',
   'xiao_bai_ke.js',
+  'shu-ling-wen-da.js',
   'bible_verse.js',
   'private/1_zhi_shi_xin_xi.js',
   'jing_jie_zhu_shi.js',

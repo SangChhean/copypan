@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1079_哥林多后书第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">哥林多后书 第 一 章</h1>
+        <div class="book-info">著者： 使徒保罗。（一1。）</div>
+        <div class="book-info">著时： 约在主后六十年，在写罗马书之前，见徒二十1注1与3注1。</div>
+        <div class="book-info">著地： 马其顿。（二13与注2，七5～6，八1，九2，4。）</div>
+        <div class="book-info">受者： 在哥林多神的召会，同着在全亚该亚的众圣徒。（一1。）</div>
+        <div class="theme">主题：新约的职事与执事</div>
+        <div class="outline level-1">壹　引言 一1～二11</div>
+        <div class="outline level-2">一　问安 一1～2</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text">凭<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>神旨意，作基督耶稣使徒的保罗，和弟兄提摩太，写信给<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>在哥林多<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>神的召会，<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>同着在全<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>亚该亚的众圣徒：</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">愿恩典与平安，从神我们的父，并主耶稣基督归与你们。</span></div>
+        <div class="outline level-2">二　神的安慰 一3～11</div>
+        <div class="outline level-3">1　受安慰以安慰人 3～4</div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">我们主耶稣基督的神与父，就是那<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>怜恤人的父，和赐诸般<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>安慰的神，是当受颂赞的；</span></div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">祂在我们一切的患难中安慰我们，叫我们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>能用自己从神所受的安慰，安慰那些在各样患难中的人。</span></div>
+        <div class="outline level-3">2　被压绝望 5～11</div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">因为<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>基督的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>苦难怎样满溢到我们身上，照样我们所受的安慰，也藉着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>基督而洋溢。</span></div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text">我们或是受患难，是为了你们受安慰，得拯救；或是受安慰，也是为了你们受安慰；这安慰叫你们能忍受我们所受的同样苦难。</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text">我们为你们所存的盼望是确定的，知道你们既是同受苦难，也必照样同受安慰。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">弟兄们，关于我们在亚西亚所遭遇的患难，我们不愿意你们不知道，就是我们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>被压太重，力不能胜，甚至连<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>活命的指望都<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>绝了，</span></div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>自己里面也<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>断定是必死的，叫我们不信靠自己，只信靠<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>那叫死人复活的神；</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">祂曾救我们脱离那极大的死亡，并且仍<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>要救我们，我们指望祂将来还要救我们，</span></div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">只要你们也为着我们以祈求<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>配合帮助，好叫许多<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>人因我们藉着许多人所得的<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>恩赐，为我们献上感谢。</span></div>
+        <div class="outline level-2">三　使徒们的夸耀 一12～14</div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">我们所夸的，是我们的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>良心见证我们<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>凭着神的<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>单纯和<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>纯诚，在世为人，不<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>靠<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>属肉体的智慧，乃<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>靠神的<sup class="clickable-sup" data-sup-text="8" tabindex="0" role="button">8</sup>恩典，对你们更是这样。</span></div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">我们写给你们的，并不外乎你们所诵读，甚至所明白的，我也盼望你们能明白到底，</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">正如你们已经有几分明白我们：我们乃是你们的夸耀，好像在我们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>主耶稣的日子，你们也是我们的夸耀一样。</span></div>
+        <div class="outline level-2">四　关于使徒的来到 一15～二11</div>
+        <div class="outline level-3">1　与基督是一 一15～22</div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text">我既然这样深信，先前就有意到你们那里去，叫你们得着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>两次的恩典，</span></div>
+        <div class="verse"><span class="verse-number">1:16</span><span class="verse-text">也要从你们那里经过，往<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>马其顿去，再从马其顿回到你们那里，然后蒙你们送行往犹太去。</span></div>
+        <div class="verse"><span class="verse-number">1:17</span><span class="verse-text">我有这样的意思，难道是行事轻浮么？还是我所定的意是按着肉体定的，以致在我有忽是忽非么？</span></div>
+        <div class="verse"><span class="verse-number">1:18</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>但神既是信实的，我们对你们所说的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>话，就没有是而又非的，</span></div>
+        <div class="verse"><span class="verse-number">1:19</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>因为藉着我和<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>西拉并提摩太，在你们中间所传神的儿子耶稣基督，并不是是而又非的，在祂只有一是。</span></div>
+        <div class="verse"><span class="verse-number">1:20</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>因为神的应许，不论有多少，在基督里都是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>是的，所以藉着祂，对神也都是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>阿们的，<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>好叫荣耀藉着<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>我们归与神。</span></div>
+        <div class="verse"><span class="verse-number">1:21</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>然而那把<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>我们同你们，<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>坚固的联于<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>基督，并且<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>膏了我们的，就是神；</span></div>
+        <div class="verse"><span class="verse-number">1:22</span><span class="verse-text">祂既<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>印了我们，又赐那灵在我们<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>心里作<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>质。</span></div>
+        <div class="outline level-3">2　耽延的原因 一23～二11</div>
+        <div class="outline level-4">a　宽容哥林多人 一23～24</div>
+        <div class="verse"><span class="verse-number">1:23</span><span class="verse-text">我呼求神<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>给我作见证，我还未往哥林多去，是为要<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>宽容你们。</span></div>
+        <div class="verse"><span class="verse-number">1:24</span><span class="verse-text">我们并不是作主管辖你们的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>信心，乃是与你们同工，使你们喜乐，因为你们是凭<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>信而立。</span></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加5章25节注</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 7px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            position: relative;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .verse-content {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #3498db;
+            padding: 5px 7px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            line-height: 1.9;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 3px;
+        }
+        
+        .verse-text {
+            color: #2c3e50;
+        }
+        
+        .verse-text sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 1px;
+        }
+        
+        .note-item {
+            margin-bottom: 7px;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+        
+        .note-item:nth-child(even) {
+            background-color: white;
+        }
+        
+        .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        /* 单段落注解样式 */
+        .note-content {
+            display: inline;
+            text-indent: 0;
+            text-align: justify;
+        }
+        
+        /* 多段落注解容器 */
+        .note-content-multi {
+            display: block;
+        }
+        
+        /* 第一段（包含注解编号）不缩进 */
+        .first-paragraph-with-number {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 0;
+        }
+        
+        .first-paragraph-with-number .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        .first-paragraph-with-number .first-paragraph-text {
+            display: inline;
+            text-indent: 0;
+        }
+        
+        /* 从第二段开始首行缩进两个字符 */
+        .indented-paragraph {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 2em;
+        }
+        
+        /* 最后一个段落去除底部边距 */
+        .note-content-multi p:last-child,
+        .indented-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 单段落内容（使用span的情况）不缩进 */
+        .note-content > span {
+            text-indent: 0;
+            text-align: justify;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">加5章25节注</h1>
+        <div class="verse-content">
+  <span class="verse-number">加5章25节</span>
+  <span class="verse-text">我们若<sup>1</sup>凭着灵活着，也就当凭着灵而<sup>2</sup>行。</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注1　</span>
+  <span class="note-content">凭着灵活着，就是使我们的生活倚靠那灵并受那灵规律，而不受律法规律。这等于16节的凭着灵而行，但与本节的凭着灵而行不同。（见注2。）</span>
+</div>
+<div class="note-item">
+  <div class="note-content-multi">
+    <p class="first-paragraph-with-number">
+      <span class="note-number">注2　</span>
+      <span class="first-paragraph-text">直译，按规则而行。原文意遵守原理，照原理而行，如列队行走，在军队行列中前进，步伐一致；引伸为整齐有规律的行动。（参六16，徒二一24，罗四12与注，腓三16与注4。）</span>
+    </p>
+    <p class="indented-paragraph">本章16节和本节的行，都是凭着那灵，受那灵的规律，但前者指一般、日常的行动，后者指以神惟一的目标为生活的方向和目的，并以那灵为我们的基本原则、基础准则，藉着活在新造里，（六16与注1，）竭力追求基督以取得祂，（腓三12与注，）并实行召会的生活，（罗十二1～5，弗四1～16，）使这种行动得着培养，而成全神在基督里对召会的意愿。</p>
+  </div>
+</div>
+    </div>
+</body>
+</html>

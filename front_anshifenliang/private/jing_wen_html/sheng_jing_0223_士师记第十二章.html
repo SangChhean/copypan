@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0223_士师记第十二章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">士师记 第 十二 章</h1>
+        <div class="verse"><span class="verse-number">12:1</span><span class="verse-text">以法莲人被召集，过河到了撒分，对耶弗他说，你过去攻打亚扪人，为什么没有召我们同去呢？我们必用火烧你和你的房屋。</span></div>
+        <div class="verse"><span class="verse-number">12:2</span><span class="verse-text">耶弗他对他们说，我和我的民与亚扪人极力奋战；我向你们呼救，你们竟没有来救我脱离他们的手。</span></div>
+        <div class="verse"><span class="verse-number">12:3</span><span class="verse-text">我见你们不来救我，就<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不顾性命，过去攻击亚扪人；耶和华将他们交在我手中。你们今日为什么上我这里来攻打我呢？</span></div>
+        <div class="verse"><span class="verse-number">12:4</span><span class="verse-text">于是耶弗他招聚基列众人，与以法莲人争战。基列人击杀以法莲人，是因他们说，你们基列人在以法莲、玛拿西中间，不过是以法莲逃亡的人。</span></div>
+        <div class="verse"><span class="verse-number">12:5</span><span class="verse-text">基列人把守约但河的渡口，不让以法莲人过去。以法莲逃走的人若说，让我过去，基列人就问他说，你是以法莲人不是？他若说，不是，</span></div>
+        <div class="verse"><span class="verse-number">12:6</span><span class="verse-text">就对他说，你说示播列。以法莲人因为咬不准字音，便说西播列。基列人就将他拿住，杀在约但河的渡口。那时以法莲人被杀的有四万二千。</span></div>
+        <div class="verse"><span class="verse-number">12:7</span><span class="verse-text">耶弗他作以色列的士师六年。基列人耶弗他死了，葬在基列的一座城里。</span></div>
+        <div class="verse"><span class="verse-number">12:8</span><span class="verse-text">耶弗他以后，有伯利恒的以比赞作以色列的士师。</span></div>
+        <div class="verse"><span class="verse-number">12:9</span><span class="verse-text">他有三十个儿子，三十个女儿；女儿都嫁到外乡去。他给众子从外乡娶了三十个女子为妻。他作以色列的士师七年。</span></div>
+        <div class="verse"><span class="verse-number">12:10</span><span class="verse-text">以比赞死了，葬在伯利恒。</span></div>
+        <div class="verse"><span class="verse-number">12:11</span><span class="verse-text">以比赞之后，有西布伦人以伦，作以色列的士师十年。</span></div>
+        <div class="verse"><span class="verse-number">12:12</span><span class="verse-text">西布伦人以伦死了，葬在西布伦地的亚雅仑。</span></div>
+        <div class="verse"><span class="verse-number">12:13</span><span class="verse-text">以伦之后，有比拉顿人希列的儿子押顿作以色列的士师。</span></div>
+        <div class="verse"><span class="verse-number">12:14</span><span class="verse-text">他有四十个儿子，三十个孙子，骑着七十匹驴。押顿作以色列的士师八年。</span></div>
+        <div class="verse"><span class="verse-number">12:15</span><span class="verse-text">比拉顿人希列的儿子押顿死了，葬在以法莲地的比拉顿，在亚玛力人的山地。</span></div>
+    </div>
+</body>
+</html>

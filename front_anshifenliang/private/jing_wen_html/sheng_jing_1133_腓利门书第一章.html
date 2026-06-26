@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1133_腓利门书第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">腓利门书 第 一 章</h1>
+        <div class="book-info">著者： 使徒保罗，和提摩太弟兄。（1。）</div>
+        <div class="book-info">著时： 约在主后六十四年，保罗第一次被囚罗马将获释时。（9，22。）</div>
+        <div class="book-info">著地： 罗马监狱。（证实的经节如前项。）</div>
+        <div class="book-info">受者： 腓利门、亚腓亚、亚基布、以及在他们家中的召会。（1～2。）</div>
+        <div class="theme">主题：在新人里信徒身分平等的例证</div>
+        <div class="outline level-1">壹　引言 1～3</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text">基督耶稣的囚犯保罗，和弟兄提摩太，写信给所爱的并我们的同工腓利门，</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">和姊妹<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亚腓亚，并与我们一同当兵的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亚基布，以及<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>在你家中的召会：</span></div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">愿恩典与平安，从神我们的父，并主耶稣基督归与你们。</span></div>
+        <div class="outline level-1">贰　奴仆重生为弟兄 4～16</div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">我祷告的时候题到你，常常感谢我的神，</span></div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">因听见你对主耶稣，并对众圣徒的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>爱与信；</span></div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text">愿你信的交通显出功效，使人<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>充分认识<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>你们里面<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>为着基督的<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>各样善事。</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>因为弟兄阿，我因你的爱，大大喜乐，满受鼓励，因为众圣徒的心肠藉着你<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>得了舒畅。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">为此，我虽然在基督里能大有胆量吩咐你合宜的事，</span></div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text">然而像我这<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>有年纪的保罗，现在又是基督耶稣的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>囚犯，宁可因着爱恳求你，</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">就是为我在捆锁中所<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>生的孩子<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>欧尼西母恳求你；</span></div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">他从前对你<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>没有益处，但如今对你我都<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>有益处。</span></div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">我现在打发他回你那里去，他乃是我<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>心上的人。</span></div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">我本有意将他留在身边，使他在我为福音所受的捆锁中，替你服事我。</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">但<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>未得知你的意见，我就不愿作什么，好叫你的善行不像是出于勉强，乃是出于甘心。</span></div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>因为他暂时离开你，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>或者是叫你可以永远<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>完全得着他，</span></div>
+        <div class="verse"><span class="verse-number">1:16</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不再是奴仆，乃是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>高过奴仆，是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>亲爱的弟兄，对我<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>固然是如此，对你，不拘<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>在肉身上，或在主里，岂不都更是这样。</span></div>
+        <div class="outline level-1">叁　推荐弟兄给新人接纳 17～22</div>
+        <div class="verse"><span class="verse-number">1:17</span><span class="verse-text">所以，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>你若以我为<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>同伙，就接纳他，如同接纳我一样。</span></div>
+        <div class="verse"><span class="verse-number">1:18</span><span class="verse-text">他若<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>亏负你，或欠你什么，这都归在<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>我的账上；</span></div>
+        <div class="verse"><span class="verse-number">1:19</span><span class="verse-text">我必<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>偿还，这是我保罗亲<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>笔写的。我并不用对你说，连<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>你自己也是亏欠于我。</span></div>
+        <div class="verse"><span class="verse-number">1:20</span><span class="verse-text">弟兄阿，是的，愿我在主里从你得着<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>益处，愿你使我的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>心肠在基督里<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>得舒畅。</span></div>
+        <div class="verse"><span class="verse-number">1:21</span><span class="verse-text">我写信给你，深信你必顺从，知道你所要行的，甚至必过于我所说的。</span></div>
+        <div class="verse"><span class="verse-number">1:22</span><span class="verse-text">同时，你还要给我豫备住所，因为我<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>盼望藉着你们的祷告，我可当作<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>恩典赐给你们。</span></div>
+        <div class="outline level-1">肆　结语 23～25</div>
+        <div class="verse"><span class="verse-number">1:23</span><span class="verse-text">在基督耶稣里与我一同坐监的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>以巴弗问你安。</span></div>
+        <div class="verse"><span class="verse-number">1:24</span><span class="verse-text">我的同工马可、亚里达古、底马、路加，也都问你安。</span></div>
+        <div class="verse"><span class="verse-number">1:25</span><span class="verse-text">愿主耶稣基督的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>恩与你们的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>灵同在<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>。</span></div>
+    </div>
+</body>
+</html>

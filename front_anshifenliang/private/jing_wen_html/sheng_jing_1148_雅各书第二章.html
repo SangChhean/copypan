@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1148_雅各书第二章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">雅各书 第 二 章</h1>
+        <div class="outline level-2">四　在弟兄间不看外貌 二1～13</div>
+        <div class="verse"><span class="verse-number">2:1</span><span class="verse-text">我的弟兄们，你们既<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>相信<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>我们荣耀的主耶稣基督，便不可按着外貌待人。</span></div>
+        <div class="verse"><span class="verse-number">2:2</span><span class="verse-text">若有一个人戴着金戒指，穿着华丽衣服，进你们的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>会堂去，又有一个穷人，穿着肮脏衣服也进去；</span></div>
+        <div class="verse"><span class="verse-number">2:3</span><span class="verse-text">你们就重看那穿华丽衣服的人，说，请你坐在这好位上；又对那穷人说，你站在那里，或坐在我脚凳下边。</span></div>
+        <div class="verse"><span class="verse-number">2:4</span><span class="verse-text">这岂不是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>你们中间有了歧视，用恶意判断人么？</span></div>
+        <div class="verse"><span class="verse-number">2:5</span><span class="verse-text">我亲爱的弟兄们，请听，神岂不是拣选了<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>世上贫穷的人，叫他们在信上富足，并承受祂所应许给那些<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>爱祂之人的<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>国么？</span></div>
+        <div class="verse"><span class="verse-number">2:6</span><span class="verse-text">你们反倒羞辱贫穷的人。那富足的人岂不是欺压你们，拉你们到<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>法庭去么？</span></div>
+        <div class="verse"><span class="verse-number">2:7</span><span class="verse-text">他们不是亵渎那在你们身上被<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>称呼的尊名么？</span></div>
+        <div class="verse"><span class="verse-number">2:8</span><span class="verse-text">你们若照着经上“要<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>爱邻舍如同自己”的话，成全这<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>君尊的律法，你们就作得好了；</span></div>
+        <div class="verse"><span class="verse-number">2:9</span><span class="verse-text">但你们若按外貌待人，便是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>犯罪，给律法定为犯法的。</span></div>
+        <div class="verse"><span class="verse-number">2:10</span><span class="verse-text">因为凡<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>遵守全律法，却在一条上失脚的，他就是犯了众条。</span></div>
+        <div class="verse"><span class="verse-number">2:11</span><span class="verse-text">原来那说不可奸淫的，也说不可杀人。你若是不奸淫，却杀人，还是成了犯律法的。</span></div>
+        <div class="verse"><span class="verse-number">2:12</span><span class="verse-text">你们既然要按<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>自由的律法受审判，就该照这律法说话行事。</span></div>
+        <div class="verse"><span class="verse-number">2:13</span><span class="verse-text">因为那不怜悯人的，也要受无怜悯的审判；怜悯原是向审判<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>夸胜。</span></div>
+        <div class="outline level-2">五　在信徒关系上本于行为的称义 二14～26</div>
+        <div class="verse"><span class="verse-number">2:14</span><span class="verse-text">我的弟兄们，若有人说自己有信心，却没有行为，有什么益处？难道这信心能<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>救他么？</span></div>
+        <div class="verse"><span class="verse-number">2:15</span><span class="verse-text">若有弟兄或姊妹<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>经常是赤身露体的，又缺了日用的食物，</span></div>
+        <div class="verse"><span class="verse-number">2:16</span><span class="verse-text">而你们中间有人对他们说，平平安安的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>去罢，愿你们穿得暖，吃得饱；却不给他们身体<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>所需用的，有什么益处？</span></div>
+        <div class="verse"><span class="verse-number">2:17</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>信心也是这样，若没有行为，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>就是死的。</span></div>
+        <div class="verse"><span class="verse-number">2:18</span><span class="verse-text">有人会说，你有信心，我有行为；你将你没有行为的信心指给我看，我便由我的行为，将我的信心指给你看。</span></div>
+        <div class="verse"><span class="verse-number">2:19</span><span class="verse-text">你信神只有一位；你信的不错；鬼也信，却是战惊。</span></div>
+        <div class="verse"><span class="verse-number">2:20</span><span class="verse-text">虚浮的人哪，你愿意知道没有行为的信心是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>无用的么？</span></div>
+        <div class="verse"><span class="verse-number">2:21</span><span class="verse-text">我们的祖宗亚伯拉罕，把他儿子以撒献在坛上，岂不是本于行为得称义么？</span></div>
+        <div class="verse"><span class="verse-number">2:22</span><span class="verse-text">你看，信心是与他的行为同工，而且信心本于行为才得完全；</span></div>
+        <div class="verse"><span class="verse-number">2:23</span><span class="verse-text">这就应验经上所说的：“亚伯拉罕信神，这就算为他的义。”他又得称为神的朋友。</span></div>
+        <div class="verse"><span class="verse-number">2:24</span><span class="verse-text">可见人<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>得称义是本于行为，不是单本于信。</span></div>
+        <div class="verse"><span class="verse-number">2:25</span><span class="verse-text">妓女喇合接待使者，又<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>放他们从别的路上出去，不也是一样本于行为得称义么？</span></div>
+        <div class="verse"><span class="verse-number">2:26</span><span class="verse-text">身体没有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>灵是死的，照样，信心没有行为也是死的。</span></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1161_约翰一书第二章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">约翰一书 第 二 章</h1>
+        <div class="verse"><span class="verse-number">2:1</span><span class="verse-text">我的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>孩子们，我将<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>这些事写给你们，是要叫你们<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>不犯罪。若有人<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>犯罪，我们有一位<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>与<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>父同在的<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>辩护者，就是那<sup class="clickable-sup" data-sup-text="8" tabindex="0" role="button">8</sup>义者耶稣基督；</span></div>
+        <div class="verse"><span class="verse-number">2:2</span><span class="verse-text">祂为我们的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪，作了<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>平息的祭物，不是单为我们的罪，也是为<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>所有的世人。</span></div>
+        <div class="outline level-3">2　爱神并爱弟兄 二3～11</div>
+        <div class="verse"><span class="verse-number">2:3</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>我们若遵守祂的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>诫命，在此就<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>知道我们<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>是认识祂。</span></div>
+        <div class="verse"><span class="verse-number">2:4</span><span class="verse-text">那说我认识祂，却不遵守祂诫命的，便是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>说谎的，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>真理也不在这人里面了；</span></div>
+        <div class="verse"><span class="verse-number">2:5</span><span class="verse-text">然而凡遵守祂<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>话的，神的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>爱在这人里面实在是得了<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>成全。在此我们就知道我们是<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>在祂里面。</span></div>
+        <div class="verse"><span class="verse-number">2:6</span><span class="verse-text">那说自己<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>住在祂里面的，就该照<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>祂所行的去行。</span></div>
+        <div class="verse"><span class="verse-number">2:7</span><span class="verse-text">亲爱的，我写给你们的，不是一条新诫命，乃是一条你们<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>从起初就有的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>旧诫命，这旧诫命就是你们所听见的话。</span></div>
+        <div class="verse"><span class="verse-number">2:8</span><span class="verse-text">再者，我写给你们的是一条<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>新诫命，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>这在主并在你们都是真的；因为<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>黑暗渐渐过去，真光已经照耀。</span></div>
+        <div class="verse"><span class="verse-number">2:9</span><span class="verse-text">那说自己在<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>光中，却恨他弟兄的，到如今还是在黑暗里。</span></div>
+        <div class="verse"><span class="verse-number">2:10</span><span class="verse-text">那爱他弟兄的，就<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>住在<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>光中，在他并没有绊跌的缘由；</span></div>
+        <div class="verse"><span class="verse-number">2:11</span><span class="verse-text">但那<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>恨他弟兄的，是在黑暗里，且在黑暗里行，也不知道往那里<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>去，因为黑暗<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>弄瞎了他的眼睛。</span></div>
+        <div class="outline level-1">贰　神圣膏抹的教导 二12～27</div>
+        <div class="outline level-2">一　关于神圣的三一，照着生命的长大 12～19</div>
+        <div class="verse"><span class="verse-number">2:12</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>孩子们，我写信给你们，因为你们的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>罪因着祂的名得了<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>赦免。</span></div>
+        <div class="verse"><span class="verse-number">2:13</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>父老们，我写信给你们，因为你们<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>认识<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>那<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>从起初原有的。<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>青年人，我写信给你们，因为你们<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>胜了那<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>恶者。<sup class="clickable-sup" data-sup-text="8" tabindex="0" role="button">8</sup>小孩子们，我<sup class="clickable-sup" data-sup-text="9" tabindex="0" role="button">9</sup>写信给你们，因为你们认识<sup class="clickable-sup" data-sup-text="10" tabindex="0" role="button">10</sup>父。</span></div>
+        <div class="verse"><span class="verse-number">2:14</span><span class="verse-text">父老们，我<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>刚写信给你们，因为你们认识那从起初原有的。青年人，我刚写信给你们，因为<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>你们刚强，神的话住在你们里面，你们也胜了那<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>恶者。</span></div>
+        <div class="verse"><span class="verse-number">2:15</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不要爱<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>世界，和世界上的事。人若爱世界，<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>爱<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>父的心就不在他里面了；</span></div>
+        <div class="verse"><span class="verse-number">2:16</span><span class="verse-text">因为凡世界上的事，就是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>肉体的情欲、<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>眼目的情欲、并<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>今<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>生的骄傲，都不是出于父，乃是出于世界。</span></div>
+        <div class="verse"><span class="verse-number">2:17</span><span class="verse-text">这世界和其上的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>情欲，正在过去；惟独<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>实行<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>神旨意的，永远长存。</span></div>
+        <div class="verse"><span class="verse-number">2:18</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>小孩子们，如今是末时了；你们曾听见，那<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>敌基督的要来，现在已经有<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>好些敌基督的出来了，从此我们就知道如今是末时了。</span></div>
+        <div class="verse"><span class="verse-number">2:19</span><span class="verse-text">他们从我们中间出去，却<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不是属我们的；若是属我们的，就会<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>仍旧与我们同在；但他们出去，是要显明他们都不是属我们的。</span></div>
+        <div class="outline level-2">二　为着住在三一神里面 20～27</div>
+        <div class="verse"><span class="verse-number">2:20</span><span class="verse-text">你们有从那圣者来的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>膏油涂抹，并且<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>你们众人都知道。</span></div>
+        <div class="verse"><span class="verse-number">2:21</span><span class="verse-text">我刚写信给你们，不是因你们不晓得<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>真理，正是因为你们<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>晓得，又因为没有虚谎是出于<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>真理的。</span></div>
+        <div class="verse"><span class="verse-number">2:22</span><span class="verse-text">谁是说谎的？不是那<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>否认<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>耶稣是基督的么？否认父与子的，这就是敌基督的。</span></div>
+        <div class="verse"><span class="verse-number">2:23</span><span class="verse-text">凡<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>否认子的就没有父，承认子的连父也有了。</span></div>
+        <div class="verse"><span class="verse-number">2:24</span><span class="verse-text">至于你们，务要让<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>那<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>从起初所听见的住在你们里面；那<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>从起初所听见的若住在你们里面，你们也就<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>住在子里面，并住在父里面。</span></div>
+        <div class="verse"><span class="verse-number">2:25</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>祂所<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>应许我们的，就是那<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>永远的生命。</span></div>
+        <div class="verse"><span class="verse-number">2:26</span><span class="verse-text">我刚将这些话写给你们，是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>指着那些<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>迷惑你们的人说的。</span></div>
+        <div class="verse"><span class="verse-number">2:27</span><span class="verse-text">你们从<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>祂所领受的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>膏油涂抹，<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>住在你们里面，并<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>不需要人教导你们，乃有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>祂的膏油涂抹，在<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>凡事上<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>教导你们；这膏油涂抹是<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>真实的，不是虚谎的，你们要按这膏油涂抹所教导你们的，<sup class="clickable-sup" data-sup-text="8" tabindex="0" role="button">8</sup>住在<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>祂里面。</span></div>
+        <div class="outline level-1">叁　神圣出生的美德 二28～五21</div>
+        <div class="outline level-2">一　实行神圣的义 二28～三10上</div>
+        <div class="verse"><span class="verse-number">2:28</span><span class="verse-text">现在，<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>孩子们，你们要<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>住在主里面；这样，<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>祂若显现，我们就可以坦然无惧，<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>当祂来临的时候，也不至于<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>蒙羞<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>离开祂。</span></div>
+        <div class="verse"><span class="verse-number">2:29</span><span class="verse-text">你们若<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>晓得<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>祂是<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>义的，<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>就当<sup class="clickable-sup" data-sup-text="5" tabindex="0" role="button">5</sup>知道凡<sup class="clickable-sup" data-sup-text="6" tabindex="0" role="button">6</sup>行义的人也都是<sup class="clickable-sup" data-sup-text="7" tabindex="0" role="button">7</sup>从祂生的。</span></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1143_希伯来书第十章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">希伯来书 第 十 章</h1>
+        <div class="verse"><span class="verse-number">10:1</span><span class="verse-text">律法有要来美事的影儿，没有本物的形像，总不能藉着每年不断献上的同样祭物，叫那些进前来的人得到完全。</span></div>
+        <div class="verse"><span class="verse-number">10:2</span><span class="verse-text">不然，敬拜的人既一次得了洁净，良心不再觉得有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪，献祭的事岂不就已停止了么？</span></div>
+        <div class="verse"><span class="verse-number">10:3</span><span class="verse-text">但那些祭物使人每年想起罪来；</span></div>
+        <div class="verse"><span class="verse-number">10:4</span><span class="verse-text">因为公牛和山羊的血是不能除罪的。</span></div>
+        <div class="verse"><span class="verse-number">10:5</span><span class="verse-text">所以基督到世上来的时候，就说，“祭物和供物是你不愿要的，你却为我豫备了身体；</span></div>
+        <div class="verse"><span class="verse-number">10:6</span><span class="verse-text">燔祭和赎<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪祭是你不喜悦的；</span></div>
+        <div class="verse"><span class="verse-number">10:7</span><span class="verse-text">于是我说，看哪，我来了，神阿，是要实行你的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>旨意。（我的事<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>经卷上已经记载了。）”</span></div>
+        <div class="verse"><span class="verse-number">10:8</span><span class="verse-text">以上说，“祭物和供物，燔祭和赎罪祭，是你不愿要的，也是你不喜悦的。”（这些都是按着律法献的。）</span></div>
+        <div class="verse"><span class="verse-number">10:9</span><span class="verse-text">后来又说，“看哪，我来了，是要实行你的旨意。”可见祂除去<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>那先有的，为要立定<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>那后来的；</span></div>
+        <div class="verse"><span class="verse-number">10:10</span><span class="verse-text">我们凭这旨意，藉耶稣基督<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>一次永远的献上身体，就得以圣别。</span></div>
+        <div class="verse"><span class="verse-number">10:11</span><span class="verse-text">再者，凡祭司都是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>天天站着供职，屡次献上同样永不能除<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>罪的祭物。</span></div>
+        <div class="verse"><span class="verse-number">10:12</span><span class="verse-text">惟独这一位既为<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪一次献上祭物，就<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>永久在神的右边<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>坐下了；</span></div>
+        <div class="verse"><span class="verse-number">10:13</span><span class="verse-text">从此等候祂的仇敌，放在祂的脚下作脚凳。</span></div>
+        <div class="verse"><span class="verse-number">10:14</span><span class="verse-text">因为祂一次献祭，便叫那些得以圣别的人永久<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>完全。</span></div>
+        <div class="verse"><span class="verse-number">10:15</span><span class="verse-text">圣灵也对我们作见证，因为祂说过，</span></div>
+        <div class="verse"><span class="verse-number">10:16</span><span class="verse-text">“主说，这是那些日子以后，我要与他们所立的约：我要将我的律法赐在他们心里，并且将这些律法写在他们心思里。”</span></div>
+        <div class="verse"><span class="verse-number">10:17</span><span class="verse-text">以后又说，“我绝不再记念他们的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪和不法。”</span></div>
+        <div class="verse"><span class="verse-number">10:18</span><span class="verse-text">这些罪既都蒙了赦免，就不用再为<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>罪献祭了。</span></div>
+        <div class="outline level-1">（第四个警告─要向前进入至圣所，不可退缩回到犹太教 十19～39）</div>
+        <div class="verse"><span class="verse-number">10:19</span><span class="verse-text">弟兄们，我们既因耶稣的血，得以坦然<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>进入至圣所，</span></div>
+        <div class="verse"><span class="verse-number">10:20</span><span class="verse-text">是藉着祂给我们开创了一条又<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>新又活的路，从<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>幔子经过，这幔子就是祂的肉体，</span></div>
+        <div class="verse"><span class="verse-number">10:21</span><span class="verse-text">又有一位尊大的祭司治理神的家，</span></div>
+        <div class="verse"><span class="verse-number">10:22</span><span class="verse-text">并且在心一面，我们已经被基督的血洒过，脱开了邪恶的良心，在<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>身体一面，也已经用<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>清水洗净了，就当存着真诚的心，以十分确信的信，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>前来进入至圣所；</span></div>
+        <div class="verse"><span class="verse-number">10:23</span><span class="verse-text">又当坚守我们所承认的盼望，不至摇动，因为那应许我们的是信实的；</span></div>
+        <div class="verse"><span class="verse-number">10:24</span><span class="verse-text">且当彼此相顾，激发爱心，勉励行善；</span></div>
+        <div class="verse"><span class="verse-number">10:25</span><span class="verse-text">不可<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>放弃我们自己的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>聚集，好像有些人习惯了一样，倒要彼此劝勉；既看见那日子临近，就更当如此。</span></div>
+        <div class="verse"><span class="verse-number">10:26</span><span class="verse-text">因为我们认识了<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>真理之后，还<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>故意犯罪，为着<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>罪的牛羊祭物是<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>不再有的了；</span></div>
+        <div class="verse"><span class="verse-number">10:27</span><span class="verse-text">惟有恐惧等候审判、和那将要吞灭众敌人的烈火。</span></div>
+        <div class="verse"><span class="verse-number">10:28</span><span class="verse-text">任何人<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>干犯摩西的律法，凭两三个见证人，尚且不得怜恤而死，</span></div>
+        <div class="verse"><span class="verse-number">10:29</span><span class="verse-text">何况那<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>践踏神的儿子，将他藉以成圣的立约之血<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>当作俗物，又<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>亵慢恩典之灵的，你们想，他该受怎样<sup class="clickable-sup" data-sup-text="4" tabindex="0" role="button">4</sup>更重的刑罚？</span></div>
+        <div class="verse"><span class="verse-number">10:30</span><span class="verse-text">因为我们知道谁曾说，“<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>伸冤在我，我必报应。”又说，“主要审判祂的百姓。”</span></div>
+        <div class="verse"><span class="verse-number">10:31</span><span class="verse-text">落在活神的手里是可怕的。</span></div>
+        <div class="verse"><span class="verse-number">10:32</span><span class="verse-text">然而你们要回想往日，那时你们蒙了光照，就忍受了各样苦难中的大争战；</span></div>
+        <div class="verse"><span class="verse-number">10:33</span><span class="verse-text">一面被辱骂，遭患难，成了给众人观看的一台<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>戏；一面作了那些受如此对待之人的同伴。</span></div>
+        <div class="verse"><span class="verse-number">10:34</span><span class="verse-text">因为你们同情了那些被捆锁的人，并且你们的家业被抢夺，你们也欢喜接受，知道自己有<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>更美长存的家业。</span></div>
+        <div class="verse"><span class="verse-number">10:35</span><span class="verse-text">所以不可丢弃你们的胆量；这胆量是会得大<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>赏赐的。</span></div>
+        <div class="verse"><span class="verse-number">10:36</span><span class="verse-text">你们所需要的乃是忍耐，使你们行完了<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>神的旨意，就可以得着所<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>应许的。</span></div>
+        <div class="verse"><span class="verse-number">10:37</span><span class="verse-text">“因为还有一点点时候，那要来的就来，并不迟延。</span></div>
+        <div class="verse"><span class="verse-number">10:38</span><span class="verse-text">只是我的义人必本于<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>信活着；他若退缩，我的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>心就不喜悦他。”</span></div>
+        <div class="verse"><span class="verse-number">10:39</span><span class="verse-text">我们却不是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>退缩以致<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>遭毁坏的人，乃是有信心以致<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>得着魂的人。</span></div>
+    </div>
+</body>
+</html>

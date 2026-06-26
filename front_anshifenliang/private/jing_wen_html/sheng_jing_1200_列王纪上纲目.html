@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1200_列王纪上纲目</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: normal; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: normal; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: normal; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: normal; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: normal; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">列王纪上纲目</h1>
+        <div class="outline level-1">壹　大卫的晚年和去世 王上一1～二11</div>
+        <div class="outline level-2">一　老迈衰萎 一1～4</div>
+        <div class="outline level-2">二　立所罗门为王位继承人 一5～53</div>
+        <div class="outline level-2">三　临终嘱咐他的儿子所罗门，就是大卫王位的继承人 二1～9</div>
+        <div class="outline level-2">四　他地上的生命终止 二10～11</div>
+        <div class="outline level-1">贰　列王的掌权 王上二12～王下二五30</div>
+        <div class="outline level-2">一　所罗门作王 王上二12～十一43上</div>
+        <div class="outline level-3">1　了结背叛的因素，以坚立他的国 二12～46</div>
+        <div class="outline level-3">2　娶埃及王女儿为妻 三1</div>
+        <div class="outline level-3">3　寻求神 三2～4</div>
+        <div class="outline level-3">4　寻求智慧 三5～15</div>
+        <div class="outline level-3">5　判断两个妓女争执的案件 三16～28</div>
+        <div class="outline level-3">6　他管理之行政的组织 四1～19</div>
+        <div class="outline level-3">7　他在神丰厚祝福下的兴盛 四20～五18</div>
+        <div class="outline level-3">8　建造神的殿和所罗门自己的宫室 六1～八66</div>
+        <div class="outline level-4">a　殿 六1～38</div>
+        <div class="outline level-4">b　建造宫室与神的居所相关联 七1～12</div>
+        <div class="outline level-4">c　户兰－所罗门的工匠 七13～14</div>
+        <div class="outline level-4">d　两根铜柱 七15～22</div>
+        <div class="outline level-4">e　铜海和十个铜盆 七23～40上</div>
+        <div class="outline level-4">f　户兰为所罗门所作的工 七40下～47</div>
+        <div class="outline level-4">g　殿的器具 七48～51</div>
+        <div class="outline level-4">h　献殿 八1～66</div>
+        <div class="outline level-5">(一)　帐幕与殿合并 1～11</div>
+        <div class="outline level-5">(二)　所罗门对百姓的祝福和宣告 12～21</div>
+        <div class="outline level-5">(三)　所罗门的祷告 22～53</div>
+        <div class="outline level-5">(四)　所罗门给百姓进一步的祝福 54～61</div>
+        <div class="outline level-5">(五)　所罗门和众民向神献上大量的祭牲 62～64</div>
+        <div class="outline level-5">(六)　所罗门和他的民守节十四日 65～66</div>
+        <div class="outline level-3">9　所罗门在列国中荣耀的巅峰 九1～十29</div>
+        <div class="outline level-4">a　耶和华悦纳所罗门的祷告，并应许坚立他的国位，直到永远 九1～9</div>
+        <div class="outline level-4">b　所罗门与希兰结盟 九10～14</div>
+        <div class="outline level-4">c　所罗门又建造许多城 九15～24</div>
+        <div class="outline level-4">d　所罗门每年三次献祭 九25</div>
+        <div class="outline level-4">e　所罗门得希兰帮助，建立船队 九26～28</div>
+        <div class="outline level-4">f　示巴女王来向所罗门致敬并听他智慧的话 十1～10，13</div>
+        <div class="outline level-4">g　希兰的船队为神的殿和所罗门的宫室运来宝贵材料 十11～12</div>
+        <div class="outline level-4">f　示巴女王来向所罗门致敬并听他智慧的话（续） 十13</div>
+        <div class="outline level-4">h　所罗门因列国诸王的进贡和商贾的税赋而致富 十14～25，27</div>
+        <div class="outline level-4">i　购建战车和马兵作为防卫 十26，28～29</div>
+        <div class="outline level-4">h　所罗门因列国诸王的进贡和商贾的税赋而致富（续） 十27</div>
+        <div class="outline level-4">i　购建战车和马兵作为防卫（续） 十28～29</div>
+        <div class="outline level-3">10　以色列历史的悲剧 十一1～43上</div>
+        <div class="outline level-4">a　所罗门的堕落 1～8</div>
+        <div class="outline level-4">b　神的惩治 9～40</div>
+        <div class="outline level-5">(一)　神向所罗门发怒，定意要将他的国撕去，赐给他的臣仆（以色列国的分裂） 9～13</div>
+        <div class="outline level-5">(二)　神惩治的行动 14～40</div>
+        <div class="outline level-4">c　所罗门作全以色列的王四十年后崩逝 41～43上</div>
+        <div class="outline level-2">二　罗波安作犹大王，耶罗波安作以色列王 王上十一43下～十四31上</div>
+        <div class="outline level-3">1　罗波安接续所罗门作王 十一43下</div>
+        <div class="outline level-3">2　罗波安遭受国度的分裂，失去十个支派 十二1～24</div>
+        <div class="outline level-3">3　耶罗波安的背道 十二25～33</div>
+        <div class="outline level-3">4　神对耶罗波安在伯特利所造之坛的审判 十三1～32</div>
+        <div class="outline level-3">5　耶罗波安进一步的背道 十三33～34</div>
+        <div class="outline level-3">6　亚希雅预言耶罗波安悲惨的结局 十四1～18</div>
+        <div class="outline level-3">7　耶罗波安作以色列十个支派的王，他的性命因神严厉的刑罚而结束 十四19～20</div>
+        <div class="outline level-3">8　罗波安登基作犹大王 十四21～24</div>
+        <div class="outline level-3">9　罗波安被埃及王击败、抢夺 十四25～28</div>
+        <div class="outline level-3">10　罗波安与耶罗波安时常争战，以及罗波安葬在大卫城 十四29～31上</div>
+        <div class="outline level-2">三　亚比央作犹大王 十四31下～十五8上</div>
+        <div class="outline level-2">四　亚撒作犹大王 十五8下～24</div>
+        <div class="outline level-2">五　拿答作以色列王 十五25～31</div>
+        <div class="outline level-2">六　巴沙作以色列王 十五32～十六7</div>
+        <div class="outline level-2">七　以拉作以色列王 十六8～14</div>
+        <div class="outline level-2">八　心利作以色列王 十六15～20</div>
+        <div class="outline level-2">九　暗利作以色列王 十六21～28上</div>
+        <div class="outline level-2">十　亚哈作以色列王 十六28下～二二40</div>
+        <div class="outline level-3">1　登基作以色列王 十六28下～29</div>
+        <div class="outline level-3">2　行耶和华眼中看为恶的事，比他以前的诸王更甚 十六30～33</div>
+        <div class="outline level-3">3　他在位的日子，有人重修耶利哥城就受了咒诅，正如所预言的 十六34</div>
+        <div class="outline level-3">4　神藉申言者以利亚对付亚哈 十七1～十九9上</div>
+        <div class="outline level-4">a　使天闭塞不下雨 十七1～24</div>
+        <div class="outline level-5">(一)　神打发以利亚去靠溪水和乌鸦叼来的食物养生 2～7</div>
+        <div class="outline level-5">(二)　神打发以利亚往一个寡妇那里去得供养 8～24</div>
+        <div class="outline level-6">(1)　以利亚神奇的用面和油供给那寡妇，而非从她得供养 8～16</div>
+        <div class="outline level-6">(2)　以利亚使寡妇死去的儿子活过来 17～24</div>
+        <div class="outline level-4">b　使天开启降雨 十八1～46</div>
+        <div class="outline level-5">(一)　神打发以利亚去见亚哈 1～2</div>
+        <div class="outline level-5">(二)　亚哈藉着俄巴底来见以利亚 3～16</div>
+        <div class="outline level-5">(三)　迦密山上的试验，证明谁是真神 17～40</div>
+        <div class="outline level-5">(四)　降下大雨 41～46</div>
+        <div class="outline level-4">c　以利亚受亚哈妻子耶洗别的威吓 十九1～9上</div>
+        <div class="outline level-3">5　耶和华在以利亚沮丧时给他的托付 十九9下～18</div>
+        <div class="outline level-3">6　以利亚遇见以利沙，得着他跟随自己，并顶替自己 十九19～21</div>
+        <div class="outline level-3">7　应付亚兰王便哈达 二十1～43</div>
+        <div class="outline level-3">8　用不义手段强取拿伯的葡萄园 二一1～29</div>
+        <div class="outline level-3">9　他可怜的结局 二二1～40</div>
+        <div class="outline level-1">十一　约沙法作犹大王 二二41～50</div>
+        <div class="outline level-1">十二　亚哈谢作以色列王 王上二二51～王下一18</div>
+    </div>
+</body>
+</html>
