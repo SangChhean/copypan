@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1198_撒母耳记上纲目</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: normal; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: normal; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: normal; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: normal; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: normal; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">撒母耳记上纲目</h1>
+        <div class="outline level-1">壹　撒母耳的历史 撒上一1～八22</div>
+        <div class="outline level-2">一　他的出身与出生 一1～20</div>
+        <div class="outline level-2">二　他的幼年 一21～二11</div>
+        <div class="outline level-2">三　他与陈腐衰微之亚伦祭司职分的关系 二12～七17</div>
+        <div class="outline level-3">1　看到堕落之亚伦祭司职分的败落 二12～26</div>
+        <div class="outline level-3">2　看见神对以利家严厉的审判 二27～三21</div>
+        <div class="outline level-3">3　知道在堕落腐败之亚伦祭司职分的迷信下，神约柜的不幸 四1～七2</div>
+        <div class="outline level-3">4　作祭司事奉，并作士师治理以色列 七3～17</div>
+        <div class="outline level-2">四　撒母耳职事的结束 八1～22</div>
+        <div class="outline level-1">贰　扫罗的历史 撒上九1～十五35</div>
+        <div class="outline level-2">一　他的出身 九1～2</div>
+        <div class="outline level-2">二　神膏扫罗作王 九3～十27</div>
+        <div class="outline level-2">三　扫罗征服亚扪人 十一1～13</div>
+        <div class="outline level-2">四　撒母耳重新题醒以色列人 十一14～十二25</div>
+        <div class="outline level-2">五　扫罗征服非利士人 十三1～十四52</div>
+        <div class="outline level-2">六　扫罗在征服亚玛力人的事上不顺从 十五1～35</div>
+        <div class="outline level-4">参　大卫的历史 撒上十六1～撒下二四25</div>
+        <div class="outline level-2">一　神所豫备，合乎神心的人 撒上十六1～撒下一27</div>
+        <div class="outline level-3">1　蒙神拣选 十六1～10</div>
+        <div class="outline level-3">2　在卑微中受神训练 十六11</div>
+        <div class="outline level-3">3　受膏 十六12～23</div>
+        <div class="outline level-3">4　在信靠神击败歌利亚的事上受试验并蒙称许 十七1～58</div>
+        <div class="outline level-3">5　受扫罗逼迫试验 撒上十八1～撒下一27</div>
+        <div class="outline level-4">a　约拿单对大卫的爱 十八1～5</div>
+        <div class="outline level-4">b　扫罗嫉妒大卫 十八6～9</div>
+        <div class="outline level-4">c　扫罗设计杀大卫 十八10～二十42</div>
+        <div class="outline level-4">d　大卫得祭司亚希米勒供给陈设圣饼和歌利亚的刀 二一1～9</div>
+        <div class="outline level-4">e　大卫躲避扫罗，逃到迦特王亚吉那里 二一10～15</div>
+        <div class="outline level-4">f　大卫住在亚杜兰洞、摩押的米斯巴、和犹大的哈列树林里 二二1～5</div>
+        <div class="outline level-4">g　扫罗因大卫的缘故，杀祭司亚希米勒和他全家 二二6～23</div>
+        <div class="outline level-4">h　大卫击败非利士人，住在基伊拉 二三1～12</div>
+        <div class="outline level-4">i　大卫留在西弗旷野 二三13～28</div>
+        <div class="outline level-4">j　大卫住在隐基底的山寨里 二三29～二四2</div>
+        <div class="outline level-4">k　扫罗落在大卫手里，大卫却不杀他 二四3～22</div>
+        <div class="outline level-4">l　撒母耳死了 二五1上</div>
+        <div class="outline level-4">m　大卫对付拿八和亚比该 二五1下～44</div>
+        <div class="outline level-4">n　耶和华将扫罗交在大卫手中，但大卫不杀他 二六1～25</div>
+        <div class="outline level-4">o　大卫逃往非利士人之地，住在那里 二七1～二八2</div>
+        <div class="outline level-4">p　撒母耳豫告扫罗悲惨的结局 二八3～25</div>
+        <div class="outline level-4">q　大卫在神的主宰下，被阻止加入非利士人的军队去攻击以色列 二九1～11</div>
+        <div class="outline level-4">r　大卫征服亚玛力人，掳掠了他们所掳掠的 三十1～31</div>
+        <div class="outline level-4">s　扫罗的结局 三一1～13</div>
+    </div>
+</body>
+</html>

@@ -10,7 +10,7 @@ $files = @(
   "traditional_to_simplified.js", "simplified_to_traditional.js",
   "qu-bie-ci-exclusion-map.js", "hymns.js", "shi_ge.js", "shi_ge_fen_lei.js",
   "zhu_jie_wen_da.js", "cha_kan_zheng_pian.js", "jing_jie_wen_da.js",
-  "xiao_bai_ke.js", "bible_verse.js", "jing_jie_zhu_shi.js",
+  "xiao_bai_ke.js", "shu-ling-wen-da.js", "bible_verse.js", "jing_jie_zhu_shi.js",
   "styles.css", "content_view.html", "viewer_host.html", "favicon.ico"
 )
 

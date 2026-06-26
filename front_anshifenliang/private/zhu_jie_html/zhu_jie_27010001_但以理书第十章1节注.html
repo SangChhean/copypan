@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>但10章1节注</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 7px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            position: relative;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .verse-content {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #3498db;
+            padding: 5px 7px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            line-height: 1.9;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 3px;
+        }
+        
+        .verse-text {
+            color: #2c3e50;
+        }
+        
+        .verse-text sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 1px;
+        }
+        
+        .note-item {
+            margin-bottom: 7px;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+        
+        .note-item:nth-child(even) {
+            background-color: white;
+        }
+        
+        .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        /* 单段落注解样式 */
+        .note-content {
+            display: inline;
+            text-indent: 0;
+            text-align: justify;
+        }
+        
+        /* 多段落注解容器 */
+        .note-content-multi {
+            display: block;
+        }
+        
+        /* 第一段（包含注解编号）不缩进 */
+        .first-paragraph-with-number {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 0;
+        }
+        
+        .first-paragraph-with-number .note-number {
+            font-weight: bold;
+            color: #2d5016;
+            margin-right: 2px;
+        }
+        
+        .first-paragraph-with-number .first-paragraph-text {
+            display: inline;
+            text-indent: 0;
+        }
+        
+        /* 从第二段开始首行缩进两个字符 */
+        .indented-paragraph {
+            margin: 0 0 4px 0;
+            text-align: justify;
+            display: block;
+            line-height: 1.8;
+            text-indent: 2em;
+        }
+        
+        /* 最后一个段落去除底部边距 */
+        .note-content-multi p:last-child,
+        .indented-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 单段落内容（使用span的情况）不缩进 */
+        .note-content > span {
+            text-indent: 0;
+            text-align: justify;
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">但10章1节注</h1>
+        <div class="verse-content">
+  <span class="verse-number">但10章1节</span>
+  <span class="verse-text">波斯王古列<sup>1</sup>第三年，有话启示给称为伯提沙撒的但以理；</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注1　</span>
+  <span class="note-content">主前约五三七年，即古列下诏释放以色列俘虏，使他们归回列祖之地并重建圣殿（拉一1～4）两年之后。见一21注1。</span>
+</div>
+<div class="note-item">
+  <span class="note-number">注2　</span>
+  <span class="note-content">或，冲突，争战。本章关于以色列定命之异象的主题，乃是极大的困苦，就是因着南方（埃及）王和北方（叙利亚）王之间的争战，而临到以色列的。这二王在以色列境内彼此发动战争，把以色列用作侵略对方的通道。（十一2～35。）这些战争对以色列人乃是困苦，试炼，尤以叙利亚王安提阿克以比凡尼所发动的战争为甚。这人是亚历山大大帝四个继承者之一的后裔，也是敌基督完满的豫表。这是神差派给祂选民的严酷试炼，因为他们从被掳归回以后又败坏了。</span>
+</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_0427_以斯帖记第一章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">以斯帖记 第 一 章</h1>
+        <div class="book-info">著者： 也许是末底改，（九20，23，）以斯帖的堂兄并抚养者。（二5，7。）</div>
+        <div class="book-info">著时： 约于主前四七四年，亚哈随鲁王十二年十二月。（九20，18，三7。）</div>
+        <div class="book-info">著地： 波斯帝国书珊京城。（一12。）</div>
+        <div class="book-info">涵盖时段: 本书涵盖时段至少十年，从主前四八四年到主前四七四年；即波斯王亚哈随鲁第三年，（一3，）至亚达薛西十二年十二月十五日之后某时。（九18，三7。）</div>
+        <div class="theme">主题：拣选以色列人作选民的这位神，在他们被掳到外邦列国中的期间，对他们成了隐藏的神，秘密的照顾他们，并在隐密中公开的拯救他们</div>
+        <div class="outline level-1">壹　隐藏的神秘密照顾那被分散受压制的选民，如在以斯帖身上所看见的 一1～二23</div>
+        <div class="outline level-2">一　在外邦世界设立一位顶尖的王 一1～2</div>
+        <div class="verse"><span class="verse-number">1:1</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>当<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>亚哈随鲁作王的日子，（这亚哈随鲁从印度直到<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>古实，统管一百二十七省，）</span></div>
+        <div class="verse"><span class="verse-number">1:2</span><span class="verse-text">那些日子，亚哈随鲁王在书珊京城登了国位。</span></div>
+        <div class="outline level-2">二　使王废掉他的王后 一3～22</div>
+        <div class="verse"><span class="verse-number">1:3</span><span class="verse-text">在位第三年，他为一切首领臣仆设摆筵宴。有波斯和玛代的权贵、贵胄、和各省的首领在他面前；</span></div>
+        <div class="verse"><span class="verse-number">1:4</span><span class="verse-text">他把他国荣耀的丰富，和他盛大威严的华贵，给他们看了许多日，就是一百八十日。</span></div>
+        <div class="verse"><span class="verse-number">1:5</span><span class="verse-text">这些日子满了，王又为所有在书珊京城的人民，无论尊大或卑小，在王宫花园的院内设摆筵宴七日。</span></div>
+        <div class="verse"><span class="verse-number">1:6</span><span class="verse-text">有白色棉织的幔子、蓝色的挂帐，用细麻绳、紫色绳系在银环和白玉石柱上，有金银的床榻摆在斑岩、白玉石、珠母、黑玉石铺的石地上。</span></div>
+        <div class="verse"><span class="verse-number">1:7</span><span class="verse-text">用金器皿赐酒，器皿各有不同；照着王的厚意，所赐的御酒甚多。</span></div>
+        <div class="verse"><span class="verse-number">1:8</span><span class="verse-text">喝酒乃照着定例，不准勉强人，因王吩咐宫里的一切臣宰，要照各人的意愿待他们。</span></div>
+        <div class="verse"><span class="verse-number">1:9</span><span class="verse-text">王后瓦实提在亚哈随鲁王的王宫中，也为妇女设摆筵宴。</span></div>
+        <div class="verse"><span class="verse-number">1:10</span><span class="verse-text">第七日，亚哈随鲁王饮酒，心中快乐，就吩咐在他面前侍立的七个太监米户幔、比斯他、哈波拿、比革他、亚拔他、西达、甲迦，</span></div>
+        <div class="verse"><span class="verse-number">1:11</span><span class="verse-text">请王后瓦实提戴着后冠到王面前，使各民和臣宰看她的美丽，因为她容貌甚美。</span></div>
+        <div class="verse"><span class="verse-number">1:12</span><span class="verse-text">王后瓦实提却不肯遵王藉太监所传的命令而来，所以王甚发怒，怒火中烧。</span></div>
+        <div class="verse"><span class="verse-number">1:13</span><span class="verse-text">王就问通达时务的智慧人说，（按王的常规，办事必先询问一切通晓法例和公理的人；</span></div>
+        <div class="verse"><span class="verse-number">1:14</span><span class="verse-text">那在王左右的是波斯和玛代的七个首领甲示拿、示达、押玛他、他施斯、米力、玛西拿和米母干，他们常见王面，在国中坐首位，）</span></div>
+        <div class="verse"><span class="verse-number">1:15</span><span class="verse-text">王后瓦实提不遵行亚哈随鲁王藉太监所传的命令，照法例应当怎样对待她？</span></div>
+        <div class="verse"><span class="verse-number">1:16</span><span class="verse-text">米母干在王和众首领面前回答说，王后瓦实提不但得罪王，也得罪亚哈随鲁王各省的臣民；</span></div>
+        <div class="verse"><span class="verse-number">1:17</span><span class="verse-text">因为王后所行的这事必传到众妇人的耳中，说，亚哈随鲁王吩咐王后瓦实提到王面前，她却不来，这就使她们藐视自己的丈夫。</span></div>
+        <div class="verse"><span class="verse-number">1:18</span><span class="verse-text">今日波斯和玛代的众夫人听见王后所行的这事，必向王的众臣照样<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>行；这样就必多有藐视和忿怒的事了。</span></div>
+        <div class="verse"><span class="verse-number">1:19</span><span class="verse-text">王若以为美，可以降旨，写在波斯和玛代人的法例中，永不废除，不准瓦实提再到亚哈随鲁王面前，又请王将她王后的位分赐给比她好的人。</span></div>
+        <div class="verse"><span class="verse-number">1:20</span><span class="verse-text">王所降的旨意传遍通国，（国度本来广大，）所有的妇人，无论丈夫尊大或卑小，都必尊敬他。</span></div>
+        <div class="verse"><span class="verse-number">1:21</span><span class="verse-text">王和众首领都以米母干的话为美，王就照这话去行，</span></div>
+        <div class="verse"><span class="verse-number">1:22</span><span class="verse-text">发诏书到王的各省，依照各省的文字达于各省，依照各族的方言达于各族，使作丈夫的在自己家中作主，各说本族的方言。</span></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1149_雅各书第三章</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: bold; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: bold; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: bold; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: bold; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: bold; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">雅各书 第 三 章</h1>
+        <div class="outline level-2">六　勒住舌头 三1～12</div>
+        <div class="verse"><span class="verse-number">3:1</span><span class="verse-text">我的弟兄们，不要多人作<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>教师，因为知道我们要受更重的<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>审判。</span></div>
+        <div class="verse"><span class="verse-number">3:2</span><span class="verse-text">我们在许多事上都<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>有过失，若有人在话语上<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>没有过失，他就是完全人，也能勒住全身。</span></div>
+        <div class="verse"><span class="verse-number">3:3</span><span class="verse-text">我们若把嚼环放在马嘴里，叫它们服从我们，就能调动它们的全身。</span></div>
+        <div class="verse"><span class="verse-number">3:4</span><span class="verse-text">看哪，船只虽然那么大，又被狂风催逼，无论掌舵者的意思要往那里去，都能被小小的舵调动。</span></div>
+        <div class="verse"><span class="verse-number">3:5</span><span class="verse-text">舌头也是这样，虽是个小肢体，却能说夸大的话。看哪，多么小的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>火，能点着多么大的树林。</span></div>
+        <div class="verse"><span class="verse-number">3:6</span><span class="verse-text">舌头就是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>火，在我们百体中，是个不义的世界，污秽全身，也把<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>生命的轮子点起来，且是给<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>火坑的火点着的。</span></div>
+        <div class="verse"><span class="verse-number">3:7</span><span class="verse-text">原来各类走兽、飞禽、爬物和水族的性情，都可以制伏，也已经被<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>人的性情制伏了；</span></div>
+        <div class="verse"><span class="verse-number">3:8</span><span class="verse-text">惟独舌头没有人能制伏，是<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>不止息的恶物，满了致死的毒气。</span></div>
+        <div class="verse"><span class="verse-number">3:9</span><span class="verse-text">我们用舌头颂赞那为主为父的，又用舌头咒诅那照着神样式受造的人。</span></div>
+        <div class="verse"><span class="verse-number">3:10</span><span class="verse-text">颂赞和咒诅从同一个口里出来，我的弟兄们，这是不应当的。</span></div>
+        <div class="verse"><span class="verse-number">3:11</span><span class="verse-text">泉源从同一个<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>眼里能涌出甜水和苦水么？</span></div>
+        <div class="verse"><span class="verse-number">3:12</span><span class="verse-text">我的弟兄们，无花果树能生橄榄么？葡萄树能结无花果么？<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>咸水也不能发出甜水来。</span></div>
+        <div class="outline level-2">七　以智慧行事 三13～18</div>
+        <div class="verse"><span class="verse-number">3:13</span><span class="verse-text">你们中间谁是有智慧有见识的？他就当用<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>智慧的温柔，<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>凭他美好的品行，显出他<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>所作所为的。</span></div>
+        <div class="verse"><span class="verse-number">3:14</span><span class="verse-text">但你们心里若怀着苦毒的嫉妒和私图好争，就不要再夸口，也不要再说谎抵挡真理了。</span></div>
+        <div class="verse"><span class="verse-number">3:15</span><span class="verse-text"><sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>这样的智慧，不是从上头下来的，乃是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>属地的、属魂的、出于鬼且像鬼的。</span></div>
+        <div class="verse"><span class="verse-number">3:16</span><span class="verse-text">因为何处有嫉妒和私图好争，何处就有扰乱和各样的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>坏事。</span></div>
+        <div class="verse"><span class="verse-number">3:17</span><span class="verse-text">惟独从上头来的<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>智慧，先是纯洁的，后是和平的、<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>和蔼的、<sup class="clickable-sup" data-sup-text="3" tabindex="0" role="button">3</sup>柔顺的，满有怜悯和善果，没有偏见，没有假冒。</span></div>
+        <div class="verse"><span class="verse-number">3:18</span><span class="verse-text">并且<sup class="clickable-sup" data-sup-text="1" tabindex="0" role="button">1</sup>义的果子，乃是<sup class="clickable-sup" data-sup-text="2" tabindex="0" role="button">2</sup>由那些制造和平的人，在和平中所种植的。</span></div>
+    </div>
+</body>
+</html>

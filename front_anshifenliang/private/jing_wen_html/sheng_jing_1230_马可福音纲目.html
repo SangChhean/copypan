@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sheng_jing_1230_马可福音纲目</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        
+        .main-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background-color: #3498db;
+        }
+        
+        .book-info {
+            margin-bottom: 10px;
+            padding: 6px 0;
+            border-left: 3px solid #3498db;
+            padding-left: 12px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .theme {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #fadbd8;
+        }
+        
+        .outline {
+            margin: 8px 0;
+            padding: 6px 12px;
+            background-color: #e8f4fd;
+            border-left: 4px solid #95a5a6;
+            border-radius: 0 5px 5px 0;
+            font-size: 15px;
+            font-weight: normal;
+        }
+        
+        
+        .outline.level-1 { border-left-color: #e74c3c; font-weight: bold; margin-left: 0; }
+        .outline.level-2 { border-left-color: #f39c12; font-weight: normal; margin-left: 0; }
+        .outline.level-3 { border-left-color: #3498db; font-weight: normal; margin-left: 0; }
+        .outline.level-4 { border-left-color: #27ae60; font-weight: normal; margin-left: 0; }
+        .outline.level-5 { border-left-color: #9b59b6; font-weight: normal; margin-left: 0; }
+        .outline.level-6 { border-left-color: #34495e; font-weight: normal; margin-left: 0; }
+        
+        .chapter-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0 12px 0;
+            padding: 8px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
+        
+        .verse {
+            margin: 10px 0;
+            padding: 8px 12px;
+            line-height: 1.9;
+            background-color: #fdfdfd;
+            border-radius: 6px;
+            border-left: 3px solid #bdc3c7;
+        }
+        
+        .verse-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .verse-text {
+            margin-left: 5px;
+        }
+        
+        /* 可点击的上标样式 */
+        .clickable-sup {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            text-decoration: underline;
+        }
+        
+        .clickable-sup:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .clickable-sup:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 2.5px; font-size: 15px; }
+            .container { padding: 5px; }
+            .main-title { font-size: 22px; margin-bottom: 6px; }
+            .theme { font-size: 16px; margin: 6px 0; padding: 5px; }
+            .chapter-title { font-size: 18px; margin: 7.5px 0 5px 0; }
+            .outline { font-size: 14px; margin: 3px 0; padding: 2.5px 5px; }
+            .verse { padding: 3px 5px; margin: 4px 0; }
+            .book-info { margin-bottom: 4px; padding: 2px 0; padding-left: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">马可福音纲目</h1>
+        <div class="outline level-1">壹　福音的开始与奴仆救主的引进 一1～13</div>
+        <div class="outline level-2">一　福音的开始─藉着先锋的职事 1～8</div>
+        <div class="outline level-3">1　如所预言者 1～3</div>
+        <div class="outline level-3">2　传悔改的浸 4～6</div>
+        <div class="outline level-3">3　介绍奴仆救主 7～8</div>
+        <div class="outline level-2">二　奴仆救主的引进 9～13</div>
+        <div class="outline level-3">1　受浸 9～11</div>
+        <div class="outline level-3">2　试验 12～13</div>
+        <div class="outline level-1">贰　奴仆救主为着福音广传的职事 一14～十52</div>
+        <div class="outline level-2">一　福音服事的内容 一14～45</div>
+        <div class="outline level-3">1　传扬福音 14～20</div>
+        <div class="outline level-3">2　教训真理 21～22</div>
+        <div class="outline level-3">3　赶逐污鬼 23～28</div>
+        <div class="outline level-3">4　医治病人 29～39</div>
+        <div class="outline level-3">5　洁净麻风 40～45</div>
+        <div class="outline level-2">二　完成福音服事的路 二1～三6</div>
+        <div class="outline level-3">1　赦免病者罪 二1～12</div>
+        <div class="outline level-3">2　同罪人坐席 二13～17</div>
+        <div class="outline level-3">3　从者快乐，无需禁食 二18～22</div>
+        <div class="outline level-3">4　宁顾从者饥饿，不顾宗教规条 二23～28</div>
+        <div class="outline level-3">5　宁顾苦者得释，不顾宗教仪式 三1～6</div>
+        <div class="outline level-2">三　福音服事的辅助动作 三7～35</div>
+        <div class="outline level-3">1　避开群众 7～12</div>
+        <div class="outline level-3">2　选立使徒 13～19</div>
+        <div class="outline level-3">3　因需废食 20～21</div>
+        <div class="outline level-3">4　捆绑撒但，洗劫其家 22～30</div>
+        <div class="outline level-3">5　不认亲属，只认行神旨者 31～35</div>
+        <div class="outline level-2">四　神国的比喻 四1～34</div>
+        <div class="outline level-3">1　撒种的比喻 1～20</div>
+        <div class="outline level-3">2　灯的比喻 21～25</div>
+        <div class="outline level-3">3　种子的比喻 26～29</div>
+        <div class="outline level-3">4　芥种的比喻 30～34</div>
+        <div class="outline level-2">五　福音服事的行动 四35～十52</div>
+        <div class="outline level-3">1　平静风海 四35～41</div>
+        <div class="outline level-3">2　赶逐群鬼 五1～20</div>
+        <div class="outline level-3">3　医治血漏，复活死女 五21～43</div>
+        <div class="outline level-3">4　受人藐视 六1～6</div>
+        <div class="outline level-3">5　差遣门徒 六7～13</div>
+        <div class="outline level-3">6　先锋殉道 六14～29</div>
+        <div class="outline level-3">7　食饱五千 六30～44</div>
+        <div class="outline level-3">8　行在海面 六45～52</div>
+        <div class="outline level-3">9　到处施医 六53～56</div>
+        <div class="outline level-3">10　教导内出的玷污 七1～23</div>
+        <div class="outline level-3">11　赶逐迦南女孩的鬼 七24～30</div>
+        <div class="outline level-3">12　医治耳聋舌结 七31～37</div>
+        <div class="outline level-3">13　食饱四千 八1～10</div>
+        <div class="outline level-3">14　无神迹给法利赛人 八11～13</div>
+        <div class="outline level-3">15　警告提防法利赛人和希律的酵 八14～21</div>
+        <div class="outline level-3">16　医治伯赛大的瞎子 八22～26</div>
+        <div class="outline level-3">17　首次揭示死与复活 八27～九1</div>
+        <div class="outline level-3">18　登山变像 九2～13</div>
+        <div class="outline level-3">19　赶出哑吧灵 九14～29</div>
+        <div class="outline level-3">20　第二次揭示死与复活 九30～32</div>
+        <div class="outline level-3">21　教导谦卑 九33～37</div>
+        <div class="outline level-3">22　教导为合一的容忍 九38～50</div>
+        <div class="outline level-3">23　来到犹太 十1</div>
+        <div class="outline level-3">24　教导不可离婚 十2～12</div>
+        <div class="outline level-3">25　祝福小孩 十13～16</div>
+        <div class="outline level-3">26　教导关于财主并进神国的事 十17～31</div>
+        <div class="outline level-3">27　第三次揭示死与复活 十32～34</div>
+        <div class="outline level-3">28　教导登上宝座的路 十35～45</div>
+        <div class="outline level-3">29　医治巴底买 十46～52</div>
+        <div class="outline level-1">叁　奴仆救主为着祂救赎服事的豫备 十一1～十四42</div>
+        <div class="outline level-2">一　进耶路撒冷，宿伯大尼 十一1～11</div>
+        <div class="outline level-2">二　咒诅果树，洁净圣殿 十一12～26</div>
+        <div class="outline level-2">三　受试验与察验 十一27～十二44</div>
+        <div class="outline level-3">1　受于祭司长、经学家和长老者 十一27～十二12</div>
+        <div class="outline level-3">2　受于法利赛人和希律党人者 十二13～17</div>
+        <div class="outline level-3">3　受于撒都该人者 十二18～二27</div>
+        <div class="outline level-3">4　受于一经学家者 十二28～34</div>
+        <div class="outline level-3">5　笼住众口 十二35～37</div>
+        <div class="outline level-3">6　警告提防经学家 十二38～40</div>
+        <div class="outline level-3">7　称赞穷寡妇 十二41～44</div>
+        <div class="outline level-2">四　为着受死豫备门徒 十三1～十四42</div>
+        <div class="outline level-3">1　示以要来的事 十三1～37</div>
+        <div class="outline level-3">2　受谋害、出卖并爱戴 十四1～11</div>
+        <div class="outline level-3">3　设立晚餐 十四12～26</div>
+        <div class="outline level-3">4　警告门徒 十四27～31</div>
+        <div class="outline level-3">5　经历客西马尼─要门徒儆醒祷告 十四32～42</div>
+        <div class="outline level-1">肆　奴仆救主为着完成神救赎的死与复活 十四43～十六18</div>
+        <div class="outline level-2">一　祂的死 十四43～十五47</div>
+        <div class="outline level-3">1　被捉 十四43～52</div>
+        <div class="outline level-3">2　受审 十四53～十五15</div>
+        <div class="outline level-4">a　为代表犹太人的犹太首领所审 十四53～72</div>
+        <div class="outline level-4">b　为代表外邦人的罗马总督所审 十五1～15</div>
+        <div class="outline level-3">3　被钉 十五16～41</div>
+        <div class="outline level-3">4　安葬 十五42～47</div>
+        <div class="outline level-2">二　祂的复活 十六1～18</div>
+        <div class="outline level-3">1　为三姊妹发现 1～8</div>
+        <div class="outline level-3">2　向马利亚显现 9～11</div>
+        <div class="outline level-3">3　向二徒显现 12～13</div>
+        <div class="outline level-3">4　向十一徒显现，命以普传福音 14～18</div>
+        <div class="outline level-1">伍　奴仆救主得高举的升天 十六19</div>
+        <div class="outline level-1">陆　奴仆救主藉着门徒的普传福音 十六20</div>
+    </div>
+</body>
+</html>
