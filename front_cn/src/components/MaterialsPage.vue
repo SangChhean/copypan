@@ -11,27 +11,42 @@
           <div class="materials-mobile-select">
             <select
               class="mat-mobile-select"
-              :value="selectedCategoryId ?? ''"
-              @change="onMobileSelectChange"
+              :value="navStack[0]?.id ?? ''"
+              @change="onMobileRootSelectChange"
             >
               <option value="">请选择分类</option>
-              <template v-for="cat in flatCategories" :key="cat.id">
-                <option :value="cat.id">{{ cat.depth > 0 ? '　' + cat.name : cat.name }}</option>
-              </template>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
             </select>
           </div>
-          <div v-if="selectedCategoryId" class="materials-mobile-head">
-            <span class="materials-main-title">{{ selectedCategoryName }}</span>
-            <a-button size="small" class="mat-dl-btn" @click="downloadZip">批量下载</a-button>
+          <div class="materials-mobile-head">
+            <button
+              v-if="navStack.length"
+              type="button"
+              class="mat-back-btn"
+              @click="goBack"
+            >‹ 返回上一级</button>
+            <span class="materials-main-title">{{ navStack.length ? selectedCategoryName : '全部分类' }}</span>
+            <a-button v-if="navStack.length" size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">批量下载</a-button>
           </div>
           <div v-if="filesLoading" class="materials-empty-main"><a-spin /></div>
-          <div v-else-if="!selectedCategoryId" class="materials-empty-main">请选择上方分类</div>
-          <div v-else-if="files.length === 0" class="materials-empty-main">暂无文件</div>
+          <div v-else-if="!currentChildren.length && !files.length" class="materials-empty-main">暂无内容</div>
           <div v-else class="mat-file-list">
-            <div v-for="f in files" :key="f.id" class="mat-file-row">
+            <div
+              v-for="child in currentChildren"
+              :key="'folder-' + child.id"
+              class="mat-file-row mat-file-row--folder"
+              @click="navStack.length ? enterSubCategory(child) : enterRootCategory(child)"
+            >
+              <span class="mat-folder-icon">📁</span>
+              <span class="mat-file-name">{{ child.name }}</span>
+              <span class="mat-file-size">文件夹</span>
+              <a-button size="small" class="mat-dl-btn" @click.stop="onDownloadZip(child.id)">下载</a-button>
+            </div>
+            <div v-for="f in files" :key="'file-' + f.id" class="mat-file-row">
+              <span class="mat-file-icon">📄</span>
               <span class="mat-file-name">{{ f.display_name }}</span>
               <span class="mat-file-size">{{ formatSize(f.size_bytes) }}</span>
-              <a-button size="small" class="mat-dl-btn" @click="downloadFile(f)">下载</a-button>
+              <a-button size="small" class="mat-dl-btn" @click.stop="downloadFile(f)">下载</a-button>
             </div>
           </div>
         </div>
@@ -43,55 +58,75 @@
               <div v-if="!categoriesLoading && !categories.length" class="materials-empty-side">
                 暂无分类
               </div>
-              <div class="tree-root">
-                <TreeNode
+              <div class="root-cat-list">
+                <div
                   v-for="node in categories"
                   :key="node.id"
-                  :node="node"
-                  :selected-id="selectedCategoryId"
-                  :open-ids="openIds"
-                  @select="onSelectCategory"
-                  @toggle="onToggleId"
-                />
+                  class="root-cat-item"
+                  :class="{ 'root-cat-item--active': navStack[0]?.id === node.id }"
+                  @click="enterRootCategory(node)"
+                >
+                  {{ node.name }}
+                </div>
               </div>
             </a-spin>
           </aside>
           <main class="materials-main">
             <a-spin :spinning="filesLoading || zipLoading">
-              <div v-if="selectedCategoryId">
+              <div>
                 <div class="materials-main-head">
-                  <span class="materials-main-title">{{ selectedCategoryName }}</span>
-                  <a-button size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">
+                  <button
+                    v-if="navStack.length >= 1"
+                    type="button"
+                    class="mat-back-btn"
+                    @click="goBack"
+                  >‹ 返回上一级</button>
+                  <span class="materials-main-title">{{ navStack.length ? selectedCategoryName : '全部分类' }}</span>
+                  <a-button v-if="navStack.length" size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">
                     批量下载
                   </a-button>
                 </div>
-                <a-table
-                  class="cn-table-hover"
-                  :columns="columns"
-                  :data-source="files"
-                  :pagination="false"
-                  row-key="id"
-                  size="middle"
-                >
-                  <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'size_bytes'">
-                      {{ formatSize(record.size_bytes) }}
-                    </template>
-                    <template v-else-if="column.key === 'created_at'">
-                      {{ formatDate(record.created_at) }}
-                    </template>
-                    <template v-else-if="column.key === 'action'">
-                      <a-button size="small" class="mat-dl-btn" @click="downloadFile(record)">
-                        下载
-                      </a-button>
-                    </template>
-                  </template>
-                  <template #emptyText>
-                    <a-empty description="该分类下暂无文件" />
-                  </template>
-                </a-table>
+                <div v-if="!currentChildren.length && !files.length" class="materials-empty-main">
+                  暂无内容
+                </div>
+                <table v-else class="mat-explorer-table">
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>大小 / 类型</th>
+                      <th>时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="child in currentChildren"
+                      :key="'folder-' + child.id"
+                      class="mat-explorer-row mat-explorer-row--folder"
+                      @click="navStack.length ? enterSubCategory(child) : enterRootCategory(child)"
+                    >
+                      <td><span class="mat-folder-icon">📁</span>{{ child.name }}</td>
+                      <td>文件夹</td>
+                      <td>{{ formatDate(child.created_at) }}</td>
+                      <td>
+                        <a-button size="small" class="mat-dl-btn" @click.stop="onDownloadZip(child.id)">下载</a-button>
+                      </td>
+                    </tr>
+                    <tr
+                      v-for="f in files"
+                      :key="'file-' + f.id"
+                      class="mat-explorer-row"
+                    >
+                      <td><span class="mat-file-icon">📄</span>{{ f.display_name }}</td>
+                      <td>{{ formatSize(f.size_bytes) }}</td>
+                      <td>{{ formatDate(f.created_at) }}</td>
+                      <td>
+                        <a-button size="small" class="mat-dl-btn" @click.stop="downloadFile(f)">下载</a-button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div v-else class="materials-empty-main">请选择左侧分类</div>
             </a-spin>
           </main>
         </div>
@@ -101,7 +136,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
@@ -114,6 +149,7 @@ watch(materialsType, () => {
   selectedCategoryId.value = null
   selectedCategoryName.value = ''
   files.value = []
+  navStack.value = []
   loadCategories()
 })
 const pageTitle = computed(() =>
@@ -125,8 +161,18 @@ const files = ref([])
 const filesLoading = ref(false)
 const zipLoading = ref(false)
 const selectedCategoryId = ref(null)
-const openIds = ref([])
 const selectedCategoryName = ref('')
+const navStack = ref([])
+
+const currentChildren = computed(() => {
+  if (!navStack.value.length) return categories.value
+  return navStack.value[navStack.value.length - 1].children || []
+})
+
+const currentCategoryId = computed(() => {
+  if (!navStack.value.length) return null
+  return navStack.value[navStack.value.length - 1].id
+})
 
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 const isMobile = computed(() => windowWidth.value <= 640)
@@ -135,119 +181,16 @@ function onResize() {
   windowWidth.value = window.innerWidth
 }
 
-const flatCategories = computed(() => {
-  const result = []
-  function flatten(nodes, depth = 0) {
-    for (const node of nodes) {
-      result.push({ ...node, depth })
-      if (node.children?.length) flatten(node.children, depth + 1)
-    }
-  }
-  flatten(categories.value)
-  return result
-})
-
-function onMobileSelectChange(e) {
+function onMobileRootSelectChange(e) {
   const id = e.target.value ? Number(e.target.value) : null
-  selectedCategoryId.value = id
-  const cat = flatCategories.value.find(c => c.id === id)
-  selectedCategoryName.value = cat?.name || ''
-  if (id) loadFiles()
-  else files.value = []
+  if (!id) {
+    navStack.value = []
+    files.value = []
+    return
+  }
+  const node = categories.value.find(c => c.id === id)
+  if (node) enterRootCategory(node)
 }
-
-function downloadZip() {
-  if (selectedCategoryId.value) onDownloadZip(selectedCategoryId.value)
-}
-
-const columns = [
-  { title: '文件名', dataIndex: 'display_name', key: 'display_name' },
-  { title: '大小', key: 'size_bytes', width: 100 },
-  { title: '上传时间', key: 'created_at', width: 180 },
-  { title: '操作', key: 'action', width: 80 },
-]
-
-// ── 树形节点组件 ──────────────────────────────────────────
-const TreeNode = defineComponent({
-  name: 'TreeNode',
-  props: {
-    node: { type: Object, required: true },
-    selectedId: { type: Number, default: null },
-    openIds: { type: Array, default: () => [] },
-  },
-  emits: ['select', 'toggle'],
-  setup(props, { emit }) {
-    return () => {
-      const node = props.node
-      const hasChildren = node.children && node.children.length > 0
-      const isOpen = props.openIds.includes(node.id)
-      const isSelected = props.selectedId === node.id
-      const isActive = isSelected || (hasChildren && node.children.some(c =>
-        c.id === props.selectedId || c.children?.some(gc => gc.id === props.selectedId)
-      ))
-
-      const rootRow = h('div', {
-        class: ['mat-cat-root', isActive && 'mat-cat-root--active'],
-        onClick: () => {
-          if (hasChildren) emit('toggle', node.id)
-          emit('select', node)
-        },
-      }, [
-        h('span', {}, node.name),
-        hasChildren ? h('span', {
-          class: ['mat-cat-arrow', isOpen && 'mat-cat-arrow--open']
-        }, '›') : null,
-      ])
-
-      const childRows = hasChildren && isOpen
-        ? h('div', { class: 'mat-cat-children' },
-            node.children.map(child => {
-              const childHasChildren = child.children && child.children.length > 0
-              const childIsOpen = props.openIds.includes(child.id)
-              const childIsSelected = props.selectedId === child.id
-              const childIsActive = childIsSelected || (childHasChildren && child.children.some(gc => gc.id === props.selectedId))
-
-              return h('div', { key: child.id }, [
-                h('div', {
-                  class: ['mat-cat-child', childIsActive && 'mat-cat-child--active'],
-                  onClick: () => {
-                    if (childHasChildren) emit('toggle', child.id)
-                    emit('select', child)
-                  },
-                }, [
-                  h('span', { class: 'mat-cat-l' }, 'L'),
-                  h('span', {}, child.name),
-                  childHasChildren ? h('span', {
-                    class: ['mat-cat-arrow', childIsOpen && 'mat-cat-arrow--open'],
-                    style: 'margin-left:4px;font-size:12px'
-                  }, '›') : null,
-                ]),
-                childHasChildren && childIsOpen
-                  ? h('div', { class: 'mat-cat-children' },
-                      child.children.map(gc =>
-                        h('div', {
-                          key: gc.id,
-                          class: ['mat-cat-child', 'mat-cat-child--l2', props.selectedId === gc.id && 'mat-cat-child--active'],
-                          style: 'padding-left: 48px',
-                          onClick: () => emit('select', gc),
-                        }, [
-                          h('span', { class: 'mat-cat-l' }, 'L'),
-                          h('span', {}, gc.name),
-                        ])
-                      )
-                    )
-                  : null,
-              ])
-            })
-          )
-        : null
-
-      return h('div', {
-        class: ['mat-cat-block', isActive && 'mat-cat-block--active'],
-      }, [rootRow, childRows])
-    }
-  },
-})
 
 // ── 工具函数 ─────────────────────────────────────────────
 function formatSize(bytes) {
@@ -297,16 +240,32 @@ async function loadFiles() {
   }
 }
 
-function onSelectCategory(node) {
+function enterRootCategory(node) {
+  navStack.value = [node]
   selectedCategoryId.value = node.id
   selectedCategoryName.value = node.name
   loadFiles()
 }
 
-function onToggleId(id) {
-  const idx = openIds.value.indexOf(id)
-  if (idx === -1) openIds.value.push(id)
-  else openIds.value.splice(idx, 1)
+function enterSubCategory(node) {
+  navStack.value.push(node)
+  selectedCategoryId.value = node.id
+  selectedCategoryName.value = node.name
+  loadFiles()
+}
+
+function goBack() {
+  navStack.value.pop()
+  if (navStack.value.length) {
+    const current = navStack.value[navStack.value.length - 1]
+    selectedCategoryId.value = current.id
+    selectedCategoryName.value = current.name
+    loadFiles()
+  } else {
+    selectedCategoryId.value = null
+    selectedCategoryName.value = ''
+    files.value = []
+  }
 }
 
 async function onDownloadZip(categoryId) {
@@ -392,70 +351,30 @@ onUnmounted(() => {
     padding: 8px 0;
     overflow-y: auto;
   }
-  .tree-root {
+  .root-cat-list {
     padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
-  .mat-cat-block {
-    border-radius: 10px;
-    border: 1.5px solid #CCE4F5;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    &.mat-cat-block--active {
-      border-color: #1B6CA8;
-    }
-  }
-  .mat-cat-root {
-    padding: 14px 18px;
-    font-size: 15px;
-    font-weight: 700;
+  .root-cat-item {
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
     background: #EBF4FB;
     color: #1A2A3A;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    border-radius: 8px;
+    border: 1.5px solid #CCE4F5;
     text-align: center;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
     &:hover { background: #D6E8F5; }
-    &.mat-cat-root--active {
+    &.root-cat-item--active {
       background: #1B6CA8;
       color: #ffffff;
+      border-color: #1B6CA8;
     }
-    &.mat-cat-root--active:hover { background: #1559A0; }
-  }
-  .mat-cat-arrow {
-    font-size: 14px;
-    transition: transform 0.2s;
-    display: inline-block;
-    &.mat-cat-arrow--open { transform: rotate(90deg); }
-  }
-  .mat-cat-children { background: #F0F7FC; }
-  .mat-cat-child {
-    padding: 10px 18px 10px 32px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #4A6A84;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-top: 1px solid #CCE4F5;
-    transition: background 0.15s, color 0.15s;
-    &:hover { background: #EBF4FB; color: #1A2A3A; }
-    &.mat-cat-child--active {
-      background: #1B6CA8;
-      color: #ffffff;
-      font-weight: 700;
-    }
-  }
-  .mat-cat-l {
-    color: #94A3B8;
-    font-size: 12px;
-    flex-shrink: 0;
+    &.root-cat-item--active:hover { background: #1559A0; }
   }
   .materials-main {
     flex: 1;
@@ -465,13 +384,52 @@ onUnmounted(() => {
   .materials-main-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 14px;
   }
   .materials-main-title {
+    flex: 1;
     font-size: 15px;
     font-weight: 500;
     color: var(--cn-text-primary);
+  }
+  .mat-back-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    color: #1B6CA8;
+    cursor: pointer;
+    flex-shrink: 0;
+    &:hover { text-decoration: underline; }
+  }
+  .mat-explorer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    th {
+      text-align: left;
+      padding: 8px 12px;
+      font-weight: 500;
+      color: var(--cn-text-secondary);
+      border-bottom: 1px solid var(--cn-border);
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #E0EDF6;
+      color: var(--cn-text-primary);
+    }
+    th:nth-child(2), td:nth-child(2) { width: 120px; }
+    th:nth-child(3), td:nth-child(3) { width: 180px; }
+    th:nth-child(4), td:nth-child(4) { width: 80px; }
+  }
+  .mat-explorer-row--folder {
+    cursor: pointer;
+    &:hover td { background: #F0F7FC; }
+  }
+  .mat-folder-icon,
+  .mat-file-icon {
+    margin-right: 6px;
   }
   .mat-dl-btn {
     background: #1677ff !important;
@@ -539,6 +497,10 @@ onUnmounted(() => {
     padding: 11px 0;
     border-bottom: 1px solid #E0EDF6;
     background: #ffffff;
+    &.mat-file-row--folder {
+      cursor: pointer;
+      &:active { background: #F0F7FC; }
+    }
   }
   .mat-file-row:last-child {
     border-bottom: none;
