@@ -125,7 +125,8 @@ def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", p
                 cat_id = cur.lastrowid
             except sqlite3.IntegrityError:
                 row = conn.execute(
-                    "SELECT id FROM material_categories WHERE dir_name = ?", (dir_name,)
+                    "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?)",
+                    (dir_name, parent_id, parent_id),
                 ).fetchone()
                 cat_id = row["id"]
         parent_id = cat_id
@@ -303,7 +304,7 @@ def create_category(body: CategoryCreate, _: bool = Depends(verify_admin_access)
             conn.commit()
             cat_id = cur.lastrowid
     except sqlite3.IntegrityError:
-        raise HTTPException(status_code=409, detail="分类名或目录名已存在") from None
+        raise HTTPException(status_code=409, detail="同一父分类下已存在相同目录名") from None
     cat_dir = MATERIALS_DIR / dir_name
     cat_dir.mkdir(parents=True, exist_ok=True)
     return {
