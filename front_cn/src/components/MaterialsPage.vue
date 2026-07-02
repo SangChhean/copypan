@@ -152,9 +152,11 @@ watch(materialsType, () => {
   navStack.value = []
   loadCategories()
 })
-const pageTitle = computed(() =>
-  materialsType.value === 'conference' ? '节期特会相关纲目' : '牧养材料'
-)
+const pageTitle = computed(() => {
+  if (materialsType.value === 'conference') return '节期特会相关纲目'
+  if (materialsType.value === 'children') return '儿童服事材料'
+  return '牧养材料'
+})
 const categories = ref([])
 const categoriesLoading = ref(false)
 const files = ref([])

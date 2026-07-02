@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+import mimetypes
 import os
 import re
 
@@ -209,19 +210,20 @@ def download_material(material_id: int, _user: dict = Depends(_require_user)):
     file_path = MATERIALS_DIR / row["dir_name"] / row["stored_name"]
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="文件暂时不可用")
-    display = row["display_name"] or "download"
-    if not display.lower().endswith(".pdf"):
-        display = f"{display}.pdf"
+    display = row["display_name"] or row["stored_name"] or "download"
+    mime_type, _ = mimetypes.guess_type(display)
+    if not mime_type:
+        mime_type = "application/octet-stream"
     if os.getenv("CN_MATERIALS_DIRECT_DOWNLOAD", "").lower() in ("1", "true", "yes"):
         from fastapi.responses import FileResponse
 
-        return FileResponse(path=file_path, media_type="application/pdf", filename=display)
+        return FileResponse(path=file_path, media_type=mime_type, filename=display)
     return Response(
         status_code=200,
         headers={
             "X-Accel-Redirect": f"/protected_materials/{row['dir_name']}/{row['stored_name']}",
             "Content-Disposition": f"attachment; filename*=UTF-8''{quote(display)}",
-            "Content-Type": "application/pdf",
+            "Content-Type": mime_type,
         },
     )
 
@@ -257,8 +259,6 @@ def download_category_zip(category_id: int, _user: dict = Depends(_require_user)
             if not file_path.is_file():
                 continue
             display = row["display_name"] or row["stored_name"]
-            if not display.lower().endswith(".pdf"):
-                display += ".pdf"
             arc_name = f"{row['cat_name']}/{display}"
             zf.write(file_path, arc_name)
     buf.seek(0)
@@ -385,14 +385,13 @@ async def upload_material(
         ).fetchone()
     if not cat:
         raise HTTPException(status_code=404, detail="分类不存在")
-    content_type = (file.content_type or "").lower()
-    if not content_type.startswith("application/pdf"):
-        raise HTTPException(status_code=422, detail="只允许上传 PDF 文件")
     content = await file.read()
     if len(content) > MAX_BYTES:
         raise HTTPException(status_code=413, detail=f"文件超过 {MAX_MB}MB 限制")
-    stored_name = f"{uuid.uuid4()}.pdf"
-    display_name = (file.filename or stored_name).strip() or stored_name
+    original_name = (file.filename or "upload").strip() or "upload"
+    ext = os.path.splitext(original_name)[1] or ""
+    stored_name = f"{uuid.uuid4()}{ext}"
+    display_name = original_name
     dest_dir = MATERIALS_DIR / cat["dir_name"]
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest_path = dest_dir / stored_name
@@ -445,13 +444,6 @@ async def batch_upload_materials(
                 continue
             display_name = parts[-1]
             path_parts = parts[:-1] if len(parts) > 1 else ["_未分类"]
-            is_pdf = (
-                (file.content_type or "").lower().startswith("application/pdf")
-                or display_name.lower().endswith(".pdf")
-            )
-            if not is_pdf:
-                errors.append({"file": filename, "error": "非 PDF，已跳过"})
-                continue
             content = await file.read()
             if len(content) > MAX_BYTES:
                 errors.append({"file": filename, "error": f"超过 {MAX_MB}MB，已跳过"})
@@ -462,7 +454,8 @@ async def batch_upload_materials(
                     "SELECT dir_name FROM material_categories WHERE id = ?", (cat_id,)
                 ).fetchone()
                 dir_name = cat_row["dir_name"]
-                stored_name = f"{uuid.uuid4()}.pdf"
+                ext = os.path.splitext(display_name)[1] or ""
+                stored_name = f"{uuid.uuid4()}{ext}"
                 dest_path = MATERIALS_DIR / dir_name / stored_name
                 dest_path.write_bytes(content)
                 cur = conn.execute(

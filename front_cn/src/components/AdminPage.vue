@@ -206,6 +206,7 @@
               <a-tabs v-model:activeKey="matTypeTab" class="cn-admin-tabs" style="margin-bottom:16px">
                 <a-tab-pane key="pastoral" tab="牧养材料" />
                 <a-tab-pane key="conference" tab="节期特会相关纲目" />
+                <a-tab-pane key="children" tab="儿童服事材料" />
               </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
@@ -269,16 +270,14 @@
                       :show-upload-list="false"
                       :before-upload="beforeMatUpload"
                       :custom-request="customMatUpload"
-                      accept=".pdf,application/pdf"
                     >
-                      <a-button type="primary" :disabled="!matSelectedCategoryId">上传 PDF</a-button>
+                      <a-button type="primary" :disabled="!matSelectedCategoryId">上传文件</a-button>
                     </a-upload>
                     <input
                       ref="folderInputRef"
                       type="file"
                       webkitdirectory
                       multiple
-                      accept=".pdf"
                       style="display:none"
                       @change="onFolderSelected"
                     />
@@ -942,8 +941,7 @@ async function loadMatCategories() {
     })
     matCategories.value = res.data || []
     if (matCategories.value.length && !matSelectedCategoryId.value) {
-      matSelectedCategoryId.value = matCategories.value[0].id
-      await loadMatFiles()
+      // 不自动选中，保持空选状态
     }
   } catch (e) {
     message.error(`分类加载失败（${e.response?.status || '网络错误'}）`)
@@ -1033,10 +1031,8 @@ async function saveRename(id) {
 }
 async function onFolderSelected(e) {
   const allFiles = Array.from(e.target.files || [])
-  const pdfs = allFiles.filter(f =>
-    f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
-  )
-  if (!pdfs.length) { message.warning('文件夹内没有 PDF 文件'); e.target.value = ''; return }
+  const pdfs = allFiles
+  if (!pdfs.length) { message.warning('文件夹内没有文件'); e.target.value = ''; return }
   batchUploading.value = true
   batchResult.value = null
   const formData = new FormData()
@@ -1069,12 +1065,6 @@ async function onFolderSelected(e) {
 }
 
 function beforeMatUpload(file) {
-  const isPdf =
-    file.type === 'application/pdf' || (file.name || '').toLowerCase().endsWith('.pdf')
-  if (!isPdf) {
-    message.error('只允许上传 PDF 文件')
-    return false
-  }
   if (file.size > MAX_MAT_MB * 1024 * 1024) {
     message.error(`文件超过 ${MAX_MAT_MB}MB 限制`)
     return false

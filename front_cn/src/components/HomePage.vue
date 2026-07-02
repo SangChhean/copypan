@@ -116,10 +116,18 @@ const features = [
     icon: CloudDownloadOutlined,
     building: false,
   },
+  {
+    key: 'children',
+    title: '儿童服事材料',
+    desc: '儿童服事相关材料',
+    path: '/materials?type=children',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
 ]
 
-const toolboxFeatures = features.filter(f => !['pastoral', 'conference'].includes(f.key))
-const materialsFeatures = features.filter(f => ['pastoral', 'conference'].includes(f.key))
+const toolboxFeatures = features.filter(f => !['pastoral', 'conference', 'children'].includes(f.key))
+const materialsFeatures = features.filter(f => ['pastoral', 'conference', 'children'].includes(f.key))
 
 function quotaText(key) {
   const u = usage.value?.[key]
