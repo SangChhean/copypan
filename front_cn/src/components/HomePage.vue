@@ -5,12 +5,12 @@
       <div ref="ministryCarouselRef" class="ministry-carousel">
         <div class="mc-track">
           <div class="mc-slide mc-active" data-slide="0">
-            <p class="mc-title">全备供应——帮助各地方召会进行家庭烹煮与按时分粮</p>
+            <p class="mc-title">全备供应——为着家庭烹煮与按时分粮</p>
             <div class="mc-verse">
               <span class="mc-vref">西一28</span>
               <p class="mc-vtxt">我们宣扬祂，是用全般的智慧警戒各人，教导各人，好将各人在基督里成熟的献上；</p>
             </div>
-            <p class="mc-btxt">主的恢复遍及全球各地，每个地方召会都有不同的属灵需要。本网站的建立，乃是为着帮助各地方召会能够各自来烹煮属灵的食物，按时分粮给不同属灵需要的圣徒。</p>
+            <p class="mc-btxt">主的恢复遍及全球各地，每个地方召会都有不同的属灵需要。本网站的建立，乃是为着各地方召会能够各自来烹煮属灵的食物，按时分粮给不同属灵需要的圣徒。</p>
             <p class="mc-btxt">愿主兴起各地的弟兄姊妹，作分解主话的工人，并作按时分粮的管家，将众圣徒在基督里成熟的献上，共同建造基督的身体。</p>
           </div>
           <div class="mc-slide" data-slide="1">
@@ -142,7 +142,7 @@ const features = [
   {
     key: 'conference',
     title: '节期特会相关纲目',
-    desc: '一年七次特会相关纲目',
+    desc: '一年七次节期特会相关的纲目',
     path: '/materials?type=conference',
     icon: CloudDownloadOutlined,
     building: false,
@@ -150,7 +150,7 @@ const features = [
   {
     key: 'pastoral',
     title: '牧养材料',
-    desc: '新人牧养和排聚会材料',
+    desc: '新人、青少年牧养和排聚会的材料',
     path: '/materials?type=pastoral',
     icon: CloudDownloadOutlined,
     building: false,
@@ -158,7 +158,7 @@ const features = [
   {
     key: 'children',
     title: '儿童服事材料',
-    desc: '儿童服事相关材料',
+    desc: '儿童服事相关的材料',
     path: '/materials?type=children',
     icon: CloudDownloadOutlined,
     building: false,
@@ -166,7 +166,7 @@ const features = [
   {
     key: 'family365',
     title: '家庭時光365',
-    desc: '以家庭为单位的共同追求材料',
+    desc: '以家庭为主的共同追求材料',
     path: '/materials?type=family365',
     icon: CloudDownloadOutlined,
     building: false,
