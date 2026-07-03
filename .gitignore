@@ -48,4 +48,6 @@ back_anshifenliang/.env
 back_anshifenliang/telegram_bot/.env
 back_anshifenliang/data/private/
 back_anshifenliang/data/zhi_shi_html/ 
- 
+ back_mic/backend/data/enhanced_translate/pool.jsonl
+back_mic/backend/data/enhanced_translate/pool.jsonl.bak
+back_mic/backend/data/enhanced_translate/source_pool.jsonl
