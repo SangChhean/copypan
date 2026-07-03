@@ -123,8 +123,8 @@ def main():
         print(f"目录不存在: {src}")
         sys.exit(1)
 
-    if type_ not in ("pastoral", "conference", "children"):
-        print(f"type 必须是 pastoral / conference / children，当前: {type_}")
+    if type_ not in ("pastoral", "conference", "children", "family365"):
+        print(f"type 必须是 pastoral / conference / children / family365，当前: {type_}")
         sys.exit(1)
 
     conn = sqlite3.connect(str(DB_PATH))
