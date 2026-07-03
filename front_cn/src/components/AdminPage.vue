@@ -207,6 +207,7 @@
                 <a-tab-pane key="pastoral" tab="牧养材料" />
                 <a-tab-pane key="conference" tab="节期特会相关纲目" />
                 <a-tab-pane key="children" tab="儿童服事材料" />
+                <a-tab-pane key="family365" tab="家庭時光365" />
               </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">

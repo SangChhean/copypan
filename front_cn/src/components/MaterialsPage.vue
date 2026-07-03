@@ -155,6 +155,7 @@ watch(materialsType, () => {
 const pageTitle = computed(() => {
   if (materialsType.value === 'conference') return '节期特会相关纲目'
   if (materialsType.value === 'children') return '儿童服事材料'
+  if (materialsType.value === 'family365') return '家庭時光365'
   return '牧养材料'
 })
 const categories = ref([])
