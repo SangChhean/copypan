@@ -1199,6 +1199,8 @@ async def translate_source_en_batch(
             _sp_base = _normalize_for_source_pool(source_en)
             _sp_zh = lookup_source_pool_zh(_sp_base)
             if _sp_zh:
+                if source_en.strip().endswith(":"):
+                    _sp_zh = _sp_zh + "："
                 zh_parts[i] = _sp_zh.strip("（）")
                 path_parts[i] = SOURCE_PATH_POOL
                 continue
@@ -1271,7 +1273,8 @@ async def translate_source_en_batch(
         for _i, (_zh, _path) in enumerate(zip(_zh_parts, _path_parts)):
             if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
                 continue
-            _en_clean = _normalize_for_source_pool(_source_list[_i])
+            _en_stripped = _strip_en_paragraph_suffix(_source_list[_i])
+            _en_clean = _normalize_for_source_pool(_en_stripped)
             _zh_clean = _zh.strip().strip("（）")
             if _zh_clean and _en_clean:
                 _sp_rows.append({"zh": _zh_clean, "en": _en_clean, "source_type": _path})
@@ -2284,6 +2287,8 @@ async def translate_source_zh_batch(
             _sp_base = _normalize_for_source_pool(source_zh)
             _sp_en = lookup_source_pool_en(_sp_base)
             if _sp_en:
+                if source_zh.strip().endswith(("：", ":")):
+                    _sp_en = _sp_en + ":"
                 en_parts[i] = f"({_sp_en})"
                 path_parts[i] = SOURCE_PATH_POOL
                 continue
