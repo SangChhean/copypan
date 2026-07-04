@@ -10,8 +10,8 @@
               <span class="mc-vref">西一28</span>
               <p class="mc-vtxt">我们宣扬祂，是用全般的智慧警戒各人，教导各人，好将各人在基督里成熟的献上；</p>
             </div>
-            <p class="mc-btxt">主的恢复遍及全球各地，每个地方召会都有不同的属灵需要。本网站的建立，乃是为着各地方召会能够各自来烹煮属灵的食物，按时分粮给不同属灵需要的圣徒。</p>
-            <p class="mc-btxt">愿主兴起各地的弟兄姊妹，作分解主话的工人，并作按时分粮的管家，将众圣徒在基督里成熟的献上，共同建造基督的身体。</p>
+            <p class="mc-qtxt" style="margin-top: 1.5rem">「在各种聚会中，我们都不轻忽主的话。擘饼聚会可选实用、简要、精粹的信息，让众人祷读、享受，然后分享、作见证；这使主满意，也叫我们得供应。祷告聚会可选关于事奉的信息，让大家清楚事奉的基本属灵原则。至于家中聚会，除了交通、祷告、唱诗、彼此介绍，也该有一篇短的造就信息，让初信者得着栽培。我们不愿意人只是来聚会，对主的话却一无所识，得不着供应；盼望每次的聚会，都有主的话释放到弟兄姊妹里面。」</p>
+            <p class="mc-qsrc">——李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十七章、第十一章</p>
           </div>
           <div class="mc-slide" data-slide="1">
             <p class="mc-title">家庭烹煮</p>
@@ -46,6 +46,7 @@
             v-for="item in materialsFeatures"
             :key="item.key"
             class="feature-card cn-home-card"
+            @touchend.prevent="go(item)"
             @click="go(item)"
           >
             <div class="card-top">
@@ -69,6 +70,7 @@
             :key="item.key"
             class="feature-card cn-home-card"
             :class="{ disabled: item.building }"
+            @touchend.prevent="go(item)"
             @click="go(item)"
           >
             <div class="card-top">
@@ -157,24 +159,16 @@ const features = [
   },
   {
     key: 'children',
-    title: '儿童服事材料',
+    title: '儿童材料',
     desc: '儿童服事相关的材料',
     path: '/materials?type=children',
     icon: CloudDownloadOutlined,
     building: false,
   },
-  {
-    key: 'family365',
-    title: '家庭時光365',
-    desc: '以家庭为主的共同追求材料',
-    path: '/materials?type=family365',
-    icon: CloudDownloadOutlined,
-    building: false,
-  },
 ]
 
-const toolboxFeatures = features.filter(f => !['pastoral', 'conference', 'children', 'family365'].includes(f.key))
-const materialsFeatures = features.filter(f => ['pastoral', 'conference', 'children', 'family365'].includes(f.key))
+const toolboxFeatures = features.filter(f => !['pastoral', 'conference', 'children'].includes(f.key))
+const materialsFeatures = features.filter(f => ['pastoral', 'conference', 'children'].includes(f.key))
 
 function quotaText(key) {
   const u = usage.value?.[key]
@@ -250,6 +244,7 @@ onMounted(() => {
   border-radius: 12px;
   padding: 28px 26px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:hover:not(.disabled) {
@@ -335,14 +330,17 @@ onMounted(() => {
   border: 0.5px solid #CCE4F5;
   background: #EBF4FB;
   overflow: hidden;
+  height: 380px;
 }
 .mc-slide {
   display: none;
   padding: 1.75rem 2rem;
-  min-height: 300px;
+  height: 380px;
   box-sizing: border-box;
   flex-direction: column;
   gap: 0.9rem;
+  overflow-y: auto;
+  justify-content: space-between;
 }
 .mc-slide.mc-active {
   display: flex;
@@ -392,7 +390,7 @@ onMounted(() => {
 .mc-qsrc {
   font-size: 12px;
   color: #4A6A84;
-  margin: 0.25rem 0 0;
+  margin-top: auto;
   text-align: right;
 }
 .mc-dots {
