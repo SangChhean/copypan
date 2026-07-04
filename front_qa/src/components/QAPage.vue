@@ -330,7 +330,7 @@
           :key="textareaKey"
           ref="textareaRef"
           v-model:value="question"
-          :placeholder="'请输入问题'"
+          :placeholder="'请输入问题（支持简体、繁體、English，切换输入法提问，答案语言自动跟随）'"
           :auto-size="{ minRows: 1, maxRows: 5 }"
           :maxlength="500"
           :disabled="loading"
@@ -1042,6 +1042,13 @@ async function toggleTTS(msg, engine = 'google') {
   })
 }
 
+function detectLang(text) {
+  const twOnly = /[麼們來說國時這後從還沒當裡應發進頭節處邊間帶層歲幾億術詞輛數親體愛東風馬長個現請讓給對開門關師書讀寫聽見頁點號員錢題難歡傳統為與將連總歷單備萬龍務業產辦屬嗎呢啊麽]/
+  if (twOnly.test(text)) return 'zh_tw'
+  if (/^[\x00-\x7F\s]+$/.test(text.trim())) return 'en'
+  return 'zh'
+}
+
 /** 答案下方语言切换。zh / 已缓存：直接切；未缓存：调用 /api/qa/translate（暂未实现，501 仅 console）。 */
 async function switchLang(msg, lang) {
   if (!msg || msg.currentLang === lang) return
@@ -1301,6 +1308,8 @@ async function submit() {
   const q = question.value.trim()
   if (!q || loading.value) return
 
+  const detectedLang = detectLang(q)
+
   question.value = ''
   textareaKey.value += 1
   loading.value = true
@@ -1345,6 +1354,7 @@ async function submit() {
     currentLang: 'zh',
     translating: false,
     hasVerseData: false,
+    detectedLang,
   }
   messages.value.push(assistantMsg)
 
@@ -1528,6 +1538,9 @@ async function submit() {
               row.streaming = false
               row.bibleGenerating = false
               incrementDailyUsageLocal()
+              if (row.detectedLang && row.detectedLang !== 'zh') {
+                await switchLang(row, row.detectedLang)
+              }
             } else if (chunk.type === 'error') {
               stopTypewriter()
               const row = assistantRow()
