@@ -2997,11 +2997,17 @@ class AISearchService:
             logger.error("Gemini 客户端未初始化")
             return None
 
+        fallback = (ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL or "").strip() or "gemini-2.5-pro"
+        max_tokens = ai_config.get("max_tokens", 8192)
+
+        if ai_config.get("prompt_key") == "polish_gemini":
+            return self._gemini_rough_outline_generate(
+                fallback, prompt, max_tokens, max_retries=2
+            )
+
         primary = (ROUGH_OUTLINE_GEMINI_MODEL or "").strip() or ai_config.get(
             "model", "gemini-3.1-pro-preview"
         )
-        fallback = (ROUGH_OUTLINE_GEMINI_FALLBACK_MODEL or "").strip() or "gemini-2.5-pro"
-        max_tokens = ai_config.get("max_tokens", 8192)
 
         result = self._gemini_rough_outline_generate(primary, prompt, max_tokens, max_retries=0)
         if result:
