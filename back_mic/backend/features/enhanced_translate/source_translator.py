@@ -2305,7 +2305,7 @@ async def translate_source_zh_batch(
             )
             total_cost_usd += lookup_cost
             if hit_en:
-                en_parts[i] = hit_en
+                en_parts[i] = _strip_en_paragraph_suffix(hit_en).strip()
                 path_parts[i] = SOURCE_PATH_RAG
                 logger.info("[source_translator] 路1a命中: %s → %s", source_zh, hit_en)
             else:
@@ -2392,7 +2392,7 @@ async def translate_source_zh_batch(
     _sp_rows: list[dict[str, str]] = []
     for _prep_idx, (_en_parts, _has_star, _source_list, _path_parts) in pending.items():
         for _i, (_en, _path) in enumerate(zip(_en_parts, _path_parts)):
-            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
+            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI, SOURCE_PATH_INFER):
                 continue
             _zh_clean = _normalize_for_source_pool(_source_list[_i])
             _en_clean = _en.strip().strip("()")

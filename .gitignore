@@ -47,3 +47,8 @@ back_anshifenliang/telegram_bot/.env
 back_anshifenliang/data/private/
 back_anshifenliang/data/zhi_shi_html/ 
 
+
+#翻译池相关文件（服务器上会实时更新，需要忽略，否则部署上线会冲突）
+back_mic/backend/data/enhanced_translate/pool.jsonl
+back_mic/backend/data/enhanced_translate/pool.jsonl.bak
+back_mic/backend/data/enhanced_translate/source_pool.jsonl
