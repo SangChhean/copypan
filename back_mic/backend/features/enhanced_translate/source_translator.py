@@ -1036,7 +1036,7 @@ async def _feasts_pool_lookup(base: str) -> str:
                 es_client.search,
                 index=_FEASTS_POOL_INDEX,
                 body={
-                    "query": {"match_phrase": {"title": variant}},
+                    "query": {"match_phrase": {"source": variant}},
                     "size": 15,
                     "_source": ["source", "title"],
                 },
@@ -1060,7 +1060,7 @@ async def _feasts_pool_lookup(base: str) -> str:
     return ""
 
 
-_EN_PARA_SUFFIX_RE = re.compile(r",\s*pp?\.\s*[\d\s\-]+\.?\s*$")
+_EN_PARA_SUFFIX_RE = re.compile(r",\s*(?:pp?\.|pars?\.)[\s\d\-]+\.?\s*$")
 _EN_SOURCE_YEAR_PREFIX_RE = re.compile(r"^\d{4}\s+\w")
 
 
@@ -2270,9 +2270,7 @@ async def translate_source_zh_batch(
     results: dict[int, str] = {}
     paths_map: dict[int, list[str]] = {}
     total_cost_usd = 0.0
-    infer_tasks: list[_SourceInferTask] = []
     road2_tasks: list[_SourceRoad2Task] = []
-    infer_keys: set[tuple[int, int]] = set()
     road2_keys: set[tuple[int, int]] = set()
     pending: dict[int, tuple[list[str], bool, list[str], list[str]]] = {}
 
@@ -2294,77 +2292,63 @@ async def translate_source_zh_batch(
                 continue
             base, _ = _strip_paragraph_suffix(source_zh)
             base = base.strip().strip("（）")
+            # 路1a：节期类出处查 feasts pool（仅年份开头）
+            if _ZH_YEAR_RE.match(base):
+                feast_en = await _feasts_pool_lookup(base)
+                if feast_en:
+                    en_parts[i] = f"({feast_en})"
+                    path_parts[i] = SOURCE_PATH_RAG
+                    logger.info("[source_translator] 路1a节期命中: %s → %s", source_zh, feast_en)
+                    continue
             table_en = lookup_source_en(base)
             if table_en:
                 en_parts[i] = table_en
                 path_parts[i] = SOURCE_PATH_TABLE
                 logger.info("[source_translator] 路1b表命中: %s → %s", source_zh, table_en)
                 continue
-            hit_en, _, lookup_cost, infer_meta = await _kg_rag_source_lookup(
-                source_zh, defer_infer=True
-            )
-            total_cost_usd += lookup_cost
-            if hit_en:
-                en_parts[i] = _strip_en_paragraph_suffix(hit_en).strip()
-                path_parts[i] = SOURCE_PATH_RAG
-                logger.info("[source_translator] 路1a命中: %s → %s", source_zh, hit_en)
-            else:
-                # 路1c：规则翻译兜底
-                rule_en, rule_path = _rule_translate_source_zh(source_zh)
-                if rule_en:
-                    if rule_path == SOURCE_PATH_RULE_AI:
-                        road2_tasks.append(
-                            _SourceRoad2Task(
-                                prep_idx=prep_idx,
-                                src_idx=i,
-                                source_zh=rule_en,
-                                line_refs=[],
-                            )
-                        )
-                        road2_keys.add((prep_idx, i))
-                        path_parts[i] = SOURCE_PATH_RULE_AI
-                    else:
-                        en_parts[i] = rule_en
-                        path_parts[i] = rule_path
-                    logger.info("[source_translator] 路1c规则命中: %s → %s", source_zh, rule_en)
-                elif infer_meta:
-                    infer_keys.add((prep_idx, i))
-                    infer_tasks.append(
-                        _SourceInferTask(
-                            prep_idx=prep_idx,
-                            src_idx=i,
-                            source_zh=source_zh,
-                            ranked=infer_meta["ranked"],
-                            para_append=infer_meta.get("para_append") or "",
-                        )
-                    )
-                else:
-                    road2_keys.add((prep_idx, i))
+            # 路1c：规则翻译兜底
+            rule_en, rule_path = _rule_translate_source_zh(source_zh)
+            if rule_en:
+                if rule_path == SOURCE_PATH_RULE_AI:
                     road2_tasks.append(
                         _SourceRoad2Task(
                             prep_idx=prep_idx,
                             src_idx=i,
-                            source_zh=source_zh,
-                            line_refs=line_refs,
+                            source_zh=rule_en,
+                            line_refs=[],
                         )
                     )
+                    road2_keys.add((prep_idx, i))
+                    path_parts[i] = SOURCE_PATH_RULE_AI
+                else:
+                    en_parts[i] = rule_en
+                    path_parts[i] = rule_path
+                logger.info("[source_translator] 路1c规则命中: %s → %s", source_zh, rule_en)
+                continue
+            # 路2 Gemini
+            road2_keys.add((prep_idx, i))
+            road2_tasks.append(
+                _SourceRoad2Task(
+                    prep_idx=prep_idx,
+                    src_idx=i,
+                    source_zh=source_zh,
+                    line_refs=line_refs,
+                )
+            )
 
         pending[prep_idx] = (en_parts, has_star, source_list, path_parts)
 
-    if infer_tasks or road2_tasks:
+    if road2_tasks:
         logger.info(
-            "[source_translator] 出处整单 Gemini: infer=%d road2=%d",
-            len(infer_tasks),
+            "[source_translator] 出处整单 Gemini: road2=%d",
             len(road2_tasks),
         )
-        gemini_map, gemini_cost = await _gemini_sources_once(infer_tasks, road2_tasks)
+        gemini_map, gemini_cost = await _gemini_sources_once([], road2_tasks)
         total_cost_usd += gemini_cost
         for (prep_idx, src_idx), translated in gemini_map.items():
             en_parts, _, _, path_parts = pending[prep_idx]
             en_parts[src_idx] = _clean_source_en(translated) if translated else ""
-            if (prep_idx, src_idx) in infer_keys:
-                path_parts[src_idx] = SOURCE_PATH_INFER
-            elif (prep_idx, src_idx) in road2_keys:
+            if (prep_idx, src_idx) in road2_keys:
                 if not path_parts[src_idx]:
                     path_parts[src_idx] = SOURCE_PATH_AI
             logger.info(
@@ -2392,7 +2376,7 @@ async def translate_source_zh_batch(
     _sp_rows: list[dict[str, str]] = []
     for _prep_idx, (_en_parts, _has_star, _source_list, _path_parts) in pending.items():
         for _i, (_en, _path) in enumerate(zip(_en_parts, _path_parts)):
-            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI, SOURCE_PATH_INFER):
+            if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
                 continue
             _zh_clean = _normalize_for_source_pool(_source_list[_i])
             _en_clean = _en.strip().strip("()")
