@@ -22,8 +22,6 @@ status.bat
 status_qa.bat
 stop_all.bat
 stop_qa.bat
-pool.jsonl
-pool.jsonl.bak
 progress_pano.json
 
 # 本地笔记/临时文档（可能含密钥，勿提交）
@@ -48,6 +46,4 @@ back_anshifenliang/.env
 back_anshifenliang/telegram_bot/.env
 back_anshifenliang/data/private/
 back_anshifenliang/data/zhi_shi_html/ 
- back_mic/backend/data/enhanced_translate/pool.jsonl
-back_mic/backend/data/enhanced_translate/pool.jsonl.bak
-back_mic/backend/data/enhanced_translate/source_pool.jsonl
+
