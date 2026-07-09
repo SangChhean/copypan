@@ -802,7 +802,11 @@ def _source_zh_base_from_hit(hit_source_zh: str) -> str:
 
 
 def _clean_source_en(source_en: str) -> str:
-    return (source_en or "").strip().strip("（）()")
+    s = (source_en or "").strip()
+    if (s.startswith("(") and s.endswith(")")) or \
+       (s.startswith("（") and s.endswith("）")):
+        s = s[1:-1].strip()
+    return s
 
 
 def _route1_source_en(source_zh: str, line_refs: list[dict[str, Any]]) -> str:
