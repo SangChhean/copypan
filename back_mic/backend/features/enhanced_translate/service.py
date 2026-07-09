@@ -2797,7 +2797,11 @@ async def enhanced_translate(
         translated = source_en_map.get(p["line_i"], "")
         p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]
         if translated:
-            inner = translated.strip("（）()")
+            s = translated.strip()
+            if (s.startswith("(") and s.endswith(")")) or \
+               (s.startswith("（") and s.endswith("）")):
+                s = s[1:-1].strip()
+            inner = s
             p["pool_line_en"] = p["source_prefix"] + inner
         else:
             p["pool_line_en"] = p["line"].strip()
@@ -3344,7 +3348,11 @@ async def enhanced_translate_en2zh(
         translated = source_zh_map.get(p["line_i"], "")
         p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]
         if translated:
-            inner = translated.strip("（）()")
+            s = translated.strip()
+            if (s.startswith("(") and s.endswith(")")) or \
+               (s.startswith("（") and s.endswith("）")):
+                s = s[1:-1].strip()
+            inner = s
             p["pool_line_en"] = p["source_prefix"] + inner
         else:
             p["pool_line_en"] = p["line"].strip()
