@@ -207,6 +207,7 @@
                 <a-tab-pane key="pastoral" tab="牧养材料" />
                 <a-tab-pane key="conference" tab="节期特会相关纲目" />
                 <a-tab-pane key="children" tab="儿童材料" />
+                <a-tab-pane key="sisters" tab="姊妹材料" />
               </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
