@@ -36,7 +36,11 @@ const routes = [
   },
   {
     path: '/materials',
-    component: () => import('@/components/MaterialsPage.vue'),
+    component: () => import('@/components/MaterialsEntry.vue'),
+  },
+  {
+    path: '/toolbox',
+    component: () => import('@/components/ToolboxLanding.vue'),
   },
 ]
 
