@@ -10,7 +10,7 @@
               <span class="mc-vref">西一28</span>
               <p class="mc-vtxt">我们宣扬祂，是用全般的智慧警戒各人，教导各人，好将各人在基督里成熟的献上；</p>
             </div>
-            <p class="mc-qtxt" style="margin-top: 1.5rem">「在各种聚会中，我们都不轻忽主的话。擘饼聚会可选实用、简要、精粹的信息，让众人祷读、享受，然后分享、作见证；这使主满意，也叫我们得供应。祷告聚会可选关于事奉的信息，让大家清楚事奉的基本属灵原则。至于家中聚会，除了交通、祷告、唱诗、彼此介绍，也该有一篇短的造就信息，让初信者得着栽培。我们不愿意人只是来聚会，对主的话却一无所识，得不着供应；盼望每次的聚会，都有主的话释放到弟兄姊妹里面。」</p>
+            <p class="mc-qtxt">「在各种聚会中，我们都不轻忽主的话。擘饼聚会可选实用、简要、精粹的信息，让众人祷读、享受，然后分享、作见证；这使主满意，也叫我们得供应。祷告聚会可选关于事奉的信息，让大家清楚事奉的基本属灵原则。至于家中聚会，除了交通、祷告、唱诗、彼此介绍，也该有一篇短的造就信息，让初信者得着栽培。我们不愿意人只是来聚会，对主的话却一无所识，得不着供应；盼望每次的聚会，都有主的话释放到弟兄姊妹里面。」</p>
             <p class="mc-qsrc">——李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十七章、第十一章</p>
           </div>
           <div class="mc-slide" data-slide="1">
@@ -40,37 +40,14 @@
       </div>
 
       <div class="home-section">
-        <div class="home-section-label">资料下载</div>
         <div class="card-grid">
           <div
-            v-for="item in materialsFeatures"
-            :key="item.key"
-            class="feature-card cn-home-card"
-            @touchend.prevent="go(item)"
-            @click="go(item)"
-          >
-            <div class="card-top">
-              <div class="card-icon">
-                <component :is="item.icon" />
-              </div>
-            </div>
-            <div class="card-title cn-card-title">{{ item.title }}</div>
-            <div class="card-desc cn-card-desc">{{ item.desc }}</div>
-          </div>
-        </div>
-      </div>
-
-      <hr class="home-divider" />
-
-      <div class="home-section">
-        <div class="home-section-label">工具箱</div>
-        <div class="card-grid">
-          <div
-            v-for="item in toolboxFeatures"
+            v-for="item in homeFeatures"
             :key="item.key"
             class="feature-card cn-home-card"
             :class="{ disabled: item.building }"
-            @touchend.prevent="go(item)"
+            @touchstart="onTouchStart($event)"
+            @touchend.prevent="onTouchEnd(item, $event)"
             @click="go(item)"
           >
             <div class="card-top">
@@ -91,84 +68,39 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  CommentOutlined,
-  FileTextOutlined,
-  BookOutlined,
-  FontSizeOutlined,
-  CloudDownloadOutlined,
-} from '@ant-design/icons-vue'
+import { features } from '@/data/homeFeatures.js'
 import http from '@/utils/http.js'
 
 const router = useRouter()
 const usage = ref(null)
 const ministryCarouselRef = ref(null)
 
-const features = [
-  {
-    key: 'qa',
-    title: '职事问答',
-    desc: '基于职事信息的智能问答',
-    path: '/qa',
-    icon: CommentOutlined,
-    quotaKey: 'qa',
-    building: false,
-  },
-  {
-    key: 'outline',
-    title: '纲目制作',
-    desc: '基于纲目主题、性质及负担点生成职事纲目',
-    path: '/outline',
-    icon: FileTextOutlined,
-    quotaKey: 'outline',
-    building: false,
-  },
-  {
-    key: 'bibco',
-    title: '经文汇集',
-    desc: '中英文经文查询与下载',
-    path: '/bibco',
-    icon: BookOutlined,
-    building: false,
-  },
-  {
-    key: 'zh',
-    title: '简繁互转',
-    desc: '简繁转换与易错字检查',
-    path: '/zh-convert',
-    icon: FontSizeOutlined,
-    building: false,
-  },
-  {
-    key: 'conference',
-    title: '节期特会相关纲目',
-    desc: '一年七次节期特会相关的纲目',
-    path: '/materials?type=conference',
-    icon: CloudDownloadOutlined,
-    building: false,
-  },
-  {
-    key: 'pastoral',
-    title: '牧养材料',
-    desc: '新人、青少年牧养和排聚会的材料',
-    path: '/materials?type=pastoral',
-    icon: CloudDownloadOutlined,
-    building: false,
-  },
-  {
-    key: 'children',
-    title: '儿童材料',
-    desc: '儿童服事相关的材料',
-    path: '/materials?type=children',
-    icon: CloudDownloadOutlined,
-    building: false,
-  },
-]
+const HOME_ORDER = ['materials', 'toolbox', 'qa', 'outline']
+const homeFeatures = computed(() =>
+  HOME_ORDER.map(key => features.find(f => f.key === key)).filter(Boolean)
+)
 
-const toolboxFeatures = features.filter(f => !['pastoral', 'conference', 'children'].includes(f.key))
-const materialsFeatures = features.filter(f => ['pastoral', 'conference', 'children'].includes(f.key))
+let touchStartX = 0
+let touchStartY = 0
+const TAP_MOVE_THRESHOLD = 10
+
+function onTouchStart(e) {
+  const t = e.touches[0]
+  touchStartX = t.clientX
+  touchStartY = t.clientY
+}
+
+function onTouchEnd(item, e) {
+  const t = e.changedTouches[0]
+  const dx = Math.abs(t.clientX - touchStartX)
+  const dy = Math.abs(t.clientY - touchStartY)
+  if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+    return
+  }
+  go(item)
+}
 
 function quotaText(key) {
   const u = usage.value?.[key]
@@ -318,7 +250,22 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .feature-card {
+    padding: 16px 14px;
+  }
+  .card-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .card-title {
+    font-size: 13px;
+  }
+  .card-desc {
+    font-size: 11px;
   }
 }
 
@@ -330,15 +277,15 @@ onMounted(() => {
   border: 0.5px solid #CCE4F5;
   background: #EBF4FB;
   overflow: hidden;
-  height: 380px;
+  height: 300px;
 }
 .mc-slide {
   display: none;
-  padding: 1.75rem 2rem;
-  height: 380px;
+  padding: 1.25rem 1.5rem;
+  height: 300px;
   box-sizing: border-box;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.6rem;
   overflow-y: auto;
   justify-content: space-between;
 }
@@ -346,7 +293,7 @@ onMounted(() => {
   display: flex;
 }
 .mc-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #000000;
   margin: 0;
@@ -356,7 +303,7 @@ onMounted(() => {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
+  padding: 0.4rem 0.7rem;
   background: rgba(255, 255, 255, 0.7);
   border-left: 3px solid #1B6CA8;
   border-radius: 0 6px 6px 0;
@@ -369,26 +316,26 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .mc-vtxt {
-  font-size: 14px;
+  font-size: 13px;
   color: #000000;
-  line-height: 1.8;
+  line-height: 1.6;
   margin: 0;
 }
 .mc-btxt {
-  font-size: 14px;
+  font-size: 13px;
   color: #000000;
-  line-height: 1.8;
+  line-height: 1.6;
   margin: 0;
   text-indent: 2em;
 }
 .mc-qtxt {
-  font-size: 14px;
+  font-size: 13px;
   color: #000000;
-  line-height: 1.8;
+  line-height: 1.6;
   margin: 0;
 }
 .mc-qsrc {
-  font-size: 12px;
+  font-size: 11px;
   color: #4A6A84;
   margin-top: auto;
   text-align: right;

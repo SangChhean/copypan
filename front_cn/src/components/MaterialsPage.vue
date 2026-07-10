@@ -1,7 +1,7 @@
 <template>
   <div class="materials-root">
     <div class="cn-page-head">
-      <button type="button" class="cn-back" @click="router.push('/')">‹‹ 返回</button>
+      <button type="button" class="cn-back" @click="router.push('/materials')">‹‹ 返回</button>
       <span class="cn-page-title">{{ pageTitle }}</span>
     </div>
     <div class="cn-content-wrap">
@@ -155,6 +155,7 @@ watch(materialsType, () => {
 const pageTitle = computed(() => {
   if (materialsType.value === 'conference') return '节期特会相关纲目'
   if (materialsType.value === 'children') return '儿童材料'
+  if (materialsType.value === 'sisters') return '姊妹材料'
   return '牧养材料'
 })
 const categories = ref([])
