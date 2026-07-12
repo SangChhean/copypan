@@ -32,7 +32,7 @@ export const features = [
   {
     key: 'bibco',
     title: '纲目附经文',
-    desc: '输入带有经文出处的纲目，自动把每处经文的原文找出来，生成一份「带经文的纲目」',
+    desc: '为纲目附上经文原文，生成「带经文的纲目」',
     path: '/bibco',
     icon: BookOutlined,
     building: false,
@@ -48,7 +48,7 @@ export const features = [
   {
     key: 'ministry-digest-generator',
     title: '职事书报追求生成器',
-    desc: '输入职事书报的内容（1-3篇内容），生成职事书报追求材料（每单元两页的真理加强版）',
+    desc: '基于职事书报内容，生成每单元两页的追求材料',
     path: null,
     icon: FormOutlined,
     comingSoon: true,
@@ -144,7 +144,7 @@ export const features = [
   {
     key: 'roundtable-reading',
     title: '小排生命读经材料制作',
-    desc: '基于生命读经原文（每周两篇或三篇），作出四个不同版本，每单元两页的材料（真理加强版、生命加强版、福音加强版、年长放大版）',
+    desc: '基于生命读经，作出四个版本，每单元两页的材料',
     path: null,
     icon: ReadOutlined,
     comingSoon: true,
