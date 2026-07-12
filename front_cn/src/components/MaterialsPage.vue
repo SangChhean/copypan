@@ -141,10 +141,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 import { authHeaders } from '@/utils/auth.js'
+import { features, MATERIALS_FEATURE_KEYS } from '@/data/homeFeatures.js'
 
 const router = useRouter()
 const route = useRoute()
-const materialsType = computed(() => route.query.type || 'pastoral')
+const materialsType = computed(() => route.query.type || MATERIALS_FEATURE_KEYS[0])
 watch(materialsType, () => {
   selectedCategoryId.value = null
   selectedCategoryName.value = ''
@@ -153,10 +154,8 @@ watch(materialsType, () => {
   loadCategories()
 })
 const pageTitle = computed(() => {
-  if (materialsType.value === 'conference') return '节期特会相关纲目'
-  if (materialsType.value === 'children') return '儿童材料'
-  if (materialsType.value === 'sisters') return '姊妹材料'
-  return '牧养材料'
+  const f = features.find(x => x.key === materialsType.value)
+  return f?.title || '资料下载'
 })
 const categories = ref([])
 const categoriesLoading = ref(false)

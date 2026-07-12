@@ -6,7 +6,7 @@
 
 参数：
   本地目录           要注册的文件夹路径（已通过 scp 传到服务器上）
-  type               分类类型：pastoral / conference / children / sisters
+  type               分类类型：conference / service / community / sisters / young_pro / college / youth / kids
   parent_category_id 可选，指定父分类 id（不填则自动建根分类）
 
 示例：
@@ -123,8 +123,8 @@ def main():
         print(f"目录不存在: {src}")
         sys.exit(1)
 
-    if type_ not in ("pastoral", "conference", "children", "sisters"):
-        print(f"type 必须是 pastoral / conference / children / sisters，当前: {type_}")
+    if type_ not in ("conference", "service", "community", "sisters", "young_pro", "college", "youth", "kids"):
+        print(f"type 必须是 conference / service / community / sisters / young_pro / college / youth / kids，当前: {type_}")
         sys.exit(1)
 
     conn = sqlite3.connect(str(DB_PATH))

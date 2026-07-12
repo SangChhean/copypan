@@ -5,14 +5,9 @@
       <div class="cn-navbar-brand cn-nav-brand">全备供应</div>
       <div class="cn-navbar-right">
         <template v-if="!isMobile">
-          <div v-if="usage" class="cn-navbar-usage">
-            <span class="cn-navbar-usage-item cn-usage-label">
-              纲目制作 <em class="cn-usage-val">{{ usage.outline?.used ?? 0 }}/{{ fmtLimit(usage.outline?.limit) }}</em>
-            </span>
-            <span class="cn-navbar-usage-item cn-usage-label">
-              职事问答 <em class="cn-usage-val">{{ usage.qa?.used ?? 0 }}/{{ fmtLimit(usage.qa?.limit) }}</em>
-            </span>
-          </div>
+          <button type="button" class="cn-navbar-guide" @click="guideModalOpen = true">
+            使用说明
+          </button>
           <button v-if="adminVisible" type="button" class="cn-navbar-admin" @click="router.push('/admin')">
             管理后台
           </button>
@@ -29,10 +24,9 @@
         </button>
       </div>
       <div v-if="isMobile && menuOpen" class="cn-mobile-menu">
-        <div v-if="usage" class="cn-mobile-usage">
-          <span>纲目制作 <em>{{ usage.outline?.used ?? 0 }}/{{ fmtLimit(usage.outline?.limit) }}</em></span>
-          <span>职事问答 <em>{{ usage.qa?.used ?? 0 }}/{{ fmtLimit(usage.qa?.limit) }}</em></span>
-        </div>
+        <button type="button" class="cn-mobile-menu-item" @click="guideModalOpen = true; menuOpen = false">
+          使用说明
+        </button>
         <button v-if="adminVisible" type="button" class="cn-mobile-menu-item" @click="router.push('/admin'); menuOpen = false">
           管理后台
         </button>
@@ -42,6 +36,13 @@
       </div>
     </header>
     <router-view />
+    <a-modal v-model:open="guideModalOpen" title="使用说明" width="800px" :footer="null">
+      <iframe
+        v-if="guideModalOpen"
+        src="/api/cn/guide/pdf"
+        style="width:100%;height:75vh;border:none"
+      ></iframe>
+    </a-modal>
   </div>
 </template>
 
@@ -56,6 +57,7 @@ const router = useRouter()
 const usage = ref(null)
 
 const menuOpen = ref(false)
+const guideModalOpen = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 const isMobile = computed(() => windowWidth.value <= 640)
 

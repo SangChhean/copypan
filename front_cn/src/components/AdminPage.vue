@@ -19,6 +19,19 @@
           <div v-if="apiError" class="admin-error">{{ apiError }}</div>
         </section>
 
+        <section class="admin-section">
+          <div class="admin-guide-section">
+            <div class="admin-mat-title">使用说明 PDF</div>
+            <a-upload
+              :show-upload-list="false"
+              :before-upload="beforeGuideUpload"
+              :custom-request="customGuideUpload"
+            >
+              <a-button type="primary">上传 / 替换使用说明 PDF</a-button>
+            </a-upload>
+          </div>
+        </section>
+
         <section v-if="stats" class="admin-section">
           <a-tabs v-model:activeKey="activeTab" class="cn-admin-tabs">
             <a-tab-pane key="stats" tab="统计">
@@ -204,10 +217,14 @@
 
             <a-tab-pane key="materials" tab="资料管理">
               <a-tabs v-model:activeKey="matTypeTab" class="cn-admin-tabs" style="margin-bottom:16px">
-                <a-tab-pane key="pastoral" tab="牧养材料" />
-                <a-tab-pane key="conference" tab="节期特会相关纲目" />
-                <a-tab-pane key="children" tab="儿童材料" />
-                <a-tab-pane key="sisters" tab="姊妹材料" />
+                <a-tab-pane key="conference" tab="节期相关" />
+                <a-tab-pane key="service" tab="事奉类" />
+                <a-tab-pane key="community" tab="社区排" />
+                <a-tab-pane key="sisters" tab="姊妹" />
+                <a-tab-pane key="young_pro" tab="青职" />
+                <a-tab-pane key="college" tab="大专" />
+                <a-tab-pane key="youth" tab="青少年" />
+                <a-tab-pane key="kids" tab="儿童" />
               </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
@@ -670,7 +687,7 @@ const limitFields = [
 ]
 
 const matCategories = ref([])
-const matTypeTab = ref('pastoral')
+const matTypeTab = ref('conference')
 const matCategoriesLoading = ref(false)
 const matFiles = ref([])
 const matFilesLoading = ref(false)
@@ -1065,6 +1082,29 @@ async function onFolderSelected(e) {
   }
 }
 
+function beforeGuideUpload(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    message.error('只支持 PDF 文件')
+    return false
+  }
+  return true
+}
+
+async function customGuideUpload({ file, onSuccess, onError }) {
+  const formData = new FormData()
+  formData.append('file', file)
+  try {
+    await http.post('/api/cn/guide/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    message.success('使用说明已更新')
+    onSuccess()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '上传失败')
+    onError(e)
+  }
+}
+
 function beforeMatUpload(file) {
   if (file.size > MAX_MAT_MB * 1024 * 1024) {
     message.error(`文件超过 ${MAX_MAT_MB}MB 限制`)
@@ -1200,7 +1240,8 @@ onMounted(() => {
   border-radius: var(--radius);
   padding: 24px;
 }
-.admin-section-title {
+.admin-section-title,
+.admin-mat-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text);
