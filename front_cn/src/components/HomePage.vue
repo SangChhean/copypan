@@ -70,6 +70,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { features } from '@/data/homeFeatures.js'
 import http from '@/utils/http.js'
 
@@ -77,7 +78,7 @@ const router = useRouter()
 const usage = ref(null)
 const ministryCarouselRef = ref(null)
 
-const HOME_ORDER = ['materials', 'toolbox', 'qa', 'outline']
+const HOME_ORDER = ['materials', 'toolbox', 'qa', 'outline', 'ministry-search', 'roundtable-reading']
 const homeFeatures = computed(() =>
   HOME_ORDER.map(key => features.find(f => f.key === key)).filter(Boolean)
 )
@@ -110,6 +111,10 @@ function quotaText(key) {
 }
 
 function go(item) {
+  if (item.comingSoon) {
+    message.info('功能待更新，敬请期待')
+    return
+  }
   if (item.building) return
   router.push(item.path)
 }

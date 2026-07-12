@@ -387,6 +387,7 @@ select {
   font-weight: 700;
   font-size: 13px;
 }
+.cn-navbar-guide,
 .cn-navbar-admin {
   background: #ffffff;
   color: #1B6CA8;
@@ -398,6 +399,7 @@ select {
   font-family: -apple-system, 'Inter', 'Noto Sans SC', sans-serif;
   cursor: pointer;
 }
+.cn-navbar-guide:hover,
 .cn-navbar-admin:hover { background: #EBF4FB; }
 .cn-navbar-logout {
   background: #ffffff;

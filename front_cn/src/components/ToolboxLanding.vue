@@ -29,12 +29,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { features, TOOLBOX_FEATURE_KEYS } from '@/data/homeFeatures.js'
 
 const router = useRouter()
 
 const toolboxItems = computed(() =>
-  features.filter(f => TOOLBOX_FEATURE_KEYS.includes(f.key))
+  TOOLBOX_FEATURE_KEYS.map(key => features.find(f => f.key === key)).filter(Boolean)
 )
 
 let touchStartX = 0
@@ -58,6 +59,10 @@ function onTouchEnd(item, e) {
 }
 
 function go(item) {
+  if (item.comingSoon) {
+    message.info('功能待更新，敬请期待')
+    return
+  }
   if (item.building) return
   router.push(item.path)
 }
