@@ -33,7 +33,7 @@ import { features, MATERIALS_FEATURE_KEYS } from '@/data/homeFeatures.js'
 const router = useRouter()
 
 const materialsFeatures = computed(() =>
-  features.filter(f => MATERIALS_FEATURE_KEYS.includes(f.key))
+  MATERIALS_FEATURE_KEYS.map(key => features.find(f => f.key === key)).filter(Boolean)
 )
 
 let touchStartX = 0

@@ -1,7 +1,8 @@
 <template>
-  <ToolsHeader title="经文汇集" />
+  <ToolsHeader title="纲目附经文" />
   <div class="cn-content-wrap">
     <div class="cn-content-card">
+    <template v-if="false">
     <div class="direction-row">
       <span class="dir-label">语言：</span>
       <div class="cn-dir-toggle">
@@ -20,6 +21,7 @@
       </div>
     </div>
     <a-divider :style="{ margin: '12px 0' }" />
+    </template>
     <a-textarea
       v-model:value="input"
       placeholder="请输入内容"
@@ -172,8 +174,8 @@ async function downloadFormat() {
   try {
     const formData = new FormData();
     formData.append("contents", contents);
-    formData.append("filename", "英文经文汇集");
-    await triggerDocxDownload("/api/getvers/format_download", formData, "英文经文汇集.docx");
+    formData.append("filename", "英文纲目附经文");
+    await triggerDocxDownload("/api/getvers/format_download", formData, "英文纲目附经文.docx");
   } finally {
     formatDownloading.value = false;
   }
@@ -187,8 +189,8 @@ async function downloadFormatZh() {
   try {
     const formData = new FormData();
     formData.append("contents", contents);
-    formData.append("filename", "中文经文汇集");
-    await triggerDocxDownload("/api/getvers/format_download_zh", formData, "中文经文汇集.docx");
+    formData.append("filename", "中文纲目附经文");
+    await triggerDocxDownload("/api/getvers/format_download_zh", formData, "中文纲目附经文.docx");
   } finally {
     formatDownloadingZh.value = false;
   }

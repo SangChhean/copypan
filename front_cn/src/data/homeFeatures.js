@@ -5,6 +5,9 @@ import {
   FontSizeOutlined,
   CloudDownloadOutlined,
   ToolOutlined,
+  SearchOutlined,
+  ReadOutlined,
+  FormOutlined,
 } from '@ant-design/icons-vue'
 
 export const features = [
@@ -28,8 +31,8 @@ export const features = [
   },
   {
     key: 'bibco',
-    title: '经文汇集',
-    desc: '汇集纲目中的所有经文出处，生成带经文的纲目',
+    title: '纲目附经文',
+    desc: '输入带有经文出处的纲目，自动把每处经文的原文找出来，生成一份「带经文的纲目」',
     path: '/bibco',
     icon: BookOutlined,
     building: false,
@@ -43,34 +46,74 @@ export const features = [
     building: false,
   },
   {
+    key: 'ministry-digest-generator',
+    title: '职事书报追求生成器',
+    desc: '输入职事书报的内容（1-3篇内容），生成职事书报追求材料（真理加强版）',
+    path: null,
+    icon: FormOutlined,
+    comingSoon: true,
+  },
+  {
     key: 'conference',
-    title: '节期特会相关纲目',
+    title: '节期相关',
     desc: '一年七次节期特会相关的纲目',
     path: '/materials?type=conference',
     icon: CloudDownloadOutlined,
     building: false,
   },
   {
-    key: 'pastoral',
-    title: '牧养材料',
-    desc: '新人、青少年牧养和排聚会的材料',
-    path: '/materials?type=pastoral',
+    key: 'service',
+    title: '事奉类',
+    desc: '事奉相关的材料',
+    path: '/materials?type=service',
     icon: CloudDownloadOutlined,
     building: false,
   },
   {
-    key: 'children',
-    title: '儿童材料',
-    desc: '儿童服事相关的材料',
-    path: '/materials?type=children',
+    key: 'community',
+    title: '社区排',
+    desc: '社区排聚会相关材料',
+    path: '/materials?type=community',
     icon: CloudDownloadOutlined,
     building: false,
   },
   {
     key: 'sisters',
-    title: '姊妹材料',
+    title: '姊妹',
     desc: '适合姊妹使用的材料',
     path: '/materials?type=sisters',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
+    key: 'young_pro',
+    title: '青职',
+    desc: '青职聚会相关材料',
+    path: '/materials?type=young_pro',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
+    key: 'college',
+    title: '大专',
+    desc: '大专聚会相关材料',
+    path: '/materials?type=college',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
+    key: 'youth',
+    title: '青少年',
+    desc: '青少年聚会相关材料',
+    path: '/materials?type=youth',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
+    key: 'kids',
+    title: '儿童',
+    desc: '儿童聚会相关的材料',
+    path: '/materials?type=kids',
     icon: CloudDownloadOutlined,
     building: false,
   },
@@ -90,8 +133,24 @@ export const features = [
     icon: ToolOutlined,
     building: false,
   },
+  {
+    key: 'ministry-search',
+    title: '职事信息搜寻',
+    desc: '关于职事信息的智能搜索引擎',
+    path: null,
+    icon: SearchOutlined,
+    comingSoon: true,
+  },
+  {
+    key: 'roundtable-reading',
+    title: '小排生命读经材料制作',
+    desc: '基于生命读经原文（每周两篇或三篇），作出四个不同版本摘要（真理加强版、生命加强版、福音加强版、年长放大版）',
+    path: null,
+    icon: ReadOutlined,
+    comingSoon: true,
+  },
 ]
 
 export const HOME_FEATURE_KEYS = ['qa', 'outline', 'materials', 'toolbox']
-export const MATERIALS_FEATURE_KEYS = ['pastoral', 'conference', 'children', 'sisters']
-export const TOOLBOX_FEATURE_KEYS = ['bibco', 'zh']
+export const MATERIALS_FEATURE_KEYS = ['conference', 'service', 'community', 'sisters', 'young_pro', 'college', 'youth', 'kids']
+export const TOOLBOX_FEATURE_KEYS = ['bibco', 'zh', 'ministry-digest-generator']
