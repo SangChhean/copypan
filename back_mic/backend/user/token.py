@@ -5,7 +5,7 @@ from utils.jwt_op import jwt_encode, jwt_decode
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from pydantic import BaseModel
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from response.excptions import ERR_401, ERR_403
 
@@ -102,7 +102,7 @@ def test_token(token: str = Depends(get_token_from_header_or_cookie)):
             return {"username": username, "role": role}
         else:
             raise ERR_403
-    except ERR_403:
+    except HTTPException:
         raise
     except Exception:
         raise ERR_401
