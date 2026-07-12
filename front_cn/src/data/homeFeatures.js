@@ -48,7 +48,7 @@ export const features = [
   {
     key: 'ministry-digest-generator',
     title: '职事书报追求生成器',
-    desc: '输入职事书报的内容（1-3篇内容），生成职事书报追求材料（真理加强版）',
+    desc: '输入职事书报的内容（1-3篇内容），生成职事书报追求材料（每单元两页的真理加强版）',
     path: null,
     icon: FormOutlined,
     comingSoon: true,
@@ -144,7 +144,7 @@ export const features = [
   {
     key: 'roundtable-reading',
     title: '小排生命读经材料制作',
-    desc: '基于生命读经原文（每周两篇或三篇），作出四个不同版本摘要（真理加强版、生命加强版、福音加强版、年长放大版）',
+    desc: '基于生命读经原文（每周两篇或三篇），作出四个不同版本，每单元两页的材料（真理加强版、生命加强版、福音加强版、年长放大版）',
     path: null,
     icon: ReadOutlined,
     comingSoon: true,

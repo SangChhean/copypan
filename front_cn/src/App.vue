@@ -36,12 +36,18 @@
       </div>
     </header>
     <router-view />
-    <a-modal v-model:open="guideModalOpen" title="使用说明" width="800px" :footer="null">
-      <iframe
-        v-if="guideModalOpen"
-        src="/api/cn/guide/pdf"
-        style="width:100%;height:75vh;border:none"
-      ></iframe>
+    <a-modal
+      v-model:open="guideModalOpen"
+      title="使用说明"
+      :width="isMobile ? '96%' : '800px'"
+      :footer="null"
+    >
+      <div v-if="guideModalOpen && guideChecked && !guideExists" style="padding:40px;text-align:center;color:#5F6B7A">
+        使用说明尚未上传
+      </div>
+      <div v-else-if="guideModalOpen && guideChecked" class="guide-pdf-scroll" style="max-height:75vh;overflow-y:auto">
+        <VuePdfEmbed source="/api/cn/guide/pdf" :width="guidePdfWidth" />
+      </div>
     </a-modal>
   </div>
 </template>
@@ -49,6 +55,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import VuePdfEmbed from 'vue-pdf-embed'
 import http from '@/utils/http.js'
 import { clearAuth, getToken, isAdmin, setIsAdmin } from '@/utils/auth.js'
 
@@ -58,8 +65,11 @@ const usage = ref(null)
 
 const menuOpen = ref(false)
 const guideModalOpen = ref(false)
+const guideExists = ref(false)
+const guideChecked = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 const isMobile = computed(() => windowWidth.value <= 640)
+const guidePdfWidth = computed(() => Math.min(760, windowWidth.value - 48))
 
 const showTopBar = computed(() => route.path !== '/login' && !!getToken())
 const adminVisible = computed(() => isAdmin())
@@ -91,6 +101,18 @@ async function loadUsage() {
   }
 }
 
+async function checkGuideExists() {
+  guideChecked.value = false
+  try {
+    const res = await http.get('/api/cn/guide/exists')
+    guideExists.value = !!res.data?.exists
+  } catch {
+    guideExists.value = false
+  } finally {
+    guideChecked.value = true
+  }
+}
+
 function onLogout() {
   clearAuth()
   router.replace('/login')
@@ -103,6 +125,10 @@ watch(
     if (showTopBar.value) loadUsage()
   }
 )
+
+watch(guideModalOpen, (open) => {
+  if (open) checkGuideExists()
+})
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
@@ -218,5 +244,25 @@ onUnmounted(() => {
     min-width: 40px;
     justify-self: end;
   }
+}
+</style>
+
+<style>
+/* 弹窗内容区背景改成浅灰，跟白色页面形成对比 */
+.guide-pdf-scroll {
+  background: #E8E8E8;
+  padding: 16px 0;
+}
+
+/* 每一页做成独立"纸张"的视觉 */
+.vue-pdf-embed__page {
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  margin: 0 auto 64px;
+  border-radius: 2px;
+}
+
+.vue-pdf-embed__page:last-child {
+  margin-bottom: 0;
 }
 </style>
