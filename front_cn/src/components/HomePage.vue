@@ -78,7 +78,7 @@ const router = useRouter()
 const usage = ref(null)
 const ministryCarouselRef = ref(null)
 
-const HOME_ORDER = ['materials', 'toolbox', 'qa', 'outline', 'ministry-search', 'roundtable-reading']
+const HOME_ORDER = ['materials', 'toolbox', 'ministry-search', 'qa', 'roundtable-reading', 'outline']
 const homeFeatures = computed(() =>
   HOME_ORDER.map(key => features.find(f => f.key === key)).filter(Boolean)
 )

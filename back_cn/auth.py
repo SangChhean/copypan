@@ -17,7 +17,7 @@ DB_PATH = Path(__file__).resolve().parent / "cn_users.db"
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 7
 
-FEATURES = ("outline", "translate", "qa", "burden", "asr")
+FEATURES = ("outline", "translate", "qa", "burden", "asr", "roundtable")
 
 FEATURE_LABELS: dict[str, str] = {
     "outline": "纲目制作",
@@ -25,6 +25,7 @@ FEATURE_LABELS: dict[str, str] = {
     "qa": "职事问答",
     "burden": "负担说明",
     "asr": "语音识别",
+    "roundtable": "小排材料制作",
 }
 
 JWT_SECRET = os.environ.get("CN_JWT_SECRET", "").strip()
@@ -39,6 +40,7 @@ def _default_limits() -> dict[str, int]:
         "qa": int(os.getenv("CN_DAILY_LIMIT_QA", "3")),
         "burden": int(os.getenv("CN_DAILY_LIMIT_BURDEN", "20")),
         "asr": int(os.getenv("CN_DAILY_LIMIT_ASR", "20")),
+        "roundtable": int(os.getenv("CN_DAILY_LIMIT_ROUNDTABLE", "2")),
     }
 
 
@@ -85,6 +87,8 @@ def init_db() -> None:
                 limit_burden INTEGER NOT NULL DEFAULT {limits['burden']},
                 count_asr INTEGER NOT NULL DEFAULT 0,
                 limit_asr INTEGER NOT NULL DEFAULT {limits['asr']},
+                count_roundtable INTEGER NOT NULL DEFAULT 0,
+                limit_roundtable INTEGER NOT NULL DEFAULT {limits['roundtable']},
                 is_admin INTEGER NOT NULL DEFAULT 0
             )
             """
@@ -136,25 +140,24 @@ def init_db() -> None:
 def check_and_increment_daily_usage(username: str, feature: str) -> dict:
     """
     检查并递增指定功能的每日用量。
-    feature ∈ {outline, translate, qa, burden, asr}
+    feature ∈ FEATURES（含 outline / translate / qa / burden / asr / roundtable）
     返回 {"allowed", "used", "limit", "feature"}
     """
     if feature not in FEATURES:
         raise ValueError(f"未知 feature: {feature!r}")
 
     today = _today()
-    count_col = f"count_{feature}"
-    limit_col = f"limit_{feature}"
     conn = _connect()
     try:
         row = conn.execute(
-            f"""
+            """
             SELECT daily_date,
                    count_outline, limit_outline,
                    count_translate, limit_translate,
                    count_qa, limit_qa,
                    count_burden, limit_burden,
-                   count_asr, limit_asr
+                   count_asr, limit_asr,
+                   count_roundtable, limit_roundtable
             FROM users WHERE username = ?
             """,
             (username,),
@@ -182,7 +185,7 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
             UPDATE users SET
                 daily_date = ?,
                 count_outline = ?, count_translate = ?, count_qa = ?,
-                count_burden = ?, count_asr = ?
+                count_burden = ?, count_asr = ?, count_roundtable = ?
             WHERE username = ?
             """,
             (
@@ -192,6 +195,7 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
                 counts["qa"],
                 counts["burden"],
                 counts["asr"],
+                counts["roundtable"],
                 username,
             ),
         )
@@ -305,8 +309,9 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                 """
                 INSERT INTO users(
                     username, hashed_password, is_admin,
-                    limit_outline, limit_translate, limit_qa, limit_burden, limit_asr
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+                    limit_outline, limit_translate, limit_qa, limit_burden, limit_asr,
+                    limit_roundtable
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     username,
@@ -317,6 +322,7 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                     limits["qa"],
                     limits["burden"],
                     limits["asr"],
+                    limits["roundtable"],
                 ),
             )
             conn.commit()
@@ -478,7 +484,7 @@ def list_users() -> list[dict]:
 
 
 def get_user_feature_limits(username: str) -> dict[str, Any] | None:
-    """返回指定用户五组功能的 limit 与当日 usage（管理员用）。"""
+    """返回指定用户各组功能的 limit 与当日 usage（管理员用）。"""
     username = (username or "").strip()
     if not username:
         return None
@@ -491,7 +497,8 @@ def get_user_feature_limits(username: str) -> dict[str, Any] | None:
                    count_translate, limit_translate,
                    count_qa, limit_qa,
                    count_burden, limit_burden,
-                   count_asr, limit_asr
+                   count_asr, limit_asr,
+                   count_roundtable, limit_roundtable
             FROM users WHERE username = ?
             """,
             (username,),
