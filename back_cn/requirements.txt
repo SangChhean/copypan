@@ -22,3 +22,4 @@ starlette
 bcrypt
 python-jose[cryptography]
 sse-starlette>=1.6.5
+beautifulsoup4>=4.12.0

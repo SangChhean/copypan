@@ -42,6 +42,10 @@ const routes = [
     path: '/toolbox',
     component: () => import('@/components/ToolboxLanding.vue'),
   },
+  {
+    path: '/roundtable',
+    component: () => import('@/components/RoundtablePage.vue'),
+  },
 ]
 
 const router = createRouter({

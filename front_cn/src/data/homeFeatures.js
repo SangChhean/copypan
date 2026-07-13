@@ -47,7 +47,7 @@ export const features = [
   },
   {
     key: 'ministry-digest-generator',
-    title: '职事书报追求生成器',
+    title: '职事书报追求材料制作',
     desc: '基于职事书报内容，生成每单元两页的追求材料',
     path: null,
     icon: FormOutlined,
@@ -145,7 +145,7 @@ export const features = [
     key: 'roundtable-reading',
     title: '小排生命读经材料制作',
     desc: '基于生命读经，作出四个版本，每单元两页的材料',
-    path: null,
+    path: '/roundtable',
     icon: ReadOutlined,
     comingSoon: true,
   },
@@ -153,4 +153,4 @@ export const features = [
 
 export const HOME_FEATURE_KEYS = ['qa', 'outline', 'materials', 'toolbox']
 export const MATERIALS_FEATURE_KEYS = ['conference', 'service', 'community', 'sisters', 'young_pro', 'college', 'youth', 'kids']
-export const TOOLBOX_FEATURE_KEYS = ['bibco', 'zh', 'ministry-digest-generator']
+export const TOOLBOX_FEATURE_KEYS = ['ministry-digest-generator', 'bibco', 'zh']

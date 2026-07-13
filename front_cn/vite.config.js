@@ -28,7 +28,8 @@ export default defineConfig({
         changeOrigin: true,
       },
       // 仅本地开发：借用 front_qa 的 LSM PDF 静态资源（Phase 2.3）
-      '/lsm': {
+      // 必须用 /lsm/（带尾斜杠），避免把 /lsm_mapping.json 也代理走
+      '/lsm/': {
         target: 'http://127.0.0.1:5174',
         changeOrigin: true,
       },
