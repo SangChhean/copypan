@@ -14,9 +14,28 @@ from lxml import etree
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NSMAP = {"w": W_NS}
 
+# 没有指定角色专属字体时的兜底默认值，确保 ascii/hAnsi 槽位不会空着交给 Word 自己决定
+DEFAULT_FALLBACK_FONT = "方正书宋_GBK"
+
 
 def W(tag):
     return f"{{{W_NS}}}{tag}"
+
+
+def _write_xml_with_double_quote_declaration(tree, path):
+    """
+    lxml 的 tree.write(xml_declaration=True) 默认输出单引号XML声明
+    （<?xml version='1.0' ...?>），这个写法在真实 Word 里解析 .rels 和
+    [Content_Types].xml 这类包级别文件时可能导致图片等资源加载失败，
+    LibreOffice 比较宽容看不出问题，但真实 Word 更严格。
+    这里统一手动写双引号声明，避免这个已知的兼容性坑。
+    """
+    xml_bytes = etree.tostring(
+        tree.getroot(), xml_declaration=False, encoding="UTF-8", standalone=True
+    )
+    declaration = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    with open(path, "wb") as f:
+        f.write(declaration + xml_bytes)
 
 
 # ---------------------------------------------------------------------------
@@ -27,7 +46,7 @@ STYLE_SPEC = {
     "truth": {  # 真理加强版
         "has_outline": True,
         "title":   {"pStyle": "000", "run_extra": []},
-        "source":  {"pStyle": "000", "pPr_sz": "28", "run_extra": [("sz", "28"), ("szCs", "28")]},
+        "source":  {"pStyle": "000", "sz": "24"},
         "reading": {"pPr": {"spacing": {"w:line": "320", "w:lineRule": "exact"},
                              "ind": {"w:leftChars": "136", "w:left": "1192", "w:hangingChars": "412", "w:hanging": "906"},
                              "jc": "left"},
@@ -51,7 +70,7 @@ STYLE_SPEC = {
     "gospel": {  # 福音加强版
         "has_outline": False,
         "title":   {"pStyle": "000", "run_extra": []},
-        "source":  {"pStyle": "000", "run_extra": [("sz", "28"), ("szCs", "28")]},
+        "source":  {"pStyle": "000", "sz": "24"},
         "reading": {"pPr": {"spacing": {"w:line": "320", "w:lineRule": "exact"},
                              "ind": {"w:leftChars": "136", "w:left": "1192", "w:hangingChars": "412", "w:hanging": "906"},
                              "jc": "left"},
@@ -74,7 +93,7 @@ STYLE_SPEC = {
     "life": {  # 生命加强版（与福音版结构相同，仅内容规则不同，样式规格一致）
         "has_outline": False,
         "title":   {"pStyle": "000", "run_extra": []},
-        "source":  {"pStyle": "000", "run_extra": [("sz", "28"), ("szCs", "28")]},
+        "source":  {"pStyle": "000", "sz": "24"},
         "reading": {"pPr": {"spacing": {"w:line": "320", "w:lineRule": "exact"},
                              "ind": {"w:leftChars": "136", "w:left": "1192", "w:hangingChars": "412", "w:hanging": "906"},
                              "jc": "left"},
@@ -97,7 +116,7 @@ STYLE_SPEC = {
     "elderly": {  # 年长放大版
         "has_outline": False,
         "title":   {"pStyle": "000", "spacing": {"w:line": "440", "w:lineRule": "exact"}, "sz": "40"},
-        "source":  {"pStyle": "000", "spacing": {"w:afterLines": "100", "w:after": "312", "w:line": "440", "w:lineRule": "exact"}, "sz": "36"},
+        "source":  {"pStyle": "000", "spacing": {"w:afterLines": "100", "w:after": "312", "w:line": "440", "w:lineRule": "exact"}, "sz": "32"},
         "reading": {"pPr": {"spacing": {"w:after": "120", "w:line": "440", "w:lineRule": "exact"},
                              "ind": {"w:leftChars": "136", "w:left": "1769", "w:hangingChars": "412", "w:hanging": "1483"},
                              "jc": "left"},
@@ -162,15 +181,12 @@ def _make_ppr(spec_pPr=None, pStyle=None, spacing=None, ind=None, jc=None, rPr_s
 def _make_run(text, rFonts=None, sz=None, szCs=None, bold=False, hint_eastasia=True):
     r = etree.Element(W("r"))
     rpr = etree.SubElement(r, W("rPr"))
-    if rFonts:
-        el = etree.SubElement(rpr, W("rFonts"))
-        el.set(W("ascii"), rFonts)
-        el.set(W("eastAsia"), rFonts)
-        el.set(W("hAnsi"), rFonts)
-        if hint_eastasia:
-            el.set(W("hint"), "eastAsia")
-    elif hint_eastasia:
-        el = etree.SubElement(rpr, W("rFonts"))
+    actual_font = rFonts or DEFAULT_FALLBACK_FONT  # 不再允许留空
+    el = etree.SubElement(rpr, W("rFonts"))
+    el.set(W("ascii"), actual_font)
+    el.set(W("eastAsia"), actual_font)
+    el.set(W("hAnsi"), actual_font)
+    if hint_eastasia:
         el.set(W("hint"), "eastAsia")
     if bold:
         etree.SubElement(rpr, W("b"))
@@ -218,10 +234,12 @@ def _role_para(role_key, spec, text=None, tab_prefix=None, extra_runs=None):
             runs.append(_make_run(tab_prefix, rFonts=rFonts, sz=sz, szCs=szCs, bold=bold))
             tab_r = etree.Element(W("r"))
             rpr = etree.SubElement(tab_r, W("rPr"))
-            if rFonts:
-                el = etree.SubElement(rpr, W("rFonts"))
-                el.set(W("ascii"), rFonts); el.set(W("eastAsia"), rFonts); el.set(W("hAnsi"), rFonts)
-                el.set(W("hint"), "eastAsia")
+            actual_font = rFonts or DEFAULT_FALLBACK_FONT
+            el = etree.SubElement(rpr, W("rFonts"))
+            el.set(W("ascii"), actual_font)
+            el.set(W("eastAsia"), actual_font)
+            el.set(W("hAnsi"), actual_font)
+            el.set(W("hint"), "eastAsia")
             if sz:
                 el = etree.SubElement(rpr, W("sz")); el.set(W("val"), sz)
             if szCs or sz:
@@ -356,7 +374,7 @@ def generate_docx(version_key, unified_fields, version_data, template_path, outp
         for p in new_paras:
             body.append(p)
 
-    tree.write(str(doc_xml_path), xml_declaration=True, encoding="UTF-8", standalone=True)
+    _write_xml_with_double_quote_declaration(tree, doc_xml_path)
 
     # 重新打包成 docx
     if output_path.exists():

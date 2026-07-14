@@ -17,7 +17,7 @@ def _get_client() -> anthropic.Anthropic:
         api_key = os.environ.get("CLAUDE_API_KEY")
         if not api_key:
             raise RuntimeError("CLAUDE_API_KEY 未配置")
-        _client = anthropic.Anthropic(api_key=api_key, timeout=600.0)
+        _client = anthropic.Anthropic(api_key=api_key, timeout=600.0, max_retries=5)
     return _client
 
 
