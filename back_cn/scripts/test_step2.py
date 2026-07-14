@@ -80,17 +80,20 @@ def _print_result(key: str, r: dict) -> None:
         print("纲目条数:", count, "（上限 11）")
     print("QA题数:", len(r["data"].get("qa", [])))
     print("--- 小标题列表 ---")
+    max_p = cfg.get("max_paragraphs_per_heading", 2)
     for sec in r["data"]["sections"]:
         for sub in sec.get("subsections", []):
-            print(f"  ◆ {sub.get('heading', '')}")
+            pc = len(sub.get("paragraphs", []))
+            flag = "超标" if pc > max_p else "通过"
+            print(f"  ◆ {sub.get('heading', '')}  （段数={pc}/{max_p} {flag}）")
 
 
 async def main() -> None:
     import time
 
-    selection = resolve_cross_book_selection(32, 1, 2)
+    selection = resolve_cross_book_selection(60, 34, 2)
     texts = get_messages_by_selection(selection)
-    versions = ["truth", "gospel", "life", "elderly"]
+    versions = ["truth", "elderly"]
 
     t0 = time.perf_counter()
     unified = await generate_unified_fields(texts, week_number=None)
