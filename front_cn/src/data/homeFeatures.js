@@ -147,7 +147,6 @@ export const features = [
     desc: '基于生命读经，作出四个版本，每单元两页的材料',
     path: '/roundtable',
     icon: ReadOutlined,
-    comingSoon: true,
   },
 ]
 

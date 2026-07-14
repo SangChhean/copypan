@@ -7,6 +7,7 @@ import re
 
 from back_cn.roundtable.bible_loader import get_verse_safe
 from back_cn.roundtable.claude_service import call_sonnet5_high
+from back_cn.roundtable.hymn_history import get_recent_hymns, record_hymn_used
 from back_cn.roundtable.hymns_service import verify_hymn
 
 _STEP1_COMMON = """你是一个资深的圣经研究学者，专精李常受生命读经信息的整理与摘要工作。
@@ -24,7 +25,8 @@ verses：读经经节，固定2节。每节包含：
 hymn：诗歌推荐
    - source：只能是"大本"或"补充"这两个值之一
    - no：诗歌编号（数字）
-   - 只需要编号，不要输出歌词。搜索/判断是否有内容贴合本周主题的诗歌；如果找不到有把握确认的，source 填 null、no 填 null
+   - 只需要编号，不要输出歌词
+   - 必须给出一首真实存在的诗歌（source 与 no 不能为空），但要认真比对歌词内容和本周原文主题的关联性，不要因为某首诗歌泛用、放在任何主题下都说得过去，就图省事选它——这类"万能诗歌"往往不是真正最贴切的选择。请优先寻找歌词内容与本周主题有具体呼应的诗歌。
 """
 
 _STEP1_SINGLE = (
@@ -90,19 +92,43 @@ def compute_topic_and_source(messages: list[dict]) -> tuple[str | None, str]:
     """
     纯代码计算，不调用 Claude。
     返回 (topic, overall_source)：
-    - 单篇：topic 为去掉「第X篇」后的题目，overall_source 直接算出
-    - 2-3篇：topic 返回 None（表示仍需交给模型合成），overall_source 直接算出
+    - 单卷单篇：topic 为去掉「第X篇」后的题目，overall_source 直接算出
+    - 单卷多篇 / 跨卷：topic 返回 None（仍需模型合成标题），overall_source 直接算出
     """
-    book_name = messages[0]["book_name"]
+    # 按书卷分组，保持原有顺序，把连续同卷的消息归到一组
+    groups: list[tuple[str, list[dict]]] = []
+    for m in messages:
+        if groups and groups[-1][0] == m["book_name"]:
+            groups[-1][1].append(m)
+        else:
+            groups.append((m["book_name"], [m]))
 
-    if len(messages) == 1:
+    # 单卷单篇：原有逻辑不变
+    if len(groups) == 1 and len(messages) == 1:
         numeral = _extract_cn_numeral(messages[0]["title"])
-        overall_source = f"（摘自{book_name}，第{numeral}篇）"
-        return _extract_topic(messages[0]["title"]), overall_source
+        topic = _extract_topic(messages[0]["title"])
+        overall_source = f"（摘自{messages[0]['book_name']}，第{numeral}篇）"
+        return topic, overall_source
 
-    first_numeral = _extract_cn_numeral(messages[0]["title"])
-    last_numeral = _extract_cn_numeral(messages[-1]["title"])
-    overall_source = f"（摘自{book_name}，第{first_numeral}~{last_numeral}篇）"
+    # 单卷多篇：原有逻辑不变
+    if len(groups) == 1:
+        book_name = groups[0][0]
+        first_numeral = _extract_cn_numeral(messages[0]["title"])
+        last_numeral = _extract_cn_numeral(messages[-1]["title"])
+        overall_source = f"（摘自{book_name}，第{first_numeral}~{last_numeral}篇）"
+        return None, overall_source
+
+    # 跨卷：每组各自算出范围，用顿号连接
+    parts = []
+    for book_name, group_msgs in groups:
+        if len(group_msgs) == 1:
+            numeral = _extract_cn_numeral(group_msgs[0]["title"])
+            parts.append(f"{book_name}，第{numeral}篇")
+        else:
+            first_numeral = _extract_cn_numeral(group_msgs[0]["title"])
+            last_numeral = _extract_cn_numeral(group_msgs[-1]["title"])
+            parts.append(f"{book_name}，第{first_numeral}~{last_numeral}篇")
+    overall_source = "（摘自" + "；".join(parts) + "）"
     return None, overall_source
 
 
@@ -154,6 +180,16 @@ async def generate_unified_fields(
 
     computed_topic, overall_source = compute_topic_and_source(original_texts)
     system = _build_step1_system(len(original_texts))
+
+    # 用拼接而非 .format()，避免 JSON 示例里的花括号与 format 冲突
+    recent = get_recent_hymns(limit=10)
+    if recent:
+        recent_desc = "、".join(f"{h['source']}{h['no']}" for h in recent)
+        system = (
+            system
+            + "\n最近已经推荐过这些诗歌，请尽量避免再次选择这几首："
+            + f"{recent_desc}。"
+        )
 
     combined_text = "\n\n".join(
         f"【{t['book_name']} {t['title']}】\n" + "\n".join(t["paragraphs"])
@@ -215,18 +251,19 @@ async def generate_unified_fields(
         resolved_verses[0]["display"] = ""
         resolved_verses[1]["display"] = display
 
-        # 校验诗歌是否真实存在（source/no 都为 null 时视为"未找到"，跳过校验，属于合法情况）
+        # 校验诗歌：必须给出真实存在的一首
         hymn = data.get("hymn") or {}
-        resolved_hymn = None
-        if hymn.get("source") and hymn.get("no"):
-            hymn_data = verify_hymn(hymn["source"], hymn["no"])
-            if hymn_data is None:
-                last_error = (
-                    f"诗歌不存在：source={hymn['source']} no={hymn['no']}，"
-                    f"请重新推荐或者如实说明未找到"
-                )
-                continue
-            resolved_hymn = hymn_data
+        if not hymn.get("source") or not hymn.get("no"):
+            last_error = "必须推荐一首真实存在的诗歌（source 与 no 不能为空）"
+            continue
+        hymn_data = verify_hymn(hymn["source"], hymn["no"])
+        if hymn_data is None:
+            last_error = (
+                f"诗歌不存在：source={hymn['source']} no={hymn['no']}，"
+                f"请重新推荐一首真实存在的诗歌"
+            )
+            continue
+        resolved_hymn = hymn_data
 
         if computed_topic is not None:
             final_topic = computed_topic
@@ -241,6 +278,8 @@ async def generate_unified_fields(
             )
 
         title = f"第{week_number}周　{final_topic}" if week_number else final_topic
+
+        record_hymn_used(resolved_hymn["source"], resolved_hymn["no"])
 
         return {
             "title": title,
