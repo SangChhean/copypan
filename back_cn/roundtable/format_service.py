@@ -15,10 +15,9 @@ def _reading_and_hymn_line(unified_fields: dict) -> str:
     hymn = unified_fields.get("hymn")
     if hymn:
         hymn_line = f"诗歌：{hymn['source']}{hymn['no']}"
-        hymn_title = (hymn.get("title") or "").strip()
-        if hymn_title:
-            hymn_line = f"{hymn_line}　{hymn_title}"
     else:
+        # 正常情况不应该走到：Step1 已要求必须给出有效诗歌，重试用尽会直接报错。
+        # 若仍出现，说明诗歌重试机制失效或上游传入了残缺 unified_fields，需要排查。
         hymn_line = "诗歌：（未找到贴合主题的推荐）"
     return f"读经：{verse_display}　　{hymn_line}"
 

@@ -98,8 +98,10 @@ async def lifespan(app: FastAPI):
     # 用户库（CN 独立鉴权）
     try:
         from back_cn.auth import init_db
+        from back_cn.roundtable.hymn_history import init_hymn_history_table
 
         init_db()
+        init_hymn_history_table()
         print("[CN] auth DB 初始化完成")
     except Exception as e:
         print(f"[CN] auth DB 初始化失败: {e}")

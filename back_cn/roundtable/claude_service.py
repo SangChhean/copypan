@@ -24,7 +24,7 @@ def _get_client() -> anthropic.Anthropic:
 async def call_sonnet5_high(
     prompt: str,
     system: str,
-    max_tokens: int = 16000,
+    max_tokens: int = 24000,
     effort: str = "medium",
     cacheable_prefix: str | None = None,
     *,

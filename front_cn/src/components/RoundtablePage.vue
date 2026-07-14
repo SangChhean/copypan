@@ -35,7 +35,7 @@
                 placeholder="请选择生命读经书卷"
                 style="width: 260px"
                 :options="bookOptions"
-                :disabled="!lsmMapping"
+                :disabled="!bookList.length"
                 show-search
                 :filter-option="filterBookOption"
                 @change="onBookChange"
@@ -45,7 +45,7 @@
                 placeholder="起始篇"
                 style="width: 200px; margin-left: 16px"
                 :options="startIssueOptions"
-                :disabled="!lsmMapping || !selectedBook"
+                :disabled="!selectedBook || bookIssuesLoading || !bookIssues.length"
                 show-search
                 :filter-option="filterIssueOption"
                 @change="onStartIssueChange"
@@ -61,7 +61,7 @@
                 placeholder="篇数"
                 style="width: 140px"
                 :options="countOptions"
-                :disabled="!lsmMapping || !startIssue"
+                :disabled="!startIssue"
               />
               <div v-if="willGenerateText" class="roundtable-hint">{{ willGenerateText }}</div>
             </div>
@@ -73,11 +73,12 @@
               <a-checkbox-group
                 v-model:value="selectedVersions"
                 class="roundtable-emphasis-text"
+                :disabled="generating"
               >
-                <a-checkbox value="truth">真理加强版</a-checkbox>
-                <a-checkbox value="gospel">福音加强版</a-checkbox>
-                <a-checkbox value="life">生命加强版</a-checkbox>
-                <a-checkbox value="elderly">年长放大版</a-checkbox>
+                <a-checkbox value="truth" :disabled="generating">真理加强版</a-checkbox>
+                <a-checkbox value="gospel" :disabled="generating">福音加强版</a-checkbox>
+                <a-checkbox value="life" :disabled="generating">生命加强版</a-checkbox>
+                <a-checkbox value="elderly" :disabled="generating">年长放大版</a-checkbox>
               </a-checkbox-group>
             </div>
           </div>
@@ -86,23 +87,52 @@
             type="primary"
             class="roundtable-gen-btn"
             :loading="generating"
-            :disabled="!canGenerate"
+            :disabled="!canGenerate || generating"
             @click="onGenerate"
           >
             生成
           </a-button>
 
-          <div v-if="generating" class="roundtable-progress">
-            <a-spin />
-            <span>{{ progressText }}</span>
+          <div
+            v-if="generating || generatingVersions.length"
+            class="roundtable-versions-grid"
+          >
+            <div
+              v-for="v in generatingVersions"
+              :key="v"
+              class="roundtable-version-card"
+            >
+              <div class="roundtable-version-title">{{ VERSION_LABELS[v] }}</div>
+              <template v-if="versionResults[v]">
+                <a-tag color="success">
+                  已完成
+                </a-tag>
+                <a-progress :percent="100" size="small" :show-info="false" />
+              </template>
+              <template v-else-if="versionErrors[v]">
+                <a-tag color="error">生成失败</a-tag>
+                <div class="roundtable-version-error">{{ versionErrors[v] }}</div>
+              </template>
+              <template v-else>
+                <a-progress
+                  :percent="versionProgressPercent(v)"
+                  :show-info="false"
+                  size="small"
+                />
+                <span class="roundtable-version-stage">
+                  {{ versionProgress[v]?.stage || '等待中' }}
+                  {{ versionProgressPercent(v) }}%
+                </span>
+              </template>
+            </div>
           </div>
 
-          <div v-if="result" class="roundtable-result">
+          <div v-if="hasAnyVersionResult" class="roundtable-result">
             <a-tabs v-model:activeKey="activeTab">
               <a-tab-pane
-                v-for="(v, key) in result.versions"
+                v-for="(v, key) in versionResults"
                 :key="key"
-                :tab="`${v.label}（${v.word_count}字）`"
+                :tab="v.label"
               >
                 <div
                   class="roundtable-preview-html cn-result"
@@ -110,9 +140,34 @@
                 ></div>
               </a-tab-pane>
             </a-tabs>
-            <a-button type="primary" class="roundtable-confirm-btn" @click="onConfirm">
+            <div class="roundtable-format-select">
+              <span>文档格式：</span>
+              <a-radio-group v-model:value="fileFormat">
+                <a-radio value="docx">Word 文档 (.docx)</a-radio>
+                <a-radio value="pdf">PDF 文档</a-radio>
+              </a-radio-group>
+            </div>
+            <a-button
+              type="primary"
+              class="roundtable-confirm-btn"
+              :loading="finalizing"
+              :disabled="!canFinalize || generating"
+              @click="onConfirm"
+            >
               确认，生成最终文档
             </a-button>
+            <div v-if="finalFiles" class="roundtable-download-list">
+              <div
+                v-for="f in finalFiles"
+                :key="f.token"
+                class="roundtable-download-item"
+              >
+                <span>{{ f.label }}</span>
+                <a-button type="primary" size="small" @click="downloadFile(f)">
+                  下载 {{ fileFormat === 'pdf' ? 'PDF' : 'Word' }}
+                </a-button>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -121,125 +176,141 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
 
 const router = useRouter()
 
-const lsmMapping = ref(null)
+const VERSION_LABELS = {
+  truth: '真理加强版',
+  gospel: '福音加强版',
+  life: '生命加强版',
+  elderly: '年长放大版',
+}
+
+const bookList = ref([])
+const bookIssues = ref([])
+const bookIssuesLoading = ref(false)
 const useWeekNumber = ref(true)
 const weekNumber = ref('')
 const selectedBook = ref(null)
 const startIssue = ref(null)
 const issueCount = ref(1)
 const selectedVersions = ref(['truth', 'gospel', 'life', 'elderly'])
+/** 点击生成那一刻锁定的版本列表，供进度卡片使用，避免生成中勾选变化影响展示 */
+const generatingVersions = ref([])
 const generating = ref(false)
-const progressText = ref('')
-const result = ref(null)
-const activeTab = ref('truth')
+const unifiedFields = ref(null)
+const versionProgress = ref({})
+const versionResults = ref({})
+const versionErrors = ref({})
+const activeTab = ref('')
+const fileFormat = ref('docx')
+const finalFiles = ref(null)
+const finalizing = ref(false)
+let pollTimer = null
 
-const allBooks = computed(() => {
-  if (!lsmMapping.value) return []
-  return [
-    ...(lsmMapping.value.oldTestament || []),
-    ...(lsmMapping.value.newTestament || []),
-  ]
-})
+/** 预览接口结果：实际会用到的篇 */
+const selectionPreview = ref(null)
+const selectionPreviewError = ref('')
+const selectionPreviewLoading = ref(false)
+let previewTimer = null
 
 const bookOptions = computed(() =>
-  allBooks.value.map((b) => ({
-    value: b.order,
-    label: `${b.order}. ${b.name}`,
+  bookList.value.map((b) => ({
+    value: b.book_id,
+    label: b.name,
   })),
 )
 
-/** 当前卷去重后的篇号集合与选项 */
-const bookMessageIndexSet = computed(() => {
-  if (!selectedBook.value || !lsmMapping.value) return new Set()
-  const book = allBooks.value.find((b) => b.order === selectedBook.value)
-  if (!book?.chapters) return new Set()
-  const set = new Set()
-  for (const ch of Object.values(book.chapters)) {
-    for (const m of ch.messages || []) {
-      set.add(m.index)
+/** 从完整标题中取出「第X篇」，与旧下拉简短样式一致 */
+function shortIssueLabel(title) {
+  const m = String(title || '').match(/^第[一二三四五六七八九十百零〇两\d]+篇/)
+  return m ? m[0] : String(title || '')
+}
+
+const startIssueOptions = computed(() =>
+  bookIssues.value.map((item) => ({
+    value: item.issue,
+    label: shortIssueLabel(item.title),
+  })),
+)
+
+/** 篇数：跨卷可续接，不再按本卷剩余篇数禁用 2/3 篇 */
+const countOptions = [
+  { value: 1, label: '1 篇' },
+  { value: 2, label: '2 篇' },
+  { value: 3, label: '3 篇' },
+]
+
+function shortBookName(name) {
+  return String(name || '').replace(/生命读经$/, '')
+}
+
+function formatSelectionRange(items) {
+  if (!items?.length) return ''
+  const groups = []
+  for (const item of items) {
+    const name = shortBookName(item.book_name)
+    if (groups.length && groups[groups.length - 1].book === item.book) {
+      groups[groups.length - 1].issues.push(item.issue)
+    } else {
+      groups.push({ book: item.book, name, issues: [item.issue] })
     }
   }
-  return set
-})
-
-const startIssueOptions = computed(() => {
-  if (!selectedBook.value || !lsmMapping.value) return []
-  const book = allBooks.value.find((b) => b.order === selectedBook.value)
-  if (!book?.chapters) return []
-  const byIndex = new Map()
-  for (const ch of Object.values(book.chapters)) {
-    for (const m of ch.messages || []) {
-      if (!byIndex.has(m.index)) byIndex.set(m.index, m)
-    }
-  }
-  return [...byIndex.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([index, m]) => ({
-      value: index,
-      label: m.label,
-    }))
-})
-
-/** 篇数选项：仅当 start..start+n-1 全部存在于本卷时才可选，从结构上杜绝跳选 */
-const countOptions = computed(() => {
-  const start = startIssue.value
-  const set = bookMessageIndexSet.value
-  if (start == null) {
-    return [
-      { value: 1, label: '1 篇', disabled: true },
-      { value: 2, label: '2 篇', disabled: true },
-      { value: 3, label: '3 篇', disabled: true },
-    ]
-  }
-  const can2 = set.has(start + 1)
-  const can3 = can2 && set.has(start + 2)
-  return [
-    { value: 1, label: '1 篇' },
-    { value: 2, label: '2 篇', disabled: !can2 },
-    { value: 3, label: '3 篇', disabled: !can3 },
-  ]
-})
-
-const selectedIssues = computed(() => {
-  const start = startIssue.value
-  const count = issueCount.value
-  if (start == null || !count) return []
-  return Array.from({ length: count }, (_, i) => start + i)
-})
+  return groups
+    .map((g) => {
+      if (g.issues.length === 1) return `${g.name}第${g.issues[0]}篇`
+      return `${g.name}第${g.issues[0]}~${g.issues[g.issues.length - 1]}篇`
+    })
+    .join(' → ')
+}
 
 const willGenerateText = computed(() => {
-  if (!selectedIssues.value.length) return ''
-  const issuesPart = `第 ${selectedIssues.value.join('、')} 篇（连续）`
+  if (selectionPreviewError.value) return selectionPreviewError.value
+  if (!selectionPreview.value?.selection?.length) return ''
+  const range = formatSelectionRange(selectionPreview.value.selection)
+  const cross = selectionPreview.value.crosses_book ? '（跨卷）' : ''
   if (useWeekNumber.value && weekNumber.value.trim()) {
-    return `将生成：第${weekNumber.value.trim()}周 · ${issuesPart}`
+    return `将生成：第${weekNumber.value.trim()}周 · ${range}${cross}`
   }
-  return `将生成：${issuesPart}`
+  return `将生成：${range}${cross}`
+})
+
+const hasAnyVersionResult = computed(
+  () => Object.keys(versionResults.value).length > 0,
+)
+
+const hasAnyVersionOutcome = computed(
+  () =>
+    hasAnyVersionResult.value || Object.keys(versionErrors.value).length > 0,
+)
+
+const canFinalize = computed(() => {
+  if (!unifiedFields.value || !generatingVersions.value.length) return false
+  return generatingVersions.value.every((k) => versionResults.value[k]?.raw_data)
 })
 
 const canGenerate = computed(
   () =>
     selectedBook.value &&
-    selectedIssues.value.length >= 1 &&
-    selectedIssues.value.length <= 3 &&
-    selectedIssues.value.every((n) => bookMessageIndexSet.value.has(n)) &&
+    startIssue.value != null &&
+    issueCount.value >= 1 &&
+    issueCount.value <= 3 &&
+    !!selectionPreview.value?.selection?.length &&
+    !selectionPreviewError.value &&
+    !selectionPreviewLoading.value &&
     selectedVersions.value.length >= 1 &&
     (!useWeekNumber.value || weekNumber.value.trim().length > 0),
 )
 
-watch([startIssue, countOptions], () => {
-  const opts = countOptions.value
-  const current = opts.find((o) => o.value === issueCount.value)
-  if (!current || current.disabled) {
-    issueCount.value = 1
-  }
-})
+function versionProgressPercent(key) {
+  if (versionResults.value[key]) return 100
+  const attempt = versionProgress.value[key]?.attempt || 0
+  return Math.min(attempt * 12, 90)
+}
 
 function filterBookOption(input, option) {
   return String(option.label || '')
@@ -253,39 +324,176 @@ function filterIssueOption(input, option) {
     .includes(String(input || '').toLowerCase())
 }
 
-function onBookChange() {
+async function loadBookIssues(bookId) {
+  bookIssues.value = []
+  if (!bookId) return
+  bookIssuesLoading.value = true
+  try {
+    // 须走鉴权 http，裸 fetch 不会带 JWT
+    const res = await http.get(`/api/cn/roundtable/book_issues/${bookId}`)
+    bookIssues.value = res.data.issues || []
+  } catch (e) {
+    const status = e.response?.status
+    const detail = e.response?.data?.detail
+    message.error(
+      `该卷篇目加载失败（状态码 ${status || '未知'}：${detail || e.message}）`,
+    )
+    console.error('loadBookIssues error:', status, detail, e)
+    bookIssues.value = []
+  } finally {
+    bookIssuesLoading.value = false
+  }
+}
+
+async function onBookChange() {
   startIssue.value = null
   issueCount.value = 1
-  result.value = null
+  unifiedFields.value = null
+  versionResults.value = {}
+  versionErrors.value = {}
+  versionProgress.value = {}
+  selectionPreview.value = null
+  selectionPreviewError.value = ''
+  await loadBookIssues(selectedBook.value)
 }
 
 function onStartIssueChange() {
   issueCount.value = 1
-  result.value = null
+  unifiedFields.value = null
+  versionResults.value = {}
+  versionErrors.value = {}
+  versionProgress.value = {}
 }
 
-async function loadLsmMapping() {
+async function loadBookList() {
   try {
-    const res = await fetch('/lsm_mapping.json')
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    lsmMapping.value = await res.json()
+    const res = await http.get('/api/cn/roundtable/books')
+    bookList.value = res.data.books || []
   } catch (e) {
-    message.error('生命读经篇目映射加载失败')
-    console.error(e)
+    const status = e.response?.status
+    const detail = e.response?.data?.detail
+    message.error(
+      `书卷列表加载失败（状态码 ${status || '未知'}：${detail || e.message}）`,
+    )
+    console.error('loadBookList error:', status, detail, e)
   }
+}
+
+async function fetchSelectionPreview() {
+  if (!selectedBook.value || startIssue.value == null || !issueCount.value) {
+    selectionPreview.value = null
+    selectionPreviewError.value = ''
+    return
+  }
+  selectionPreviewLoading.value = true
+  try {
+    const res = await http.post('/api/cn/roundtable/preview_selection', {
+      book: selectedBook.value,
+      start_issue: startIssue.value,
+      count: issueCount.value,
+    })
+    selectionPreview.value = res.data
+    selectionPreviewError.value = ''
+  } catch (e) {
+    selectionPreview.value = null
+    const detail = e.response?.data?.detail
+    const detailText =
+      typeof detail === 'string'
+        ? detail
+        : '已经是全集最后一卷，篇数不足，请减少篇数'
+    selectionPreviewError.value = detailText
+  } finally {
+    selectionPreviewLoading.value = false
+  }
+}
+
+watch([selectedBook, startIssue, issueCount], () => {
+  if (previewTimer) clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => {
+    fetchSelectionPreview()
+  }, 300)
+})
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function pollTask(taskId) {
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await http.get(`/api/cn/roundtable/task/${taskId}`)
+      const task = res.data
+
+      if (task.unified_fields) {
+        unifiedFields.value = task.unified_fields
+      }
+
+      let allSettled = true
+      const nextProgress = { ...versionProgress.value }
+      const nextResults = { ...versionResults.value }
+      const nextErrors = { ...versionErrors.value }
+
+      for (const [key, v] of Object.entries(task.versions || {})) {
+        if (v.status === 'done' && v.result) {
+          nextResults[key] = v.result
+          delete nextProgress[key]
+          delete nextErrors[key]
+          if (!activeTab.value) {
+            activeTab.value = key
+          }
+        } else if (v.status === 'error') {
+          nextErrors[key] = v.error || '生成失败，请重试'
+          delete nextProgress[key]
+        } else {
+          nextProgress[key] = {
+            stage: v.stage || '等待中',
+            attempt: v.attempt || 0,
+          }
+          allSettled = false
+        }
+      }
+
+      versionProgress.value = nextProgress
+      versionResults.value = nextResults
+      versionErrors.value = nextErrors
+
+      if (allSettled) {
+        stopPolling()
+        generating.value = false
+        const okCount = Object.keys(nextResults).length
+        const errCount = Object.keys(nextErrors).length
+        if (okCount && !errCount) {
+          message.success('全部版本生成完成，请预览确认')
+        } else if (okCount && errCount) {
+          message.warning('部分版本生成完成，部分失败')
+        } else if (errCount) {
+          message.error('生成失败')
+        }
+      }
+    } catch (e) {
+      stopPolling()
+      generating.value = false
+      if (e.response?.status === 404) {
+        message.error('任务已丢失（可能是服务重启），请重新点击生成')
+      } else {
+        message.error('查询进度失败，请重试')
+      }
+    }
+  }, 3000)
 }
 
 async function onGenerate() {
-  const issues = selectedIssues.value
-  if (!issues.length) {
+  if (!selectedBook.value || startIssue.value == null) {
     message.warning('请选择起始篇与篇数')
     return
   }
-  for (let i = 1; i < issues.length; i++) {
-    if (issues[i] !== issues[i - 1] + 1) {
-      message.error('篇号必须连续')
-      return
-    }
+  if (selectionPreviewError.value) {
+    message.error(selectionPreviewError.value)
+    return
   }
   if (useWeekNumber.value && !weekNumber.value.trim()) {
     message.warning('请填写周数，或取消勾选「标注周数」')
@@ -295,26 +503,39 @@ async function onGenerate() {
     message.warning('请至少选择一个版本')
     return
   }
+
+  stopPolling()
   generating.value = true
-  result.value = null
-  progressText.value = '正在读取原文…'
+  generatingVersions.value = [...selectedVersions.value]
+  unifiedFields.value = null
+  versionResults.value = {}
+  versionErrors.value = {}
+  versionProgress.value = Object.fromEntries(
+    generatingVersions.value.map((k) => [k, { stage: '等待中', attempt: 0 }]),
+  )
+  activeTab.value = ''
+  finalFiles.value = null
+
   try {
-    progressText.value = '正在生成，预计需要 3–8 分钟，请耐心等待…'
     const body = {
       book: selectedBook.value,
-      issues,
-      versions: selectedVersions.value,
+      start_issue: startIssue.value,
+      count: issueCount.value,
+      versions: generatingVersions.value,
     }
     if (useWeekNumber.value) {
       body.week_number = weekNumber.value.trim()
     }
     const res = await http.post('/api/cn/roundtable/generate', body, {
-      timeout: 600000,
+      timeout: 60000,
     })
-    result.value = res.data
-    activeTab.value = selectedVersions.value[0]
-    message.success('生成完成，请预览确认')
+    const taskId = res.data.task_id
+    if (!taskId) {
+      throw new Error('未返回 task_id')
+    }
+    pollTask(taskId)
   } catch (e) {
+    generating.value = false
     const status = e?.response?.status
     const detail = e.response?.data?.detail
     const detailText =
@@ -325,18 +546,76 @@ async function onGenerate() {
           : '生成失败，请稍后重试'
     if (status === 429) {
       message.warning(detailText || '今日次数已达上限')
-    } else if (status === 422 || status === 400) {
-      message.error(detailText)
     } else {
       message.error(detailText)
     }
-  } finally {
-    generating.value = false
   }
 }
 
-function onConfirm() {
-  message.info('排版下载功能即将上线，敬请期待')
+async function onConfirm() {
+  if (!canFinalize.value) {
+    message.warning('请等所选版本全部生成完成后再确认')
+    return
+  }
+  const versionsPayload = {}
+  for (const key of generatingVersions.value) {
+    if (!versionResults.value[key]?.raw_data) {
+      message.error(`缺少 ${VERSION_LABELS[key] || key} 的结构化数据，请重新生成`)
+      return
+    }
+    versionsPayload[key] = versionResults.value[key].raw_data
+  }
+  finalizing.value = true
+  finalFiles.value = null
+  try {
+    const res = await http.post(
+      '/api/cn/roundtable/finalize',
+      {
+        unified_fields: unifiedFields.value,
+        versions: versionsPayload,
+        file_format: fileFormat.value,
+        week_number: useWeekNumber.value ? weekNumber.value.trim() : null,
+      },
+      { timeout: 120000 },
+    )
+    finalFiles.value = res.data.files
+    message.success('文档已生成，请点击下方按钮下载')
+  } catch (e) {
+    message.error(e.response?.data?.detail || '生成失败，请稍后重试')
+  } finally {
+    finalizing.value = false
+  }
+}
+
+async function downloadFile(file) {
+  // 带 Authorization 的 blob 下载（window.open 不会带 JWT，会被鉴权拦住）
+  try {
+    const res = await http.get(`/api/cn/roundtable/download/${file.token}`, {
+      responseType: 'blob',
+      timeout: 120000,
+    })
+    const blob = new Blob([res.data])
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.filename || 'download'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    let detail = '下载失败，请重新生成'
+    const data = e.response?.data
+    if (data instanceof Blob) {
+      try {
+        const parsed = JSON.parse(await data.text())
+        if (typeof parsed?.detail === 'string') detail = parsed.detail
+      } catch {
+        /* ignore */
+      }
+    } else if (typeof data?.detail === 'string') {
+      detail = data.detail
+    }
+    message.error(detail)
+  }
 }
 
 function goHome() {
@@ -344,7 +623,12 @@ function goHome() {
 }
 
 onMounted(() => {
-  loadLsmMapping()
+  loadBookList()
+})
+
+onUnmounted(() => {
+  stopPolling()
+  if (previewTimer) clearTimeout(previewTimer)
 })
 </script>
 
@@ -439,5 +723,65 @@ onMounted(() => {
 .roundtable-confirm-btn {
   display: block !important;
   margin: 16px auto 0 !important;
+}
+
+.roundtable-format-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--cn-text, #243447);
+}
+
+.roundtable-download-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roundtable-download-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f5f8fb;
+  border-radius: 8px;
+}
+
+.roundtable-versions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.roundtable-version-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f8fb;
+  border-radius: 8px;
+}
+
+.roundtable-version-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b6ca8;
+}
+
+.roundtable-version-stage {
+  font-size: 12px;
+  color: var(--cn-text-secondary, #4a6a84);
+}
+
+.roundtable-version-error {
+  font-size: 12px;
+  color: #cf1322;
+  word-break: break-word;
 }
 </style>
