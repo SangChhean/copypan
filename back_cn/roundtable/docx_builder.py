@@ -24,14 +24,15 @@ def W(tag):
 
 def _write_xml_with_double_quote_declaration(tree, path):
     """
-    lxml 的 tree.write(xml_declaration=True) 默认输出单引号XML声明
-    （<?xml version='1.0' ...?>），这个写法在真实 Word 里解析 .rels 和
-    [Content_Types].xml 这类包级别文件时可能导致图片等资源加载失败，
-    LibreOffice 比较宽容看不出问题，但真实 Word 更严格。
-    这里统一手动写双引号声明，避免这个已知的兼容性坑。
+    lxml 的 tree.write(xml_declaration=True) 默认输出单引号XML声明，
+    这个写法在真实 Word 里解析 .rels 和 [Content_Types].xml 这类包级别文件时
+    可能导致图片等资源加载失败。这里手动拼接标准双引号声明，避免这个坑。
+
+    注意：不能同时传 standalone=True，lxml 会无视 xml_declaration=False 强行
+    带出（单引号版本的）声明行，导致文件里出现两行XML声明、变成不合法的XML。
     """
     xml_bytes = etree.tostring(
-        tree.getroot(), xml_declaration=False, encoding="UTF-8", standalone=True
+        tree.getroot(), xml_declaration=False, encoding="UTF-8"
     )
     declaration = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
     with open(path, "wb") as f:
