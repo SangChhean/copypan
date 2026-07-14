@@ -16,7 +16,10 @@ load_dotenv(_repo_root / "back_cn" / ".env", override=True)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-from back_cn.roundtable.life_text_service import get_messages
+from back_cn.roundtable.life_text_service import (
+    get_messages_by_selection,
+    resolve_cross_book_selection,
+)
 from back_cn.roundtable.prompts import VERSION_CONFIG
 from back_cn.roundtable.step1_service import generate_unified_fields
 from back_cn.roundtable.step2_service import (
@@ -26,8 +29,17 @@ from back_cn.roundtable.step2_service import (
 )
 
 
+def _heading_count(data: dict) -> int:
+    return sum(len(sec.get("subsections", [])) for sec in data.get("sections", []))
+
+
 def _print_result(key: str, r: dict) -> None:
     cfg = VERSION_CONFIG[key]
+    if isinstance(r, Exception) or (isinstance(r, dict) and r.get("error")):
+        print(f"\n=== {cfg['label']} ===")
+        print("生成失败:", r if isinstance(r, Exception) else r.get("error"))
+        return
+
     print(f"\n=== {r['label']} ===")
     print(
         "字数:",
@@ -35,10 +47,16 @@ def _print_result(key: str, r: dict) -> None:
         f"（要求 {cfg['word_range'][0]}-{cfg['word_range'][1]}）",
     )
     print("尝试次数:", r["attempts"])
+    hc = _heading_count(r["data"])
+    lo, hi = cfg["heading_range"]
+    in_range = lo <= hc <= hi
+    print(f"小标题数: {hc}（目标 {lo}-{hi}） 校验={'通过' if in_range else '超标/不足'}")
+    if r.get("fallback_stripped"):
+        print("摘取兜底: 已生效（删除不合规片段后收尾）")
     if r["retry_log"]:
         print("重试原因:")
         for msg in r["retry_log"]:
-            print("  -", msg)
+            print("  -", msg[:240] + ("…" if len(msg) > 240 else ""))
     print(
         "段落数:",
         sum(
@@ -61,23 +79,36 @@ def _print_result(key: str, r: dict) -> None:
         )
         print("纲目条数:", count, "（上限 11）")
     print("QA题数:", len(r["data"].get("qa", [])))
+    print("--- 小标题列表 ---")
+    for sec in r["data"]["sections"]:
+        for sub in sec.get("subsections", []):
+            print(f"  ◆ {sub.get('heading', '')}")
 
 
 async def main() -> None:
     import time
 
-    texts = get_messages(49, [15, 16])
+    selection = resolve_cross_book_selection(32, 1, 2)
+    texts = get_messages_by_selection(selection)
+    versions = ["truth", "gospel", "life", "elderly"]
+
     t0 = time.perf_counter()
-    unified = await generate_unified_fields(texts, week_number="十五")
+    unified = await generate_unified_fields(texts, week_number=None)
     print("统一字段完成，标题:", unified["title"])
     print("出处:", unified["overall_source"])
     print(f"Step1 耗时: {time.perf_counter() - t0:.1f}s")
+    print(f"测试参数: selection={selection} versions={versions}")
 
     t1 = time.perf_counter()
-    results = await generate_all_versions(texts, unified)
-    print(f"\nStep2 四版本总耗时: {time.perf_counter() - t1:.1f}s")
-    for key in VERSION_CONFIG:
-        _print_result(key, results[key])
+    results = await generate_all_versions(texts, unified, version_keys=versions)
+    print(f"\nStep2 总耗时: {time.perf_counter() - t1:.1f}s")
+    for key in versions:
+        item = results[key]
+        if isinstance(item, Exception):
+            print(f"\n=== {VERSION_CONFIG[key]['label']} ===")
+            print("生成失败:", item)
+        else:
+            _print_result(key, item)
 
 
 if __name__ == "__main__":

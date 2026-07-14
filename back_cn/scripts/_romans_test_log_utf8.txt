@@ -1,0 +1,249 @@
+python : HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+所在位置 C:\Users\czh\AppData\Local\Temp\ps-script-3ec3be6b-1ee9-4308-b8b4-5aaa22003454.ps1:84 字符: 47
++ ... E:\copypan; python -m back_cn.scripts.test_step2 > back_cn/scripts/_r ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (HTTP Request: P...TTP/1.1 200 OK":String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Bible data loaded: 66 books
+[Step2] 鐪熺悊鍔犲己鐗?attempt 1/6 mode=鍒濆啓 error_type=None
+[Step2] 绂忛煶鍔犲己鐗?attempt 1/6 mode=鍒濆啓 error_type=None
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 1/6 mode=鍒濆啓 error_type=None
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 2/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 绂忛煶鍔犲己鐗?attempt 2/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 鐪熺悊鍔犲己鐗?attempt 2/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 3/6 mode=璋冩暣 error_type=ratio
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 绂忛煶鍔犲己鐗?attempt 3/6 mode=璋冩暣 error_type=verbatim
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 鐪熺悊鍔犲己鐗?attempt 3/6 mode=璋冩暣 error_type=ratio
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 绂忛煶鍔犲己鐗?attempt 4/6 mode=璋冩暣 error_type=verbatim
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 4/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 绂忛煶鍔犲己鐗?attempt 5/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 5/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 绂忛煶鍔犲己鐗?attempt 6/6 mode=璋冩暣 error_type=verbatim
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 6/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 鐪熺悊鍔犲己鐗?attempt 4/6 mode=閲嶅啓 error_type=json_parse
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step1] attempt 1 usage: {'input_tokens': 16, 'output_tokens': 76, 'cache_creation_input_tokens': 18213, 'cache_read_input_tokens': 0}
+缁熶竴瀛楁瀹屾垚锛屾爣棰? 鍓嶈█涓庣鐨勭闊?
+鍑哄: 锛堟憳鑷綏椹功鐢熷懡璇荤粡锛岀涓€~浜岀瘒锛?
+Step1 鑰楁椂: 4.0s
+娴嬭瘯鍙傛暟: book=45 issues=[1, 2] versions=['truth', 'gospel', 'elderly']
+[Step2] 鐪熺悊鍔犲己鐗?attempt 1/6 浣跨敤妯″紡: 鍒濆啓, 瑙﹀彂鍘熷洜: None
+[Step2] 绂忛煶鍔犲己鐗?attempt 1/6 浣跨敤妯″紡: 鍒濆啓, 瑙﹀彂鍘熷洜: None
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 1/6 浣跨敤妯″紡: 鍒濆啓, 瑙﹀彂鍘熷洜: None
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 1 usage: {'input_tokens': 72, 'output_tokens': 2674, 'cache_creation_input_tokens': 19147, 'cache_read_input_tokens': 0}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 1 瀛楁暟=890 鐩爣=700-800 mode=鍒濆啓
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 2/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?890 瀛楋紝鐩爣鍖洪棿 700-800 瀛楋紝瓒呭嚭绾?58 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 2 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 890
+[Step2] 绂忛煶鍔犲己鐗?attempt 1 usage: {'input_tokens': 72, 'output_tokens': 4676, 'cache_creation_input_tokens': 19436, 'cache_read_input_tokens': 0}
+[Step2] 绂忛煶鍔犲己鐗?attempt 1 瀛楁暟=1145 鐩爣=1500-1600 mode=鍒濆啓
+[Step2] 绂忛煶鍔犲己鐗?attempt 2/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?1145 瀛楋紝鐩爣鍖洪棿 1500-1600 瀛楋紝瀛楁暟涓嶈冻锛岃繕闇€瑕佸鍔犵害 295 瀛椼€傝鍦ㄤ繚鎸?00%鍘熸枃鎽樺彇鐨勫墠鎻愪笅锛屼粠鍘熸枃涓ˉ鍏呮憳鍙栨洿澶氱浉鍏冲彞瀛愶紝鍙互閫傚綋澧炲姞姣忕瘒鐨勬钀芥暟閲忔垨鑰呮瘡娈靛紩鐢ㄦ洿澶氬師鏂囧唴瀹癸紝涓嶈鏀瑰啓鐜版湁鍐呭鏉ュ噾瀛楁暟銆?
+[Step2] 绂忛煶鍔犲己鐗?attempt 2 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1145
+[Step2] 鐪熺悊鍔犲己鐗?attempt 1 usage: {'input_tokens': 72, 'output_tokens': 5615, 'cache_creation_input_tokens': 19684, 'cache_read_input_tokens': 0}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 1 瀛楁暟=1384 鐩爣=1100-1250 mode=鍒濆啓
+[Step2] 鐪熺悊鍔犲己鐗?attempt 2/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?1384 瀛楋紝鐩爣鍖洪棿 1100-1250 瀛楋紝瓒呭嚭绾?84 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 鐪熺悊鍔犲己鐗?attempt 2 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1384
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 2 usage: {'input_tokens': 2022, 'output_tokens': 3443, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19147}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 2 瀛楁暟=829 鐩爣=700-800 mode=璋冩暣
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶锛涗綘鑻ヨ繘鍏ヤ簡鍦ｇ粡娣卞鐨勬€?..
+[Step2璋冭瘯] type=鐪熺悊 text=杩欓厤鍋朵簩浜轰箖鏄竴浣擄紱鍩虹潱鍜岀鎵€鎷ｉ€夌殑浜烘槸...
+[Step2璋冭瘯] type=鐪熺悊 text=涓荤粰浜嗘垜浠叓涓緸锛屾寚鏄庢湰涔︾殑鍏锛氬紩瑷€銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=缃楅┈涔︾殑涓昏缁撴瀯鏈変笁鈥旀晳鎭┿€佺敓鍛戒笌寤洪€狅紱...
+[Step2璋冭瘯] type=鐪熺悊 text=绁炵殑绂忛煶璁哄埌鍩虹潱锛屾寜鑲変綋璇达紝鏄粠澶у崼鍚庤...
+[Step2璋冭瘯] type=鐢熷懡 text=绁炲師鏉ュ彧鏈変竴涓効瀛愶紝灏辨槸绁傜殑鐙敓瀛愶紱鐒惰€?..
+[Step2璋冭瘯] type=鐪熺悊 text=绁炵殑绂忛煶涓鸿挋鍙殑浜烘墍鎺ュ彈锛涜挋鍙氨鏄粠涓嶆槸...
+[Step2璋冭瘯] type=鐪熺悊 text=杩欑闊虫湰鏄鐨勫ぇ鑳斤紝瑕佹晳涓€鍒囦俊鐨勪汉锛涚闊?..
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 3/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鐪熺悊:鐢熷懡 瀹為檯绾?618:140锛岀洰鏍囨瘮渚嬬害 3:7锛岃鍑忓皯鐪熺悊鍙ャ€佸鍔犵敓鍛藉彞鐨勭瘒骞呭崰姣斻€傚綋鍓嶆€诲瓧鏁?829 瀛楀凡缁忕鍚堣姹傚尯闂达紝璋冩暣姣斾緥鏃惰鍋氱瓑閲忔浛鎹⑩€斺€斿鍔犳煇涓€绫诲唴瀹圭殑鍚屾椂锛屽悓姝ュ垹鍑忓ぇ鑷寸浉褰撳瓧鏁扮殑鍙︿竴绫诲唴瀹癸紝纭繚璋冩暣鍚庢€诲瓧鏁板熀鏈繚鎸佷笉鍙橈紝涓嶈鍙仛鍔犳硶瀵艰嚧鎬诲瓧鏁板張瓒呮爣銆?
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 3 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 829
+[Step2] 绂忛煶鍔犲己鐗?attempt 2 usage: {'input_tokens': 2336, 'output_tokens': 3143, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19436}
+[Step2] 绂忛煶鍔犲己鐗?attempt 2 瀛楁暟=1596 鐩爣=1500-1600 mode=璋冩暣
+[Step2璋冭瘯] type=None text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶銆備綘浠ュ墠鍚繃杩欒瘽鍚楋紵杩欏惉...
+[Step2璋冭瘯] type=None text=鍦ㄦ棫绾﹂噷锛岀濂藉嚑娆¤鍒扮鑷繁鏄笀澶紝绁傜殑...
+[Step2璋冭瘯] type=None text=鏈夊叧浜庡畾缃殑涓€娈碉紝鍚戞垜浠彮绀虹鏁戞仼鐨勯渶瑕?..
+[Step2璋冭瘯] type=None text=鍥涚闊抽噷鐨勫熀鐫ｆ槸鍦ㄩ棬寰掍腑闂达紱缃楅┈涔﹂噷鐨勫熀...
+[Step2璋冭瘯] type=None text=绁炵殑绂忛煶涓鸿挋鍙殑浜烘墍鎺ュ彈锛岃繖浜涜挋鍙殑浜轰綔...
+[Step2璋冭瘯] type=None text=鎴戜滑涓虹潃浼犵闊筹紝闇€瑕佽澶氱シ鍛婏紱鎴戜滑闇€瑕佷负...
+[Step2璋冭瘯] type=None text=鍊熺潃椤轰粠淇′话鎺ュ彈绂忛煶锛屽氨甯﹁繘鎭╁吀涓庡钩瀹夛紱...
+[Step2璋冭瘯] type=None text=绁炵殑涔夊湪杩欑闊充笂锛屾湰浜庝俊鏄剧ず涓庝俊锛岃繖鎰忔€?..
+[Step2] 绂忛煶鍔犲己鐗?attempt 3/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 浠ヤ笅杩欎簺鐗囨缁忔牳鏌ワ紝涓嶆槸閫愬瓧鎽樿嚜鍘熸枃锛堝彲鑳借鏀瑰啓鎴栨鎷簡锛夛紝蹇呴』閫愪竴鏇挎崲鎴愬師鏂囦腑鐪熷疄瀛樺湪銆佹剰鎬濈浉杩戠殑鍙ュ瓙锛?
+- 銆岃繖瀵归厤鍋剁殑鐢锋柟鏄鑷繁锛岃繖浣嶇缁忚繃婕暱鐨勮繃绋嬩箣鍚庯紝褰掔粨涓哄熀鐫ｏ紝灏辨槸鏂伴儙銆?
+- 銆岃繖瀵归厤鍋剁殑濂虫柟鏄洟浣撶殑浜虹被锛岀鎵€鏁戣祹鐨勪汉锛屽寘鎷墍鏈夋棫绾﹀拰鏂扮害鐨勫湥寰掞紝杩欏洟浣撶殑浜虹粡杩囨极闀跨殑杩囩▼涔嬪悗锛屽綊缁撲负鏂拌€惰矾鎾掑喎锛屽氨鏄€?
+- 銆岃繖瀵归厤鍋舵槸瀹囧畽鐨勭瀵嗭紝鏁翠釜瀹囧畽鐨勭瀵嗭紝涔冩槸绁炰笌绁傛墍鎷ｉ€夌殑浜鸿鎴愪负涓€瀵归厤鍋躲€?
+- 銆屽亣瀹氫綘鐨勫瀛愪互涓轰綘鏄紵浜恒€佹槸宸ㄤ汉锛屽磭鏁殑灏辫繎浣狅紝鍚戜綘闉犺含銆佷笅璺暚鎷滐紝浣犱細鎬庝箞璇达紵浣犱細璇达紝锠㈠お澶紝鎴戜笉闇€瑕佽繖鏍风殑鏁嫓鑰咃紝鎴戙€?
+- 銆岀鍊熺潃浠ヨ禌浜氳锛屾垜鍘岀儲杩欎釜锛屾垜鍘屽€︿綘浠殑绁墿锛屾垜瑕佷綘浠埍鎴戙€?
+
+鍙浛鎹笂闈㈠垪鍑虹殑杩欎簺鐗囨锛屼笉瑕佹敼鍔ㄨ崏绋块噷鍏朵粬閮ㄥ垎锛堜繚鎸佸凡缁忚皟濂界殑鎬诲瓧鏁板拰鐪熺悊/鐢熷懡姣斾緥鍩烘湰涓嶅彉锛屾浛鎹㈡椂灏介噺閫夌敤瀛楁暟鐩歌繎鐨勫師鏂囧彞瀛愶級銆傚鏋滃師鏂囬噷瀹炲湪鎵句笉鍒版剰鎬濆搴旂殑鍙ュ瓙锛屽彲浠ョ洿鎺ュ垹鎺夎繖閮ㄥ垎鍐呭锛屼笉瑕佷繚鐣欐敼鍐欑増鏈噾鏁般€?
+[Step2] 绂忛煶鍔犲己鐗?attempt 3 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1596
+[Step2] 鐪熺悊鍔犲己鐗?attempt 2 usage: {'input_tokens': 3460, 'output_tokens': 6311, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19684}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 2 瀛楁暟=1180 鐩爣=1100-1250 mode=璋冩暣
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ㄦ渶绾磥銆佹渶绁炲湥鐨勬剰涔変笂锛屽湥缁忔槸涓€瀵瑰畤瀹?..
+[Step2璋冭瘯] type=鐪熺悊 text=鏃х害鏄熀鐫ｇ殑棰勫憡锛屽€熺潃鏄庤█銆侀琛ㄣ€佽〃鍙峰拰...
+[Step2璋冭瘯] type=鐪熺悊 text=涓荤粰浜嗘垜浠叓涓緸锛屾寚鏄庢湰涔︾殑鍏锛氬紩瑷€銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=缃楅┈涔︾殑涓昏缁撴瀯鏈変笁鈥旀晳鎭┿€佺敓鍛戒笌寤洪€狅紱...
+[Step2璋冭瘯] type=鐪熺悊 text=绁炶繖绂忛煶璁哄埌涓€涓汉浣嶏紝鍩虹潱锛涗繚缃楅鍏堟彁鍒?..
+[Step2璋冭瘯] type=鐪熺悊 text=杩欑洰鏍囨槸瑕佷骇鐢熺鐨勪紬瀛愶紱绁炲師鏉ュ彧鏈変竴涓効...
+[Step2璋冭瘯] type=鐢熷懡 text=杩欑闊虫槸鍦ㄧ伒閲岃浼犳壃锛屾垜浠紶绂忛煶鏃讹紝涓嶈...
+[Step2璋冭瘯] type=鐪熺悊 text=钂欏彫鐨勪汉鍊熺潃椤轰粠淇′话鎺ュ彈绁炵殑绂忛煶锛涗俊鐨勬剰...
+[Step2璋冭瘯] type=鐪熺悊 text=杩欑闊虫湰鏄鐨勫ぇ鑳斤紝瑕佹晳涓€鍒囦俊鐨勪汉锛涚闊?..
+[Step2] 鐪熺悊鍔犲己鐗?attempt 3/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鐪熺悊:鐢熷懡 瀹為檯绾?955:98锛岀洰鏍囨瘮渚嬬害 1:1锛岃鍑忓皯鐪熺悊鍙ャ€佸鍔犵敓鍛藉彞鐨勭瘒骞呭崰姣斻€傚綋鍓嶆€诲瓧鏁?1180 瀛楀凡缁忕鍚堣姹傚尯闂达紝璋冩暣姣斾緥鏃惰鍋氱瓑閲忔浛鎹⑩€斺€斿鍔犳煇涓€绫诲唴瀹圭殑鍚屾椂锛屽悓姝ュ垹鍑忓ぇ鑷寸浉褰撳瓧鏁扮殑鍙︿竴绫诲唴瀹癸紝纭繚璋冩暣鍚庢€诲瓧鏁板熀鏈繚鎸佷笉鍙橈紝涓嶈鍙仛鍔犳硶瀵艰嚧鎬诲瓧鏁板張瓒呮爣銆?
+[Step2] 鐪熺悊鍔犲己鐗?attempt 3 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1180
+[Step2] 绂忛煶鍔犲己鐗?attempt 3 usage: {'input_tokens': 3244, 'output_tokens': 4613, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19436}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 5/6 mode=璋冩暣 error_type=ratio
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+[Step2] 鐪熺悊鍔犲己鐗?attempt 6/6 mode=璋冩暣 error_type=word_count
+HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+Traceback (most recent call last):
+  File "E:\python\py\lib\runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "E:\python\py\lib\runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "E:\copypan\back_cn\scripts\test_step2.py", line 89, in <module>
+    asyncio.run(main())
+  File "E:\python\py\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "E:\python\py\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "E:\copypan\back_cn\scripts\test_step2.py", line 82, in main
+    results = await generate_all_versions(texts, unified, version_keys=versions)
+  File "E:\copypan\back_cn\roundtable\step2_service.py", line 486, in generate_all_versions
+    raise RuntimeError(
+RuntimeError: 閮ㄥ垎鐗堟湰鐢熸垚澶辫触銆?
+鎴愬姛: ['鐪熺悊鍔犲己鐗?]
+澶辫触:
+- 绂忛煶鍔犲己鐗? 绂忛煶鍔犲己鐗?鐢熸垚澶辫触锛屽凡閲嶈瘯 5 娆★紝鏈€鍚庨敊璇細鎬诲瓧鏁?1682 瀛楋紝鐩爣鍖洪棿 1500-1600 瀛楋紝瓒呭嚭绾?18 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜
+繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+- 骞撮暱鏀惧ぇ鐗? 骞撮暱鏀惧ぇ鐗?鐢熸垚澶辫触锛屽凡閲嶈瘯 5 娆★紝鏈€鍚庨敊璇細浠ヤ笅杩欎簺鐗囨缁忔牳鏌ワ紝涓嶆槸閫愬瓧鎽樿嚜鍘熸枃锛堝彲鑳借鏀瑰啓鎴栨鎷簡锛夛紝蹇呴』閫愪竴鏇挎崲鎴愬師鏂囦腑鐪熷疄瀛樺湪銆佹剰鎬濈浉杩戠
+殑鍙ュ瓙锛?
+- 銆岃繖瀵归厤鍋剁殑鐢锋柟鏄鑷繁锛岃繖浣嶇缁忚繃婕暱鐨勮繃绋嬩箣鍚庯紝褰掔粨涓哄熀鐫ｏ紝灏辨槸鏂伴儙銆?
+- 銆岃繖瀵归厤鍋剁殑濂虫柟鏄洟浣撶殑浜虹被锛岀鎵€鏁戣祹鐨勪汉锛屽寘鎷墍鏈夋棫绾﹀拰鏂扮害鐨勫湥寰掞紝杩欏洟浣撶殑浜虹粡杩囨极闀跨殑杩囩▼涔嬪悗锛屽綊缁撲负鏂拌€惰矾鎾掑喎锛屽氨鏄€?
+- 銆岃繖瀵归厤鍋舵槸瀹囧畽鐨勭瀵嗭紝鏁翠釜瀹囧畽鐨勭瀵嗭紝涔冩槸绁炰笌绁傛墍鎷ｉ€夌殑浜鸿鎴愪负涓€瀵归厤鍋躲€?
+- 銆屾垜浠繖浜涚鎵€鎷ｉ€夌殑浜轰笌绁炴槸鍑轰簬鍚屼竴涓簮澶达紝鍚屾湁涓€涓€ф儏锛屽苟鏈夊悓涓€涓敓鍛斤紝鐜板湪鎴戜滑涔熼渶瑕佸悓鏈変竴涓敓娲汇€?
+- 銆屾垜浠笉鏄嚟鑷繁鎴栦负鑷繁娲荤潃锛屾垜浠箖鏄悓绁炲苟涓虹娲荤潃銆?
+
+鍙浛鎹笂闈㈠垪鍑虹殑杩欎簺鐗囨锛屼笉瑕佹敼鍔ㄨ崏绋块噷鍏朵粬閮ㄥ垎锛堜繚鎸佸凡缁忚皟濂界殑鎬诲瓧鏁板拰鐪熺悊/鐢熷懡姣斾緥鍩烘湰涓嶅彉锛屾浛鎹㈡椂灏介噺閫夌敤瀛楁暟鐩歌繎鐨勫師鏂囧彞瀛愶級銆傚鏋滃師鏂囬噷瀹炲湪鎵句笉鍒版剰鎬濆搴
+旂殑鍙ュ瓙锛屽彲浠ョ洿鎺ュ垹鎺夎繖閮ㄥ垎鍐呭锛屼笉瑕佷繚鐣欐敼鍐欑増鏈噾鏁般€?
+[Step2] 绂忛煶鍔犲己鐗?attempt 3 瀛楁暟=1633 鐩爣=1500-1600 mode=璋冩暣
+[Step2璋冭瘯] type=None text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶銆備綘浠ュ墠鍚繃杩欒瘽鍚楋紵杩欏惉...
+[Step2璋冭瘯] type=None text=鍦ㄦ棫绾﹂噷锛岀濂藉嚑娆¤鍒扮鑷繁鏄笀澶紝绁傜殑...
+[Step2璋冭瘯] type=None text=鏈夊叧浜庡畾缃殑涓€娈碉紝鍚戞垜浠彮绀虹鏁戞仼鐨勯渶瑕?..
+[Step2璋冭瘯] type=None text=鍥涚闊抽噷鐨勫熀鐫ｆ槸鍦ㄩ棬寰掍腑闂达紱缃楅┈涔﹂噷鐨勫熀...
+[Step2璋冭瘯] type=None text=绁炵殑绂忛煶涓鸿挋鍙殑浜烘墍鎺ュ彈锛岃繖浜涜挋鍙殑浜轰綔...
+[Step2璋冭瘯] type=None text=鎴戜滑涓虹潃浼犵闊筹紝闇€瑕佽澶氱シ鍛婏紱鎴戜滑闇€瑕佷负...
+[Step2璋冭瘯] type=None text=鍊熺潃椤轰粠淇′话鎺ュ彈绂忛煶锛屽氨甯﹁繘鎭╁吀涓庡钩瀹夛紱...
+[Step2璋冭瘯] type=None text=绁炵殑涔夊湪杩欑闊充笂锛屾湰浜庝俊鏄剧ず涓庝俊锛岃繖鎰忔€?..
+[Step2] 绂忛煶鍔犲己鐗?attempt 4/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 浠ヤ笅杩欎簺鐗囨缁忔牳鏌ワ紝涓嶆槸閫愬瓧鎽樿嚜鍘熸枃锛堝彲鑳借鏀瑰啓鎴栨鎷簡锛夛紝蹇呴』閫愪竴鏇挎崲鎴愬師鏂囦腑鐪熷疄瀛樺湪銆佹剰鎬濈浉杩戠殑鍙ュ瓙锛?
+- 銆屸€濇湁涓€澶╃杩涙潵锛屽苟鍊熺潃浠ヨ禌浜氳锛屸€滄垜鍘岀儲杩欎釜銆?
+- 銆屸€濆湪闆呮瓕閲岋紝鎴戜滑鐪嬭涓€涓コ瀛愪笌涓€涓敺瀛愬湪鎭嬬埍涔嬩腑锛屽コ瀛愯锛屽摝锛屾効浠栫敤鍙ｄ笌鎴戜翰鍢达紝鎴戞复鏈涜繖涓€?
+- 銆屽ス鐨勮壇浜虹珛鍒诲氨鍦ㄨ繎鏃侊紝浣犵殑鍚嶉Θ棣欙紝浣犵殑鐖辨瘮閰掓洿缇庛€?
+- 銆屾効浣犲惛寮曟垜锛屾垜浠氨蹇窇杩介殢浣狅紝杩欐槸浣曠瓑鐨勭綏鏇煎彶锛併€?
+- 銆屾湁鍏充簬瀹氱姜鐨勪竴娈碉紝鍚戞垜浠彮绀虹鏁戞仼鐨勯渶瑕併€?
+
+鍙浛鎹笂闈㈠垪鍑虹殑杩欎簺鐗囨锛屼笉瑕佹敼鍔ㄨ崏绋块噷鍏朵粬閮ㄥ垎锛堜繚鎸佸凡缁忚皟濂界殑鎬诲瓧鏁板拰鐪熺悊/鐢熷懡姣斾緥鍩烘湰涓嶅彉锛屾浛鎹㈡椂灏介噺閫夌敤瀛楁暟鐩歌繎鐨勫師鏂囧彞瀛愶級銆傚鏋滃師鏂囬噷瀹炲湪鎵句笉鍒版剰鎬濆搴旂殑鍙ュ瓙锛屽彲浠ョ洿鎺ュ垹鎺夎繖閮ㄥ垎鍐呭锛屼笉瑕佷繚鐣欐敼鍐欑増鏈噾鏁般€?
+[Step2] 绂忛煶鍔犲己鐗?attempt 4 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1633
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 3 usage: {'input_tokens': 2004, 'output_tokens': 11152, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19147}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 3 瀛楁暟=933 鐩爣=700-800 mode=璋冩暣
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 4/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?933 瀛楋紝鐩爣鍖洪棿 700-800 瀛楋紝瓒呭嚭绾?101 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 4 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 933
+[Step2] 绂忛煶鍔犲己鐗?attempt 4 usage: {'input_tokens': 3184, 'output_tokens': 4398, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19436}
+[Step2] 绂忛煶鍔犲己鐗?attempt 4 瀛楁暟=1693 鐩爣=1500-1600 mode=璋冩暣
+[Step2] 绂忛煶鍔犲己鐗?attempt 5/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?1693 瀛楋紝鐩爣鍖洪棿 1500-1600 瀛楋紝瓒呭嚭绾?29 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 绂忛煶鍔犲己鐗?attempt 5 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1693
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 4 usage: {'input_tokens': 2089, 'output_tokens': 1637, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19147}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 4 瀛楁暟=935 鐩爣=700-800 mode=璋冩暣
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 5/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?935 瀛楋紝鐩爣鍖洪棿 700-800 瀛楋紝瓒呭嚭绾?103 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 5 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 935
+[Step2] 绂忛煶鍔犲己鐗?attempt 5 usage: {'input_tokens': 2982, 'output_tokens': 2457, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19436}
+[Step2] 绂忛煶鍔犲己鐗?attempt 5 瀛楁暟=1611 鐩爣=1500-1600 mode=璋冩暣
+[Step2璋冭瘯] type=None text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶銆備綘浠ュ墠鍚繃杩欒瘽鍚楋紵杩欏惉...
+[Step2璋冭瘯] type=None text=鍦ㄦ棫绾﹂噷锛岀濂藉嚑娆¤鍒扮鑷繁鏄笀澶紝绁傜殑...
+[Step2璋冭瘯] type=None text=鍦ㄥ紩瑷€涔嬪悗鏈夊叧浜庡畾缃殑涓€娈碉紝鍚戞垜浠彮绀虹...
+[Step2璋冭瘯] type=None text=鍥涚闊抽噷鐨勫熀鐫ｆ槸鍦ㄩ棬寰掍腑闂达紱缃楅┈涔﹂噷鐨勫熀...
+[Step2璋冭瘯] type=None text=绁炵殑绂忛煶涓鸿挋鍙殑浜烘墍鎺ュ彈锛岃繖浜涜挋鍙殑浜轰綔...
+[Step2璋冭瘯] type=None text=鎴戜滑涓虹潃浼犵闊筹紝闇€瑕佽澶氱シ鍛婏紱鎴戜滑闇€瑕佷负...
+[Step2璋冭瘯] type=None text=鍊熺潃椤轰粠淇′话鎺ュ彈绂忛煶锛屽氨甯﹁繘鎭╁吀涓庡钩瀹夛紱...
+[Step2璋冭瘯] type=None text=绁炵殑涔夊湪杩欑闊充笂锛屾湰浜庝俊鏄剧ず涓庝俊锛岃繖鎰忔€?..
+[Step2] 绂忛煶鍔犲己鐗?attempt 6/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 浠ヤ笅杩欎簺鐗囨缁忔牳鏌ワ紝涓嶆槸閫愬瓧鎽樿嚜鍘熸枃锛堝彲鑳借鏀瑰啓鎴栨鎷簡锛夛紝蹇呴』閫愪竴鏇挎崲鎴愬師鏂囦腑鐪熷疄瀛樺湪銆佹剰鎬濈浉杩戠殑鍙ュ瓙锛?
+- 銆屸€濇湁涓€澶╃杩涙潵锛屽苟鍊熺潃浠ヨ禌浜氳锛屸€滄垜鍘岀儲杩欎釜銆?
+- 銆屸€濆湪闆呮瓕閲岋紝鎴戜滑鐪嬭涓€涓コ瀛愪笌涓€涓敺瀛愬湪鎭嬬埍涔嬩腑锛屽コ瀛愯锛屸€滃摝锛屾効浠栫敤鍙ｄ笌鎴戜翰鍢淬€?
+- 銆屸€濃€滀綘鐨勫悕棣ㄩ锛屼綘鐨勭埍姣旈厭鏇寸編銆?
+- 銆屽湪寮曡█涔嬪悗鏈夊叧浜庡畾缃殑涓€娈碉紝鍚戞垜浠彮绀虹鏁戞仼鐨勯渶瑕併€?
+- 銆屾垜浠兘鏄病鏈夌浖鏈涖€佹棤鑳戒负鍔涚殑浜猴紝涓斿湪绁炵殑瀹氱姜涔嬩笅锛屾垜浠渶瑕佺鐨勬晳鎭┿€?
+
+鍙浛鎹笂闈㈠垪鍑虹殑杩欎簺鐗囨锛屼笉瑕佹敼鍔ㄨ崏绋块噷鍏朵粬閮ㄥ垎锛堜繚鎸佸凡缁忚皟濂界殑鎬诲瓧鏁板拰鐪熺悊/鐢熷懡姣斾緥鍩烘湰涓嶅彉锛屾浛鎹㈡椂灏介噺閫夌敤瀛楁暟鐩歌繎鐨勫師鏂囧彞瀛愶級銆傚鏋滃師鏂囬噷瀹炲湪鎵句笉鍒版剰鎬濆搴旂殑鍙ュ瓙锛屽彲浠ョ洿鎺ュ垹鎺夎繖閮ㄥ垎鍐呭锛屼笉瑕佷繚鐣欐敼鍐欑増鏈噾鏁般€?
+[Step2] 绂忛煶鍔犲己鐗?attempt 6 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1611
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 5 usage: {'input_tokens': 2119, 'output_tokens': 1664, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19147}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 5 瀛楁暟=857 鐩爣=700-800 mode=璋冩暣
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 6/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?857 瀛楋紝鐩爣鍖洪棿 700-800 瀛楋紝瓒呭嚭绾?25 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 6 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 857
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 6 usage: {'input_tokens': 2012, 'output_tokens': 2406, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19147}
+[Step2] 骞撮暱鏀惧ぇ鐗?attempt 6 瀛楁暟=775 鐩爣=700-800 mode=璋冩暣
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶锛涜繖瀵归厤鍋剁殑鐢锋柟鏄鑷繁...
+[Step2璋冭瘯] type=鐢熷懡 text=杩欏閰嶅伓鏄畤瀹欑殑绉樺瘑锛屾暣涓畤瀹欑殑绉樺瘑锛屼箖...
+[Step2璋冭瘯] type=鐪熺悊 text=涓荤粰浜嗘垜浠叓涓緸锛屾寚鏄庢湰涔︾殑鍏锛氬紩瑷€銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=绁炵殑绂忛煶璁哄埌鍩虹潱锛屾寜鑲変綋璇达紝鏄粠澶у崼鍚庤...
+[Step2璋冭瘯] type=鐢熷懡 text=绁炲師鏉ュ彧鏈変竴涓効瀛愶紝灏辨槸绁傜殑鐙敓瀛愶紱鐒惰€?..
+[Step2璋冭瘯] type=鐢熷懡 text=琚湥鍒槸浠€涔堟剰鎬濓紵鎴戜滑鍙啀鐢ㄨ尪鐨勪緥璇侊紱鎴?..
+[Step2璋冭瘯] type=鐢熷懡 text=鎴戜滑浼犵闊抽渶瑕佽繍鐢ㄦ垜浠殑鐏点€侀渶瑕佽澶氱シ鍛?..
+[Step2璋冭瘯] type=鐪熺悊 text=绁炵殑绂忛煶涓鸿挋鍙殑浜烘墍鎺ュ彈锛涗俊瑕佹眰鎴戜滑鎵胯...
+[Step2] 绂忛煶鍔犲己鐗?attempt 6 usage: {'input_tokens': 3146, 'output_tokens': 4494, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19436}
+[Step2] 绂忛煶鍔犲己鐗?attempt 6 瀛楁暟=1682 鐩爣=1500-1600 mode=璋冩暣
+[Step2] 鐪熺悊鍔犲己鐗?attempt 3 usage: {'input_tokens': 3280, 'output_tokens': 16000, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19684}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 4/6 浣跨敤妯″紡: 閲嶅啓, 瑙﹀彂鍘熷洜: JSON瑙ｆ瀽澶辫触锛歎nterminated string starting at: line 118 column 19 (char 4013)
+[Step2] 鐪熺悊鍔犲己鐗?attempt 4 usage: {'input_tokens': 107, 'output_tokens': 8521, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19684}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 4 瀛楁暟=1256 鐩爣=1100-1250 mode=閲嶅啓
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶锛涚劧鑰岋紝浣犺嫢杩涘叆浜嗗湥缁忔繁...
+[Step2璋冭瘯] type=鐪熺悊 text=浜氬綋鍜屽濞冪殑棰勮〃鍚ず锛岃繖瀹囧畽閰嶅伓涓殑浜岃€?..
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ｇ粡鍛婅瘔鎴戜滑锛岃繖閰嶅伓浜屼汉涔冩槸涓€浣擄紱鍩虹潱鍜?..
+[Step2璋冭瘯] type=鐪熺悊 text=鏃х害鏄熀鐫ｇ殑棰勫憡锛屽€熺潃鏄庤█銆侀琛ㄣ€佽〃鍙峰拰...
+[Step2璋冭瘯] type=鐪熺悊 text=鍥涚闊虫槸涓€涓濡欎汉鐗╂椿鐨勪紶璁帮紱浣垮緬琛屼紶鏄?..
+[Step2璋冭瘯] type=鐪熺悊 text=涓荤粰浜嗘垜浠叓涓緸锛屾寚鏄庢湰涔︾殑鍏锛氬紩瑷€銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=缃楅┈涔︾殑涓昏缁撴瀯鏈変笁鈥旀晳鎭┿€佺敓鍛戒笌寤洪€狅紱...
+[Step2璋冭瘯] type=鐪熺悊 text=淇濈綏棣栧厛鎻愬埌鐨勬槸鍩虹潱鐨勪汉鎬э紝涓嶆槸绁傜殑绁炴€?..
+[Step2璋冭瘯] type=鐪熺悊 text=鍩虹潱鍊熺潃杩欎袱姝ワ紝鎴愪簡涓ょ涓嶅悓鐨勬墍鏄紱绁傞...
+[Step2璋冭瘯] type=鐪熺悊 text=鍩虹潱鎴愪簡鑲変綋锛屼负鎴戜滑瀹屾垚鏁戣祹鐨勫伐浣滐紱鑰岀...
+[Step2璋冭瘯] type=鐢熷懡 text=杩欑闊虫槸鍦ㄧ伒閲岃浼犳壃锛涗繚缃楄锛屼粬鍦ㄧ鍎垮瓙...
+[Step2璋冭瘯] type=鐢熷懡 text=鎴戜滑涓虹潃浼犵闊筹紝闇€瑕佽澶氱シ鍛婏紱鎴戜滑鑻ユ病鏈?..
+[Step2璋冭瘯] type=鐪熺悊 text=钂欏彫灏辨槸浠庝笉鏄鑷繁鐨勪换浣曚簨鐗╀腑鍑烘潵锛涗俊...
+[Step2璋冭瘯] type=鐪熺悊 text=钂欏彫鐨勪汉鍊熺潃椤轰粠淇′话鎺ュ彈绁炵殑绂忛煶锛涙棤璁烘垜...
+[Step2璋冭瘯] type=鐪熺悊 text=杩欑闊虫湰鏄鐨勫ぇ鑳斤紝瑕佹晳涓€鍒囦俊鐨勪汉锛涜繖鏁?..
+[Step2璋冭瘯] type=鐪熺悊 text=绂忛煶鏈夊ぇ鑳斤紝鍥犱负绁炵殑涔夊湪鍏朵笂鏄剧ず鍑烘潵锛涘洜...
+[Step2] 鐪熺悊鍔犲己鐗?attempt 5/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鐪熺悊:鐢熷懡 瀹為檯绾?1024:141锛岀洰鏍囨瘮渚嬬害 1:1锛岃鍑忓皯鐪熺悊鍙ャ€佸鍔犵敓鍛藉彞鐨勭瘒骞呭崰姣斻€傚綋鍓嶆€诲瓧鏁?1256 瀛楀凡缁忕鍚堣姹傚尯闂达紝璋冩暣姣斾緥鏃惰鍋氱瓑閲忔浛鎹⑩€斺€斿鍔犳煇涓€绫诲唴瀹圭殑鍚屾椂锛屽悓姝ュ垹鍑忓ぇ鑷寸浉褰撳瓧鏁扮殑鍙︿竴绫诲唴瀹癸紝纭繚璋冩暣鍚庢€诲瓧鏁板熀鏈繚鎸佷笉鍙橈紝涓嶈鍙仛鍔犳硶瀵艰嚧鎬诲瓧鏁板張瓒呮爣銆?
+[Step2] 鐪熺悊鍔犲己鐗?attempt 5 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1256
+[Step2] 鐪熺悊鍔犲己鐗?attempt 5 usage: {'input_tokens': 3386, 'output_tokens': 11192, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19684}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 5 瀛楁暟=1314 鐩爣=1100-1250 mode=璋冩暣
+[Step2] 鐪熺悊鍔犲己鐗?attempt 6/6 浣跨敤妯″紡: 璋冩暣, 瑙﹀彂鍘熷洜: 鎬诲瓧鏁?1314 瀛楋紝鐩爣鍖洪棿 1100-1250 瀛楋紝瓒呭嚭绾?14 瀛椼€傝绮剧畝锛屽垹鍑忔帀鐩稿娆¤鐨勫彞瀛?娈佃惤锛屼紭鍏堜繚鐣欐渶鏍稿績鐨勫唴瀹癸紝涓嶈鐢ㄧ缉鍐欐垨鏀瑰啓鐨勬柟寮忓帇缂╁瓧鏁扳€斺€斿垹鍙ュ瓙鑰屼笉鏄敼鍙ュ瓙銆?
+[Step2] 鐪熺悊鍔犲己鐗?attempt 6 璋冩暣妯″紡浣跨敤鐨勪笂鐗堣崏绋垮瓧鏁? 1314
+[Step2] 鐪熺悊鍔犲己鐗?attempt 6 usage: {'input_tokens': 3459, 'output_tokens': 2914, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 19684}
+[Step2] 鐪熺悊鍔犲己鐗?attempt 6 瀛楁暟=1206 鐩爣=1100-1250 mode=璋冩暣
+[Step2璋冭瘯] type=鐪熺悊 text=鍦ｇ粡鏄竴閮ㄧ綏鏇煎彶锛涚劧鑰岋紝浣犺嫢杩涘叆浜嗗湥缁忔繁...
+[Step2璋冭瘯] type=鐪熺悊 text=浜氬綋鍜屽濞冪殑棰勮〃鍚ず锛岃繖瀹囧畽閰嶅伓涓殑浜岃€?..
+[Step2璋冭瘯] type=鐢熷懡 text=鎴戜滑杩欎簺绁炴墍鎷ｉ€夌殑浜轰笌绁炴槸鍑轰簬鍚屼竴涓簮澶?..
+[Step2璋冭瘯] type=鐪熺悊 text=鏃х害涔熸槸鍙細鐨勯鍛婏紝涓嶆槸鐢ㄦ槑瑷€锛屽彧鏄敤棰?..
+[Step2璋冭瘯] type=鐪熺悊 text=杩欐妸鎴戜滑甯﹀埌缃楅┈涔︼紝缃楅┈涔﹁В閲婏紝涓汉鐨勫熀...
+[Step2璋冭瘯] type=鐪熺悊 text=涓荤粰浜嗘垜浠叓涓緸锛屾寚鏄庢湰涔︾殑鍏锛氬紩瑷€銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=缃楅┈涔︾殑涓昏缁撴瀯鏈変笁鈥旀晳鎭┿€佺敓鍛戒笌寤洪€狅紱...
+[Step2璋冭瘯] type=鐪熺悊 text=淇濈綏棣栧厛鎻愬埌鐨勬槸鍩虹潱鐨勪汉鎬э紝涓嶆槸绁傜殑绁炴€?..
+[Step2璋冭瘯] type=鐪熺悊 text=鍩虹潱鍊熺潃杩欎袱姝ワ紝鎴愪簡涓ょ涓嶅悓鐨勬墍鏄紱绁傞...
+[Step2璋冭瘯] type=鐢熷懡 text=杩欑闊虫槸鍦ㄧ伒閲岃浼犳壃锛涗繚缃楄锛屼粬鍦ㄧ鍎垮瓙...
+[Step2璋冭瘯] type=鐢熷懡 text=鎴戜滑涓虹潃浼犵闊筹紝闇€瑕佽澶氱シ鍛婏紱鎴戜滑鑻ユ病鏈?..
+[Step2璋冭瘯] type=鐢熷懡 text=鍦ㄧ閲岄潰骞朵韩鍙楃鏄綍绛夌編濂斤紒鐒惰€岋紝涓嶈鐪?..
+[Step2璋冭瘯] type=鐢熷懡 text=琚湥鍒槸浠€涔堟剰鎬濓紵鎴戜滑鍙啀鐢ㄨ尪鐨勪緥璇侊紱鎴?..
+[Step2璋冭瘯] type=鐪熺悊 text=钂欏彫灏辨槸浠庝笉鏄鑷繁鐨勪换浣曚簨鐗╀腑鍑烘潵锛涗俊...
+[Step2璋冭瘯] type=鐢熷懡 text=鍙鎴戜滑鍛兼眰涓昏€剁ǎ鐨勫悕锛岀瀵逛綘灏辨槸涓板瘜鐨?..
+[Step2璋冭瘯] type=鐪熺悊 text=杩欑闊虫湰鏄鐨勫ぇ鑳斤紝瑕佹晳涓€鍒囦俊鐨勪汉銆?..
+[Step2璋冭瘯] type=鐪熺悊 text=绂忛煶鏈夊ぇ鑳斤紝鍥犱负绁炵殑涔夊湪鍏朵笂鏄剧ず鍑烘潵锛涘洜...
