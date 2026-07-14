@@ -8,6 +8,8 @@ import zipfile
 from pathlib import Path
 from lxml import etree
 
+from back_cn.roundtable.docx_builder import _write_xml_with_double_quote_declaration
+
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 WP_NS = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
@@ -124,7 +126,7 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
             "ContentType",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
         )
-    ct_tree.write(str(ct_path), xml_declaration=True, encoding="UTF-8", standalone=True)
+    _write_xml_with_double_quote_declaration(ct_tree, ct_path)
 
     # 6. 更新 word/_rels/document.xml.rels：注册 header1.xml 关系（如果已存在同类型关系，先复用，不重复添加）
     doc_rels_path = rels_dir / "document.xml.rels"
@@ -149,7 +151,7 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
         rel_el.set("Id", header_rid)
         rel_el.set("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
         rel_el.set("Target", "header1.xml")
-        doc_rels_tree.write(str(doc_rels_path), xml_declaration=True, encoding="UTF-8", standalone=True)
+        _write_xml_with_double_quote_declaration(doc_rels_tree, doc_rels_path)
 
     # 7. 更新 document.xml 的 sectPr：加 headerReference（如果已存在则不重复加），并按需覆盖页脚距离
     has_header_ref = sectPr.find('w:headerReference[@w:type="default"]', nsmap) is not None
@@ -164,7 +166,7 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
         if pgMar is not None:
             pgMar.set(f"{{{W_NS}}}footer", str(footer_override))
 
-    doc_tree.write(str(doc_xml_path), xml_declaration=True, encoding="UTF-8", standalone=True)
+    _write_xml_with_double_quote_declaration(doc_tree, doc_xml_path)
 
     # 8. 重新打包
     docx_path.unlink()

@@ -177,6 +177,29 @@ def _heading_count_fragment(
     )
 
 
+def _paragraph_count_fragment(
+    data: dict, max_paragraphs_per_heading: int = 2
+) -> str | None:
+    """检查是否有小标题下面的自然段数量超过限制"""
+    violations = []
+    for sec in data.get("sections", []):
+        for sub in sec.get("subsections", []):
+            count = len(sub.get("paragraphs", []))
+            if count > max_paragraphs_per_heading:
+                violations.append(
+                    f"「{sub.get('heading', '')}」这个小标题下有{count}段"
+                )
+    if not violations:
+        return None
+    detail = "；".join(violations)
+    return (
+        f"以下小标题下的自然段数量超过限制"
+        f"（每个小标题最多{max_paragraphs_per_heading}段）：{detail}。"
+        "请直接把多出来的段落合并进已有段落里（用分号连接相邻句子），"
+        "不需要拆分成新标题，合并即可。"
+    )
+
+
 def _build_unified_instruction(
     verbatim_fragment: str | None,
     word_fragment: str | None,
@@ -184,6 +207,7 @@ def _build_unified_instruction(
     outline_fragment: str | None,
     word_count: int,
     heading_fragment: str | None = None,
+    paragraph_fragment: str | None = None,
 ) -> str:
     """把这一轮所有不合格的项目，合并成一条指令一次性反馈给模型。"""
     parts = []
@@ -197,6 +221,8 @@ def _build_unified_instruction(
         parts.append(f"【比例问题】{ratio_fragment}")
     if heading_fragment:
         parts.append(f"【小标题数量问题】{heading_fragment}")
+    if paragraph_fragment:
+        parts.append(f"【小标题下段落数量问题】{paragraph_fragment}")
     if outline_fragment:
         parts.append(f"【鸟瞰纲目问题】{outline_fragment}")
     joined = "\n\n".join(parts)
@@ -484,6 +510,10 @@ async def generate_version(
             data, config["heading_range"]
         )
 
+        paragraph_fragment = _paragraph_count_fragment(
+            data, config["max_paragraphs_per_heading"]
+        )
+
         outline_fragment = None
         if config["has_outline"]:
             outline = data.get("outline", {})
@@ -503,6 +533,7 @@ async def generate_version(
             and not verbatim_fragment
             and not word_fragment
             and not heading_fragment
+            and not paragraph_fragment
             and not outline_fragment
             and len(data.get("qa", [])) == 3
             and ratio_gap is not None
@@ -524,6 +555,7 @@ async def generate_version(
             and not word_fragment
             and not ratio_fragment
             and not heading_fragment
+            and not paragraph_fragment
             and not outline_fragment
             and attempt >= FALLBACK_TRIGGER_ATTEMPT
             and bad_clauses
@@ -557,6 +589,12 @@ async def generate_version(
                 _heading_count_fragment(stripped_data, config["heading_range"])
                 is None
             )
+            stripped_paragraph_ok = (
+                _paragraph_count_fragment(
+                    stripped_data, config["max_paragraphs_per_heading"]
+                )
+                is None
+            )
             stripped_qa_ok = len(stripped_data.get("qa", [])) == 3
 
             if (
@@ -564,6 +602,7 @@ async def generate_version(
                 and stripped_ratio_ok
                 and stripped_verbatim_ok
                 and stripped_heading_ok
+                and stripped_paragraph_ok
                 and stripped_qa_ok
             ):
                 logger.info(
@@ -595,13 +634,15 @@ async def generate_version(
                 }
             logger.info(
                 "[Step2] %s 摘取兜底未采用：删后字数=%s word_ok=%s "
-                "ratio_ok=%s verbatim_ok=%s heading_ok=%s remaining_bad=%s",
+                "ratio_ok=%s verbatim_ok=%s heading_ok=%s paragraph_ok=%s "
+                "remaining_bad=%s",
                 config["label"],
                 stripped_word_count,
                 stripped_word_ok,
                 stripped_ratio_ok,
                 stripped_verbatim_ok,
                 stripped_heading_ok,
+                stripped_paragraph_ok,
                 len(remaining_bad),
             )
 
@@ -610,6 +651,7 @@ async def generate_version(
             or word_fragment
             or ratio_fragment
             or heading_fragment
+            or paragraph_fragment
             or outline_fragment
         ):
             last_error = _build_unified_instruction(
@@ -619,6 +661,7 @@ async def generate_version(
                 outline_fragment,
                 word_count,
                 heading_fragment=heading_fragment,
+                paragraph_fragment=paragraph_fragment,
             )
             last_error_type = "content_adjust"
             retry_log.append(last_error)
