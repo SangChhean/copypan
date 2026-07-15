@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from back_cn.roundtable.border_service import add_border_for_version
 from back_cn.roundtable.docx_builder import VERSION_TEMPLATE_FILES, generate_docx
 from back_cn.roundtable.docx_to_pdf import convert_docx_to_pdf
 
@@ -44,8 +43,8 @@ def build_version_file(
         OUTPUT_DIR / docx_name,
     )
 
-    # 边框是硬性条件，每次都加，不做用户开关
-    add_border_for_version(docx_path, version_key, BORDERS_DIR)
+    # 边框已经预先烧进模版文件本身，这一步不再需要
+    # add_border_for_version(docx_path, version_key, BORDERS_DIR)
 
     if file_format == "docx":
         return docx_path
