@@ -2,6 +2,7 @@
 """Step 5：套用正式模版生成各版本 Word 文档。"""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from back_cn.roundtable.docx_builder import VERSION_TEMPLATE_FILES, generate_docx
@@ -15,6 +16,23 @@ VERSION_LABELS = {
     "life": "生命加强版",
     "elderly": "年长放大版",
 }
+
+_WINDOWS_FORBIDDEN = re.compile(r'[\\/:*?"<>|]')
+
+
+def _safe_filename_part(text: str) -> str:
+    """去掉 Windows 文件名不允许的字符。"""
+    cleaned = _WINDOWS_FORBIDDEN.sub("", text or "").strip()
+    return cleaned or "未命名"
+
+
+def _extract_topic(unified_fields: dict) -> str:
+    """优先用 step1 返回的纯题目 topic；缺失时再从完整 title 剥掉「第X周　」前缀。"""
+    topic = (unified_fields.get("topic") or "").strip()
+    if topic:
+        return topic
+    title = (unified_fields.get("title") or "").strip()
+    return re.sub(r"^第.+?周[　\s]*", "", title).strip() or title
 
 
 def build_version_file(
@@ -30,8 +48,12 @@ def build_version_file(
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     label = VERSION_LABELS[version_key]
-    base_name = f"第{week_number}周_{label}" if week_number else label
-    docx_name = f"{base_name}.docx"
+    topic = _safe_filename_part(_extract_topic(unified_fields))
+    if week_number:
+        base_name = f"第{week_number}周　{topic}（{label}）"
+    else:
+        base_name = f"{topic}（{label}）"
+    docx_name = f"{_safe_filename_part(base_name)}.docx"
     docx_path = generate_docx(
         version_key,
         unified_fields,
