@@ -210,6 +210,65 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
         conn.close()
 
 
+def refund_daily_usage(username: str, feature: str) -> None:
+    """
+    生成失败时退还一次配额（count减1，不低于0）。
+    跟 check_and_increment_daily_usage 是一对，扣的时候+1，失败退的时候-1。
+    """
+    if feature not in FEATURES:
+        raise ValueError(f"未知 feature: {feature!r}")
+
+    today = _today()
+    conn = _connect()
+    try:
+        row = conn.execute(
+            """
+            SELECT daily_date,
+                   count_outline, limit_outline,
+                   count_translate, limit_translate,
+                   count_qa, limit_qa,
+                   count_burden, limit_burden,
+                   count_asr, limit_asr,
+                   count_roundtable, limit_roundtable
+            FROM users WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+        if not row:
+            return
+
+        date_str = row["daily_date"]
+        counts = {f: row[f"count_{f}"] for f in FEATURES}
+
+        if date_str != today:
+            counts = {f: 0 for f in FEATURES}
+            date_str = today
+
+        counts[feature] = max(0, counts[feature] - 1)
+        conn.execute(
+            """
+            UPDATE users SET
+                daily_date = ?,
+                count_outline = ?, count_translate = ?, count_qa = ?,
+                count_burden = ?, count_asr = ?, count_roundtable = ?
+            WHERE username = ?
+            """,
+            (
+                date_str,
+                counts["outline"],
+                counts["translate"],
+                counts["qa"],
+                counts["burden"],
+                counts["asr"],
+                counts["roundtable"],
+                username,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def get_daily_usage(username: str) -> dict:
     """只返回 outline / translate / qa 三组用量，不递增。"""
     today = _today()

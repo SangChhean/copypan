@@ -45,8 +45,6 @@ def _print_result(label: str, texts: list[dict], result: dict) -> None:
         print(f"  {h['source']} {h['no']} | {h['title']}")
     else:
         print("  None")
-    usage = result.get("usage")
-    print("usage:", usage)
 
 
 async def main() -> None:

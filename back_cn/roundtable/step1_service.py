@@ -9,6 +9,7 @@ from back_cn.roundtable.bible_loader import get_verse_safe
 from back_cn.roundtable.claude_service import call_sonnet5_high
 from back_cn.roundtable.hymn_history import get_recent_hymns, record_hymn_used
 from back_cn.roundtable.hymns_service import verify_hymn
+from back_cn.roundtable.usage_tracker import accumulate_usage
 
 _STEP1_COMMON = """你是一个资深的圣经研究学者，专精李常受生命读经信息的整理与摘要工作。
 
@@ -169,11 +170,13 @@ async def generate_unified_fields(
     original_texts: list[dict],
     week_number: str | None = None,
     max_retries: int = 2,
+    task_id: str | None = None,
 ) -> dict:
     """
     original_texts: life_text_service.get_messages() 返回的列表
     week_number: 可选周次文案（如「三」「十五」）；有则标题为「第X周　题目」，无则只用题目
-    返回: title / week_number / topic / overall_source / verses / hymn / usage
+    task_id: 可选任务 ID，用于累加 usage 统计（仅写服务器日志）
+    返回: title / week_number / topic / overall_source / verses / hymn
     """
     if week_number is not None:
         week_number = str(week_number).strip() or None
@@ -197,7 +200,6 @@ async def generate_unified_fields(
     )
 
     last_error = None
-    last_usage: dict | None = None
     for attempt in range(max_retries + 1):
         task_note = (
             f"上一次生成有问题：{last_error}\n请重新生成。"
@@ -211,7 +213,7 @@ async def generate_unified_fields(
             effort="medium",
             cacheable_prefix=combined_text,
         )
-        last_usage = usage
+        accumulate_usage(task_id, "step1", usage)
         print(f"[Step1] attempt {attempt + 1} usage: {usage}")
         try:
             data = _extract_json(raw)
@@ -288,7 +290,6 @@ async def generate_unified_fields(
             "overall_source": overall_source,
             "verses": resolved_verses,
             "hymn": resolved_hymn,
-            "usage": last_usage,
         }
 
     raise RuntimeError(

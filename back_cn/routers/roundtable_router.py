@@ -13,8 +13,11 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, field_validator
 
-from back_cn.auth import check_and_increment_daily_usage, get_current_user
-from back_cn.roundtable.docx_builder import VERSION_TEMPLATE_FILES
+from back_cn.auth import (
+    check_and_increment_daily_usage,
+    get_current_user,
+    refund_daily_usage,
+)
 from back_cn.roundtable.format_service import (
     format_version_preview,
     format_version_preview_html,
@@ -34,10 +37,18 @@ from back_cn.roundtable.task_manager import (
     cleanup_old_tasks,
     create_task,
     get_task,
+    set_finalize_done,
+    set_finalize_error,
+    set_finalize_running,
     set_unified_fields,
     set_version_done,
     set_version_error,
     update_version_progress,
+)
+from back_cn.roundtable.usage_tracker import (
+    discard_task_usage,
+    init_task_usage,
+    log_task_usage,
 )
 
 router = APIRouter(tags=["cn-roundtable"])
@@ -78,19 +89,18 @@ class PreviewSelectionBody(BaseModel):
     count: int = Field(..., ge=1, le=3)
 
 
-class FinalizeRoundtableBody(BaseModel):
-    unified_fields: dict
-    versions: dict
-    file_format: str = Field(..., pattern="^(docx|pdf)$")
-    week_number: str | None = None
+class FinalizeOneVersionBody(BaseModel):
+    task_id: str = Field(..., min_length=1)
+    version_key: str
 
-    @field_validator("week_number")
+    @field_validator("version_key")
     @classmethod
-    def _strip_week(cls, v: str | None) -> str | None:
-        if v is None:
-            return None
-        v = v.strip()
-        return v if v else None
+    def _valid_version(cls, v: str) -> str:
+        if v not in VERSION_CONFIG:
+            raise ValueError(
+                f"未知的版本：{v}，可选值为 {list(VERSION_CONFIG.keys())}"
+            )
+        return v
 
 
 @router.get("/api/cn/roundtable/books")
@@ -142,13 +152,6 @@ async def preview_selection(request: Request, body: PreviewSelectionBody):
 async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
     username = get_current_user(request)["username"]
 
-    usage = check_and_increment_daily_usage(username, "roundtable")
-    if not usage["allowed"]:
-        raise HTTPException(
-            status_code=429,
-            detail=f"今日小排材料制作次数已达上限（{usage['limit']}次），请明天再来",
-        )
-
     try:
         selection = resolve_cross_book_selection(
             body.book, body.start_issue, body.count
@@ -157,14 +160,24 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
     except (FileNotFoundError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
+    usage = check_and_increment_daily_usage(username, "roundtable")
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail=f"今日小排材料制作次数已达上限（{usage['limit']}次），请明天再来",
+        )
+
     cleanup_old_tasks()
-    task_id = create_task(body.versions)
+    task_id = create_task(body.versions, week_number=body.week_number)
+    init_task_usage(task_id, body.versions)
 
     async def run_background() -> None:
         interrupt_msg = "生成任务被中断（服务重启），请重新生成"
         try:
             unified_fields = await generate_unified_fields(
-                texts, week_number=body.week_number
+                texts,
+                week_number=body.week_number,
+                task_id=task_id,
             )
             set_unified_fields(task_id, unified_fields)
 
@@ -180,6 +193,7 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
                         texts,
                         unified_fields,
                         on_progress=callback,
+                        task_id=task_id,
                     )
                     set_version_done(
                         task_id,
@@ -207,7 +221,21 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
                         "roundtable version %s failed: %s", version_key, e
                     )
 
-            await asyncio.gather(*[run_one(v) for v in body.versions])
+            await asyncio.gather(
+                *[run_one(v) for v in body.versions], return_exceptions=True
+            )
+
+            task = get_task(task_id)
+            if task:
+                all_failed = all(
+                    v["status"] == "error" for v in task["versions"].values()
+                )
+                if all_failed:
+                    refund_daily_usage(username, "roundtable")
+                    logger.info(
+                        "[配额退还] %s 本次生成全部版本失败，已退还roundtable配额",
+                        username,
+                    )
         except asyncio.CancelledError:
             for v in body.versions:
                 task = get_task(task_id)
@@ -215,12 +243,21 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
                     continue
                 set_version_error(task_id, v, interrupt_msg)
             raise
-        except Exception:
+        except Exception as e:
+            refund_daily_usage(username, "roundtable")
+            logger.info(
+                "[配额退还] %s Step1失败，已退还roundtable配额: %s",
+                username,
+                e,
+            )
             for v in body.versions:
                 task = get_task(task_id)
                 if task and task["versions"].get(v, {}).get("status") == "done":
                     continue
-                set_version_error(task_id, v, "生成失败，请重试")
+                set_version_error(task_id, v, str(e))
+        finally:
+            log_task_usage(task_id)
+            discard_task_usage(task_id)
 
     asyncio.create_task(run_background())
     return {"task_id": task_id}
@@ -236,48 +273,72 @@ async def get_task_status(task_id: str, request: Request):
     return task
 
 
-@router.post("/api/cn/roundtable/finalize")
-async def finalize_roundtable(request: Request, body: FinalizeRoundtableBody):
-    get_current_user(request)["username"]
+@router.post("/api/cn/roundtable/finalize_one")
+async def finalize_one_version(request: Request, body: FinalizeOneVersionBody):
+    get_current_user(request)
+    cleanup_old_tasks()
 
-    if not body.versions:
-        raise HTTPException(status_code=400, detail="versions 不能为空")
+    task = get_task(body.task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在或已过期")
 
-    invalid = [k for k in body.versions if k not in VERSION_TEMPLATE_FILES]
-    if invalid:
-        raise HTTPException(
-            status_code=400,
-            detail=f"未知的版本：{invalid}，可选值为 {list(VERSION_TEMPLATE_FILES.keys())}",
-        )
+    version = task.get("versions", {}).get(body.version_key)
+    if not version:
+        raise HTTPException(status_code=400, detail="该任务未生成所选版本")
+    if version.get("status") != "done" or not (version.get("result") or {}).get(
+        "raw_data"
+    ):
+        raise HTTPException(status_code=409, detail="该版本内容尚未生成完成")
+    if not task.get("unified_fields"):
+        raise HTTPException(status_code=409, detail="统一字段尚未生成完成")
 
-    files_info = []
-    for version_key, version_data in body.versions.items():
+    finalize = version.get("finalize") or {}
+    if finalize.get("status") in {"running", "done"}:
+        return {
+            "task_id": body.task_id,
+            "version_key": body.version_key,
+            "status": finalize["status"],
+        }
+
+    set_finalize_running(body.task_id, body.version_key)
+
+    async def run_finalize() -> None:
         try:
-            path = build_version_file(
-                version_key,
-                body.unified_fields,
-                version_data,
-                body.file_format,
-                body.week_number,
+            path = await asyncio.to_thread(
+                build_version_file,
+                body.version_key,
+                task["unified_fields"],
+                version["result"]["raw_data"],
+                task.get("week_number"),
             )
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=500, detail=str(e)) from e
-        except RuntimeError as e:
-            raise HTTPException(
-                status_code=500, detail=f"生成{version_key}失败：{e}"
-            ) from e
-        token = uuid.uuid4().hex
-        _PENDING_FILES[token] = path
-        files_info.append(
-            {
-                "version": version_key,
-                "label": VERSION_LABELS[version_key],
-                "filename": path.name,
-                "token": token,
-            }
-        )
+            token = uuid.uuid4().hex
+            _PENDING_FILES[token] = path
+            set_finalize_done(
+                body.task_id,
+                body.version_key,
+                {
+                    "version": body.version_key,
+                    "label": VERSION_LABELS[body.version_key],
+                    "filename": path.name,
+                    "token": token,
+                },
+            )
+        except Exception:
+            logger.exception(
+                "roundtable finalize failed: task=%s version=%s",
+                body.task_id,
+                body.version_key,
+            )
+            set_finalize_error(
+                body.task_id, body.version_key, "Word文档生成失败，请重试"
+            )
 
-    return {"files": files_info}
+    asyncio.create_task(run_finalize())
+    return {
+        "task_id": body.task_id,
+        "version_key": body.version_key,
+        "status": "running",
+    }
 
 
 def _cleanup_file(path: Path) -> None:
@@ -292,10 +353,9 @@ async def download_roundtable_file(
     path = _PENDING_FILES.pop(token, None)
     if not path or not path.exists():
         raise HTTPException(status_code=404, detail="文件不存在或已过期，请重新生成")
-    media_type = (
-        "application/pdf"
-        if path.suffix.lower() == ".pdf"
-        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
     background_tasks.add_task(_cleanup_file, path)
-    return FileResponse(path, media_type=media_type, filename=path.name)
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=path.name,
+    )

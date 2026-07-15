@@ -140,34 +140,31 @@
                 ></div>
               </a-tab-pane>
             </a-tabs>
-            <div class="roundtable-format-select">
-              <span>文档格式：</span>
-              <a-radio-group v-model:value="fileFormat">
-                <a-radio value="docx">Word 文档 (.docx)</a-radio>
-                <a-radio value="pdf">PDF 文档</a-radio>
-              </a-radio-group>
-            </div>
-            <a-button
-              type="primary"
-              class="roundtable-confirm-btn"
-              :loading="finalizing"
-              :disabled="!canFinalize || generating"
-              @click="onConfirm"
+            <div
+              v-if="currentFinalFile"
+              class="roundtable-download-list"
             >
-              确认，生成最终文档
-            </a-button>
-            <div v-if="finalFiles" class="roundtable-download-list">
-              <div
-                v-for="f in finalFiles"
-                :key="f.token"
-                class="roundtable-download-item"
-              >
-                <span>{{ f.label }}</span>
-                <a-button type="primary" size="small" @click="downloadFile(f)">
-                  下载 {{ fileFormat === 'pdf' ? 'PDF' : 'Word' }}
+              <div class="roundtable-download-item">
+                <span>{{ currentFinalFile.label }}</span>
+                <a-button
+                  type="primary"
+                  size="small"
+                  @click="downloadFile(currentFinalFile)"
+                >
+                  下载 Word
                 </a-button>
               </div>
             </div>
+            <a-button
+              v-else
+              type="primary"
+              class="roundtable-confirm-btn"
+              :loading="currentFinalizeStatus === 'running'"
+              :disabled="!canFinalizeCurrent"
+              @click="onFinalizeOne"
+            >
+              生成Word文档
+            </a-button>
           </div>
         </section>
       </div>
@@ -207,9 +204,10 @@ const versionProgress = ref({})
 const versionResults = ref({})
 const versionErrors = ref({})
 const activeTab = ref('')
-const fileFormat = ref('docx')
-const finalFiles = ref(null)
-const finalizing = ref(false)
+const currentTaskId = ref('')
+const finalizeStatus = ref({})
+const finalizeErrors = ref({})
+const finalFiles = ref({})
 let pollTimer = null
 
 /** 预览接口结果：实际会用到的篇 */
@@ -288,10 +286,22 @@ const hasAnyVersionOutcome = computed(
     hasAnyVersionResult.value || Object.keys(versionErrors.value).length > 0,
 )
 
-const canFinalize = computed(() => {
-  if (!unifiedFields.value || !generatingVersions.value.length) return false
-  return generatingVersions.value.every((k) => versionResults.value[k]?.raw_data)
-})
+const currentFinalizeStatus = computed(
+  () => finalizeStatus.value[activeTab.value] || 'idle',
+)
+
+const currentFinalFile = computed(
+  () => finalFiles.value[activeTab.value] || null,
+)
+
+const canFinalizeCurrent = computed(
+  () =>
+    !!currentTaskId.value &&
+    !!activeTab.value &&
+    !!unifiedFields.value &&
+    !!versionResults.value[activeTab.value]?.raw_data &&
+    !['running', 'done'].includes(currentFinalizeStatus.value),
+)
 
 const canGenerate = computed(
   () =>
@@ -421,7 +431,7 @@ function stopPolling() {
   }
 }
 
-function pollTask(taskId) {
+function pollTask(taskId = currentTaskId.value) {
   stopPolling()
   pollTimer = setInterval(async () => {
     try {
@@ -433,9 +443,13 @@ function pollTask(taskId) {
       }
 
       let allSettled = true
+      let anyFinalizeRunning = false
       const nextProgress = { ...versionProgress.value }
       const nextResults = { ...versionResults.value }
       const nextErrors = { ...versionErrors.value }
+      const nextFinalizeStatus = { ...finalizeStatus.value }
+      const nextFinalizeErrors = { ...finalizeErrors.value }
+      const nextFinalFiles = { ...finalFiles.value }
 
       for (const [key, v] of Object.entries(task.versions || {})) {
         if (v.status === 'done' && v.result) {
@@ -455,14 +469,36 @@ function pollTask(taskId) {
           }
           allSettled = false
         }
+
+        const finalize = v.finalize || { status: 'idle' }
+        nextFinalizeStatus[key] = finalize.status || 'idle'
+        if (finalize.status === 'running') {
+          anyFinalizeRunning = true
+          delete nextFinalizeErrors[key]
+        } else if (finalize.status === 'done' && finalize.file) {
+          if (!nextFinalFiles[key]) {
+            message.success(`${v.result?.label || VERSION_LABELS[key]} Word文档已生成`)
+          }
+          nextFinalFiles[key] = finalize.file
+          delete nextFinalizeErrors[key]
+        } else if (finalize.status === 'error') {
+          const error = finalize.error || 'Word文档生成失败，请重试'
+          if (nextFinalizeErrors[key] !== error) {
+            message.error(error)
+          }
+          nextFinalizeErrors[key] = error
+          delete nextFinalFiles[key]
+        }
       }
 
       versionProgress.value = nextProgress
       versionResults.value = nextResults
       versionErrors.value = nextErrors
+      finalizeStatus.value = nextFinalizeStatus
+      finalizeErrors.value = nextFinalizeErrors
+      finalFiles.value = nextFinalFiles
 
-      if (allSettled) {
-        stopPolling()
+      if (allSettled && generating.value) {
         generating.value = false
         const okCount = Object.keys(nextResults).length
         const errCount = Object.keys(nextErrors).length
@@ -473,6 +509,9 @@ function pollTask(taskId) {
         } else if (errCount) {
           message.error('生成失败')
         }
+      }
+      if (allSettled && !anyFinalizeRunning) {
+        stopPolling()
       }
     } catch (e) {
       stopPolling()
@@ -514,7 +553,12 @@ async function onGenerate() {
     generatingVersions.value.map((k) => [k, { stage: '等待中', attempt: 0 }]),
   )
   activeTab.value = ''
-  finalFiles.value = null
+  currentTaskId.value = ''
+  finalizeStatus.value = Object.fromEntries(
+    generatingVersions.value.map((k) => [k, 'idle']),
+  )
+  finalizeErrors.value = {}
+  finalFiles.value = {}
 
   try {
     const body = {
@@ -529,11 +573,11 @@ async function onGenerate() {
     const res = await http.post('/api/cn/roundtable/generate', body, {
       timeout: 60000,
     })
-    const taskId = res.data.task_id
-    if (!taskId) {
+    currentTaskId.value = res.data.task_id
+    if (!currentTaskId.value) {
       throw new Error('未返回 task_id')
     }
-    pollTask(taskId)
+    pollTask(currentTaskId.value)
   } catch (e) {
     generating.value = false
     const status = e?.response?.status
@@ -552,38 +596,37 @@ async function onGenerate() {
   }
 }
 
-async function onConfirm() {
-  if (!canFinalize.value) {
-    message.warning('请等所选版本全部生成完成后再确认')
+async function onFinalizeOne() {
+  const versionKey = activeTab.value
+  if (!canFinalizeCurrent.value || !versionKey) {
+    message.warning('当前版本尚未生成完成')
     return
   }
-  const versionsPayload = {}
-  for (const key of generatingVersions.value) {
-    if (!versionResults.value[key]?.raw_data) {
-      message.error(`缺少 ${VERSION_LABELS[key] || key} 的结构化数据，请重新生成`)
-      return
-    }
-    versionsPayload[key] = versionResults.value[key].raw_data
+
+  finalizeStatus.value = {
+    ...finalizeStatus.value,
+    [versionKey]: 'running',
   }
-  finalizing.value = true
-  finalFiles.value = null
+  const nextFiles = { ...finalFiles.value }
+  delete nextFiles[versionKey]
+  finalFiles.value = nextFiles
+
   try {
-    const res = await http.post(
-      '/api/cn/roundtable/finalize',
+    await http.post(
+      '/api/cn/roundtable/finalize_one',
       {
-        unified_fields: unifiedFields.value,
-        versions: versionsPayload,
-        file_format: fileFormat.value,
-        week_number: useWeekNumber.value ? weekNumber.value.trim() : null,
+        task_id: currentTaskId.value,
+        version_key: versionKey,
       },
-      { timeout: 120000 },
+      { timeout: 60000 },
     )
-    finalFiles.value = res.data.files
-    message.success('文档已生成，请点击下方按钮下载')
+    pollTask(currentTaskId.value)
   } catch (e) {
-    message.error(e.response?.data?.detail || '生成失败，请稍后重试')
-  } finally {
-    finalizing.value = false
+    finalizeStatus.value = {
+      ...finalizeStatus.value,
+      [versionKey]: 'idle',
+    }
+    message.error(e.response?.data?.detail || 'Word文档生成失败，请稍后重试')
   }
 }
 
@@ -723,16 +766,6 @@ onUnmounted(() => {
 .roundtable-confirm-btn {
   display: block !important;
   margin: 16px auto 0 !important;
-}
-
-.roundtable-format-select {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  font-size: 15px;
-  color: var(--cn-text, #243447);
 }
 
 .roundtable-download-list {
