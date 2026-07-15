@@ -8,7 +8,10 @@ import zipfile
 from pathlib import Path
 from lxml import etree
 
-from back_cn.roundtable.docx_builder import _write_xml_with_double_quote_declaration
+from back_cn.roundtable.docx_builder import (
+    _repack_docx,
+    _write_xml_with_double_quote_declaration,
+)
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -169,11 +172,7 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
     _write_xml_with_double_quote_declaration(doc_tree, doc_xml_path)
 
     # 8. 重新打包
-    docx_path.unlink()
-    with zipfile.ZipFile(docx_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for f in tmp_dir.rglob("*"):
-            if f.is_file():
-                zf.write(f, f.relative_to(tmp_dir))
+    _repack_docx(tmp_dir, docx_path)
 
     shutil.rmtree(tmp_dir)
 
