@@ -3,6 +3,7 @@
 把边框图片以"衬于文字下方、铺满整页、锁定位置"的方式插入 docx 的页眉。
 纯 Python 实现（zipfile + lxml），不依赖 Word/pywin32，可在 Linux 服务器上运行。
 """
+import random
 import shutil
 import zipfile
 from pathlib import Path
@@ -31,7 +32,7 @@ BORDER_CONFIG = {
 
 HEADER1_XML_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:hdr xmlns:w="{w}" xmlns:wp="{wp}" xmlns:a="{a}" xmlns:pic="{pic}" xmlns:r="{r}">
-<w:p><w:r><w:rPr><w:noProof/></w:rPr>
+<w:p><w:pPr><w:pStyle w:val="a3"/></w:pPr><w:r><w:rPr><w:noProof/></w:rPr>
 <w:drawing>
 <wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251658240" behindDoc="1" locked="1" layoutInCell="1" allowOverlap="1">
 <wp:simplePos x="0" y="0"/>
@@ -40,10 +41,10 @@ HEADER1_XML_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?
 <wp:extent cx="{cx}" cy="{cy}"/>
 <wp:effectExtent l="0" t="0" r="0" b="0"/>
 <wp:wrapNone/>
-<wp:docPr id="900001" name="边框底图" descr="边框装饰图片，不可编辑内容" title="边框"/>
+<wp:docPr id="{docpr_id}" name="边框底图" descr="边框装饰图片，不可编辑内容" title="边框"/>
 <wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>
 <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-<pic:pic><pic:nvPicPr><pic:cNvPr id="900001" name="边框底图"/>
+<pic:pic><pic:nvPicPr><pic:cNvPr id="{docpr_id}" name="边框底图"/>
 <pic:cNvPicPr><a:picLocks noChangeAspect="1" noMove="1" noResize="1" noSelect="1"/></pic:cNvPicPr></pic:nvPicPr>
 <pic:blipFill><a:blip r:embed="rIdBorderImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>
 <pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm>
@@ -53,10 +54,38 @@ HEADER1_XML_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?
 </w:drawing>
 </w:r>
 </w:p>
-</w:hdr>""".format(w=W_NS, wp=WP_NS, a=A_NS, pic=PIC_NS, r=R_NS, cx="{cx}", cy="{cy}")
+</w:hdr>""".format(
+    w=W_NS,
+    wp=WP_NS,
+    a=A_NS,
+    pic=PIC_NS,
+    r=R_NS,
+    cx="{cx}",
+    cy="{cy}",
+    docpr_id="{docpr_id}",
+)
 
 HEADER_RELS_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="{rels}"><Relationship Id="rIdBorderImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/{image_name}"/></Relationships>""".format(rels=RELS_NS, image_name="{image_name}")
+
+
+def _generate_docpr_id() -> int:
+    """模拟真实Word生成的docPr id风格（大随机数），避免用固定小数字可能带来的潜在ID冲突风险"""
+    return random.randint(100000000, 2000000000)
+
+
+def _validate_docx_openable(docx_path: Path) -> None:
+    """
+    用 python-docx 尝试打开生成的文件，做一次基本的健全性检查。
+    这不能100%代表Word的严格校验行为，但至少能提前发现一些明显的结构性错误，
+    比python-docx都打不开的文件，Word大概率也会有问题。
+    """
+    import docx
+
+    try:
+        docx.Document(str(docx_path))
+    except Exception as e:
+        raise RuntimeError(f"生成的docx文件校验失败，可能存在结构性问题: {e}") from e
 
 
 def add_border(docx_path: Path, border_image_path: Path, footer_override: int | None = None) -> None:
@@ -95,7 +124,12 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
     shutil.copy2(border_image_path, media_dir / image_name)
 
     # 3. 写 header1.xml（如果已存在同名文件，说明这个 docx 已经加过边框，直接覆盖）
-    header_xml_content = HEADER1_XML_TEMPLATE.replace("{cx}", str(cx)).replace("{cy}", str(cy))
+    docpr_id = _generate_docpr_id()
+    header_xml_content = (
+        HEADER1_XML_TEMPLATE.replace("{cx}", str(cx))
+        .replace("{cy}", str(cy))
+        .replace("{docpr_id}", str(docpr_id))
+    )
     (tmp_dir / "word" / "header1.xml").write_text(header_xml_content, encoding="utf-8")
 
     # 4. 写 header1.xml.rels
@@ -175,6 +209,9 @@ def add_border(docx_path: Path, border_image_path: Path, footer_override: int | 
     _repack_docx(tmp_dir, docx_path)
 
     shutil.rmtree(tmp_dir)
+
+    # 9. 最终校验：python-docx 能打开，才算结构基本健全
+    _validate_docx_openable(docx_path)
 
 
 def add_border_for_version(docx_path: Path, version_key: str, borders_dir: Path) -> None:
