@@ -140,6 +140,15 @@
                 ></div>
               </a-tab-pane>
             </a-tabs>
+            <a-button
+              type="primary"
+              class="roundtable-confirm-btn"
+              :loading="currentFinalizeStatus === 'running'"
+              :disabled="!canFinalizeCurrent"
+              @click="onFinalizeOne"
+            >
+              生成Word文档
+            </a-button>
             <div
               v-if="currentFinalFile"
               class="roundtable-download-list"
@@ -155,16 +164,6 @@
                 </a-button>
               </div>
             </div>
-            <a-button
-              v-else
-              type="primary"
-              class="roundtable-confirm-btn"
-              :loading="currentFinalizeStatus === 'running'"
-              :disabled="!canFinalizeCurrent"
-              @click="onFinalizeOne"
-            >
-              生成Word文档
-            </a-button>
           </div>
         </section>
       </div>
@@ -300,7 +299,7 @@ const canFinalizeCurrent = computed(
     !!activeTab.value &&
     !!unifiedFields.value &&
     !!versionResults.value[activeTab.value]?.raw_data &&
-    !['running', 'done'].includes(currentFinalizeStatus.value),
+    currentFinalizeStatus.value !== 'running',
 )
 
 const canGenerate = computed(
@@ -475,8 +474,10 @@ function pollTask(taskId = currentTaskId.value) {
         if (finalize.status === 'running') {
           anyFinalizeRunning = true
           delete nextFinalizeErrors[key]
+          delete nextFinalFiles[key]
         } else if (finalize.status === 'done' && finalize.file) {
-          if (!nextFinalFiles[key]) {
+          const prev = nextFinalFiles[key]
+          if (!prev || prev.token !== finalize.file.token) {
             message.success(`${v.result?.label || VERSION_LABELS[key]} Word文档已生成`)
           }
           nextFinalFiles[key] = finalize.file
@@ -525,6 +526,16 @@ function pollTask(taskId = currentTaskId.value) {
   }, 3000)
 }
 
+async function cleanupCurrentTask() {
+  const taskId = currentTaskId.value
+  if (!taskId) return
+  try {
+    await http.post(`/api/cn/roundtable/cleanup_task/${taskId}`)
+  } catch {
+    // 离开页面时的清理失败不影响返回
+  }
+}
+
 async function onGenerate() {
   if (!selectedBook.value || startIssue.value == null) {
     message.warning('请选择起始篇与篇数')
@@ -544,6 +555,7 @@ async function onGenerate() {
   }
 
   stopPolling()
+  await cleanupCurrentTask()
   generating.value = true
   generatingVersions.value = [...selectedVersions.value]
   unifiedFields.value = null
@@ -661,7 +673,9 @@ async function downloadFile(file) {
   }
 }
 
-function goHome() {
+async function goHome() {
+  stopPolling()
+  await cleanupCurrentTask()
   router.push('/')
 }
 

@@ -108,8 +108,11 @@ def set_finalize_error(task_id: str, version_key: str, error: str) -> None:
             }
 
 
-def cleanup_old_tasks(max_age_seconds: int = 3600) -> None:
-    """清理超过 max_age_seconds 的旧任务，避免内存无限增长。"""
+def cleanup_old_tasks(max_age_seconds: int = 3600) -> list[str]:
+    """清理超过 max_age_seconds 的旧任务，避免内存无限增长。
+
+    返回被清理的 task_id 列表，供调用方联动清理关联的 Word 文件。
+    """
     now = time.time()
     expired = [
         tid
@@ -119,3 +122,4 @@ def cleanup_old_tasks(max_age_seconds: int = 3600) -> None:
     for tid in expired:
         discard_task_usage(tid)
         del _tasks[tid]
+    return expired
