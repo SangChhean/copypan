@@ -39,6 +39,35 @@ def _write_xml_with_double_quote_declaration(tree, path):
         f.write(declaration + xml_bytes)
 
 
+def _repack_docx(tmp_dir: Path, output_path: Path) -> None:
+    """
+    把 tmp_dir 里的内容重新打包成 docx。
+    刻意按 OPC 规范的惯例顺序写入关键文件（[Content_Types].xml 和 _rels/.rels 必须最先写入），
+    其余文件顺序不重要，但不能再用 rglob 的随机文件系统遍历顺序，
+    否则真实 Word 打开时容易判定包结构不规范、弹出"无法读取内容"的修复提示
+    （这是实测确认过的：真实Word生成的docx，_rels/.rels 固定排在第2位，
+    而用 rglob 随机打包出来的文件，这个关键文件可能被排到第17位之后）
+    """
+    if output_path.exists():
+        output_path.unlink()
+
+    priority_files = ["[Content_Types].xml", "_rels/.rels"]
+
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        written = set()
+        for rel_name in priority_files:
+            f = tmp_dir / rel_name
+            if f.exists():
+                zf.write(f, rel_name)
+                written.add(rel_name)
+        for f in tmp_dir.rglob("*"):
+            if f.is_file():
+                rel_name = str(f.relative_to(tmp_dir)).replace("\\", "/")
+                if rel_name not in written:
+                    zf.write(f, rel_name)
+                    written.add(rel_name)
+
+
 # ---------------------------------------------------------------------------
 # 每个版本、每种"角色"段落的样式规格（从真实模版逆向提取，数值不要改）
 # ---------------------------------------------------------------------------
@@ -378,12 +407,7 @@ def generate_docx(version_key, unified_fields, version_data, template_path, outp
     _write_xml_with_double_quote_declaration(tree, doc_xml_path)
 
     # 重新打包成 docx
-    if output_path.exists():
-        output_path.unlink()
-    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for f in tmp_dir.rglob("*"):
-            if f.is_file():
-                zf.write(f, f.relative_to(tmp_dir))
+    _repack_docx(tmp_dir, output_path)
 
     shutil.rmtree(tmp_dir)
     return output_path
