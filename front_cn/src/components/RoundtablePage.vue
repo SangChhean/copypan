@@ -8,11 +8,12 @@
     <div class="cn-content-wrap">
       <div class="cn-content-card">
         <section class="section">
-          <div class="roundtable-row">
+          <div class="roundtable-row roundtable-row--week">
             <div class="roundtable-row-label">周数</div>
             <div class="roundtable-row-content">
               <a-input
                 v-model:value="weekNumber"
+                class="roundtable-week-input"
                 addon-before="第"
                 addon-after="周"
                 :disabled="!useWeekNumber"
@@ -27,11 +28,12 @@
             </div>
           </div>
 
-          <div class="roundtable-row">
+          <div class="roundtable-row roundtable-row--book-select">
             <div class="roundtable-row-label">生命读经</div>
             <div class="roundtable-row-content">
               <a-select
                 v-model:value="selectedBook"
+                class="roundtable-book-select"
                 placeholder="请选择生命读经书卷"
                 style="width: 260px"
                 :options="bookOptions"
@@ -42,6 +44,7 @@
               />
               <a-select
                 v-model:value="startIssue"
+                class="roundtable-issue-select"
                 placeholder="起始篇"
                 style="width: 200px; margin-left: 16px"
                 :options="startIssueOptions"
@@ -830,5 +833,22 @@ onUnmounted(() => {
   font-size: 12px;
   color: #cf1322;
   word-break: break-word;
+}
+
+.roundtable-row--week :deep(.roundtable-week-input .ant-input) {
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .roundtable-row--book-select .roundtable-row-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .roundtable-row--book-select :deep(.roundtable-book-select),
+  .roundtable-row--book-select :deep(.roundtable-issue-select) {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
 }
 </style>
