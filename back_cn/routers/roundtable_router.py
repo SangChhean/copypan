@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, field_validator
 
@@ -53,8 +53,24 @@ from back_cn.roundtable.usage_tracker import (
 
 router = APIRouter(tags=["cn-roundtable"])
 
-# token -> 文件路径；进程内内存态，重启会丢失（可接受）
-_PENDING_FILES: dict[str, Path] = {}
+# token -> (文件路径, task_id)；进程内内存态，重启会丢失（可接受）
+# 下载不消费 token；失效靠任务清理（返回页 / 过期任务）联动
+_PENDING_FILES: dict[str, tuple[Path, str]] = {}
+
+
+def cleanup_files_for_task(task_id: str) -> None:
+    """当某个 task 被清理时，一并清理这个 task 下所有已生成的 Word 文件。"""
+    tokens_to_remove = [
+        t for t, (_path, tid) in _PENDING_FILES.items() if tid == task_id
+    ]
+    for token in tokens_to_remove:
+        path, _ = _PENDING_FILES.pop(token)
+        path.unlink(missing_ok=True)
+
+
+def _cleanup_expired_tasks() -> None:
+    for tid in cleanup_old_tasks():
+        cleanup_files_for_task(tid)
 
 
 class GenerateRoundtableBody(BaseModel):
@@ -167,7 +183,7 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
             detail=f"今日小排材料制作次数已达上限（{usage['limit']}次），请明天再来",
         )
 
-    cleanup_old_tasks()
+    _cleanup_expired_tasks()
     task_id = create_task(body.versions, week_number=body.week_number)
     init_task_usage(task_id, body.versions)
 
@@ -266,7 +282,7 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
 @router.get("/api/cn/roundtable/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
     get_current_user(request)
-    cleanup_old_tasks()
+    _cleanup_expired_tasks()
     task = get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在或已过期")
@@ -276,7 +292,7 @@ async def get_task_status(task_id: str, request: Request):
 @router.post("/api/cn/roundtable/finalize_one")
 async def finalize_one_version(request: Request, body: FinalizeOneVersionBody):
     get_current_user(request)
-    cleanup_old_tasks()
+    _cleanup_expired_tasks()
 
     task = get_task(body.task_id)
     if not task:
@@ -293,7 +309,7 @@ async def finalize_one_version(request: Request, body: FinalizeOneVersionBody):
         raise HTTPException(status_code=409, detail="统一字段尚未生成完成")
 
     finalize = version.get("finalize") or {}
-    if finalize.get("status") in {"running", "done"}:
+    if finalize.get("status") == "running":
         return {
             "task_id": body.task_id,
             "version_key": body.version_key,
@@ -312,7 +328,7 @@ async def finalize_one_version(request: Request, body: FinalizeOneVersionBody):
                 task.get("week_number"),
             )
             token = uuid.uuid4().hex
-            _PENDING_FILES[token] = path
+            _PENDING_FILES[token] = (path, body.task_id)
             set_finalize_done(
                 body.task_id,
                 body.version_key,
@@ -341,19 +357,24 @@ async def finalize_one_version(request: Request, body: FinalizeOneVersionBody):
     }
 
 
-def _cleanup_file(path: Path) -> None:
-    path.unlink(missing_ok=True)
+@router.post("/api/cn/roundtable/cleanup_task/{task_id}")
+async def cleanup_task_endpoint(task_id: str, request: Request):
+    get_current_user(request)
+    cleanup_files_for_task(task_id)
+    discard_task_usage(task_id)
+    return {"cleaned": True}
 
 
 @router.get("/api/cn/roundtable/download/{token}")
-async def download_roundtable_file(
-    token: str, request: Request, background_tasks: BackgroundTasks
-):
-    get_current_user(request)  # 仍需登录态才能下载
-    path = _PENDING_FILES.pop(token, None)
-    if not path or not path.exists():
+async def download_roundtable_file(token: str, request: Request):
+    get_current_user(request)
+    entry = _PENDING_FILES.get(token)
+    if not entry:
         raise HTTPException(status_code=404, detail="文件不存在或已过期，请重新生成")
-    background_tasks.add_task(_cleanup_file, path)
+    path, _ = entry
+    if not path.exists():
+        _PENDING_FILES.pop(token, None)
+        raise HTTPException(status_code=404, detail="文件不存在或已过期，请重新生成")
     return FileResponse(
         path,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
