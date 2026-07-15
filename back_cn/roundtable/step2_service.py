@@ -11,6 +11,7 @@ from collections.abc import Callable
 
 from back_cn.roundtable.claude_service import call_sonnet5_high
 from back_cn.roundtable.prompts import VERSION_CONFIG
+from back_cn.roundtable.usage_tracker import accumulate_usage
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,30 @@ def _paragraph_count_fragment(
     )
 
 
+def _qa_quality_fragment(qa_list: list[dict], max_length: int = 45) -> str | None:
+    """检查彼此问互相答：每题只能有一个问号，且不能过长"""
+    issues = []
+    for i, qa in enumerate(qa_list, 1):
+        question = qa.get("question", "")
+        question_mark_count = question.count("？") + question.count("?")
+        if question_mark_count > 1:
+            issues.append(
+                f"第{i}题包含{question_mark_count}个问号，疑似把多个问题挤在一起了：「{question}」"
+            )
+        elif len(question) > max_length:
+            issues.append(
+                f"第{i}题共{len(question)}字，偏长（建议{max_length}字以内）：「{question}」"
+            )
+    if not issues:
+        return None
+    detail = "；".join(issues)
+    return (
+        f"彼此问互相答部分需要调整：{detail}。"
+        "请把每一题改成只问一件事、一句话说完的简洁问句，"
+        "不要在一个问题里塞进多层追问。"
+    )
+
+
 def _build_unified_instruction(
     verbatim_fragment: str | None,
     word_fragment: str | None,
@@ -208,6 +233,7 @@ def _build_unified_instruction(
     word_count: int,
     heading_fragment: str | None = None,
     paragraph_fragment: str | None = None,
+    qa_fragment: str | None = None,
 ) -> str:
     """把这一轮所有不合格的项目，合并成一条指令一次性反馈给模型。"""
     parts = []
@@ -223,6 +249,8 @@ def _build_unified_instruction(
         parts.append(f"【小标题数量问题】{heading_fragment}")
     if paragraph_fragment:
         parts.append(f"【小标题下段落数量问题】{paragraph_fragment}")
+    if qa_fragment:
+        parts.append(f"【彼此问互相答问题】{qa_fragment}")
     if outline_fragment:
         parts.append(f"【鸟瞰纲目问题】{outline_fragment}")
     joined = "\n\n".join(parts)
@@ -350,6 +378,7 @@ async def generate_version(
     unified_fields: dict,
     max_retries: int = 7,
     on_progress: Callable[[str, int], None] | None = None,
+    task_id: str | None = None,
 ) -> dict:
     config = VERSION_CONFIG[version_key]
     combined_original = "\n\n".join(
@@ -433,6 +462,7 @@ async def generate_version(
                 effort="medium",
                 cacheable_prefix=combined_original,
             )
+            accumulate_usage(task_id, version_key, usage)
             print(
                 f"[Step2] {config['label']} attempt {attempt + 1} usage: {usage}"
             )
@@ -514,6 +544,8 @@ async def generate_version(
             data, config["max_paragraphs_per_heading"]
         )
 
+        qa_fragment = _qa_quality_fragment(data.get("qa", []))
+
         outline_fragment = None
         if config["has_outline"]:
             outline = data.get("outline", {})
@@ -534,6 +566,7 @@ async def generate_version(
             and not word_fragment
             and not heading_fragment
             and not paragraph_fragment
+            and not qa_fragment
             and not outline_fragment
             and len(data.get("qa", [])) == 3
             and ratio_gap is not None
@@ -556,6 +589,7 @@ async def generate_version(
             and not ratio_fragment
             and not heading_fragment
             and not paragraph_fragment
+            and not qa_fragment
             and not outline_fragment
             and attempt >= FALLBACK_TRIGGER_ATTEMPT
             and bad_clauses
@@ -595,7 +629,10 @@ async def generate_version(
                 )
                 is None
             )
-            stripped_qa_ok = len(stripped_data.get("qa", [])) == 3
+            stripped_qa_ok = (
+                len(stripped_data.get("qa", [])) == 3
+                and _qa_quality_fragment(stripped_data.get("qa", [])) is None
+            )
 
             if (
                 stripped_word_ok
@@ -652,6 +689,7 @@ async def generate_version(
             or ratio_fragment
             or heading_fragment
             or paragraph_fragment
+            or qa_fragment
             or outline_fragment
         ):
             last_error = _build_unified_instruction(
@@ -662,6 +700,7 @@ async def generate_version(
                 word_count,
                 heading_fragment=heading_fragment,
                 paragraph_fragment=paragraph_fragment,
+                qa_fragment=qa_fragment,
             )
             last_error_type = "content_adjust"
             retry_log.append(last_error)
