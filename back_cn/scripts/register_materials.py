@@ -43,13 +43,11 @@ def _to_pinyin_dir(name: str) -> str:
 def _ensure_category(name: str, parent_id, type_: str, conn) -> int:
     dir_name = _to_pinyin_dir(name)
     row = conn.execute(
-        "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?)",
-        (dir_name, parent_id, parent_id),
+        "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?) AND type = ?",
+        (dir_name, parent_id, parent_id, type_),
     ).fetchone()
     if row:
         return row["id"]
-    cat_dir = MATERIALS_DIR / dir_name
-    cat_dir.mkdir(parents=True, exist_ok=True)
     try:
         cur = conn.execute(
             """
@@ -59,13 +57,16 @@ def _ensure_category(name: str, parent_id, type_: str, conn) -> int:
             (name, dir_name, parent_id, _utc_now(), type_),
         )
         conn.commit()
-        return cur.lastrowid
+        cat_id = cur.lastrowid
     except sqlite3.IntegrityError:
         row = conn.execute(
-            "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?)",
-            (dir_name, parent_id, parent_id),
+            "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?) AND type = ?",
+            (dir_name, parent_id, parent_id, type_),
         ).fetchone()
-        return row["id"]
+        cat_id = row["id"]
+    physical_dir = MATERIALS_DIR / f"cat_{cat_id}"
+    physical_dir.mkdir(parents=True, exist_ok=True)
+    return cat_id
 
 def register_dir(src_dir: Path, type_: str, parent_id, conn):
     items = sorted(src_dir.iterdir())
@@ -78,13 +79,9 @@ def register_dir(src_dir: Path, type_: str, parent_id, conn):
     for f in files:
         ext = f.suffix or ""
         stored_name = f"{uuid.uuid4()}{ext}"
-        cat_row = conn.execute(
-            "SELECT dir_name FROM material_categories WHERE id = ?", (parent_id,)
-        ).fetchone()
-        if not cat_row:
-            errors.append(f"分类 id={parent_id} 不存在，跳过文件 {f.name}")
-            continue
-        dest = MATERIALS_DIR / cat_row["dir_name"] / stored_name
+        dest_dir = MATERIALS_DIR / f"cat_{parent_id}"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / stored_name
         try:
             shutil.copy2(f, dest)
             conn.execute(
