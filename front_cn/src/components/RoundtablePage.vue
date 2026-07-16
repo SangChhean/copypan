@@ -105,7 +105,22 @@
               :key="v"
               class="roundtable-version-card"
             >
-              <div class="roundtable-version-title">{{ VERSION_LABELS[v] }}</div>
+              <div class="roundtable-version-head">
+                <div class="roundtable-version-title">{{ VERSION_LABELS[v] }}</div>
+                <div
+                  class="roundtable-version-cost"
+                  :class="{
+                    'roundtable-version-cost--done':
+                      !!versionResults[v] && versionCosts[v] != null,
+                  }"
+                >
+                  <span class="roundtable-version-cost-icon">💰</span>
+                  <span
+                    v-if="versionResults[v] && versionCosts[v] != null"
+                    class="roundtable-version-cost-value"
+                  >${{ formatCostUsd(versionCosts[v]) }}</span>
+                </div>
+              </div>
               <template v-if="versionResults[v]">
                 <a-tag color="success">
                   已完成
@@ -128,6 +143,12 @@
                 </span>
               </template>
             </div>
+          </div>
+
+          <div v-if="showCostTotal" class="roundtable-cost-total">
+            <span class="roundtable-cost-total-label">本次总计</span>
+            <span class="roundtable-cost-total-icon">💰</span>
+            <span class="roundtable-cost-total-value">${{ formatCostUsd(totalCostUsd) }}</span>
           </div>
 
           <div v-if="hasAnyVersionResult" class="roundtable-result">
@@ -205,6 +226,10 @@ const unifiedFields = ref(null)
 const versionProgress = ref({})
 const versionResults = ref({})
 const versionErrors = ref({})
+/** 各版本累计费用（美元），来自 task.versions[key].cost_usd */
+const versionCosts = ref({})
+/** Step1 共享费用，来自 task.step1_cost_usd */
+const step1CostUsd = ref(null)
 const activeTab = ref('')
 const currentTaskId = ref('')
 const finalizeStatus = ref({})
@@ -288,6 +313,22 @@ const hasAnyVersionOutcome = computed(
     hasAnyVersionResult.value || Object.keys(versionErrors.value).length > 0,
 )
 
+/** 本次勾选的版本全部 done 才显示总计条 */
+const showCostTotal = computed(
+  () =>
+    generatingVersions.value.length > 0 &&
+    generatingVersions.value.every((k) => !!versionResults.value[k]),
+)
+
+const totalCostUsd = computed(() => {
+  const step1 = Number(step1CostUsd.value) || 0
+  const versionsSum = generatingVersions.value.reduce((sum, k) => {
+    const n = Number(versionCosts.value[k])
+    return sum + (Number.isFinite(n) ? n : 0)
+  }, 0)
+  return step1 + versionsSum
+})
+
 const currentFinalizeStatus = computed(
   () => finalizeStatus.value[activeTab.value] || 'idle',
 )
@@ -322,6 +363,12 @@ function versionProgressPercent(key) {
   if (versionResults.value[key]) return 100
   const attempt = versionProgress.value[key]?.attempt || 0
   return Math.min(attempt * 12, 90)
+}
+
+function formatCostUsd(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return '0.00'
+  return n.toFixed(2)
 }
 
 function filterBookOption(input, option) {
@@ -443,6 +490,9 @@ function pollTask(taskId = currentTaskId.value) {
       if (task.unified_fields) {
         unifiedFields.value = task.unified_fields
       }
+      if (task.step1_cost_usd != null) {
+        step1CostUsd.value = task.step1_cost_usd
+      }
 
       let allSettled = true
       let anyFinalizeRunning = false
@@ -452,8 +502,12 @@ function pollTask(taskId = currentTaskId.value) {
       const nextFinalizeStatus = { ...finalizeStatus.value }
       const nextFinalizeErrors = { ...finalizeErrors.value }
       const nextFinalFiles = { ...finalFiles.value }
+      const nextCosts = { ...versionCosts.value }
 
       for (const [key, v] of Object.entries(task.versions || {})) {
+        if (v.cost_usd != null) {
+          nextCosts[key] = v.cost_usd
+        }
         if (v.status === 'done' && v.result) {
           nextResults[key] = v.result
           delete nextProgress[key]
@@ -498,6 +552,7 @@ function pollTask(taskId = currentTaskId.value) {
       versionProgress.value = nextProgress
       versionResults.value = nextResults
       versionErrors.value = nextErrors
+      versionCosts.value = nextCosts
       finalizeStatus.value = nextFinalizeStatus
       finalizeErrors.value = nextFinalizeErrors
       finalFiles.value = nextFinalFiles
@@ -564,6 +619,8 @@ async function onGenerate() {
   unifiedFields.value = null
   versionResults.value = {}
   versionErrors.value = {}
+  versionCosts.value = {}
+  step1CostUsd.value = null
   versionProgress.value = Object.fromEntries(
     generatingVersions.value.map((k) => [k, { stage: '等待中', attempt: 0 }]),
   )
@@ -818,10 +875,69 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
+.roundtable-version-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .roundtable-version-title {
   font-size: 14px;
   font-weight: 600;
   color: #1b6ca8;
+  min-width: 0;
+}
+
+.roundtable-version-cost {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--cn-text-muted, #94a3b8);
+}
+
+.roundtable-version-cost--done {
+  color: var(--cn-text-secondary, #4a6a84);
+  font-weight: 500;
+}
+
+.roundtable-version-cost-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.roundtable-version-cost-value {
+  line-height: 1;
+}
+
+.roundtable-cost-total {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: var(--cn-bg-card, #ebf4fb);
+  border-radius: var(--radius, 8px);
+}
+
+.roundtable-cost-total-label {
+  font-size: 13px;
+  color: var(--cn-text-secondary, #4a6a84);
+}
+
+.roundtable-cost-total-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.roundtable-cost-total-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--cn-text-primary, #1a2a3a);
+  line-height: 1;
 }
 
 .roundtable-version-stage {

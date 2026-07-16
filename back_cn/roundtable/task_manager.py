@@ -17,6 +17,7 @@ def create_task(version_keys: list[str], week_number: str | None = None) -> str:
         "created_at": time.time(),
         "week_number": week_number,
         "unified_fields": None,
+        "step1_cost_usd": None,
         "versions": {
             v: {
                 "status": "pending",
@@ -24,6 +25,7 @@ def create_task(version_keys: list[str], week_number: str | None = None) -> str:
                 "attempt": 0,
                 "result": None,
                 "error": None,
+                "cost_usd": None,
                 "finalize": {
                     "status": "idle",
                     "file": None,

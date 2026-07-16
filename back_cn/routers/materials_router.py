@@ -80,6 +80,20 @@ def _build_tree(rows: list[dict]) -> list[dict]:
             by_id[pid]["children"].append(node)
         else:
             roots.append(node)
+
+    def _sort_nodes(nodes: list[dict]) -> None:
+        nodes.sort(
+            key=lambda n: (
+                n.get("sort_order") or 0,
+                _natural_sort_key(n.get("name") or ""),
+                n["id"],
+            )
+        )
+        for n in nodes:
+            if n["children"]:
+                _sort_nodes(n["children"])
+
+    _sort_nodes(roots)
     return roots
 
 
@@ -106,14 +120,12 @@ def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", p
             continue
         dir_name = _to_pinyin_dir(part)
         row = conn.execute(
-            "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?)",
-            (dir_name, parent_id, parent_id),
+            "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?) AND type = ?",
+            (dir_name, parent_id, parent_id, type),
         ).fetchone()
         if row:
             cat_id = row["id"]
         else:
-            cat_dir = MATERIALS_DIR / dir_name
-            cat_dir.mkdir(parents=True, exist_ok=True)
             try:
                 cur = conn.execute(
                     """
@@ -126,10 +138,12 @@ def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", p
                 cat_id = cur.lastrowid
             except sqlite3.IntegrityError:
                 row = conn.execute(
-                    "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?)",
-                    (dir_name, parent_id, parent_id),
+                    "SELECT id FROM material_categories WHERE dir_name = ? AND (parent_id IS ? OR parent_id = ?) AND type = ?",
+                    (dir_name, parent_id, parent_id, type),
                 ).fetchone()
                 cat_id = row["id"]
+            physical_dir = MATERIALS_DIR / f"cat_{cat_id}"
+            physical_dir.mkdir(parents=True, exist_ok=True)
         parent_id = cat_id
     return cat_id
 
@@ -187,9 +201,8 @@ def list_materials(category_id: int, _user: dict = Depends(_require_user)):
             """,
             (category_id,),
         ).fetchall()
-    import re as _re
     rows_list = [dict(r) for r in rows]
-    rows_list.sort(key=lambda x: [int(c) if c.isdigit() else c.lower() for c in _re.split(r'(\d+)', x.get('display_name', ''))])
+    rows_list.sort(key=lambda x: _natural_sort_key(x.get("display_name") or ""))
     return rows_list
 
 
@@ -198,7 +211,7 @@ def download_material(material_id: int, _user: dict = Depends(_require_user)):
     with _connect() as conn:
         row = conn.execute(
             """
-            SELECT m.display_name, m.stored_name, c.dir_name
+            SELECT m.display_name, m.stored_name, c.id AS category_id
             FROM materials m
             JOIN material_categories c ON c.id = m.category_id
             WHERE m.id = ?
@@ -207,7 +220,7 @@ def download_material(material_id: int, _user: dict = Depends(_require_user)):
         ).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="文件不存在")
-    file_path = MATERIALS_DIR / row["dir_name"] / row["stored_name"]
+    file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="文件暂时不可用")
     display = row["display_name"] or row["stored_name"] or "download"
@@ -221,7 +234,7 @@ def download_material(material_id: int, _user: dict = Depends(_require_user)):
     return Response(
         status_code=200,
         headers={
-            "X-Accel-Redirect": f"/protected_materials/{row['dir_name']}/{row['stored_name']}",
+            "X-Accel-Redirect": f"/protected_materials/cat_{row['category_id']}/{row['stored_name']}",
             "Content-Disposition": f"attachment; filename*=UTF-8''{quote(display)}",
             "Content-Type": mime_type,
         },
@@ -242,7 +255,7 @@ def download_category_zip(category_id: int, _user: dict = Depends(_require_user)
         placeholders = ",".join("?" * len(all_ids))
         rows = conn.execute(
             f"""
-            SELECT m.display_name, m.stored_name, c.dir_name, c.name as cat_name
+            SELECT m.display_name, m.stored_name, c.id AS category_id, c.name as cat_name
             FROM materials m
             JOIN material_categories c ON c.id = m.category_id
             WHERE m.category_id IN ({placeholders})
@@ -255,7 +268,7 @@ def download_category_zip(category_id: int, _user: dict = Depends(_require_user)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for row in rows:
-            file_path = MATERIALS_DIR / row["dir_name"] / row["stored_name"]
+            file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
             if not file_path.is_file():
                 continue
             display = row["display_name"] or row["stored_name"]
@@ -305,7 +318,7 @@ def create_category(body: CategoryCreate, _: bool = Depends(verify_admin_access)
             cat_id = cur.lastrowid
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=409, detail="同一父分类下已存在相同目录名") from None
-    cat_dir = MATERIALS_DIR / dir_name
+    cat_dir = MATERIALS_DIR / f"cat_{cat_id}"
     cat_dir.mkdir(parents=True, exist_ok=True)
     return {
         "id": cat_id,
@@ -342,7 +355,7 @@ def rename_category(category_id: int, body: CategoryRename, _: bool = Depends(ve
 def delete_category(category_id: int, _: bool = Depends(verify_admin_access)):
     with _connect() as conn:
         cat = conn.execute(
-            "SELECT id, dir_name FROM material_categories WHERE id = ?", (category_id,)
+            "SELECT id FROM material_categories WHERE id = ?", (category_id,)
         ).fetchone()
         if not cat:
             raise HTTPException(status_code=404, detail="分类不存在")
@@ -350,26 +363,23 @@ def delete_category(category_id: int, _: bool = Depends(verify_admin_access)):
         # 删除所有子分类下的文件（磁盘 + 数据库）
         for cid in all_ids:
             file_rows = conn.execute(
-                "SELECT dir_name, stored_name FROM materials m "
-                "JOIN material_categories mc ON mc.id = m.category_id "
-                "WHERE m.category_id = ?", (cid,)
+                "SELECT stored_name FROM materials WHERE category_id = ?", (cid,)
             ).fetchall()
             for f in file_rows:
                 try:
-                    (MATERIALS_DIR / f["dir_name"] / f["stored_name"]).unlink(missing_ok=True)
+                    (MATERIALS_DIR / f"cat_{cid}" / f["stored_name"]).unlink(missing_ok=True)
                 except Exception:
                     pass
             conn.execute("DELETE FROM materials WHERE category_id = ?", (cid,))
         # 从子到父依次删除分类记录
         for cid in reversed(all_ids):
             conn.execute("DELETE FROM material_categories WHERE id = ?", (cid,))
+            try:
+                import shutil
+                shutil.rmtree(MATERIALS_DIR / f"cat_{cid}", ignore_errors=True)
+            except Exception:
+                pass
         conn.commit()
-    # 尝试删除磁盘目录
-    try:
-        import shutil
-        shutil.rmtree(MATERIALS_DIR / cat["dir_name"], ignore_errors=True)
-    except Exception:
-        pass
     return {"deleted": True}
 
 
@@ -381,7 +391,7 @@ async def upload_material(
 ):
     with _connect() as conn:
         cat = conn.execute(
-            "SELECT id, dir_name FROM material_categories WHERE id = ?", (category_id,)
+            "SELECT id FROM material_categories WHERE id = ?", (category_id,)
         ).fetchone()
     if not cat:
         raise HTTPException(status_code=404, detail="分类不存在")
@@ -392,7 +402,7 @@ async def upload_material(
     ext = os.path.splitext(original_name)[1] or ""
     stored_name = f"{uuid.uuid4()}{ext}"
     display_name = original_name
-    dest_dir = MATERIALS_DIR / cat["dir_name"]
+    dest_dir = MATERIALS_DIR / f"cat_{category_id}"
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest_path = dest_dir / stored_name
     created_at = _utc_now()
@@ -450,13 +460,11 @@ async def batch_upload_materials(
                 continue
             try:
                 cat_id = _ensure_category_path(path_parts, conn, type, parent_id=parent_category_id)
-                cat_row = conn.execute(
-                    "SELECT dir_name FROM material_categories WHERE id = ?", (cat_id,)
-                ).fetchone()
-                dir_name = cat_row["dir_name"]
                 ext = os.path.splitext(display_name)[1] or ""
                 stored_name = f"{uuid.uuid4()}{ext}"
-                dest_path = MATERIALS_DIR / dir_name / stored_name
+                dest_dir = MATERIALS_DIR / f"cat_{cat_id}"
+                dest_dir.mkdir(parents=True, exist_ok=True)
+                dest_path = dest_dir / stored_name
                 dest_path.write_bytes(content)
                 cur = conn.execute(
                     """
@@ -477,7 +485,7 @@ def delete_material(material_id: int, _: bool = Depends(verify_admin_access)):
     with _connect() as conn:
         row = conn.execute(
             """
-            SELECT m.stored_name, c.dir_name
+            SELECT m.stored_name, c.id AS category_id
             FROM materials m
             JOIN material_categories c ON c.id = m.category_id
             WHERE m.id = ?
@@ -488,7 +496,7 @@ def delete_material(material_id: int, _: bool = Depends(verify_admin_access)):
             raise HTTPException(status_code=404, detail="文件不存在")
         conn.execute("DELETE FROM materials WHERE id = ?", (material_id,))
         conn.commit()
-    file_path = MATERIALS_DIR / row["dir_name"] / row["stored_name"]
+    file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
     try:
         file_path.unlink(missing_ok=True)
     except OSError:
