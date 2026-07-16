@@ -472,7 +472,7 @@ const AdminCatNode = defineComponent({
   },
   emits: ['start-rename', 'save-rename', 'cancel-rename', 'update-rename', 'delete'],
   setup(props, { emit }) {
-    const open = ref(true)
+    const open = ref(false)
     return () => {
       const node = props.node
       const indent = props.depth * 16
@@ -558,7 +558,7 @@ const AdminCatRow = defineComponent({
   },
   emits: ['start-rename', 'save-rename', 'cancel-rename', 'update-rename', 'delete'],
   setup(props, { emit }) {
-    const open = ref(true)
+    const open = ref(false)
     return () => {
       const node = props.node
       const hasChildren = node.children && node.children.length > 0
