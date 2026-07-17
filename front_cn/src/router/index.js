@@ -46,6 +46,10 @@ const routes = [
     path: '/roundtable',
     component: () => import('@/components/RoundtablePage.vue'),
   },
+  {
+    path: '/ministry-pursuit',
+    component: () => import('@/components/MinistryPursuitPage.vue'),
+  },
 ]
 
 const router = createRouter({

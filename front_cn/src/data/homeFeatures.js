@@ -49,9 +49,10 @@ export const features = [
     key: 'ministry-digest-generator',
     title: '职事书报追求材料制作',
     desc: '基于职事书报内容，生成每单元两页的追求材料',
-    path: null,
+    path: '/ministry-pursuit',
     icon: FormOutlined,
-    comingSoon: true,
+    quotaKey: 'ministry_pursuit',
+    building: false,
   },
   {
     key: 'conference',
