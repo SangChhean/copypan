@@ -17,7 +17,15 @@ DB_PATH = Path(__file__).resolve().parent / "cn_users.db"
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 7
 
-FEATURES = ("outline", "translate", "qa", "burden", "asr", "roundtable")
+FEATURES = (
+    "outline",
+    "translate",
+    "qa",
+    "burden",
+    "asr",
+    "roundtable",
+    "ministry_pursuit",
+)
 
 FEATURE_LABELS: dict[str, str] = {
     "outline": "纲目制作",
@@ -26,6 +34,7 @@ FEATURE_LABELS: dict[str, str] = {
     "burden": "负担说明",
     "asr": "语音识别",
     "roundtable": "小排材料制作",
+    "ministry_pursuit": "职事书报追求材料制作",
 }
 
 JWT_SECRET = os.environ.get("CN_JWT_SECRET", "").strip()
@@ -41,11 +50,21 @@ def _default_limits() -> dict[str, int]:
         "burden": int(os.getenv("CN_DAILY_LIMIT_BURDEN", "20")),
         "asr": int(os.getenv("CN_DAILY_LIMIT_ASR", "20")),
         "roundtable": int(os.getenv("CN_DAILY_LIMIT_ROUNDTABLE", "2")),
+        "ministry_pursuit": int(os.getenv("CN_DAILY_LIMIT_MINISTRY_PURSUIT", "2")),
     }
 
 
 def _today() -> str:
-    return datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d")
+    """按上海时区取当天日期（YYYY-MM-DD）。
+
+    Windows 上若未安装 tzdata，ZoneInfo('Asia/Shanghai') 会失败；
+    此时回退到固定 UTC+8，避免配额相关接口全部 500。
+    """
+    try:
+        tz = ZoneInfo("Asia/Shanghai")
+    except Exception:
+        tz = timezone(timedelta(hours=8))
+    return datetime.now(tz).strftime("%Y-%m-%d")
 
 
 def _hash_password(password: str) -> str:
@@ -89,6 +108,8 @@ def init_db() -> None:
                 limit_asr INTEGER NOT NULL DEFAULT {limits['asr']},
                 count_roundtable INTEGER NOT NULL DEFAULT 0,
                 limit_roundtable INTEGER NOT NULL DEFAULT {limits['roundtable']},
+                count_ministry_pursuit INTEGER NOT NULL DEFAULT 0,
+                limit_ministry_pursuit INTEGER NOT NULL DEFAULT {limits['ministry_pursuit']},
                 is_admin INTEGER NOT NULL DEFAULT 0
             )
             """
@@ -110,6 +131,14 @@ def init_db() -> None:
             )
         except sqlite3.OperationalError:
             pass
+        for col_sql in (
+            "ALTER TABLE users ADD COLUMN count_ministry_pursuit INTEGER NOT NULL DEFAULT 0",
+            f"ALTER TABLE users ADD COLUMN limit_ministry_pursuit INTEGER NOT NULL DEFAULT {limits['ministry_pursuit']}",
+        ):
+            try:
+                conn.execute(col_sql)
+            except sqlite3.OperationalError:
+                pass
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS material_categories (
@@ -140,7 +169,7 @@ def init_db() -> None:
 def check_and_increment_daily_usage(username: str, feature: str) -> dict:
     """
     检查并递增指定功能的每日用量。
-    feature ∈ FEATURES（含 outline / translate / qa / burden / asr / roundtable）
+    feature ∈ FEATURES（含 outline / translate / qa / burden / asr / roundtable / ministry_pursuit）
     返回 {"allowed", "used", "limit", "feature"}
     """
     if feature not in FEATURES:
@@ -157,7 +186,8 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
                    count_qa, limit_qa,
                    count_burden, limit_burden,
                    count_asr, limit_asr,
-                   count_roundtable, limit_roundtable
+                   count_roundtable, limit_roundtable,
+                   count_ministry_pursuit, limit_ministry_pursuit
             FROM users WHERE username = ?
             """,
             (username,),
@@ -185,7 +215,8 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
             UPDATE users SET
                 daily_date = ?,
                 count_outline = ?, count_translate = ?, count_qa = ?,
-                count_burden = ?, count_asr = ?, count_roundtable = ?
+                count_burden = ?, count_asr = ?, count_roundtable = ?,
+                count_ministry_pursuit = ?
             WHERE username = ?
             """,
             (
@@ -196,6 +227,7 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
                 counts["burden"],
                 counts["asr"],
                 counts["roundtable"],
+                counts["ministry_pursuit"],
                 username,
             ),
         )
@@ -229,7 +261,8 @@ def refund_daily_usage(username: str, feature: str) -> None:
                    count_qa, limit_qa,
                    count_burden, limit_burden,
                    count_asr, limit_asr,
-                   count_roundtable, limit_roundtable
+                   count_roundtable, limit_roundtable,
+                   count_ministry_pursuit, limit_ministry_pursuit
             FROM users WHERE username = ?
             """,
             (username,),
@@ -250,7 +283,8 @@ def refund_daily_usage(username: str, feature: str) -> None:
             UPDATE users SET
                 daily_date = ?,
                 count_outline = ?, count_translate = ?, count_qa = ?,
-                count_burden = ?, count_asr = ?, count_roundtable = ?
+                count_burden = ?, count_asr = ?, count_roundtable = ?,
+                count_ministry_pursuit = ?
             WHERE username = ?
             """,
             (
@@ -261,6 +295,7 @@ def refund_daily_usage(username: str, feature: str) -> None:
                 counts["burden"],
                 counts["asr"],
                 counts["roundtable"],
+                counts["ministry_pursuit"],
                 username,
             ),
         )
@@ -369,8 +404,8 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                 INSERT INTO users(
                     username, hashed_password, is_admin,
                     limit_outline, limit_translate, limit_qa, limit_burden, limit_asr,
-                    limit_roundtable
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    limit_roundtable, limit_ministry_pursuit
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     username,
@@ -382,6 +417,7 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                     limits["burden"],
                     limits["asr"],
                     limits["roundtable"],
+                    limits["ministry_pursuit"],
                 ),
             )
             conn.commit()
@@ -557,7 +593,8 @@ def get_user_feature_limits(username: str) -> dict[str, Any] | None:
                    count_qa, limit_qa,
                    count_burden, limit_burden,
                    count_asr, limit_asr,
-                   count_roundtable, limit_roundtable
+                   count_roundtable, limit_roundtable,
+                   count_ministry_pursuit, limit_ministry_pursuit
             FROM users WHERE username = ?
             """,
             (username,),
