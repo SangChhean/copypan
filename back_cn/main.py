@@ -128,6 +128,7 @@ from back_cn.routers.materials_router import router as materials_router
 from back_cn.routers.guide_router import router as guide_router
 from back_cn.routers.roundtable_router import router as roundtable_router
 from back_cn.routers.es_search_router import router as es_search_router
+from back_cn.routers.ministry_router import router as ministry_router
 
 app.include_router(auth_router)
 app.include_router(qa_router, prefix="/api/qa")
@@ -138,6 +139,7 @@ app.include_router(materials_router)
 app.include_router(guide_router)
 app.include_router(roundtable_router)
 app.include_router(es_search_router)
+app.include_router(ministry_router)
 
 
 @app.get("/api/cn/liveness")

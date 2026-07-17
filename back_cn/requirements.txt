@@ -21,6 +21,7 @@ docx2pdf>=0.1.8
 neo4j>=5.0.0
 starlette
 bcrypt
+tzdata
 python-jose[cryptography]
 sse-starlette>=1.6.5
 beautifulsoup4>=4.12.0
