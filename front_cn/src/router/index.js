@@ -15,6 +15,10 @@ const routes = [
     component: () => import('@/components/QAPage.vue'),
   },
   {
+    path: '/ministry-search',
+    component: () => import('@/components/MinistrySearchPage.vue'),
+  },
+  {
     path: '/admin',
     component: () => import('@/components/AdminPage.vue'),
   },
