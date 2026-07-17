@@ -138,9 +138,9 @@ export const features = [
     key: 'ministry-search',
     title: '职事信息搜寻',
     desc: '关于职事信息的智能搜索引擎',
-    path: null,
+    path: '/ministry-search',
     icon: SearchOutlined,
-    comingSoon: true,
+    building: false,
   },
   {
     key: 'roundtable-reading',
