@@ -6,9 +6,11 @@ import logging
 import os
 import re
 from functools import lru_cache
+from pathlib import Path
 
 from elasticsearch import Elasticsearch, NotFoundError
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import FileResponse
 
 from back_cn.auth import get_current_user
 
@@ -300,3 +302,28 @@ def read_ministry_source(
     except Exception as exc:
         logger.exception("[cn-es-search] reading failed")
         raise HTTPException(status_code=502, detail="阅读服务暂时不可用") from exc
+
+
+OFFLINE_PACKAGE_DOWNLOAD_NAME = "ES7-offline-search.zip"
+
+
+def _offline_package_path() -> Path:
+    raw = (os.getenv("OFFLINE_SEARCH_PACKAGE_PATH") or "").strip()
+    if not raw:
+        raise HTTPException(status_code=503, detail="离线包尚未配置")
+    path = Path(raw)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="离线包文件不存在或暂时不可用")
+    return path
+
+
+@router.get("/download_offline_package")
+def download_offline_package(_user: dict = Depends(_require_user)):
+    """下载职事信息搜寻离线包 zip（路径由 OFFLINE_SEARCH_PACKAGE_PATH 配置）。"""
+    file_path = _offline_package_path()
+    return FileResponse(
+        path=file_path,
+        media_type="application/zip",
+        filename=OFFLINE_PACKAGE_DOWNLOAD_NAME,
+        content_disposition_type="attachment",
+    )
