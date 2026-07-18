@@ -57,7 +57,7 @@ export const features = [
   {
     key: 'conference',
     title: '节期相关',
-    desc: '一年七次节期特会相关的纲目',
+    desc: '一年七次节期特会相关的材料',
     path: '/materials?type=conference',
     icon: CloudDownloadOutlined,
     building: false,
@@ -140,6 +140,7 @@ export const features = [
     desc: '关于职事信息的智能搜索引擎',
     path: '/ministry-search',
     icon: SearchOutlined,
+    quotaKey: 'es_search',
     building: false,
   },
   {
@@ -148,6 +149,7 @@ export const features = [
     desc: '基于生命读经，作出四个版本，每单元两页的材料',
     path: '/roundtable',
     icon: ReadOutlined,
+    quotaKey: 'roundtable',
   },
 ]
 

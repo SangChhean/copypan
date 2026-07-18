@@ -25,6 +25,7 @@ FEATURES = (
     "asr",
     "roundtable",
     "ministry_pursuit",
+    "es_search",
 )
 
 FEATURE_LABELS: dict[str, str] = {
@@ -35,6 +36,7 @@ FEATURE_LABELS: dict[str, str] = {
     "asr": "语音识别",
     "roundtable": "小排材料制作",
     "ministry_pursuit": "职事书报追求材料制作",
+    "es_search": "职事信息搜寻",
 }
 
 JWT_SECRET = os.environ.get("CN_JWT_SECRET", "").strip()
@@ -51,7 +53,26 @@ def _default_limits() -> dict[str, int]:
         "asr": int(os.getenv("CN_DAILY_LIMIT_ASR", "20")),
         "roundtable": int(os.getenv("CN_DAILY_LIMIT_ROUNDTABLE", "2")),
         "ministry_pursuit": int(os.getenv("CN_DAILY_LIMIT_MINISTRY_PURSUIT", "2")),
+        "es_search": int(os.getenv("CN_DAILY_LIMIT_ES_SEARCH", "1")),
     }
+
+
+def _feature_count_limit_select_sql() -> str:
+    return ", ".join(f"count_{f}, limit_{f}" for f in FEATURES)
+
+
+def _update_feature_counts(
+    conn: sqlite3.Connection,
+    username: str,
+    date_str: str,
+    counts: dict[str, int],
+) -> None:
+    set_parts = ["daily_date = ?"] + [f"count_{f} = ?" for f in FEATURES]
+    values: list[Any] = [date_str] + [counts[f] for f in FEATURES] + [username]
+    conn.execute(
+        f"UPDATE users SET {', '.join(set_parts)} WHERE username = ?",
+        values,
+    )
 
 
 def _today() -> str:
@@ -110,6 +131,8 @@ def init_db() -> None:
                 limit_roundtable INTEGER NOT NULL DEFAULT {limits['roundtable']},
                 count_ministry_pursuit INTEGER NOT NULL DEFAULT 0,
                 limit_ministry_pursuit INTEGER NOT NULL DEFAULT {limits['ministry_pursuit']},
+                count_es_search INTEGER NOT NULL DEFAULT 0,
+                limit_es_search INTEGER NOT NULL DEFAULT {limits['es_search']},
                 is_admin INTEGER NOT NULL DEFAULT 0
             )
             """
@@ -134,6 +157,8 @@ def init_db() -> None:
         for col_sql in (
             "ALTER TABLE users ADD COLUMN count_ministry_pursuit INTEGER NOT NULL DEFAULT 0",
             f"ALTER TABLE users ADD COLUMN limit_ministry_pursuit INTEGER NOT NULL DEFAULT {limits['ministry_pursuit']}",
+            "ALTER TABLE users ADD COLUMN count_es_search INTEGER NOT NULL DEFAULT 0",
+            f"ALTER TABLE users ADD COLUMN limit_es_search INTEGER NOT NULL DEFAULT {limits['es_search']}",
         ):
             try:
                 conn.execute(col_sql)
@@ -169,7 +194,7 @@ def init_db() -> None:
 def check_and_increment_daily_usage(username: str, feature: str) -> dict:
     """
     检查并递增指定功能的每日用量。
-    feature ∈ FEATURES（含 outline / translate / qa / burden / asr / roundtable / ministry_pursuit）
+    feature ∈ FEATURES
     返回 {"allowed", "used", "limit", "feature"}
     """
     if feature not in FEATURES:
@@ -179,15 +204,8 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
     conn = _connect()
     try:
         row = conn.execute(
-            """
-            SELECT daily_date,
-                   count_outline, limit_outline,
-                   count_translate, limit_translate,
-                   count_qa, limit_qa,
-                   count_burden, limit_burden,
-                   count_asr, limit_asr,
-                   count_roundtable, limit_roundtable,
-                   count_ministry_pursuit, limit_ministry_pursuit
+            f"""
+            SELECT daily_date, {_feature_count_limit_select_sql()}
             FROM users WHERE username = ?
             """,
             (username,),
@@ -210,27 +228,7 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
             return {"allowed": False, "used": used, "limit": limit, "feature": feature}
 
         counts[feature] = used + 1
-        conn.execute(
-            """
-            UPDATE users SET
-                daily_date = ?,
-                count_outline = ?, count_translate = ?, count_qa = ?,
-                count_burden = ?, count_asr = ?, count_roundtable = ?,
-                count_ministry_pursuit = ?
-            WHERE username = ?
-            """,
-            (
-                date_str,
-                counts["outline"],
-                counts["translate"],
-                counts["qa"],
-                counts["burden"],
-                counts["asr"],
-                counts["roundtable"],
-                counts["ministry_pursuit"],
-                username,
-            ),
-        )
+        _update_feature_counts(conn, username, date_str, counts)
         conn.commit()
         return {
             "allowed": True,
@@ -254,15 +252,8 @@ def refund_daily_usage(username: str, feature: str) -> None:
     conn = _connect()
     try:
         row = conn.execute(
-            """
-            SELECT daily_date,
-                   count_outline, limit_outline,
-                   count_translate, limit_translate,
-                   count_qa, limit_qa,
-                   count_burden, limit_burden,
-                   count_asr, limit_asr,
-                   count_roundtable, limit_roundtable,
-                   count_ministry_pursuit, limit_ministry_pursuit
+            f"""
+            SELECT daily_date, {_feature_count_limit_select_sql()}
             FROM users WHERE username = ?
             """,
             (username,),
@@ -278,63 +269,37 @@ def refund_daily_usage(username: str, feature: str) -> None:
             date_str = today
 
         counts[feature] = max(0, counts[feature] - 1)
-        conn.execute(
-            """
-            UPDATE users SET
-                daily_date = ?,
-                count_outline = ?, count_translate = ?, count_qa = ?,
-                count_burden = ?, count_asr = ?, count_roundtable = ?,
-                count_ministry_pursuit = ?
-            WHERE username = ?
-            """,
-            (
-                date_str,
-                counts["outline"],
-                counts["translate"],
-                counts["qa"],
-                counts["burden"],
-                counts["asr"],
-                counts["roundtable"],
-                counts["ministry_pursuit"],
-                username,
-            ),
-        )
+        _update_feature_counts(conn, username, date_str, counts)
         conn.commit()
     finally:
         conn.close()
 
 
 def get_daily_usage(username: str) -> dict:
-    """只返回 outline / translate / qa 三组用量，不递增。"""
+    """返回 FEATURES 中各组用量，不递增。"""
     today = _today()
     conn = _connect()
     try:
         row = conn.execute(
-            """
-            SELECT daily_date,
-                   count_outline, limit_outline,
-                   count_translate, limit_translate,
-                   count_qa, limit_qa
+            f"""
+            SELECT daily_date, {_feature_count_limit_select_sql()}
             FROM users WHERE username = ?
             """,
             (username,),
         ).fetchone()
         if not row:
-            return {
-                "outline": {"used": 0, "limit": 0},
-                "translate": {"used": 0, "limit": 0},
-                "qa": {"used": 0, "limit": 0},
-            }
+            return {f: {"used": 0, "limit": 0} for f in FEATURES}
 
         reset = row["daily_date"] != today
-        result = {}
-        for feat in ("outline", "translate", "qa"):
-            used = 0 if reset else row[f"count_{feat}"]
-            result[feat] = {"used": used, "limit": row[f"limit_{feat}"]}
-        return result
+        return {
+            f: {
+                "used": 0 if reset else row[f"count_{f}"],
+                "limit": row[f"limit_{f}"],
+            }
+            for f in FEATURES
+        }
     finally:
         conn.close()
-
 
 def create_invite_code(code: str) -> bool:
     code = (code or "").strip()
@@ -404,8 +369,8 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                 INSERT INTO users(
                     username, hashed_password, is_admin,
                     limit_outline, limit_translate, limit_qa, limit_burden, limit_asr,
-                    limit_roundtable, limit_ministry_pursuit
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    limit_roundtable, limit_ministry_pursuit, limit_es_search
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     username,
@@ -418,6 +383,7 @@ def create_user(username: str, password: str, *, is_admin: bool = False) -> bool
                     limits["asr"],
                     limits["roundtable"],
                     limits["ministry_pursuit"],
+                    limits["es_search"],
                 ),
             )
             conn.commit()
@@ -586,15 +552,8 @@ def get_user_feature_limits(username: str) -> dict[str, Any] | None:
     today = _today()
     with _connect() as conn:
         row = conn.execute(
-            """
-            SELECT daily_date,
-                   count_outline, limit_outline,
-                   count_translate, limit_translate,
-                   count_qa, limit_qa,
-                   count_burden, limit_burden,
-                   count_asr, limit_asr,
-                   count_roundtable, limit_roundtable,
-                   count_ministry_pursuit, limit_ministry_pursuit
+            f"""
+            SELECT daily_date, {_feature_count_limit_select_sql()}
             FROM users WHERE username = ?
             """,
             (username,),
