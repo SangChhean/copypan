@@ -17,6 +17,9 @@
             <div class="card-icon">
               <component :is="item.icon" />
             </div>
+            <span v-if="item.quotaKey && usage" class="cn-card-badge">
+              {{ quotaText(item.quotaKey) }}
+            </span>
           </div>
           <div class="card-title cn-card-title">{{ item.title }}</div>
           <div class="card-desc cn-card-desc">{{ item.desc }}</div>
@@ -27,12 +30,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { features, TOOLBOX_FEATURE_KEYS } from '@/data/homeFeatures.js'
+import http from '@/utils/http.js'
 
 const router = useRouter()
+const usage = ref(null)
 
 const toolboxItems = computed(() =>
   TOOLBOX_FEATURE_KEYS.map(key => features.find(f => f.key === key)).filter(Boolean)
@@ -58,6 +63,13 @@ function onTouchEnd(item, e) {
   go(item)
 }
 
+function quotaText(key) {
+  const u = usage.value?.[key]
+  if (!u) return ''
+  const lim = u.limit === -1 ? '不限' : u.limit
+  return `${u.used ?? 0}/${lim}`
+}
+
 function go(item) {
   if (item.comingSoon) {
     message.info('功能待更新，敬请期待')
@@ -66,6 +78,19 @@ function go(item) {
   if (item.building) return
   router.push(item.path)
 }
+
+async function loadUsage() {
+  try {
+    const res = await http.get('/api/cn/auth/usage')
+    usage.value = res.data || null
+  } catch {
+    usage.value = null
+  }
+}
+
+onMounted(() => {
+  loadUsage()
+})
 </script>
 
 <style lang="less" scoped>
