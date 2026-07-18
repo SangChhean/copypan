@@ -12,7 +12,12 @@ from elasticsearch import Elasticsearch, NotFoundError
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import FileResponse
 
-from back_cn.auth import get_current_user
+from back_cn.auth import (
+    check_and_increment_daily_usage,
+    get_current_user,
+    quota_exceeded_message,
+    refund_daily_usage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -263,8 +268,17 @@ def search_ministry(
     _user: dict = Depends(_require_user),
 ):
     indices, matches, field, page, page_size = _get_search_info(args, input)
+    # 参数无效 / 空关键词：不扣配额
     if not indices or not (input or "").strip():
         return {"total": 0, "msg": []}
+
+    username = _user["username"]
+    usage = check_and_increment_daily_usage(username, "es_search")
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail=quota_exceeded_message("es_search", usage["limit"]),
+        )
 
     body = {
         "size": page_size,
@@ -284,6 +298,8 @@ def search_ministry(
     try:
         response = _es_client().search(index=indices, body=body, ignore_unavailable=True)
     except Exception as exc:
+        # 与小排/职事书报一致：服务侧失败则退还本次配额
+        refund_daily_usage(username, "es_search")
         logger.exception("[cn-es-search] search failed")
         raise HTTPException(status_code=502, detail="搜索服务暂时不可用") from exc
 

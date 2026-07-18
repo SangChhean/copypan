@@ -54,7 +54,7 @@
               <div class="card-icon">
                 <component :is="item.icon" />
               </div>
-              <span v-if="item.quotaKey && usage" class="card-quota cn-card-badge">
+              <span v-if="item.quotaKey && usage" class="cn-card-badge">
                 {{ quotaText(item.quotaKey) }}
               </span>
             </div>
@@ -212,16 +212,6 @@ onMounted(() => {
   border-radius: var(--cn-radius-md);
   color: #1B6CA8;
   font-size: 18px;
-}
-
-.card-quota {
-  background: #fff;
-  color: #1B6CA8;
-  padding: 2px 8px;
-  border-radius: 10px;
-  line-height: 1.6;
-  font-weight: 600;
-  font-size: 11px;
 }
 
 .card-title {

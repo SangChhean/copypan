@@ -675,7 +675,7 @@ const limitModalOpen = ref(false)
 const limitModalUser = ref('')
 const limitModalLoading = ref(false)
 const limitSaving = ref(false)
-const limitValues = ref({ outline: 3, translate: 3, qa: 3, burden: 20, asr: 20, roundtable: 2, ministry_pursuit: 2 })
+const limitValues = ref({ outline: 3, translate: 3, qa: 3, burden: 20, asr: 20, roundtable: 2, ministry_pursuit: 2, es_search: 1 })
 const limitUsage = ref({})
 
 const limitFields = [
@@ -686,6 +686,7 @@ const limitFields = [
   { key: 'asr', label: '语音转写', hint: '防滥用护栏' },
   { key: 'roundtable', label: '小排材料制作' },
   { key: 'ministry_pursuit', label: '职事书报追求材料制作' },
+  { key: 'es_search', label: '职事信息搜寻' },
 ]
 
 const matCategories = ref([])
