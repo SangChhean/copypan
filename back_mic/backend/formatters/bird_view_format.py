@@ -117,7 +117,11 @@ def format_bird_view_docx(
         # 5. 调用中文纲目格式刷处理第5段起的纲目内容
         format_chinese_outline_docx(tmp_path, traditional_quotes=False)
 
-        # Step 10/11：出处标红 + 无出处行标绿 + 关键词标红（仅 with_source 模式）
+        # 关键词标红（所有模式均执行，包括普通下载和带出处下载）
+        doc_kw = Document(tmp_path)
+        _colorize_keyword_only(doc_kw, keyword)
+        doc_kw.save(tmp_path)
+        # 出处标红 + 无出处行标绿（仅 with_source 模式，在关键词标红之后叠加）
         if with_source:
             doc_color = Document(tmp_path)
             _colorize_bird_view_sources(doc_color, keyword)
@@ -229,3 +233,30 @@ def _add_run_with_keyword_red(para, text: str, keywords: list, apply_highlight: 
             run.font.color.rgb = RGBColor(0xFF, 0, 0)
         elif apply_highlight:
             run.font.highlight_color = WD_COLOR_INDEX.BRIGHT_GREEN
+
+
+def _colorize_keyword_only(doc, keyword: str) -> None:
+    """
+    将纲目正文中所有出现关键词的段落做关键词标红。
+    所有模式（普通下载和带出处下载）均调用此函数。
+    跳过前4段篇头，但第2段（index=1）篇题也做标红。
+    只做关键词标红，不涉及出处着色，不影响其他任何功能。
+    """
+    if not keyword:
+        return
+    keywords = [kw.strip() for kw in keyword.split("、") if kw.strip()]
+    if not keywords:
+        return
+    for i, para in enumerate(doc.paragraphs):
+        text = para.text
+        if not text.strip():
+            continue
+        # 前4段篇头中，只对第2段（index=1，篇题行）做关键词标红
+        if i < 4 and i != 1:
+            continue
+        # 该段落不含任何关键词则跳过
+        if not any(kw in text for kw in keywords):
+            continue
+        # 重写段落 runs，将关键词部分标红
+        para.clear()
+        _add_run_with_keyword_red(para, text, keywords)

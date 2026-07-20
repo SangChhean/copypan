@@ -891,6 +891,30 @@ async def _call_kg_rag_llm(
     )
 
 
+def _extract_keyword_paragraphs(keyword: str, content: str) -> str:
+    """
+    从原文中提取所有含关键词的行/段落，返回拼接后的字符串。
+    用于构建关键词段落库，注入鸟瞰纲目生成 Prompt。
+    只在 bird_view 功能内使用，不影响其他任何功能。
+    """
+    if not keyword or not content:
+        return "（原文中未找到含关键词的段落）"
+    # 支持多关键词（以「、」分隔）
+    keywords = [kw.strip() for kw in keyword.split("、") if kw.strip()]
+    if not keywords:
+        return "（原文中未找到含关键词的段落）"
+    matched = []
+    for line in content.split("\n"):
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+        if any(kw in line_stripped for kw in keywords):
+            matched.append(line_stripped)
+    if not matched:
+        return "（原文中未找到含关键词的段落）"
+    return "\n".join(matched)
+
+
 class KgRagService:
     """KG-RAG 流水线编排：Step 1 概念抽取 → Step 2 骨架 → Step 3 三路检索 → Step 4 Prompt 构建 → Step 5 生成。"""
 
@@ -1935,9 +1959,13 @@ class KgRagService:
         skeleton: str,
     ) -> dict:
         """根据骨架与原文生成鸟瞰纲目正文。"""
+        # 预处理：提取原文中含关键词的段落，构建关键词段落库
+        keyword_sentences = _extract_keyword_paragraphs(keyword, content)
+
         prompt = BIRD_VIEW_OUTLINE_PROMPT.format(
             keyword=keyword,
             skeleton=skeleton,
+            keyword_sentences=keyword_sentences,
             content=content,
         )
         raw, usage = await _call_kg_rag_llm(
