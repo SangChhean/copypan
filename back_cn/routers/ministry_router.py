@@ -53,8 +53,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["cn-ministry"])
 
 VERSION_KEY = "truth"
-TEXT_MIN_LEN = 1500
-TEXT_MAX_LEN = 30000
+TEXT_MAX_LEN = 50000
 
 _PENDING_FILES: dict[str, tuple[Path, str]] = {}
 
@@ -74,7 +73,7 @@ def _cleanup_expired_tasks() -> None:
 
 
 class GenerateMinistryBody(BaseModel):
-    text: str = Field(..., min_length=TEXT_MIN_LEN, max_length=TEXT_MAX_LEN)
+    text: str = Field(..., min_length=1, max_length=TEXT_MAX_LEN)
     outline_title: str = Field(..., min_length=1, max_length=200)
     book_name: str = Field(default="", max_length=100)
     chapter_info: str = Field(default="", max_length=100)
@@ -84,6 +83,13 @@ class GenerateMinistryBody(BaseModel):
     @classmethod
     def _strip_text_fields(cls, v: str) -> str:
         return (v or "").strip()
+
+    @field_validator("text")
+    @classmethod
+    def _text_not_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("职事信息不能为空")
+        return v
 
     @field_validator("outline_title")
     @classmethod
