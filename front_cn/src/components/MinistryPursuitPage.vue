@@ -67,9 +67,9 @@
               <a-textarea
                 v-model:value="ministryText"
                 :rows="14"
-                placeholder="请粘贴职事信息原文（1500～30000字）"
+                placeholder="请粘贴职事信息原文"
                 :maxlength="TEXT_MAX_LEN"
-                show-count
+                :show-count="textCountConfig"
                 style="width: 100%; max-width: 720px"
               />
             </div>
@@ -157,9 +157,11 @@ import http from '@/utils/http.js'
 
 const router = useRouter()
 
-const TEXT_MIN_LEN = 1500
-const TEXT_MAX_LEN = 30000
+const TEXT_MAX_LEN = 50000
 const VERSION_KEY = 'truth'
+const textCountConfig = {
+  formatter: ({ count }) => `${count}`,
+}
 
 const useWeekNumber = ref(true)
 const weekNumber = ref('')
@@ -186,7 +188,7 @@ const textLen = computed(() => ministryText.value.trim().length)
 const canGenerate = computed(
   () =>
     outlineTitle.value.trim().length > 0 &&
-    textLen.value >= TEXT_MIN_LEN &&
+    textLen.value > 0 &&
     textLen.value <= TEXT_MAX_LEN &&
     (!useWeekNumber.value || weekNumber.value.trim().length > 0),
 )
@@ -329,8 +331,8 @@ async function onGenerate() {
     message.warning('请填写纲要题目')
     return
   }
-  if (textLen.value < TEXT_MIN_LEN) {
-    message.warning(`职事信息至少需要 ${TEXT_MIN_LEN} 字`)
+  if (!textLen.value) {
+    message.warning('请粘贴职事信息原文')
     return
   }
   if (textLen.value > TEXT_MAX_LEN) {
