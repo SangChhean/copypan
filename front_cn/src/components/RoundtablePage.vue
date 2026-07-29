@@ -612,6 +612,25 @@ async function onGenerate() {
     return
   }
 
+  const versionCount = selectedVersions.value.length
+  try {
+    const usageRes = await http.get('/api/cn/auth/usage')
+    const rt = usageRes.data?.roundtable
+    const limit = Number(rt?.limit)
+    const used = Number(rt?.used ?? 0)
+    if (limit !== -1 && Number.isFinite(limit)) {
+      const remaining = Math.max(0, limit - used)
+      if (remaining < versionCount) {
+        message.warning(
+          `额度不足：本次勾选了${versionCount}个版本，但今日仅剩${remaining}次（上限${limit}次），请减少勾选或明天再来`,
+        )
+        return
+      }
+    }
+  } catch {
+    // 额度预检失败时仍交给后端兜底，避免因 usage 接口短暂异常卡死生成
+  }
+
   stopPolling()
   await cleanupCurrentTask()
   generating.value = true
