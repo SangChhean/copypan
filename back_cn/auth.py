@@ -191,14 +191,19 @@ def init_db() -> None:
     print("[CN] materials tables ready")
 
 
-def check_and_increment_daily_usage(username: str, feature: str) -> dict:
+def check_and_increment_daily_usage(
+    username: str, feature: str, amount: int = 1
+) -> dict:
     """
     检查并递增指定功能的每日用量。
     feature ∈ FEATURES
+    amount: 一次扣减次数（默认 1，兼容其它功能的原有调用）
     返回 {"allowed", "used", "limit", "feature"}
     """
     if feature not in FEATURES:
         raise ValueError(f"未知 feature: {feature!r}")
+    if not isinstance(amount, int) or amount < 1:
+        raise ValueError(f"amount 必须为正整数，收到: {amount!r}")
 
     today = _today()
     conn = _connect()
@@ -224,10 +229,10 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
         used = counts[feature]
         limit = limits[feature]
 
-        if limit != -1 and used >= limit:
+        if limit != -1 and used + amount > limit:
             return {"allowed": False, "used": used, "limit": limit, "feature": feature}
 
-        counts[feature] = used + 1
+        counts[feature] = used + amount
         _update_feature_counts(conn, username, date_str, counts)
         conn.commit()
         return {
@@ -240,13 +245,17 @@ def check_and_increment_daily_usage(username: str, feature: str) -> dict:
         conn.close()
 
 
-def refund_daily_usage(username: str, feature: str) -> None:
+def refund_daily_usage(username: str, feature: str, amount: int = 1) -> None:
     """
-    生成失败时退还一次配额（count减1，不低于0）。
-    跟 check_and_increment_daily_usage 是一对，扣的时候+1，失败退的时候-1。
+    生成失败时退还配额（count 按 amount 减少，不低于 0）。
+    跟 check_and_increment_daily_usage 是一对；amount 默认 1，兼容原有调用。
     """
     if feature not in FEATURES:
         raise ValueError(f"未知 feature: {feature!r}")
+    if not isinstance(amount, int) or amount < 0:
+        raise ValueError(f"amount 必须为非负整数，收到: {amount!r}")
+    if amount == 0:
+        return
 
     today = _today()
     conn = _connect()
@@ -268,7 +277,7 @@ def refund_daily_usage(username: str, feature: str) -> None:
             counts = {f: 0 for f in FEATURES}
             date_str = today
 
-        counts[feature] = max(0, counts[feature] - 1)
+        counts[feature] = max(0, counts[feature] - amount)
         _update_feature_counts(conn, username, date_str, counts)
         conn.commit()
     finally:

@@ -176,11 +176,20 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
     except (FileNotFoundError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    usage = check_and_increment_daily_usage(username, "roundtable")
+    version_count = len(body.versions)
+    usage = check_and_increment_daily_usage(
+        username, "roundtable", amount=version_count
+    )
     if not usage["allowed"]:
+        limit = usage["limit"]
+        remaining = max(0, limit - usage["used"]) if limit != -1 else -1
         raise HTTPException(
             status_code=429,
-            detail=f"今日小排材料制作次数已达上限（{usage['limit']}次），请明天再来",
+            detail=(
+                f"额度不足：本次勾选了{version_count}个版本，"
+                f"但今日小排材料制作仅剩{remaining}次"
+                f"（上限{limit}次），请减少勾选或明天再来"
+            ),
         )
 
     _cleanup_expired_tasks()
@@ -243,14 +252,20 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
 
             task = get_task(task_id)
             if task:
-                all_failed = all(
-                    v["status"] == "error" for v in task["versions"].values()
+                failed_count = sum(
+                    1
+                    for v in task["versions"].values()
+                    if v.get("status") == "error"
                 )
-                if all_failed:
-                    refund_daily_usage(username, "roundtable")
+                if failed_count:
+                    refund_daily_usage(
+                        username, "roundtable", amount=failed_count
+                    )
                     logger.info(
-                        "[配额退还] %s 本次生成全部版本失败，已退还roundtable配额",
+                        "[配额退还] %s 本次生成失败%d个版本，已退还roundtable配额%d次",
                         username,
+                        failed_count,
+                        failed_count,
                     )
         except asyncio.CancelledError:
             for v in body.versions:
@@ -260,10 +275,14 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
                 set_version_error(task_id, v, interrupt_msg)
             raise
         except Exception as e:
-            refund_daily_usage(username, "roundtable")
+            # Step1 失败等：尚未进入各版本分别成功，整单退还勾选数量
+            refund_daily_usage(
+                username, "roundtable", amount=len(body.versions)
+            )
             logger.info(
-                "[配额退还] %s Step1失败，已退还roundtable配额: %s",
+                "[配额退还] %s Step1失败，已退还roundtable配额%d次: %s",
                 username,
+                len(body.versions),
                 e,
             )
             for v in body.versions:
