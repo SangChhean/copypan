@@ -23,20 +23,31 @@ const AI_ORDER = ["claude", "gpt", "gemini", "grok", "deepseek", "perplexity"];
 
 /** 场景④ 顶级模型思考：三选一 */
 const SCENE4_AI_LIST = [
-  { key: "claude_opus", label: "Claude Opus 4.6", desc: "thinking" },
-  { key: "gpt_pro", label: "GPT-5.4", desc: "pro" },
+  { key: "claude_opus", label: "Claude Fable 5", desc: "" },
+  { key: "gpt_pro", label: "GPT-5.6 Sol", desc: "" },
   { key: "gemini_pro", label: "Gemini 3.1 Pro", desc: "" },
 ];
 const SCENE4_ORDER = ["claude_opus", "gpt_pro", "gemini_pro"];
 
+/** 去掉 _top / 场景④ key，用于排序与头像 */
+const baseAiKey = (aiKey) => {
+  if (!aiKey) return aiKey;
+  if (aiKey.endsWith("_top")) return aiKey.slice(0, -4);
+  if (aiKey === "claude_opus") return "claude";
+  if (aiKey === "gpt_pro") return "gpt";
+  if (aiKey === "gemini_pro") return "gemini";
+  return aiKey;
+};
+
 const getAvatar = (aiKey) => {
+  const base = baseAiKey(aiKey);
   const scene4 = SCENE4_AI_LIST.find((a) => a.key === aiKey);
   if (scene4) {
     if (aiKey === "claude_opus") return claudeAvatar;
     if (aiKey === "gpt_pro") return gptAvatar;
     if (aiKey === "gemini_pro") return geminiAvatar;
   }
-  return AI_LIST.find((a) => a.key === aiKey)?.avatar || "";
+  return AI_LIST.find((a) => a.key === base)?.avatar || "";
 };
 
 const getDisplayName = (aiKey) => {
@@ -50,7 +61,10 @@ const getSpeakerName = (ai) => {
   if (runSceneType.value === "scene_two" && stances.value[ai]) return stances.value[ai];
   const s4 = SCENE4_AI_LIST.find((a) => a.key === ai);
   if (s4) return s4.desc ? `${s4.label}（${s4.desc}）` : s4.label;
-  return ai;
+  const base = baseAiKey(ai);
+  const label = AI_LIST.find((a) => a.key === base)?.label || base;
+  if (String(ai).endsWith("_top")) return `${label}（顶级）`;
+  return label;
 };
 
 const cleanMarkdown = (text) => {
@@ -76,6 +90,29 @@ const stances = ref({
   perplexity: "",
 });
 const isLoading = ref(false);
+
+/** 场景③提交时将基础 key 映射为顶级 key；①②④不变 */
+const SCENE3_TOP_KEY = {
+  claude: "claude_top",
+  gpt: "gpt_top",
+  gemini: "gemini_top",
+  grok: "grok_top",
+  deepseek: "deepseek_top",
+  perplexity: "perplexity_top",
+};
+
+const buildParticipantsPayload = () => {
+  if (sceneType.value === "scene_four") return [selectedScene4Ai.value];
+  if (sceneType.value === "scene_three") {
+    return selectedAIs.value.map((k) => SCENE3_TOP_KEY[k] || k);
+  }
+  return selectedAIs.value;
+};
+
+const aiOrderIndex = (aiKey) => {
+  const idx = AI_ORDER.indexOf(baseAiKey(aiKey));
+  return idx < 0 ? 999 : idx;
+};
 
 const sessionId = ref("");
 const speeches = ref([]); // 每条格式：{ round: 1, ai: 'claude', content: '...', displayContent: '', done: false, typing: false }
@@ -118,7 +155,7 @@ const sceneOptions = [
 const sceneDesc = computed(() => {
   if (sceneType.value === "scene_one") return "十二支派：多AI并行历史神学研究，综合汇总";
   if (sceneType.value === "scene_three") return "重大讨论：第一轮各AI作答，第二轮互相点评（至少2～3人），第三轮对题目做最终评价，Claude 总结";
-  if (sceneType.value === "scene_four") return "顶级模型思考：从 Claude Opus 4.6（thinking）、GPT-5.4（pro）、Gemini 3.1 Pro 中选一个，单轮深度思考，无总结";
+  if (sceneType.value === "scene_four") return "顶级模型思考：从 Claude Fable 5、GPT-5.6 Sol、Gemini 3.1 Pro 中选一个，单轮深度思考，无总结";
   return "神学辩论：3轮交锋 + 中立结论";
 });
 
@@ -150,6 +187,12 @@ const canStart = computed(() => {
 
 const typewriterEffect = (s) => {
   const fullText = cleanMarkdown(s.content);
+  if (s.failed || !fullText) {
+    s.displayContent = s.failed ? "（生成失败）" : "";
+    s.done = true;
+    s.typing = false;
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     let i = 0;
     s.typing = true;
@@ -168,10 +211,15 @@ const typewriterEffect = (s) => {
 };
 
 const startTypingQueue = async (round) => {
-  const order = runSceneType.value === "scene_four" ? SCENE4_ORDER : AI_ORDER;
-  const roundSpeeches = order.map((ai) =>
-    speeches.value.find((s) => s.round === round && s.ai === ai)
-  ).filter(Boolean);
+  const order = runSceneType.value === "scene_four" ? SCENE4_ORDER : null;
+  const roundSpeeches = speeches.value
+    .filter((s) => s.round === round)
+    .slice()
+    .sort((a, b) =>
+      order
+        ? order.indexOf(a.ai) - order.indexOf(b.ai)
+        : aiOrderIndex(a.ai) - aiOrderIndex(b.ai)
+    );
   for (const s of roundSpeeches) {
     await typewriterEffect(s);
   }
@@ -184,24 +232,67 @@ const enqueueRound = (round) => {
   }
 };
 
+/** 场景①：等待排在前面的 AI 的 speech_end 超时后跳过，避免无限阻塞 */
+const SCENE_ONE_SKIP_MS = 8000;
+const sceneOneWaitTimers = {};
+
+const clearSceneOneWaitTimer = (ai) => {
+  if (sceneOneWaitTimers[ai]) {
+    clearTimeout(sceneOneWaitTimers[ai]);
+    delete sceneOneWaitTimers[ai];
+  }
+};
+
+const scheduleSceneOneSkip = (ai) => {
+  if (sceneOneWaitTimers[ai] || sceneOneTypedAis.value.includes(ai)) return;
+  sceneOneWaitTimers[ai] = setTimeout(() => {
+    delete sceneOneWaitTimers[ai];
+    if (sceneOneTypedAis.value.includes(ai)) return;
+    if (!sceneOneEndedAis.value.includes(ai)) {
+      sceneOneEndedAis.value.push(ai);
+    }
+    const s = speeches.value.find((sp) => sp.round === 1 && sp.ai === ai);
+    if (s && !s.done) {
+      s.failed = true;
+      s.content = s.content || "";
+      s.displayContent = "（等待超时，已跳过）";
+      s.done = true;
+    }
+    tryAdvanceSceneOne();
+  }, SCENE_ONE_SKIP_MS);
+};
+
+/**
+ * 场景①按 AI_ORDER 顺序打字机；已 ended（含 failed）的立刻推进；
+ * 尚未 ended 的启动超时跳过，不因某一位失败/迟迟不返回而卡住整场。
+ */
 const tryAdvanceSceneOne = async () => {
   if (isTyping.value) return;
-  // 按AI_ORDER找下一个还没打字机的AI
-  const nextAi = AI_ORDER.find(
-    (ai) =>
-      speeches.value.some((sp) => sp.round === 1 && sp.ai === ai) &&
-      !sceneOneTypedAis.value.includes(ai)
-  );
-  if (!nextAi) return;
-  // 如果下一个AI还没收到speech_end，停止等待
-  if (!sceneOneEndedAis.value.includes(nextAi)) return;
-  const s = speeches.value.find((sp) => sp.round === 1 && sp.ai === nextAi);
-  if (!s) return;
-  isTyping.value = true;
-  await typewriterEffect(s);
-  sceneOneTypedAis.value.push(nextAi);
-  isTyping.value = false;
-  await tryAdvanceSceneOne();
+  while (true) {
+    const nextAi = AI_ORDER.find(
+      (ai) =>
+        speeches.value.some((sp) => sp.round === 1 && sp.ai === ai) &&
+        !sceneOneTypedAis.value.includes(ai)
+    );
+    if (!nextAi) return;
+
+    if (!sceneOneEndedAis.value.includes(nextAi)) {
+      scheduleSceneOneSkip(nextAi);
+      return;
+    }
+    clearSceneOneWaitTimer(nextAi);
+
+    const s = speeches.value.find((sp) => sp.round === 1 && sp.ai === nextAi);
+    if (!s) {
+      sceneOneTypedAis.value.push(nextAi);
+      continue;
+    }
+
+    isTyping.value = true;
+    await typewriterEffect(s);
+    sceneOneTypedAis.value.push(nextAi);
+    isTyping.value = false;
+  }
 };
 
 const processNextRound = async () => {
@@ -211,12 +302,13 @@ const processNextRound = async () => {
   }
   isTyping.value = true;
   const round = typingQueue.value.shift();
-  // 当轮发言按 AI_ORDER 排序后再进入打字机，保证显示顺序一致
-  const order = runSceneType.value === "scene_four" ? SCENE4_ORDER : AI_ORDER;
+  // 当轮发言按厂商顺序排序后再进入打字机（含 *_top）
   speeches.value.sort(
     (a, b) =>
       a.round - b.round ||
-      order.indexOf(a.ai) - order.indexOf(b.ai)
+      (runSceneType.value === "scene_four"
+        ? SCENE4_ORDER.indexOf(a.ai) - SCENE4_ORDER.indexOf(b.ai)
+        : aiOrderIndex(a.ai) - aiOrderIndex(b.ai))
   );
   await startTypingQueue(round);
   await processNextRound();
@@ -232,6 +324,7 @@ const handleSSEEvent = (event, sse) => {
       displayContent: "",
       done: false,
       typing: false,
+      failed: false,
     });
   } else if (event.type === "speech_chunk") {
     const s = speeches.value.find(
@@ -242,10 +335,15 @@ const handleSSEEvent = (event, sse) => {
     const s = speeches.value.find(
       (sp) => sp.round === event.round && sp.ai === event.ai
     );
-    if (s) s.content = event.full_content ?? s.content;
+    if (s) {
+      s.content = event.full_content ?? s.content;
+      if (event.failed) s.failed = true;
+    }
 
     if (!endedSpeeches.value[event.round]) endedSpeeches.value[event.round] = [];
-    endedSpeeches.value[event.round].push(event.ai);
+    if (!endedSpeeches.value[event.round].includes(event.ai)) {
+      endedSpeeches.value[event.round].push(event.ai);
+    }
 
     const roundParticipants = speeches.value
       .filter((sp) => sp.round === event.round)
@@ -254,7 +352,10 @@ const handleSSEEvent = (event, sse) => {
       endedSpeeches.value[event.round]?.includes(ai)
     );
     if (runSceneType.value === "scene_one") {
-      sceneOneEndedAis.value.push(event.ai);
+      if (!sceneOneEndedAis.value.includes(event.ai)) {
+        sceneOneEndedAis.value.push(event.ai);
+      }
+      clearSceneOneWaitTimer(event.ai);
       tryAdvanceSceneOne();
     } else if (runSceneType.value === "scene_two" || runSceneType.value === "scene_three" || runSceneType.value === "scene_four") {
       if (allEnded) {
@@ -269,10 +370,13 @@ const handleSSEEvent = (event, sse) => {
     conclusionLoading.value = false;
     roundDone.value = true;
     totalCost.value = event.total_cost ?? 0;
+    if (event.conclusion_error) {
+      errorMsg.value = `结论生成失败：${event.conclusion_error}`;
+    }
     loadHistory();
     sse.close();
   } else if (event.type === "error") {
-    errorMsg.value = `${event.ai} 出错：${event.reason}`;
+    errorMsg.value = `${getSpeakerName(event.ai)} 出错：${event.reason}`;
   }
 };
 
@@ -286,6 +390,7 @@ const handleStart = async () => {
   isTyping.value = false;
   sceneOneTypedAis.value = [];
   sceneOneEndedAis.value = [];
+  Object.keys(sceneOneWaitTimers).forEach((ai) => clearSceneOneWaitTimer(ai));
   conclusion.value = "";
   showProgress.value = false;
   roundDone.value = false;
@@ -306,7 +411,7 @@ const handleStart = async () => {
       body: JSON.stringify({
         scene_type: sceneType.value,
         topic: topic.value,
-        participants: sceneType.value === "scene_four" ? [selectedScene4Ai.value] : selectedAIs.value,
+        participants: buildParticipantsPayload(),
         ai_roles: sceneType.value === "scene_two" ? stances.value : {},
       }),
     });
@@ -478,6 +583,9 @@ onMounted(loadHistory);
               />
             </div>
           </a-checkbox-group>
+          <p v-if="sceneType === 'scene_three'" class="tier-hint">
+            本场景固定使用各厂商顶级模型，性能更强但稳定性验证时间较短，建议关键决策仍需人工复核。
+          </p>
         </div>
 
         <p v-if="sceneType !== 'scene_four'" class="count-hint" :class="{ invalid: selectedAIs.length < 2 }">
@@ -524,7 +632,7 @@ onMounted(loadHistory);
           <span class="line"></span>
         </div>
         <div
-          v-for="s in speeches.filter((sp) => sp.round === round).sort((a, b) => (runSceneType === 'scene_four' ? SCENE4_ORDER : AI_ORDER).indexOf(a.ai) - (runSceneType === 'scene_four' ? SCENE4_ORDER : AI_ORDER).indexOf(b.ai))"
+          v-for="s in speeches.filter((sp) => sp.round === round).sort((a, b) => runSceneType === 'scene_four' ? SCENE4_ORDER.indexOf(a.ai) - SCENE4_ORDER.indexOf(b.ai) : aiOrderIndex(a.ai) - aiOrderIndex(b.ai))"
           :key="`${s.round}-${s.ai}`"
           style="
             display: flex;
@@ -548,7 +656,11 @@ onMounted(loadHistory);
             <div class="speaker-name" style="margin-bottom: 4px">
               {{ getSpeakerName(s.ai) }}
               <span
-                v-if="s.typing"
+                v-if="s.failed && s.done"
+                style="color: #cf1322; font-size: 12px; font-weight: 400"
+              > 失败</span>
+              <span
+                v-else-if="s.typing"
                 style="color: #999; font-size: 12px; font-weight: 400"
               > 发言中...</span>
               <span
@@ -581,6 +693,18 @@ onMounted(loadHistory);
           >
         </a-space>
       </template>
+      <div
+        v-if="runSceneType === 'scene_four'"
+        class="conclusion-disclaimer"
+      >
+        以上内容由 AI 深度思考生成，仅供参考，请务必人工复核。
+      </div>
+      <div
+        v-if="runSceneType !== 'scene_four'"
+        class="conclusion-disclaimer"
+      >
+        以上结论由 AI 圆桌讨论生成，仅供参考，请务必人工复核。
+      </div>
       <div v-if="runSceneType !== 'scene_four'" style="white-space: pre-wrap">{{ conclusion }}</div>
       <div
         v-if="roundDone"
@@ -693,6 +817,17 @@ onMounted(loadHistory);
   flex: 1;
   min-width: 200px;
 }
+.tier-hint {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  color: #ad6800;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 640px;
+}
 .count-hint {
   margin: 12px 0 16px;
   color: #555;
@@ -723,5 +858,16 @@ onMounted(loadHistory);
 .speaker-name {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+.conclusion-disclaimer {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  color: #ad6800;
+  font-size: 13px;
+  line-height: 1.5;
 }
 </style>

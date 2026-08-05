@@ -3,9 +3,10 @@ AI 圆桌会议核心调度逻辑（轮次管理、并发控制）
 """
 import asyncio
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, Union
 
 # 复用 ai_search 已初始化的 redis_client
 from ai_search.ai_service import redis_client
@@ -24,8 +25,13 @@ from .roundtable_prompts import (
     build_scene_four_prompt,
 )
 
+logger = logging.getLogger(__name__)
+
 SESSION_KEY_PREFIX = "roundtable:session:"
 SESSION_TTL = 24 * 3600  # 24 小时
+# 场景①②结论兜底：基础档；场景③与参与者同档用顶级 key
+CONCLUSION_FALLBACK_MODELS = ("claude", "gpt", "gemini")
+CONCLUSION_FALLBACK_MODELS_SCENE3 = ("claude_top", "gpt_top", "gemini_top")
 
 
 class RoundTableService:
@@ -72,6 +78,78 @@ class RoundTableService:
             json.dumps(sess, ensure_ascii=False),
         )
 
+    @staticmethod
+    def _fail_speech_events(
+        ai_name: str,
+        round_num: int,
+        reason: Union[BaseException, str],
+        scene_type: str = "",
+    ):
+        """失败时：打失败原因日志 + error + 补发 speech_end（failed=True），避免前端推进卡住。"""
+        if isinstance(reason, RoundTableAIError):
+            exc_type = "RoundTableAIError"
+            detail = reason.reason
+            attempts = getattr(reason, "attempts", None)
+            client_flag = f" client_error={reason.is_client_error}"
+        elif isinstance(reason, BaseException):
+            exc_type = type(reason).__name__
+            detail = str(reason)
+            attempts = getattr(reason, "attempts", None)
+            client_flag = ""
+        else:
+            exc_type = type(reason).__name__
+            detail = str(reason)
+            attempts = None
+            client_flag = ""
+        attempts_str = str(attempts) if attempts is not None else "未知"
+        logger.error(
+            "[RoundTable] %s 判定失败 | 原因=%s | exc_type=%s | attempts=%s%s | scene=%s | round=%s",
+            ai_name,
+            detail,
+            exc_type,
+            attempts_str,
+            client_flag,
+            scene_type,
+            round_num,
+        )
+        return [
+            {"type": "error", "ai": ai_name, "reason": str(reason)},
+            {
+                "type": "speech_end",
+                "round": round_num,
+                "ai": ai_name,
+                "full_content": "",
+                "failed": True,
+            },
+        ]
+
+    async def _generate_conclusion_with_fallback(
+        self, prompt: str, system_prompt: str, scene_type: str
+    ) -> Tuple[str, float, Optional[str], Optional[str]]:
+        """
+        结论轮兜底链：
+        - scene_three：claude_top → gpt_top → gemini_top（与参与者同顶级档）
+        - 其它场景：claude → gpt → gemini
+        返回 (conclusion, cost, conclusion_model, conclusion_error)。
+        三者都失败时 conclusion 为空、conclusion_model 为 None、conclusion_error 有文案。
+        conclusion_model 为实际成功的调用 key（如 claude_top），便于前端展示与计费核对。
+        """
+        models = (
+            CONCLUSION_FALLBACK_MODELS_SCENE3
+            if scene_type == "scene_three"
+            else CONCLUSION_FALLBACK_MODELS
+        )
+        errors: List[str] = []
+        for model in models:
+            try:
+                content, cost = await call_ai(
+                    model, prompt, system_prompt=system_prompt, scene_type=scene_type
+                )
+                return content, cost, model, None
+            except RoundTableAIError as e:
+                errors.append(f"[{model}] {e}")
+        return "", 0.0, None, "; ".join(errors) if errors else "结论生成失败"
+
     async def run_scene_one(self, session_id: str):
         """
         场景①：十二支派。多AI并发独立历史神学研究，Claude 汇总。async generator。
@@ -107,13 +185,15 @@ class RoundTableService:
             ai_name, result = await fut
             if isinstance(result, Exception):
                 all_speeches[ai_name].append("")
-                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+                for ev in self._fail_speech_events(ai_name, 1, result, "scene_one"):
+                    yield ev
             else:
                 _, content, cost, err = result
                 total_cost += cost
                 if err is not None:
                     all_speeches[ai_name].append("")
-                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                    for ev in self._fail_speech_events(ai_name, 1, err, "scene_one"):
+                        yield ev
                 else:
                     all_speeches[ai_name].append(content)
                     yield {"type": "speech_chunk", "round": 1, "ai": ai_name, "content": content}
@@ -131,19 +211,22 @@ class RoundTableService:
         conclusion_prompt = build_scene_one_conclusion_prompt(topic, all_responses_str)
 
         yield {"type": "conclusion_start"}
-        try:
-            conclusion, cost = await call_ai(
-                "claude",
-                conclusion_prompt,
-                system_prompt="你是中立的神学历史学家",
-                scene_type="scene_one",
-            )
-            total_cost += cost
-        except RoundTableAIError as e:
-            yield {"type": "error", "ai": "claude", "reason": str(e)}
-            conclusion = ""
+        conclusion, cost, conclusion_model, conclusion_error = await self._generate_conclusion_with_fallback(
+            conclusion_prompt,
+            "你是中立的神学历史学家",
+            "scene_one",
+        )
+        total_cost += cost
+        if conclusion_error:
+            yield {"type": "error", "ai": "conclusion", "reason": conclusion_error}
         yield {"type": "conclusion_chunk", "content": conclusion}
-        yield {"type": "conclusion_end", "conclusion": conclusion, "total_cost": round(total_cost, 6)}
+        yield {
+            "type": "conclusion_end",
+            "conclusion": conclusion,
+            "total_cost": round(total_cost, 6),
+            "conclusion_model": conclusion_model or "",
+            "conclusion_error": conclusion_error,
+        }
 
         await self.update_session(session_id, {"status": "done", "conclusion": conclusion})
         sess = await self.get_session(session_id)
@@ -218,13 +301,15 @@ class RoundTableService:
                 ai_name, result = await fut
                 if isinstance(result, Exception):
                     all_speeches[ai_name].append("")
-                    yield {"type": "error", "ai": ai_name, "reason": str(result)}
+                    for ev in self._fail_speech_events(ai_name, round_num, result, "scene_two"):
+                        yield ev
                 else:
                     _, content, cost, err = result
                     total_cost += cost
                     if err is not None:
                         all_speeches[ai_name].append("")
-                        yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                        for ev in self._fail_speech_events(ai_name, round_num, err, "scene_two"):
+                            yield ev
                     else:
                         all_speeches[ai_name].append(content)
                         yield {"type": "speech_chunk", "round": round_num, "ai": ai_name, "content": content}
@@ -254,14 +339,22 @@ class RoundTableService:
         conclusion_prompt = build_conclusion_prompt(topic, all_stances_str, all_speeches_str)
 
         yield {"type": "conclusion_start"}
-        try:
-            conclusion, cost = await call_ai("claude", conclusion_prompt, system_prompt="你是中立的神学裁判", scene_type="scene_two")
-            total_cost += cost
-        except RoundTableAIError as e:
-            yield {"type": "error", "ai": "claude", "reason": str(e)}
-            conclusion = ""
+        conclusion, cost, conclusion_model, conclusion_error = await self._generate_conclusion_with_fallback(
+            conclusion_prompt,
+            "你是中立的神学裁判",
+            "scene_two",
+        )
+        total_cost += cost
+        if conclusion_error:
+            yield {"type": "error", "ai": "conclusion", "reason": conclusion_error}
         yield {"type": "conclusion_chunk", "content": conclusion}
-        yield {"type": "conclusion_end", "conclusion": conclusion, "total_cost": round(total_cost, 6)}
+        yield {
+            "type": "conclusion_end",
+            "conclusion": conclusion,
+            "total_cost": round(total_cost, 6),
+            "conclusion_model": conclusion_model or "",
+            "conclusion_error": conclusion_error,
+        }
 
         await self.update_session(session_id, {"status": "done", "conclusion": conclusion})
         sess = await self.get_session(session_id)
@@ -315,13 +408,15 @@ class RoundTableService:
             ai_name, result = await fut
             if isinstance(result, Exception):
                 all_speeches[ai_name].append("")
-                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+                for ev in self._fail_speech_events(ai_name, 1, result, "scene_three"):
+                    yield ev
             else:
                 _, content, cost, err = result
                 total_cost += cost
                 if err is not None:
                     all_speeches[ai_name].append("")
-                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                    for ev in self._fail_speech_events(ai_name, 1, err, "scene_three"):
+                        yield ev
                 else:
                     all_speeches[ai_name].append(content)
                     yield {"type": "speech_chunk", "round": 1, "ai": ai_name, "content": content}
@@ -347,13 +442,15 @@ class RoundTableService:
             ai_name, result = await fut
             if isinstance(result, Exception):
                 all_speeches[ai_name].append("")
-                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+                for ev in self._fail_speech_events(ai_name, 2, result, "scene_three"):
+                    yield ev
             else:
                 _, content, cost, err = result
                 total_cost += cost
                 if err is not None:
                     all_speeches[ai_name].append("")
-                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                    for ev in self._fail_speech_events(ai_name, 2, err, "scene_three"):
+                        yield ev
                 else:
                     all_speeches[ai_name].append(content)
                     yield {"type": "speech_chunk", "round": 2, "ai": ai_name, "content": content}
@@ -381,13 +478,15 @@ class RoundTableService:
             ai_name, result = await fut
             if isinstance(result, Exception):
                 all_speeches[ai_name].append("")
-                yield {"type": "error", "ai": ai_name, "reason": str(result)}
+                for ev in self._fail_speech_events(ai_name, 3, result, "scene_three"):
+                    yield ev
             else:
                 _, content, cost, err = result
                 total_cost += cost
                 if err is not None:
                     all_speeches[ai_name].append("")
-                    yield {"type": "error", "ai": ai_name, "reason": str(err)}
+                    for ev in self._fail_speech_events(ai_name, 3, err, "scene_three"):
+                        yield ev
                 else:
                     all_speeches[ai_name].append(content)
                     yield {"type": "speech_chunk", "round": 3, "ai": ai_name, "content": content}
@@ -398,7 +497,7 @@ class RoundTableService:
         sess = await self.get_session(session_id)
         await self.update_session(session_id, {"rounds": sess["rounds"] + [round3_data]})
 
-        # 结论：Claude 总结
+        # 结论：Claude → GPT → Gemini
         rounds_data = [round1_data, round2_data, round3_data]
         round_titles = ["第1轮·作答", "第2轮·互相指出", "第3轮·最终评价"]
         all_speeches_str = ""
@@ -410,19 +509,22 @@ class RoundTableService:
         conclusion_prompt = build_scene_three_conclusion_prompt(topic, all_speeches_str)
 
         yield {"type": "conclusion_start"}
-        try:
-            conclusion, cost = await call_ai(
-                "claude",
-                conclusion_prompt,
-                system_prompt="你是讨论主持人，负责客观总结",
-                scene_type="scene_three",
-            )
-            total_cost += cost
-        except RoundTableAIError as e:
-            yield {"type": "error", "ai": "claude", "reason": str(e)}
-            conclusion = ""
+        conclusion, cost, conclusion_model, conclusion_error = await self._generate_conclusion_with_fallback(
+            conclusion_prompt,
+            "你是讨论主持人，负责客观总结",
+            "scene_three",
+        )
+        total_cost += cost
+        if conclusion_error:
+            yield {"type": "error", "ai": "conclusion", "reason": conclusion_error}
         yield {"type": "conclusion_chunk", "content": conclusion}
-        yield {"type": "conclusion_end", "conclusion": conclusion, "total_cost": round(total_cost, 6)}
+        yield {
+            "type": "conclusion_end",
+            "conclusion": conclusion,
+            "total_cost": round(total_cost, 6),
+            "conclusion_model": conclusion_model or "",
+            "conclusion_error": conclusion_error,
+        }
 
         await self.update_session(session_id, {"status": "done", "conclusion": conclusion})
         sess = await self.get_session(session_id)
@@ -466,17 +568,25 @@ class RoundTableService:
             yield {"type": "speech_chunk", "round": 1, "ai": ai_name, "content": content}
             yield {"type": "speech_end", "round": 1, "ai": ai_name, "full_content": content}
         except RoundTableAIError as e:
-            yield {"type": "error", "ai": ai_name, "reason": str(e)}
             content = ""
+            for ev in self._fail_speech_events(ai_name, 1, e, "scene_four"):
+                yield ev
         except Exception as e:
-            yield {"type": "error", "ai": ai_name, "reason": str(e)}
             content = ""
+            for ev in self._fail_speech_events(ai_name, 1, e, "scene_four"):
+                yield ev
 
         yield {"type": "round_complete", "round": 1}
         round_data = {ai_name: content}
         sess = await self.get_session(session_id)
         await self.update_session(session_id, {"rounds": sess["rounds"] + [round_data], "status": "done"})
-        yield {"type": "conclusion_end", "conclusion": "", "total_cost": round(total_cost, 6)}
+        yield {
+            "type": "conclusion_end",
+            "conclusion": "",
+            "total_cost": round(total_cost, 6),
+            "conclusion_model": "",
+            "conclusion_error": None,
+        }
         save_record({
             "record_id": session_id,
             "scene_type": "scene_four",
