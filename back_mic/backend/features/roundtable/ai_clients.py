@@ -17,37 +17,85 @@ if _env_path.exists():
     from dotenv import load_dotenv
     load_dotenv(dotenv_path=_env_path)
 
-# 圆桌专用模型环境变量与默认值（Claude 复用现有可用型号）
-ROUNDTABLE_CLAUDE_MODEL = os.getenv("ROUNDTABLE_CLAUDE_MODEL", "claude-sonnet-4-6")
-ROUNDTABLE_GPT_MODEL = os.getenv("ROUNDTABLE_GPT_MODEL", "gpt-5.4")
-ROUNDTABLE_GEMINI_MODEL = os.getenv("ROUNDTABLE_GEMINI_MODEL", "gemini-2.5-pro")
-ROUNDTABLE_GROK_MODEL = os.getenv("ROUNDTABLE_GROK_MODEL", "grok-4-1-fast-reasoning")
-ROUNDTABLE_DEEPSEEK_MODEL = os.getenv("ROUNDTABLE_DEEPSEEK_MODEL", "deepseek-chat")
-ROUNDTABLE_PERPLEXITY_MODEL = os.getenv("ROUNDTABLE_PERPLEXITY_MODEL", "sonar-deep-research")
+# 圆桌专用模型环境变量与默认值（仅本文件使用，勿与 KG-RAG / 翻译等模块共享默认值）
+ROUNDTABLE_CLAUDE_MODEL = os.getenv("ROUNDTABLE_CLAUDE_MODEL", "claude-sonnet-5")
+ROUNDTABLE_GPT_MODEL = os.getenv("ROUNDTABLE_GPT_MODEL", "gpt-5.5")
+ROUNDTABLE_GEMINI_MODEL = os.getenv("ROUNDTABLE_GEMINI_MODEL", "gemini-3.1-pro-preview")
+ROUNDTABLE_GROK_MODEL = os.getenv("ROUNDTABLE_GROK_MODEL", "grok-4.5")
+ROUNDTABLE_DEEPSEEK_MODEL = os.getenv("ROUNDTABLE_DEEPSEEK_MODEL", "deepseek-v4-flash")
+# 若设置则覆盖 Perplexity 型号；未设置时按场景 fallback（① sonar-deep-research，其它 sonar-pro）
+ROUNDTABLE_PERPLEXITY_MODEL = (os.getenv("ROUNDTABLE_PERPLEXITY_MODEL") or "").strip()
 
-# 场景④ 顶级模型思考：三选一
-ROUNDTABLE_SCENE4_CLAUDE_MODEL = os.getenv("ROUNDTABLE_SCENE4_CLAUDE_MODEL", "claude-opus-4-6")
-# 官方 API：gpt-5.4 标准版，gpt-5.4-pro 为高阶推理版，见 https://developers.openai.com/api/docs/models/gpt-5.4-pro
-ROUNDTABLE_SCENE4_GPT_MODEL = os.getenv("ROUNDTABLE_SCENE4_GPT_MODEL", "gpt-5.4-pro")
-# 官方 API 名称为 gemini-3.1-pro-preview，见 https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview
-ROUNDTABLE_SCENE4_GEMINI_MODEL = os.getenv("ROUNDTABLE_SCENE4_GEMINI_MODEL", "gemini-3.1-pro-preview")
+# 场景无关「顶级档」型号（场景③等可混搭；env 可覆盖）
+ROUNDTABLE_CLAUDE_TOP_MODEL = os.getenv("ROUNDTABLE_CLAUDE_TOP_MODEL", "claude-fable-5")
+ROUNDTABLE_GPT_TOP_MODEL = os.getenv("ROUNDTABLE_GPT_TOP_MODEL", "gpt-5.6-sol")
+ROUNDTABLE_GEMINI_TOP_MODEL = os.getenv(
+    "ROUNDTABLE_GEMINI_TOP_MODEL", "gemini-3.1-pro-preview"
+)
+ROUNDTABLE_GROK_TOP_MODEL = os.getenv("ROUNDTABLE_GROK_TOP_MODEL", "grok-4.5")
+ROUNDTABLE_DEEPSEEK_TOP_MODEL = os.getenv("ROUNDTABLE_DEEPSEEK_TOP_MODEL", "deepseek-v4-pro")
+ROUNDTABLE_PERPLEXITY_TOP_MODEL = os.getenv(
+    "ROUNDTABLE_PERPLEXITY_TOP_MODEL", "sonar-reasoning-pro"
+)
+
+# 场景④ 顶级模型思考：三选一（历史 key 名保留，底层已对齐顶级档）
+ROUNDTABLE_SCENE4_CLAUDE_MODEL = os.getenv("ROUNDTABLE_SCENE4_CLAUDE_MODEL", "claude-fable-5")
+ROUNDTABLE_SCENE4_GPT_MODEL = os.getenv("ROUNDTABLE_SCENE4_GPT_MODEL", "gpt-5.6-sol")
+ROUNDTABLE_SCENE4_GEMINI_MODEL = os.getenv(
+    "ROUNDTABLE_SCENE4_GEMINI_MODEL", "gemini-3.1-pro-preview"
+)
 
 SUPPORTED_AIS = ["claude", "gpt", "gemini", "grok", "deepseek", "perplexity"]
 SUPPORTED_AIS_SCENE4 = ["claude_opus", "gpt_pro", "gemini_pro"]
+SUPPORTED_AIS_TOP = [
+    "claude_top",
+    "gpt_top",
+    "gemini_top",
+    "grok_top",
+    "deepseek_top",
+    "perplexity_top",
+]
+
+# 场景无关：高阶/顶级 key → (厂商基座 actual_ai, 型号字符串)
+# 在 call_ai 入口解析，不再仅绑定 scene_four
+def _premium_key_map():
+    return {
+        "claude_opus": ("claude", ROUNDTABLE_SCENE4_CLAUDE_MODEL),
+        "gpt_pro": ("gpt", ROUNDTABLE_SCENE4_GPT_MODEL),
+        "gemini_pro": ("gemini", ROUNDTABLE_SCENE4_GEMINI_MODEL),
+        "claude_top": ("claude", ROUNDTABLE_CLAUDE_TOP_MODEL),
+        "gpt_top": ("gpt", ROUNDTABLE_GPT_TOP_MODEL),
+        "gemini_top": ("gemini", ROUNDTABLE_GEMINI_TOP_MODEL),
+        "grok_top": ("grok", ROUNDTABLE_GROK_TOP_MODEL),
+        "deepseek_top": ("deepseek", ROUNDTABLE_DEEPSEEK_TOP_MODEL),
+        "perplexity_top": ("perplexity", ROUNDTABLE_PERPLEXITY_TOP_MODEL),
+    }
+
 
 MAX_RETRIES = 2
 RETRY_DELAYS = [2, 6]  # 秒
 CLIENT_ERROR_CODES = (400, 401, 403, 404, 422)
 
-# 圆桌各AI单价（美元/百万token，2026年3月）
+# 圆桌各AI单价（美元/百万token）
+# claude（sonnet-5）：Anthropic 限时优惠 $2/$10，截止 2026-08-31；
+# 2026-09-01 起请改回标准价 $3.00/$15.00。
+# grok-4.5：https://docs.x.ai/developers/models/grok-4.5 标准档 <200k $2/$6
+# gemini_top 与 gemini_pro 共用价目；grok_top 与 grok 共用价目
 ROUNDTABLE_PRICES = {
-    "claude": {"input": 3.00, "output": 15.00},
+    "claude": {"input": 2.00, "output": 10.00},  # 优惠至 2026-08-31；其后改回 3.00/15.00
     "gpt": {"input": 2.50, "output": 15.00},
     "gemini": {"input": 1.25, "output": 10.00},
-    "grok": {"input": 0.20, "output": 0.50},
+    "grok": {"input": 2.00, "output": 6.00},
     "deepseek": {"input": 0.28, "output": 0.42},
     "perplexity_sonar_pro": {"input": 3.00, "output": 15.00},
     "perplexity_deep_research": {"input": 2.00, "output": 8.00},
+    "claude_opus": {"input": 10.00, "output": 50.00},  # claude-fable-5（场景④）
+    "gpt_pro": {"input": 5.00, "output": 30.00},  # gpt-5.6-sol（场景④；OpenAI 标准短上下文）
+    "gemini_pro": {"input": 2.00, "output": 12.00},
+    "claude_top": {"input": 10.00, "output": 50.00},  # claude-fable-5
+    "gpt_top": {"input": 5.00, "output": 30.00},  # gpt-5.6-sol
+    "deepseek_top": {"input": 0.435, "output": 0.87},  # deepseek-v4-pro
+    "perplexity_top": {"input": 2.00, "output": 8.00},  # sonar-reasoning-pro
 }
 PERPLEXITY_REQUEST_FEE = 0.005  # $5/1000次请求 = $0.005/次
 
@@ -55,13 +103,18 @@ PERPLEXITY_REQUEST_FEE = 0.005  # $5/1000次请求 = $0.005/次
 def _calc_roundtable_cost(
     ai_name: str, input_tokens: int, output_tokens: int, scene_type: str = "scene_two"
 ) -> float:
-    if ai_name == "perplexity":
+    """按调用 key 计费；gemini_top→gemini_pro，grok_top→grok。"""
+    if ai_name == "gemini_top":
+        key = "gemini_pro"
+    elif ai_name == "grok_top":
+        key = "grok"
+    elif ai_name == "perplexity":
         key = "perplexity_deep_research" if scene_type == "scene_one" else "perplexity_sonar_pro"
     else:
         key = ai_name
     price = ROUNDTABLE_PRICES.get(key, {"input": 0, "output": 0})
     cost = (input_tokens * price["input"] + output_tokens * price["output"]) / 1_000_000
-    if ai_name == "perplexity":
+    if ai_name in ("perplexity", "perplexity_top") or key.startswith("perplexity"):
         cost += PERPLEXITY_REQUEST_FEE
     return cost
 
@@ -98,11 +151,17 @@ class RoundTableAIError(Exception):
         self.ai_name = ai_name
         self.reason = reason
         self.is_client_error = is_client_error
+        self.attempts = None  # 最终失败时由 call_ai 填入已尝试次数（1-based）
         super().__init__(f"[{ai_name}] {reason}")
 
 
-def _call_claude_sync(prompt_or_bytes, system_prompt_or_bytes, scene_type: str = "scene_two") -> tuple:
-    """返回 (content, input_tokens, output_tokens)。"""
+def _call_claude_sync(
+    prompt_or_bytes,
+    system_prompt_or_bytes,
+    scene_type: str = "scene_two",
+    model_override: Optional[str] = None,
+) -> tuple:
+    """返回 (content, input_tokens, output_tokens)。model_override 优先于默认/场景④型号。"""
     svc = _get_ai_service()
     client = svc["claude_client"]
     if not client:
@@ -118,8 +177,12 @@ def _call_claude_sync(prompt_or_bytes, system_prompt_or_bytes, scene_type: str =
     except Exception as e:
         raise RoundTableAIError("claude", str(e), is_client_error=True)
     old_model = os.environ.get("CLAUDE_MODEL")
-    # 场景④ 使用 Opus 4.6 + 官方「扩展思考」：同一模型 claude-opus-4-6，通过 thinking 参数开启
-    claude_model = ROUNDTABLE_SCENE4_CLAUDE_MODEL if scene_type == "scene_four" else ROUNDTABLE_CLAUDE_MODEL
+    if model_override:
+        claude_model = model_override
+    elif scene_type == "scene_four":
+        claude_model = ROUNDTABLE_SCENE4_CLAUDE_MODEL
+    else:
+        claude_model = ROUNDTABLE_CLAUDE_MODEL
     os.environ["CLAUDE_MODEL"] = claude_model
     # 场景①研究/结论内容长；场景④顶级思考给足上限
     max_tokens = 16000 if scene_type == "scene_one" else (16000 if scene_type == "scene_four" else 8192)
@@ -131,7 +194,7 @@ def _call_claude_sync(prompt_or_bytes, system_prompt_or_bytes, scene_type: str =
         "tools": [{"type": "web_search_20250305", "name": "web_search"}],
     }
     if scene_type == "scene_four":
-        kwargs["thinking"] = {"type": "adaptive"}  # Opus 4.6 推荐：自适应扩展思考，无单独 thinking 模型 ID
+        kwargs["thinking"] = {"type": "adaptive"}  # Opus 自适应扩展思考
     try:
         try:
             msg = client_120.messages.create(**kwargs)
@@ -205,7 +268,7 @@ def _call_openai_compat_sync(
 def _call_gpt_with_responses_sync(
     prompt: str, system_prompt: str, model: Optional[str] = None, timeout: float = 120.0
 ) -> tuple:
-    """返回 (content, input_tokens, output_tokens)。model 为空时使用 ROUNDTABLE_GPT_MODEL。场景④ gpt-5.4-pro 推理较慢，需更长 timeout。"""
+    """返回 (content, input_tokens, output_tokens)。model 为空时使用 ROUNDTABLE_GPT_MODEL。场景④ gpt-5.5-pro 推理较慢，需更长 timeout。"""
     svc = _get_ai_service()
     api_key = svc.get("OPENAI_API_KEY")
     if not api_key:
@@ -275,20 +338,21 @@ def _call_gemini_sync(prompt: str, system_prompt: str, model: Optional[str] = No
 async def _call_perplexity_deep_research(prompt: str, system_prompt: str) -> str:
     """
     Perplexity Deep Research：POST 提交异步任务，轮询 GET 直到 COMPLETED，返回 response.choices[0].message.content。
-    使用 sonar-deep-research 模型，最多轮询 60 次（5 分钟）。
+    型号优先 ROUNDTABLE_PERPLEXITY_MODEL，否则 sonar-deep-research；最多轮询 60 次（5 分钟）。
     """
     import httpx
     svc = _get_ai_service()
     api_key = svc.get("PERPLEXITY_API_KEY") or os.getenv("PERPLEXITY_API_KEY")
     if not api_key:
         raise RoundTableAIError("perplexity", "PERPLEXITY_API_KEY 未配置", is_client_error=True)
+    model = ROUNDTABLE_PERPLEXITY_MODEL or "sonar-deep-research"
     messages = []
     if system_prompt and system_prompt.strip():
         messages.append({"role": "system", "content": system_prompt.strip()})
     messages.append({"role": "user", "content": prompt})
     payload = {
         "request": {
-            "model": "sonar-deep-research",
+            "model": model,
             "messages": messages,
         }
     }
@@ -346,18 +410,19 @@ async def _call_perplexity_deep_research(prompt: str, system_prompt: str) -> str
 
 def _call_perplexity_sonar_pro(prompt: str, system_prompt: str) -> str:
     """
-    Perplexity Sonar Pro：同步调用 chat/completions，model=sonar-pro，供场景②使用。
+    Perplexity Sonar Pro：同步调用 chat/completions；型号优先 ROUNDTABLE_PERPLEXITY_MODEL，否则 sonar-pro。
     """
     svc = _get_ai_service()
     api_key = svc.get("PERPLEXITY_API_KEY") or os.getenv("PERPLEXITY_API_KEY")
     if not api_key:
         raise RoundTableAIError("perplexity", "PERPLEXITY_API_KEY 未配置", is_client_error=True)
+    model = ROUNDTABLE_PERPLEXITY_MODEL or "sonar-pro"
     return _call_openai_compat_sync(
         "perplexity",
         prompt,
         system_prompt.strip() or "",
         api_key,
-        "sonar-pro",
+        model,
         "https://api.perplexity.ai",
         False,
     )
@@ -365,25 +430,42 @@ def _call_perplexity_sonar_pro(prompt: str, system_prompt: str) -> str:
 
 async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type: str = "scene_two") -> tuple[str, float]:
     """
-    统一调用接口。ai_name 取值：claude / gpt / gemini / grok / deepseek / perplexity；
-    场景④ 时可为 claude_opus / gpt_pro / gemini_pro。
-    返回 (content, cost)，cost 为美元。
-    出错时抛出 RoundTableAIError(ai_name, reason)。
+    统一调用接口。
+    ai_name：基础档 SUPPORTED_AIS；场景④ SUPPORTED_AIS_SCENE4；
+    场景③还可混搭 SUPPORTED_AIS_TOP（*_top）。
+    返回 (content, cost)，cost 为美元；计费按原始 ai_name。
     """
-    actual_ai = ai_name
+    premium = _premium_key_map()
+    model_override: Optional[str] = None
+
     if scene_type == "scene_four":
         if ai_name not in SUPPORTED_AIS_SCENE4:
             raise RoundTableAIError(ai_name, f"场景④ 仅支持: {SUPPORTED_AIS_SCENE4}", is_client_error=True)
-        if ai_name == "claude_opus":
-            actual_ai = "claude"
-        elif ai_name == "gpt_pro":
-            actual_ai = "gpt"
-        elif ai_name == "gemini_pro":
-            actual_ai = "gemini"
-    elif ai_name not in SUPPORTED_AIS:
-        raise RoundTableAIError(ai_name, f"不支持的 AI，可选: {SUPPORTED_AIS}", is_client_error=True)
+        actual_ai, model_override = premium[ai_name]
+    elif scene_type == "scene_three":
+        allowed = set(SUPPORTED_AIS) | set(SUPPORTED_AIS_TOP)
+        if ai_name not in allowed:
+            raise RoundTableAIError(
+                ai_name, f"场景③ 仅支持: {sorted(allowed)}", is_client_error=True
+            )
+        if ai_name in premium:
+            actual_ai, model_override = premium[ai_name]
+        else:
+            actual_ai = ai_name
+    else:
+        if ai_name not in SUPPORTED_AIS:
+            raise RoundTableAIError(ai_name, f"不支持的 AI，可选: {SUPPORTED_AIS}", is_client_error=True)
+        actual_ai = ai_name
+
     loop = asyncio.get_event_loop()
     svc = _get_ai_service()
+    # 高阶 GPT / Claude 给更长超时
+    long_timeout = scene_type == "scene_four" or ai_name in (
+        "claude_top",
+        "gpt_top",
+        "claude_opus",
+        "gpt_pro",
+    )
 
     async def _do_call() -> tuple:
         """返回 (content, input_tokens, output_tokens)。"""
@@ -393,13 +475,17 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
             out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
-                    lambda _p=p_b, _s=s_b, _st=scene_type: _call_claude_sync(_p, _s, _st),
+                    lambda _p=p_b, _s=s_b, _st=scene_type, _m=model_override: _call_claude_sync(
+                        _p, _s, _st, _m
+                    ),
                 ),
                 timeout=600.0,
             )
             return out
         if actual_ai == "gemini":
-            gemini_model = ROUNDTABLE_SCENE4_GEMINI_MODEL if scene_type == "scene_four" else None
+            gemini_model = model_override or (
+                ROUNDTABLE_SCENE4_GEMINI_MODEL if scene_type == "scene_four" else None
+            )
             out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
@@ -409,28 +495,54 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
             )
             return out
         if actual_ai == "gpt":
-            gpt_model = ROUNDTABLE_SCENE4_GPT_MODEL if scene_type == "scene_four" else None
-            # 场景④ 使用 gpt-5.4-pro，官方文档称可能需数分钟，延长至 10 分钟
-            gpt_timeout = 600.0 if scene_type == "scene_four" else 120.0
+            gpt_model = model_override or (
+                ROUNDTABLE_SCENE4_GPT_MODEL if scene_type == "scene_four" else None
+            )
+            gpt_timeout = 600.0 if long_timeout else 120.0
             out = await asyncio.wait_for(
-                asyncio.to_thread(_call_gpt_with_responses_sync, prompt, system_prompt, gpt_model, gpt_timeout),
+                asyncio.to_thread(
+                    _call_gpt_with_responses_sync, prompt, system_prompt, gpt_model, gpt_timeout
+                ),
                 timeout=gpt_timeout,
             )
             return out
         if actual_ai == "deepseek":
+            ds_model = model_override or ROUNDTABLE_DEEPSEEK_MODEL
             out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
                     lambda: _call_openai_compat_sync(
-                        "deepseek", prompt, system_prompt,
-                        svc["DEEPSEEK_API_KEY"], ROUNDTABLE_DEEPSEEK_MODEL,
-                        "https://api.deepseek.com", False,
+                        "deepseek",
+                        prompt,
+                        system_prompt,
+                        svc["DEEPSEEK_API_KEY"],
+                        ds_model,
+                        "https://api.deepseek.com",
+                        False,
                     ),
                 ),
                 timeout=120.0,
             )
             return out
         if actual_ai == "perplexity":
+            if model_override:
+                # 顶级档等：显式型号走同步兼容接口
+                out = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None,
+                        lambda: _call_openai_compat_sync(
+                            "perplexity",
+                            prompt,
+                            system_prompt.strip() or "",
+                            svc.get("PERPLEXITY_API_KEY") or os.getenv("PERPLEXITY_API_KEY") or "",
+                            model_override,
+                            "https://api.perplexity.ai",
+                            False,
+                        ),
+                    ),
+                    timeout=120.0,
+                )
+                return out
             if scene_type == "scene_one":
                 out = await asyncio.wait_for(
                     _call_perplexity_deep_research(prompt, system_prompt),
@@ -446,15 +558,20 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
             )
             return out
         if actual_ai == "grok":
+            grok_model = model_override or ROUNDTABLE_GROK_MODEL
             grok_system = (system_prompt or "").strip()
             grok_system += "\n\n你可以使用实时搜索能力获取最新资料，请积极搜索相关神学资料以支撑你的论点。"
             out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
                     lambda: _call_openai_compat_sync(
-                        "grok", prompt, grok_system,
-                        svc["XAI_API_KEY"], ROUNDTABLE_GROK_MODEL,
-                        "https://api.x.ai/v1", False,
+                        "grok",
+                        prompt,
+                        grok_system,
+                        svc["XAI_API_KEY"],
+                        grok_model,
+                        "https://api.x.ai/v1",
+                        False,
                     ),
                 ),
                 timeout=120.0,
@@ -465,13 +582,14 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
     for attempt in range(MAX_RETRIES + 1):
         try:
             content, in_tok, out_tok = await _do_call()
-            cost = _calc_roundtable_cost(actual_ai, in_tok, out_tok, scene_type)
+            cost = _calc_roundtable_cost(ai_name, in_tok, out_tok, scene_type)
             logger.info(
                 "[RoundTable] %s | 输入=%d tokens | 输出=%d tokens | 费用=$%.6f",
                 ai_name, in_tok, out_tok, cost
             )
             return (content, cost)
         except RoundTableAIError as e:
+            e.attempts = attempt + 1
             if e.is_client_error:
                 raise
             if attempt == MAX_RETRIES:
@@ -483,7 +601,9 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
             )
         except asyncio.TimeoutError as e:
             if attempt == MAX_RETRIES:
-                raise RoundTableAIError(ai_name, f"请求超时: {e}", is_client_error=False)
+                err = RoundTableAIError(ai_name, f"请求超时: {e}", is_client_error=False)
+                err.attempts = attempt + 1
+                raise err
             await asyncio.sleep(RETRY_DELAYS[attempt])
             logger.warning(
                 "[RoundTable] %s 第%d次失败，%d秒后重试：请求超时",

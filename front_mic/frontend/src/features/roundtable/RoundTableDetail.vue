@@ -26,19 +26,49 @@ const roundTitles = computed(() => {
   return null;
 });
 
-const SCENE4_LABELS = { claude_opus: "Claude Opus 4.6（thinking）", gpt_pro: "GPT-5.4（pro）", gemini_pro: "Gemini 3.1 Pro" };
+const SCENE4_LABELS = {
+  claude_opus: "Claude Fable 5",
+  gpt_pro: "GPT-5.6 Sol",
+  gemini_pro: "Gemini 3.1 Pro",
+};
+const BASE_LABELS = {
+  claude: "Claude",
+  gpt: "GPT",
+  gemini: "Gemini",
+  grok: "Grok",
+  deepseek: "DeepSeek",
+  perplexity: "Perplexity",
+};
+const baseAiKey = (aiKey) => {
+  if (!aiKey) return aiKey;
+  if (aiKey.endsWith("_top")) return aiKey.slice(0, -4);
+  if (aiKey === "claude_opus") return "claude";
+  if (aiKey === "gpt_pro") return "gpt";
+  if (aiKey === "gemini_pro") return "gemini";
+  return aiKey;
+};
 const getSpeakerName = (ai) => {
   if (isSceneTwo.value && aiRoles.value[ai]) return aiRoles.value[ai];
-  if (isSceneFour.value && SCENE4_LABELS[ai]) return SCENE4_LABELS[ai];
-  return ai;
+  if (SCENE4_LABELS[ai]) return SCENE4_LABELS[ai];
+  const base = baseAiKey(ai);
+  const label = BASE_LABELS[base] || base;
+  if (String(ai).endsWith("_top")) return `${label}（顶级）`;
+  return label;
 };
 
 const SCENE4_ORDER = ["claude_opus", "gpt_pro", "gemini_pro"];
-/** 按 AI_ORDER 返回当轮发言列表 [ [ai, speech], ... ] */
+/** 按厂商顺序返回当轮发言（支持 *_top） */
 const sortedRoundEntries = (roundData) => {
   if (!roundData || typeof roundData !== "object") return [];
-  const order = isSceneFour.value ? SCENE4_ORDER : AI_ORDER;
-  return order.filter((ai) => roundData[ai] != null).map((ai) => [ai, roundData[ai]]);
+  if (isSceneFour.value) {
+    return SCENE4_ORDER.filter((ai) => roundData[ai] != null).map((ai) => [ai, roundData[ai]]);
+  }
+  const keys = Object.keys(roundData).sort((a, b) => {
+    const ia = AI_ORDER.indexOf(baseAiKey(a));
+    const ib = AI_ORDER.indexOf(baseAiKey(b));
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  return keys.map((ai) => [ai, roundData[ai]]);
 };
 
 const cleanMarkdown = (text) => {
@@ -147,13 +177,13 @@ onMounted(loadRecord);
           </p>
           <!-- 场景①、③、④：无立场 -->
           <p v-if="!isSceneTwo">
-            参与AI：{{ record.participants?.join("、") }}
+            参与AI：{{ (record.participants || []).map(getSpeakerName).join("、") }}
           </p>
           <!-- 场景②：立场 -->
           <template v-else>
             <p>参与立场：</p>
             <p v-for="ai in record.participants" :key="ai">
-              {{ aiRoles[ai] || ai }}（{{ ai }}）
+              {{ aiRoles[ai] || getSpeakerName(ai) }}
             </p>
           </template>
         </a-card>
@@ -187,6 +217,13 @@ onMounted(loadRecord);
           :title="record.conclusion ? '圆桌结论' : '下载'"
           style="margin-top: 16px"
         >
+          <div v-if="record.conclusion || isSceneFour" class="conclusion-disclaimer">
+            {{
+              isSceneFour
+                ? "以上内容由 AI 深度思考生成，仅供参考，请务必人工复核。"
+                : "以上结论由 AI 圆桌讨论生成，仅供参考，请务必人工复核。"
+            }}
+          </div>
           <div v-if="record.conclusion" style="white-space: pre-wrap">{{ cleanMarkdown(record.conclusion) }}</div>
           <div class="download-btns" style="margin-top: 16px; display: flex; gap: 12px">
             <button @click="downloadFile('docx')">下载 DOCX</button>
@@ -227,5 +264,16 @@ onMounted(loadRecord);
 .speaker-name {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+.conclusion-disclaimer {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  color: #ad6800;
+  font-size: 13px;
+  line-height: 1.5;
 }
 </style>

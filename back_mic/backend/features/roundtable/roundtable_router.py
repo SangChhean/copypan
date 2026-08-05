@@ -7,7 +7,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import Dict, List
+from typing import Dict, List, Optional
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,10 +18,48 @@ from user.token import test_token, test_token_optional
 
 from .roundtable_service import RoundTableService
 from .roundtable_db import get_all_records, get_record_by_id, toggle_pin, delete_record
+from .ai_clients import SUPPORTED_AIS, SUPPORTED_AIS_TOP, SUPPORTED_AIS_SCENE4
 
 logger = logging.getLogger(__name__)
 
 roundtable_router = APIRouter(prefix="/api")
+
+# 导出/文案用显示名（与前端 getSpeakerName 对齐）
+_AI_BASE_LABELS = {
+    "claude": "Claude",
+    "gpt": "GPT",
+    "gemini": "Gemini",
+    "grok": "Grok",
+    "deepseek": "DeepSeek",
+    "perplexity": "Perplexity",
+}
+_SCENE4_LABELS = {
+    "claude_opus": "Claude Fable 5",
+    "gpt_pro": "GPT-5.6 Sol",
+    "gemini_pro": "Gemini 3.1 Pro",
+}
+
+ROUNDTABLE_CONCLUSION_DISCLAIMER = (
+    "以上结论由 AI 圆桌讨论生成，仅供参考，请务必人工复核。"
+)
+ROUNDTABLE_SCENE4_DISCLAIMER = (
+    "以上内容由 AI 深度思考生成，仅供参考，请务必人工复核。"
+)
+
+
+def _ai_display_name(ai_key: str, scene_type: str = "", ai_roles: Optional[dict] = None) -> str:
+    """将存储 key 转为人类可读名；覆盖基础六 key、*_top、场景④三 key。"""
+    if not ai_key:
+        return ""
+    if scene_type == "scene_two" and ai_roles and ai_roles.get(ai_key):
+        return ai_roles[ai_key]
+    if ai_key in _SCENE4_LABELS:
+        return _SCENE4_LABELS[ai_key]
+    if ai_key.endswith("_top"):
+        base = ai_key[:-4]
+        label = _AI_BASE_LABELS.get(base, base)
+        return f"{label}（顶级）"
+    return _AI_BASE_LABELS.get(ai_key, ai_key)
 
 
 class RoundtableStartBody(BaseModel):
@@ -39,8 +77,28 @@ async def start_roundtable(body: RoundtableStartBody):
     if body.scene_type == "scene_four":
         if len(body.participants) != 1:
             raise HTTPException(status_code=400, detail="场景④ 仅支持选择 1 个 AI")
+        if body.participants[0] not in SUPPORTED_AIS_SCENE4:
+            raise HTTPException(
+                status_code=400,
+                detail=f"场景④ participants 须为: {SUPPORTED_AIS_SCENE4}",
+            )
     elif len(body.participants) < 2 or len(body.participants) > 6:
         raise HTTPException(status_code=400, detail="participants 数量须在 2～6 之间")
+    if body.scene_type == "scene_three":
+        allowed = set(SUPPORTED_AIS_TOP)
+        bad = [p for p in body.participants if p not in allowed]
+        if bad:
+            raise HTTPException(
+                status_code=400,
+                detail=f"场景③ participants 须为顶级档: {sorted(SUPPORTED_AIS_TOP)}，收到: {bad}",
+            )
+    elif body.scene_type in ("scene_one", "scene_two"):
+        bad = [p for p in body.participants if p not in SUPPORTED_AIS]
+        if bad:
+            raise HTTPException(
+                status_code=400,
+                detail=f"participants 须为: {SUPPORTED_AIS}",
+            )
     svc = RoundTableService()
     session_id = await svc.create_session(
         body.scene_type,
@@ -135,10 +193,13 @@ def _roundtable_export_text(record: dict) -> str:
     """将圆桌记录拼成导出用纯文本。"""
     topic = record.get("topic") or ""
     participants = record.get("participants") or []
-    participants_str = "、".join(participants)
+    ai_roles = record.get("ai_roles") or {}
+    scene_type = record.get("scene_type") or ""
+    participants_str = "、".join(
+        _ai_display_name(p, scene_type, ai_roles) for p in participants
+    )
     rounds = record.get("rounds") or []
     conclusion = record.get("conclusion") or ""
-    scene_type = record.get("scene_type") or ""
     if scene_type == "scene_two":
         scene_label = "神学辩论"
         round_titles = ["第1轮 · 亮明立场", "第2轮 · 正面交锋", "第3轮 · 总结陈词"]
@@ -163,12 +224,17 @@ def _roundtable_export_text(record: dict) -> str:
         lines.append("")
         if isinstance(round_data, dict):
             for ai_name, content in round_data.items():
-                lines.append(f"【{ai_name}】")
+                lines.append(f"【{_ai_display_name(ai_name, scene_type, ai_roles)}】")
                 lines.append(content if content else "")
                 lines.append("")
         lines.append("")
-    lines.append("===== 圆桌结论 =====")
-    lines.append(conclusion)
+    if scene_type == "scene_four":
+        lines.append("【提醒】" + ROUNDTABLE_SCENE4_DISCLAIMER)
+    else:
+        lines.append("===== 圆桌结论 =====")
+        lines.append(conclusion)
+        lines.append("")
+        lines.append("【提醒】" + ROUNDTABLE_CONCLUSION_DISCLAIMER)
     return "\n".join(lines)
 
 
@@ -207,6 +273,11 @@ def _build_roundtable_docx(docx_path: str, record: dict) -> None:
         if stances:
             p_roles = doc.add_paragraph(style='0000模板')
             p_roles.add_run(f'参与角色：{stances}')
+    elif participants:
+        # ①③④：写出人类可读参与 AI，避免导出直出原始 key
+        names = '、'.join(_ai_display_name(p, scene_type, ai_roles) for p in participants)
+        p_ais = doc.add_paragraph(style='0000模板')
+        p_ais.add_run(f'参与AI：{names}')
 
     # 场景④：单轮思考内容
     if scene_type == 'scene_four':
@@ -221,6 +292,16 @@ def _build_roundtable_docx(docx_path: str, record: dict) -> None:
     for line in conclusion.split('\n'):
         p = doc.add_paragraph(style='0000模板')
         p.add_run(line if line.strip() else ' ')
+
+    # 导出文件脱离界面后仍需提醒：仅供参考、需人工复核
+    if conclusion.strip() or scene_type == 'scene_four':
+        p_disc = doc.add_paragraph(style='0000模板')
+        disclaimer = (
+            ROUNDTABLE_SCENE4_DISCLAIMER
+            if scene_type == 'scene_four'
+            else ROUNDTABLE_CONCLUSION_DISCLAIMER
+        )
+        p_disc.add_run(disclaimer)
 
     doc.save(docx_path)
 
