@@ -832,7 +832,7 @@ async function downloadReprocessDocx(item) {
     <div class="box">
       <a-spin :spinning="busy">
         <a-tabs :active-key="tab" @change="onTabChange">
-          <a-tab-pane key="pano" tab="进展75系列" />
+          <a-tab-pane key="pano" tab="进展79系列" />
           <a-tab-pane key="entry" tab="新增词条" />
           <a-tab-pane key="reprocess" tab="重新职事化" />
         </a-tabs>
