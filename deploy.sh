@@ -10,12 +10,16 @@ mkdir -p "$LOG_DIR"
 echo "[1/7] 备份当前代码..."
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$BACKUP_DIR"
-tar -czf "$BACKUP_DIR/code_backup_$DATE.tar.gz" "$CODE_DIR" 2>/dev/null
+tar -czf "$BACKUP_DIR/code_backup_$DATE.tar.gz" \
+  --exclude='*/node_modules' \
+  --exclude='*/.git' \
+  --exclude="$BACKUP_DIR" \
+  -C "$(dirname "$CODE_DIR")" "$(basename "$CODE_DIR")" 2>/dev/null
 echo "✅ 备份完成"
 echo "[2/7] 拉取最新代码..."
 cd "$CODE_DIR"
 git stash
-git pull origin master
+git pull origin master --no-edit
 git stash pop
 echo "✅ 代码更新完成"
 echo "[3/7] 安装 Python 依赖..."
@@ -67,37 +71,21 @@ else
     echo "✅ Neo4j 已在运行"
 fi
 echo "[6/7] 重启后端服务..."
-pkill -f "uvicorn main:app" 2>/dev/null
-sleep 2
-cd "$CODE_DIR/back_mic/backend"
-nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_DIR/backend.log" 2>&1 &
+systemctl restart back-mic
 echo "✅ 后端已重启"
 echo "[6b/7] 重启 QA 后端服务..."
-pkill -f "uvicorn back_qa.main:app" 2>/dev/null
-sleep 2
-cd /opt/pansearch/code
-nohup python3 -m uvicorn back_qa.main:app --host 0.0.0.0 --port 8001 \
-  > /opt/pansearch/logs/qa_backend.log 2>&1 &
+systemctl restart back-qa
 echo "✅ QA 后端已重启"
 echo "[6c/7] 重启 CN 后端服务..."
-pkill -f "uvicorn back_cn.main:app" 2>/dev/null
-sleep 2
-cd /opt/pansearch/code
-nohup python3 -m uvicorn back_cn.main:app --host 0.0.0.0 --port 8014 \
-  > /opt/pansearch/logs/cn_backend.log 2>&1 &
+systemctl restart back-cn
 echo "✅ CN 后端已重启"
 echo "[6d/7] 重启 Anshifenliang 后端服务..."
-pkill -f "node.*server.js" 2>/dev/null
-sleep 2
 cd /opt/pansearch/code/back_anshifenliang
 npm install --silent
-nohup node server.js > /opt/pansearch/logs/anshifenliang_backend.log 2>&1 &
+systemctl restart anshifenliang-server
 echo "✅ Anshifenliang 后端已重启 (port 8020)"
 echo "[6e/7] 重启 Telegram Bot..."
-pkill -f "python3 bot.py" 2>/dev/null
-sleep 1
-cd /opt/pansearch/code/back_anshifenliang/telegram_bot
-nohup python3 bot.py > /opt/pansearch/logs/telegram_bot.log 2>&1 &
+systemctl restart anshifenliang-bot
 echo "✅ Telegram Bot 已启动"
 echo "[7/7] 重启 Nginx..."
 systemctl reload nginx
@@ -109,10 +97,10 @@ echo "🌐 主站: https://aipansearch.org"
 echo "🌐 QA站: https://qa.aipansearch.org"
 echo "🌐 CN站: https://quanbeigongying.com"
 echo "🌐 按时分粮: https://chat.educationbylevel.org"
-echo "📋 查看日志: tail -f $LOG_DIR/backend.log"
-echo "📋 QA 日志: tail -f /opt/pansearch/logs/qa_backend.log"
-echo "📋 CN 日志: tail -f /opt/pansearch/logs/cn_backend.log"
-echo "📋 按时分粮日志: tail -f /opt/pansearch/logs/anshifenliang_backend.log"
-echo "📋 Bot 日志: tail -f /opt/pansearch/logs/telegram_bot.log"
+echo "📋 查看日志: journalctl -u back-mic -f"
+echo "📋 QA 日志: journalctl -u back-qa -f"
+echo "📋 CN 日志: journalctl -u back-cn -f"
+echo "📋 按时分粮日志: journalctl -u anshifenliang-server -f"
+echo "📋 Bot 日志: journalctl -u anshifenliang-bot -f"
 echo "📁 前端静态: $FRONT_DIR/dist（请确认 Nginx root 指向此目录）"
 echo "=========================================="
