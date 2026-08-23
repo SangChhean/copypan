@@ -24,6 +24,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 _GLYPH_FIX_MAP = {"k": "祂", "q": "痲", "F": "镕", "Z": "繸", "m": "醡"}
 
