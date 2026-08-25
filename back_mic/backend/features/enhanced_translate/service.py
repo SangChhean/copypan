@@ -39,6 +39,8 @@ from features.enhanced_translate.pool import (
     collect_auto_append_rows,
     collect_auto_append_rows_en2zh,
     en_contains,
+    get_record_by_en,
+    get_record_by_zh,
     levenshtein_distance,
     lookup_line_en,
     lookup_line_zh,
@@ -1316,7 +1318,9 @@ def _build_line_ref_group(
     reference_source_zh_list: list[str] | None = None,
     reference_source_en: str = "",
     reference_source_paths: list[str] | None = None,
+    reference_source_human_verified: list[bool | None] | None = None,
     source_line_path: str = "",
+    human_verified: bool | None = None,
 ) -> dict[str, Any]:
     deduped = _assign_paragraph_numbers(_dedupe_refs_by_chunk_id(line_refs))
     stats = _stats_from_line_refs(
@@ -1326,7 +1330,7 @@ def _build_line_ref_group(
         pool_line=pool_line,
         feasts_line=feasts_line,
     )
-    return {
+    result: dict[str, Any] = {
         "line_index": line_index,
         "original_line": original_line,
         "line_type": line_type,
@@ -1338,8 +1342,16 @@ def _build_line_ref_group(
         "reference_source_zh_list": reference_source_zh_list or [],
         "reference_source_en": reference_source_en,
         "reference_source_paths": reference_source_paths or [],
+        # 与 reference_source_zh_list 逐条对齐；非 Source Pool 命中的出处填 None
+        # （不是 False），因为它们根本没有 human_verified 概念。
+        "reference_source_human_verified": reference_source_human_verified or [],
         "source_line_path": source_line_path or "",
     }
+    # 只有真正整行命中 Additional Pool 缓存的行才有 human_verified 概念；
+    # ES Pool / Feasts / 无匹配行不编造一个 false，直接不放进响应里。
+    if additional_pool_line and human_verified is not None:
+        result["human_verified"] = human_verified
+    return result
 
 
 # 单价（USD / 1M tokens）：(输入, 输出)；thinking token 按输出价计费
@@ -1724,6 +1736,10 @@ def _prep_cached_line(
     line_for_retrieval, reference_source_zh_list = parse_source_from_line(line)
     reference_source_zh = format_source_zh(reference_source_zh_list)
     prefix, body, _ = _strip_scripture_suffix(line_for_retrieval)
+    # 与产生 cached_en 的 lookup_line_en(line) 用同一个 line 变量现算，
+    # 保证取到的是同一条命中记录的 human_verified。
+    pool_record = get_record_by_zh(line)
+    pool_human_verified = pool_record.get("human_verified") if pool_record else None
     return {
         "line_i": line_i,
         "line": line,
@@ -1735,6 +1751,7 @@ def _prep_cached_line(
         "needs_batch": False,
         "line_cached_en": cached_en,
         "pool_line_en": "",
+        "pool_human_verified": pool_human_verified,
         "feasts_line": "",
         "reference_source_zh": reference_source_zh,
         "reference_source_zh_list": reference_source_zh_list,
@@ -2478,6 +2495,7 @@ def _append_source_zh(body_zh: str, prep: dict[str, Any]) -> str:
 
 def _source_group_kwargs(prep: dict[str, Any], *, en2zh: bool = False) -> dict[str, Any]:
     paths = prep.get("reference_source_paths") or []
+    human_verified_list = prep.get("reference_source_human_verified") or []
     source_line_path = prep.get("source_line_path") or ""
     if en2zh:
         return {
@@ -2485,6 +2503,7 @@ def _source_group_kwargs(prep: dict[str, Any], *, en2zh: bool = False) -> dict[s
             "reference_source_zh_list": prep.get("reference_source_en_list") or [],
             "reference_source_en": prep.get("reference_source_zh_result") or "",
             "reference_source_paths": paths,
+            "reference_source_human_verified": human_verified_list,
             "source_line_path": source_line_path,
         }
     return {
@@ -2492,6 +2511,7 @@ def _source_group_kwargs(prep: dict[str, Any], *, en2zh: bool = False) -> dict[s
         "reference_source_zh_list": prep.get("reference_source_zh_list") or [],
         "reference_source_en": prep.get("reference_source_en") or "",
         "reference_source_paths": paths,
+        "reference_source_human_verified": human_verified_list,
         "source_line_path": source_line_path,
     }
 
@@ -2543,6 +2563,7 @@ async def _assemble_line(
             gemini_translate=out,
             additional_pool_line=True,
             retrieval_skipped=True,
+            human_verified=prep.get("pool_human_verified"),
             **src_kw,
         )
 
@@ -2559,6 +2580,7 @@ async def _assemble_line(
                 pool_kw["pool_line"] = True
             else:
                 pool_kw["additional_pool_line"] = True
+                pool_kw["human_verified"] = prep.get("pool_human_verified")
             pool_kw["retrieval_skipped"] = True
         else:
             pool_kw["pool_line"] = True
@@ -2786,13 +2808,18 @@ async def enhanced_translate(
             (p["line_i"], [p["source_content"]], [], False)
         )
     # 整单一次调用
-    source_en_map, source_paths_map, source_cost_usd = await translate_source_zh_batch(source_items)
+    source_en_map, source_paths_map, source_verified_map, source_cost_usd = (
+        await translate_source_zh_batch(source_items)
+    )
     total_cost_usd += source_cost_usd
     # 分发结果
     for prep in preps:
         if prep.get("line_type") != "source":
             prep["reference_source_en"] = source_en_map.get(prep["line_i"], "")
             prep["reference_source_paths"] = source_paths_map.get(prep["line_i"], [])
+            prep["reference_source_human_verified"] = source_verified_map.get(
+                prep["line_i"], []
+            )
     for p in source_preps:
         translated = source_en_map.get(p["line_i"], "")
         p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]
@@ -2870,6 +2897,7 @@ async def _retrieve_line_en2zh(
     if line.strip():
         pool_zh = await _pool_lookup_en2zh(line_for_retrieval)
         if pool_zh is not None:
+            _pool_rec = get_record_by_en(line_for_retrieval)
             return {
                 "line_i": line_i,
                 "line": line,
@@ -2881,6 +2909,7 @@ async def _retrieve_line_en2zh(
                 "line_cached_en": "",
                 "pool_line_en": pool_zh,
                 "pool_source": "local",
+                "pool_human_verified": _pool_rec.get("human_verified") if _pool_rec else None,
                 **_src_en,
             }
 
@@ -2977,6 +3006,7 @@ async def _retrieve_line_en2zh(
         if line_for_retrieval.strip():
             pool_zh = await _pool_lookup_en2zh(line_for_retrieval)
             if pool_zh is not None:
+                _pool_rec = get_record_by_en(line_for_retrieval)
                 return {
                     "line_i": line_i,
                     "line": line,
@@ -2988,6 +3018,7 @@ async def _retrieve_line_en2zh(
                     "line_cached_en": "",
                     "pool_line_en": pool_zh,
                     "pool_source": "local",
+                    "pool_human_verified": _pool_rec.get("human_verified") if _pool_rec else None,
                     **_src_en,
                 }
             fuzzy_zh = await _pool_fuzzy_match_en(line_for_retrieval)
@@ -3337,13 +3368,18 @@ async def enhanced_translate_en2zh(
             (p["line_i"], [p["source_content"]], [], False)
         )
     # 整单一次调用
-    source_zh_map, source_paths_map, source_cost_usd = await translate_source_en_batch(source_items)
+    source_zh_map, source_paths_map, source_verified_map, source_cost_usd = (
+        await translate_source_en_batch(source_items)
+    )
     total_cost_usd += source_cost_usd
     # 分发结果
     for prep in preps:
         if prep.get("line_type") != "source":
             prep["reference_source_zh_result"] = source_zh_map.get(prep["line_i"], "")
             prep["reference_source_paths"] = source_paths_map.get(prep["line_i"], [])
+            prep["reference_source_human_verified"] = source_verified_map.get(
+                prep["line_i"], []
+            )
     for p in source_preps:
         translated = source_zh_map.get(p["line_i"], "")
         p["source_line_path"] = (source_paths_map.get(p["line_i"]) or [""])[0]

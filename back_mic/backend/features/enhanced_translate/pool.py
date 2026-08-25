@@ -225,6 +225,8 @@ def _load_pool_file() -> dict[str, dict[str, Any]]:
             norm = normalize_zh(zh)
             if not norm:
                 continue
+            if "human_verified" not in rec:
+                rec = {**rec, "human_verified": False}
             out[norm] = {**rec, "zh": zh, "en": en, "norm_zh": norm}
     return out
 
@@ -321,6 +323,46 @@ def lookup_line_zh(en_line: str, norm_en_line: str) -> str | None:
     return None
 
 
+def get_record_by_zh(zh_line: str) -> dict[str, Any] | None:
+    """
+    按中文整行现算 key，返回完整 Additional Pool 记录（含 human_verified）。
+    与 ``lookup_line_en`` 使用同一套 key 计算规则，供只读展示（如 API 响应里
+    透出 human_verified）使用，不影响检索/写入路径。
+    """
+    zh_line = (zh_line or "").strip()
+    if not zh_line:
+        return None
+    reload_pool()
+    return _cache_by_norm.get(normalize_zh(zh_line))
+
+
+def get_record_by_en(en_line: str, norm_en_line: str = "") -> dict[str, Any] | None:
+    """
+    按归一化英文整行返回完整 Additional Pool 记录（含 human_verified）。
+    与 ``lookup_line_zh`` 使用同一套 key 计算规则（原样对齐，不做出处剥离），
+    供只读展示使用。
+    """
+    target = normalize_en((norm_en_line or en_line or "").strip())
+    if not target:
+        return None
+    reload_pool()
+    for rec in _cache_by_norm.values():
+        zh = (rec.get("zh") or "").strip()
+        if not zh:
+            continue
+        norm_stored = (rec.get("norm_en") or "").strip()
+        if norm_stored:
+            if norm_stored == target:
+                return rec
+            continue
+        en = (rec.get("en") or "").strip()
+        if not en:
+            continue
+        if normalize_en(en) == target:
+            return rec
+    return None
+
+
 def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tuple[int, int]:
     if not records:
         return 0, 0
@@ -355,6 +397,7 @@ def append_records(records: list[dict[str, Any]], *, force: bool = False) -> tup
             "saved_at": rec.get("saved_at") or now,
             "prompt_version": rec.get("prompt_version") or "",
             "source": rec.get("source") or "enhanced_translate",
+            "human_verified": False,
         }
         norm_en = (rec.get("norm_en") or "").strip() or normalize_en(en)
         if norm_en:
@@ -465,7 +508,7 @@ def _write_pool(existing: dict[str, dict[str, Any]]) -> None:
     reload_pool(force=True)
 
 
-def update_record(zh: str, new_en: str) -> bool:
+def update_record(zh: str, new_en: str, force_confirm: bool = False) -> bool:
     zh = (zh or "").strip()
     new_en = (new_en or "").strip()
     if not zh or not new_en:
@@ -474,23 +517,67 @@ def update_record(zh: str, new_en: str) -> bool:
     norm = normalize_zh(zh)
     if norm not in _cache_by_norm:
         return False
+    old = _cache_by_norm[norm]
+    old_en = (old.get("en") or "").strip()
+    if new_en == old_en:
+        if not force_confirm:
+            # 内容未发生实际变化：不改动 human_verified，也不触发写入
+            return True
+        if old.get("human_verified") is True:
+            # 已经确认过：幂等，不重复写入
+            return True
+        existing = dict(_cache_by_norm)
+        existing[norm] = {**old, "human_verified": True}
+        _write_pool(existing)
+        logger.info("[enhanced_translate_pool] 已强制确认 norm_zh=%s", norm)
+        return True
     existing = dict(_cache_by_norm)
-    old = existing.pop(norm)
+    existing.pop(norm)
     now = datetime.now(timezone.utc).isoformat()
     existing[norm] = {
+        **old,
         "zh": zh,
         "en": new_en,
         "norm_zh": norm,
         "saved_at": now,
         "prompt_version": old.get("prompt_version") or "",
         "source": old.get("source") or "enhanced_translate",
+        "human_verified": True,
     }
     _write_pool(existing)
     logger.info("[enhanced_translate_pool] 已更新 norm_zh=%s", norm)
     return True
 
 
-def update_record_en2zh(en_line: str, new_zh: str) -> bool:
+def _resolve_norm_en_for_lookup(en_line: str) -> str:
+    """剥出处后再归一化，与 Pool 存入时的 en 字段对齐。"""
+    en_line = (en_line or "").strip()
+    try:
+        from features.enhanced_translate.source_translator import parse_source_from_line_en
+
+        en_line_stripped, _ = parse_source_from_line_en(en_line)
+        en_line_stripped = en_line_stripped.strip() or en_line
+    except Exception:
+        en_line_stripped = en_line
+    return normalize_en(en_line_stripped)
+
+
+def _find_record_by_norm_en(
+    existing: dict[str, dict[str, Any]], target_norm_en: str
+) -> tuple[str, dict[str, Any]] | None:
+    """在给定的 norm_zh->rec 字典里按 norm_en 线性查找，返回 (norm_zh, rec)。"""
+    for norm_zh, rec in existing.items():
+        norm_en_stored = (rec.get("norm_en") or "").strip()
+        if not norm_en_stored:
+            norm_en_stored = normalize_en((rec.get("en") or "").strip())
+        if norm_en_stored == target_norm_en:
+            return norm_zh, rec
+    return None
+
+
+def update_record_en2zh(
+    en_line: str, new_zh: str, force_confirm: bool = False
+) -> bool:
     """
     英翻中方向：用 normalize_en(en_line) 定位记录，更新 zh 字段。
     同时更新字典 key（删旧中文 key，插入新中文 key）。
@@ -501,37 +588,36 @@ def update_record_en2zh(en_line: str, new_zh: str) -> bool:
         return False
     if not any(c.isascii() and c.isalpha() for c in en_line):
         return False
-    # 剥出处后再归一化，与 Pool 存入时的 en 字段对齐
-    try:
-        from features.enhanced_translate.source_translator import parse_source_from_line_en
-
-        en_line_stripped, _ = parse_source_from_line_en(en_line)
-        en_line_stripped = en_line_stripped.strip() or en_line
-    except Exception:
-        en_line_stripped = en_line
     reload_pool(force=True)
-    target_norm_en = normalize_en(en_line_stripped)
+    target_norm_en = _resolve_norm_en_for_lookup(en_line)
     if not target_norm_en:
         return False
     existing = dict(_cache_by_norm)
-    found_old_norm_zh: str | None = None
-    found_old_rec: dict[str, Any] | None = None
-    for norm_zh, rec in existing.items():
-        norm_en_stored = (rec.get("norm_en") or "").strip()
-        if not norm_en_stored:
-            norm_en_stored = normalize_en((rec.get("en") or "").strip())
-        if norm_en_stored == target_norm_en:
-            found_old_norm_zh = norm_zh
-            found_old_rec = rec
-            break
-    if found_old_norm_zh is None or found_old_rec is None:
+    found = _find_record_by_norm_en(existing, target_norm_en)
+    if found is None:
         return False
+    found_old_norm_zh, found_old_rec = found
     new_norm_zh = normalize_zh(new_zh)
     if not new_norm_zh:
         return False
+    old_zh = (found_old_rec.get("zh") or "").strip()
+    if new_zh == old_zh:
+        if not force_confirm:
+            # 内容未发生实际变化：不改动 human_verified，也不触发写入
+            return True
+        if found_old_rec.get("human_verified") is True:
+            # 已经确认过：幂等，不重复写入
+            return True
+        existing[found_old_norm_zh] = {**found_old_rec, "human_verified": True}
+        _write_pool(existing)
+        logger.info(
+            "[enhanced_translate_pool] en2zh 已强制确认 norm_en=%s", target_norm_en
+        )
+        return True
     now = datetime.now(timezone.utc).isoformat()
     existing.pop(found_old_norm_zh)
     existing[new_norm_zh] = {
+        **found_old_rec,
         "zh": new_zh,
         "en": (found_old_rec.get("en") or "").strip(),
         "norm_zh": new_norm_zh,
@@ -539,9 +625,48 @@ def update_record_en2zh(en_line: str, new_zh: str) -> bool:
         "saved_at": now,
         "prompt_version": found_old_rec.get("prompt_version") or "",
         "source": found_old_rec.get("source") or "enhanced_translate_en2zh",
+        "human_verified": True,
     }
     _write_pool(existing)
     logger.info("[enhanced_translate_pool] en2zh 已更新 norm_en=%s", target_norm_en)
+    return True
+
+
+def delete_record(zh: str) -> bool:
+    """中翻英方向：按中文原文现算 norm_zh 定位并删除 Additional Pool 记录。"""
+    zh = (zh or "").strip()
+    if not zh:
+        return False
+    reload_pool(force=True)
+    norm = normalize_zh(zh)
+    if norm not in _cache_by_norm:
+        return False
+    existing = dict(_cache_by_norm)
+    existing.pop(norm)
+    _write_pool(existing)
+    logger.info("[enhanced_translate_pool] 已删除 norm_zh=%s", norm)
+    return True
+
+
+def delete_record_en2zh(en: str) -> bool:
+    """英翻中方向：按英文原文剥出处后归一化定位并删除 Additional Pool 记录。"""
+    en = (en or "").strip()
+    if not en:
+        return False
+    if not any(c.isascii() and c.isalpha() for c in en):
+        return False
+    reload_pool(force=True)
+    target_norm_en = _resolve_norm_en_for_lookup(en)
+    if not target_norm_en:
+        return False
+    existing = dict(_cache_by_norm)
+    found = _find_record_by_norm_en(existing, target_norm_en)
+    if found is None:
+        return False
+    found_norm_zh, _found_rec = found
+    existing.pop(found_norm_zh)
+    _write_pool(existing)
+    logger.info("[enhanced_translate_pool] en2zh 已删除 norm_en=%s", target_norm_en)
     return True
 
 
@@ -566,6 +691,8 @@ def _load_source_pool() -> None:
                 continue
             try:
                 rec = json.loads(line)
+                if "human_verified" not in rec:
+                    rec = {**rec, "human_verified": False}
                 norm_zh = rec.get("norm_zh", "")
                 norm_en = rec.get("norm_en", "")
                 if norm_zh:
@@ -604,11 +731,35 @@ def lookup_source_pool_zh(source_en: str) -> str | None:
     return rec["zh"] if rec else None
 
 
+def get_source_pool_record_by_zh(source_zh: str) -> dict[str, Any] | None:
+    """
+    与 ``lookup_source_pool_en`` 使用同一套 key 计算规则，返回完整 source_pool
+    记录（含 human_verified），供只读展示使用。
+    """
+    _ensure_source_pool_loaded()
+    norm = normalize_zh(_normalize_source_key(source_zh))
+    return _source_pool_by_norm_zh.get(norm)
+
+
+def get_source_pool_record_by_en(source_en: str) -> dict[str, Any] | None:
+    """
+    与 ``lookup_source_pool_zh`` 使用同一套 key 计算规则，返回完整 source_pool
+    记录（含 human_verified），供只读展示使用。
+    """
+    _ensure_source_pool_loaded()
+    norm = normalize_en(_normalize_source_key(source_en))
+    return _source_pool_by_norm_en.get(norm)
+
+
 def _write_source_pool() -> None:
     _SOURCE_POOL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(_SOURCE_POOL_PATH, "w", encoding="utf-8") as f:
+    tmp = _SOURCE_POOL_PATH.with_suffix(".jsonl.tmp")
+    if _SOURCE_POOL_PATH.is_file():
+        shutil.copy2(_SOURCE_POOL_PATH, _SOURCE_POOL_PATH.with_suffix(".jsonl.bak"))
+    with tmp.open("w", encoding="utf-8", newline="\n") as f:
         for rec in _source_pool_by_norm_zh.values():
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    tmp.replace(_SOURCE_POOL_PATH)
 
 
 def append_source_pool_records(records: list[dict[str, Any]]) -> tuple[int, int]:
@@ -638,6 +789,7 @@ def append_source_pool_records(records: list[dict[str, Any]]) -> tuple[int, int]
             "norm_en": norm_en,
             "source_type": rec.get("source_type", ""),
             "saved_at": now,
+            "human_verified": False,
         }
         old_by_zh = _source_pool_by_norm_zh.get(norm_zh)
         if old_by_zh:
@@ -657,7 +809,9 @@ def append_source_pool_records(records: list[dict[str, Any]]) -> tuple[int, int]
     return added, 0
 
 
-def update_source_pool_record(zh: str, new_en: str) -> bool:
+def update_source_pool_record(
+    zh: str, new_en: str, force_confirm: bool = False
+) -> bool:
     """中翻英手动写回：用中文出处定位，覆盖英文出处。"""
     _ensure_source_pool_loaded()
     zh = _normalize_source_key((zh or "").strip())
@@ -668,6 +822,26 @@ def update_source_pool_record(zh: str, new_en: str) -> bool:
     rec = _source_pool_by_norm_zh.get(norm_zh)
     if not rec:
         return False
+    old_en = (rec.get("en") or "").strip()
+    if new_en == old_en:
+        if not force_confirm:
+            # 内容未发生实际变化：不改动 human_verified，也不触发写入
+            return True
+        if rec.get("human_verified") is True:
+            # 已经确认过：幂等，不重复写入
+            return True
+        entry = {
+            **rec,
+            "human_verified": True,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }
+        _source_pool_by_norm_zh[norm_zh] = entry
+        norm_en_existing = rec.get("norm_en", "")
+        if norm_en_existing:
+            _source_pool_by_norm_en[norm_en_existing] = entry
+        _write_source_pool()
+        logger.info("[enhanced_translate_pool] source_pool 已强制确认 norm_zh=%s", norm_zh)
+        return True
     old_norm_en = rec.get("norm_en", "")
     if old_norm_en:
         _source_pool_by_norm_en.pop(old_norm_en, None)
@@ -677,6 +851,7 @@ def update_source_pool_record(zh: str, new_en: str) -> bool:
         "en": new_en,
         "norm_en": norm_en,
         "saved_at": datetime.now(timezone.utc).isoformat(),
+        "human_verified": True,
     }
     _source_pool_by_norm_zh[norm_zh] = entry
     _source_pool_by_norm_en[norm_en] = entry
@@ -684,7 +859,9 @@ def update_source_pool_record(zh: str, new_en: str) -> bool:
     return True
 
 
-def update_source_pool_record_en2zh(en: str, new_zh: str) -> bool:
+def update_source_pool_record_en2zh(
+    en: str, new_zh: str, force_confirm: bool = False
+) -> bool:
     """英翻中手动写回：用英文出处定位，覆盖中文出处。"""
     _ensure_source_pool_loaded()
     en = _normalize_source_key((en or "").strip())
@@ -694,6 +871,11 @@ def update_source_pool_record_en2zh(en: str, new_zh: str) -> bool:
     norm_en = normalize_en(en)
     rec = _source_pool_by_norm_en.get(norm_en)
     if not rec:
+        if force_confirm:
+            # force_confirm 语义是"确认已存在的记录"，记录本就不存在时
+            # 不应静默新建一条当作确认，如实返回"未找到"
+            return False
+        # 找不到已有记录：视为机器写入的新建记录，不算人工确认
         norm_zh = normalize_zh(new_zh)
         entry = {
             "zh": new_zh,
@@ -702,10 +884,31 @@ def update_source_pool_record_en2zh(en: str, new_zh: str) -> bool:
             "norm_en": norm_en,
             "source_type": "manual",
             "saved_at": datetime.now(timezone.utc).isoformat(),
+            "human_verified": False,
         }
         _source_pool_by_norm_zh[norm_zh] = entry
         _source_pool_by_norm_en[norm_en] = entry
         _write_source_pool()
+        return True
+    old_zh = (rec.get("zh") or "").strip()
+    if new_zh == old_zh:
+        if not force_confirm:
+            # 内容未发生实际变化：不改动 human_verified，也不触发写入
+            return True
+        if rec.get("human_verified") is True:
+            # 已经确认过：幂等，不重复写入
+            return True
+        entry = {
+            **rec,
+            "human_verified": True,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }
+        norm_zh_existing = rec.get("norm_zh", "")
+        if norm_zh_existing:
+            _source_pool_by_norm_zh[norm_zh_existing] = entry
+        _source_pool_by_norm_en[norm_en] = entry
+        _write_source_pool()
+        logger.info("[enhanced_translate_pool] source_pool en2zh 已强制确认 norm_en=%s", norm_en)
         return True
     old_norm_zh = rec.get("norm_zh", "")
     if old_norm_zh:
@@ -716,8 +919,47 @@ def update_source_pool_record_en2zh(en: str, new_zh: str) -> bool:
         "zh": new_zh,
         "norm_zh": norm_zh,
         "saved_at": datetime.now(timezone.utc).isoformat(),
+        "human_verified": True,
     }
     _source_pool_by_norm_zh[norm_zh] = entry
     _source_pool_by_norm_en[norm_en] = entry
     _write_source_pool()
+    return True
+
+
+def delete_source_pool_record(zh: str) -> bool:
+    """中翻英方向：按中文出处定位并删除 source_pool 记录，同时清理双向索引。"""
+    _ensure_source_pool_loaded()
+    zh = _normalize_source_key((zh or "").strip())
+    if not zh:
+        return False
+    norm_zh = normalize_zh(zh)
+    rec = _source_pool_by_norm_zh.get(norm_zh)
+    if not rec:
+        return False
+    norm_en = rec.get("norm_en", "")
+    _source_pool_by_norm_zh.pop(norm_zh, None)
+    if norm_en:
+        _source_pool_by_norm_en.pop(norm_en, None)
+    _write_source_pool()
+    logger.info("[enhanced_translate_pool] source_pool 已删除 norm_zh=%s", norm_zh)
+    return True
+
+
+def delete_source_pool_record_en2zh(en: str) -> bool:
+    """英翻中方向：按英文出处定位并删除 source_pool 记录，同时清理双向索引。"""
+    _ensure_source_pool_loaded()
+    en = _normalize_source_key((en or "").strip())
+    if not en:
+        return False
+    norm_en = normalize_en(en)
+    rec = _source_pool_by_norm_en.get(norm_en)
+    if not rec:
+        return False
+    norm_zh = rec.get("norm_zh", "")
+    _source_pool_by_norm_en.pop(norm_en, None)
+    if norm_zh:
+        _source_pool_by_norm_zh.pop(norm_zh, None)
+    _write_source_pool()
+    logger.info("[enhanced_translate_pool] source_pool 已删除 norm_en=%s", norm_en)
     return True

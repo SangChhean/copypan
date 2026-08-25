@@ -12,6 +12,13 @@ from pydantic import BaseModel, Field
 from user.token import test_token
 from features.enhanced_translate.pool import (
     append_source_pool_records,
+    delete_record,
+    delete_record_en2zh,
+    delete_source_pool_record,
+    delete_source_pool_record_en2zh,
+    get_record_by_zh,
+    get_source_pool_record_by_en,
+    get_source_pool_record_by_zh,
     lookup_line_en,
     update_record,
     update_record_en2zh,
@@ -58,6 +65,9 @@ class UpdateTranslationRequest(BaseModel):
     new_translation: str = Field(..., min_length=1, max_length=10_000)
     direction: str = Field(default="zh2en")  # "zh2en" 或 "en2zh"
     line_type: str = Field(default="")
+    # 内容与当前 Pool 记录完全一致时，正常写回逻辑会判定为"无变化"而跳过。
+    # force_confirm=True 时即使内容不变，也把该记录标记为已确认（human_verified=true）。
+    force_confirm: bool = Field(default=False)
 
 
 def _sync_source_pool_from_translation(
@@ -122,24 +132,45 @@ async def api_update_translation(req: UpdateTranslationRequest):
                 }
             _, en_content = _strip_source_prefix(req.original_line.strip())
             _, zh_content = _strip_source_prefix(req.new_translation.strip())
+            en_key = en_content or req.original_line.strip()
             updated = update_source_pool_record_en2zh(
-                en_content or req.original_line.strip(),
+                en_key,
                 zh_content or req.new_translation.strip(),
+                force_confirm=req.force_confirm,
             )
+            if not updated:
+                return {"success": False, "error": "Source Pool 写入失败"}
+            # update_source_pool_record_en2zh 定位/写入的 key 始终是 norm_en，
+            # 不会因为这次更新而改变，所以直接用同一个 en_key 复查即可拿到最新记录。
+            rec = get_source_pool_record_by_en(en_key)
+            return {
+                "success": True,
+                "human_verified": rec.get("human_verified") if rec else None,
+            }
         else:
             _, zh_content = _strip_source_prefix(req.original_line.strip())
             _, en_content = _strip_source_prefix(req.new_translation.strip())
             zh_val = zh_content or req.original_line.strip()
             en_val = en_content or req.new_translation.strip()
-            updated = update_source_pool_record(zh_val, en_val)
-            if not updated:
+            updated = update_source_pool_record(
+                zh_val, en_val, force_confirm=req.force_confirm
+            )
+            # force_confirm 语义是"确认已存在的记录"，记录不存在时不应该退化成
+            # "顺手新建一条"——那样会把一次确认操作悄悄变成一次机器写入。
+            if not updated and not req.force_confirm:
                 added, _ = append_source_pool_records(
                     [{"zh": zh_val, "en": en_val, "source_type": "manual"}]
                 )
                 updated = added > 0
-        if not updated:
-            return {"success": False, "error": "Source Pool 写入失败"}
-        return {"success": True}
+            if not updated:
+                return {"success": False, "error": "Source Pool 写入失败"}
+            # update_source_pool_record 与 append_source_pool_records 都以 norm_zh
+            # 为 key，且都不会改变这个 key，直接用同一个 zh_val 复查即可。
+            rec = get_source_pool_record_by_zh(zh_val)
+            return {
+                "success": True,
+                "human_verified": rec.get("human_verified") if rec else None,
+            }
 
     if req.direction == "en2zh":
         if not any(c.isascii() and c.isalpha() for c in req.original_line):
@@ -147,9 +178,21 @@ async def api_update_translation(req: UpdateTranslationRequest):
                 "success": False,
                 "error": "英翻中方向的 original_line 必须是英文",
             }
-        updated = update_record_en2zh(req.original_line, req.new_translation)
+        updated = update_record_en2zh(
+            req.original_line, req.new_translation, force_confirm=req.force_confirm
+        )
+        # update_record_en2zh 是以译文（中文）算 norm_zh 作为字典 key，内容变化时
+        # 旧 key 会被替换成 normalize_zh(new_translation)；不管内容是否变化，
+        # 用 new_translation 复查都能命中最新记录（未变化时 new_translation ==
+        # 旧 zh，key 本就没变）。
+        lookup_key = req.new_translation
     else:
-        updated = update_record(req.original_line, req.new_translation)
+        updated = update_record(
+            req.original_line, req.new_translation, force_confirm=req.force_confirm
+        )
+        # update_record 以原文（中文）算 norm_zh 作为字典 key，只更新 en 字段，
+        # key 本身从不改变，用 original_line 复查即可。
+        lookup_key = req.original_line
 
     _sync_source_pool_from_translation(
         req.original_line, req.new_translation, req.direction
@@ -159,6 +202,77 @@ async def api_update_translation(req: UpdateTranslationRequest):
         return {
             "success": False,
             "error": "Additional Pool 中未找到对应条目，或译文为空",
+        }
+    rec = get_record_by_zh(lookup_key)
+    return {
+        "success": True,
+        "human_verified": rec.get("human_verified") if rec else None,
+    }
+
+
+class DeleteTranslationRequest(BaseModel):
+    original_line: str = Field(..., min_length=1, max_length=10_000)
+    direction: str = Field(default="zh2en")  # "zh2en" 或 "en2zh"
+    line_type: str = Field(default="")
+
+
+def _sync_source_pool_delete_from_line(original_line: str, direction: str) -> None:
+    """删除正文行末出处解析出的 source_pool 记录（best effort）。"""
+    if direction == "en2zh":
+        _, en_sources = parse_source_from_line_en(original_line)
+        for en_src in en_sources:
+            en_clean = en_src.strip().strip("()")
+            if en_clean:
+                delete_source_pool_record_en2zh(en_clean)
+    else:
+        _, zh_sources = parse_source_from_line(original_line)
+        for zh_src in zh_sources:
+            zh_clean = zh_src.strip().strip("（）")
+            if zh_clean:
+                delete_source_pool_record(zh_clean)
+
+
+@router.delete(
+    "/delete_translation",
+    dependencies=[Depends(test_token)],
+)
+async def api_delete_translation(req: DeleteTranslationRequest):
+    if req.line_type == "source":
+        if req.direction == "en2zh":
+            if not any(c.isascii() and c.isalpha() for c in req.original_line):
+                return {
+                    "success": False,
+                    "error": "英翻中方向的 original_line 必须是英文",
+                }
+            _, en_content = _strip_source_prefix(req.original_line.strip())
+            deleted = delete_source_pool_record_en2zh(
+                en_content or req.original_line.strip()
+            )
+        else:
+            _, zh_content = _strip_source_prefix(req.original_line.strip())
+            deleted = delete_source_pool_record(
+                zh_content or req.original_line.strip()
+            )
+        if not deleted:
+            return {"success": False, "error": "Source Pool 中未找到对应条目"}
+        return {"success": True}
+
+    if req.direction == "en2zh":
+        if not any(c.isascii() and c.isalpha() for c in req.original_line):
+            return {
+                "success": False,
+                "error": "英翻中方向的 original_line 必须是英文",
+            }
+        deleted = delete_record_en2zh(req.original_line)
+    else:
+        deleted = delete_record(req.original_line)
+
+    _sync_source_pool_delete_from_line(req.original_line, req.direction)
+
+    if not deleted:
+        return {
+            "success": False,
+            "error": "Additional Pool 中未找到对应条目",
         }
     return {"success": True}
 
@@ -252,6 +366,7 @@ async def retrieve_test(req: RetrieveTestRequest) -> dict[str, Any]:
             reference_source_zh=prep.get("reference_source_zh") or "",
             reference_source_zh_list=prep.get("reference_source_zh_list") or [],
             reference_source_en=prep.get("reference_source_en") or "",
+            human_verified=prep.get("pool_human_verified"),
         )
         lt = prep.get("line_type") or ""
         if prep.get("line_cached_en"):

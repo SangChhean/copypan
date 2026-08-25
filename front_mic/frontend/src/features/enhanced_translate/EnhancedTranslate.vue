@@ -25,6 +25,9 @@ const downloadFormats = ref(["docx"]);
 const downloading = ref(false);
 const downloadingRefsTxt = ref(false);
 const editedTranslations = ref({});
+const confirmingArticle = ref(false);
+const clearingArticle = ref(false);
+const clearPoolModalVisible = ref(false);
 
 const computedResult = computed(() => {
   const groups = lineRefGroups.value;
@@ -168,12 +171,30 @@ function getEditedResultText() {
 }
 
 const savingLineIndex = ref(null);
+const deletingLineIndex = ref(null);
+
+/**
+ * 用 update_translation 响应体里的 human_verified 权威值更新 group 状态。
+ * 响应体里没有这个字段（undefined）或后端防御性返回了 null 时，说明后端
+ * 没能给出确定答案，维持 group.human_verified 现有值不变，不用 null/undefined
+ * 覆盖掉一个可能是真实的旧值。
+ */
+function applyHumanVerified(group, data) {
+  if (typeof data.human_verified === "boolean") {
+    group.human_verified = data.human_verified;
+  }
+}
 
 async function saveTranslation(group) {
   const originalLine = (group.original_line || "").trim();
   const lineIndex = group.line_index;
   const newTranslation = (editedTranslations.value[lineIndex] || "").trim();
   if (!originalLine || !newTranslation) return;
+
+  // 提前记录内容是否真的发生了变化：后端只有在内容实际变化时才会把
+  // human_verified 置为 true，未变化时会静默跳过写入（见 pool.py update_record）。
+  const previousTranslation = (group.gemini_translate || "").trim();
+  const contentChanged = newTranslation !== previousTranslation;
 
   const authToken = localStorage.getItem("token") || null;
   if (!authToken) {
@@ -199,9 +220,18 @@ async function saveTranslation(group) {
     if (!res.ok) throw new Error(parseApiError(res, data));
     if (data.success) {
       group.gemini_translate = newTranslation;
+      // 记录已写回，之前若展示过"已从缓存移除"，此处撤销该提示
+      group.poolRemoved = false;
+      // update_translation 成功响应体现在带权威的 human_verified 真实值
+      // （{ success, human_verified }），直接采用，不再是本地猜测。
+      applyHumanVerified(group, data);
       const poolLabel =
         group.line_type === "source" ? "Source Pool" : "Additional Pool";
-      toastSuccess(`Line ${lineIndex + 1} 已更新 ${poolLabel}`);
+      if (contentChanged) {
+        toastSuccess(`Line ${lineIndex + 1} 已更新 ${poolLabel}`);
+      } else {
+        toastSuccess(`Line ${lineIndex + 1} 内容未变化，${poolLabel} 现状保持不变`);
+      }
     } else {
       toastWarning(data.error || "Pool 中无对应条目，未写入");
     }
@@ -214,6 +244,186 @@ async function saveTranslation(group) {
 
 function onTranslationBlur(group) {
   saveTranslation(group);
+}
+
+async function deleteTranslation(group) {
+  const originalLine = (group.original_line || "").trim();
+  const lineIndex = group.line_index;
+  if (!originalLine) return;
+
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  deletingLineIndex.value = lineIndex;
+  try {
+    const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/delete_translation`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      // 部分请求封装会默认丢弃 DELETE 请求体，这里使用原生 fetch 并显式传入
+      // method + body，确保后端能收到 original_line/direction/line_type。
+      body: JSON.stringify({
+        original_line: originalLine,
+        direction: direction.value,
+        line_type: group.line_type || "",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(parseApiError(res, data));
+    if (data.success) {
+      group.poolRemoved = true;
+      const poolLabel =
+        group.line_type === "source" ? "Source Pool" : "Additional Pool";
+      toastSuccess(`Line ${lineIndex + 1} 已从 ${poolLabel} 移除`);
+    } else {
+      toastWarning(data.error || "Pool 中无对应条目，未删除");
+    }
+  } catch (e) {
+    toastError(e.message || "删除 Pool 记录失败");
+  } finally {
+    deletingLineIndex.value = null;
+  }
+}
+
+/**
+ * 确认本篇所有 Pool 命中行。
+ *
+ * 内容与当前缓存一致（用户只是要确认"这条缓存是对的"，没有改动文字）的行，
+ * 请求体带 force_confirm: true，让后端即使判定"内容无变化"也把 human_verified
+ * 置为 true；内容确实被编辑过的行维持现有正常保存语义，不需要这个标记
+ * （后端在内容变化时本来就会把该记录标记为已确认）。
+ */
+async function confirmArticlePool() {
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  const targets = activePoolBackedGroups.value;
+  if (!targets.length) {
+    toastWarning("本篇没有可确认的 Pool 缓存行");
+    return;
+  }
+  confirmingArticle.value = true;
+  let confirmedCount = 0;
+  let failedCount = 0;
+  try {
+    for (const group of targets) {
+      const lineIndex = group.line_index;
+      const currentText = (
+        editedTranslations.value[lineIndex] ??
+        group.gemini_translate ??
+        ""
+      ).trim();
+      if (!currentText) continue;
+      const storedText = (group.gemini_translate || "").trim();
+      const contentChanged = currentText !== storedText;
+      const payload = {
+        original_line: (group.original_line || "").trim(),
+        new_translation: currentText,
+        direction: direction.value,
+        line_type: group.line_type || "",
+      };
+      if (!contentChanged) {
+        payload.force_confirm = true;
+      }
+      try {
+        const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/update_translation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          group.gemini_translate = currentText;
+          // 同 saveTranslation：直接采用响应体里的权威 human_verified 值。
+          applyHumanVerified(group, data);
+          confirmedCount += 1;
+        } else {
+          failedCount += 1;
+        }
+      } catch (_) {
+        failedCount += 1;
+      }
+    }
+  } finally {
+    confirmingArticle.value = false;
+  }
+
+  const parts = [];
+  if (confirmedCount) parts.push(`${confirmedCount} 行已确认`);
+  if (failedCount) parts.push(`${failedCount} 行失败`);
+  const message = parts.join("；") || "没有需要处理的行";
+  if (failedCount) {
+    toastWarning(message);
+  } else {
+    toastSuccess(message);
+  }
+}
+
+function openClearPoolModal() {
+  if (!hasActivePoolBackedRows.value) return;
+  clearPoolModalVisible.value = true;
+}
+
+async function clearArticlePool() {
+  clearPoolModalVisible.value = false;
+  const authToken = localStorage.getItem("token") || null;
+  if (!authToken) {
+    window.location.hash = "/login";
+    return;
+  }
+  const targets = activePoolBackedGroups.value;
+  if (!targets.length) {
+    toastWarning("本篇没有可清除的 Pool 缓存行");
+    return;
+  }
+  clearingArticle.value = true;
+  let removedCount = 0;
+  let failedCount = 0;
+  try {
+    for (const group of targets) {
+      try {
+        const res = await fetch(`${apiBase}/api/ai_search/enhanced_translate/delete_translation`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            original_line: (group.original_line || "").trim(),
+            direction: direction.value,
+            line_type: group.line_type || "",
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          group.poolRemoved = true;
+          removedCount += 1;
+        } else {
+          failedCount += 1;
+        }
+      } catch (_) {
+        failedCount += 1;
+      }
+    }
+  } finally {
+    clearingArticle.value = false;
+  }
+  if (removedCount) {
+    toastSuccess(
+      `已清除本篇 ${removedCount} 行的 Pool 缓存记录${failedCount ? `，${failedCount} 行失败` : ""}`
+    );
+  } else {
+    toastError("清除失败，未删除任何记录");
+  }
 }
 
 async function downloadFormatted() {
@@ -291,6 +501,29 @@ const lineRefGroups = computed(() => {
   return [];
 });
 
+/**
+ * 该行译文是否来自一条真实存在的 Additional Pool（普通行）或 Source Pool（source 行）
+ * 记录 —— 只有这类行才有对应的删除/确认接口可调用，ES Pool / Feasts / 无匹配行没有
+ * 对应记录，调用删除接口只会得到"未找到"。
+ */
+function isPoolBackedGroup(group) {
+  if (group.line_type === "source") {
+    return group.source_line_path === "pool";
+  }
+  return !!group.stats?.additional_pool_line;
+}
+
+function canDeletePoolRecord(group) {
+  if (group.poolRemoved) return false;
+  return isPoolBackedGroup(group);
+}
+
+const poolBackedGroups = computed(() => lineRefGroups.value.filter(isPoolBackedGroup));
+const activePoolBackedGroups = computed(() =>
+  poolBackedGroups.value.filter((g) => !g.poolRemoved)
+);
+const hasActivePoolBackedRows = computed(() => activePoolBackedGroups.value.length > 0);
+
 const refsFilter = ref("all");
 
 /** 行级状态：direct=绿（Pool/精确/body 子串全等）、reference=蓝（含 main/clause 参考）、none=灰 */
@@ -358,6 +591,19 @@ function sourcePathLabel(path) {
     ai: "AI",
   };
   return map[path] || "AI";
+}
+
+/**
+ * 出处的确认状态徽标（与 sourcePathClass/Label 呈现风格一致）。
+ * verified === true  -> 已确认；=== false -> 待确认；null/undefined（非 Pool
+ * 命中的出处，没有 human_verified 概念）-> 不展示，调用方需先判断再渲染。
+ */
+function sourceVerifyClass(verified) {
+  return verified ? "source-verify-confirmed" : "source-verify-pending";
+}
+
+function sourceVerifyLabel(verified) {
+  return verified ? "✓ 已确认" : "待确认";
 }
 
 function formatCost(usd) {
@@ -488,6 +734,21 @@ function downloadRefsTxt() {
     <p>{{ errorModalMessage }}</p>
   </a-modal>
 
+  <a-modal
+    v-model:visible="clearPoolModalVisible"
+    title="确认清除本篇缓存记录？"
+    ok-text="确认清除"
+    cancel-text="取消"
+    :ok-button-props="{ danger: true }"
+    @ok="clearArticlePool"
+    @cancel="clearPoolModalVisible = false"
+  >
+    <p>
+      此操作会删除本篇所有涉及 Additional Pool / Source Pool 命中的行
+      （共 {{ activePoolBackedGroups.length }} 行）对应的缓存记录，删除后不可撤销。
+    </p>
+  </a-modal>
+
   <div class="box">
     <div class="view-switcher">
       <button
@@ -615,7 +876,27 @@ function downloadRefsTxt() {
 
       <a-card v-if="lineRefGroups.length" class="result-card refs-card">
         <template #title>
-          参考语料（{{ lineRefGroups.length }} 行 · {{ totalDedupedCount }} 段）
+          <div class="refs-title-row">
+            <span>参考语料（{{ lineRefGroups.length }} 行 · {{ totalDedupedCount }} 段）</span>
+            <button
+              type="button"
+              class="link-btn"
+              :disabled="!hasActivePoolBackedRows || confirmingArticle || clearingArticle"
+              :title="!hasActivePoolBackedRows ? '本篇没有 Pool 缓存命中的行' : ''"
+              @click="confirmArticlePool"
+            >
+              {{ confirmingArticle ? "确认中…" : "确认本篇缓存记录" }}
+            </button>
+            <button
+              type="button"
+              class="link-btn link-btn-danger"
+              :disabled="!hasActivePoolBackedRows || confirmingArticle || clearingArticle"
+              :title="!hasActivePoolBackedRows ? '本篇没有 Pool 缓存命中的行' : ''"
+              @click="openClearPoolModal"
+            >
+              {{ clearingArticle ? "清除中…" : "清除本篇缓存记录" }}
+            </button>
+          </div>
         </template>
         <div class="refs-stats">
           <span
@@ -656,7 +937,28 @@ function downloadRefsTxt() {
             <div class="ref-line-title" :class="lineTypeClass(group)">
               <span class="line-type-tag">{{ group.line_type || "reference" }}</span>
               Line {{ group.line_index + 1 }}：{{ group.original_line }}
-              <span v-if="group.stats?.additional_pool_line" class="pool-tag">Additional Pool</span>
+              <template v-if="group.poolRemoved">
+                <span class="pool-tag pool-tag-removed">已从缓存移除</span>
+              </template>
+              <template v-else-if="group.stats?.additional_pool_line">
+                <span class="pool-tag">Additional Pool</span>
+                <!--
+                  human_verified 直接读取后端 /translate、/retrieve_test 等接口
+                  实际返回的 group.human_verified 值：true=已确认、false=待确认。
+                  这个 key 不存在时（理论上不应发生，因为 additional_pool_line 为真
+                  时后端总会尝试透出该字段；如果确实缺失，说明后端那次命中未能
+                  定位到记录）按原有逻辑不展示任何状态，不在前端编造。
+                  保存/确认成功后，update_translation 响应体会带上这次操作后的
+                  权威 human_verified 值（见 applyHumanVerified），徽标立即刷新，
+                  不需要等下一次整篇翻译/检索。
+                -->
+                <span v-if="group.human_verified === true" class="verify-tag verify-confirmed">
+                  ✓ 已确认
+                </span>
+                <span v-else-if="group.human_verified === false" class="verify-tag verify-pending">
+                  待确认
+                </span>
+              </template>
               <span v-else-if="group.stats?.pool_line" class="pool-tag es-pool">ES Pool</span>
               <span v-else-if="group.stats?.feasts_line" class="pool-tag es-pool">Feasts</span>
             </div>
@@ -677,6 +979,15 @@ function downloadRefsTxt() {
                   >
                     {{ sourcePathLabel(group.reference_source_paths[si]) }}
                   </span>
+                  <!-- reference_source_human_verified 与 zh_list 逐条对齐；null/undefined
+                       表示该出处不是 Source Pool 命中，没有确认概念，不展示徽标 -->
+                  <span
+                    v-if="group.reference_source_human_verified?.[si] === true || group.reference_source_human_verified?.[si] === false"
+                    class="source-path-tag"
+                    :class="sourceVerifyClass(group.reference_source_human_verified[si])"
+                  >
+                    {{ sourceVerifyLabel(group.reference_source_human_verified[si]) }}
+                  </span>
                   <span class="ref-source-zh">{{ srcZh }}</span>
                 </div>
                 <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
@@ -691,6 +1002,13 @@ function downloadRefsTxt() {
                 >
                   {{ sourcePathLabel(group.reference_source_paths[0]) }}
                 </span>
+                <span
+                  v-if="group.reference_source_human_verified?.[0] === true || group.reference_source_human_verified?.[0] === false"
+                  class="source-path-tag"
+                  :class="sourceVerifyClass(group.reference_source_human_verified[0])"
+                >
+                  {{ sourceVerifyLabel(group.reference_source_human_verified[0]) }}
+                </span>
                 <span class="ref-source-zh">{{ group.reference_source_zh }}</span>
                 <span v-if="group.reference_source_en" class="ref-source-arrow"> → </span>
                 <span v-if="group.reference_source_en" class="ref-source-en">{{ group.reference_source_en }}</span>
@@ -698,7 +1016,11 @@ function downloadRefsTxt() {
               </template>
             </div>
             <div v-if="group.source_line_path" class="source-path-row">
+              <span v-if="group.poolRemoved && group.source_line_path === 'pool'" class="source-path-tag path-removed">
+                已从缓存移除
+              </span>
               <span
+                v-else
                 class="source-path-tag"
                 :class="sourcePathClass(group.source_line_path)"
               >
@@ -719,6 +1041,16 @@ function downloadRefsTxt() {
                 @click="saveTranslation(group)"
               >
                 保存
+              </a-button>
+              <a-button
+                size="small"
+                danger
+                :disabled="!canDeletePoolRecord(group)"
+                :title="!isPoolBackedGroup(group) ? '该行不在 Additional Pool / Source Pool 缓存中，无记录可删' : ''"
+                :loading="deletingLineIndex === group.line_index"
+                @click="deleteTranslation(group)"
+              >
+                {{ group.poolRemoved ? "已移除" : "删除" }}
               </a-button>
             </div>
             <div
@@ -937,6 +1269,21 @@ function downloadRefsTxt() {
   cursor: not-allowed;
 }
 
+.link-btn-danger {
+  color: #cf1322;
+}
+
+.link-btn-danger:disabled {
+  color: #bbb;
+}
+
+.refs-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1125,6 +1472,33 @@ function downloadRefsTxt() {
   color: #1677ff;
 }
 
+.pool-tag-removed {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #8c8c8c;
+  text-decoration: line-through;
+}
+
+.verify-tag {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+
+.verify-confirmed {
+  background: rgba(56, 158, 13, 0.1);
+  color: #389e0d;
+}
+
+.verify-pending {
+  background: rgba(250, 173, 20, 0.12);
+  color: #ad6800;
+}
+
 .line-translation-input {
   margin-bottom: 0.35rem;
   font-family: inherit;
@@ -1133,6 +1507,8 @@ function downloadRefsTxt() {
 
 .line-translation-actions {
   margin-bottom: 0.65rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .ref-card {
@@ -1329,6 +1705,22 @@ function downloadRefsTxt() {
 .path-ai {
   background: #e2e3e5;
   color: #383d41;
+}
+
+.path-removed {
+  background: #f5f5f5;
+  color: #8c8c8c;
+  text-decoration: line-through;
+}
+
+.source-verify-confirmed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.source-verify-pending {
+  background: #fff3cd;
+  color: #856404;
 }
 
 .source-path-row {

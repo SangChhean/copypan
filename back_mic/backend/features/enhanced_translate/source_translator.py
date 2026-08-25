@@ -15,6 +15,8 @@ from typing import Any
 from es_config import es as es_client
 from features.enhanced_translate.pool import (
     append_source_pool_records,
+    get_source_pool_record_by_en,
+    get_source_pool_record_by_zh,
     levenshtein_distance,
     lookup_source_pool_en,
     lookup_source_pool_zh,
@@ -1178,27 +1180,30 @@ async def _gemini_translate_sources_en2zh(
 
 async def translate_source_en_batch(
     items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
-) -> tuple[dict[int, str], dict[int, list[str]], float]:
+) -> tuple[dict[int, str], dict[int, list[str]], dict[int, list[bool | None]], float]:
     """
     批量翻译英文出处为中文。
     items: [(prep_index, source_en_list, line_refs, has_star), ...]
     整单一次 Gemini 处理所有路2 未命中出处。
-    返回：(译文 map, 路径标签 map, 费用 USD)
+    返回：(译文 map, 路径标签 map, 逐条 human_verified map（非 Pool 命中项为
+    None）, 费用 USD)
     """
     if not items:
-        return {}, {}, 0.0
+        return {}, {}, {}, 0.0
     results: dict[int, str] = {}
     paths_map: dict[int, list[str]] = {}
+    verified_map: dict[int, list[bool | None]] = {}
     total_cost_usd = 0.0
     road2_tasks: list[_SourceRoad2TaskEn2zh] = []
     road2_keys: set[tuple[int, int]] = set()
-    pending: dict[int, tuple[list[str], list[str], list[str]]] = {}
+    pending: dict[int, tuple[list[str], list[str], list[str], list[bool | None]]] = {}
 
     for prep_idx, source_list, line_refs, _has_star in items:
         if not source_list:
             continue
         zh_parts = [""] * len(source_list)
         path_parts = [""] * len(source_list)
+        verified_parts: list[bool | None] = [None] * len(source_list)
         for i, source_en in enumerate(source_list):
             _sp_base = _normalize_for_source_pool(source_en)
             _sp_zh = lookup_source_pool_zh(_sp_base)
@@ -1207,6 +1212,8 @@ async def translate_source_en_batch(
                     _sp_zh = _sp_zh + "："
                 zh_parts[i] = _sp_zh.strip("（）")
                 path_parts[i] = SOURCE_PATH_POOL
+                _sp_rec = get_source_pool_record_by_en(_sp_base)
+                verified_parts[i] = bool(_sp_rec.get("human_verified")) if _sp_rec else False
                 continue
             base = _strip_en_paragraph_suffix(source_en)
             if _EN_SOURCE_YEAR_PREFIX_RE.match(base):
@@ -1250,20 +1257,20 @@ async def translate_source_en_batch(
                         line_refs=line_refs,
                     )
                 )
-        pending[prep_idx] = (zh_parts, source_list, path_parts)
+        pending[prep_idx] = (zh_parts, source_list, path_parts, verified_parts)
 
     if road2_tasks:
         logger.info("[source_translator] en2zh 出处整单 Gemini: road2=%d", len(road2_tasks))
         gemini_map, gemini_cost = await _gemini_sources_once_en2zh(road2_tasks)
         total_cost_usd += gemini_cost
         for (prep_idx, src_idx), translated in gemini_map.items():
-            zh_parts, _, path_parts = pending[prep_idx]
+            zh_parts, _, path_parts, _ = pending[prep_idx]
             zh_parts[src_idx] = translated.strip().strip("（）")
             if (prep_idx, src_idx) in road2_keys:
                 if not path_parts[src_idx]:
                     path_parts[src_idx] = SOURCE_PATH_AI
 
-    for prep_idx, (zh_parts, source_list, path_parts) in pending.items():
+    for prep_idx, (zh_parts, source_list, path_parts, verified_parts) in pending.items():
         for i, source_en in enumerate(source_list):
             if not zh_parts[i]:
                 zh_parts[i] = source_en
@@ -1271,9 +1278,10 @@ async def translate_source_en_batch(
         parts = [p for p in zh_parts if p]
         results[prep_idx] = "（" + "；".join(parts) + "）" if parts else ""
         paths_map[prep_idx] = path_parts
+        verified_map[prep_idx] = verified_parts
 
     _sp_rows: list[dict[str, str]] = []
-    for _prep_idx, (_zh_parts, _source_list, _path_parts) in pending.items():
+    for _prep_idx, (_zh_parts, _source_list, _path_parts, _verified_parts) in pending.items():
         for _i, (_zh, _path) in enumerate(zip(_zh_parts, _path_parts)):
             if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
                 continue
@@ -1285,7 +1293,7 @@ async def translate_source_en_batch(
     if _sp_rows:
         append_source_pool_records(_sp_rows)
 
-    return results, paths_map, total_cost_usd
+    return results, paths_map, verified_map, total_cost_usd
 
 
 async def _gemini_infer_source_en(
@@ -2261,22 +2269,24 @@ def _rule_translate_source_en(source_en: str) -> tuple[str | None, str]:
 
 async def translate_source_zh_batch(
     items: list[tuple[int, list[str], list[dict[str, Any]], bool]],
-) -> tuple[dict[int, str], dict[int, list[str]], float]:
+) -> tuple[dict[int, str], dict[int, list[str]], dict[int, list[bool | None]], float]:
     """
     批量翻译 reference_source_zh 列表。
     items: [(prep_index, source_list, line_refs, has_star), ...]
     整单一次 Gemini 处理所有路1推算 + 路2 未命中出处。
-    返回：(译文 map, 路径标签 map, 费用 USD)
+    返回：(译文 map, 路径标签 map, 逐条 human_verified map（非 Pool 命中项为
+    None）, 费用 USD)
     """
     if not items:
-        return {}, {}, 0.0
+        return {}, {}, {}, 0.0
 
     results: dict[int, str] = {}
     paths_map: dict[int, list[str]] = {}
+    verified_map: dict[int, list[bool | None]] = {}
     total_cost_usd = 0.0
     road2_tasks: list[_SourceRoad2Task] = []
     road2_keys: set[tuple[int, int]] = set()
-    pending: dict[int, tuple[list[str], bool, list[str], list[str]]] = {}
+    pending: dict[int, tuple[list[str], bool, list[str], list[str], list[bool | None]]] = {}
 
     for prep_idx, source_list, line_refs, has_star in items:
         if not source_list:
@@ -2284,6 +2294,7 @@ async def translate_source_zh_batch(
 
         en_parts = [""] * len(source_list)
         path_parts = [""] * len(source_list)
+        verified_parts: list[bool | None] = [None] * len(source_list)
 
         for i, source_zh in enumerate(source_list):
             _sp_base = _normalize_for_source_pool(source_zh)
@@ -2293,6 +2304,8 @@ async def translate_source_zh_batch(
                     _sp_en = _sp_en + ":"
                 en_parts[i] = f"({_sp_en})"
                 path_parts[i] = SOURCE_PATH_POOL
+                _sp_rec = get_source_pool_record_by_zh(_sp_base)
+                verified_parts[i] = bool(_sp_rec.get("human_verified")) if _sp_rec else False
                 continue
             base, _ = _strip_paragraph_suffix(source_zh)
             base = base.strip().strip("（）")
@@ -2340,7 +2353,7 @@ async def translate_source_zh_batch(
                 )
             )
 
-        pending[prep_idx] = (en_parts, has_star, source_list, path_parts)
+        pending[prep_idx] = (en_parts, has_star, source_list, path_parts, verified_parts)
 
     if road2_tasks:
         logger.info(
@@ -2350,7 +2363,7 @@ async def translate_source_zh_batch(
         gemini_map, gemini_cost = await _gemini_sources_once([], road2_tasks)
         total_cost_usd += gemini_cost
         for (prep_idx, src_idx), translated in gemini_map.items():
-            en_parts, _, _, path_parts = pending[prep_idx]
+            en_parts, _, _, path_parts, _ = pending[prep_idx]
             en_parts[src_idx] = _clean_source_en(translated) if translated else ""
             if (prep_idx, src_idx) in road2_keys:
                 if not path_parts[src_idx]:
@@ -2362,7 +2375,7 @@ async def translate_source_zh_batch(
                 translated,
             )
 
-    for prep_idx, (en_parts, has_star, source_list, path_parts) in pending.items():
+    for prep_idx, (en_parts, has_star, source_list, path_parts, verified_parts) in pending.items():
         for i, source_zh in enumerate(source_list):
             if not en_parts[i]:
                 en_parts[i] = source_zh
@@ -2370,6 +2383,7 @@ async def translate_source_zh_batch(
         formatted = format_source_en(en_parts, has_star)
         results[prep_idx] = formatted
         paths_map[prep_idx] = path_parts
+        verified_map[prep_idx] = verified_parts
         logger.info(
             "[source_translator] 出处译文 prep=%s %s | debug %s",
             prep_idx,
@@ -2378,7 +2392,7 @@ async def translate_source_zh_batch(
         )
 
     _sp_rows: list[dict[str, str]] = []
-    for _prep_idx, (_en_parts, _has_star, _source_list, _path_parts) in pending.items():
+    for _prep_idx, (_en_parts, _has_star, _source_list, _path_parts, _verified_parts) in pending.items():
         for _i, (_en, _path) in enumerate(zip(_en_parts, _path_parts)):
             if _path not in (SOURCE_PATH_RULE_AI, SOURCE_PATH_AI):
                 continue
@@ -2389,7 +2403,7 @@ async def translate_source_zh_batch(
     if _sp_rows:
         append_source_pool_records(_sp_rows)
 
-    return results, paths_map, total_cost_usd
+    return results, paths_map, verified_map, total_cost_usd
 
 
 async def verify_source_lines(lines: list[str]) -> None:
