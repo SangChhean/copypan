@@ -15,6 +15,7 @@ from user.token import require_admin, test_token
 from kg_rag.firewall import load_firewall
 from kg_rag.kg_rag_service import KgRagService, ministerialize_outline
 from ai_search.ai_service import ai_service
+from ai_search.monitoring import get_monitoring
 from kg_rag.neo4j_client import Neo4jClient
 from features.feast_outline_maker.feast_router import feast_router
 
@@ -53,6 +54,19 @@ def get_service() -> KgRagService:
             _neo4j.startup()  # 同步方法，连接失败时内部降级不抛异常
         except Exception:
             pass
+        if not _neo4j.is_available():
+            # 进程级事件：整个服务运行期间只在启动时判定一次，不存在"重复记录"的问题。
+            # Neo4jClient 本身不依赖 ai_search.monitoring（保持零业务依赖），
+            # 由这里的调用方在 startup() 失败后自行上报，避免底层基础设施模块
+            # 反向依赖上层业务监控模块。
+            try:
+                get_monitoring().record_degradation(
+                    source="neo4j_connection",
+                    reason=_neo4j.get_last_connect_error() or "连接失败，原因未知",
+                    extra=_neo4j.get_connection_info(),
+                )
+            except Exception as mon_e:
+                logger.warning(f"[KG-RAG] Neo4j 连接降级事件记录失败（不影响主流程）: {mon_e}")
 
         load_firewall()
         _service = KgRagService(es_client, _neo4j)

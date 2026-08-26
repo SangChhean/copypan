@@ -238,7 +238,20 @@ def _apply_outline_nature_weight(
 # 全流程 full_query：Step1 默认 Opus 4.7；Query Rewrite 固定 Opus 4.6；Step2 使用 params.llm_model（前端下拉）；Step5 默认 Sonnet（可被 params.step5_model 覆盖）
 FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"  # Query 改写专用
 FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 params.step1_model 覆盖）
-FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
+FULL_QUERY_STEP5_MODEL = "claude-sonnet-5"
+FULL_QUERY_STEP5_FALLBACK_MODEL = "claude-sonnet-4-6"  # Step5 主模型两次失败后的兜底模型：退回切换前验证过的旧模型，而非更贵档位
+
+# Step2 骨架 JSON 解析失败重试次数：只重试 1 次（共 2 次尝试）。
+# 理由：这是"格式合规性"问题（模型多输出了解释文字/漏了字段等），把具体解析错误
+# 反馈给模型后通常一次就能纠正；如果带着明确错误提示重试一次仍然失败，说明问题
+# 不是简单的格式疏忽，继续重试的边际收益很低，且 Step2 处于 Step1→5 流水线中段，
+# 每多试一次都会线性拉长整条流水线的尾延迟，所以选择"止损"而不是无限重试。
+STEP2_JSON_PARSE_MAX_RETRIES = 1
+STEP2_JSON_RETRY_SUFFIX = (
+    "\n\n【格式修正提醒】上一次输出解析失败，原因：{parse_error}\n"
+    "请严格按照上文要求的 JSON 格式重新输出完整结果，不要包含任何解释性文字、"
+    "也不要在 JSON 代码块之外添加其它内容。"
+)
 
 
 def _resolve_step1_model(p: dict) -> str:
@@ -587,10 +600,13 @@ def _format_key_verses_text(raw: dict[str, list[tuple[str, str]]]) -> str:
     return "\n".join(lines_out) if lines_out else "（无）"
 
 
-def _parse_step2_skeleton(text: str) -> list[dict] | None:
-    """解析 Step 2 骨架 JSON，返回 [{"step": str, "deep_indices": list[int], "path_evidence": str|None, "scripture_anchor": str|None}, ...]；为 null 或失败时返回 None。
+def _parse_step2_skeleton_detailed(text: str) -> tuple[list[dict] | None, str | None]:
+    """解析 Step 2 骨架 JSON，返回 (skeleton_or_None, parse_error_reason_or_None)。
+    skeleton 格式：[{"step": str, "deep_indices": list[int], "path_evidence": str|None, "scripture_anchor": str|None}, ...]。
+    parse_error 仅在解析失败（skeleton 为 None）时非 None，简要说明失败原因，供日志、重试 prompt、
+    降级事件记录使用；解析成功时为 None。
     若 scripture_anchor 含全角「，则将其前缀作为出处拼入 step：step +「（出处）」；scripture_anchor 字段原样保留。"""
-    text = text.strip()
+    text = (text or "").strip()
     if text.startswith("```"):
         text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
         text = re.sub(r"\n?```$", "", text)
@@ -600,51 +616,59 @@ def _parse_step2_skeleton(text: str) -> list[dict] | None:
         obj = _safe_parse_json(text or "")
     except Exception as e:
         logger.info(f"[KG-RAG DEBUG] Step2 parse FAILED: {e}, text preview: {text[:200]}")
-        return None
+        return None, f"JSON 解析异常：{e}"
     if not obj:
-        return None
+        return None, "响应内容为空或无法解析为合法 JSON 对象"
     sk = obj.get("skeleton")
     if sk is None:
-        return None
-    if isinstance(sk, list):
-        result = []
-        for x in sk:
-            if isinstance(x, dict) and "step" in x:
-                step = str(x.get("step", "")).strip()
-                indices = x.get("deep_indices", [])
-                if not isinstance(indices, list):
-                    indices = []
-                indices = [i for i in indices if isinstance(i, int)]
-                pe_raw = x.get("path_evidence")
-                path_evidence = str(pe_raw).strip() if pe_raw and str(pe_raw).strip() else None
-                sa_raw = x.get("scripture_anchor")
-                scripture_anchor = str(sa_raw).strip() if sa_raw and str(sa_raw).strip() else None
-                if step:
-                    if scripture_anchor is not None:
-                        pos = scripture_anchor.find("「")
-                        if pos != -1:
-                            scripture_id = scripture_anchor[:pos].strip()
-                            if scripture_id:
-                                step = f"{step}（{scripture_id}）"
-                    result.append(
-                        {
-                            "step": step,
-                            "deep_indices": indices,
-                            "path_evidence": path_evidence,
-                            "scripture_anchor": scripture_anchor,
-                        }
-                    )
-            elif isinstance(x, str) and x.strip():
+        return None, "JSON 中缺少 skeleton 字段（或其值为 null）"
+    if not isinstance(sk, list):
+        return None, "skeleton 字段不是数组"
+    result = []
+    for x in sk:
+        if isinstance(x, dict) and "step" in x:
+            step = str(x.get("step", "")).strip()
+            indices = x.get("deep_indices", [])
+            if not isinstance(indices, list):
+                indices = []
+            indices = [i for i in indices if isinstance(i, int)]
+            pe_raw = x.get("path_evidence")
+            path_evidence = str(pe_raw).strip() if pe_raw and str(pe_raw).strip() else None
+            sa_raw = x.get("scripture_anchor")
+            scripture_anchor = str(sa_raw).strip() if sa_raw and str(sa_raw).strip() else None
+            if step:
+                if scripture_anchor is not None:
+                    pos = scripture_anchor.find("「")
+                    if pos != -1:
+                        scripture_id = scripture_anchor[:pos].strip()
+                        if scripture_id:
+                            step = f"{step}（{scripture_id}）"
                 result.append(
                     {
-                        "step": x.strip(),
-                        "deep_indices": [],
-                        "path_evidence": None,
-                        "scripture_anchor": None,
+                        "step": step,
+                        "deep_indices": indices,
+                        "path_evidence": path_evidence,
+                        "scripture_anchor": scripture_anchor,
                     }
                 )
-        return result if result else None
-    return None
+        elif isinstance(x, str) and x.strip():
+            result.append(
+                {
+                    "step": x.strip(),
+                    "deep_indices": [],
+                    "path_evidence": None,
+                    "scripture_anchor": None,
+                }
+            )
+    if result:
+        return result, None
+    return None, "skeleton 数组为空，或数组内元素均无法解析为有效步骤"
+
+
+def _parse_step2_skeleton(text: str) -> list[dict] | None:
+    """兼容旧调用方式的薄包装，仅返回解析结果，不返回失败原因。"""
+    skeleton, _ = _parse_step2_skeleton_detailed(text)
+    return skeleton
 
 
 async def _call_claude(
@@ -1001,28 +1025,87 @@ class KgRagService:
         )
         prompt_out = step2_prompt
         logger.info(f"[KG-RAG DEBUG] Step2 prompt (first 1200 chars): {step2_prompt[:1200]}")
+
+        # JSON 格式类失败（模型返回的内容不是合法 skeleton JSON）才重试；
+        # no_concepts/no_paths 在上面已经提前返回，不会走到这里；
+        # 网络/API 异常（下面的 except）也不重试，直接降级，因为重试同一个已经报错的调用
+        # 大概率仍然失败，徒增一次 Step2 的等待时间。
+        # retry_count/first_parse_error 在 try 之前初始化，确保调用异常发生在任意尝试阶段时，
+        # 外层仍能拿到已尝试次数，用于降级事件上报。
+        current_prompt = step2_prompt
+        parse_error: str | None = None
+        first_parse_error: str | None = None
+        retry_count = 0
         try:
-            t0 = asyncio.get_event_loop().time()
-            raw_out, u2 = await _call_kg_rag_llm(
-                step2_prompt, p["llm_model"], temperature=0, max_tokens=4096
-            )
-            llm_elapsed_ms_step2 = (asyncio.get_event_loop().time() - t0) * 1000
-            logger.info(f"[KG-RAG DEBUG] Step2 raw response (first 1000 chars): {(raw_out or '')[:1000]}")
-            skeleton = _parse_step2_skeleton(raw_out)
-            sn2 = register_llm_usage(
-                llm_calls, step="step2", request_model=p["llm_model"], usage=u2
-            )
-            if sn2:
-                logger.info(
-                    f"[KG-RAG LLM] step2 model={p['llm_model']} billing={sn2['billing_model']} "
-                    f"in={sn2['input_tokens']} out={sn2['output_tokens']} cost_usd≈{sn2['cost_usd']}"
+            for attempt_i in range(STEP2_JSON_PARSE_MAX_RETRIES + 1):
+                t0 = asyncio.get_event_loop().time()
+                raw_out, u2 = await _call_kg_rag_llm(
+                    current_prompt, p["llm_model"], temperature=0, max_tokens=4096
                 )
+                llm_elapsed_ms_step2 += (asyncio.get_event_loop().time() - t0) * 1000
+                logger.info(
+                    f"[KG-RAG DEBUG] Step2 raw response (attempt={attempt_i + 1}, first 1000 chars): "
+                    f"{(raw_out or '')[:1000]}"
+                )
+                skeleton, parse_error = _parse_step2_skeleton_detailed(raw_out)
+                sn2 = register_llm_usage(
+                    llm_calls,
+                    step="step2" if attempt_i == 0 else "step2_retry",
+                    request_model=p["llm_model"],
+                    usage=u2,
+                )
+                if sn2:
+                    logger.info(
+                        f"[KG-RAG LLM] step2 model={p['llm_model']} attempt={attempt_i + 1} "
+                        f"billing={sn2['billing_model']} in={sn2['input_tokens']} "
+                        f"out={sn2['output_tokens']} cost_usd≈{sn2['cost_usd']}"
+                    )
+                if skeleton is not None:
+                    break  # 解析成功，无需再试
+                if attempt_i == 0:
+                    first_parse_error = parse_error
+                if attempt_i < STEP2_JSON_PARSE_MAX_RETRIES:
+                    retry_count += 1
+                    logger.warning(
+                        f"[KG-RAG] Step2 骨架 JSON 解析失败，准备第 {retry_count} 次重试。原因: {parse_error}"
+                    )
+                    current_prompt = step2_prompt + STEP2_JSON_RETRY_SUFFIX.format(parse_error=parse_error)
+                else:
+                    logger.warning(
+                        f"[KG-RAG] Step2 骨架 JSON 解析重试后仍失败，真正降级为平铺模式。原因: {parse_error}"
+                    )
         except Exception as e:
             logger.info(f"[KG-RAG DEBUG] Step2 LLM EXCEPTION: {e}")
             graph_error = str(e)
             skeleton = None
             raw_out = raw_out or ""
             sn2 = None
+
+        inner_reason: str | None = None
+        if skeleton is None and graph_error is None and retry_count > 0:
+            inner_reason = "json_parse_failed"
+
+        # 仅当发生过重试（无论重试成功与否）才记一条降级事件；no_concepts/no_paths 属于
+        # 正常业务路径，已经在函数上方提前返回，不会进入这里。
+        if retry_count > 0:
+            if skeleton is not None:
+                degradation_reason = "重试后解析成功"
+            elif graph_error:
+                degradation_reason = "重试过程中调用异常，降级为平铺模式"
+            else:
+                degradation_reason = "重试后仍解析失败，降级为平铺模式"
+            try:
+                get_monitoring(self.redis).record_degradation(
+                    source="step2_skeleton",
+                    reason=degradation_reason,
+                    extra={
+                        "retry_count": retry_count,
+                        "first_parse_error": first_parse_error,
+                        "final_parse_error": None if skeleton is not None else (graph_error or parse_error),
+                    },
+                )
+            except Exception as mon_e:
+                logger.warning(f"[KG-RAG] Step2 降级事件记录失败（不影响主流程）: {mon_e}")
 
         return {
             "paths": paths,
@@ -1033,7 +1116,7 @@ class KgRagService:
             "prompt": prompt_out,
             "raw_response": raw_out,
             "llm_usage": sn2,
-            "inner_reason": None,
+            "inner_reason": inner_reason,
         }
 
     async def full_query(self, query: str, params: dict | None = None, mode: str = "3.0") -> dict:
@@ -1448,6 +1531,9 @@ class KgRagService:
             elif s2.get("inner_reason") == "no_paths":
                 step2_body["skipped"] = False
                 step2_body["reason"] = "no_paths"
+            elif s2.get("inner_reason") == "json_parse_failed":
+                step2_body["skipped"] = False
+                step2_body["reason"] = "json_parse_failed"
             if s2.get("prompt") is not None:
                 step2_body["prompt"] = s2["prompt"]
             if s2.get("raw_response") is not None:
@@ -1514,9 +1600,18 @@ class KgRagService:
 
         bm25_fetch_size = bm25_top_k * 3
         dense_fetch_size = dense_top_k * 3
-        bm25_task = bm25_search(self.es, query, active_index, bm25_fetch_size)
+        # es_call_errors：本次请求所有 ES 检索调用（BM25 + 各路 Dense + 各路 route3）共享的
+        # 错误收集列表。bm25_search/dense_search/skeleton_route_search 内部异常时仍然按
+        # 既有设计返回空列表、不抛异常（保证 asyncio.gather 不会因单路失败而整体失败），
+        # 但会额外把失败原因追加进这个列表，从而让这里能区分"真的检索到 0 条结果"与
+        # "ES 调用本身失败被静默降级"——这是本次改动里对 retrieval.py 做的唯一最小改动
+        # （新增可选 errors 形参，默认 None 时行为与改动前完全一致）。
+        es_call_errors: list[str] = []
+        bm25_task = bm25_search(self.es, query, active_index, bm25_fetch_size, errors=es_call_errors)
         dense_tasks = [
-            dense_search(self.es, rq, active_index, dense_fetch_size, p["num_candidates"])
+            dense_search(
+                self.es, rq, active_index, dense_fetch_size, p["num_candidates"], errors=es_call_errors
+            )
             for rq in dense_query_list
         ]
         route3_tasks = []
@@ -1524,13 +1619,30 @@ class KgRagService:
         if expanded_nodes and not p.get("skip_skeleton_route"):
             route3_tasks = [
                 skeleton_route_search(
-                    self.es, node, query, active_index, sk_top_k, outline_nature
+                    self.es, node, query, active_index, sk_top_k, outline_nature, errors=es_call_errors
                 )
                 for node in expanded_nodes
             ]
         logger.info(f"[KG-RAG TRACE] #1 gather start: bm25=1, dense={len(dense_tasks)}, route3={len(route3_tasks)}")
         results = await asyncio.gather(bm25_task, *dense_tasks, *route3_tasks)
         logger.info(f"[KG-RAG TRACE] #2 gather done: total_results={len(results)}")
+
+        # 仅当这一批 ES 调用里确实存在可判定的失败/异常时才记一条降级事件；
+        # "正常查询但没有结果"不会出现在 es_call_errors 里，不会误记。
+        _es_total_calls = 1 + len(dense_tasks) + len(route3_tasks)
+        if es_call_errors:
+            try:
+                get_monitoring(self.redis).record_degradation(
+                    source="es_retrieval",
+                    reason=f"本次请求 {_es_total_calls} 路 ES 调用中有 {len(es_call_errors)} 路失败",
+                    extra={
+                        "total_calls": _es_total_calls,
+                        "failed_calls": len(es_call_errors),
+                        "failed_details": es_call_errors[:20],
+                    },
+                )
+            except Exception as mon_e:
+                logger.warning(f"[KG-RAG] ES 检索降级事件记录失败（不影响主流程）: {mon_e}")
         bm25_raw = results[0]
         _apply_outline_nature_weight(bm25_raw, outline_nature, log_full_list=False)
         bm25_weighted_count = sum(
@@ -1742,6 +1854,17 @@ class KgRagService:
             result["steps"]["step5"] = {"skipped": True}
             result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
             return result
+        # Step5 重试/降级序列：主模型（默认 claude-sonnet-5，可被 params.step5_model 覆盖）
+        # 失败重试一次，仍失败则降级到 FULL_QUERY_STEP5_FALLBACK_MODEL 再试一次。
+        # attempt_errors/used_model 在 try 之前初始化，确保无论异常发生在序列的哪个阶段，
+        # 外层 except 都能拿到已尝试过的记录，用于日志和降级事件上报。
+        step5_model = p.get("step5_model") or FULL_QUERY_STEP5_MODEL
+        step5_attempt_models = [step5_model, step5_model]
+        if step5_model != FULL_QUERY_STEP5_FALLBACK_MODEL:
+            step5_attempt_models.append(FULL_QUERY_STEP5_FALLBACK_MODEL)
+        attempt_errors: list[str] = []
+        used_model: str | None = None
+        success_attempt_index: int | None = None
         try:
             tail_preview = step5_prompt[-200:] if len(step5_prompt) > 200 else step5_prompt
             logger.info(
@@ -1750,25 +1873,81 @@ class KgRagService:
                 len(step5_prompt),
                 tail_preview,
             )
-            step5_model = p.get("step5_model") or FULL_QUERY_STEP5_MODEL
             t5_0 = asyncio.get_event_loop().time()
-            gen, u5 = await _call_kg_rag_llm(
-                step5_prompt, step5_model, temperature=p["temperature"], max_tokens=4096, system=None
-            )
+            gen: str | None = None
+            u5: dict[str, int] | None = None
+            for attempt_i, attempt_model in enumerate(step5_attempt_models, 1):
+                try:
+                    gen, u5 = await _call_kg_rag_llm(
+                        step5_prompt, attempt_model, temperature=p["temperature"], max_tokens=4096, system=None
+                    )
+                    used_model = attempt_model
+                    success_attempt_index = attempt_i
+                    break
+                except Exception as call_e:
+                    attempt_errors.append(f"[attempt {attempt_i} model={attempt_model}] {call_e}")
+                    logger.warning(
+                        "[KG-RAG] Step5 生成调用失败：model=%s attempt=%d/%d error=%s",
+                        attempt_model,
+                        attempt_i,
+                        len(step5_attempt_models),
+                        call_e,
+                    )
+            if used_model is None:
+                # 全部尝试均失败，抛出汇总错误，交给下面统一的 except 分支处理
+                raise RuntimeError("; ".join(attempt_errors) or "Step5 生成失败：未知原因")
+
             step_elapsed_ms["step5"] = round((asyncio.get_event_loop().time() - t5_0) * 1000, 1)
             result["answer"] = gen.strip() if gen else None
-            s5: dict[str, Any] = {"answer": result["answer"], "model": step5_model}
-            sn5 = register_llm_usage(llm_calls, step="step5", request_model=step5_model, usage=u5)
+            s5: dict[str, Any] = {"answer": result["answer"], "model": used_model}
+            sn5 = register_llm_usage(llm_calls, step="step5", request_model=used_model, usage=u5)
             if sn5:
                 s5["llm_usage"] = sn5
                 logger.info(
-                    f"[KG-RAG LLM] step5 model={step5_model} billing={sn5['billing_model']} "
+                    f"[KG-RAG LLM] step5 model={used_model} billing={sn5['billing_model']} "
                     f"in={sn5['input_tokens']} out={sn5['output_tokens']} cost_usd≈{sn5['cost_usd']}"
                 )
             result["steps"]["step5"] = s5
+
+            # 仅当发生过重试/降级（即首次调用没有直接成功）才记一条降级事件，
+            # 首次即成功的正常路径不产生任何降级记录。
+            if success_attempt_index and success_attempt_index > 1:
+                if used_model == step5_model:
+                    degradation_reason = "同模型重试后成功"
+                else:
+                    degradation_reason = "降级到备用模型后成功"
+                try:
+                    get_monitoring(self.redis).record_degradation(
+                        source="step5_generation",
+                        reason=degradation_reason,
+                        extra={
+                            "attempts_used": success_attempt_index,
+                            "original_model": step5_model,
+                            "final_model": used_model,
+                            "attempt_errors": attempt_errors,
+                        },
+                    )
+                except Exception as mon_e:
+                    logger.warning(f"[KG-RAG] Step5 降级事件记录失败（不影响主流程）: {mon_e}")
         except Exception as e:
             result["steps"]["step5"] = {"error": str(e)}
             result["answer"] = None
+            # 只有在"确实所有尝试都失败"（used_model 仍为 None）时才算得上 Step5 的降级事件；
+            # 如果是重试循环之外的其它异常（如后续 usage 登记出错），不应误报为"全部尝试失败"。
+            if used_model is None:
+                try:
+                    get_monitoring(self.redis).record_degradation(
+                        source="step5_generation",
+                        reason="全部尝试失败",
+                        extra={
+                            "attempts_used": len(attempt_errors),
+                            "original_model": step5_model,
+                            "final_model": None,
+                            "attempt_errors": attempt_errors,
+                        },
+                    )
+                except Exception as mon_e:
+                    logger.warning(f"[KG-RAG] Step5 降级事件记录失败（不影响主流程）: {mon_e}")
         result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
         result["cached"] = False
         result["cache_key"] = cache_key

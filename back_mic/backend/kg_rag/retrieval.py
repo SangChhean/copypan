@@ -23,6 +23,7 @@ async def bm25_search(
     query: str,
     index: str,
     top_k: int = 30,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """
     路1：BM25 关键词检索。
@@ -30,6 +31,9 @@ async def bm25_search(
     :param query: 查询字符串
     :param index: 索引名
     :param top_k: 返回条数（≤0 时不请求 ES，返回空列表）
+    :param errors: 可选，调用方传入的共享错误收集列表；本函数内部异常时若提供则追加一条描述，
+        不提供时行为与之前完全一致（仅打印+返回空列表，不抛异常）。用于让调用方能区分
+        "真的检索到 0 条结果" 与 "ES 调用本身失败被静默降级"，本身不改变返回值语义。
     :return: [{"chunk_id", "text", "score", "source": "bm25", ...metadata}, ...]
     """
     if top_k <= 0:
@@ -60,7 +64,10 @@ async def bm25_search(
     try:
         resp = await asyncio.to_thread(es.search, index=index, body=body)
     except Exception as e:
-        print(f"[KG-RAG] BM25 检索失败: {e}")
+        msg = f"BM25 检索失败 (query={query[:30]!r}): {e}"
+        print(f"[KG-RAG] {msg}")
+        if errors is not None:
+            errors.append(msg)
         return []
     out = []
     for hit in (resp.get("hits") or {}).get("hits") or []:
@@ -79,6 +86,7 @@ async def dense_search(
     index: str,
     top_k: int = 30,
     num_candidates: int = 100,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """
     路2：向量 kNN 检索。使用 embedding_adapter.get_embedding(profile="kg_rag") 生成查询向量。
@@ -87,6 +95,7 @@ async def dense_search(
     :param index: 索引名
     :param top_k: 返回条数（≤0 时不请求 ES，返回空列表）
     :param num_candidates: kNN 候选数
+    :param errors: 可选，同 bm25_search 的 errors 参数；用 query_text 前缀区分具体是哪一路 Dense 调用失败。
     :return: [{"chunk_id", "text", "score", "source": "dense", "rewritten_query": query_text, ...metadata}, ...]
     """
     if top_k <= 0:
@@ -94,7 +103,10 @@ async def dense_search(
     try:
         query_vector = await get_embedding(query_text, profile="kg_rag")
     except Exception as e:
-        print(f"[KG-RAG] Embedding 失败: {e}")
+        msg = f"Embedding 失败 (query={query_text[:30]!r}): {e}"
+        print(f"[KG-RAG] {msg}")
+        if errors is not None:
+            errors.append(msg)
         return []
     # ES 全局 size 默认 10；不设 size 时即使 knn.k=30，hits 仍可能被截成 10 条
     body = {
@@ -123,7 +135,10 @@ async def dense_search(
     try:
         resp = await asyncio.to_thread(es.search, index=index, body=body)
     except Exception as e:
-        print(f"[KG-RAG] kNN 检索失败: {e}")
+        msg = f"kNN 检索失败 (query={query_text[:30]!r}): {e}"
+        print(f"[KG-RAG] {msg}")
+        if errors is not None:
+            errors.append(msg)
         return []
     out = []
     for hit in (resp.get("hits") or {}).get("hits") or []:
@@ -231,6 +246,7 @@ async def skeleton_route_search(
     index: str,
     top_k: int = 5,
     outline_nature: str = "一般性",
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """
     路3：为单个骨架扩展节点执行「原始 Query + 节点名」的 BM25 + Dense → RRF → 纲目加权截断 → Reranker → Top-K。
@@ -241,14 +257,21 @@ async def skeleton_route_search(
     :param index: 索引名
     :param top_k: 返回条数
     :param outline_nature: 纲目性质，与主路 BM25/Dense 加权规则一致
+    :param errors: 可选，同 bm25_search 的 errors 参数；本函数内部 bm25/dense 子调用各自失败时
+        先汇总到局部列表，再合并成一条以 node_name 标注的记录追加到 errors，方便调用方
+        直接按"路3扩展节点"粒度统计，而不必关心内部还拆成了 2 次 ES 调用。
     :return: 每条含 "expanded_from": node_name 和 "source": "skeleton_route"
     """
     combined_query = f"{original_query} {node_name}".strip()
     route3_fetch_size = top_k * 3
-    bm25_hits = await bm25_search(es, combined_query, index, top_k=route3_fetch_size)
+    _sub_errors: list[str] = []
+    bm25_hits = await bm25_search(es, combined_query, index, top_k=route3_fetch_size, errors=_sub_errors)
     dense_hits = await dense_search(
-        es, combined_query, index, top_k=route3_fetch_size, num_candidates=min(300, route3_fetch_size * 3)
+        es, combined_query, index, top_k=route3_fetch_size, num_candidates=min(300, route3_fetch_size * 3),
+        errors=_sub_errors,
     )
+    if _sub_errors and errors is not None:
+        errors.append(f"路3[node={node_name}] 检索失败: " + "; ".join(_sub_errors))
     merged = await rrf_merge(bm25_hits, dense_hits)
     from kg_rag.kg_rag_service import _apply_outline_nature_weight
 

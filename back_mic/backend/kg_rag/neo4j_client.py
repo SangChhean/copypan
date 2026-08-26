@@ -27,9 +27,16 @@ class Neo4jClient:
         self._driver = None
         self._concept_names: list[str] = []
         self._available: bool = False
+        # 最近一次 startup() 连接失败的原因；仅供调用方在启动失败后自行上报监控使用。
+        # 本类本身不依赖 ai_search.monitoring（见类文档"核心原则"），保持零业务依赖。
+        self._last_connect_error: str | None = None
 
     def startup(self) -> None:
-        """尝试连接 Neo4j；成功则刷新概念名列表，失败则不抛异常并设 _available=False。同步方法，供 FastAPI 启动或 get_service 时调用。"""
+        """尝试连接 Neo4j；成功则刷新概念名列表，失败则不抛异常并设 _available=False。同步方法，供 FastAPI 启动或 get_service 时调用。
+        连接失败的具体原因记录在 self._last_connect_error，供调用方（如 kg_rag_router.get_service）
+        判断是否需要上报一次"neo4j_connection"降级事件；本方法本身不做任何监控上报。
+        """
+        self._last_connect_error = None
         try:
             from neo4j import GraphDatabase
             driver = GraphDatabase.driver(
@@ -44,12 +51,25 @@ class Neo4jClient:
             print(f"[KG-RAG] Neo4j 连接失败，图谱功能将降级为空: {e}")
             self._available = False
             self._concept_names = []
+            self._last_connect_error = str(e)
             if getattr(self, "_driver", None) is not None:
                 try:
                     self._driver.close()
                 except Exception:
                     pass
                 self._driver = None
+
+    def is_available(self) -> bool:
+        """当前是否已成功连接 Neo4j。"""
+        return self._available
+
+    def get_last_connect_error(self) -> str | None:
+        """最近一次 startup() 连接失败的原因；成功时为 None。"""
+        return self._last_connect_error
+
+    def get_connection_info(self) -> dict[str, str]:
+        """连接目标的非敏感信息（不含密码），供日志/监控 extra 使用。"""
+        return {"uri": self._uri, "user": self._user}
 
     def shutdown(self) -> None:
         """关闭 driver 连接（如果存在）。"""
