@@ -42,8 +42,10 @@ KEY_STATS = f"{_MONITORING_PREFIX}stats"  # 全局统计 hash
 KEY_DAILY_PREFIX = f"{_MONITORING_PREFIX}daily:"  # 每日统计 hash
 KEY_ERRORS = f"{_MONITORING_PREFIX}errors"  # 最近错误 list
 KEY_RETRIEVAL_LOG = f"{_MONITORING_PREFIX}retrieval_log"  # 检索统计日志 list
+KEY_DEGRADATION_LOG = f"{_MONITORING_PREFIX}degradation_log"  # 降级事件日志 list
 MAX_ERRORS = 200  # 最多保留错误条数
 MAX_RETRIEVAL_LOG = 100  # 检索日志最多保留条数
+MAX_DEGRADATION_LOG = 200  # 降级日志最多保留条数（与 MAX_ERRORS 同量级，属于同类"需要排查的异常路径"事件）
 DAILY_TTL_DAYS = 30  # 每日统计保留天数
 DAILY_TTL_SECONDS = 30 * 24 * 3600  # 每日 key 的 TTL（秒）
 
@@ -206,6 +208,7 @@ class AIMonitoring:
         mode: str = "旧版",
         depth: str = "general",
         burden: str = "否",
+        avg_rerank_score: Optional[float] = None,
     ) -> None:
         """
         记录一次检索统计（总检索条数、使用条数、浪费率），用于后台展示。
@@ -213,6 +216,8 @@ class AIMonitoring:
         :param total: 总检索条数
         :param used: 实际使用条数
         :param waste_rate: 浪费率（百分比）
+        :param avg_rerank_score: 可选，本次检索涉及的精排平均分；为 None 时不写入该字段
+            （None 与 0 语义不同：None 表示本次没有可用的精排分数，不代表分数为 0）
         """
         if not self.redis:
             return
@@ -227,10 +232,39 @@ class AIMonitoring:
                 "depth": depth,
                 "burden": burden,
             }
+            if avg_rerank_score is not None:
+                item["avg_rerank_score"] = avg_rerank_score
             self.redis.lpush(KEY_RETRIEVAL_LOG, json.dumps(item, ensure_ascii=False))
             self.redis.ltrim(KEY_RETRIEVAL_LOG, 0, MAX_RETRIEVAL_LOG - 1)
         except Exception as e:
             logger.warning(f"记录检索统计失败: {e}")
+
+    def record_degradation(
+        self,
+        source: str,
+        reason: str,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        记录一次降级事件（非报错，属于业务上主动走了降级路径，如检索无结果、精排服务不可用等）。
+        与 record_error 分开存储，避免和真实系统错误混在一起，干扰运维排查。
+        :param source: 降级来源标识（如 "rerank_service"、"translate_line"）
+        :param reason: 降级原因（简要分类或提示文案）
+        :param extra: 可选，额外上下文（如 line_i、line_type、top_n 等）
+        """
+        if not self.redis:
+            return
+        try:
+            item = {
+                "ts": datetime.utcnow().isoformat() + "Z",
+                "source": source,
+                "reason": reason[:2000],
+                **(extra or {}),
+            }
+            self.redis.lpush(KEY_DEGRADATION_LOG, json.dumps(item, ensure_ascii=False))
+            self.redis.ltrim(KEY_DEGRADATION_LOG, 0, MAX_DEGRADATION_LOG - 1)
+        except Exception as e:
+            logger.warning(f"记录降级事件失败: {e}")
 
     def get_recent_retrieval_log(self, limit: int = 50) -> List[Dict[str, Any]]:
         """
@@ -251,6 +285,27 @@ class AIMonitoring:
             return result
         except Exception as e:
             logger.warning(f"获取检索日志失败: {e}")
+            return []
+
+    def get_recent_degradations(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        获取最近的降级事件记录。
+        :param limit: 最多返回条数
+        :return: 降级事件列表，每项含 ts、source、reason 及可能的 extra 字段
+        """
+        if not self.redis:
+            return []
+        try:
+            raw_list = self.redis.lrange(KEY_DEGRADATION_LOG, 0, limit - 1)
+            result = []
+            for s in raw_list:
+                try:
+                    result.append(json.loads(s))
+                except json.JSONDecodeError:
+                    result.append({"reason": s, "ts": None, "source": None})
+            return result
+        except Exception as e:
+            logger.warning(f"获取最近降级事件失败: {e}")
             return []
 
     def get_stats(self, days: int = 7) -> Dict[str, Any]:
@@ -418,7 +473,7 @@ class AIMonitoring:
         if not self.redis:
             return
         try:
-            keys = [KEY_STATS, KEY_ERRORS, KEY_RETRIEVAL_LOG]
+            keys = [KEY_STATS, KEY_ERRORS, KEY_RETRIEVAL_LOG, KEY_DEGRADATION_LOG]
             # 删除最近 30 天内的每日键
             for i in range(DAILY_TTL_DAYS + 1):
                 d = datetime.utcnow().date() - timedelta(days=i)

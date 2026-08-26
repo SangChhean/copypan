@@ -11,6 +11,20 @@ _DEGRADE_WARNING = (
 )
 
 
+def _record_rerank_degradation(reason: str, top_n: int, query: str) -> None:
+    """记录一次精排降级事件（信号 b）。容错：监控写入失败不能影响降级返回逻辑。"""
+    try:
+        from ai_search.monitoring import get_monitoring
+
+        get_monitoring().record_degradation(
+            source="rerank_service",
+            reason=reason,
+            extra={"top_n": top_n, "query_preview": (query or "")[:30]},
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate_rerank] 记录降级监控失败（不影响主流程）: %s", e)
+
+
 def _degrade_results(results: list[dict], top_n: int, reason: str) -> tuple[list[dict[str, Any]], str]:
     msg = _DEGRADE_WARNING.format(reason=reason)
     logger.warning("[enhanced_translate_rerank] %s", msg)
@@ -42,9 +56,12 @@ async def rerank(
         if degraded or not indices:
             reason = "JINA_API_KEY 未配置或 API 失败" if degraded else "indices 为空"
             out, msg = _degrade_results(results, top_n, reason)
+            _record_rerank_degradation(reason, top_n, query)
             return out, msg
     except Exception as e:
-        out, msg = _degrade_results(results, top_n, str(e) or type(e).__name__)
+        reason = str(e) or type(e).__name__
+        out, msg = _degrade_results(results, top_n, reason)
+        _record_rerank_degradation(reason, top_n, query)
         return out, msg
 
     out: list[dict[str, Any]] = []
@@ -57,6 +74,8 @@ async def rerank(
                 d["rerank_score"] = scores[rank]
             out.append(d)
     if not out:
-        out, msg = _degrade_results(results, top_n, "indices 解析后 out 为空")
+        reason = "indices 解析后 out 为空"
+        out, msg = _degrade_results(results, top_n, reason)
+        _record_rerank_degradation(reason, top_n, query)
         return out, msg
     return out, None

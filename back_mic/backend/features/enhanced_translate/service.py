@@ -2705,6 +2705,68 @@ async def _run_gemini_translation_phases(
     return translate_by_line, reading_full, suffix_map, total_in, total_out, total_cost
 
 
+def _record_translate_monitoring(
+    preps: list[dict[str, Any]],
+    outline: str,
+    *,
+    direction: str,
+) -> None:
+    """
+    记录增强式翻译一批 preps 的降级事件（信号 a）与检索/精排统计（信号 c）。
+    容错：任何异常都只记 warning，不能影响翻译主流程的返回。
+    :param preps: 本批次每行的检索准备结果（_retrieve_line / _retrieve_line_en2zh 的输出）
+    :param outline: 原始纲目/内容文本，仅用于 question_preview
+    :param direction: "zh2en" 或 "en2zh"
+    """
+    try:
+        from ai_search.monitoring import get_monitoring
+
+        monitoring = get_monitoring()
+
+        used_count = 0
+        degraded_count = 0
+        rerank_scores: list[float] = []
+        for prep in preps:
+            deduped_refs = prep.get("deduped_refs") or []
+            if deduped_refs:
+                used_count += 1
+            if prep.get("degraded_no_refs"):
+                degraded_count += 1
+                try:
+                    monitoring.record_degradation(
+                        source="translate_line",
+                        reason="检索未命中参考语料，已降级为无参考纯翻译",
+                        extra={
+                            "line_i": prep.get("line_i"),
+                            "line_type": prep.get("line_type"),
+                            "direction": direction,
+                        },
+                    )
+                except Exception as e:
+                    logger.warning("[enhanced_translate] 记录降级监控失败（不影响主流程）: %s", e)
+            for ref in deduped_refs:
+                score = ref.get("rerank_score")
+                if score is not None:
+                    rerank_scores.append(score)
+
+        total = len(preps)
+        avg_rerank_score = (sum(rerank_scores) / len(rerank_scores)) if rerank_scores else None
+        waste_rate = round((degraded_count / total) * 100, 1) if total > 0 else 0.0
+
+        monitoring.record_retrieval_stats(
+            question_preview=outline[:30],
+            total=total,
+            used=used_count,
+            waste_rate=waste_rate,
+            mode="增强式翻译",
+            depth="general",
+            burden="否",
+            avg_rerank_score=avg_rerank_score,
+        )
+    except Exception as e:
+        logger.warning("[enhanced_translate] 记录检索/降级监控失败（不影响主流程）: %s", e)
+
+
 async def enhanced_translate(
     content: str,
     prompt_override: str | None = None,
@@ -2768,6 +2830,7 @@ async def enhanced_translate(
             degraded_warnings.append(
                 f"第 {line_no} 行检索未命中参考语料，已降级为无参考纯翻译"
             )
+    _record_translate_monitoring(preps, outline, direction="zh2en")
 
     (
         translate_by_line,
@@ -3328,6 +3391,7 @@ async def enhanced_translate_en2zh(
             degraded_warnings.append(
                 f"第 {line_no} 行检索未命中参考语料，已降级为无参考纯翻译"
             )
+    _record_translate_monitoring(preps, outline, direction="en2zh")
 
     (
         translate_by_line,
