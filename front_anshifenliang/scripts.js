@@ -2307,7 +2307,7 @@ async function handleLocalDictionaryMatch(userMessage) {
         } else {
             // 其他分类保持原有排序逻辑
             const sortedResults = comprehensiveSortWithDisplayLength(merged, query, category.name);
-            topResults = sortedResults.slice(0, 20);
+            topResults = sortedResults.slice(0, 30);
         }
 
         if (topResults.length > 0) {
