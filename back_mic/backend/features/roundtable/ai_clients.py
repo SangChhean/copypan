@@ -72,8 +72,8 @@ def _premium_key_map():
     }
 
 
-MAX_RETRIES = 2
-RETRY_DELAYS = [2, 6]  # 秒
+MAX_RETRIES = 3
+RETRY_DELAYS = [2, 6, 10]  # 秒
 CLIENT_ERROR_CODES = (400, 401, 403, 404, 422)
 
 # 圆桌各AI单价（美元/百万token）
@@ -184,8 +184,8 @@ def _call_claude_sync(
     else:
         claude_model = ROUNDTABLE_CLAUDE_MODEL
     os.environ["CLAUDE_MODEL"] = claude_model
-    # 场景①研究/结论内容长；场景④顶级思考给足上限
-    max_tokens = 16000 if scene_type == "scene_one" else (16000 if scene_type == "scene_four" else 8192)
+    # 所有场景统一给足上限，避免长内容被截断
+    max_tokens = 16000
     kwargs = {
         "model": claude_model,
         "max_tokens": max_tokens,
@@ -521,7 +521,7 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
                         False,
                     ),
                 ),
-                timeout=120.0,
+                timeout=200.0,
             )
             return out
         if actual_ai == "perplexity":
@@ -574,7 +574,7 @@ async def call_ai(ai_name: str, prompt: str, system_prompt: str = "", scene_type
                         False,
                     ),
                 ),
-                timeout=120.0,
+                timeout=200.0,
             )
             return out
         raise RoundTableAIError(ai_name, "未实现", is_client_error=True)
