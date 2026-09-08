@@ -261,6 +261,18 @@ def _call_openai_compat_sync(
     in_tok = int(getattr(usage, "prompt_tokens", 0) or 0)
     out_tok = int(getattr(usage, "completion_tokens", 0) or 0)
     if not (text and text.strip()):
+        msg_obj = response.choices[0].message if response.choices else None
+        reasoning = getattr(msg_obj, "reasoning_content", None) or "" if msg_obj else ""
+        finish_reason = response.choices[0].finish_reason if response.choices else "no_choices"
+        logger.warning(
+            f"[RoundTable DEBUG] {ai_name} content为空 | "
+            f"model={model} | "
+            f"finish_reason={finish_reason} | "
+            f"completion_tokens={usage.completion_tokens if usage else 'N/A'} | "
+            f"has_reasoning_content={bool(reasoning)} | "
+            f"reasoning_content_len={len(reasoning)} | "
+            f"reasoning_preview={reasoning[:200] if reasoning else ''}"
+        )
         raise RoundTableAIError(ai_name, "返回为空", is_client_error=False)
     return (text.strip(), in_tok, out_tok)
 
