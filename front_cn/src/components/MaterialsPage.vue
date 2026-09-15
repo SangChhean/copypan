@@ -27,6 +27,7 @@
             >‹ 返回上一级</button>
             <span class="materials-main-title">{{ navStack.length ? selectedCategoryName : '全部分类' }}</span>
             <a-button v-if="navStack.length" size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">批量下载</a-button>
+            <a-button v-else size="small" class="mat-dl-btn" :loading="allZipLoading" @click="onDownloadAllZip">全部下载</a-button>
           </div>
           <div v-if="filesLoading" class="materials-empty-main"><a-spin /></div>
           <div v-else-if="!currentChildren.length && !files.length" class="materials-empty-main">暂无内容</div>
@@ -72,7 +73,7 @@
             </a-spin>
           </aside>
           <main class="materials-main">
-            <a-spin :spinning="filesLoading || zipLoading">
+            <a-spin :spinning="filesLoading || zipLoading || allZipLoading">
               <div>
                 <div class="materials-main-head">
                   <button
@@ -84,6 +85,9 @@
                   <span class="materials-main-title">{{ navStack.length ? selectedCategoryName : '全部分类' }}</span>
                   <a-button v-if="navStack.length" size="small" class="mat-dl-btn" @click="onDownloadZip(selectedCategoryId)">
                     批量下载
+                  </a-button>
+                  <a-button v-else size="small" class="mat-dl-btn" :loading="allZipLoading" @click="onDownloadAllZip">
+                    全部下载
                   </a-button>
                 </div>
                 <div v-if="!currentChildren.length && !files.length" class="materials-empty-main">
@@ -162,6 +166,7 @@ const categoriesLoading = ref(false)
 const files = ref([])
 const filesLoading = ref(false)
 const zipLoading = ref(false)
+const allZipLoading = ref(false)
 const selectedCategoryId = ref(null)
 const selectedCategoryName = ref('')
 const navStack = ref([])
@@ -294,6 +299,33 @@ async function onDownloadZip(categoryId) {
     message.error(e.message || '打包下载失败')
   } finally {
     zipLoading.value = false
+  }
+}
+
+async function onDownloadAllZip() {
+  allZipLoading.value = true
+  try {
+    const res = await fetch(`/api/cn/materials/type/${materialsType.value}/zip`, {
+      headers: { ...authHeaders() },
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || `HTTP ${res.status}`)
+    }
+    const blob = await res.blob()
+    const disposition = res.headers.get('Content-Disposition') || ''
+    const match = disposition.match(/filename\*=UTF-8''(.+)/)
+    const filename = match ? decodeURIComponent(match[1]) : 'download.zip'
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    message.error(e.message || '全部下载失败')
+  } finally {
+    allZipLoading.value = false
   }
 }
 

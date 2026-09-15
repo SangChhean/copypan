@@ -2,7 +2,6 @@
 """CN 站资料下载：分类与 PDF 管理（支持树形分类）。"""
 from __future__ import annotations
 
-import io
 import logging
 import mimetypes
 import os
@@ -34,6 +33,21 @@ MAX_BYTES = MAX_MB * 1024 * 1024
 
 router = APIRouter(prefix="/api/cn/materials", tags=["materials"])
 _DIR_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+# type -> 中文入口标题，打包下载时用作压缩包内最外层目录名。
+# ⚠️ 手动对应前端 front_cn/src/data/homeFeatures.js 里各 feature 的 title 字段——
+# 前端改了某个入口的标题文案，这里必须同步改，否则压缩包内路径会和网页上显示的入口名对不上。
+MATERIALS_TYPE_LABELS: dict[str, str] = {
+    "conference": "节期相关",
+    "service": "事奉类",
+    "community": "社区排",
+    "sisters": "姊妹",
+    "young_pro": "青职",
+    "college": "大专",
+    "youth": "青少年",
+    "kids": "儿童",
+    "teen_daily": "18岁以前每天的属灵材料",
+}
 
 
 def _db_path() -> Path:
@@ -108,6 +122,27 @@ def _get_all_descendant_ids(category_id: int, conn) -> list[int]:
     return result
 
 
+def _collect_categories_with_path(category_id: int, conn, prefix: str = "") -> dict[int, str]:
+    """递归收集某分类自身及所有子孙分类，返回 {分类id: 相对起点的路径} 映射。
+
+    起点分类自身的路径就是它的 name；层级越深，路径越长（"父/子/孙"）。
+    用于打包下载时拼压缩包内的完整目录路径，避免不同分支下同名子分类互相覆盖。
+    """
+    cat = conn.execute(
+        "SELECT id, name FROM material_categories WHERE id = ?", (category_id,)
+    ).fetchone()
+    if not cat:
+        return {}
+    path = f"{prefix}/{cat['name']}" if prefix else cat["name"]
+    result = {category_id: path}
+    children = conn.execute(
+        "SELECT id FROM material_categories WHERE parent_id = ?", (category_id,)
+    ).fetchall()
+    for child in children:
+        result.update(_collect_categories_with_path(child["id"], conn, prefix=path))
+    return result
+
+
 def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", parent_id: int | None = None) -> int:
     """
     按路径层级递归确保分类存在，返回最末层分类 id。
@@ -146,6 +181,72 @@ def _ensure_category_path(path_parts: list[str], conn, type: str = "pastoral", p
             physical_dir.mkdir(parents=True, exist_ok=True)
         parent_id = cat_id
     return cat_id
+
+
+class _ZipChunkStream:
+    """极简可写、不可 seek 的类文件对象，供 zipfile 写入。
+
+    zipfile 在构造时会探测底层文件是否可 seek：这个对象只提供 write()/tell()，
+    不提供 seek()，zipfile 探测到后自动切换为"数据描述符"模式（本地文件头不回写，
+    大小/CRC 写在文件数据之后），从而不需要整个 zip 都能随机访问——这是实现真流式
+    打包的关键。调用方通过 drain() 取走已写入但尚未发出的字节，随读随吐、不在内存
+    里攒完整个 zip。
+    """
+
+    def __init__(self):
+        self._buf = bytearray()
+        self._total = 0
+
+    def write(self, data: bytes) -> int:
+        self._buf += data
+        self._total += len(data)
+        return len(data)
+
+    def tell(self) -> int:
+        return self._total
+
+    def flush(self) -> None:
+        pass
+
+    def drain(self) -> bytes:
+        if not self._buf:
+            return b""
+        data = bytes(self._buf)
+        self._buf.clear()
+        return data
+
+
+_ZIP_READ_CHUNK = 64 * 1024
+
+
+def _iter_zip_stream(entries: list[tuple[Path, str]]):
+    """真流式产出 zip 字节：逐文件分块读取源文件、压缩、产出，不缓存整个 zip。
+
+    entries: (磁盘文件路径, 压缩包内路径) 列表。
+    """
+    stream = _ZipChunkStream()
+    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as zf:
+        for file_path, arcname in entries:
+            try:
+                zinfo = zipfile.ZipInfo.from_file(file_path, arcname)
+            except OSError:
+                continue
+            zinfo.compress_type = zipfile.ZIP_DEFLATED
+            with open(file_path, "rb") as src, zf.open(zinfo, "w") as dest:
+                while True:
+                    chunk = src.read(_ZIP_READ_CHUNK)
+                    if not chunk:
+                        break
+                    dest.write(chunk)
+                    out = stream.drain()
+                    if out:
+                        yield out
+            out = stream.drain()
+            if out:
+                yield out
+    out = stream.drain()
+    if out:
+        yield out
 
 
 # ── 读取接口 ──────────────────────────────────────────────
@@ -243,41 +344,92 @@ def download_material(material_id: int, _user: dict = Depends(_require_user)):
 
 @router.get("/categories/{category_id}/zip")
 def download_category_zip(category_id: int, _user: dict = Depends(_require_user)):
-    """打包下载某分类及其所有子分类下的全部 PDF。"""
+    """真流式打包下载某分类及其所有子分类下的全部文件。
+
+    压缩包内路径为 "{入口中文标题}/{从该分类到文件所在分类的完整路径}/{文件名}"，
+    和"全部下载"（整个入口打包）共用同一套路径风格，方便用户区分不同入口/不同层级。
+    """
     with _connect() as conn:
         cat = conn.execute(
-            "SELECT name FROM material_categories WHERE id = ?", (category_id,)
+            "SELECT name, type FROM material_categories WHERE id = ?", (category_id,)
         ).fetchone()
         if not cat:
             raise HTTPException(status_code=404, detail="分类不存在")
         cat_name = cat["name"]
-        all_ids = _get_all_descendant_ids(category_id, conn)
+        type_label = MATERIALS_TYPE_LABELS.get(cat["type"], cat["type"])
+        path_map = _collect_categories_with_path(category_id, conn)
+        all_ids = list(path_map.keys())
         placeholders = ",".join("?" * len(all_ids))
         rows = conn.execute(
             f"""
-            SELECT m.display_name, m.stored_name, c.id AS category_id, c.name as cat_name
+            SELECT m.display_name, m.stored_name, m.category_id
             FROM materials m
-            JOIN material_categories c ON c.id = m.category_id
             WHERE m.category_id IN ({placeholders})
-            ORDER BY c.id, m.created_at
+            ORDER BY m.category_id, m.created_at
             """,
             all_ids,
         ).fetchall()
     if not rows:
         raise HTTPException(status_code=404, detail="该分类下没有文件")
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for row in rows:
-            file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
-            if not file_path.is_file():
-                continue
-            display = row["display_name"] or row["stored_name"]
-            arc_name = f"{row['cat_name']}/{display}"
-            zf.write(file_path, arc_name)
-    buf.seek(0)
+    entries: list[tuple[Path, str]] = []
+    for row in rows:
+        file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
+        if not file_path.is_file():
+            continue
+        display = row["display_name"] or row["stored_name"]
+        arc_name = f"{type_label}/{path_map[row['category_id']]}/{display}"
+        entries.append((file_path, arc_name))
     zip_name = quote(f"{cat_name}.zip")
     return StreamingResponse(
-        buf,
+        _iter_zip_stream(entries),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{zip_name}"},
+    )
+
+
+@router.get("/type/{type}/zip")
+def download_type_zip(type: str, _user: dict = Depends(_require_user)):
+    """全部下载接口：打包下载某个入口(type)下所有根分类、所有层级的全部文件。
+
+    对该 type 下每个根分类分别递归收集路径，合并成一个大字典后复用同一套真流式
+    打包生成器；压缩包内路径为 "{入口中文标题}/{根分类名}/.../{文件名}"，
+    和单分类下载（download_category_zip）保持同一套路径风格。
+    """
+    type_label = MATERIALS_TYPE_LABELS.get(type, type)
+    with _connect() as conn:
+        root_rows = conn.execute(
+            "SELECT id FROM material_categories WHERE parent_id IS NULL AND type = ?",
+            (type,),
+        ).fetchall()
+        if not root_rows:
+            raise HTTPException(status_code=404, detail="该入口下没有分类")
+        path_map: dict[int, str] = {}
+        for root in root_rows:
+            path_map.update(_collect_categories_with_path(root["id"], conn))
+        all_ids = list(path_map.keys())
+        placeholders = ",".join("?" * len(all_ids))
+        rows = conn.execute(
+            f"""
+            SELECT m.display_name, m.stored_name, m.category_id
+            FROM materials m
+            WHERE m.category_id IN ({placeholders})
+            ORDER BY m.category_id, m.created_at
+            """,
+            all_ids,
+        ).fetchall()
+    if not rows:
+        raise HTTPException(status_code=404, detail="该入口下没有文件")
+    entries: list[tuple[Path, str]] = []
+    for row in rows:
+        file_path = MATERIALS_DIR / f"cat_{row['category_id']}" / row["stored_name"]
+        if not file_path.is_file():
+            continue
+        display = row["display_name"] or row["stored_name"]
+        arc_name = f"{type_label}/{path_map[row['category_id']]}/{display}"
+        entries.append((file_path, arc_name))
+    zip_name = quote(f"{type_label}.zip")
+    return StreamingResponse(
+        _iter_zip_stream(entries),
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{zip_name}"},
     )

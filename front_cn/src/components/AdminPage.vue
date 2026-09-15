@@ -225,6 +225,7 @@
                 <a-tab-pane key="college" tab="大专" />
                 <a-tab-pane key="youth" tab="青少年" />
                 <a-tab-pane key="kids" tab="儿童" />
+                <a-tab-pane key="teen_daily" tab="18岁以前每天的属灵材料" />
               </a-tabs>
               <a-card title="分类管理" size="small" class="admin-mat-card">
                 <div class="admin-mat-create">
