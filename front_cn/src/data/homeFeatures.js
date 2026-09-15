@@ -119,6 +119,14 @@ export const features = [
     building: false,
   },
   {
+    key: 'teen_daily',
+    title: '18岁以前每天的属灵材料',
+    desc: '按年龄分成四个阶段，每阶段每天都有分定的相关材料',
+    path: '/materials?type=teen_daily',
+    icon: CloudDownloadOutlined,
+    building: false,
+  },
+  {
     key: 'materials',
     title: '资料下载',
     desc: '各类追求材料下载',
@@ -154,5 +162,5 @@ export const features = [
 ]
 
 export const HOME_FEATURE_KEYS = ['qa', 'outline', 'materials', 'toolbox']
-export const MATERIALS_FEATURE_KEYS = ['conference', 'service', 'community', 'sisters', 'young_pro', 'college', 'youth', 'kids']
+export const MATERIALS_FEATURE_KEYS = ['conference', 'service', 'community', 'sisters', 'young_pro', 'college', 'youth', 'kids', 'teen_daily']
 export const TOOLBOX_FEATURE_KEYS = ['ministry-digest-generator', 'bibco', 'zh']
