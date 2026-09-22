@@ -10,6 +10,7 @@ uploadir = basedir / "upload"
 
 
 def del_other_day():
+    if not uploadir.exists(): return
     for d in uploadir.iterdir():
         if d.is_dir():
             if d.name != datetime.now().strftime("%Y%m%d"):
@@ -19,6 +20,7 @@ def del_other_day():
 
 
 def up_load(filename, contents):
+    uploadir.mkdir(parents=True, exist_ok=True)
     today = datetime.now().strftime("%Y%m%d")
     del_other_day()
     updir = uploadir / today
