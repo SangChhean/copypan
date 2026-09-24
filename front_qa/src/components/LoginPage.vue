@@ -39,6 +39,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import axios from 'axios'
+import { safeInternalPath } from '@/utils/auth'
 
 const router = useRouter()
 const activeTab = ref('login')
@@ -69,7 +70,7 @@ async function onLogin() {
     localStorage.setItem('qa_token', data.token || '')
     localStorage.setItem('qa_username', data.username || username)
     message.success('登录成功')
-    router.replace('/')
+    router.replace(safeInternalPath(router.currentRoute.value.query.redirect))
   } catch (e) {
     message.error(e?.response?.data?.detail || '登录失败')
   } finally {

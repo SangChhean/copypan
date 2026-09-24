@@ -133,6 +133,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { handleUnauthorized } from '@/utils/auth'
 
 defineProps({
   embedded: {
@@ -186,6 +187,10 @@ async function submit() {
     )
     result.value = res.data
   } catch (e) {
+    if (e?.response?.status === 401) {
+      handleUnauthorized()
+      return
+    }
     result.value = { error: e.response?.data?.detail || '请求失败' }
   } finally {
     loading.value = false

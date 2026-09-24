@@ -61,6 +61,30 @@
               <span class="qa-loading-text">{{ assistantLoadingText(msg) }}</span>
             </div>
 
+            <div v-else-if="msg.requestFailed && !msg.interrupted" class="qa-request-fail">
+              <div class="qa-request-fail-text">{{ failCopy.failed }}</div>
+              <button type="button" class="qa-retry-btn" :disabled="loading" @click="retrySubmit(msg)">{{ failCopy.retry }}</button>
+            </div>
+
+            <template v-else-if="msg.requestFailed && msg.interrupted">
+              <BibleMessage
+                v-if="
+                  msg.intent === 'bible' &&
+                  (msg.verse || (msg.verses && msg.verses.length))
+                "
+                :verse="msg.verse"
+                :verses="msg.verses"
+                :query-type="msg.queryType || 'verse'"
+                :lang="msg.currentLang || 'gb'"
+                :generating="false"
+              />
+              <div class="qa-answer-body" v-html="renderAnswer(displayAnswer(msg))"></div>
+              <div class="qa-request-fail">
+                <div class="qa-request-fail-text">{{ failCopy.interrupted }}</div>
+                <button type="button" class="qa-retry-btn" :disabled="loading" @click="retrySubmit(msg)">{{ failCopy.retry }}</button>
+              </div>
+            </template>
+
             <div v-else-if="!msg.found" class="qa-not-found">
               <span class="qa-not-found-icon">🔍</span>
               以下内容未能在职事信息中找到相关依据。
@@ -267,7 +291,7 @@
               </div>
             </template>
 
-            <div v-if="!msg.loading" class="qa-disclaimer">
+            <div v-if="!msg.loading && !msg.requestFailed" class="qa-disclaimer">
               <span v-if="msg.currentLang === 'en'">
                 The above content is quoted directly from the ministry messages.
               </span>
@@ -389,6 +413,7 @@ import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
+import { AuthExpiredError, authFetch, clearAuth, getToken, isTokenExpired, handleUnauthorized } from '@/utils/auth'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
 const SHOW_POLLY_TTS = false
@@ -710,6 +735,16 @@ const headerLang = computed(() => {
   return 'zh'
 })
 
+const uiLang = ref('zh')
+const failCopy = computed(() => {
+  const table = {
+    zh: { failed: '请求失败，请稍后重试', interrupted: '回答中断', retry: '重试' },
+    zh_tw: { failed: '請求失敗，請稍後重試', interrupted: '回答中斷', retry: '重試' },
+    en: { failed: 'Request failed, please try again later', interrupted: 'Answer interrupted', retry: 'Retry' },
+  }
+  return table[uiLang.value] || table.zh
+})
+
 const usageDisplayText = computed(() => {
   const { used, limit } = dailyUsage.value
   if (headerLang.value === 'en') return `Today ${used}/${limit}`
@@ -724,20 +759,16 @@ const usageLevelClass = computed(() => {
 })
 
 async function fetchDailyUsage() {
-  const token = localStorage.getItem('qa_token') || ''
-  if (!token) return
   try {
-    const res = await fetch('/api/qa/auth/usage', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const res = await authFetch('/api/qa/auth/usage')
     if (!res.ok) return
     const data = await res.json()
     dailyUsage.value = {
       used: Number(data.used) || 0,
       limit: Number(data.limit) || 30,
     }
-  } catch {
-    /* ignore */
+  } catch (e) {
+    if (e instanceof AuthExpiredError) return
   }
 }
 
@@ -779,8 +810,7 @@ function goAdmin() {
 }
 
 function logout() {
-  localStorage.removeItem('qa_token')
-  localStorage.removeItem('qa_username')
+  clearAuth()
   router.replace('/login')
 }
 
@@ -947,45 +977,21 @@ async function toggleTTS(msg, engine = 'google') {
     ttsActiveRequests.value.add(ctrl)
     try {
       let res
+      const ttsPayload = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: chunks[i],
+          lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
+        }),
+        signal: ctrl.signal,
+      }
       if (engine === 'google') {
-        res = await fetch('/api/qa/tts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
-          },
-          body: JSON.stringify({
-            text: chunks[i],
-            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
-          }),
-          signal: ctrl.signal,
-        })
+        res = await authFetch('/api/qa/tts', ttsPayload)
       } else if (engine === 'minimax') {
-        res = await fetch('/api/qa/tts/minimax', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
-          },
-          body: JSON.stringify({
-            text: chunks[i],
-            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
-          }),
-          signal: ctrl.signal,
-        })
+        res = await authFetch('/api/qa/tts/minimax', ttsPayload)
       } else if (engine === 'elevenlabs') {
-        res = await fetch('/api/qa/tts/elevenlabs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('qa_token') || ''}`,
-          },
-          body: JSON.stringify({
-            text: chunks[i],
-            lang: lang === 'zh_tw' ? 'zh_tw' : lang === 'en' ? 'en' : 'zh',
-          }),
-          signal: ctrl.signal,
-        })
+        res = await authFetch('/api/qa/tts/elevenlabs', ttsPayload)
       } else {
         const voice = lang === 'en' ? 'Joanna' : 'Zhiyu'
         const params = new URLSearchParams({ text: chunks[i], voice })
@@ -999,7 +1005,8 @@ async function toggleTTS(msg, engine = 'google') {
       }
       const buf = await res.arrayBuffer()
       audioQueue[i] = await ctx.decodeAudioData(buf)
-    } catch {
+    } catch (e) {
+      if (e instanceof AuthExpiredError) return
       // ignore abort
     } finally {
       ttsActiveRequests.value.delete(ctrl)
@@ -1055,21 +1062,19 @@ async function switchLang(msg, lang) {
   stopTTS()
   if (lang === 'zh') {
     msg.currentLang = 'zh'
+    uiLang.value = 'zh'
     return
   }
   if (msg.translatedAnswers?.[lang]) {
     msg.currentLang = lang
+    uiLang.value = lang
     return
   }
   msg.translating = true
   try {
-    const token = localStorage.getItem('qa_token') || ''
-    const res = await fetch('/api/qa/translate', {
+    const res = await authFetch('/api/qa/translate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: msg.answer || '',
         sources: msg.sources || [],
@@ -1087,7 +1092,9 @@ async function switchLang(msg, lang) {
       sources: data.sources || [],
     }
     msg.currentLang = lang
+    uiLang.value = lang
   } catch (e) {
+    if (e instanceof AuthExpiredError) return
     console.error('translate fallback failed', e)
     message.warning('翻译失败，请稍后重试')
   } finally {
@@ -1138,19 +1145,27 @@ function stopTypewriter() {
   typewriterQueue.value = []
 }
 
+function flushTypewriter(targetMsg) {
+  if (typewriterTimer) {
+    clearInterval(typewriterTimer)
+    typewriterTimer = null
+  }
+  const pending = typewriterQueue.value.join('')
+  typewriterQueue.value = []
+  if (pending && targetMsg) {
+    const idx = messages.value.findIndex((m) => m.id === targetMsg.id)
+    if (idx !== -1) messages.value[idx].answer += pending
+  }
+}
+
 async function uploadAudio() {
   audioState.value = 'processing'
   try {
-    const token = localStorage.getItem('qa_token') || ''
-    if (!token) throw new Error('no token')
     const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' })
     const formData = new FormData()
     formData.append('file', blob, 'recording.webm')
-    const res = await fetch('/api/qa/asr', {
+    const res = await authFetch('/api/qa/asr', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -1172,6 +1187,7 @@ async function uploadAudio() {
       textareaRef.value.resizableTextArea.textArea.focus()
     }
   } catch (e) {
+    if (e instanceof AuthExpiredError) return
     asrError.value = true
     setTimeout(() => { asrError.value = false }, 3000)
   } finally {
@@ -1307,6 +1323,10 @@ function stopRecording() {
 async function submit() {
   const q = question.value.trim()
   if (!q || loading.value) return
+  if (!getToken() || isTokenExpired(getToken())) {
+    handleUnauthorized()
+    return
+  }
 
   const detectedLang = detectLang(q)
 
@@ -1315,12 +1335,13 @@ async function submit() {
   loading.value = true
   await nextTick()
 
-  messages.value.push({
+  const userMsg = {
     id: ++nextMessageId,
     role: 'user',
     content: q,
     loading: false,
-  })
+  }
+  messages.value.push(userMsg)
 
   const assistantMsg = {
     id: ++nextMessageId,
@@ -1355,13 +1376,13 @@ async function submit() {
     translating: false,
     hasVerseData: false,
     detectedLang,
+    requestFailed: false,
+    interrupted: false,
+    sentQuestion: q,
+    sentHistory: [],
+    userMsgId: userMsg.id,
   }
   messages.value.push(assistantMsg)
-
-  const assistantRow = () => {
-    const i = messages.value.findIndex((m) => m.id === assistantMsg.id)
-    return i !== -1 ? messages.value[i] : assistantMsg
-  }
 
   await scrollToBottom()
 
@@ -1388,23 +1409,96 @@ async function submit() {
     }
   }
 
+  const historySnapshot = history.value.map((h) => ({ question: h.question, answer: h.answer }))
+  assistantMsg.sentQuestion = finalQuestion
+  assistantMsg.sentHistory = historySnapshot
+  await runQaStream({
+    assistantMsg,
+    userMsgId: userMsg.id,
+    finalQuestion,
+    historySnapshot,
+    isRetry: false,
+  })
+}
+
+async function retrySubmit(msg) {
+  if (!msg?.requestFailed || loading.value) return
+  if (!getToken() || isTokenExpired(getToken())) {
+    handleUnauthorized()
+    return
+  }
+  msg.loading = true
+  msg.streaming = true
+  msg.requestFailed = false
+  msg.interrupted = false
+  msg.answer = ''
+  msg.found = true
+  msg.sources = []
+  msg.concepts = []
+  msg.verse = null
+  msg.verses = null
+  msg.queryType = null
+  msg.intent = null
+  msg.hasVerseData = false
+  msg.bibleGenerating = false
+  msg._bodyDone = false
+  msg.feedback = null
+  msg.copied = false
+  msg.cache_hit = false
+  msg.cache_key = ''
+  msg.request_id = ''
+  msg.elapsed = 0
+  msg.cost = 0
+  msg.translatedAnswers = { zh_tw: null, en: null }
+  msg.currentLang = 'zh'
+  msg.translating = false
+  loading.value = true
+  await runQaStream({
+    assistantMsg: msg,
+    userMsgId: msg.userMsgId,
+    finalQuestion: msg.sentQuestion,
+    historySnapshot: msg.sentHistory || [],
+    isRetry: true,
+  })
+}
+
+async function runQaStream({ assistantMsg, userMsgId, finalQuestion, historySnapshot, isRetry }) {
+  const assistantRow = () => {
+    const i = messages.value.findIndex((m) => m.id === assistantMsg.id)
+    return i !== -1 ? messages.value[i] : null
+  }
+
+  let firstTokenReceived = false
+  let recordHistory = false
+  let authDropped = false
+  let failureMarked = false
+  let turnDone = false
+
+  function markFailure(partial) {
+    const row = assistantRow()
+    if (!row || failureMarked) return
+    failureMarked = true
+    flushTypewriter(assistantMsg)
+    row.requestFailed = true
+    row.interrupted = !!partial
+    row.bibleGenerating = false
+    row.loading = false
+    row.streaming = false
+    if (!partial) row.answer = ''
+  }
+
   try {
     const sendTime = Date.now()
-    let firstTokenReceived = false
 
     await navigator.locks.request('qa-stream', async () => {
-      const token = localStorage.getItem('qa_token') || ''
-      const response = await fetch('/api/qa/stream', {
+      const response = await authFetch('/api/qa/stream', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: finalQuestion,
           skip_cache: false,
           debug: false,
-          history: history.value.map((h) => ({
+          history: (historySnapshot || []).map((h) => ({
             question: h.question,
             answer: h.answer,
           })),
@@ -1521,6 +1615,11 @@ async function submit() {
               })
               stopTypewriter()
               const row = assistantRow()
+              if (!row) continue
+              turnDone = true
+              recordHistory = true
+              row.requestFailed = false
+              row.interrupted = false
               row.found = chunk.found ?? true
               if (!row.answer) {
                 row.answer = chunk.answer || ''
@@ -1542,70 +1641,81 @@ async function submit() {
                 await switchLang(row, row.detectedLang)
               }
             } else if (chunk.type === 'error') {
-              stopTypewriter()
-              const row = assistantRow()
-              row.bibleGenerating = false
-              row.answer = '请求失败，请稍后重试。'
-              row.found = false
-              row.loading = false
-              row.streaming = false
+              markFailure(firstTokenReceived)
             }
           }
         }
       }
     })
+    if (!turnDone && !failureMarked) {
+      markFailure(firstTokenReceived)
+    }
   } catch (e) {
-    stopTypewriter()
-    const r = assistantRow()
-    r.bibleGenerating = false
-    if (e?.status === 429) {
-      await fetchDailyUsage()
-      message.warning(e.message || '今日问答次数已达上限，请明天再来')
-      r.found = false
-      r.answer = e.message || '今日问答次数已达上限，请明天再来'
-      r.loading = false
-      r.streaming = false
-    } else if (firstTokenReceived) {
-      // 已有内容输出，连接中断但答案部分可用，保留已有内容
-      r.found = r.found ?? true
-      r.loading = false
-      r.streaming = false
+    if (e instanceof AuthExpiredError) {
+      authDropped = true
+      recordHistory = false
+      stopTypewriter()
+      if (!isRetry) {
+        messages.value = messages.value.filter((m) => m.id !== userMsgId && m.id !== assistantMsg.id)
+      }
+    } else if (e?.status === 429) {
+      stopTypewriter()
+      const r = assistantRow()
+      if (r) {
+        await fetchDailyUsage()
+        message.warning(e.message || '今日问答次数已达上限，请明天再来')
+        r.bibleGenerating = false
+        r.found = false
+        r.answer = e.message || '今日问答次数已达上限，请明天再来'
+        r.loading = false
+        r.streaming = false
+        r.requestFailed = false
+      }
+      recordHistory = true
     } else {
-      // 完全没收到任何内容，显示报错
-      r.found = false
-      r.answer = '请求失败，请稍后重试。'
+      markFailure(firstTokenReceived)
     }
   } finally {
     stopTypewriter()
+    loading.value = false
+    if (!isRetry) question.value = ''
+    if (authDropped) {
+      if (!isRetry) return
+      const r = assistantRow()
+      if (r) {
+        r.loading = false
+        r.streaming = false
+        r.bibleGenerating = false
+        r.requestFailed = true
+        r.interrupted = false
+        r.answer = ''
+      }
+      return
+    }
     const r = assistantRow()
+    if (!r) return
     r.loading = false
     r.streaming = false
     r.bibleGenerating = false
-    loading.value = false
-    question.value = ''
-    // 存补全后的问句，便于下一轮从 history 提取书名再做追问补全（气泡仍用上面的 q）
-    history.value.push({
-      question: finalQuestion,
-      answer: r.answer || '',
-    })
-    history.value = history.value.slice(-3)
+    if (recordHistory) {
+      history.value.push({
+        question: finalQuestion,
+        answer: r.answer || '',
+      })
+      history.value = history.value.slice(-3)
+    }
     await nextTick()
   }
 }
 
 async function submitFeedback(msg, rating) {
   if (!msg || msg.feedback !== null || msg.feedbackSubmitting) return
-  const token = localStorage.getItem('qa_token') || ''
-  if (!token) return
 
   msg.feedbackSubmitting = true
   try {
-    const res = await fetch('/api/qa/feedback', {
+    const res = await authFetch('/api/qa/feedback', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         request_id: msg.request_id || '',
         question: msg.question || '',
@@ -1616,6 +1726,7 @@ async function submitFeedback(msg, rating) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     msg.feedback = rating
   } catch (e) {
+    if (e instanceof AuthExpiredError) return
     console.error('submit feedback failed', e)
   } finally {
     msg.feedbackSubmitting = false
@@ -1853,6 +1964,30 @@ async function scrollToMessageTop(messageId) {
   font-size: 14px;
 }
 .qa-not-found-icon { margin-right: 6px; }
+
+.qa-request-fail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.qa-request-fail-text {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+.qa-retry-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border-radius: 8px;
+  padding: 4px 14px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.qa-retry-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* 答案正文 */
 .qa-answer-body {
