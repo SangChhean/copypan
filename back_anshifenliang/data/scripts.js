@@ -64,9 +64,11 @@ function maybeToTraditional(text) {
     return text;
 }
 
-/** 在词典 value 正文中匹配（库内为简体，query 已转简体） */
-function matchKeysByValue(keys, getValue, query, expandedQueries, isExcludedFn) {
+/** 在词典 value 正文中匹配（库内为简体，query 已转简体）
+ *  queryTerms 有2个及以上元素时，切换为"多关键词 AND"模式：正文必须同时包含所有关键词 */
+function matchKeysByValue(keys, getValue, query, expandedQueries, isExcludedFn, queryTerms) {
     const minLen = 2;
+    const useAndMode = queryTerms && queryTerms.length > 1;
     const hits = [];
     const seen = new Set();
     for (const k of keys) {
@@ -74,7 +76,9 @@ function matchKeysByValue(keys, getValue, query, expandedQueries, isExcludedFn) 
         const raw = getValue(k);
         const text = typeof raw === 'string' ? raw : (raw && raw.content != null ? String(raw.content) : '');
         if (!text) continue;
-        const matched = expandedQueries.some((q) => q.length >= minLen && text.includes(q));
+        const matched = useAndMode
+            ? queryTerms.every((t) => t.length >= minLen && text.includes(t))
+            : expandedQueries.some((q) => q.length >= minLen && text.includes(q));
         if (!matched) continue;
         if (isExcludedFn && isExcludedFn(query, k, raw)) continue;
         seen.add(k);
@@ -2045,6 +2049,9 @@ async function handleLocalDictionaryMatch(userMessage) {
         }
 
         const expandedQueries = expandQuery(query);
+        // 多关键词 AND 搜索：按空白（含全角空格 U+3000）拆分原始 query，仅用于正文值匹配，
+        // 不能用 expandedQueries（那是同义词的 OR 展开，语义不同）
+        const queryTerms = query.split(/\s+/).filter(Boolean);
 
         // 【保持原有的所有匹配逻辑不变】
         let exactMatch, containsMatches, fuzzyResults, valueMatches = [];
@@ -2256,6 +2263,7 @@ async function handleLocalDictionaryMatch(userMessage) {
                         query,
                         expandedQueries,
                         (q, k, raw) => isExcluded(q, k, raw, category.name, 'simple'),
+                        queryTerms,
                     ).filter((k) => !existingKeys.has(k));
 
                     for (const match of valueKeys) {
@@ -2409,6 +2417,7 @@ async function handleLocalDictionaryMatch(userMessage) {
                     query,
                     expandedQueries,
                     (q, k, raw) => isExcluded(q, k, raw, category.name, 'simple'),
+                    queryTerms,
                 ).filter((k) => !skipKeys.has(k));
                 if (valueMatches.length) {
                     console.log(`📄 [${category.name}] 值匹配: ${valueMatches.length} 条`);
@@ -6405,6 +6414,14 @@ function standardizeChapterInputEnhanced(input) {
     };
 }
 
+// 裸名本身就是人名/常见词、容易跟"关键词搜索"混淆的书名别名——精确匹配才排除，
+// 完整形式（"雅各书""犹大书""约翰福音"等）不受影响
+const AMBIGUOUS_BARE_BOOK_NAMES = new Set([
+    '以赛亚', '耶利米', '以西结', '但以理', '何西阿', '约珥', '阿摩司',
+    '俄巴底亚', '约拿', '弥迦', '那鸿', '哈巴谷', '西番雅', '哈该',
+    '撒迦利亚', '玛拉基', '路得', '以斯帖', '约伯', '雅各', '犹大', '约翰'
+]);
+
 /**
  * 判断是否为纯书名（带预处理）
  * @param {string} query - 查询字符串
@@ -6414,20 +6431,24 @@ function isBookNameOnlyEnhanced(query) {
     // 🔧 添加预处理
     const cleanedQuery = preprocessInput(query);
     console.log(`📖 检查是否为纯书名: "${cleanedQuery}"`);
-    
+
     if (!cleanedQuery) {
         return false;
     }
-    
+
     // 检查现有映射和扩展映射
-    const isBookName = (typeof BOOK_NAME_MAP !== 'undefined' && BOOK_NAME_MAP[cleanedQuery]) || 
+    const isBookName = (typeof BOOK_NAME_MAP !== 'undefined' && BOOK_NAME_MAP[cleanedQuery]) ||
                       (typeof BOOK_VARIANT_COMPLETE_MAP !== 'undefined' && BOOK_VARIANT_COMPLETE_MAP[cleanedQuery]);
-    
+
     if (isBookName) {
+        if (AMBIGUOUS_BARE_BOOK_NAMES.has(cleanedQuery)) {
+            console.log(`⚠️ "${cleanedQuery}" 是歧义裸名（人名/常见词），不当作纯书名处理`);
+            return false;
+        }
         console.log(`✅ 识别为书名: "${cleanedQuery}"`);
         return true;
     }
-    
+
     console.log(`❌ 不是书名: "${cleanedQuery}"`);
     return false;
 }
@@ -6543,26 +6564,8 @@ async function handleBookDirectoryQuery(query) {
         const directoryContent = directoryData[standardBook];
         
         if (!directoryContent) {
-            console.log(`❌ 在目录中未找到: "${standardBook}"`);
-            
-            // 提供友好的错误提示
-            const cleanedQuery = preprocessInput(query);
-            const availableBooks = Object.keys(directoryData).filter(book => 
-                book.includes(cleanedQuery.substring(0, 1))
-            ).slice(0, 5);
-            
-            let errorMessage = `未找到"${standardBook}"的目录信息`;
-            if (availableBooks.length > 0) {
-                errorMessage += `\n\n相似的书卷包括：\n${availableBooks.join('\n')}`;
-            }
-            
-            if (typeof appendMessage === 'function') {
-                appendMessage('AI', errorMessage);
-            }
-            if (typeof appendCopyButton === 'function') {
-                appendCopyButton();
-            }
-            return true;
+            console.log(`❌ 在目录中未找到: "${standardBook}"，放行到后续优先级判断`);
+            return false;
         }
         
         console.log(`✅ 找到目录内容`);
@@ -6581,21 +6584,8 @@ async function handleBookDirectoryQuery(query) {
         return true;
         
     } catch (error) {
-        console.error('❌ 处理书名目录查询失败:', error);
-        
-        let errorMessage = `加载目录失败: ${error.message}`;
-        
-        if (error.message.includes('目录文件加载失败')) {
-            errorMessage += '\n\n请确保目录文件存在：private/4_sheng_jing_fen_lei_mu_lu.json';
-        }
-        
-        if (typeof appendMessage === 'function') {
-            appendMessage('AI', errorMessage);
-        }
-        if (typeof appendCopyButton === 'function') {
-            appendCopyButton();
-        }
-        return true;
+        console.error('❌ 处理书名目录查询失败:', error, '，放行到后续优先级判断');
+        return false;
     }
 }
 
@@ -7169,10 +7159,14 @@ function convertToStandardFormat(input) {
     // 模式7: 处理只有书名的情况（默认第一章第一节）
     match = cleanedInput.match(/^([^0-9第章节一二三四五六七八九十百〇零]+)$/);
     if (match) {
-        const bookName = BOOK_NAME_MAP[match[1]] || match[1];
-        const result = `${bookName}一1`;
-        console.log(`✅ 仅书名格式转换: "${cleanedInput}" -> "${result}"`);
-        return result;
+        if (AMBIGUOUS_BARE_BOOK_NAMES.has(match[1])) {
+            console.log(`⚠️ "${match[1]}" 是歧义裸名（人名/常见词），不自动补第一章第一节，继续往下走`);
+        } else {
+            const bookName = BOOK_NAME_MAP[match[1]] || match[1];
+            const result = `${bookName}一1`;
+            console.log(`✅ 仅书名格式转换: "${cleanedInput}" -> "${result}"`);
+            return result;
+        }
     }
     
     console.log(`❌ 无法转换: "${cleanedInput}"`);
