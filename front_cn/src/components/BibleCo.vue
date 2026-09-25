@@ -63,7 +63,7 @@
 import ToolsHeader from "@/components/ToolsHeader.vue";
 import { ref, computed } from "vue";
 import http from "@/utils/http.js";
-import { getToken } from "@/utils/auth.js";
+import { authFetch, getToken } from "@/utils/auth.js";
 
 const input = ref("");
 const showData = ref([]);
@@ -121,9 +121,8 @@ async function triggerDocxDownload(url, formData, defaultFilename) {
     return;
   }
 
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${getToken()}` },
     body: formData,
   });
   const data = await res.json().catch(() => ({}));

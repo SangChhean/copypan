@@ -54,7 +54,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
-import { setToken, setUsername, setIsAdmin } from '@/utils/auth.js'
+import { safeInternalPath, setToken, setUsername, setIsAdmin } from '@/utils/auth.js'
 
 const router = useRouter()
 const activeTab = ref('login')
@@ -79,7 +79,7 @@ async function onLogin() {
     setUsername(data.username || username)
     setIsAdmin(!!data.is_admin)
     message.success('登录成功')
-    router.replace('/')
+    router.replace(safeInternalPath(router.currentRoute.value.query.redirect))
   } catch (e) {
     message.error(e?.response?.data?.detail || '登录失败')
   } finally {

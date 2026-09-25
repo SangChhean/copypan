@@ -3,7 +3,7 @@ import ToolsHeader from "@/components/ToolsHeader.vue";
 import { ref, computed } from "vue";
 import { LoadingOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import http from "@/utils/http.js";
-import { getToken } from "@/utils/auth.js";
+import { authFetch, getToken } from "@/utils/auth.js";
 import { toastSuccess, toastWarning, toastError } from "@/utils/Dialog.js";
 const direction = ref("zh_cn2tw"); // zh_cn2tw | zh_tw2cn
 const downloadFormats = ref([]); // ["docx", "pdf"] - 用户选择的下载格式
@@ -214,11 +214,10 @@ async function downloadFormatted() {
   try {
     const orderedFormats = ["docx", "pdf"].filter((f) => downloadFormats.value.includes(f));
     for (const format of orderedFormats) {
-      const res = await fetch("/api/ai_search/format_outline_only", {
+      const res = await authFetch("/api/ai_search/format_outline_only", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({ 
           direction: direction.value, 

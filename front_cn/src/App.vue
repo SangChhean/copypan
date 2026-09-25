@@ -130,8 +130,11 @@ watch(guideModalOpen, (open) => {
   if (open) checkGuideExists()
 })
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', onResize)
+  // 等首次导航（含路由守卫）完成再判断：否则 route.path 仍是初始的 '/'，
+  // 会带着即将被守卫判定过期的 token 先发出 usage/me 请求
+  await router.isReady()
   if (showTopBar.value) loadUsage()
 })
 onUnmounted(() => {

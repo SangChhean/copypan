@@ -237,7 +237,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
-import { authHeaders, getToken } from '@/utils/auth.js'
+import { authFetch, getToken } from '@/utils/auth.js'
 
 const router = useRouter()
 
@@ -402,10 +402,6 @@ async function onSearch() {
     results.value = Array.isArray(data.msg) ? data.msg : []
     viewState.value = total.value === 0 ? 'empty' : 'results'
   } catch (e) {
-    if (e?.response?.status === 401) {
-      router.push('/login')
-      return
-    }
     message.error(e?.response?.data?.detail || '搜索失败，请稍后重试')
     viewState.value = 'empty'
   }
@@ -415,7 +411,7 @@ function onPageChange() {
   if (inputVar.value.trim()) onSearch()
 }
 
-/** 下载离线包：鉴权方式与资料下载一致（Bearer + fetch） */
+/** 下载离线包：鉴权方式与资料下载一致（authFetch） */
 async function onDownloadOffline() {
   if (!getToken()) {
     router.push('/login')
@@ -423,13 +419,7 @@ async function onDownloadOffline() {
   }
   offlineDownloading.value = true
   try {
-    const res = await fetch('/api/cn/es_search/download_offline_package', {
-      headers: { ...authHeaders() },
-    })
-    if (res.status === 401) {
-      router.push('/login')
-      return
-    }
+    const res = await authFetch('/api/cn/es_search/download_offline_package')
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(
@@ -532,10 +522,6 @@ async function openReading(refidRaw) {
     const el = document.querySelector('.ms-reading-modal .ant-modal-body')
     if (el) el.scrollTop = 0
   } catch (e) {
-    if (e?.response?.status === 401) {
-      router.push('/login')
-      return
-    }
     readingError.value = e?.response?.data?.detail || '加载原文失败'
   } finally {
     readingLoading.value = false
