@@ -368,7 +368,7 @@ import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { message } from 'ant-design-vue'
 import BibleMessage from './BibleMessage.vue'
-import { clearAuth, getToken, getUsername, isAdmin } from '@/utils/auth.js'
+import { AuthExpiredError, authFetch, clearAuth, getToken, getUsername, isAdmin } from '@/utils/auth.js'
 
 const POLLY_API = 'https://x2vi7ecfqk3q7qqfpruvveqkj40vbnxc.lambda-url.us-east-1.on.aws'
 const SHOW_POLLY_TTS = false
@@ -710,9 +710,7 @@ async function fetchDailyUsage() {
   const token = getToken() || ''
   if (!token) return
   try {
-    const res = await fetch('/api/cn/auth/usage', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const res = await authFetch('/api/cn/auth/usage')
     if (!res.ok) return
     const data = await res.json()
     const qa = data.qa || {}
@@ -935,11 +933,10 @@ async function toggleTTS(msg, engine = 'google') {
     try {
       let res
       if (engine === 'google') {
-        res = await fetch('/api/qa/tts', {
+        res = await authFetch('/api/qa/tts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken() || ''}`,
           },
           body: JSON.stringify({
             text: chunks[i],
@@ -948,11 +945,10 @@ async function toggleTTS(msg, engine = 'google') {
           signal: ctrl.signal,
         })
       } else if (engine === 'minimax') {
-        res = await fetch('/api/qa/tts/minimax', {
+        res = await authFetch('/api/qa/tts/minimax', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken() || ''}`,
           },
           body: JSON.stringify({
             text: chunks[i],
@@ -961,11 +957,10 @@ async function toggleTTS(msg, engine = 'google') {
           signal: ctrl.signal,
         })
       } else if (engine === 'elevenlabs') {
-        res = await fetch('/api/qa/tts/elevenlabs', {
+        res = await authFetch('/api/qa/tts/elevenlabs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken() || ''}`,
           },
           body: JSON.stringify({
             text: chunks[i],
@@ -1043,12 +1038,10 @@ async function switchLang(msg, lang) {
   }
   msg.translating = true
   try {
-    const token = getToken() || ''
-    const res = await fetch('/api/qa/translate', {
+    const res = await authFetch('/api/qa/translate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         text: msg.answer || '',
@@ -1126,11 +1119,8 @@ async function uploadAudio() {
     const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' })
     const formData = new FormData()
     formData.append('file', blob, 'recording.webm')
-    const res = await fetch('/api/qa/asr', {
+    const res = await authFetch('/api/qa/asr', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -1370,12 +1360,12 @@ async function submit() {
     let firstTokenReceived = false
 
     await navigator.locks.request('qa-stream', async () => {
-      const token = getToken() || ''
-      const response = await fetch('/api/qa/stream', {
+      // 在 Web Lock 回调内：401 必须抛错而不是挂起，否则锁永不释放（见 authFetch 注释）
+      const response = await authFetch('/api/qa/stream', {
+        throwOnUnauthorized: true,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           question: finalQuestion,
@@ -1529,6 +1519,8 @@ async function submit() {
       }
     })
   } catch (e) {
+    // 登录失效已由 authFetch 统一处理（清理状态并跳转登录页），这里不再提示错误
+    if (e instanceof AuthExpiredError) return
     stopTypewriter()
     const r = assistantRow()
     r.bibleGenerating = false
@@ -1574,11 +1566,10 @@ async function submitFeedback(msg, rating) {
 
   msg.feedbackSubmitting = true
   try {
-    const res = await fetch('/api/qa/feedback', {
+    const res = await authFetch('/api/qa/feedback', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         request_id: msg.request_id || '',

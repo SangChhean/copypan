@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { getToken, isAdmin } from '@/utils/auth.js'
+import { bindRouter, clearAuth, getToken, isAdmin, isTokenExpired, notifyAuthExpired } from '@/utils/auth.js'
 
 const routes = [
   {
@@ -61,13 +61,24 @@ const router = createRouter({
   routes,
 })
 
+bindRouter(router)
+
 router.beforeEach((to, _from, next) => {
   if (to.path === '/login') {
     next()
     return
   }
-  if (!getToken()) {
-    next('/login')
+  const token = getToken()
+  if (!token) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+    return
+  }
+  // 本地已能判断过期（或 token 损坏）时直接去登录页，不先进页面再等请求 401；
+  // 密钥变更等本地判断不了的情况，仍由请求层的 401 统一处理兜底
+  if (isTokenExpired(token)) {
+    clearAuth()
+    notifyAuthExpired()
+    next({ path: '/login', query: { redirect: to.fullPath } })
     return
   }
   if (to.path === '/admin' && !isAdmin()) {

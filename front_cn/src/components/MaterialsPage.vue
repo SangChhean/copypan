@@ -144,7 +144,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import http from '@/utils/http.js'
-import { authHeaders } from '@/utils/auth.js'
+import { authFetch } from '@/utils/auth.js'
 import { features, MATERIALS_FEATURE_KEYS } from '@/data/homeFeatures.js'
 
 const router = useRouter()
@@ -278,9 +278,7 @@ function goBack() {
 async function onDownloadZip(categoryId) {
   zipLoading.value = true
   try {
-    const res = await fetch(`/api/cn/materials/categories/${categoryId}/zip`, {
-      headers: { ...authHeaders() },
-    })
+    const res = await authFetch(`/api/cn/materials/categories/${categoryId}/zip`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.detail || `HTTP ${res.status}`)
@@ -305,9 +303,7 @@ async function onDownloadZip(categoryId) {
 async function onDownloadAllZip() {
   allZipLoading.value = true
   try {
-    const res = await fetch(`/api/cn/materials/type/${materialsType.value}/zip`, {
-      headers: { ...authHeaders() },
-    })
+    const res = await authFetch(`/api/cn/materials/type/${materialsType.value}/zip`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.detail || `HTTP ${res.status}`)
@@ -331,9 +327,7 @@ async function onDownloadAllZip() {
 
 async function downloadFile(record) {
   try {
-    const res = await fetch(`/api/cn/materials/${record.id}/download`, {
-      headers: { ...authHeaders() },
-    })
+    const res = await authFetch(`/api/cn/materials/${record.id}/download`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.detail || `HTTP ${res.status}`)

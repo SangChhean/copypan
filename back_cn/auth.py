@@ -16,6 +16,8 @@ from jose import JWTError, jwt
 DB_PATH = Path(__file__).resolve().parent / "cn_users.db"
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 7
+# 登录失效（无 token / 无效 / 过期）统一的 401 文案，get_current_user 与管理员鉴权共用
+UNAUTHORIZED_DETAIL = "未登录或 token 无效或已过期"
 
 FEATURES = (
     "outline",
@@ -490,7 +492,7 @@ def get_current_user(request: Request) -> dict[str, Any]:
 
     user = get_current_user_optional(request)
     if not user:
-        raise HTTPException(status_code=401, detail="未登录或 token 无效或已过期")
+        raise HTTPException(status_code=401, detail=UNAUTHORIZED_DETAIL)
     return user
 
 
@@ -499,7 +501,11 @@ def _check_admin_access(
     x_admin_token: str | None = None,
     current_user: dict[str, Any] | None = None,
 ) -> bool:
-    """管理员鉴权核心：X-Admin-Token 或 is_admin JWT 二选一（OR）。"""
+    """管理员鉴权核心：X-Admin-Token 或 is_admin JWT 二选一（OR）。
+
+    都不满足时：没有有效登录（无 JWT / JWT 无效或过期）→ 401，前端据此跳转登录页；
+    已登录但不是管理员 → 403，前端原地提示，不跳转。
+    """
     from fastapi import HTTPException
 
     if current_user is None:
@@ -512,6 +518,8 @@ def _check_admin_access(
         return True
     if current_user and current_user.get("is_admin"):
         return True
+    if not current_user:
+        raise HTTPException(status_code=401, detail=UNAUTHORIZED_DETAIL)
     raise HTTPException(status_code=403, detail="需要管理员权限")
 
 

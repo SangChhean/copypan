@@ -132,8 +132,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
-import { getToken } from '@/utils/auth.js'
+import http from '@/utils/http.js'
 
 defineProps({
   embedded: {
@@ -165,8 +164,7 @@ async function submit() {
   loading.value = true
   result.value = null
   try {
-    const token = getToken()
-    const res = await axios.post(
+    const res = await http.post(
       '/api/qa/query',
       {
         question: question.value.trim(),
@@ -179,11 +177,8 @@ async function submit() {
           rerank_top_n: params.value.rerank_top_n,
         },
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      // 调试模式跳过缓存、跑完整流水线，可能较慢：保持改造前的"不限时"
+      { timeout: 0 },
     )
     result.value = res.data
   } catch (e) {
