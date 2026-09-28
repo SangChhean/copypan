@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PanAI 4.0 测试台 · 样式参考稿</title>
+<!--
+  PanAI 4.0 测试台 · 样式参考稿（静态页，供 Cursor 照着实现 PanAI4Test.vue）
+  - 只用系统字体，不引外部字体、图标库；图标一律用内联 SVG。
+  - 颜色、间距、圆角都集中在 :root 变量里，实现时直接沿用变量名与 class 名。
+  - 页面上的文字是示例内容。
+-->
+<style>
+:root{
+  --bg:#f3f1ec;            /* 页面底色：暖灰 */
+  --panel:#ffffff;         /* 区块卡片 */
+  --subtle:#faf9f6;        /* 卡片内的浅底（输出正文、输入框底） */
+  --sunken:#f0ede6;        /* 区块页脚、页签底 */
+  --line:#e2ddd2;          /* 常规边框 */
+  --line-strong:#cfc8b9;   /* 输入框边框 */
+  --ink:#1f1d1a;           /* 正文 */
+  --ink-2:#55504a;         /* 次要文字 */
+  --ink-3:#8a8479;         /* 说明、元数据 */
+  --primary:#1e3a5f;       /* 主色：与站点顶栏同色系的深蓝 */
+  --primary-soft:#e6edf6;
+  --ok:#2f6b3a;   --ok-soft:#e5f0e3;
+  --run:#9a5b12;  --run-soft:#fbeedc;
+  --err:#a8322a;  --err-soft:#f8e4e1;
+  --wait:#6b665d; --wait-soft:#eeebe4;
+  --radius:12px; --radius-sm:8px;
+  --shadow:0 1px 2px rgba(31,29,26,.05), 0 2px 8px rgba(31,29,26,.04);
+  --font:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --font-title:"Songti SC","STSong","SimSun","Noto Serif SC",serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.6}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--primary)}
+
+/* 站点顶栏保持原样，这里只示意 */
+.topbar{height:52px;background:#0b1a33;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;letter-spacing:.5px}
+
+.page{max-width:1600px;margin:0 auto;padding:24px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.main{display:flex;flex-direction:column;gap:20px;min-width:0}
+
+/* ── 区块卡片 ── */
+.section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.section-title{display:flex;align-items:center;gap:10px;margin:0;font-size:16px;font-weight:700}
+.section-num{width:24px;height:24px;border-radius:50%;background:var(--primary);color:#fff;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+.section-body{padding:20px}
+.section-foot{padding:16px 20px;background:var(--sunken);border-top:1px solid var(--line)}
+.meta{font-size:12px;color:var(--ink-3)}
+
+/* ── 按钮 ── */
+.btn{height:36px;padding:0 14px;border:1px solid var(--line-strong);background:var(--panel);border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--subtle)}
+.btn-sm{height:30px;padding:0 10px;font-size:13px}
+.btn-icon{width:36px;padding:0;justify-content:center}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700;height:42px;padding:0 24px}
+.btn-primary:hover{background:#16304f}
+.btn[disabled]{background:var(--sunken);color:var(--ink-3);border-color:var(--line);cursor:not-allowed}
+.btn-link{border:0;background:none;padding:0;color:var(--primary);cursor:pointer;font-size:13px}
+.icon{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* ── 状态标签 ── */
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip-ok{background:var(--ok-soft);color:var(--ok)}
+.chip-run{background:var(--run-soft);color:var(--run)}
+.chip-err{background:var(--err-soft);color:var(--err)}
+.chip-wait{background:var(--wait-soft);color:var(--wait)}
+
+/* ── 一、输入 ── */
+.setbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.select{height:36px;min-width:260px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel)}
+.items{display:flex;flex-direction:column;gap:12px}
+.item{border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--subtle)}
+.item-top{display:flex;align-items:center;gap:10px;padding:12px}
+.item-no{flex-shrink:0;min-width:52px;height:26px;padding:0 8px;border-radius:13px;background:var(--primary-soft);color:var(--primary);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.field-label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.title-input{flex-grow:1;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel);font-size:15px}
+.item-outline{padding:0 12px 12px 74px}
+.outline-bar{display:flex;align-items:center;justify-content:space-between;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);font-size:13px;color:var(--ink-2)}
+.outline-bar.empty{border-style:dashed;background:transparent;color:var(--ink-3)}
+.outline-text{width:100%;height:220px;padding:12px 14px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel);line-height:1.8;font-size:13px;resize:vertical}
+.input-foot{display:flex;align-items:flex-end;gap:16px}
+.note{flex-grow:1}
+.note input{width:100%;height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel)}
+.estimate{font-size:13px;color:var(--ink-2);text-align:right;line-height:1.5}
+.estimate strong{color:var(--ink);font-size:15px}
+.warn{margin-top:10px;font-size:13px;color:var(--run)}
+
+/* ── 二、流程 ── */
+.flow{display:flex;flex-direction:column;gap:14px}
+.flow-row{display:flex;align-items:center;gap:0}
+.flow-label{width:56px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--ink-3)}
+.step{min-width:112px;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--panel);text-align:center}
+.step-name{font-size:13px;font-weight:700}
+.step-state{font-size:11px;color:var(--ink-3)}
+.step.done{background:var(--ok-soft);border-color:#c7ddc3}.step.done .step-state{color:var(--ok)}
+.step.running{background:var(--primary);border-color:var(--primary);color:#fff}.step.running .step-state{color:#d8e3f1}
+.step.failed{background:var(--err-soft);border-color:#ebc3be}.step.failed .step-state{color:var(--err)}
+.step.pending{background:var(--panel)}
+.step.todo{background:transparent;border-style:dashed;color:var(--ink-3)}
+.connector{width:28px;height:2px;background:var(--line-strong);flex-shrink:0}
+.flow-viewing{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+
+/* ── 三、结果 ── */
+.results-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px}
+.results-toolbar h2{margin:0}
+.toolbar-group{display:flex;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card-head{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer}
+.card-head:hover{background:var(--subtle)}
+.card.open .card-head{border-bottom:1px solid var(--line);background:var(--subtle)}
+.chev{transition:transform .15s}
+.card.open .chev{transform:rotate(90deg)}
+.card-title{flex-grow:1;min-width:0;font-family:var(--font-title);font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.card-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+
+.block{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
+.block-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--panel);cursor:pointer}
+.block-name{font-weight:700;font-size:14px}
+.block-meta{margin-left:auto;font-size:12px;color:var(--ink-3);white-space:nowrap}
+.block-body{border-top:1px solid var(--line);background:var(--subtle)}
+.tabs{display:flex;gap:4px;padding:8px 14px 0;background:var(--sunken);border-bottom:1px solid var(--line)}
+.tab{padding:6px 14px;border-radius:6px 6px 0 0;font-size:13px;color:var(--ink-2);border:1px solid transparent;border-bottom:0;cursor:pointer;background:none}
+.tab.active{background:var(--subtle);border-color:var(--line);color:var(--ink);font-weight:700;margin-bottom:-1px}
+.output{padding:14px 18px;font-size:14px;line-height:1.95;white-space:pre-wrap;max-height:420px;overflow:auto;user-select:text}
+.block-links{display:flex;gap:18px;padding:8px 18px 12px}
+.skipline{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px dashed var(--line-strong);border-radius:var(--radius-sm);color:var(--ink-3);font-size:13px}
+
+/* ── 四、历史记录 ── */
+.aside{position:sticky;top:16px;max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+.aside .section-body{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.hist{display:block;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);cursor:pointer}
+.hist:hover{background:var(--subtle)}
+.hist.selected{border-color:var(--primary);background:var(--primary-soft)}
+.hist-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hist-no{font-weight:700;font-size:14px}
+.hist-line{font-size:12px;color:var(--ink-3)}
+.hist-note{font-size:12px;color:var(--ink-2);margin-top:2px}
+.hist-src{font-size:12px;color:var(--primary);margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">PanAI 4.0 测试台</div>
+
+<div class="page">
+<div class="main">
+
+<!-- ═══ 一、输入 ═══ -->
+<section class="section">
+  <div class="section-head">
+    <h2 class="section-title"><span class="section-num">1</span>输入</h2>
+    <div class="setbar">
+      <label class="meta" for="set">题组</label>
+      <select id="set" class="select"><option>2025 冬季训练 · 12 篇</option></select>
+      <button class="btn">载入</button>
+      <button class="btn">保存</button>
+      <button class="btn">另存为</button>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="items">
+
+      <!-- 篇目：原纲目展开 -->
+      <div class="item">
+        <div class="item-top">
+          <span class="item-no">第 1 篇</span>
+          <input class="title-input" aria-label="第1篇篇题" value="认识并经历亚伯拉罕的神、以撒的神和雅各的神，而成为神的以色列">
+          <button class="btn btn-icon" aria-label="在下面加一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="btn btn-icon" aria-label="删除这一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        </div>
+        <div class="item-outline">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label class="field-label" for="o1" style="margin:0">原纲目 · 已贴 2,596 字</label>
+            <button class="btn-link">收起</button>
+          </div>
+          <textarea id="o1" class="outline-text">第一篇　认识并经历亚伯拉罕的神、以撒的神和雅各的神，而成为神的以色列
+读经：创二八13，三三20，出三6、14~15，徒三13，加六16，帖前一1
+壹　我们的神乃是三个特别人物——亚伯拉罕、以撒、雅各——的神；这含示祂是三一神——出三15，太二八19，林后十三14：
+一　亚伯拉罕、以撒、雅各是以色列国的根基……</textarea>
+        </div>
+      </div>
+
+      <!-- 篇目：原纲目收起 -->
+      <div class="item">
+        <div class="item-top">
+          <span class="item-no">第 2 篇</span>
+          <input class="title-input" aria-label="第2篇篇题" value="亚伯拉罕的神见于祂对待亚伯拉罕的事">
+          <button class="btn btn-icon" aria-label="在下面加一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="btn btn-icon" aria-label="删除这一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        </div>
+        <div class="item-outline">
+          <div class="outline-bar"><span>原纲目 · 已贴 2,718 字</span><button class="btn-link">展开</button></div>
+        </div>
+      </div>
+
+      <!-- 篇目：无原纲目 -->
+      <div class="item">
+        <div class="item-top">
+          <span class="item-no">第 3 篇</span>
+          <input class="title-input" aria-label="第3篇篇题" placeholder="输入篇题">
+          <button class="btn btn-icon" aria-label="在下面加一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="btn btn-icon" aria-label="删除这一篇"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        </div>
+        <div class="item-outline">
+          <div class="outline-bar empty"><span>无原纲目：只跑负担说明、龙骨</span><button class="btn-link">贴上原纲目</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="section-foot">
+    <div class="input-foot">
+      <div class="note">
+        <label class="field-label" for="note">备注（这次测什么）</label>
+        <input id="note" placeholder="例如：测 Prompt1 v0.3，看团体面是否带出">
+      </div>
+      <div class="estimate">共 3 篇<br><strong>预估约 0.78 美元</strong></div>
+      <button class="btn btn-primary" disabled>开始运行</button>
+    </div>
+    <div class="warn">已有运行中的任务（#28），请等它结束后再开始。</div>
+  </div>
+</section>
+
+<!-- ═══ 二、流程 ═══ -->
+<section class="section">
+  <div class="section-head">
+    <h2 class="section-title"><span class="section-num">2</span>流程</h2>
+    <div class="flow-viewing">
+      <span>运行 #28 · 已完成 1 / 3 篇 · 累计 0.22 美元</span>
+      <label class="meta" for="viewing">当前显示</label>
+      <select id="viewing" class="select" style="min-width:160px;height:30px;font-size:13px"><option>第 2 篇（进行中）</option></select>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="flow">
+      <div class="flow-row">
+        <span class="flow-label">主线</span>
+        <div class="step done"><div class="step-name">主题</div><div class="step-state">完成</div></div>
+        <span class="connector"></span>
+        <div class="step done"><div class="step-name">负担说明</div><div class="step-state">完成 · 66 秒</div></div>
+        <span class="connector"></span>
+        <div class="step running"><div class="step-name">龙骨</div><div class="step-state">进行中…</div></div>
+        <span class="connector"></span>
+        <div class="step todo"><div class="step-name">检索</div><div class="step-state">待设计</div></div>
+        <span class="connector"></span>
+        <div class="step todo"><div class="step-name">生成</div><div class="step-state">待设计</div></div>
+        <span class="connector"></span>
+        <div class="step todo"><div class="step-name">评估</div><div class="step-state">待设计</div></div>
+      </div>
+      <div class="flow-row">
+        <span class="flow-label">分析</span>
+        <div class="step done"><div class="step-name">原纲目的龙骨</div><div class="step-state">完成（沿用）</div></div>
+        <span class="connector"></span>
+        <div class="step pending"><div class="step-name">对比诊断</div><div class="step-state">等待</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 三、结果 ═══ -->
+<div class="results-toolbar">
+  <h2 class="section-title"><span class="section-num">3</span>结果</h2>
+  <div class="toolbar-group">
+    <button class="btn btn-sm">全部展开</button>
+    <button class="btn btn-sm">全部收起</button>
+    <button class="btn btn-sm">整次从某一步重跑 <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="btn btn-sm" disabled title="第5步提供">导出 docx（第5步）</button>
+  </div>
+</div>
+
+<!-- 结果卡片：展开 -->
+<article class="card open">
+  <div class="card-head">
+    <svg class="icon chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+    <span class="item-no">第 1 篇</span>
+    <span class="card-title" title="认识并经历亚伯拉罕的神、以撒的神和雅各的神，而成为神的以色列">认识并经历亚伯拉罕的神、以撒的神和雅各的神，而成为神的以色列</span>
+    <span class="chip chip-ok">完成</span>
+    <span class="card-meta">0.25 美元 · 2 分 09 秒</span>
+    <button class="btn btn-sm">只重跑这一篇 <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div class="card-body">
+
+    <div class="block">
+      <div class="block-head">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        <span class="block-name">负担说明</span>
+        <span class="chip chip-ok">完成</span>
+        <span class="block-meta">Prompt1 v0.3 · 输入 6,236 / 输出 5,995 · 0.145 美元 · 65.8 秒</span>
+      </div>
+      <div class="block-body">
+        <div class="tabs">
+          <button class="tab">职事界定</button>
+          <button class="tab">真理脉络</button>
+          <button class="tab active">负担说明</button>
+        </div>
+        <div class="output">神自称是亚伯拉罕的神、以撒的神、雅各的神（出三15）。这名启示三一神要在祂所拣选的人身上，成就一个完整的生命经历，把自己作到人里面，将抓夺的雅各构成为神的以色列。
+
+认识亚伯拉罕的神，乃是看见父是使死人活过来、使无变为有的神（罗四17），祂的呼召成了我们信的源头；认识以撒的神，乃是凭着子承受父所预备的一切，在安息中享受恩典。</div>
+        <div class="block-links"><button class="btn-link">查看思考过程</button><button class="btn-link">查看送出的 prompt</button></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        <span class="block-name">龙骨</span>
+        <span class="chip chip-ok">完成</span>
+        <span class="block-meta">Prompt2 v0.1 · 输入 2,442 / 输出 913 · 0.028 美元 · 9.7 秒</span>
+      </div>
+      <div class="block-body">
+        <div class="output">1. 神自称是亚伯拉罕的神、以撒的神、雅各的神（出三15）……
+2. 认识亚伯拉罕的神，就是看见父是使死人活过来、使无变为有的神（罗四17）……
+3. 认识以撒的神，就是凭着子承受父所预备的一切，在安息中享受恩典。</div>
+        <div class="block-links"><button class="btn-link">查看思考过程</button><button class="btn-link">查看送出的 prompt</button></div>
+      </div>
+    </div>
+
+    <div class="skipline"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>检索 · 生成 · 评估　跳过（待设计）</div>
+
+    <div class="block">
+      <div class="block-head">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="block-name">原纲目的龙骨</span>
+        <span class="chip chip-ok">完成 · 沿用缓存</span>
+        <span class="block-meta">Prompt3 v0.1 · 沿用自运行 #16</span>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="block-name">对比诊断</span>
+        <span class="chip chip-ok">完成</span>
+        <span class="block-meta">Prompt4 v0.1 · 输入 2,941 / 输出 4,278 · 0.097 美元 · 43.3 秒</span>
+      </div>
+    </div>
+
+  </div>
+</article>
+
+<!-- 结果卡片：收起（进行中 / 等待 / 失败） -->
+<article class="card">
+  <div class="card-head">
+    <svg class="icon chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+    <span class="item-no">第 2 篇</span>
+    <span class="card-title">亚伯拉罕的神见于祂对待亚伯拉罕的事</span>
+    <span class="chip chip-run">进行中 · 龙骨</span>
+    <span class="card-meta">0.14 美元 · 1 分 12 秒</span>
+    <button class="btn btn-sm" disabled>只重跑这一篇</button>
+  </div>
+</article>
+
+<article class="card">
+  <div class="card-head">
+    <svg class="icon chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+    <span class="item-no">第 3 篇</span>
+    <span class="card-title">[第三篇篇题]</span>
+    <span class="chip chip-wait">等待</span>
+    <span class="card-meta">—</span>
+    <button class="btn btn-sm" disabled>只重跑这一篇</button>
+  </div>
+</article>
+
+<article class="card">
+  <div class="card-head">
+    <svg class="icon chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+    <span class="item-no">第 4 篇</span>
+    <span class="card-title">[失败时的样子]</span>
+    <span class="chip chip-err">失败 · Prompt1 输出中找不到【负担说明】</span>
+    <span class="card-meta">0.14 美元</span>
+    <button class="btn btn-sm">只重跑这一篇 <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+</article>
+
+</div>
+
+<!-- ═══ 四、历史记录 ═══ -->
+<aside class="section aside">
+  <div class="section-head">
+    <h2 class="section-title"><span class="section-num">4</span>历史记录</h2>
+  </div>
+  <div class="section-body">
+    <button class="hist selected">
+      <div class="hist-top"><span class="hist-no">#28</span><span class="chip chip-run">进行中</span></div>
+      <div class="hist-line">09-28 15:22 · 3 篇 · 0.22 美元</div>
+      <div class="hist-note">测 Prompt1 v0.3，看团体面是否带出</div>
+    </button>
+    <button class="hist">
+      <div class="hist-top"><span class="hist-no">#27</span><span class="chip chip-ok">完成</span></div>
+      <div class="hist-line">09-28 14:31 · 1 篇 · 0.25 美元</div>
+      <div class="hist-note">真模型核对 max_tokens</div>
+    </button>
+    <button class="hist">
+      <div class="hist-top"><span class="hist-no">#25</span><span class="chip chip-ok">完成</span></div>
+      <div class="hist-line">09-28 14:24 · 1 篇 · 假模型</div>
+      <div class="hist-src">重跑自 #23 第 3 篇，从龙骨</div>
+      <div class="hist-note">页面假模型</div>
+    </button>
+    <button class="hist">
+      <div class="hist-top"><span class="hist-no">#14</span><span class="chip chip-err">中断</span></div>
+      <div class="hist-line">09-28 12:31 · 2 篇 · 假模型</div>
+    </button>
+  </div>
+</aside>
+
+</div>
+</body>
+</html>

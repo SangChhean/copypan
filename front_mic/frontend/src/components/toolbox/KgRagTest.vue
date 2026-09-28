@@ -228,8 +228,8 @@ const translating = ref(false);
 /** Step5 纲目展示 Tab：zh | en | tw */
 const outlineResultTab = ref("zh");
 
-/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；4.0 全索引 */
-const aiMode = ref("3.0"); // "2.0" | "3.0" | "4.0"
+/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；3.5 全索引 */
+const aiMode = ref("3.0"); // "2.0" | "3.0" | "3.5"
 function setAiMode(m) {
   aiMode.value = m;
 }
@@ -1406,7 +1406,7 @@ onMounted(() => {
                       <a-col :span="24">
                         <div class="ai-mode-switcher">
                           <button
-                            v-for="m in ['2.0', '3.0', '4.0']"
+                            v-for="m in ['2.0', '3.0', '3.5']"
                             :key="m"
                             type="button"
                             :class="['ai-mode-btn', { active: aiMode === m }]"

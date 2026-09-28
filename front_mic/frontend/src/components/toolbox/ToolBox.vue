@@ -73,6 +73,7 @@ const go = (val = "/") => {
           <div class="card_title"><ApartmentOutlined /> 图谱测试</div>
         </template>
         <a-card-grid class="card c2" @click="go('/kg-rag-test')"><span class="card_text">KG-RAG 测试工作台</span></a-card-grid>
+        <a-card-grid class="card c2" @click="go('/panai4-test')"><span class="card_text">PanAI 4.0 测试台</span></a-card-grid>
       </a-card>
     </div>
   </div>

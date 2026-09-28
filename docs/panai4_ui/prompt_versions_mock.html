@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PanAI 4.0 测试台 · Prompt 版本草图</title>
+<!--
+  PanAI 4.0 测试台 · Prompt 版本功能草图（静态页）
+  沿用 testbench_mock.html 的变量与 class，新增部分集中在文件后半段的样式。
+  页面分四块示意：A. 顶端页签；B. Prompt 版本页（编辑状态）；C. 对比状态；D. 运行页里的版本选择、排队、只看我的。
+-->
+<style>
+:root{
+  --bg:#f3f1ec;--panel:#ffffff;--subtle:#faf9f6;--sunken:#f0ede6;
+  --line:#e2ddd2;--line-strong:#cfc8b9;--ink:#1f1d1a;--ink-2:#55504a;--ink-3:#8a8479;
+  --primary:#1e3a5f;--primary-soft:#e6edf6;--link:#2f6fdb;
+  --ok:#2f6b3a;--ok-soft:#e5f0e3;--run:#9a5b12;--run-soft:#fbeedc;
+  --err:#a8322a;--err-soft:#f8e4e1;--wait:#6b665d;--wait-soft:#eeebe4;
+  --test:#6a3fa0;--test-soft:#efe8f8;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 2px rgba(31,29,26,.05),0 2px 8px rgba(31,29,26,.04);
+  --font:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.6}
+button,input,textarea,select{font:inherit;color:inherit}
+.topbar{height:52px;background:#0b1a33;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+.wrap{max-width:1600px;margin:0 auto;padding:20px 32px 60px;display:flex;flex-direction:column;gap:28px}
+.label-a{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:1px;margin-bottom:8px}
+
+.section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.section-title{display:flex;align-items:center;gap:10px;margin:0;font-size:16px;font-weight:700}
+.section-num{width:24px;height:24px;border-radius:50%;background:var(--primary);color:#fff;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+.section-body{padding:20px}
+.section-foot{padding:16px 20px;background:var(--sunken);border-top:1px solid var(--line)}
+.meta{font-size:12px;color:var(--ink-3)}
+.btn{height:36px;padding:0 14px;border:1px solid var(--line-strong);background:var(--panel);border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--subtle)}
+.btn-sm{height:30px;padding:0 10px;font-size:13px}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.btn-primary[disabled]{background:#c9ced6;border-color:#c9ced6;color:#fff;cursor:not-allowed}
+.btn-danger{color:var(--err);border-color:#e3b9b3}
+.btn-link{border:0;background:none;padding:0;color:var(--link);cursor:pointer;font-size:13px}
+.btn-link:hover{text-decoration:underline;color:#1f55b8}
+.icon{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip-cur{background:var(--primary-soft);color:var(--primary)}
+.chip-test{background:var(--test-soft);color:var(--test)}
+.chip-run{background:var(--run-soft);color:var(--run)}
+.chip-wait{background:var(--wait-soft);color:var(--wait)}
+.chip-ok{background:var(--ok-soft);color:var(--ok)}
+.chip-err{background:var(--err-soft);color:var(--err)}
+
+/* A. 页签 */
+.tabs-top{display:flex;gap:4px;border-bottom:1px solid var(--line-strong)}
+.tabtop{padding:10px 22px;font-size:15px;font-weight:600;color:var(--ink-2);background:none;border:1px solid transparent;border-bottom:0;border-radius:10px 10px 0 0;cursor:pointer}
+.tabtop.active{background:var(--panel);border-color:var(--line-strong);color:var(--primary);margin-bottom:-1px}
+
+/* B. Prompt 版本页 */
+.pv{display:grid;grid-template-columns:320px minmax(0,1fr);min-height:760px}
+.pv-list{border-right:1px solid var(--line);background:var(--subtle);padding:12px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.pv-group-title{font-size:13px;font-weight:700;color:var(--ink-2);padding:0 4px 6px;display:flex;justify-content:space-between;align-items:center}
+.pv-item{display:block;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);cursor:pointer;margin-bottom:6px}
+.pv-item:hover{background:#fff}
+.pv-item.selected{border-color:var(--test);box-shadow:0 0 0 2px var(--test-soft)}
+.pv-item-top{display:flex;align-items:center;gap:8px}
+.pv-name{font-weight:700;font-size:14px}
+.pv-line{font-size:12px;color:var(--ink-3)}
+.pv-note{font-size:12px;color:var(--ink-2)}
+.pv-main{display:flex;flex-direction:column;min-width:0}
+.pv-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+.pv-toolbar .grow{flex-grow:1}
+.pv-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+.pv-form{padding:16px 20px;display:flex;flex-direction:column;gap:12px;flex-grow:1}
+.field-label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.input{width:100%;height:38px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel)}
+.editor{width:100%;flex-grow:1;min-height:440px;padding:14px 16px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel);line-height:1.9;font-size:13.5px;resize:vertical}
+.checks{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px}
+.ck-ok{color:var(--ok);font-weight:600}
+.ck-bad{color:var(--err);font-weight:600}
+.pv-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--sunken);border-top:1px solid var(--line)}
+
+/* C. 对比 */
+.diff{padding:14px 20px;font-size:13.5px;line-height:1.95;background:var(--subtle)}
+.diff-line{padding:1px 8px;border-radius:4px;white-space:pre-wrap}
+.diff-del{background:#fbe3e0;text-decoration:line-through;color:#8a2a22}
+.diff-add{background:#e2f1df;color:#24542d}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink-3);align-items:center}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:4px}
+
+/* D. 运行页片段 */
+.grid-d{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.opts{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:center;font-size:13px}
+.opts .k{color:var(--ink-3);font-weight:700}
+.radio{display:inline-flex;align-items:center;gap:4px;margin-right:14px}
+.vbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);font-size:13px}
+.vbar.test{border-color:#cdb8ea;background:var(--test-soft);color:var(--test)}
+.vgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border:1px solid #cdb8ea;border-top:0;border-radius:0 0 var(--radius-sm) var(--radius-sm);background:var(--panel)}
+.select{width:100%;height:34px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--panel);font-size:13px}
+.select.test{border-color:var(--test);color:var(--test);font-weight:600}
+.run-foot{display:flex;align-items:flex-end;justify-content:flex-end;gap:16px;margin-top:14px}
+.estimate{font-size:13px;color:var(--ink-2);text-align:right;line-height:1.5}
+.estimate strong{color:var(--ink);font-size:15px}
+.queue{display:flex;align-items:center;gap:10px;font-size:13px}
+.hist{display:block;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);margin-bottom:8px}
+.hist-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hist-no{font-weight:700}
+.hist-line{font-size:12px;color:var(--ink-3)}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2)}
+.block-meta-demo{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel)}
+</style>
+</head>
+<body>
+<div class="topbar">PanAI 4.0 测试台</div>
+<div class="wrap">
+
+<!-- ═══ A ═══ -->
+<div>
+  <div class="label-a">A　顶端页签（"运行"就是现在整页，内容不变）</div>
+  <div class="tabs-top">
+    <button class="tabtop">运行</button>
+    <button class="tabtop active">Prompt 版本</button>
+  </div>
+</div>
+
+<!-- ═══ B ═══ -->
+<div>
+  <div class="label-a">B　Prompt 版本页 · 新建测试版（编辑状态）</div>
+  <section class="section">
+    <div class="pv">
+      <nav class="pv-list" aria-label="Prompt 版本列表">
+
+        <div>
+          <div class="pv-group-title"><span>Prompt1　负担说明</span><span class="meta">3 个版本</span></div>
+          <button class="pv-item">
+            <div class="pv-item-top"><span class="pv-name">v0.3</span><span class="chip chip-cur"><svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>当前版</span></div>
+            <div class="pv-line">Srey · 09-24</div>
+          </button>
+          <button class="pv-item">
+            <div class="pv-item-top"><span class="pv-name">v0.3-测1</span><span class="chip chip-test">测试版</span></div>
+            <div class="pv-line">张弟兄 · 09-29 10:12 · 已用 3 次</div>
+            <div class="pv-note">团体面改为必写</div>
+          </button>
+        </div>
+
+        <div>
+          <div class="pv-group-title"><span>Prompt2　新生成的龙骨</span><span class="meta">2 个版本</span></div>
+          <button class="pv-item">
+            <div class="pv-item-top"><span class="pv-name">v0.2</span><span class="chip chip-cur">当前版</span></div>
+            <div class="pv-line">Srey · 09-28</div>
+          </button>
+          <button class="pv-item selected">
+            <div class="pv-item-top"><span class="pv-name">v0.2-测1</span><span class="chip chip-test">编辑中</span></div>
+            <div class="pv-line">李弟兄 · 尚未保存</div>
+          </button>
+        </div>
+
+        <div>
+          <div class="pv-group-title"><span>Prompt3　原纲目的龙骨</span><span class="meta">1 个版本</span></div>
+          <button class="pv-item">
+            <div class="pv-item-top"><span class="pv-name">v0.2</span><span class="chip chip-cur">当前版</span></div>
+            <div class="pv-line">Srey · 09-28</div>
+          </button>
+        </div>
+
+        <div>
+          <div class="pv-group-title"><span>Prompt4　对比诊断</span><span class="meta">1 个版本</span></div>
+          <button class="pv-item">
+            <div class="pv-item-top"><span class="pv-name">v0.1</span><span class="chip chip-cur">当前版</span></div>
+            <div class="pv-line">Srey · 09-23</div>
+          </button>
+        </div>
+
+        <p class="meta" style="margin:0;padding:0 4px">当前版只能查看，由 Srey 经代码更新。测试版任何人可建、可删。</p>
+      </nav>
+
+      <div class="pv-main">
+        <div class="pv-toolbar">
+          <div class="pv-title">Prompt2　新生成的龙骨　<span class="chip chip-test">新建测试版 · 底稿 v0.2（当前版）</span></div>
+          <span class="grow"></span>
+          <button class="btn btn-sm">和底稿对比</button>
+          <button class="btn btn-sm">和当前版对比</button>
+        </div>
+        <div class="pv-form">
+          <div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px">
+            <div>
+              <label class="field-label" for="vname">版本名（自动）</label>
+              <input id="vname" class="input" value="v0.2-测1" readonly style="background:var(--sunken)">
+            </div>
+            <div>
+              <label class="field-label" for="vnote">修改说明（必填）</label>
+              <input id="vnote" class="input" value="排序规则改为：应用实行固定排在确定目标之前">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;flex-grow:1">
+            <label class="field-label" for="ed">Prompt 全文</label>
+            <textarea id="ed" class="editor">你是一位熟悉倪柝声、李常受职事信息的助手。
+你的任务是根据用户提供的篇题/主题与负担说明，生成一份「龙骨」——6-9条最核心的要点，对应纲目未来的6-9个大点。
+━━━━━━━━━━━━━━━━━━━
+⛔严格遵守
+━━━━━━━━━━━━━━━━━━━
+①最终只输出6-9条要点内容本身，不标注每条属于六阶段的哪一项，不编号类别、不加标签。
+……
+━━━━━━━━━━━━━━━━━━━
+【排序】
+━━━━━━━━━━━━━━━━━━━
+确定目标固定排在整份龙骨列表最后；应用实行固定排在确定目标之前；其余各项严格按负担说明原文的先后顺序排列……
+━━━━━━━━━━━━━━━━━━━
+【用户输入】
+━━━━━━━━━━━━━━━━━━━
+-篇题/主题：{query}
+-负担说明：{burden}</textarea>
+          </div>
+          <div class="checks">
+            <span class="meta">填入位检查</span>
+            <span class="ck-ok">✓ {query}</span>
+            <span class="ck-ok">✓ {burden}</span>
+            <span class="meta">（必须恰好这两个，各一次）</span>
+          </div>
+        </div>
+        <div class="pv-foot">
+          <span class="meta">保存后成为新的测试版，不会改动底稿。</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn">取消</button>
+            <button class="btn btn-primary">保存为测试版</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ C ═══ -->
+<div>
+  <div class="label-a">C　查看一个测试版 · 和当前版对比</div>
+  <section class="section">
+    <div class="pv-toolbar">
+      <div class="pv-title">Prompt1　v0.3-测1　<span class="chip chip-test">测试版</span></div>
+      <span class="meta">张弟兄 · 09-29 10:12 · 已用 3 次 · 团体面改为必写</span>
+      <span class="grow"></span>
+      <button class="btn btn-sm">以此为底稿新建</button>
+      <button class="btn btn-sm">显示全文</button>
+      <button class="btn btn-sm btn-danger">删除</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--line)">
+      <span style="font-size:13px;font-weight:700">和当前版 v0.3 对比：改动 2 处</span>
+      <span class="legend"><span><span class="sw" style="background:#fbe3e0"></span>删去</span><span><span class="sw" style="background:#e2f1df"></span>新增</span><span>未改动的段落收起</span></span>
+    </div>
+    <div class="diff">
+      <div class="meta">…… 第 30 段之前未改动 ……</div>
+      <div class="diff-line diff-del">团体建造一项，须沿着神的经纶那条线带出……若职事对本题确实没有这一面、写不出来，可在【真理脉络】第0行下注明「团体面：本题不明显」，不可临时补出。</div>
+      <div class="diff-line diff-add">团体建造一项，须沿着神的经纶那条线带出，每篇都必须写出，不得注明「本题不明显」。</div>
+      <div class="meta">…… 第 31–87 段未改动 ……</div>
+      <div class="diff-line diff-del">·团体一环：……写不出的，在第0行下注明「团体面：本题不明显」。</div>
+      <div class="diff-line diff-add">·团体一环：沿着经纶那条线带出，写出第X环里神作进人里面的东西，怎样构成召会、建造基督的身体。</div>
+      <div class="meta">…… 其余未改动 ……</div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ D ═══ -->
+<div>
+  <div class="label-a">D　运行页里新增的三处：版本选择（输入区页脚）、排队（流程区）、只看我的（历史栏）</div>
+  <div class="grid-d">
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <section class="section">
+        <div class="section-foot" style="border-top:0">
+          <div class="opts">
+            <span class="k">主线</span>
+            <span><label class="radio"><input type="radio" name="m">不跑</label><label class="radio"><input type="radio" name="m">只跑负担说明</label><label class="radio"><input type="radio" name="m" checked>跑到新生成的龙骨</label></span>
+            <span class="k">分析</span>
+            <span><label class="radio"><input type="radio" name="a">不跑</label><label class="radio"><input type="radio" name="a">只跑原纲目的龙骨</label><label class="radio"><input type="radio" name="a" checked>跑到对比诊断</label></span>
+            <span class="k">Prompt 版本</span>
+            <div>
+              <div class="vbar test">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                <span>Prompt2 使用测试版 <b>v0.2-测1</b>（李弟兄），其余使用当前版</span>
+                <span style="flex-grow:1"></span>
+                <button class="btn-link">收起</button>
+              </div>
+              <div class="vgrid">
+                <div><label class="field-label" for="s1">Prompt1 负担说明</label><select id="s1" class="select"><option>v0.3（当前版）</option></select></div>
+                <div><label class="field-label" for="s2">Prompt2 新生成的龙骨</label><select id="s2" class="select test"><option>v0.2-测1 · 李弟兄</option></select></div>
+                <div><label class="field-label" for="s3">Prompt3 原纲目的龙骨</label><select id="s3" class="select"><option>v0.2（当前版）</option></select></div>
+                <div><label class="field-label" for="s4">Prompt4 对比诊断</label><select id="s4" class="select"><option>v0.1（当前版）</option></select></div>
+              </div>
+            </div>
+            <span class="k"></span>
+            <div class="vbar"><span>平时收起时的样子：</span><span>Prompt 版本：全部使用当前版</span><span style="flex-grow:1"></span><button class="btn-link">更改</button></div>
+          </div>
+          <div class="run-foot">
+            <div class="estimate">共 3 篇<br><strong>预估约 0.780 美元</strong></div>
+            <button class="btn btn-primary" style="height:42px;padding:0 24px">开始运行</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2 class="section-title"><span class="section-num">2</span>流程</h2>
+          <div class="queue">
+            <span class="chip chip-wait">排队中 · 前面还有 2 个</span>
+            <span class="meta">运行 #58 · 同时最多跑 3 个</span>
+            <button class="btn btn-sm">取消</button>
+          </div>
+        </div>
+        <div class="section-body" style="display:flex;flex-direction:column;gap:12px">
+          <span class="meta">结果区各步骤的版本标签（测试版用紫色，点击跳到版本页）：</span>
+          <div class="block-meta-demo">
+            <span style="font-weight:700">新生成的龙骨</span><span class="chip chip-ok">完成</span>
+            <span style="flex-grow:1"></span>
+            <button class="btn-link" style="color:var(--test);font-weight:600">Prompt2 v0.2-测1</button>
+            <span class="meta">· 输入 2,487 / 输出 788 · 0.026 美元 · 12.0 秒</span>
+          </div>
+          <div class="block-meta-demo">
+            <span style="font-weight:700">负担说明</span><span class="chip chip-ok">完成</span>
+            <span style="flex-grow:1"></span>
+            <span class="meta">Prompt1 v0.3 · 输入 6,236 / 输出 5,995 · 0.145 美元 · 65.8 秒</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="section">
+      <div class="section-head">
+        <h2 class="section-title"><span class="section-num">4</span>历史记录</h2>
+        <label class="toggle"><input type="checkbox" checked>只看我的</label>
+      </div>
+      <div class="section-body" style="padding:12px">
+        <div class="hist">
+          <div class="hist-top"><span class="hist-no">#58</span><span class="chip chip-wait">排队中</span></div>
+          <div class="hist-line">李弟兄 · 09-29 11:02 · 3 篇</div>
+          <div style="margin-top:4px"><span class="chip chip-test">含测试版</span></div>
+        </div>
+        <div class="hist">
+          <div class="hist-top"><span class="hist-no">#55</span><span class="chip chip-ok">完成</span></div>
+          <div class="hist-line">李弟兄 · 09-29 10:40 · 1 篇 · 0.246 美元</div>
+        </div>
+        <div class="hist">
+          <div class="hist-top"><span class="hist-no">#51</span><span class="chip chip-ok">完成</span></div>
+          <div class="hist-line">李弟兄 · 09-29 10:15 · 2 篇 · 0.412 美元</div>
+          <div style="margin-top:4px"><span class="chip chip-test">含测试版</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

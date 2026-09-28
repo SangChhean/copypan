@@ -241,6 +241,18 @@ FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 
 FULL_QUERY_STEP5_MODEL = "claude-sonnet-5"
 FULL_QUERY_STEP5_FALLBACK_MODEL = "claude-sonnet-4-6"  # Step5 主模型两次失败后的兜底模型：退回切换前验证过的旧模型，而非更贵档位
 
+# Messages API 不接受 temperature 的模型。调用方仍传入 temperature；
+# _call_claude 按此前缀决定是否放进请求。兜底模型 claude-sonnet-4-6 不在此列。
+MODELS_WITHOUT_TEMPERATURE = (
+    "claude-opus-4-7",
+    "claude-sonnet-5",
+)
+
+
+def _model_omits_temperature(model: str) -> bool:
+    name = (model or "").strip()
+    return any(name == item or name.startswith(item) for item in MODELS_WITHOUT_TEMPERATURE)
+
 # Step2 骨架 JSON 解析失败重试次数：只重试 1 次（共 2 次尝试）。
 # 理由：这是"格式合规性"问题（模型多输出了解释文字/漏了字段等），把具体解析错误
 # 反馈给模型后通常一次就能纠正；如果带着明确错误提示重试一次仍然失败，说明问题
@@ -700,7 +712,7 @@ async def _call_claude(
             system=system or "你是一位专业、精确的助手。请严格按要求的格式输出。",
             messages=[{"role": "user", "content": prompt}],
         )
-        if not (model or "").startswith("claude-opus-4-7"):
+        if not _model_omits_temperature(model):
             kwargs["temperature"] = temperature
         return client.messages.create(**kwargs)
 
@@ -1141,9 +1153,10 @@ class KgRagService:
         burden_description = str(p.get("burden_description") or "").strip()
         audience = str(p.get("audience") or "").strip()
 
-        # ── Mode 选择（2.0 / 3.0 / 4.0）──
+        # ── Mode 选择（2.0 / 3.0 / 3.5）──
+        # 3.5 使用全索引与 STEP5_GENERATION_V4 / STEP5_GENERATION_FLAT_V4（常量名不改）。
         mode = str(mode or "3.0").strip()
-        if mode == "4.0":
+        if mode == "3.5":
             active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_FULL)
         else:
             active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_BASE)
@@ -1801,7 +1814,7 @@ class KgRagService:
                 "[KG-RAG DEBUG] Step5 context (skeleton_with_chunks) first_500_chars: %r",
                 ctx_head,
             )
-            if mode == "4.0":
+            if mode == "3.5":
                 concepts_list = revelation + experience + practice
                 concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
                 base_prompt = STEP5_GENERATION_V4.format(
@@ -1825,7 +1838,7 @@ class KgRagService:
                 "[KG-RAG DEBUG] Step5 context (flat main+expanded) first_300_chars: %r",
                 ctx_head_flat,
             )
-            if mode == "4.0":
+            if mode == "3.5":
                 concepts_list = revelation + experience + practice
                 concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
                 base_prompt = STEP5_GENERATION_FLAT_V4.format(

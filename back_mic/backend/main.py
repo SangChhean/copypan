@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Annotated, List
 import json
 import logging
@@ -33,6 +34,7 @@ from ai_search import ai_router
 from features.enhanced_translate.router import router as enhanced_translate_official_router
 from features.roundtable import roundtable_router
 from kg_rag.kg_rag_router import router as kg_rag_router
+from panai4.router import router as panai4_router
 from features.feast_outline_maker.feast_router import feast_router
 from features.zh_convert.router import router as zh_convert_router
 from features.outline_translate.router import router as outline_translate_router
@@ -52,7 +54,17 @@ from es_config import es
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    from panai4.db import init_db, mark_running_interrupted
+
+    init_db()
+    mark_running_interrupted()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 # 应用启动时初始化监控模块（复用 ai_search 的 Redis 客户端）
 get_monitoring(redis_client)
@@ -417,6 +429,7 @@ app.include_router(progress_outline_entry_router)
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）
 app.include_router(kg_rag_router)
+app.include_router(panai4_router)
 app.include_router(feast_router)
 
 # 注册API路由器
