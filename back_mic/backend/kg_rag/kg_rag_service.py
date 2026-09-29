@@ -238,8 +238,9 @@ def _apply_outline_nature_weight(
 # 全流程 full_query：Step1 默认 Opus 4.7；Query Rewrite 固定 Opus 4.6；Step2 使用 params.llm_model（前端下拉）；Step5 默认 Sonnet（可被 params.step5_model 覆盖）
 FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"  # Query 改写专用
 FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 params.step1_model 覆盖）
-FULL_QUERY_STEP5_MODEL = "claude-sonnet-5"
-FULL_QUERY_STEP5_FALLBACK_MODEL = "claude-sonnet-4-6"  # Step5 主模型两次失败后的兜底模型：退回切换前验证过的旧模型，而非更贵档位
+FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
+# 与主模型相同。默认路径不再追加第二次调用；仅当请求另行指定了不同的 step5_model 时，才作为兜底追加。
+FULL_QUERY_STEP5_FALLBACK_MODEL = "claude-sonnet-4-6"
 
 # Messages API 不接受 temperature 的模型。调用方仍传入 temperature；
 # _call_claude 按此前缀决定是否放进请求。兜底模型 claude-sonnet-4-6 不在此列。
@@ -270,6 +271,16 @@ def _resolve_step1_model(p: dict) -> str:
     """Step1 专用模型；未配置时回退到 FULL_QUERY_STEP1_MODEL。"""
     m = str(p.get("step1_model") or "").strip()
     return m if m else FULL_QUERY_STEP1_MODEL
+
+
+class Step5TruncatedError(RuntimeError):
+    """stop_reason=max_tokens 且响应里没有 text block。同模型同参数再试不会产生正文。"""
+
+    def __init__(self, max_tokens: int):
+        self.max_tokens = max_tokens
+        super().__init__(
+            f"模型输出被截断：max_tokens={max_tokens} 已被 thinking 耗尽，未产生正文"
+        )
 
 
 def _max_tokens_for_model(model: str, base: int) -> int:
@@ -683,12 +694,82 @@ def _parse_step2_skeleton(text: str) -> list[dict] | None:
     return skeleton
 
 
+def _log_step5_anthropic_response(msg: Any, max_tokens: int) -> None:
+    """step5 诊断：只记录响应，不改请求参数，也不改返回值。"""
+    try:
+        content = getattr(msg, "content", None) or []
+        block_types = [getattr(block, "type", type(block).__name__) for block in content]
+        uobj = getattr(msg, "usage", None)
+        if uobj is None:
+            usage_full: Any = None
+        elif hasattr(uobj, "model_dump"):
+            usage_full = uobj.model_dump()
+        elif hasattr(uobj, "to_dict"):
+            usage_full = uobj.to_dict()
+        else:
+            usage_full = {
+                name: getattr(uobj, name)
+                for name in dir(uobj)
+                if not name.startswith("_") and not callable(getattr(uobj, name, None))
+            }
+        logger.info(
+            "[KG-RAG LLM] step5 stop_reason=%s max_tokens=%s content_types=%s usage=%s",
+            getattr(msg, "stop_reason", None),
+            max_tokens,
+            block_types,
+            json.dumps(usage_full, ensure_ascii=False, default=str),
+        )
+    except Exception as log_exc:
+        logger.warning("[KG-RAG LLM] step5 diag log failed: %s", log_exc)
+
+
+def _log_step1_anthropic_response(msg: Any) -> None:
+    """step1 诊断：只记录 stop_reason、block type、thinking_tokens，不改请求与解析。"""
+    try:
+        content = getattr(msg, "content", None) or []
+        block_types = [getattr(block, "type", type(block).__name__) for block in content]
+        uobj = getattr(msg, "usage", None)
+        thinking_tokens = None
+        details = getattr(uobj, "output_tokens_details", None) if uobj is not None else None
+        if details is None and uobj is not None and hasattr(uobj, "model_dump"):
+            dumped = uobj.model_dump() or {}
+            details = dumped.get("output_tokens_details")
+        if isinstance(details, dict):
+            thinking_tokens = details.get("thinking_tokens")
+        elif details is not None:
+            thinking_tokens = getattr(details, "thinking_tokens", None)
+        logger.info(
+            "[KG-RAG LLM] step1 stop_reason=%s content_types=%s thinking_tokens=%s",
+            getattr(msg, "stop_reason", None),
+            block_types,
+            thinking_tokens,
+        )
+    except Exception as log_exc:
+        logger.warning("[KG-RAG LLM] step1 diag log failed: %s", log_exc)
+
+
+def _claude_text_blocks(msg: Any) -> tuple[str, bool]:
+    """按顺序拼接 type==text 的 block。thinking block 不参与。"""
+    parts: list[str] = []
+    has_text_block = False
+    for block in getattr(msg, "content", None) or []:
+        if getattr(block, "type", None) != "text":
+            continue
+        has_text_block = True
+        piece = getattr(block, "text", None)
+        if piece:
+            parts.append(str(piece))
+    return "".join(parts), has_text_block
+
+
 async def _call_claude(
     prompt: str,
     model: str,
     temperature: float = 0.0,
     max_tokens: int = 1024,
     system: str | None = None,
+    *,
+    diag_step: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """
     封装 Claude API 调用。复用 ai_search 的 Claude 客户端（CLAUDE_API_KEY）。
@@ -714,6 +795,13 @@ async def _call_claude(
         )
         if not _model_omits_temperature(model):
             kwargs["temperature"] = temperature
+        if diag_step == "step5":
+            logger.info(
+                "[KG-RAG LLM] step5 request model=%s max_tokens=%s temperature=%s",
+                kwargs["model"],
+                kwargs["max_tokens"],
+                kwargs["temperature"] if "temperature" in kwargs else "omitted",
+            )
         return client.messages.create(**kwargs)
 
     try:
@@ -721,6 +809,10 @@ async def _call_claude(
     except Exception as e:
         print(f"[KG-RAG] Claude 调用失败: {e}")
         raise
+    if diag_step == "step5":
+        _log_step5_anthropic_response(msg, max_tokens)
+    elif diag_step == "step1":
+        _log_step1_anthropic_response(msg)
     usage: dict[str, int] | None = None
     uobj = getattr(msg, "usage", None)
     if uobj is not None:
@@ -728,9 +820,15 @@ async def _call_claude(
         ot = int(getattr(uobj, "output_tokens", 0) or 0)
         if it or ot:
             usage = {"input_tokens": it, "output_tokens": ot}
-    if not msg.content or not getattr(msg.content[0], "text", None):
-        return "", usage
-    return msg.content[0].text, usage
+    text, has_text_block = _claude_text_blocks(msg)
+    stop_reason = getattr(msg, "stop_reason", None)
+    if stop_reason == "max_tokens" and not has_text_block:
+        raise Step5TruncatedError(max_tokens)
+    if not text.strip():
+        raise RuntimeError(
+            f"模型未产生正文：stop_reason={stop_reason} max_tokens={max_tokens}"
+        )
+    return text, usage
 
 
 def _is_deepseek_kg_model(model: str) -> bool:
@@ -912,6 +1010,8 @@ async def _call_kg_rag_llm(
     temperature: float = 0.0,
     max_tokens: int = 1024,
     system: str | None = None,
+    *,
+    diag_step: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """KG-RAG 统一 LLM：Claude、OpenAI（含 GPT-5.4）或 DeepSeek。返回 (文本, usage)。"""
     if _is_deepseek_kg_model(model):
@@ -923,7 +1023,8 @@ async def _call_kg_rag_llm(
             prompt, model, temperature=temperature, max_tokens=max_tokens, system=system
         )
     return await _call_claude(
-        prompt, model, temperature=temperature, max_tokens=max_tokens, system=system
+        prompt, model, temperature=temperature, max_tokens=max_tokens, system=system,
+        diag_step=diag_step,
     )
 
 
@@ -1315,7 +1416,8 @@ class KgRagService:
                         f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
                     )
                     raw1, u1 = await _call_kg_rag_llm(
-                        step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800)
+                        step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800),
+                        diag_step="step1",
                     )
                     logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
                     revelation, experience, practice, reasoning = _parse_step1_layers(
@@ -1867,14 +1969,15 @@ class KgRagService:
             result["steps"]["step5"] = {"skipped": True}
             result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
             return result
-        # Step5 重试/降级序列：主模型（默认 claude-sonnet-5，可被 params.step5_model 覆盖）
-        # 失败重试一次，仍失败则降级到 FULL_QUERY_STEP5_FALLBACK_MODEL 再试一次。
+        # 默认主模型与兜底同为 claude-sonnet-4-6，序列只保留一次，避免同名模型连打。
+        # 仅当请求指定了不同的 step5_model 时：偶发错误再试该模型一次，截断则跳到兜底。
         # attempt_errors/used_model 在 try 之前初始化，确保无论异常发生在序列的哪个阶段，
         # 外层 except 都能拿到已尝试过的记录，用于日志和降级事件上报。
         step5_model = p.get("step5_model") or FULL_QUERY_STEP5_MODEL
-        step5_attempt_models = [step5_model, step5_model]
-        if step5_model != FULL_QUERY_STEP5_FALLBACK_MODEL:
-            step5_attempt_models.append(FULL_QUERY_STEP5_FALLBACK_MODEL)
+        if step5_model == FULL_QUERY_STEP5_FALLBACK_MODEL:
+            step5_attempt_models = [step5_model]
+        else:
+            step5_attempt_models = [step5_model, step5_model, FULL_QUERY_STEP5_FALLBACK_MODEL]
         attempt_errors: list[str] = []
         used_model: str | None = None
         success_attempt_index: int | None = None
@@ -1889,14 +1992,44 @@ class KgRagService:
             t5_0 = asyncio.get_event_loop().time()
             gen: str | None = None
             u5: dict[str, int] | None = None
-            for attempt_i, attempt_model in enumerate(step5_attempt_models, 1):
+            attempt_i = 0
+            idx = 0
+            while idx < len(step5_attempt_models):
+                attempt_model = step5_attempt_models[idx]
+                attempt_i += 1
+                step5_max_tokens = _max_tokens_for_model(attempt_model, 4096)
                 try:
                     gen, u5 = await _call_kg_rag_llm(
-                        step5_prompt, attempt_model, temperature=p["temperature"], max_tokens=4096, system=None
+                        step5_prompt, attempt_model, temperature=p["temperature"], max_tokens=step5_max_tokens, system=None,
+                        diag_step="step5",
                     )
+                    # 空字符串以前被当成成功，兜底不会跑。
+                    if not (gen or "").strip():
+                        raise RuntimeError("模型未产生正文")
                     used_model = attempt_model
                     success_attempt_index = attempt_i
                     break
+                except Step5TruncatedError as call_e:
+                    attempt_errors.append(f"[attempt {attempt_i} model={attempt_model}] {call_e}")
+                    logger.warning(
+                        "[KG-RAG] Step5 生成调用失败：model=%s attempt=%d/%d error=%s",
+                        attempt_model,
+                        attempt_i,
+                        len(step5_attempt_models),
+                        call_e,
+                    )
+                    next_idx = idx + 1
+                    while (
+                        next_idx < len(step5_attempt_models)
+                        and step5_attempt_models[next_idx] == attempt_model
+                    ):
+                        next_idx += 1
+                    logger.info(
+                        "[KG-RAG] Step5 截断为确定性失败，跳过同模型重试：model=%s next_index=%s",
+                        attempt_model,
+                        next_idx,
+                    )
+                    idx = next_idx
                 except Exception as call_e:
                     attempt_errors.append(f"[attempt {attempt_i} model={attempt_model}] {call_e}")
                     logger.warning(
@@ -1906,6 +2039,7 @@ class KgRagService:
                         len(step5_attempt_models),
                         call_e,
                     )
+                    idx += 1
             if used_model is None:
                 # 全部尝试均失败，抛出汇总错误，交给下面统一的 except 分支处理
                 raise RuntimeError("; ".join(attempt_errors) or "Step5 生成失败：未知原因")
@@ -1945,6 +2079,7 @@ class KgRagService:
         except Exception as e:
             result["steps"]["step5"] = {"error": str(e)}
             result["answer"] = None
+            result["error"] = str(e)
             # 只有在"确实所有尝试都失败"（used_model 仍为 None）时才算得上 Step5 的降级事件；
             # 如果是重试循环之外的其它异常（如后续 usage 登记出错），不应误报为"全部尝试失败"。
             if used_model is None:
