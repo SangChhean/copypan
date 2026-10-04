@@ -51,14 +51,15 @@ def step_of(body, name, position=1):
 
 
 def part1_versions(client):
-    print("=== 1. 建 Prompt2 测试版 ===")
-    base = load_template("skeleton", "v0.2")
-    old_line = next(line for line in base.split("\n") if line.startswith("确定目标固定排在整份龙骨列表最后"))
-    new_line = "确定目标固定排在整份龙骨列表最后；应用实行固定排在确定目标之前；其余各项严格按负担说明原文的先后顺序排列。"
+    print("=== 1. 建 Prompt2 测试版（基于 CURRENT=v1.0） ===")
+    base = load_template("skeleton")  # v1.0
+    old_line = "条数 6–9 条。"
+    new_line = "条数 6–9 条；本测版标记。"
+    assert old_line in base, "v1.0 模板应含「条数 6–9 条。」"
     edited = base.replace(old_line, new_line)
     missing = edited.replace("{burden}", "")
     check = client.post(f"{API}/prompt_tests/check", json={"step": "skeleton", "template": missing}).json()
-    print("check missing", check["ok"], check["problems"], check["version_name"])
+    print("check missing", check["ok"], check["problems"], check.get("version_name"))
     assert not check["ok"] and check["missing"] == ["burden"]
     extra = edited + "\n{original_outline}\n{query}"
     check = client.post(f"{API}/prompt_tests/check", json={"step": "skeleton", "template": extra}).json()
@@ -76,10 +77,10 @@ def part1_versions(client):
     assert no_note.status_code == 400
     listed = client.get(f"{API}/prompts").json()["prompts"]
     existing = [t for p in listed if p["step"] == "skeleton" for t in p["tests"]]
-    expected_name = f"v0.2-测{client.post(f'{API}/prompt_tests/check', json={'step': 'skeleton', 'template': edited}).json()['version_name'].split('测')[1]}"
+    expected_name = f"v1.0-测{client.post(f'{API}/prompt_tests/check', json={'step': 'skeleton', 'template': edited}).json()['version_name'].split('测')[1]}"
     saved = client.post(
         f"{API}/prompt_tests",
-        json={"step": "skeleton", "template": edited, "change_note": "排序：应用实行排在确定目标之前", "created_by": f"  {A}  "},
+        json={"step": "skeleton", "template": edited, "change_note": "条数说明加测版标记", "created_by": f"  {A}  "},
     )
     assert saved.status_code == 201, saved.text
     test = saved.json()
@@ -88,7 +89,7 @@ def part1_versions(client):
     assert test["created_by"] == A
     diff = client.post(
         f"{API}/prompt_diff",
-        json={"step": "skeleton", "template": test["template"], "against_kind": "current", "against_version": "v0.2"},
+        json={"step": "skeleton", "template": test["template"], "against_kind": "current", "against_version": "v1.0"},
     ).json()
     print("diff vs current", diff["changes"], [b for b in diff["blocks"] if b["type"] != "same"])
     assert diff["changes"] == 1
@@ -104,15 +105,18 @@ def part1_versions(client):
         },
     ).json()
     print("child", child["version_name"], child["parent_version"], child["base_current_version"])
-    assert child["parent_version"] == test["version_name"] and child["base_current_version"] == "v0.2"
+    assert child["parent_version"] == test["version_name"] and child["base_current_version"] == "v1.0"
     burden_text = load_template("burden").replace("【负担说明】", "【负担】")
     warn = client.post(f"{API}/prompt_tests/check", json={"step": "burden", "template": burden_text}).json()
     print("prompt1 warning", warn["ok"], warn["warnings"])
     assert warn["ok"] and warn["warnings"]
     current = client.post(f"{API}/prompt_tests/check", json={"step": "burden", "template": load_template("burden")}).json()
     assert current["ok"] and not current["warnings"]
-    for step in ("burden", "skeleton", "orig_skeleton", "diagnosis"):
+    for step in ("select", "burden", "skeleton", "orig_skeleton", "diagnosis"):
         assert client.post(f"{API}/prompt_tests/check", json={"step": step, "template": load_template(step)}).json()["ok"], step
+    # 旧版 v0.2 / v0.3 仍可读
+    assert load_template("skeleton", "v0.2")
+    assert load_template("burden", "v0.3")
     return test, new_line, child
 
 

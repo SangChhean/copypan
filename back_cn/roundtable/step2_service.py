@@ -393,6 +393,8 @@ async def generate_version(
 
     last_error = None
     last_error_type = None
+    # 仅记录「没有 text 块」这一类；重试用尽时拼进对外错误。其他失败仍只留在 last_error。
+    last_no_text_error: str | None = None
     previous_data = None
     previous_word_count: int | None = None
     retry_log: list[str] = []
@@ -469,6 +471,8 @@ async def generate_version(
         except RuntimeError as e:
             last_error = str(e)
             last_error_type = "api_error"
+            if "没有找到 text 类型的内容块" in last_error:
+                last_no_text_error = last_error
             retry_log.append(last_error)
             logger.warning("[Step2] %s API/内容异常: %s", config["label"], e)
             continue
@@ -746,16 +750,24 @@ async def generate_version(
 
     if on_progress:
         on_progress("生成失败", max_retries + 1)
-    # last_error 是给模型看的内部调整指令，只写日志，不塞进对外 RuntimeError
+    # last_error 是给模型看的内部调整指令，只写日志，不塞进对外 RuntimeError。
+    # 「没有 text 块」除外：最后一次原始错误（含 stop_reason、block_types）要出现在对外信息里。
     logger.error(
         "[Step2] %s 生成失败，已重试 %s 次，最后内部错误：%s",
         config["label"],
         max_retries,
         last_error,
     )
-    raise RuntimeError(
+    outward = (
         f"{config['label']}：内容生成多次尝试后仍不符合要求，请重新生成或更换原文范围"
     )
+    if (
+        last_no_text_error
+        and last_error
+        and "没有找到 text 类型的内容块" in last_error
+    ):
+        outward = f"{outward}\n{last_no_text_error}"
+    raise RuntimeError(outward)
 
 
 async def generate_all_versions(

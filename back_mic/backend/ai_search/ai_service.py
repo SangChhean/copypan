@@ -2918,7 +2918,24 @@ class AISearchService:
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
                 )
-                text = message.content[0].text
+                text_parts = []
+                for block in message.content or []:
+                    if getattr(block, "type", None) != "text":
+                        continue
+                    piece = getattr(block, "text", None)
+                    if isinstance(piece, str) and piece.strip():
+                        text_parts.append(piece.strip())
+                text = "\n\n".join(text_parts)
+                if not text:
+                    block_types = [
+                        getattr(b, "type", type(b).__name__)
+                        for b in (message.content or [])
+                    ]
+                    stop = getattr(message, "stop_reason", None)
+                    raise RuntimeError(
+                        "Claude 返回内容中没有找到 text 类型的内容块 "
+                        f"(stop_reason={stop}, block_types={block_types})"
+                    )
                 try:
                     in_tok = int(getattr(message.usage, "input_tokens", 0) or 0)
                     out_tok = int(getattr(message.usage, "output_tokens", 0) or 0)

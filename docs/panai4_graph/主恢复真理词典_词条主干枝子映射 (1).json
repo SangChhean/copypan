@@ -15643,6 +15643,14 @@
   "branch_indirectly": []
  },
  {
+  "name": "圣经中的奥秘",
+  "trunk": "神的话",
+  "branch_directly": "圣经中的奥秘",
+  "branch_indirectly": [
+   "圣经—神的话"
+  ]
+ },
+ {
   "name": "结晶意义",
   "trunk": "神的话",
   "branch_directly": "圣经的结晶意义",

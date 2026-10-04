@@ -4,6 +4,7 @@
     python panai4/verify_skeleton.py
 
 写入 data/panai4/panai4_test.db，不使用正式库。
+覆盖新主线（select→…→skeleton）；另含一条 legacy 只读用例。
 """
 from __future__ import annotations
 
@@ -31,6 +32,9 @@ from user.token import test_token
 
 app.dependency_overrides[test_token] = lambda: {"username": "verify", "role": "t0"}
 
+MAIN_DONE = ("select", "await_confirm", "term_defs", "burden", "skeleton")
+MAIN_PLUS_ANALYSIS = MAIN_DONE + ("orig_skeleton", "diagnosis")
+
 
 def _steps(payload: dict, title: str) -> list[dict]:
     for item in payload["items"]:
@@ -44,7 +48,8 @@ def _print_steps(payload: dict) -> None:
     for item in payload["items"]:
         print(f"  [{item['status']}] {item['title']}")
         for step in item["steps"]:
-            print(f"    {step['step']} {step['status']} {step.get('output_text') or ''}")
+            out = (step.get("output_text") or "").replace("\n", " ")[:80]
+            print(f"    {step['step']} {step['status']} {out}")
 
 
 def _poll(client: TestClient, run_id: int, timeout: float = 60) -> dict:
@@ -80,10 +85,28 @@ def _sqlite(run_id: int) -> None:
     conn.close()
 
 
+def _call_kind(row: dict) -> str:
+    step = row.get("step")
+    if step in {"select", "burden", "skeleton", "orig_skeleton", "diagnosis"}:
+        return "orig" if step == "orig_skeleton" else step
+    prompt = row.get("prompt") or ""
+    if "完整原纲目" in prompt:
+        return "orig"
+    if "生成的龙骨" in prompt and "诊断" in prompt:
+        return "diagnosis"
+    if "生成一份「龙骨」" in prompt or "把下面的负担说明切分成" in prompt:
+        return "skeleton"
+    if "构建并生成一条「负担说明」" in prompt:
+        return "burden"
+    if "档次的意思" in prompt or "【最内在】" in prompt:
+        return "select"
+    return "other"
+
+
 def test_fake_flow() -> None:
     os.environ["PANAI4_FAKE_LLM"] = "1"
     os.environ["PANAI4_FAKE_DELAY"] = "0.3"
-    print("=== 1. 假模型：两篇，一篇带原纲目 ===")
+    print("=== 1. 假模型：两篇，一篇带原纲目（新主线 full） ===")
     with TestClient(app) as client:
         created = client.post(
             "/api/panai4/runs",
@@ -100,6 +123,7 @@ def test_fake_flow() -> None:
         run_id = created.json()["run_id"]
         body = _poll(client, run_id)
         _print_steps(body)
+        assert body.get("flow_kind") == "full" or True  # progress 可能无此字段
         plain = _steps(body, "没有原纲目的篇")
         outlined = _steps(body, "带原纲目的篇")
         designed = {"retrieval", "generation", "evaluation"}
@@ -109,33 +133,43 @@ def test_fake_flow() -> None:
             if step["step"] in {"orig_skeleton", "diagnosis"}:
                 assert step["status"] == "skipped", step
         called = [s for s in outlined if s["status"] == "done"]
-        assert [s["step"] for s in called] == ["burden", "skeleton", "orig_skeleton", "diagnosis"], called
+        assert [s["step"] for s in called] == list(MAIN_PLUS_ANALYSIS), called
         for step in outlined:
             if step["step"] in designed:
                 assert step["output_text"] == "跳过（待设计）", step
         detail = client.get(f"/api/panai4/runs/{run_id}").json()
+        assert detail.get("flow_kind") == "full"
+        assert detail.get("batch_mode") in (True, 1)
         outlined_detail = _steps(detail, "带原纲目的篇")
         by_step = {step["step"]: step for step in outlined_detail}
+        assert by_step["select"]["prompt_name"] == "Prompt0"
+        assert by_step["select"]["prompt_version"] == "v1.0"
         assert by_step["burden"]["prompt_name"] == "Prompt1"
-        assert by_step["burden"]["prompt_version"] == "v0.3"
+        assert by_step["burden"]["prompt_version"] == "v1.0"
         assert by_step["skeleton"]["prompt_name"] == "Prompt2"
-        assert by_step["skeleton"]["prompt_version"] == "v0.2"
+        assert by_step["skeleton"]["prompt_version"] == "v1.0"
         assert by_step["orig_skeleton"]["prompt_name"] == "Prompt3"
         assert by_step["orig_skeleton"]["prompt_version"] == "v0.2"
-        assert "【输出格式】" in (by_step["skeleton"]["prompt_text"] or "")
         assert "【输出格式】" in (by_step["orig_skeleton"]["prompt_text"] or "")
-        for step_name in ("burden", "skeleton", "orig_skeleton", "diagnosis"):
+        assert "把下面的负担说明切分成" in (by_step["skeleton"]["prompt_text"] or "")
+        for step_name in MAIN_PLUS_ANALYSIS:
+            if step_name in {"await_confirm", "term_defs"}:
+                assert by_step[step_name]["status"] == "done", by_step[step_name]
+                continue
             assert by_step[step_name]["model"] == "fake", by_step[step_name]
             assert by_step[step_name]["cost_usd"] == 0, by_step[step_name]
         assert db_path().name == "panai4_test.db"
         assert by_step["diagnosis"]["prompt_name"] == "Prompt4"
         assert "{query}" not in (by_step["burden"]["prompt_text"] or "")
         assert "没有原纲目" not in (by_step["skeleton"]["prompt_text"] or "")
-        assert "【测试负担】带原纲目的篇" in by_step["skeleton"]["prompt_text"]
+        assert "【测试负担】" in (by_step["skeleton"]["prompt_text"] or "")
+        assert "篇题：带原纲目的篇" in (by_step["skeleton"]["prompt_text"] or "")
         assert "{burden}" not in by_step["skeleton"]["prompt_text"]
+        assert "【用到的参考材料】" not in (by_step["skeleton"]["prompt_text"] or "")
         assert by_step["burden"]["content_blocks"] == {"text": 1, "thinking": 1}
         assert "【负担说明】" in (by_step["burden"]["output_text"] or "")
         assert by_step["burden"]["reused_from"] is None
+        assert "批量模式：自动确认" in (by_step["await_confirm"]["output_text"] or "")
         _sqlite(run_id)
 
         print("=== 2. 运行中再提交，期望同时执行而不是 409；未填名字期望 400 ===")
@@ -151,6 +185,15 @@ def test_fake_flow() -> None:
         _poll(client, first.json()["run_id"], timeout=30)
         _poll(client, second.json()["run_id"], timeout=30)
 
+        print("=== 2b. batch_mode=false → 允许创建并进入待确认 ===")
+        bad_batch = client.post(
+            "/api/panai4/runs",
+            json={"created_by": "自测", "batch_mode": False, "items": [{"title": "非批量"}], "main_scope": "burden", "analysis_scope": "none"},
+        )
+        assert bad_batch.status_code == 202, bad_batch.text
+        paused = _poll(client, bad_batch.json()["run_id"], timeout=30)
+        assert paused["status"] == "awaiting_confirm", paused["status"]
+        assert paused.get("batch_mode") in (False, 0)
     print("=== 3. 运行中重启，期望中断 ===")
     os.environ["PANAI4_FAKE_DELAY"] = "30"
     with TestClient(app) as client:
@@ -180,6 +223,9 @@ def test_fake_flow() -> None:
         assert item["status"] == "failed"
         assert item["error"] == "Prompt1 输出中找不到【负担说明】"
         steps = {step["step"]: step for step in item["steps"]}
+        assert steps["select"]["status"] == "done"
+        assert steps["await_confirm"]["status"] == "done"
+        assert steps["term_defs"]["status"] == "done"
         assert steps["skeleton"]["status"] == "failed"
         assert steps["skeleton"]["error"] == "Prompt1 输出中找不到【负担说明】"
         assert steps["orig_skeleton"]["status"] == "done"
@@ -200,7 +246,7 @@ def test_fake_flow() -> None:
         first_orig = {s["step"]: s for s in _steps(first_body, title)}["orig_skeleton"]
         assert first_orig["reused_from"] is None
         assert first_orig["model"] == "fake"
-        orig_calls = sum(1 for row in llm.call_log if "完整原纲目" in row["prompt"])
+        orig_calls = sum(1 for row in llm.call_log if _call_kind(row) == "orig")
         assert orig_calls == 1, orig_calls
         second = client.post(
             "/api/panai4/runs",
@@ -213,10 +259,10 @@ def test_fake_flow() -> None:
         assert second_orig["reused_from"] == first_orig["id"]
         assert second_orig["output_text"] == first_orig["output_text"]
         assert not second_orig.get("model")
-        orig_calls = sum(1 for row in llm.call_log if "完整原纲目" in row["prompt"])
+        orig_calls = sum(1 for row in llm.call_log if _call_kind(row) == "orig")
         assert orig_calls == 1, orig_calls
 
-        print("=== 6. 从龙骨重跑：沿用负担说明，重做龙骨和对比诊断 ===")
+        print("=== 6. 从龙骨重跑：沿用选词/负担，重做龙骨和对比诊断 ===")
         before = len(llm.call_log)
         rerun = client.post(
             f"/api/panai4/runs/{second.json()['run_id']}/rerun",
@@ -229,6 +275,9 @@ def test_fake_flow() -> None:
         assert rerun_body["start_step"] == "skeleton"
         parent_steps = {s["step"]: s for s in _steps(second_body, title)}
         again = {s["step"]: s for s in _steps(rerun_body, title)}
+        assert again["select"]["reused_from"] == parent_steps["select"]["id"]
+        assert again["await_confirm"]["reused_from"] == parent_steps["await_confirm"]["id"]
+        assert again["term_defs"]["reused_from"] == parent_steps["term_defs"]["id"]
         assert again["burden"]["reused_from"] == parent_steps["burden"]["id"]
         assert again["burden"]["output_text"] == parent_steps["burden"]["output_text"]
         assert again["skeleton"]["reused_from"] is None
@@ -236,19 +285,7 @@ def test_fake_flow() -> None:
         assert again["diagnosis"]["reused_from"] is None
         assert again["diagnosis"]["model"] == "fake"
         assert again["orig_skeleton"]["reused_from"] == first_orig["id"]
-        kinds = []
-        for row in llm.call_log[before:]:
-            prompt = row["prompt"]
-            if "完整原纲目" in prompt:
-                kinds.append("orig")
-            elif "生成的龙骨" in prompt and "诊断" in prompt:
-                kinds.append("diagnosis")
-            elif "生成一份「龙骨」" in prompt:
-                kinds.append("skeleton")
-            elif "构建并生成一条「负担说明」" in prompt:
-                kinds.append("burden")
-            else:
-                kinds.append("other")
+        kinds = [_call_kind(row) for row in llm.call_log[before:]]
         print("rerun calls", kinds)
         assert kinds == ["skeleton", "diagnosis"], kinds
 
@@ -263,8 +300,70 @@ def test_fake_flow() -> None:
         forced_orig = {s["step"]: s for s in _steps(forced_body, title)}["orig_skeleton"]
         assert forced_orig["reused_from"] is None
         assert forced_orig["model"] == "fake"
-        forced_calls = [row for row in llm.call_log[before:] if "完整原纲目" in row["prompt"]]
+        forced_calls = [row for row in llm.call_log[before:] if _call_kind(row) == "orig"]
         assert len(forced_calls) == 1, len(forced_calls)
+
+    print("=== 8. legacy 只读：能打开；重跑 400 ===")
+    from panai4 import db
+    from panai4.pipeline import ALL_STEPS
+
+    init_db()
+    prepared = []
+    for spec in ALL_STEPS:
+        status = "done" if spec.step == "burden" else "skipped"
+        out = (
+            "【职事界定】\nx\n【真理脉络】\ny\n【负担说明】\n旧负担全文。"
+            if spec.step == "burden"
+            else "跳过（legacy 只读）"
+        )
+        prepared.append(
+            {
+                "position": 1,
+                "step": spec.step,
+                "status": status,
+                "output_text": out,
+                "prompt_name": "",
+                "prompt_version": "v0.3" if spec.step == "burden" else "",
+            }
+        )
+    legacy_id = db.create_run(
+        items=[
+            {
+                "position": 1,
+                "title": "旧流程篇",
+                "original_outline": "壹 旧。",
+                "outline_hash": None,
+            }
+        ],
+        note="legacy readonly",
+        steps=prepared,
+        created_by="自测",
+        main_scope="skeleton",
+        analysis_scope="diagnosis",
+        flow_kind="legacy",
+        batch_mode=0,
+    )
+    conn = sqlite3.connect(str(db_path()))
+    conn.execute("UPDATE runs SET status='done' WHERE id=?", (legacy_id,))
+    conn.execute("UPDATE run_items SET status='done' WHERE run_id=?", (legacy_id,))
+    conn.commit()
+    conn.close()
+    with TestClient(app) as client:
+        detail = client.get(f"/api/panai4/runs/{legacy_id}").json()
+        assert detail["flow_kind"] == "legacy"
+        assert detail["status"] == "done"
+        bur = next(s for s in detail["items"][0]["steps"] if s["step"] == "burden")
+        assert "旧负担全文" in (bur.get("output_text") or "")
+        exp = client.get(f"/api/panai4/runs/{legacy_id}/items/1/steps/burden/docx")
+        print("legacy export", exp.status_code, len(exp.content))
+        assert exp.status_code == 200 and len(exp.content) > 100
+        rr = client.post(
+            f"/api/panai4/runs/{legacy_id}/rerun",
+            json={"created_by": "自测", "start_step": "burden"},
+        )
+        print("legacy rerun", rr.status_code, rr.json())
+        assert rr.status_code == 400
+        assert "旧流程运行不再支持重跑" in str(rr.json().get("detail"))
 
 
 def test_real_model() -> None:

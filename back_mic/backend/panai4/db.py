@@ -13,14 +13,39 @@ from typing import Any
 from .config import LEGACY_CREATOR, db_path
 from .pipeline import STEP_IDS
 
-SCHEMA_VERSION = 2
-_STATUS_RUN = ("pending", "queued", "running", "done", "failed", "interrupted", "cancelled")
-_STATUS_ITEM = ("pending", "running", "done", "failed", "skipped", "interrupted", "cancelled")
-PROMPT_STEPS = ("burden", "skeleton", "orig_skeleton", "diagnosis")
+SCHEMA_VERSION = 3
+_STATUS_RUN = (
+    "pending",
+    "queued",
+    "running",
+    "done",
+    "failed",
+    "interrupted",
+    "cancelled",
+    "awaiting_confirm",
+)
+_STATUS_ITEM = (
+    "pending",
+    "running",
+    "done",
+    "failed",
+    "skipped",
+    "interrupted",
+    "cancelled",
+    "awaiting_confirm",
+)
+# 可建 Prompt 测试版的步骤（含尚未接入 runner 的 select）
+PROMPT_STEPS = ("select", "burden", "skeleton", "orig_skeleton", "diagnosis")
+# step_results.step：旧主线 + 全流程新增（保留全部旧值）
+STEP_RESULT_STEPS = tuple(dict.fromkeys((*STEP_IDS, "select", "await_confirm", "term_defs")))
+FLOW_KINDS = ("legacy", "full")
 REBUILT_TABLES = ("runs", "run_items", "step_results")
+REBUILT_TABLES_V3 = ("runs", "run_items", "step_results", "prompt_test_versions")
 _lock = threading.Lock()
 _conn: sqlite3.Connection | None = None
 _ready = False
+# 仅验证用：迁移中途抛错，确认回滚
+_migrate_v3_fail_hook = None
 
 
 def _quoted(values) -> str:
@@ -43,6 +68,8 @@ CREATE TABLE {guard}{name} (
     created_by     TEXT,
     prompt_selection TEXT,
     uses_test      INTEGER NOT NULL DEFAULT 0,
+    batch_mode     INTEGER NOT NULL DEFAULT 0,
+    flow_kind      TEXT NOT NULL DEFAULT 'legacy' CHECK (flow_kind IN ({_quoted(FLOW_KINDS)})),
     started_at     TEXT,
     finished_at    TEXT
 )"""
@@ -60,6 +87,7 @@ CREATE TABLE {guard}{name} (
     outline_hash      TEXT,
     status            TEXT NOT NULL CHECK (status IN ({_quoted(_STATUS_ITEM)})),
     error             TEXT,
+    final_terms_json  TEXT,
     UNIQUE (run_id, position)
 )"""
 
@@ -70,7 +98,7 @@ def _step_results_sql(name: str, if_not_exists: bool = False) -> str:
 CREATE TABLE {guard}{name} (
     id                          INTEGER PRIMARY KEY,
     run_item_id                 INTEGER NOT NULL REFERENCES run_items(id) ON DELETE CASCADE,
-    step                        TEXT NOT NULL CHECK (step IN ({_quoted(STEP_IDS)})),
+    step                        TEXT NOT NULL CHECK (step IN ({_quoted(STEP_RESULT_STEPS)})),
     prompt_name                 TEXT NOT NULL,
     prompt_version              TEXT NOT NULL,
     model                       TEXT NOT NULL,
@@ -91,7 +119,32 @@ CREATE TABLE {guard}{name} (
     content_blocks              TEXT,
     thinking_text               TEXT,
     prompt_test_version_id      INTEGER REFERENCES prompt_test_versions(id),
+    meta_json                   TEXT,
     UNIQUE (run_item_id, step)
+)"""
+
+
+def _prompt_test_versions_sql(name: str, if_not_exists: bool = False) -> str:
+    guard = "IF NOT EXISTS " if if_not_exists else ""
+    return f"""
+CREATE TABLE {guard}{name} (
+    id                   INTEGER PRIMARY KEY,
+    step                 TEXT NOT NULL CHECK (step IN ({_quoted(PROMPT_STEPS)})),
+    prompt_name          TEXT NOT NULL,
+    base_current_version TEXT NOT NULL,
+    seq                  INTEGER NOT NULL,
+    version_name         TEXT NOT NULL,
+    parent_kind          TEXT NOT NULL CHECK (parent_kind IN ('current', 'test')),
+    parent_version       TEXT NOT NULL,
+    parent_test_id       INTEGER REFERENCES prompt_test_versions(id),
+    template             TEXT NOT NULL,
+    change_note          TEXT NOT NULL CHECK (length(trim(change_note)) > 0),
+    created_by           TEXT NOT NULL,
+    created_at           TEXT NOT NULL,
+    deleted_at           TEXT,
+    deleted_by           TEXT,
+    UNIQUE (step, base_current_version, seq),
+    UNIQUE (step, version_name)
 )"""
 
 
@@ -99,6 +152,7 @@ _TABLE_SQL = {
     "runs": _runs_sql,
     "run_items": _run_items_sql,
     "step_results": _step_results_sql,
+    "prompt_test_versions": _prompt_test_versions_sql,
 }
 
 _INDEXES = """
@@ -131,25 +185,7 @@ CREATE TABLE IF NOT EXISTS topic_set_items (
 );
 CREATE INDEX IF NOT EXISTS idx_topic_set_items_set ON topic_set_items(set_id);
 
-CREATE TABLE IF NOT EXISTS prompt_test_versions (
-    id                   INTEGER PRIMARY KEY,
-    step                 TEXT NOT NULL CHECK (step IN ({_quoted(PROMPT_STEPS)})),
-    prompt_name          TEXT NOT NULL,
-    base_current_version TEXT NOT NULL,
-    seq                  INTEGER NOT NULL,
-    version_name         TEXT NOT NULL,
-    parent_kind          TEXT NOT NULL CHECK (parent_kind IN ('current', 'test')),
-    parent_version       TEXT NOT NULL,
-    parent_test_id       INTEGER REFERENCES prompt_test_versions(id),
-    template             TEXT NOT NULL,
-    change_note          TEXT NOT NULL CHECK (length(trim(change_note)) > 0),
-    created_by           TEXT NOT NULL,
-    created_at           TEXT NOT NULL,
-    deleted_at           TEXT,
-    deleted_by           TEXT,
-    UNIQUE (step, base_current_version, seq),
-    UNIQUE (step, version_name)
-);
+{_prompt_test_versions_sql("prompt_test_versions", True)};
 
 {_runs_sql("runs", True)};
 
@@ -250,20 +286,50 @@ def _backup(conn: sqlite3.Connection) -> Path:
     return target
 
 
-def _snapshot(conn: sqlite3.Connection) -> dict[str, tuple[int, str]]:
+def _snapshot(conn: sqlite3.Connection, tables: tuple[str, ...] | None = None) -> dict[str, tuple[int, str]]:
     shot = {}
-    for table in REBUILT_TABLES + ("topic_sets", "topic_set_items", "orig_skeleton_cache"):
+    names = tables or (REBUILT_TABLES + ("topic_sets", "topic_set_items", "orig_skeleton_cache"))
+    for table in names:
         count = conn.execute(f"SELECT COUNT(1) FROM {table}").fetchone()[0]
         if table == "orig_skeleton_cache":
-            ids = conn.execute("SELECT group_concat(outline_hash || prompt3_version) FROM orig_skeleton_cache").fetchone()[0]
+            ids = conn.execute(
+                "SELECT group_concat(outline_hash || prompt3_version) FROM orig_skeleton_cache"
+            ).fetchone()[0]
         else:
-            ids = conn.execute(f"SELECT group_concat(id) FROM (SELECT id FROM {table} ORDER BY id)").fetchone()[0]
+            ids = conn.execute(
+                f"SELECT group_concat(id) FROM (SELECT id FROM {table} ORDER BY id)"
+            ).fetchone()[0]
         digest = hashlib.sha256((ids or "").encode("utf-8")).hexdigest()
         shot[table] = (int(count), digest)
     return shot
 
 
+def content_hash(conn: sqlite3.Connection, table: str, columns: list[str]) -> str:
+    """按 id 排序后，所选列内容的 SHA256（用于迁移核对旧列）。"""
+    names = ", ".join(columns)
+    rows = conn.execute(f"SELECT {names} FROM {table} ORDER BY id").fetchall()
+    h = hashlib.sha256()
+    for row in rows:
+        for value in row:
+            h.update(repr(value).encode("utf-8"))
+            h.update(b"\0")
+        h.update(b"\n")
+    return h.hexdigest()
+
+
 migration_report: dict[str, Any] = {}
+
+
+def _rebuild_tables(conn: sqlite3.Connection, tables: tuple[str, ...], temp_suffix: str) -> None:
+    for table in tables:
+        temp = f"{table}{temp_suffix}"
+        conn.execute(f"DROP TABLE IF EXISTS {temp}")
+        conn.execute(_TABLE_SQL[table](temp))
+        shared = [column for column in _columns(conn, table) if column in set(_columns(conn, temp))]
+        names = ", ".join(shared)
+        conn.execute(f"INSERT INTO {temp} ({names}) SELECT {names} FROM {table}")
+        conn.execute(f"DROP TABLE {table}")
+        conn.execute(f"ALTER TABLE {temp} RENAME TO {table}")
 
 
 def _migrate_to_v2(conn: sqlite3.Connection) -> None:
@@ -271,6 +337,7 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
 
     做法依 SQLite 文档：关外键 → 事务内建新表、整批复制、删旧表、新表改回原名 → foreign_key_check → 提交。
     id 原样保留，所有互相引用不变。行数或 id 不一致即回滚。
+    目标 user_version = 2（固定，不跟 SCHEMA_VERSION 走）。
     """
     backup = _backup(conn)
     before = _snapshot(conn)
@@ -279,15 +346,7 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA foreign_keys=OFF")
     try:
         conn.execute("BEGIN IMMEDIATE")
-        for table in REBUILT_TABLES:
-            temp = f"{table}__v2"
-            conn.execute(f"DROP TABLE IF EXISTS {temp}")
-            conn.execute(_TABLE_SQL[table](temp))
-            shared = [column for column in _columns(conn, table) if column in set(_columns(conn, temp))]
-            names = ", ".join(shared)
-            conn.execute(f"INSERT INTO {temp} ({names}) SELECT {names} FROM {table}")
-            conn.execute(f"DROP TABLE {table}")
-            conn.execute(f"ALTER TABLE {temp} RENAME TO {table}")
+        _rebuild_tables(conn, REBUILT_TABLES, "__v2")
         conn.execute(
             "UPDATE runs SET created_by = ? WHERE created_by IS NULL OR trim(created_by) = ''",
             (LEGACY_CREATOR,),
@@ -299,8 +358,10 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
         after = _snapshot(conn)
         if problems or after != before:
             conn.execute("ROLLBACK")
-            raise RuntimeError(f"迁移核对不一致，已回滚。外键问题 {len(problems)} 条；迁移前 {before}；迁移后 {after}")
-        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+            raise RuntimeError(
+                f"迁移核对不一致，已回滚。外键问题 {len(problems)} 条；迁移前 {before}；迁移后 {after}"
+            )
+        conn.execute("PRAGMA user_version = 2")
         conn.execute("COMMIT")
     except Exception:
         if conn.in_transaction:
@@ -313,10 +374,87 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     migration_report.update(
         {
             "backup": str(backup),
+            "to_version": 2,
             "counts": {table: value[0] for table, value in before.items()},
             "ids_match": True,
         }
     )
+
+
+def _migrate_to_v3(conn: sqlite3.Connection) -> None:
+    """v3：全流程字段与 CHECK（batch_mode / flow_kind / awaiting_confirm / select 等）。
+
+    重建 runs、run_items、step_results、prompt_test_versions。sc_* 不动。
+    """
+    backup = _backup(conn)
+    snap_tables = REBUILT_TABLES_V3 + ("topic_sets", "topic_set_items", "orig_skeleton_cache")
+    before = _snapshot(conn, snap_tables)
+    old_cols: dict[str, list[str]] = {table: _columns(conn, table) for table in REBUILT_TABLES_V3}
+    old_hashes: dict[str, str] = {
+        table: content_hash(conn, table, cols) for table, cols in old_cols.items()
+    }
+
+    old_isolation = conn.isolation_level
+    conn.isolation_level = None
+    conn.execute("PRAGMA foreign_keys=OFF")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        _rebuild_tables(conn, REBUILT_TABLES_V3, "__v3")
+        for statement in _INDEXES.strip().split(";"):
+            if statement.strip():
+                conn.execute(statement)
+        if _migrate_v3_fail_hook is not None:
+            _migrate_v3_fail_hook()
+        problems = conn.execute("PRAGMA foreign_key_check").fetchall()
+        after = _snapshot(conn, snap_tables)
+        hash_ok = True
+        new_hashes: dict[str, str] = {}
+        for table, cols in old_cols.items():
+            # 新表仍含全部旧列；只比对旧列
+            present = [c for c in cols if c in set(_columns(conn, table))]
+            if present != cols:
+                hash_ok = False
+            new_hashes[table] = content_hash(conn, table, present)
+            if new_hashes[table] != old_hashes[table]:
+                hash_ok = False
+        if problems or after != before or not hash_ok:
+            conn.execute("ROLLBACK")
+            raise RuntimeError(
+                f"v3 迁移核对不一致，已回滚。外键问题 {len(problems)} 条；"
+                f"ids {before}→{after}；hash_ok={hash_ok}"
+            )
+        conn.execute("PRAGMA user_version = 3")
+        conn.execute("COMMIT")
+    except Exception:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.isolation_level = old_isolation
+    migration_report.clear()
+    migration_report.update(
+        {
+            "backup": str(backup),
+            "to_version": 3,
+            "counts": {table: value[0] for table, value in before.items()},
+            "ids_match": True,
+            "content_hashes": old_hashes,
+        }
+    )
+
+
+def reset_connection_for_tests() -> None:
+    """验证脚本切换 DB 路径时关闭旧连接。"""
+    global _ready, _conn
+    with _lock:
+        if _conn is not None:
+            try:
+                _conn.close()
+            except Exception:
+                pass
+            _conn = None
+        _ready = False
 
 
 def init_db() -> None:
@@ -326,12 +464,17 @@ def init_db() -> None:
             return
         conn = connect()
         existed = _table_exists(conn, "runs")
-        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        version = int(conn.execute("PRAGMA user_version").fetchone()[0])
         if existed and version < SCHEMA_VERSION:
             _add_legacy_columns(conn)
             conn.executescript(_ddl())
-            _migrate_to_v2(conn)
+            if version < 2:
+                _migrate_to_v2(conn)
+                version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+            if version < 3:
+                _migrate_to_v3(conn)
         else:
+            # 已是 v3（或空库）：只确保表存在，不再备份/重建
             conn.executescript(_ddl())
             conn.executescript(_INDEXES)
             if not existed:
@@ -339,24 +482,28 @@ def init_db() -> None:
         conn.commit()
         _ready = True
 
-
 def _run_ids_with_status(conn: sqlite3.Connection, statuses: tuple[str, ...]) -> list[int]:
     marks = ",".join("?" for _ in statuses)
     return [row[0] for row in conn.execute(f"SELECT id FROM runs WHERE status IN ({marks})", statuses)]
 
 
 def _close_run_rows(conn: sqlite3.Connection, run_id: int, status: str) -> None:
+    # 取消时一并收掉 awaiting_confirm；启动 interrupted 也只动 pending/running
+    # （awaiting_confirm 的整次运行不会进入 mark_running_interrupted）
+    step_from = ("pending", "running", "awaiting_confirm") if status == "cancelled" else ("pending", "running")
+    item_from = step_from
+    marks = ",".join("?" for _ in step_from)
     conn.execute(
         f"""
         UPDATE step_results SET status = ?
-        WHERE status IN ('pending', 'running')
+        WHERE status IN ({marks})
           AND run_item_id IN (SELECT id FROM run_items WHERE run_id = ?)
         """,
-        (status, run_id),
+        (status, *step_from, run_id),
     )
     conn.execute(
-        "UPDATE run_items SET status = ? WHERE run_id = ? AND status IN ('pending', 'running')",
-        (status, run_id),
+        f"UPDATE run_items SET status = ? WHERE run_id = ? AND status IN ({marks})",
+        (status, run_id, *item_from),
     )
     conn.execute(
         "UPDATE runs SET status = ?, finished_at = ? WHERE id = ?",
@@ -365,7 +512,10 @@ def _close_run_rows(conn: sqlite3.Connection, run_id: int, status: str) -> None:
 
 
 def mark_running_interrupted() -> dict[str, int]:
-    """启动时：运行中与排队中的运行，连同其下未完成的篇与步骤，标为 interrupted。"""
+    """启动时：仅把 running/queued/pending 标为 interrupted。
+
+    awaiting_confirm 的运行与篇保留，重启后仍可确认续跑。
+    """
     init_db()
     with _lock:
         conn = connect()
@@ -418,21 +568,26 @@ def create_run(
     created_by: str | None = None,
     prompt_selection: dict | None = None,
     uses_test: bool = False,
+    flow_kind: str = "full",
+    batch_mode: int = 1,
 ) -> int:
-    """items: title, original_outline, outline_hash, position.
+    """items: title, original_outline, outline_hash, position[, final_terms_json].
     steps: 每一步的初始状态。reused_from 有值表示沿用上一次的结果。新运行一律先排队。
     """
     init_db()
     now = utc_now()
+    if flow_kind not in FLOW_KINDS:
+        raise ValueError(f"flow_kind 无效: {flow_kind}")
     with _lock:
         conn = connect()
         cur = conn.execute(
             """
             INSERT INTO runs (
                 created_at, status, topic_set_id, parent_run_id, start_step,
-                main_scope, analysis_scope, note, created_by, prompt_selection, uses_test
+                main_scope, analysis_scope, note, created_by, prompt_selection, uses_test,
+                batch_mode, flow_kind
             )
-            VALUES (?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 now,
@@ -445,6 +600,8 @@ def create_run(
                 created_by,
                 json.dumps(prompt_selection, ensure_ascii=False) if prompt_selection is not None else None,
                 1 if uses_test else 0,
+                1 if batch_mode else 0,
+                flow_kind,
             ),
         )
         run_id = int(cur.lastrowid)
@@ -453,8 +610,8 @@ def create_run(
             cur = conn.execute(
                 """
                 INSERT INTO run_items
-                    (run_id, position, title, original_outline, outline_hash, status, error)
-                VALUES (?, ?, ?, ?, ?, 'pending', NULL)
+                    (run_id, position, title, original_outline, outline_hash, status, error, final_terms_json)
+                VALUES (?, ?, ?, ?, ?, 'pending', NULL, ?)
                 """,
                 (
                     run_id,
@@ -462,6 +619,7 @@ def create_run(
                     item["title"],
                     item.get("original_outline"),
                     item.get("outline_hash"),
+                    item.get("final_terms_json"),
                 ),
             )
             pos_to_id[item["position"]] = int(cur.lastrowid)
@@ -474,8 +632,8 @@ def create_run(
                     output_text, input_tokens, output_tokens,
                     cache_creation_input_tokens, cache_read_input_tokens, cache_creation_5m_tokens,
                     cost_usd, duration_ms, stop_reason, status, error, reused_from,
-                    content_blocks, thinking_text, created_at, prompt_test_version_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    content_blocks, thinking_text, created_at, prompt_test_version_id, meta_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item_id,
@@ -500,6 +658,7 @@ def create_run(
                     step.get("thinking_text"),
                     now,
                     step.get("prompt_test_version_id"),
+                    step.get("meta_json"),
                 ),
             )
         conn.commit()
@@ -514,9 +673,51 @@ def set_run_status(run_id: int, status: str) -> None:
                 "UPDATE runs SET status = ?, finished_at = ? WHERE id = ?",
                 (status, finished, run_id),
             )
+        elif status == "awaiting_confirm":
+            # 待确认不算结束，清掉 finished_at
+            connect().execute(
+                "UPDATE runs SET status = ?, finished_at = NULL WHERE id = ?",
+                (status, run_id),
+            )
         else:
             connect().execute("UPDATE runs SET status = ? WHERE id = ?", (status, run_id))
         connect().commit()
+
+
+def claim_await_confirm(item_id: int) -> bool:
+    """原子地把 await_confirm 从 awaiting_confirm 抢成 running。成功 True，已被抢 False。"""
+    init_db()
+    with _lock:
+        cur = connect().execute(
+            """
+            UPDATE step_results SET status = 'running'
+            WHERE run_item_id = ? AND step = 'await_confirm' AND status = 'awaiting_confirm'
+            """,
+            (item_id,),
+        )
+        connect().commit()
+        return cur.rowcount == 1
+
+
+def awaiting_confirm_count(run_id: int) -> int:
+    rows = _rows(
+        "SELECT COUNT(1) AS n FROM run_items WHERE run_id = ? AND status = 'awaiting_confirm'",
+        (run_id,),
+    )
+    return int(rows[0]["n"]) if rows else 0
+
+
+def refresh_run_status_after_items(run_id: int) -> str:
+    """根据各篇状态汇总 run：有待确认 → awaiting_confirm；否则 done（含有失败篇）。"""
+    items = list_items(run_id)
+    if any(item.get("status") == "awaiting_confirm" for item in items):
+        set_run_status(run_id, "awaiting_confirm")
+        return "awaiting_confirm"
+    if any(item.get("status") == "running" for item in items):
+        set_run_status(run_id, "running")
+        return "running"
+    set_run_status(run_id, "done")
+    return "done"
 
 
 def set_item_status(item_id: int, status: str, error: str | None = None) -> None:
@@ -526,6 +727,21 @@ def set_item_status(item_id: int, status: str, error: str | None = None) -> None
             (status, error, item_id),
         )
         connect().commit()
+
+
+def set_item_final_terms(item_id: int, final_terms_json: str | None) -> None:
+    with _lock:
+        connect().execute(
+            "UPDATE run_items SET final_terms_json = ? WHERE id = ?",
+            (final_terms_json, item_id),
+        )
+        connect().commit()
+
+
+def get_item(item_id: int) -> dict[str, Any] | None:
+    init_db()
+    rows = _rows("SELECT * FROM run_items WHERE id = ?", (item_id,))
+    return rows[0] if rows else None
 
 
 def update_step(step_id: int, **fields: Any) -> None:
@@ -562,6 +778,7 @@ def list_runs(limit: int = 50, created_by: str | None = None) -> list[dict[str, 
         SELECT r.*,
                (SELECT COUNT(*) FROM run_items i WHERE i.run_id = r.id) AS item_count,
                (SELECT COUNT(*) FROM run_items i WHERE i.run_id = r.id AND i.status = 'failed') AS failed_count,
+               (SELECT COUNT(*) FROM run_items i WHERE i.run_id = r.id AND i.status = 'awaiting_confirm') AS awaiting_confirm_count,
                (SELECT COALESCE(SUM(s.cost_usd), 0)
                   FROM step_results s
                   JOIN run_items i ON i.id = s.run_item_id

@@ -136,8 +136,8 @@ def load_plan() -> dict:
     list_2380, splits, bad_parens = build_2380(terms)
     if bad_parens:
         raise SystemExit("词表中有无法按单层括号拆开的行: " + "、".join(bad_parens))
-    if len(list_2380) != 2380 or len(set(list_2380)) != 2380:
-        raise SystemExit(f"2380 名单长度异常: {len(list_2380)} / 去重 {len(set(list_2380))}")
+    if len(list_2380) != 2381 or len(set(list_2380)) != 2381:
+        raise SystemExit(f"2381 名单长度异常: {len(list_2380)} / 去重 {len(set(list_2380))}")
     split_by_src = {src: (outer, inner) for src, outer, inner in splits}
     trunks_text = _TRUNKS_TXT.read_text(encoding="utf-8-sig")
     trunk_pairs, trunk_notes = parse_trunks(trunks_text)
@@ -598,7 +598,7 @@ def render_report(
         for p in same_as_rows
     )
     graft_each_one = len(plan["grafting"]) == len({b for b, _t in plan["grafting"]}) == branch_count
-    belong_each_one = all(p["trunk"] for p in plan["points"]) and point_count == 2380
+    belong_each_one = all(p["trunk"] for p in plan["points"]) and point_count == 2381
     direct_each_one = all(p["direct"] for p in plan["points"])
     direct_trunk_bad = [
         p["name"]
@@ -631,7 +631,7 @@ def render_report(
         actual = planned if live is None else live_value
         add(_row(item, expected, actual))
 
-    show("Truth_Point", 2380, point_count, label_counts.get("Truth_Point"))
+    show("Truth_Point", 2381, point_count, label_counts.get("Truth_Point"))
     show("Trunk", 12, trunk_count, label_counts.get("Trunk"))
     show("Branch", 91, branch_count, label_counts.get("Branch"))
     other_labels = [k for k in (label_counts if live else {}) if k not in {"Truth_Point", "Trunk", "Branch"}]
@@ -666,19 +666,19 @@ def render_report(
     add(_row("各主干下枝子数与 12 大类文件一致", "是", "是" if trunk_ok else "否", trunk_ok))
 
     belong_actual = point_count if live is None else live["belong_stats"]["rels"]
-    add(_row("BELONGS_TO_TRUNK", 2380, belong_actual))
+    add(_row("BELONGS_TO_TRUNK", 2381, belong_actual))
     if live is None:
         belong_one = belong_each_one and not plan["missing_json"]
     else:
-        belong_one = int(live["belong_stats"]["exactly_one"]) == 2380
+        belong_one = int(live["belong_stats"]["exactly_one"]) == 2381
     add(_row("每个真理要点恰一条 BELONGS_TO_TRUNK", "是", "是" if belong_one else "否", belong_one))
 
     direct_actual = point_count if live is None else live["direct_stats"]["rels"]
-    add(_row("OF_BRANCH_DIRECTLY", 2380, direct_actual))
+    add(_row("OF_BRANCH_DIRECTLY", 2381, direct_actual))
     if live is None:
         direct_one = direct_each_one and not direct_trunk_bad
     else:
-        direct_one = int(live["direct_stats"]["exactly_one"]) == 2380 and int(live["direct_trunk_mismatch"]) == 0
+        direct_one = int(live["direct_stats"]["exactly_one"]) == 2381 and int(live["direct_trunk_mismatch"]) == 0
     add(_row("每个真理要点恰一条直接枝子，且枝子所属主干等于词条主干", "是", "是" if direct_one else "否", direct_one))
 
     indirect_planned = len({(p["name"], b) for p in plan["points"] for b in p["indirect"]})
@@ -735,7 +735,7 @@ def render_report(
     add(f"- 12 大类解析提示：{len(plan['trunk_notes'])}")
     for note in plan["trunk_notes"]:
         add(f"  - {note}")
-    add(f"- 间接关系列表长度之和（2372 条）：{plan['indirect_base']}")
+    add(f"- 间接关系列表长度之和（2373 条）：{plan['indirect_base']}")
     add(f"- 其中 8 个括号词条再复制给括号内节点：{plan['indirect_paren_copy']}")
     add(f"- 去重后的间接关系条数（MERGE 后会得到的条数）：{indirect_planned}")
     if indirect_planned != indirect_raw:
@@ -752,7 +752,7 @@ def render_report(
     add(f"- 旧名在 3.5 中但 CSV 没有：{len(classified['missing_old'])}")
     for item in classified["missing_old"][:30]:
         add(f"  - {item}")
-    add(f"- 新名不在 2380 名单中：{len(classified['missing_new'])}")
+    add(f"- 新名不在 2381 名单中：{len(classified['missing_new'])}")
     for item in classified["missing_new"][:30]:
         add(f"  - {item}")
     add(f"- 迁过去之后同一起点、终点、类型的多余条数：{sum(classified['duplicate_extra'].values())}（去重后合计 {unique_total}）")

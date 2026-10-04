@@ -35,6 +35,7 @@ from features.enhanced_translate.router import router as enhanced_translate_offi
 from features.roundtable import roundtable_router
 from kg_rag.kg_rag_router import router as kg_rag_router
 from panai4.router import router as panai4_router
+from panai4.sc.router import router as panai4_sc_router
 from features.feast_outline_maker.feast_router import feast_router
 from features.zh_convert.router import router as zh_convert_router
 from features.outline_translate.router import router as outline_translate_router
@@ -430,6 +431,7 @@ app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）
 app.include_router(kg_rag_router)
 app.include_router(panai4_router)
+app.include_router(panai4_sc_router)
 app.include_router(feast_router)
 
 # 注册API路由器

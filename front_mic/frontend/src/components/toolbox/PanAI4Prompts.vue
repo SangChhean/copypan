@@ -13,7 +13,7 @@ const props = defineProps({
 const emit = defineEmits(["reload"]);
 
 const NEED_NAME = "请先填写你的名字";
-const selected = reactive({ kind: "current", step: "burden", testId: null });
+const selected = reactive({ kind: "current", step: "burden", testId: null, version: null });
 const detail = ref(null);
 const loading = ref(false);
 const diff = ref(null);
@@ -47,7 +47,20 @@ function detailMessage(error, fallback) {
 async function openCurrent(step) {
   if (editing.value && !(await confirmLeave())) return;
   editing.value = false;
-  Object.assign(selected, { kind: "current", step, testId: null });
+  Object.assign(selected, { kind: "current", step, testId: null, version: null });
+  diff.value = null;
+  showFull.value = true;
+  await loadDetail();
+}
+
+async function openStoredVersion(step, version, isCurrent) {
+  if (editing.value && !(await confirmLeave())) return;
+  editing.value = false;
+  if (isCurrent) {
+    Object.assign(selected, { kind: "current", step, testId: null, version: null });
+  } else {
+    Object.assign(selected, { kind: "stored", step, testId: null, version });
+  }
   diff.value = null;
   showFull.value = true;
   await loadDetail();
@@ -56,7 +69,7 @@ async function openCurrent(step) {
 async function openTest(test) {
   if (editing.value && !(await confirmLeave())) return;
   editing.value = false;
-  Object.assign(selected, { kind: "test", step: test.step, testId: test.id });
+  Object.assign(selected, { kind: "test", step: test.step, testId: test.id, version: null });
   showFull.value = false;
   await loadDetail();
   if (detail.value) await compare("current");
@@ -68,9 +81,14 @@ async function loadDetail() {
   loading.value = true;
   detail.value = null;
   try {
-    const url = selected.kind === "current"
-      ? `${props.api}/prompts/${selected.step}/current`
-      : `${props.api}/prompt_tests/${selected.testId}`;
+    let url;
+    if (selected.kind === "current") {
+      url = `${props.api}/prompts/${selected.step}/current`;
+    } else if (selected.kind === "stored") {
+      url = `${props.api}/prompts/${selected.step}/versions/${selected.version}`;
+    } else {
+      url = `${props.api}/prompt_tests/${selected.testId}`;
+    }
     const res = await axios.get(url, { headers });
     detail.value = res.data;
   } catch (error) {
@@ -305,21 +323,34 @@ const title = computed(() => {
     <div class="pv">
       <nav class="pv-list" aria-label="Prompt 版本列表">
         <div v-for="row in prompts" :key="row.step">
-          <div class="pv-group-title"><span>{{ groupTitle(row) }}</span><span class="meta">{{ row.tests.length + 1 }} 个版本</span></div>
+          <div class="pv-group-title">
+            <span>{{ groupTitle(row) }}</span>
+            <span class="meta">{{ (row.versions || []).length + row.tests.length }} 个版本</span>
+            <span v-if="row.enabled === false" class="chip chip-off">未启用</span>
+          </div>
           <button
+            v-for="ver in (row.versions || [{ version: row.current_version, is_current: true, enabled: true }])"
+            :key="`${row.step}-${ver.version}`"
             type="button"
             class="pv-item"
-            :class="{ selected: !editing && selected.kind === 'current' && selected.step === row.step }"
-            @click="openCurrent(row.step)"
+            :class="{
+              selected: !editing && (
+                (selected.kind === 'current' && selected.step === row.step && ver.is_current)
+                || (selected.kind === 'stored' && selected.step === row.step && selected.version === ver.version)
+              ),
+            }"
+            @click="openStoredVersion(row.step, ver.version, ver.is_current)"
           >
             <div class="pv-item-top">
-              <span class="pv-name">{{ row.current_version }}</span>
-              <span class="chip chip-cur">
+              <span class="pv-name">{{ ver.version }}</span>
+              <span v-if="ver.is_current && ver.enabled !== false" class="chip chip-cur">
                 <svg class="icon icon-xs" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
                 当前版
               </span>
+              <span v-else-if="ver.is_current && row.enabled === false" class="chip chip-off">当前版 · 未启用</span>
+              <span v-else class="chip chip-off">{{ ver.note || "未启用" }}</span>
             </div>
-            <div class="pv-line">当前版 · 由代码更新</div>
+            <div class="pv-line">{{ ver.is_current ? "由代码更新" : "已入库，运行未切换" }}</div>
           </button>
           <button
             v-for="test in row.tests"
@@ -403,11 +434,29 @@ const title = computed(() => {
         <p v-if="loading" class="meta pad">读取中……</p>
         <template v-else-if="detail && selected.kind === 'current'">
           <div class="pv-toolbar">
-            <div class="pv-title">{{ title }}　{{ detail.version }} <span class="chip chip-cur">当前版</span></div>
+            <div class="pv-title">
+              {{ title }}　{{ detail.version }}
+              <span v-if="detail.enabled !== false" class="chip chip-cur">当前版</span>
+              <span v-else class="chip chip-off">当前版 · 未启用</span>
+            </div>
             <span class="grow"></span>
-            <button type="button" class="btn btn-sm" @click="newFromDetail">以此为底稿新建</button>
+            <button
+              v-if="detail.enabled !== false"
+              type="button"
+              class="btn btn-sm"
+              @click="newFromDetail"
+            >以此为底稿新建</button>
           </div>
-          <p class="meta pad-top">当前版只能查看，不能修改或删除。</p>
+          <p v-if="detail.enabled !== false" class="meta pad-top">当前版只能查看，不能修改或删除。</p>
+          <p v-else class="meta pad-top">步骤未接入运行（数据库 step CHECK 尚无 select）；本步不建测试版。等步骤 B 升级库后才能建测试版。</p>
+          <div class="fulltext">{{ detail.template }}</div>
+        </template>
+        <template v-else-if="detail && selected.kind === 'stored'">
+          <div class="pv-toolbar">
+            <div class="pv-title">{{ title }}　{{ detail.version }} <span class="chip chip-off">未启用</span></div>
+            <span class="grow"></span>
+          </div>
+          <p class="meta pad-top">入库版本，尚未切换为当前版；本步不改 CURRENT，不能以此新建测试版。</p>
           <div class="fulltext">{{ detail.template }}</div>
         </template>
         <template v-else-if="detail">
@@ -460,6 +509,7 @@ const title = computed(() => {
 .icon-xs { width: 12px; height: 12px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 11px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .chip-cur { background: var(--primary-soft); color: var(--primary); }
+.chip-off { background: #f0f0f0; color: #8c8c8c; }
 .chip-test { background: var(--test-soft); color: var(--test); }
 .pv { display: grid; grid-template-columns: 320px minmax(0, 1fr); min-height: 760px; }
 .pv-list { border-right: 1px solid var(--line); background: var(--subtle); padding: 12px; display: flex; flex-direction: column; gap: 14px; overflow: auto; max-height: 900px; }

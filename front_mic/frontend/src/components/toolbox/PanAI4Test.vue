@@ -4,6 +4,7 @@ import { ArrowLeftOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { Modal, message } from "ant-design-vue";
 import PanAI4Prompts from "./PanAI4Prompts.vue";
+import PanAI4SC from "./PanAI4SC.vue";
 
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
 const api = `${apiBase}/api/panai4`;
@@ -12,12 +13,21 @@ const NEED_NAME = "请先填写你的名字";
 const TEST_DELETED = "所用测试版已删除，请重新选择版本";
 const DELETED_CHOICE = "__deleted__";
 const PROMPT_STEPS = [
+  { step: "select", name: "Prompt0", label: "选词" },
   { step: "burden", name: "Prompt1", label: "负担说明" },
   { step: "skeleton", name: "Prompt2", label: "新生成的龙骨" },
   { step: "orig_skeleton", name: "Prompt3", label: "原纲目的龙骨" },
   { step: "diagnosis", name: "Prompt4", label: "对比诊断" },
 ];
-const STEP_ORDER = { burden: 0, skeleton: 1, orig_skeleton: 5, diagnosis: 6 };
+const STEP_ORDER = {
+  select: 0,
+  await_confirm: 1,
+  term_defs: 2,
+  burden: 3,
+  skeleton: 4,
+  orig_skeleton: 5,
+  diagnosis: 6,
+};
 
 function getAuthHeaders() {
   const token = localStorage.getItem("token") || null;
@@ -37,6 +47,9 @@ function blankRow() {
 
 const MAIN_CELLS = [
   { id: "topic", label: "主题" },
+  { id: "select", label: "选词" },
+  { id: "await_confirm", label: "确认词表" },
+  { id: "term_defs", label: "词条定义块" },
   { id: "burden", label: "负担说明" },
   { id: "skeleton", label: "新生成的龙骨" },
   { id: "retrieval", label: "检索", designed: true },
@@ -48,18 +61,21 @@ const ANALYSIS_CELLS = [
   { id: "diagnosis", label: "对比诊断" },
 ];
 const RERUN_STEPS = [
+  { id: "select", label: "选词" },
+  { id: "term_defs", label: "词条定义块" },
   { id: "burden", label: "负担说明" },
   { id: "skeleton", label: "新生成的龙骨" },
   { id: "orig_skeleton", label: "原纲目的龙骨" },
   { id: "diagnosis", label: "对比诊断" },
 ];
 const DESIGNED = new Set(["retrieval", "generation", "evaluation"]);
-const OPEN_BY_DEFAULT = new Set(["burden", "skeleton"]);
+const OPEN_BY_DEFAULT = new Set(["select", "await_confirm", "burden", "skeleton"]);
 const BURDEN_TABS = [
   { mark: "【职事界定】", label: "职事界定" },
   { mark: "【真理脉络】", label: "真理脉络" },
   { mark: "【负担说明】", label: "负担说明" },
 ];
+const TIER_ORDER = ["最内在", "内在", "外在"];
 const STATUS_TEXT = {
   pending: "等待",
   running: "进行中",
@@ -69,35 +85,38 @@ const STATUS_TEXT = {
   interrupted: "中断",
   queued: "排队中",
   cancelled: "已取消",
+  awaiting_confirm: "待确认",
 };
-const ACTIVE = new Set(["queued", "running"]);
+const ACTIVE = new Set(["queued", "running", "awaiting_confirm"]);
 
 const rows = ref([blankRow()]);
 const note = ref("");
+const skipConfirm = ref(false); // true → batch_mode=1「跳过人工确认选词」
 const sets = ref([]);
 const selectedSetId = ref("");
 const loadedSetId = ref(null);
 const savedSnapshot = ref("");
 const meta = ref({ estimate_usd_two_steps: 0.18, estimate_usd_four_steps: 0.3 });
+const scMeta = ref(null);
 const history = ref([]);
 const currentRun = ref(null);
 const focusPosition = ref(null);
 const mainScope = ref("skeleton");
 const analysisScope = ref("diagnosis");
-const prices = ref({ burden: 0.15, skeleton: 0.03, orig_skeleton: 0.045, diagnosis: 0.08 });
+const prices = ref({ select: 0.15, burden: 0.4, skeleton: 0.04, orig_skeleton: 0.045, diagnosis: 0.08 });
 const cacheHits = ref([]);
 const rerunOpen = ref(false);
 const rerunStart = ref("skeleton");
 const rerunMain = ref("skeleton");
 const rerunAnalysis = ref("diagnosis");
 const rerunPosition = ref(null);
-const rerunChoice = reactive({ burden: "", skeleton: "", orig_skeleton: "", diagnosis: "" });
+const rerunChoice = reactive({ select: "", burden: "", skeleton: "", orig_skeleton: "", diagnosis: "" });
 const tab = ref("run");
 const creator = ref(localStorage.getItem(CREATOR_KEY) || "");
 const creatorName = computed(() => creator.value.trim());
 const creatorNames = ref([]);
 const prompts = ref([]);
-const promptChoice = reactive({ burden: "", skeleton: "", orig_skeleton: "", diagnosis: "" });
+const promptChoice = reactive({ select: "", burden: "", skeleton: "", orig_skeleton: "", diagnosis: "" });
 const versionsOpen = ref(false);
 const onlyMine = ref(true);
 const focusTest = ref(null);
@@ -110,6 +129,7 @@ const manualOpen = reactive({});
 const stepOpen = reactive({});
 const extraOpen = reactive({});
 const burdenTab = reactive({});
+const confirmDraft = reactive({}); // itemId → { terms, search, confirming }
 const autoKey = ref("");
 let timer = null;
 let seenRunId = null;
@@ -165,7 +185,10 @@ const estimate = computed(() => {
   const price = prices.value;
   return rows.value.reduce((sum, row, index) => {
     let cost = 0;
-    if (mainScope.value === "burden" || mainScope.value === "skeleton") cost += Number(price.burden) || 0;
+    if (mainScope.value === "burden" || mainScope.value === "skeleton") {
+      cost += Number(price.select) || 0;
+      cost += Number(price.burden) || 0;
+    }
     if (mainScope.value === "skeleton") cost += Number(price.skeleton) || 0;
     const hasOutline = !!(row.outline || "").trim();
     if (hasOutline && (analysisScope.value === "orig_skeleton" || analysisScope.value === "diagnosis")) {
@@ -216,11 +239,13 @@ function statusText(status) {
 function chipClass(status) {
   if (status === "done") return "chip chip-ok";
   if (status === "running") return "chip chip-run";
+  if (status === "awaiting_confirm") return "chip chip-wait confirm-chip";
   if (status === "failed" || status === "interrupted") return "chip chip-err";
   return "chip chip-wait";
 }
 
 function itemChipText(item) {
+  if (item.status === "awaiting_confirm") return "待确认选词";
   if (item.status === "running") {
     const step = (item.steps || []).find((row) => row.status === "running");
     return step ? `进行中 · ${step.label}` : "进行中";
@@ -437,6 +462,138 @@ function displayBlocks(item) {
   return blocks;
 }
 
+function parseSelectMeta(step) {
+  const raw = step?.meta_json;
+  if (!raw) return null;
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function ensureConfirmDraft(item) {
+  if (confirmDraft[item.id]) return confirmDraft[item.id];
+  const select = (item.steps || []).find((s) => s.step === "select");
+  const gate = (item.steps || []).find((s) => s.step === "await_confirm");
+  const meta = parseSelectMeta(gate) || parseSelectMeta(select) || {};
+  const candidates = meta.candidates || meta.items || [];
+  const terms = candidates.map((row) => ({
+    name: row.name,
+    tier: row.tier || row.tier_actual || "外在",
+    reason: row.reason || "",
+    in_list: true,
+  }));
+  const draft = reactive({ terms, search: "", confirming: false });
+  confirmDraft[item.id] = draft;
+  return draft;
+}
+
+function confirmByTier(item) {
+  const draft = ensureConfirmDraft(item);
+  const out = { 最内在: [], 内在: [], 外在: [] };
+  draft.terms.forEach((t) => {
+    (out[t.tier] || out["外在"]).push(t);
+  });
+  return out;
+}
+
+function confirmInnerShare(item) {
+  const draft = ensureConfirmDraft(item);
+  if (!draft.terms.length) return 0;
+  const n = draft.terms.filter((t) => t.tier === "内在" || t.tier === "最内在").length;
+  return Math.round((1000 * n) / draft.terms.length) / 10;
+}
+
+function confirmHasBad(item) {
+  return ensureConfirmDraft(item).terms.some((t) => t.in_list === false);
+}
+
+function confirmSearchHits(item) {
+  const draft = ensureConfirmDraft(item);
+  const q = (draft.search || "").trim();
+  if (!q || !scMeta.value?.terms) return [];
+  const taken = new Set(draft.terms.map((t) => t.name));
+  return scMeta.value.terms.filter((t) => t.name.includes(q) && !taken.has(t.name)).slice(0, 20);
+}
+
+function removeConfirmTerm(item, name) {
+  const draft = ensureConfirmDraft(item);
+  draft.terms = draft.terms.filter((t) => t.name !== name);
+}
+
+function addConfirmTerm(item, hit) {
+  const draft = ensureConfirmDraft(item);
+  if (draft.terms.some((t) => t.name === hit.name)) return;
+  draft.terms.push({
+    name: hit.name,
+    tier: hit.tier,
+    reason: "",
+    in_list: true,
+  });
+  draft.search = "";
+}
+
+async function loadScMeta() {
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  try {
+    const res = await axios.get(`${api}/sc/meta`, { headers });
+    scMeta.value = res.data;
+  } catch {
+    /* 确认加词依赖 SC meta；失败时仍可删词确认 */
+  }
+}
+
+async function submitConfirm(item) {
+  const run = currentRun.value;
+  if (!run) return;
+  const draft = ensureConfirmDraft(item);
+  if (!draft.terms.length) {
+    message.warning("请至少保留一个词条");
+    return;
+  }
+  if (confirmHasBad(item)) {
+    message.error("有不在词库中的词条，请删除后再确认");
+    return;
+  }
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  draft.confirming = true;
+  try {
+    await axios.post(
+      `${api}/runs/${run.run_id}/items/${item.position}/confirm`,
+      {
+        terms: draft.terms.map((t) => ({ name: t.name, tier: t.tier, reason: t.reason || "" })),
+      },
+      { headers }
+    );
+    message.success(`第 ${item.position} 篇已确认，继续生成`);
+    delete confirmDraft[item.id];
+    await openRun(run.run_id);
+    ensureTimer();
+  } catch (error) {
+    const detail = error.response?.data?.detail;
+    if (detail && typeof detail === "object" && detail.unknown_names) {
+      const bad = new Set(detail.unknown_names);
+      draft.terms.forEach((t) => {
+        if (bad.has(t.name)) t.in_list = false;
+      });
+      message.error(`词条不在词库：${detail.unknown_names.join("、")}`);
+    } else {
+      message.error(typeof detail === "string" ? detail : "确认失败");
+    }
+  } finally {
+    draft.confirming = false;
+  }
+}
+
+function showConfirmEditor(item, step) {
+  if (currentRun.value?.batch_mode) return false;
+  return step.step === "await_confirm" && (step.status === "awaiting_confirm" || item.status === "awaiting_confirm");
+}
+
 function toggleExtra(item, step, kind) {
   const key = `${stepKey(item, step)}:${kind}`;
   const opening = !extraOpen[key];
@@ -497,6 +654,7 @@ async function loadMeta() {
   const res = await axios.get(`${api}/meta`, { headers });
   meta.value = res.data;
   prices.value = {
+    select: res.data.estimate_usd_select ?? 0.15,
     burden: res.data.estimate_usd_burden,
     skeleton: res.data.estimate_usd_skeleton,
     orig_skeleton: res.data.estimate_usd_orig_skeleton,
@@ -828,6 +986,7 @@ async function startRun() {
         topic_set_id: loadedSetId.value || null,
         main_scope: mainScope.value,
         analysis_scope: analysisScope.value,
+        batch_mode: !!skipConfirm.value,
         items: rows.value.map((row) => ({
           title: row.title.trim(),
           original_outline: (row.outline || "").trim() ? row.outline : null,
@@ -881,8 +1040,11 @@ async function postRerun(url, startStep, main, analysis, tests) {
 }
 
 function rerunNeeds(step) {
+  if (STEP_ORDER[step] == null) return false;
   if (STEP_ORDER[step] < STEP_ORDER[rerunStart.value]) return false;
-  if (step === "burden") return rerunMain.value === "burden" || rerunMain.value === "skeleton";
+  if (step === "select" || step === "term_defs" || step === "burden") {
+    return rerunMain.value === "burden" || rerunMain.value === "skeleton";
+  }
   if (step === "skeleton") return rerunMain.value === "skeleton";
   if (step === "orig_skeleton") return rerunAnalysis.value === "orig_skeleton" || rerunAnalysis.value === "diagnosis";
   return rerunAnalysis.value === "diagnosis";
@@ -1056,6 +1218,7 @@ onMounted(async () => {
   window.addEventListener("click", closeMenu);
   if (!getAuthHeaders()) return;
   await loadMeta();
+  await loadScMeta();
   await loadPrompts();
   await loadCreators();
   await loadSets();
@@ -1084,7 +1247,7 @@ onUnmounted(() => {
 
     <div class="topline">
       <div class="tabs-top" role="tablist">
-        <button type="button" class="tabtop" :class="{ active: tab === 'run' }" role="tab" @click="tab = 'run'">运行</button>
+        <button type="button" class="tabtop" :class="{ active: tab === 'run' }" role="tab" @click="tab = 'run'">全流程测试</button>
         <button type="button" class="tabtop" :class="{ active: tab === 'prompts' }" role="tab" @click="tab = 'prompts'">Prompt 版本</button>
       </div>
       <label class="me">
@@ -1114,6 +1277,11 @@ onUnmounted(() => {
         :focus="focusTest"
         @reload="onPromptsChanged"
       />
+    </div>
+
+    <!-- SC 页签已退役入口（步骤 F）；组件与数据保留，不删除 -->
+    <div v-show="false" class="page-single" aria-hidden="true">
+      <PanAI4SC :api="api" :get-auth-headers="getAuthHeaders" />
     </div>
 
     <div v-show="tab === 'run'" class="page">
@@ -1205,6 +1373,13 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
+              <div class="scope-line">
+                <label class="batch-check">
+                  <input v-model="skipConfirm" type="checkbox" />
+                  跳过人工确认选词
+                </label>
+                <span class="meta">勾选后，模型选出的词条不经人工确认，直接全部送入。</span>
+              </div>
             </div>
             <div class="input-foot">
               <div class="note">
@@ -1225,6 +1400,9 @@ onUnmounted(() => {
             <h2 class="section-title"><span class="section-num">2</span>流程</h2>
             <div v-if="currentActive" class="queue">
               <span v-if="currentRun.status === 'queued'" class="chip chip-wait">排队中 · 前面还有 {{ currentRun.queue_ahead }} 个</span>
+              <span v-else-if="currentRun.status === 'awaiting_confirm'" class="chip chip-wait confirm-chip">
+                待确认 · {{ currentRun.awaiting_confirm_count || 0 }} 篇
+              </span>
               <span v-else class="chip chip-run">运行中</span>
               <span class="meta">同时最多跑 {{ currentRun.max_concurrent_runs }} 个</span>
               <button type="button" class="btn btn-sm" @click="askCancel(currentRun)">取消</button>
@@ -1246,7 +1424,7 @@ onUnmounted(() => {
                   <span v-if="index" class="connector"></span>
                   <div class="step" :class="cell.designed ? 'todo' : cellOf(cell.id).kind">
                     <div class="step-name">{{ cell.label }}</div>
-                    <div class="step-state">{{ cell.designed ? "待设计" : cellOf(cell.id).text }}</div>
+                    <div class="step-state">{{ cell.designed ? "未接入" : cellOf(cell.id).text }}</div>
                   </div>
                 </template>
               </div>
@@ -1305,7 +1483,7 @@ onUnmounted(() => {
             <template v-for="(block, blockIndex) in displayBlocks(item)" :key="blockIndex">
               <div v-if="block.kind === 'skip'" class="skipline">
                 <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12h8" /></svg>
-                {{ block.names }}　跳过（待设计）
+                {{ block.names }}　未接入
               </div>
               <div v-else-if="block.kind === 'unselected'" class="unselected-line">{{ block.label }}　未选择</div>
               <div v-else class="block" :class="{ open: isStepOpen(item, block.step) }">
@@ -1331,15 +1509,57 @@ onUnmounted(() => {
                     <template v-if="stepClosed(block.step)"> · {{ stepReason(block.step) }}</template>
                   </span>
                   <button
-                    v-if="block.step.status === 'done'"
+                    v-if="block.step.status === 'done' || (block.step.step === 'select' && item.final_terms_json)"
                     type="button"
                     class="btn btn-sm"
-                    @click.stop="downloadStep(item, block.step.step)"
+                    @click.stop="downloadStep(item, block.step.step === 'await_confirm' ? 'select' : block.step.step)"
                   >导出 docx</button>
                 </div>
                 <div v-if="isStepOpen(item, block.step)" class="block-body">
-                  <p v-if="stepClosed(block.step)" class="reason">{{ stepReason(block.step) }}</p>
-                  <template v-else-if="block.step.step === 'burden' && splitBurden(block.step.output_text)">
+                  <template v-if="showConfirmEditor(item, block.step)">
+                    <div class="confirm-panel">
+                      <div class="meta-line">
+                        已选 {{ ensureConfirmDraft(item).terms.length }}；内在+最内在约占已选 {{ confirmInnerShare(item) }}%（只提示）
+                      </div>
+                      <div class="search-row">
+                        <input v-model="ensureConfirmDraft(item).search" class="title-input" placeholder="按名字搜索词库并添加" />
+                        <div v-if="confirmSearchHits(item).length" class="hits">
+                          <button
+                            v-for="hit in confirmSearchHits(item)"
+                            :key="hit.name"
+                            type="button"
+                            class="hit"
+                            @click="addConfirmTerm(item, hit)"
+                          >〔{{ hit.tier }}〕{{ hit.name }}</button>
+                        </div>
+                      </div>
+                      <div class="tiers">
+                        <div v-for="t in TIER_ORDER" :key="t" class="tier-col">
+                          <h4>{{ t }}（{{ confirmByTier(item)[t].length }}）</h4>
+                          <div
+                            v-for="term in confirmByTier(item)[t]"
+                            :key="term.name"
+                            class="term"
+                            :class="{ bad: term.in_list === false }"
+                          >
+                            <div class="term-top">
+                              <strong>{{ term.name }}</strong>
+                              <button type="button" class="btn-link" @click="removeConfirmTerm(item, term.name)">删除</button>
+                            </div>
+                            <div class="reason">{{ term.reason || "（无依据）" }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        :disabled="ensureConfirmDraft(item).confirming || confirmHasBad(item) || !ensureConfirmDraft(item).terms.length"
+                        @click="submitConfirm(item)"
+                      >{{ ensureConfirmDraft(item).confirming ? "确认中…" : "确认并继续" }}</button>
+                    </div>
+                  </template>
+                  <p v-else-if="stepClosed(block.step)" class="reason">{{ stepReason(block.step) }}</p>
+                  <template v-else-if="block.step.step === 'burden' && currentRun?.flow_kind !== 'full' && splitBurden(block.step.output_text)">
                     <div class="tabs">
                       <button
                         v-for="tab in BURDEN_TABS"
@@ -1353,7 +1573,7 @@ onUnmounted(() => {
                     <div class="output">{{ splitBurden(block.step.output_text)[currentBurdenTab(item)] }}</div>
                   </template>
                   <div v-else class="output">{{ displayOutput(block.step) }}</div>
-                  <div class="block-links">
+                  <div v-if="!showConfirmEditor(item, block.step)" class="block-links">
                     <button type="button" class="btn-link" @click="toggleExtra(item, block.step, 'think')">查看思考过程</button>
                     <button type="button" class="btn-link" @click="toggleExtra(item, block.step, 'prompt')">查看送出的 prompt</button>
                   </div>
@@ -1400,6 +1620,9 @@ onUnmounted(() => {
             </div>
             <div class="hist-line">{{ run.created_by || "—" }} · {{ formatTime(run.created_at) }} · {{ run.item_count }} 篇 · {{ money(run.cost_usd) }} 美元</div>
             <div v-if="run.status === 'queued'" class="hist-line">前面还有 {{ run.queue_ahead }} 个</div>
+            <div v-if="run.status === 'awaiting_confirm'" class="hist-line confirm-line">
+              待确认 · {{ run.awaiting_confirm_count || 0 }} 篇
+            </div>
             <div v-if="run.uses_test" class="hist-tags"><span class="chip chip-test">含测试版</span></div>
             <div v-if="histSource(run)" class="hist-src">{{ histSource(run) }}</div>
             <div v-if="histNote(run)" class="hist-note">{{ histNote(run) }}</div>
@@ -1411,7 +1634,7 @@ onUnmounted(() => {
     </div>
 
     <a-modal v-model:open="rerunOpen" title="确认要跑到哪里" ok-text="开始重跑" cancel-text="取消" @ok="confirmRerun">
-      <p class="meta">从「{{ ({ burden: "负担说明", skeleton: "新生成的龙骨", orig_skeleton: "原纲目的龙骨", diagnosis: "对比诊断" })[rerunStart] }}」重跑。预设为这次运行原来的选择。</p>
+      <p class="meta">从「{{ ({ select: "选词", term_defs: "词条定义块", burden: "负担说明", skeleton: "新生成的龙骨", orig_skeleton: "原纲目的龙骨", diagnosis: "对比诊断" })[rerunStart] }}」重跑。预设为这次运行原来的选择。</p>
       <div class="scopes dialog-scopes">
         <div class="scope-line">
           <span class="field-label">主线</span>
@@ -1653,4 +1876,21 @@ onUnmounted(() => {
 .test-tag { color: var(--test); font-weight: 600; opacity: .75; }
 .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
 .hist-tags { margin-top: 4px; }
+.batch-check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.confirm-chip { border-color: #e0b35a !important; color: #8a5a00 !important; background: #fff6e5 !important; font-weight: 700; }
+.confirm-line { color: #8a5a00; font-weight: 600; }
+.confirm-panel { display: flex; flex-direction: column; gap: 12px; }
+.confirm-panel .meta-line { font-size: 13px; color: var(--ink-2); }
+.confirm-panel .search-row { position: relative; }
+.confirm-panel .hits { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); max-height: 220px; overflow: auto; box-shadow: var(--shadow); }
+.confirm-panel .hit { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: none; cursor: pointer; font-size: 13px; }
+.confirm-panel .hit:hover { background: var(--subtle); }
+.confirm-panel .tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.confirm-panel .tier-col h4 { margin: 0 0 8px; font-size: 13px; }
+.confirm-panel .term { padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--sunken); }
+.confirm-panel .term.bad { border-color: var(--err); background: var(--err-soft); color: var(--err); }
+.confirm-panel .term-top { display: flex; align-items: center; gap: 8px; }
+.confirm-panel .reason { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+.step.awaiting_confirm { background: #fff6e5; border-color: #e0b35a; }
+.step.awaiting_confirm .step-state { color: #8a5a00; }
 </style>

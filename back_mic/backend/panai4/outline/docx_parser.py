@@ -186,40 +186,135 @@ def level_of_label(normalized: str) -> Optional[int]:
     return None
 
 
-def split_label_body(raw: str) -> tuple[str, str, bool]:
-    """返回 (label 原文, 正文, 是否有 Tab)。
+_LINE_SPLIT = re.compile(r"[\n\r\v\x0b]+")
+_PAREN_LEAD = re.compile(r"^[（(][^）)]{1,8}[）)]")
+_PART_RE = re.compile(r"第([一二三123])部分")
 
-    有 Tab 时，label 是第一个 Tab 之前的文字。
-    无 Tab 时，label 取到第一个标点为止，正文是标点之后的文字。
+
+def split_label_body(raw: str, separators=None) -> tuple[str, str, str]:
+    """返回 (label 原文, 正文, 切分方式)。
+
+    切分方式：paren / sep / punct / plain。
+    先剥段首 Tab 与空白（方案 2.6），再认括号编号或分隔符（方案 2.2）。
+    非括号编号没有分隔符时不按编号切开。
+    separators 默认只用主分隔符表；兜底重试时把全角逗号并进去。
     """
-    if "\t" in raw:
-        left, right = raw.split("\t", 1)
-        return left.strip(), right.strip(), True
-    text = raw.strip()
-    for i, ch in enumerate(text):
+    if separators is None:
+        separators = config.LABEL_SEPARATORS
+    text = (raw or "").lstrip(" \t\u3000\n\r\v\x0b")
+    matched = _PAREN_LEAD.match(text)
+    if matched:
+        token = matched.group(0)
+        if level_of_label(normalize_label(token)):
+            rest = text[matched.end() :]
+            if rest[:1] in separators:
+                rest = rest[1:]
+            return token, rest.strip(), "paren"
+    positions = []
+    for sep in separators:
+        idx = text.find(sep)
+        if idx > 0:
+            positions.append(idx)
+    if positions:
+        cut = min(positions)
+        left = text[:cut].strip()
+        right = text[cut + 1 :].strip()
+        if left and level_of_label(normalize_label(left)):
+            return left, right, "sep"
+    stripped = text.strip()
+    for i, ch in enumerate(stripped):
         if ch in config.LABEL_PUNCT:
-            return text[:i].strip(), text[i + 1 :].strip(), False
-    return text, "", False
+            return stripped[:i].strip(), stripped[i + 1 :].strip(), "punct"
+    return stripped, "", "plain"
 
 
-def match_truncate_rule(text: str) -> Optional[str]:
-    """命中截断文字规则时返回 truncate_rule，否则 None。"""
-    compact = _WHITESPACE_RE.sub("", text or "")
+def _marker_display(base: str, suffix: str) -> str:
+    if suffix == "":
+        return "text:" + base
+    shown = "：" if suffix in (":", "：") else "。"
+    return "text:" + base + shown
+
+
+def marker_line_rule(line: str) -> Optional[str]:
+    """一行去掉首尾空白后等于条件 A 标志时，返回 text:标志。"""
+    compact = (line or "").strip()
     if not compact:
         return None
-    for prefix in config.TRUNCATE_FU_PREFIXES:
-        if compact.startswith(prefix):
-            return "text:附："
     for base in config.TRUNCATE_MARKER_BASES:
         for suffix in config.TRUNCATE_MARKER_SUFFIXES:
             if suffix == "" and base not in config.TRUNCATE_BARE_OK:
                 continue
             if compact == base + suffix:
-                if suffix == "":
-                    return "text:" + base
-                shown = "：" if suffix in (":", "：") else "。"
-                return "text:" + base + shown
+                return _marker_display(base, suffix)
     return None
+
+
+def match_truncate_rule(text: str) -> Optional[str]:
+    """兼容旧调用：整段压成一行后的标志，或段首「附：」。"""
+    for line in _LINE_SPLIT.split(text or ""):
+        hit = marker_line_rule(line)
+        if hit:
+            return hit
+    compact = (text or "").lstrip()
+    for prefix in config.TRUNCATE_FU_PREFIXES:
+        if compact.startswith(prefix):
+            return "text:附："
+    return None
+
+
+def _scan_truncation(paragraphs: list[dict]) -> dict:
+    """先扫全文定截断点。条件 A 优先于「附：」。"""
+    found = None
+    fu_cut = None
+    for para in paragraphs:
+        lines = _LINE_SPLIT.split(para["text"] or "")
+        if found is None:
+            for index, line in enumerate(lines):
+                hit = marker_line_rule(line)
+                if not hit:
+                    continue
+                before = "\n".join(lines[:index]).strip()
+                if before:
+                    found = {
+                        "kind": "inline",
+                        "para_no": para["para_no"],
+                        "rule": "text_inline:" + hit[len("text:") :],
+                        "kept_text": before,
+                        "cut": para["para_no"] + 1,
+                        "marker_para": para["para_no"],
+                    }
+                else:
+                    found = {
+                        "kind": "whole",
+                        "para_no": para["para_no"],
+                        "rule": hit,
+                        "kept_text": None,
+                        "cut": para["para_no"],
+                        "marker_para": para["para_no"],
+                    }
+                break
+        if fu_cut is None:
+            lead = (para["text"] or "").lstrip()
+            if lead.startswith(config.TRUNCATE_FU_PREFIXES):
+                fu_cut = para["para_no"]
+    return {"marker": found, "fu_cut": fu_cut}
+
+
+def _gospel_part(raw: str):
+    """返回 (写入篇头的文字, (part_no, part_name) 或 None, 错字原文或 None)。"""
+    original = raw or ""
+    normalized = original.replace(config.GOSPEL_TYPO_FROM, config.GOSPEL_TYPO_TO)
+    typo_from = original if normalized != original else None
+    matched = _PART_RE.search(normalized)
+    part_hit = None
+    if matched:
+        part_hit = config.GOSPEL_PART_NAMES.get(matched.group(1))
+    return normalized, part_hit, typo_from
+
+
+def is_header_bible_reading(raw: str) -> bool:
+    """方案 4.5：去掉首尾空白后以「读经」开头（含各种冒号）。"""
+    return (raw or "").strip().startswith(config.BIBLE_READING_LEAD)
 
 
 def _join_header(existing: str, piece: str) -> str:
@@ -231,39 +326,205 @@ def _join_header(existing: str, piece: str) -> str:
     return existing + "\n" + piece
 
 
-def analyze_document(paragraphs: list[dict], hardcoded_para: Optional[int]) -> dict:
+def analyze_document(
+    paragraphs: list[dict],
+    hardcoded_para: Optional[int],
+    single_point: bool = False,
+    title_hint: str = "",
+) -> dict:
     """对一篇的段落做截断、层级判定和异常收集（不含文件级 id）。"""
     style_counts: Counter = Counter()
     marker_paras = []
-    text_cut = None
-    text_rule = None
     for para in paragraphs:
         style_counts[para["style"]] += 1
         if para["style"] in config.EXCERPT_MARKER_STYLES:
             marker_paras.append(para["para_no"])
-        if text_cut is None:
-            rule = match_truncate_rule(para["text"])
-            if rule:
-                text_cut = para["para_no"]
-                text_rule = rule
-
+    scanned = _scan_truncation(paragraphs)
+    marker = scanned["marker"]
+    fu_cut = scanned["fu_cut"]
+    text_overrides = {}
+    inline_para = None
     if hardcoded_para is not None:
         cut = hardcoded_para
         rule = "hardcoded"
+        text_cut_para = None
+    elif marker is not None:
+        cut = marker["cut"]
+        rule = marker["rule"]
+        text_cut_para = marker["marker_para"]
+        if marker["kind"] == "inline":
+            text_overrides[marker["para_no"]] = marker["kept_text"]
+            inline_para = marker["para_no"]
+    elif fu_cut is not None:
+        cut = fu_cut
+        rule = "text:附："
+        text_cut_para = fu_cut
     else:
-        cut = text_cut
-        rule = text_rule
+        cut = None
+        rule = None
+        text_cut_para = None
 
-    doc_header = {
-        "series": "",
-        "sub_series": "",
-        "title_in_doc": "",
-        "bible_reading": "",
-    }
-    points = []
+    def _collect(separators):
+        doc_header = {
+            "series": "",
+            "sub_series": "",
+            "title_in_doc": "",
+            "bible_reading": "",
+        }
+        points = []
+        point_anomalies = []
+        bible_prefix_hits = []
+        continuations = []
+        seen_outline = False
+        part_no = None
+        part_name = None
+        merged_notes = 0
+        prev_level = 0
+        for para in paragraphs:
+            if cut is not None and para["para_no"] >= cut:
+                break
+            style = para["style"]
+            raw = text_overrides.get(para["para_no"], para["text"])
+            if not raw.strip():
+                continue
+            role = _HEADER_OF_STYLE.get(style)
+            if role:
+                stored = raw
+                if style == "11111西列":
+                    stored, part_hit, typo_from = _gospel_part(raw)
+                    if part_hit and part_no is None:
+                        part_no, part_name = part_hit
+                    if typo_from:
+                        point_anomalies.append(
+                            {
+                                "type": "text_typo",
+                                "para_no": para["para_no"],
+                                "detail": "原文=" + typo_from,
+                            }
+                        )
+                doc_header[role] = _join_header(doc_header[role], stored)
+                continue
+
+            # 方案 4.5：只认「第一个纲目点之前」。已出现纲目点之后的「读经……」仍是正文。
+            if not seen_outline and is_header_bible_reading(raw):
+                doc_header["bible_reading"] = _join_header(doc_header["bible_reading"], raw)
+                bible_prefix_hits.append(
+                    {
+                        "para_no": para["para_no"],
+                        "style": style,
+                        "text": raw.strip(),
+                    }
+                )
+                continue
+
+            style_level = config.LEVEL_STYLES.get(style)
+            raw_label, body, kind = split_label_body(raw, separators)
+            normalized = normalize_label(raw_label)
+            # 文字轨：括号编号，或带分隔符的非括号编号。层级样式上的段首编号也认。
+            text_level = None
+            if kind in ("paren", "sep") or style_level:
+                text_level = level_of_label(normalized)
+
+            if style_level and text_level:
+                if style_level == text_level:
+                    level = style_level
+                    source = "both"
+                else:
+                    level = text_level
+                    source = "text_over_style"
+                    point_anomalies.append(
+                        {
+                            "type": "level_conflict",
+                            "para_no": para["para_no"],
+                            "detail": "样式层级={0} 文字层级={1} label={2}".format(
+                                style_level, text_level, normalized
+                            ),
+                        }
+                    )
+                label = normalized
+            elif style_level:
+                level = style_level
+                source = "style"
+                label = raw_label.strip()
+                # 段首就是标点（常见于 Word 把一句话拆成两段）。label 为空，并入上一点正文。
+                if not label and points and (raw or "").lstrip()[:1] in config.LABEL_PUNCT:
+                    extra = (raw or "").lstrip()
+                    prev = points[-1]
+                    prev["text"] = (prev["text"] + extra) if prev["text"] else extra
+                    continuations.append(
+                        {
+                            "para_no": para["para_no"],
+                            "style": style,
+                            "text": extra,
+                            "into_para_no": prev["para_no"],
+                        }
+                    )
+                    continue
+                if label not in config.KNOWN_UNNUMBERED_LABELS:
+                    point_anomalies.append(
+                        {
+                            "type": "unknown_label",
+                            "para_no": para["para_no"],
+                            "detail": "label=" + (label or "（空）"),
+                        }
+                    )
+            elif text_level:
+                level = text_level
+                source = "text"
+                label = normalized
+            else:
+                # 方案 2.7：截断前、已有纲目点之后的无编号段并入上一点。空段前面已跳过。
+                if points:
+                    piece = raw.strip()
+                    prev = points[-1]
+                    prev["text"] = (prev["text"] + "\n" + piece) if prev["text"] else piece
+                    prev["has_note"] = True
+                    prev["note_para_nos"].append(para["para_no"])
+                    merged_notes += 1
+                continue
+
+            jumped = (prev_level > 0 and level > prev_level + 1) or (
+                prev_level == 0 and level > 1
+            )
+            if jumped:
+                point_anomalies.append(
+                    {
+                        "type": "level_jump",
+                        "para_no": para["para_no"],
+                        "detail": "上一点层级={0} 本点层级={1} label={2}".format(
+                            prev_level, level, label
+                        ),
+                    }
+                )
+            prev_level = level
+            seen_outline = True
+            points.append(
+                {
+                    "idx": len(points),
+                    "level": level,
+                    "label": label,
+                    "text": body,
+                    "style": style,
+                    "level_source": source,
+                    "para_no": para["para_no"],
+                    "has_note": False,
+                    "note_para_nos": [],
+                }
+            )
+
+        return {
+            "points": points,
+            "doc_header": doc_header,
+            "point_anomalies": point_anomalies,
+            "bible_prefix_hits": bible_prefix_hits,
+            "continuations": continuations,
+            "part_no": part_no,
+            "part_name": part_name,
+            "merged_notes": merged_notes,
+        }
+
     anomalies = []
-
-    if text_cut is None and marker_paras:
+    if text_cut_para is None and marker_paras:
         anomalies.append(
             {
                 "type": "truncate_by_style_only",
@@ -271,101 +532,84 @@ def analyze_document(paragraphs: list[dict], hardcoded_para: Optional[int]) -> d
                 "detail": "摘录样式段号=" + ",".join(str(n) for n in marker_paras),
             }
         )
-    if text_cut is not None:
-        early = [n for n in marker_paras if n < text_cut]
+    if text_cut_para is not None:
+        early = [n for n in marker_paras if n < text_cut_para]
         if early:
             anomalies.append(
                 {
                     "type": "truncate_text_late",
-                    "para_no": text_cut,
+                    "para_no": text_cut_para,
                     "detail": "文字规则段号={0}；更早的摘录样式段号={1}".format(
-                        text_cut, ",".join(str(n) for n in early)
+                        text_cut_para, ",".join(str(n) for n in early)
                     ),
                 }
             )
-
-    prev_level = 0
-    for para in paragraphs:
-        if cut is not None and para["para_no"] >= cut:
-            break
-        style = para["style"]
-        raw = para["text"]
-        if not raw.strip():
-            continue
-        role = _HEADER_OF_STYLE.get(style)
-        if role:
-            doc_header[role] = _join_header(doc_header[role], raw)
-            continue
-
-        style_level = config.LEVEL_STYLES.get(style)
-        raw_label, body, had_tab = split_label_body(raw)
-        normalized = normalize_label(raw_label)
-        # 文字轨：有 Tab 才认；无 Tab 时只有层级样式上的段首编号才认（方案 2.2 / 2.5）
-        text_level = None
-        if had_tab or style_level:
-            text_level = level_of_label(normalized)
-
-        if style_level and text_level:
-            if style_level == text_level:
-                level = style_level
-                source = "both"
-            else:
-                level = style_level
-                source = "style"
-                anomalies.append(
-                    {
-                        "type": "level_conflict",
-                        "para_no": para["para_no"],
-                        "detail": "样式层级={0} 文字层级={1} label={2}".format(
-                            style_level, text_level, normalized
-                        ),
-                    }
-                )
-            label = normalized
-        elif style_level:
-            level = style_level
-            source = "style"
-            label = raw_label.strip()
-            if label not in config.KNOWN_UNNUMBERED_LABELS:
-                anomalies.append(
-                    {
-                        "type": "unknown_label",
-                        "para_no": para["para_no"],
-                        "detail": "label=" + (label or "（空）"),
-                    }
-                )
-        elif text_level:
-            level = text_level
-            source = "text"
-            label = normalized
-        else:
-            continue
-
-        jumped = (prev_level > 0 and level > prev_level + 1) or (
-            prev_level == 0 and level > 1
-        )
-        if jumped:
-            anomalies.append(
-                {
-                    "type": "level_jump",
-                    "para_no": para["para_no"],
-                    "detail": "上一点层级={0} 本点层级={1} label={2}".format(
-                        prev_level, level, label
-                    ),
-                }
-            )
-        prev_level = level
-        points.append(
+    if inline_para is not None:
+        anomalies.append(
             {
-                "idx": len(points),
-                "level": level,
-                "label": label,
-                "text": body,
-                "style": style,
-                "level_source": source,
-                "para_no": para["para_no"],
+                "type": "truncate_inline",
+                "para_no": inline_para,
+                "detail": rule or "",
             }
         )
+
+    chosen = _collect(config.LABEL_SEPARATORS)
+    if (not chosen["points"]) and (not single_point) and config.FALLBACK_SEPARATORS:
+        alt_seps = tuple(config.LABEL_SEPARATORS) + tuple(config.FALLBACK_SEPARATORS)
+        alt = _collect(alt_seps)
+        if len(alt["points"]) >= 2:
+            chosen = alt
+            chosen["point_anomalies"].append(
+                {
+                    "type": "fallback_separator",
+                    "para_no": None,
+                    "detail": "点数={0}".format(len(alt["points"])),
+                }
+            )
+    points = chosen["points"]
+    doc_header = chosen["doc_header"]
+    bible_prefix_hits = chosen["bible_prefix_hits"]
+    continuations = chosen["continuations"]
+    part_no = chosen["part_no"]
+    part_name = chosen["part_name"]
+    merged_notes = chosen["merged_notes"]
+    anomalies.extend(chosen["point_anomalies"])
+
+    if single_point:
+        body_bits = []
+        body_nos = []
+        body_styles = []
+        for para in paragraphs:
+            if cut is not None and para["para_no"] >= cut:
+                break
+            raw = text_overrides.get(para["para_no"], para["text"])
+            if not (raw or "").strip():
+                continue
+            if _HEADER_OF_STYLE.get(para["style"]):
+                continue
+            if is_header_bible_reading(raw):
+                continue
+            body_bits.append(raw.strip())
+            body_nos.append(para["para_no"])
+            body_styles.append(para["style"])
+        label = (doc_header.get("title_in_doc") or "").strip() or (title_hint or "").strip()
+        points = [
+            {
+                "idx": 0,
+                "level": 1,
+                "label": label,
+                "text": "\n".join(body_bits),
+                "style": body_styles[0] if body_styles else "",
+                "level_source": "single_point",
+                "para_no": body_nos[0] if body_nos else None,
+                "has_note": True,
+                "note_para_nos": body_nos[1:],
+            }
+        ]
+        merged_notes = len(body_nos[1:])
+        # 单点篇的说明段是题面本身，不按 note_overflow 计。
+        if merged_notes > len(points):
+            merged_notes = len(points)
 
     if points and not any(p["level"] == 1 for p in points):
         anomalies.append(
@@ -397,20 +641,37 @@ def analyze_document(paragraphs: list[dict], hardcoded_para: Optional[int]) -> d
                 }
             )
 
+    if points and merged_notes > len(points):
+        anomalies.append(
+            {
+                "type": "note_overflow",
+                "para_no": None,
+                "detail": "说明段={0} 纲目点={1}".format(merged_notes, len(points)),
+            }
+        )
+
     levels = sorted({p["level"] for p in points})
     same_level = len(levels) == 1
-    candidate = bool(
-        points
-        and same_level
-        and levels[0] != 1
-        and text_cut is None
-        and hardcoded_para is None
-    )
+    # 方案 5.1：全部同一层级，且没有截断。
+    candidate = bool(points and same_level and cut is None and not single_point)
 
     level_counts = {}
     for p in points:
         key = str(p["level"])
         level_counts[key] = level_counts.get(key, 0) + 1
+
+    bible_nos = {hit["para_no"] for hit in bible_prefix_hits}
+    header_paras = 0
+    empty_paras = 0
+    for para in paragraphs:
+        if cut is not None and para["para_no"] >= cut:
+            break
+        raw = text_overrides.get(para["para_no"], para["text"])
+        if not (raw or "").strip():
+            empty_paras += 1
+            continue
+        if _HEADER_OF_STYLE.get(para["style"]) or para["para_no"] in bible_nos:
+            header_paras += 1
 
     return {
         "points": points,
@@ -420,12 +681,18 @@ def analyze_document(paragraphs: list[dict], hardcoded_para: Optional[int]) -> d
         "style_system": classify_style_system(set(style_counts)),
         "truncated_at": cut,
         "truncate_rule": rule,
-        "text_cut": text_cut,
-        "text_rule": text_rule,
         "candidate": candidate,
         "candidate_level": levels[0] if candidate else None,
         "level_counts": level_counts,
         "para_total": len(paragraphs),
+        "bible_prefix_hits": bible_prefix_hits,
+        "continuations": continuations,
+        "min_level": min(p["level"] for p in points) if points else None,
+        "merged_note_paras": merged_notes,
+        "part_no": part_no,
+        "part_name": part_name,
+        "header_paras": header_paras,
+        "empty_paras": empty_paras,
     }
 
 
@@ -488,8 +755,20 @@ def parse_conference_dirname(dirname: str) -> dict:
     }
 
 
+def _point_line(point: dict) -> str:
+    if point["text"]:
+        return point["label"] + "\t" + point["text"]
+    return point["label"]
+
+
+def estimate_token(points: list[dict]) -> int:
+    """len(text)/1.5，与 v7 的 estimate_tokens 同为 int。"""
+    blob = "\n".join(_point_line(p) for p in points)
+    return max(0, int(len(blob) / 1.5))
+
+
 def level1_group_token(points: list[dict]) -> list[int]:
-    """每个「第 1 级点 + 其下属」的 token 估算：len(text)/1.5，与 v7 同为 int。"""
+    """每个「第 1 级点 + 其下属」的 token。第 1 级之前的点不计入。"""
     tokens = []
     i = 0
     n = len(points)
@@ -500,13 +779,46 @@ def level1_group_token(points: list[dict]) -> list[int]:
         j = i + 1
         while j < n and points[j]["level"] > 1:
             j += 1
-        lines = []
-        for p in points[i:j]:
-            if p["text"]:
-                lines.append(p["label"] + "\t" + p["text"])
-            else:
-                lines.append(p["label"])
-        blob = "\n".join(lines)
-        tokens.append(max(0, int(len(blob) / 1.5)))
+        tokens.append(estimate_token(points[i:j]))
         i = j
     return tokens
+
+
+def group_by_min_level(points: list[dict]) -> dict:
+    """按本篇 min(level) 切单位。残留点只返回，不并入第一个单位。
+
+    没有纲目点时单位数为 0。有纲目点时至少有一个单位。
+    """
+    if not points:
+        return {
+            "min_level": None,
+            "tokens": [],
+            "residue": [],
+            "units": [],
+        }
+    min_level = min(p["level"] for p in points)
+    first = 0
+    while first < len(points) and points[first]["level"] != min_level:
+        first += 1
+    residue = points[:first]
+    units = []
+    tokens = []
+    i = first
+    n = len(points)
+    while i < n:
+        if points[i]["level"] != min_level:
+            i += 1
+            continue
+        j = i + 1
+        while j < n and points[j]["level"] != min_level:
+            j += 1
+        chunk = points[i:j]
+        units.append(chunk)
+        tokens.append(estimate_token(chunk))
+        i = j
+    return {
+        "min_level": min_level,
+        "tokens": tokens,
+        "residue": residue,
+        "units": units,
+    }

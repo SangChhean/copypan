@@ -168,25 +168,75 @@ call_log: list[dict] = []
 FAKE_MISSING_BURDEN = "缺少负担标记"
 
 
-def _fake_text(topic: str) -> str:
-    if FAKE_MISSING_BURDEN in (topic or ""):
-        return f"【测试】{topic}"
+def _fake_select_text(topic: str) -> str:
+    """假模型选词：用词表里真实存在的名字，便于 parse / term_defs。"""
+    try:
+        from .sc.data import load_sc_data
+
+        data = load_sc_data()
+        zui = (data.tiers.get("最内在") or ["包罗万有的灵"])[0]
+        nei = (data.tiers.get("内在") or ["呼召"])[0]
+        wai = (data.tiers.get("外在") or ["亚伯拉罕"])[0]
+    except Exception:
+        zui, nei, wai = "包罗万有的灵", "呼召", "亚伯拉罕"
     return (
-        f"【职事界定】\n职事界定：{topic}\n\n"
-        f"【真理脉络】\n真理脉络：{topic}\n\n"
-        f"【负担说明】\n[360字左右]\n【测试负担】{topic}"
+        f"【最内在】\n{zui}｜依据：假模型·{topic}\n"
+        f"【内在】\n{nei}｜依据：假模型·{topic}\n"
+        f"【外在】\n{wai}｜依据：假模型·{topic}\n"
     )
 
 
-async def complete(prompt: str, system: str = "", topic: str = "", max_tokens: int | None = None) -> LLMResult:
+def _fake_skeleton_text(topic: str) -> str:
+    return (
+        f"神呼召人认识祂是亚伯拉罕的神。\n"
+        f"人需要相信神的应许并往前。\n"
+        f"借着享受恩典，成为神的以色列。\n"
+        f"这是为着神永远的定旨（{topic}）。\n"
+        f"最终达到新耶路撒冷。\n"
+        f"因此我们今天要活在召会生活中。\n"
+    )
+
+
+def _fake_burden_text(topic: str) -> str:
+    return (
+        f"【负担说明】\n"
+        f"【测试负担】认识并经历亚伯拉罕的神，而成为神的以色列。篇题：{topic}。"
+        f"神呼召亚伯拉罕离开本地，凭信往前，承受应许。"
+        f"我们需要同样凭信回应神的呼召，享受恩典，被变化成为神的以色列。\n"
+        f"【用到的参考材料】\n"
+        f"呼召、应许、亚伯拉罕\n"
+    )
+
+
+def _fake_text(topic: str, *, step: str | None = None, prompt: str = "") -> str:
+    if step == "select" or ("档次的意思" in (prompt or "") and "【最内在】" in (prompt or "")):
+        return _fake_select_text(topic)
+    if step in {"skeleton", "orig_skeleton", "diagnosis"} or (
+        "原句" in (prompt or "") and "龙骨" in (prompt or "")
+    ):
+        return _fake_skeleton_text(topic)
+    # 仅负担说明步可触发「缺【负担说明】」用例；选词/龙骨仍给正常假输出
+    if FAKE_MISSING_BURDEN in (topic or ""):
+        return f"【测试】{topic}"
+    return _fake_burden_text(topic)
+
+
+async def complete(
+    prompt: str,
+    system: str = "",
+    topic: str = "",
+    max_tokens: int | None = None,
+    *,
+    step: str | None = None,
+) -> LLMResult:
     limit = MAX_TOKENS if max_tokens is None else max_tokens
-    call_log.append({"topic": topic, "prompt": prompt, "max_tokens": limit})
+    call_log.append({"topic": topic, "prompt": prompt, "max_tokens": limit, "step": step})
     if fake_llm_enabled():
         delay = fake_llm_delay_seconds()
         if delay:
             await asyncio.sleep(delay)
         return LLMResult(
-            text=_fake_text(topic),
+            text=_fake_text(topic, step=step, prompt=prompt),
             model="fake",
             stop_reason="end_turn",
             input_tokens=0,
@@ -215,10 +265,12 @@ async def complete(prompt: str, system: str = "", topic: str = "", max_tokens: i
                 await asyncio.sleep(wait)
                 continue
             raise
-        result = _result_from_message(message, started)
-        if result.stop_reason == "max_tokens" and not raised_max_tokens and limit < MAX_TOKENS_RETRY:
+        if (
+            getattr(message, "stop_reason", None) == "max_tokens"
+            and limit < MAX_TOKENS_RETRY
+            and not raised_max_tokens
+        ):
             raised_max_tokens = True
             limit = MAX_TOKENS_RETRY
-            call_log.append({"topic": topic, "prompt": prompt, "max_tokens": limit})
             continue
-        return result
+        return _result_from_message(message, started)

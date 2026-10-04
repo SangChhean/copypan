@@ -30,7 +30,12 @@ def _get_kg_rag_client():
     if not OPENROUTER_API_KEY:
         return None
     from openai import AsyncOpenAI
-    return AsyncOpenAI(base_url=OPENROUTER_BASE_URL, api_key=OPENROUTER_API_KEY)
+    import httpx
+    return AsyncOpenAI(
+        base_url=OPENROUTER_BASE_URL,
+        api_key=OPENROUTER_API_KEY,
+        timeout=httpx.Timeout(connect=30.0, read=600.0, write=600.0, pool=600.0),
+    )
 
 
 async def get_embeddings(

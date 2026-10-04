@@ -10,6 +10,10 @@ NAME = "Prompt3"
 SOURCE_DOCX = "Prompt3_原纲目的龙骨生成_v0.2.docx"
 SOURCE_TITLE = "【2026.09.23】原纲目的龙骨生成Prompt"
 EXTRACTED_NAME = "Prompt3_原纲目的龙骨生成_v0.2.txt"
+EXTRACTED_BY_VERSION = {
+    "v0.1": "Prompt3_原纲目的龙骨生成_v0.1.txt",
+    "v0.2": "Prompt3_原纲目的龙骨生成_v0.2.txt",
+}
 VERSIONS = {
     "v0.1": "prompt3_orig_skeleton_v0.1.txt",
     "v0.2": "prompt3_orig_skeleton_v0.2.txt",

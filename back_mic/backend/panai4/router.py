@@ -20,6 +20,7 @@ from .config import (
     ESTIMATE_USD_DIAGNOSIS,
     ESTIMATE_USD_FOUR_STEPS,
     ESTIMATE_USD_ORIG_SKELETON,
+    ESTIMATE_USD_SELECT,
     ESTIMATE_USD_SKELETON,
     ESTIMATE_USD_TWO_STEPS,
     max_concurrent_runs,
@@ -36,6 +37,7 @@ from .pipeline import (
     ALL_STEPS,
     ANALYSIS_SCOPES,
     MAIN_SCOPES,
+    PROMPT_STEPS as PIPELINE_PROMPT_STEPS,
     SKIP_UNSELECTED,
     STEP_IDS,
     STEP_LABELS,
@@ -43,13 +45,28 @@ from .pipeline import (
     initial_step_status,
 )
 from .prompt_diff import paragraph_diff
-from .prompts import REGISTRY, check_placeholders, current_prompt, load_template, render_user
-from .runner import cancel_run, step_public, submit_run
+from .prompts import (
+    PROMPT_LABELS,
+    PROMPT_LIST_ORDER,
+    REGISTRY,
+    check_placeholders,
+    current_prompt,
+    load_template,
+    prompt_version_meta,
+    render_user,
+)
+from .runner import cancel_run, confirm_item_terms, step_public, submit_run
 
-RERUN_STEPS = ("burden", "skeleton", "orig_skeleton", "diagnosis")
+# 可从该步重跑（含无 Prompt 的 term_defs）
+RERUN_STEPS = ("select", "term_defs", "burden", "skeleton", "orig_skeleton", "diagnosis")
+# 可建/检查/对比/选用测试版的步骤
+PROMPT_TEST_STEPS = PIPELINE_PROMPT_STEPS
 NEED_NAME = "请先填写你的名字"
 TEST_DELETED = "所用测试版已删除，请重新选择版本"
-
+LEGACY_RERUN_BLOCKED = "旧流程运行不再支持重跑，请新建运行"
+CONFIRM_ALREADY = "该篇已确认或不可确认"
+CONFIRM_CANCELLED = "运行已取消，不能确认"
+CONFIRM_UNKNOWN = "词条不在词库中"
 router = APIRouter(prefix="/api/panai4", tags=["panai4"], dependencies=[Depends(test_token)])
 
 
@@ -67,6 +84,18 @@ class RunCreate(BaseModel):
     created_by: str = ""
     # 步骤 → 测试版 id。没列出的步骤用当前版。
     prompt_tests: dict[str, Optional[int]] = Field(default_factory=dict)
+    # True=跳过人工确认；False=待确认。默认由前端决定，后端照记。
+    batch_mode: Optional[bool] = None
+
+
+class ConfirmTermIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    tier: str = Field(..., min_length=1, max_length=20)
+    reason: str = ""
+
+
+class ConfirmIn(BaseModel):
+    terms: list[ConfirmTermIn] = Field(..., min_length=1, max_length=500)
 
 
 class RerunIn(BaseModel):
@@ -133,7 +162,14 @@ def _creator(raw: str) -> str:
 
 
 def _check_prompt_step(step: str) -> None:
-    if step not in RERUN_STEPS:
+    """建测试版 / 检查 / 对比：允许 select；运行选版仍只用 RERUN_STEPS。"""
+    if step not in PROMPT_TEST_STEPS:
+        raise HTTPException(status_code=400, detail="Prompt 步骤无效")
+
+
+def _check_prompt_catalog_step(step: str) -> None:
+    """版本页可读的步骤（含未启用的 select）。"""
+    if step not in REGISTRY:
         raise HTTPException(status_code=400, detail="Prompt 步骤无效")
 
 
@@ -157,7 +193,11 @@ class _Choices:
     """每一步用哪一版。只有真正要执行的步骤才解析；所选测试版已删除时拒绝。"""
 
     def __init__(self, tests: dict[str, Optional[int]] | None):
-        self.tests = {step: int(value) for step, value in (tests or {}).items() if step in RERUN_STEPS and value}
+        self.tests = {
+            step: int(value)
+            for step, value in (tests or {}).items()
+            if step in PROMPT_TEST_STEPS and value
+        }
         self.resolved: dict[str, dict] = {}
 
     def get(self, step: str) -> dict:
@@ -196,7 +236,7 @@ class _Choices:
     def selection(self) -> dict:
         rows = db.get_prompt_tests(set(self.tests.values()))
         out = {}
-        for step in RERUN_STEPS:
+        for step in PROMPT_TEST_STEPS:
             test_id = self.tests.get(step)
             if test_id:
                 row = rows.get(test_id) or {}
@@ -207,22 +247,33 @@ class _Choices:
                     "created_by": row.get("created_by"),
                 }
             else:
-                out[step] = {"kind": "current", "id": None, "version": current_prompt(step)["version"]}
+                out[step] = {
+                    "kind": "current",
+                    "id": None,
+                    "version": current_prompt(step)["version"],
+                }
         return out
 
 
-def _fresh_step(position: int, spec, status: str, output: str | None, title: str, outline: str | None, choices: _Choices) -> dict:
+def _fresh_step(
+    position: int, spec, status: str, output: str | None, title: str, outline: str | None, choices: _Choices
+) -> dict:
     prompt_name = ""
     prompt_version = ""
     prompt_text = ""
     test_id = None
-    if status == "pending":
+    if status == "pending" and spec.step in PROMPT_TEST_STEPS:
         choice = choices.get(spec.step)
         prompt_name = choice["name"]
         prompt_version = choice["version"]
         test_id = choice["id"]
-        if spec.step in {"burden", "orig_skeleton"}:
-            prompt_text = render_user(spec.step, topic=title, original_outline=outline or "", template=choice["template"])
+        # 仅旧负担版与原纲目可在建跑时预填；full 的 select/burden/skeleton 在 runner 填槽
+        if spec.step == "orig_skeleton":
+            prompt_text = render_user(
+                spec.step, topic=title, original_outline=outline or "", template=choice["template"]
+            )
+        elif spec.step == "burden" and choice["version"] == "v0.3":
+            prompt_text = render_user(spec.step, topic=title, template=choice["template"])
     return {
         "position": position,
         "step": spec.step,
@@ -233,6 +284,7 @@ def _fresh_step(position: int, spec, status: str, output: str | None, title: str
         "prompt_text": prompt_text,
         "prompt_test_version_id": test_id,
         "model": "",
+        "meta_json": None,
     }
 
 
@@ -296,7 +348,7 @@ def _public_selection(selection: dict | None) -> dict:
     ids = {int(entry["id"]) for entry in selection.values() if entry.get("kind") == "test" and entry.get("id")}
     rows = db.get_prompt_tests(ids)
     out = {}
-    for step in RERUN_STEPS:
+    for step in PROMPT_TEST_STEPS:
         entry = dict(selection.get(step) or {"kind": "current", "id": None, "version": None})
         if entry.get("kind") == "test":
             row = rows.get(int(entry["id"])) if entry.get("id") else None
@@ -343,6 +395,7 @@ def _run_body(run_id: int, *, include_prompt: bool) -> dict:
                 "original_outline": item.get("original_outline"),
                 "status": item["status"],
                 "error": item.get("error"),
+                "final_terms_json": item.get("final_terms_json"),
                 "steps": public_steps,
             }
         )
@@ -364,6 +417,9 @@ def _run_body(run_id: int, *, include_prompt: bool) -> dict:
         "main_scope": run.get("main_scope") or "skeleton",
         "analysis_scope": run.get("analysis_scope") or "diagnosis",
         "topic_set_id": run.get("topic_set_id"),
+        "flow_kind": run.get("flow_kind") or "legacy",
+        "batch_mode": bool(run.get("batch_mode")),
+        "awaiting_confirm_count": sum(1 for i in items if i["status"] == "awaiting_confirm"),
         "cost_usd": summary["cost_usd"],
         "completed_count": summary["completed_count"],
         "total_count": summary["total_count"],
@@ -377,7 +433,7 @@ def _summary(items: list[dict]) -> dict:
     current = None
     completed = 0
     for item in items:
-        if item["status"] not in ("pending", "running"):
+        if item["status"] not in ("pending", "running", "awaiting_confirm"):
             completed += 1
         for step in item["steps"]:
             if step.get("cost_usd"):
@@ -396,13 +452,19 @@ def _summary(items: list[dict]) -> dict:
                 "step": None,
                 "label": None,
             }
+        if current is None and item["status"] == "awaiting_confirm":
+            current = {
+                "position": item["position"],
+                "title": item["title"],
+                "step": "await_confirm",
+                "label": STEP_LABELS.get("await_confirm", "确认词表"),
+            }
     return {
         "cost_usd": round(cost, 6),
         "completed_count": completed,
         "total_count": len(items),
         "current": current,
     }
-
 
 def _copy_step(position: int, src: dict) -> dict:
     return {
@@ -426,6 +488,7 @@ def _copy_step(position: int, src: dict) -> dict:
         "error": src.get("error"),
         "content_blocks": src.get("content_blocks"),
         "thinking_text": src.get("thinking_text"),
+        "meta_json": src.get("meta_json"),
         "reused_from": src["id"],
     }
 
@@ -452,6 +515,8 @@ def _prepare_rerun(
 ) -> tuple[list[dict], list[dict]]:
     items = []
     steps = []
+    # 从 term_defs / burden / skeleton… 重跑：沿用已确认词表
+    copy_terms = start_step in {"term_defs", "burden", "skeleton", "orig_skeleton", "diagnosis"}
     for item in db.list_items(parent_id):
         if only_position is not None and item["position"] != only_position:
             continue
@@ -463,6 +528,7 @@ def _prepare_rerun(
                 "title": item["title"],
                 "original_outline": outline,
                 "outline_hash": db.outline_hash(outline) if outline else None,
+                "final_terms_json": item.get("final_terms_json") if copy_terms else None,
             }
         )
         parent_steps = {row["step"]: row for row in db.list_steps(item["id"])}
@@ -497,7 +563,10 @@ def _normalize_topic_items(items: list[TopicItemIn]) -> list[dict]:
 
 def _check_start_step(start_step: str) -> None:
     if start_step not in RERUN_STEPS:
-        raise HTTPException(status_code=400, detail="start_step 只能是 burden、skeleton、orig_skeleton、diagnosis")
+        raise HTTPException(
+            status_code=400,
+            detail="start_step 只能是 select、term_defs、burden、skeleton、orig_skeleton、diagnosis",
+        )
 
 
 def _submitted(run_id: int, **extra) -> dict:
@@ -514,6 +583,7 @@ def _submitted(run_id: int, **extra) -> dict:
 @router.get("/meta")
 async def meta():
     return {
+        "estimate_usd_select": ESTIMATE_USD_SELECT,
         "estimate_usd_burden": ESTIMATE_USD_BURDEN,
         "estimate_usd_skeleton": ESTIMATE_USD_SKELETON,
         "estimate_usd_orig_skeleton": ESTIMATE_USD_ORIG_SKELETON,
@@ -545,6 +615,7 @@ async def estimate(body: EstimateIn):
         outline = item.original_outline or ""
         cost = 0.0
         if body.main_scope in {"burden", "skeleton"}:
+            cost += ESTIMATE_USD_SELECT
             cost += ESTIMATE_USD_BURDEN
         if body.main_scope == "skeleton":
             cost += ESTIMATE_USD_SKELETON
@@ -605,6 +676,7 @@ async def create_run(body: RunCreate):
         raise HTTPException(status_code=404, detail="题组不存在")
     choices = _Choices(body.prompt_tests)
     items, steps = _prepare(body, choices)
+    batch_mode = 1 if body.batch_mode else 0
     run_id = await submit_run(
         items,
         body.note,
@@ -615,6 +687,8 @@ async def create_run(body: RunCreate):
         created_by=creator,
         prompt_selection=choices.selection(),
         uses_test=choices.uses_test(),
+        flow_kind="full",
+        batch_mode=batch_mode,
     )
     return _submitted(run_id)
 
@@ -645,6 +719,8 @@ async def _submit_rerun(run_id: int, body: RerunIn, position: int | None) -> dic
     parent = db.get_run(run_id)
     if parent is None:
         raise HTTPException(status_code=404, detail="运行不存在")
+    if (parent.get("flow_kind") or "legacy") == "legacy":
+        raise HTTPException(status_code=400, detail=LEGACY_RERUN_BLOCKED)
     main_scope, analysis_scope = _rerun_scopes(parent, body)
     choices = _rerun_choices(parent, body)
     items, steps = _prepare_rerun(run_id, body.start_step, main_scope, analysis_scope, choices, only_position=position)
@@ -662,6 +738,8 @@ async def _submit_rerun(run_id: int, body: RerunIn, position: int | None) -> dic
         created_by=creator,
         prompt_selection=choices.selection(),
         uses_test=choices.uses_test(),
+        flow_kind="full",
+        batch_mode=1 if parent.get("batch_mode") else 0,
     )
     return _submitted(new_id, parent_run_id=run_id, start_step=body.start_step)
 
@@ -674,6 +752,32 @@ async def rerun(run_id: int, body: RerunIn):
 @router.post("/runs/{run_id}/items/{position}/rerun", status_code=202)
 async def rerun_item(run_id: int, position: int, body: RerunIn):
     return await _submit_rerun(run_id, body, position)
+
+
+@router.post("/runs/{run_id}/items/{position}/confirm")
+async def confirm_item(run_id: int, position: int, body: ConfirmIn):
+    terms = [row.model_dump() for row in body.terms]
+    try:
+        result = await confirm_item_terms(run_id, position, terms)
+    except LookupError as exc:
+        code = str(exc)
+        if code == "missing":
+            raise HTTPException(status_code=404, detail="运行不存在") from exc
+        raise HTTPException(status_code=404, detail="这一篇不存在") from exc
+    except PermissionError as exc:
+        code = str(exc)
+        if code == "cancelled":
+            raise HTTPException(status_code=400, detail=CONFIRM_CANCELLED) from exc
+        raise HTTPException(status_code=400, detail=CONFIRM_ALREADY) from exc
+    except ValueError as exc:
+        unknown = exc.args[0] if exc.args else []
+        if not isinstance(unknown, list):
+            unknown = [str(unknown)]
+        raise HTTPException(
+            status_code=400,
+            detail={"message": CONFIRM_UNKNOWN, "unknown_names": unknown},
+        ) from exc
+    return result
 
 
 @router.post("/runs/{run_id}/cancel")
@@ -703,11 +807,25 @@ async def export_step(run_id: int, position: int, step: str):
     if step not in EXPORT_STEPS:
         raise HTTPException(status_code=400, detail="这一步不能导出")
     item, steps = _load_item(run_id, position)
+    run = db.get_run(run_id) or {}
+    flow_kind = run.get("flow_kind") or "legacy"
+    if step == "select":
+        if flow_kind != "full":
+            raise HTTPException(status_code=400, detail="旧流程没有选词导出")
+        if not (item.get("final_terms_json") or any(s.get("step") == "select" and s.get("status") == "done" for s in steps)):
+            raise HTTPException(status_code=404, detail="这一步还没有完成")
+        try:
+            filename, data = build_step_docx(
+                item, {"step": "select", "status": "done"}, flow_kind=flow_kind, steps=steps
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return Response(content=data, media_type=DOCX_TYPE, headers={"Content-Disposition": content_disposition(filename)})
     row = next((entry for entry in steps if entry["step"] == step), None)
     if row is None or row["status"] != "done":
         raise HTTPException(status_code=404, detail="这一步还没有完成")
     try:
-        filename, data = build_step_docx(item, row)
+        filename, data = build_step_docx(item, row, flow_kind=flow_kind, steps=steps)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return Response(content=data, media_type=DOCX_TYPE, headers={"Content-Disposition": content_disposition(filename)})
@@ -716,20 +834,29 @@ async def export_step(run_id: int, position: int, step: str):
 @router.get("/runs/{run_id}/items/{position}/export.zip")
 async def export_item_zip(run_id: int, position: int):
     item, steps = _load_item(run_id, position)
-    if not completed_export_steps(steps):
+    run = db.get_run(run_id) or {}
+    flow_kind = run.get("flow_kind") or "legacy"
+    if not completed_export_steps(steps, flow_kind=flow_kind) and not (
+        flow_kind == "full" and item.get("final_terms_json")
+    ):
         raise HTTPException(status_code=404, detail="没有可导出的步骤")
-    filename, data = build_article_zip(item, steps)
+    filename, data = build_article_zip(item, steps, flow_kind=flow_kind)
     return Response(content=data, media_type="application/zip", headers={"Content-Disposition": content_disposition(filename)})
 
 
 @router.get("/runs/{run_id}/export.zip")
 async def export_run_zip(run_id: int):
-    if db.get_run(run_id) is None:
+    run = db.get_run(run_id)
+    if run is None:
         raise HTTPException(status_code=404, detail="运行不存在")
+    flow_kind = run.get("flow_kind") or "legacy"
     packed = [(item, db.list_steps(item["id"])) for item in db.list_items(run_id)]
-    if not any(completed_export_steps(steps) for _item, steps in packed):
+    if not any(
+        completed_export_steps(steps, flow_kind=flow_kind) or (flow_kind == "full" and item.get("final_terms_json"))
+        for item, steps in packed
+    ):
         raise HTTPException(status_code=404, detail="没有可导出的步骤")
-    data = build_run_zip(packed)
+    data = build_run_zip(packed, flow_kind=flow_kind)
     return Response(
         content=data,
         media_type="application/zip",
@@ -774,7 +901,7 @@ def _test_public(row: dict, *, include_template: bool) -> dict:
         "id": row["id"],
         "step": row["step"],
         "prompt_name": row["prompt_name"],
-        "label": STEP_LABELS[row["step"]],
+        "label": PROMPT_LABELS.get(row["step"]) or STEP_LABELS.get(row["step"], row["step"]),
         "base_current_version": row["base_current_version"],
         "version_name": row["version_name"],
         "parent_kind": row["parent_kind"],
@@ -814,14 +941,17 @@ def _normalized_template(text: str) -> str:
 async def list_prompts():
     tests = [_test_public(row, include_template=False) for row in db.list_prompt_tests()]
     out = []
-    for step in RERUN_STEPS:
+    for step in PROMPT_LIST_ORDER:
         module = REGISTRY[step]
+        versions = [prompt_version_meta(step, ver) for ver in module.VERSIONS]
         out.append(
             {
                 "step": step,
                 "name": module.NAME,
-                "label": STEP_LABELS[step],
+                "label": PROMPT_LABELS.get(step) or STEP_LABELS.get(step, step),
                 "current_version": module.CURRENT,
+                "enabled": bool(getattr(module, "ENABLED", True)),
+                "versions": versions,
                 "tests": [row for row in tests if row["step"] == step],
             }
         )
@@ -830,14 +960,38 @@ async def list_prompts():
 
 @router.get("/prompts/{step}/current")
 async def read_current_prompt(step: str):
-    _check_prompt_step(step)
+    _check_prompt_catalog_step(step)
     current = current_prompt(step)
     return {
         "step": step,
         "name": current["name"],
-        "label": STEP_LABELS[step],
+        "label": PROMPT_LABELS.get(step) or STEP_LABELS.get(step, step),
         "version": current["version"],
         "template": current["template"],
+        "enabled": current.get("enabled", True),
+        "note": None if current.get("enabled", True) else "未启用",
+        "source_docx": current.get("source_docx"),
+    }
+
+
+@router.get("/prompts/{step}/versions/{version}")
+async def read_prompt_version(step: str, version: str):
+    """读取已入库的任意版本正文（含未启用的 v1.0）。"""
+    _check_prompt_catalog_step(step)
+    module = REGISTRY[step]
+    if version not in module.VERSIONS:
+        raise HTTPException(status_code=404, detail="版本不存在")
+    meta = prompt_version_meta(step, version)
+    return {
+        "step": step,
+        "name": module.NAME,
+        "label": PROMPT_LABELS.get(step) or STEP_LABELS.get(step, step),
+        "version": version,
+        "template": load_template(step, version),
+        "enabled": meta["enabled"],
+        "note": meta["note"],
+        "is_current": meta["is_current"],
+        "source_docx": meta["source_docx"],
     }
 
 
@@ -855,7 +1009,9 @@ async def read_prompt_test(test_id: int):
 async def check_prompt_test(body: PromptCheckIn):
     _check_prompt_step(body.step)
     parent = _parent_for(body.step, body.parent_kind, body.parent_test_id)
-    result = check_placeholders(body.step, _normalized_template(body.template))
+    result = check_placeholders(
+        body.step, _normalized_template(body.template), version=parent["base"]
+    )
     result["version_name"] = f"{parent['base']}-测{db.next_test_seq(body.step, parent['base'])}"
     return result
 

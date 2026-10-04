@@ -27,7 +27,7 @@ _REPO = _BACKEND.parents[1]
 _DATA = _REPO / "docs" / "panai4_graph"
 _REPORTS = _DATA / "reports"
 
-_TXT = _DATA / "2372个词条（已确定一一对应为concept节点）.txt"
+_TXT = _DATA / "2373个词条（已确定一一对应为concept节点）.txt"
 _TERMS_JSON = _DATA / "主恢复真理词典_词条主干枝子映射 (1).json"
 _TAGS_JSON = _DATA / "主恢复真理词典_标签映射_已校对 (1).json"
 _TRUNKS_TXT = _DATA / "12大类与91小类的对应关系.txt"

@@ -51,6 +51,17 @@ from back_cn.roundtable.usage_tracker import (
     log_task_usage,
 )
 
+_NO_TEXT_BLOCK_MARK = "没有找到 text 类型的内容块"
+
+
+def _step2_runtime_error_message(exc: RuntimeError) -> str:
+    """无 text 块时把原始错误（含 stop_reason）交给前端；其他 RuntimeError 保持笼统提示。"""
+    text = str(exc)
+    if _NO_TEXT_BLOCK_MARK in text:
+        return text
+    return "生成失败，请重试"
+
+
 router = APIRouter(tags=["cn-roundtable"])
 
 # token -> (文件路径, task_id)；进程内内存态，重启会丢失（可接受）
@@ -238,8 +249,10 @@ async def generate_roundtable(request: Request, body: GenerateRoundtableBody):
                 except asyncio.CancelledError:
                     set_version_error(task_id, version_key, interrupt_msg)
                     raise  # 必须重新抛出，不能吞掉取消
-                except RuntimeError:
-                    set_version_error(task_id, version_key, "生成失败，请重试")
+                except RuntimeError as e:
+                    set_version_error(
+                        task_id, version_key, _step2_runtime_error_message(e)
+                    )
                 except Exception as e:
                     set_version_error(task_id, version_key, "生成失败，请重试")
                     logger.exception(

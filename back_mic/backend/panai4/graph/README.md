@@ -8,7 +8,7 @@
 
 | 资料 | 用途 |
 |---|---|
-| `docs/panai4_graph/2372个词条（已确定一一对应为concept节点）.txt` | 词条原名。8 个带括号的词条拆成括号外、括号内两个真理要点 |
+| `docs/panai4_graph/2373个词条（已确定一一对应为concept节点）.txt` | 词条原名。8 个带括号的词条拆成括号外、括号内两个真理要点 |
 | `docs/panai4_graph/主恢复真理词典_词条主干枝子映射 (1).json` | 每个词条的 trunk、branch_directly、branch_indirectly。带括号词条的归属同时给拆开的两个节点 |
 | `docs/panai4_graph/12大类与91小类的对应关系.txt` | 12 个主干、91 个枝子，以及枝子接在哪个主干上 |
 | `docs/panai4_graph/concept_mapping_35_to_40.csv` | 3.5 Concept 旧名到新名。处理方式为「删除」的端点，其旧关系不迁 |

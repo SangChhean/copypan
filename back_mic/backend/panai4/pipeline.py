@@ -9,11 +9,14 @@ from dataclasses import dataclass
 class StepSpec:
     step: str
     label: str
-    # connected：调用模型。designed：跳过（待设计）。analysis：有原纲目才调用。
+    # connected：调用模型。local：本地步骤不调模型。designed：跳过（待设计）。analysis：有原纲目才调用。
     kind: str
 
 
 MAIN_LINE = (
+    StepSpec("select", "选词", "connected"),
+    StepSpec("await_confirm", "确认词表", "local"),
+    StepSpec("term_defs", "词条定义块", "local"),
     StepSpec("burden", "负担说明", "connected"),
     StepSpec("skeleton", "新生成的龙骨", "connected"),
     StepSpec("retrieval", "检索", "designed"),
@@ -30,22 +33,38 @@ ALL_STEPS = MAIN_LINE + ANALYSIS
 STEP_IDS = tuple(spec.step for spec in ALL_STEPS)
 STEP_LABELS = {spec.step: spec.label for spec in ALL_STEPS}
 
+# 有 Prompt 版本可选的步骤
+PROMPT_STEPS = ("select", "burden", "skeleton", "orig_skeleton", "diagnosis")
+
 SKIP_DESIGNED = "跳过（待设计）"
 SKIP_NO_OUTLINE = "跳过（无原纲目）"
 SKIP_UNSELECTED = "未选择"
+SKIP_SELECT_FAILED = "选词失败，未执行"
+SKIP_CONFIRM_FAILED = "确认词表失败，未执行"
+SKIP_TERMS_FAILED = "词条定义块失败，未执行"
 SKIP_BURDEN_FAILED = "负担说明失败，未执行"
 SKIP_SKELETON_FAILED = "新生成的龙骨失败，未执行"
 SKIP_ORIG_FAILED = "原纲目的龙骨失败，未执行"
 MISSING_BURDEN = "Prompt1 输出中找不到【负担说明】"
+MISSING_TERM_DATA = "缺少词条数据文件"
 BURDEN_MARKER = "【负担说明】"
 BURDEN_TAG = "[360字左右]"
 
 MAIN_SCOPES = ("none", "burden", "skeleton")
 ANALYSIS_SCOPES = ("none", "orig_skeleton", "diagnosis")
 
+# 主线依赖链（失败则后续主线 skipped）
+MAIN_CHAIN = ("select", "await_confirm", "term_defs", "burden", "skeleton")
+_SKIP_BY_PREV = {
+    "select": SKIP_SELECT_FAILED,
+    "await_confirm": SKIP_CONFIRM_FAILED,
+    "term_defs": SKIP_TERMS_FAILED,
+    "burden": SKIP_BURDEN_FAILED,
+}
+
 
 def step_in_scope(step: str, main_scope: str, analysis_scope: str) -> bool:
-    if step == "burden":
+    if step in {"select", "await_confirm", "term_defs", "burden"}:
         return main_scope in {"burden", "skeleton"}
     if step == "skeleton":
         return main_scope == "skeleton"
@@ -59,7 +78,7 @@ def step_in_scope(step: str, main_scope: str, analysis_scope: str) -> bool:
 def cover_start_step(main_scope: str, analysis_scope: str, start_step: str | None) -> tuple[str, str]:
     """从某一步重跑时，把选择扩到能覆盖这一步。"""
     main, analysis = main_scope, analysis_scope
-    if start_step == "burden" and main == "none":
+    if start_step in {"select", "await_confirm", "term_defs", "burden"} and main == "none":
         main = "burden"
     if start_step == "skeleton":
         main = "skeleton"
@@ -72,7 +91,7 @@ def cover_start_step(main_scope: str, analysis_scope: str, start_step: str | Non
 
 
 def extract_burden_body(output: str) -> str:
-    """取最后一次【负担说明】之后的正文，去掉紧跟的 [360字左右] 和首尾空白。"""
+    """旧流程：取最后一次【负担说明】之后的正文，去掉紧跟的 [360字左右] 和首尾空白。"""
     index = output.rfind(BURDEN_MARKER)
     if index < 0:
         raise ValueError(MISSING_BURDEN)
@@ -84,8 +103,11 @@ def extract_burden_body(output: str) -> str:
 
 
 def dependency_skip(step: str, failed: set[str]) -> str | None:
-    if step == "skeleton" and "burden" in failed:
-        return SKIP_BURDEN_FAILED
+    if step in MAIN_CHAIN:
+        idx = MAIN_CHAIN.index(step)
+        for prev in MAIN_CHAIN[:idx]:
+            if prev in failed:
+                return _SKIP_BY_PREV.get(prev, f"{STEP_LABELS.get(prev, prev)}失败，未执行")
     if step == "diagnosis" and "skeleton" in failed:
         return SKIP_SKELETON_FAILED
     if step == "diagnosis" and "orig_skeleton" in failed:

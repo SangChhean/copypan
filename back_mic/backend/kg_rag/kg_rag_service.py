@@ -239,7 +239,8 @@ def _apply_outline_nature_weight(
 FULL_QUERY_OPUS_MODEL = "claude-opus-4-6"  # Query 改写专用
 FULL_QUERY_STEP1_MODEL = "claude-opus-4-7"  # Step1 概念抽取默认（可被 params.step1_model 覆盖）
 FULL_QUERY_STEP5_MODEL = "claude-sonnet-4-6"
-# 与主模型相同。默认路径不再追加第二次调用；仅当请求另行指定了不同的 step5_model 时，才作为兜底追加。
+# 与主模型相同。默认序列为 [主, 主]：第二个槽位只给偶发错误重试；截断会跳过它。
+# 请求另行指定了不同的 step5_model 时，再在两次主模型之后追加该兜底。
 FULL_QUERY_STEP5_FALLBACK_MODEL = "claude-sonnet-4-6"
 
 # Messages API 不接受 temperature 的模型。调用方仍传入 temperature；
@@ -1969,15 +1970,14 @@ class KgRagService:
             result["steps"]["step5"] = {"skipped": True}
             result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
             return result
-        # 默认主模型与兜底同为 claude-sonnet-4-6，序列只保留一次，避免同名模型连打。
-        # 仅当请求指定了不同的 step5_model 时：偶发错误再试该模型一次，截断则跳到兜底。
+        # 主备同名时序列为 [主, 主]，第二个槽位只承接网络/429/5xx 这类偶发错误。
+        # 主备不同名时为 [主, 主, 兜底]。截断走 Step5TruncatedError，跳过后续同名槽位。
         # attempt_errors/used_model 在 try 之前初始化，确保无论异常发生在序列的哪个阶段，
         # 外层 except 都能拿到已尝试过的记录，用于日志和降级事件上报。
         step5_model = p.get("step5_model") or FULL_QUERY_STEP5_MODEL
-        if step5_model == FULL_QUERY_STEP5_FALLBACK_MODEL:
-            step5_attempt_models = [step5_model]
-        else:
-            step5_attempt_models = [step5_model, step5_model, FULL_QUERY_STEP5_FALLBACK_MODEL]
+        step5_attempt_models = [step5_model, step5_model]
+        if step5_model != FULL_QUERY_STEP5_FALLBACK_MODEL:
+            step5_attempt_models.append(FULL_QUERY_STEP5_FALLBACK_MODEL)
         attempt_errors: list[str] = []
         used_model: str | None = None
         success_attempt_index: int | None = None

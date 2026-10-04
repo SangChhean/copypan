@@ -36,6 +36,24 @@ def poll(client, run_id, timeout=30):
     raise SystemExit(f"超时 {run_id}")
 
 
+def _call_kind(row: dict) -> str:
+    step = row.get("step")
+    if step in {"select", "burden", "skeleton", "orig_skeleton", "diagnosis"}:
+        return "orig" if step == "orig_skeleton" else step
+    prompt = row.get("prompt") or ""
+    if "完整原纲目" in prompt:
+        return "orig"
+    if "生成的龙骨" in prompt and "诊断" in prompt:
+        return "diagnosis"
+    if "生成一份「龙骨」" in prompt or "把下面的负担说明切分成" in prompt:
+        return "skeleton"
+    if "构建并生成一条「负担说明」" in prompt:
+        return "burden"
+    if "档次的意思" in prompt:
+        return "select"
+    return "other"
+
+
 def main():
     name = f"题组{uuid.uuid4().hex[:6]}"
     with TestClient(app) as client:
@@ -99,39 +117,34 @@ def main():
         detail = client.get(f"/api/panai4/runs/{run_id}").json()
         assert detail["topic_set_id"] == set_id
         assert detail["status"] == "done"
-        burden = detail["items"][0]["steps"][0]
+        assert detail.get("flow_kind") == "full"
         assert db_path().name == "panai4_test.db"
+        by_step = {step["step"]: step for step in detail["items"][0]["steps"]}
+        assert by_step["select"]["status"] == "done"
+        assert by_step["await_confirm"]["status"] == "done"
+        assert by_step["term_defs"]["status"] == "done"
+        burden = by_step["burden"]
         assert burden["model"] == "fake"
         assert burden["cost_usd"] == 0
         assert burden["thinking_text"]
-        by_step = {step["step"]: step for step in detail["items"][0]["steps"]}
         assert by_step["skeleton"]["prompt_name"] == "Prompt2"
-        assert by_step["skeleton"]["prompt_version"] == "v0.2"
+        assert by_step["skeleton"]["prompt_version"] == "v1.0"
         assert by_step["skeleton"]["model"] == "fake"
-        assert "【输出格式】" in (by_step["skeleton"]["prompt_text"] or "")
+        assert "把下面的负担说明切分成" in (by_step["skeleton"]["prompt_text"] or "")
         assert by_step["orig_skeleton"]["prompt_name"] == "Prompt3"
         assert by_step["orig_skeleton"]["prompt_version"] == "v0.2"
         assert by_step["orig_skeleton"]["model"] == "fake"
         assert "【输出格式】" in (by_step["orig_skeleton"]["prompt_text"] or "")
-        assert "【职事界定】" in burden["output_text"]
-        assert "【真理脉络】" in burden["output_text"]
         assert "【负担说明】" in burden["output_text"]
         assert burden["prompt_text"]
+        assert by_step["select"]["prompt_version"] == "v1.0"
+        assert by_step["burden"]["prompt_version"] == "v1.0"
         limits = {}
         for row in llm.call_log:
-            prompt = row["prompt"]
-            if "构建并生成一条「负担说明」" in prompt:
-                kind = "burden"
-            elif "完整原纲目" in prompt:
-                kind = "orig"
-            elif "生成的龙骨" in prompt and "诊断" in prompt:
-                kind = "diagnosis"
-            elif "生成一份「龙骨」" in prompt:
-                kind = "skeleton"
-            else:
-                kind = "other"
+            kind = _call_kind(row)
             limits.setdefault(kind, set()).add(row["max_tokens"])
         print("limits", {key: sorted(value) for key, value in limits.items()})
+        assert limits["select"] == {16000}
         assert limits["burden"] == {16000}
         assert limits["skeleton"] == {8192}
         assert limits["orig"] == {8192}
@@ -156,7 +169,10 @@ def main():
         assert len(one_body["items"]) == 1
         assert one_body["items"][0]["position"] == 2
         assert one_body["items"][0]["title"] == "乙改"
-        assert one_body["items"][0]["steps"][0]["reused_from"]
+        # 从 skeleton 重跑：前面的 select/await_confirm/term_defs/burden 被复制
+        copied = {s["step"]: s for s in one_body["items"][0]["steps"]}
+        assert copied["burden"]["reused_from"]
+        assert copied["select"]["reused_from"]
 
         whole = client.post(f"/api/panai4/runs/{run_id}/rerun", json={"created_by": "自测", "start_step": "diagnosis"})
         assert whole.status_code == 202, whole.text
