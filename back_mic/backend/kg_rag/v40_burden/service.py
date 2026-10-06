@@ -243,6 +243,23 @@ def save_record(record: dict[str, Any], topic_no: str) -> str:
     return rid
 
 
+_RID_RE = re.compile(r"^[0-9A-Za-z_\-一-鿿]+-" + VERSION_KEY + r"-\d+$")
+
+
+def get_record(record_id: str) -> dict[str, Any] | None:
+    """按记录编号读取完整记录；编号格式不符（含路径字符）一律当作不存在。"""
+    rid = (record_id or "").strip()
+    if not _RID_RE.match(rid):
+        return None
+    p = _RECORD_DIR / f"{rid}.json"
+    if not p.is_file():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
 def list_records(topic_no: str | None = None) -> list[dict[str, Any]]:
     if not _RECORD_DIR.exists():
         return []
@@ -255,6 +272,10 @@ def list_records(topic_no: str | None = None) -> list[dict[str, Any]]:
             continue
         if key and r.get("topic_no") != key:
             continue
+        if r.get("scenario") == "B":
+            parts = [{"layer": c.get("layer"), "chars": c.get("chars")} for c in (r.get("candidates") or [])]
+        else:
+            parts = [{"layer": r.get("outline_nature"), "chars": r.get("result_chars")}]
         rows.append(
             {
                 "record_id": r.get("record_id"),
@@ -263,6 +284,7 @@ def list_records(topic_no: str | None = None) -> list[dict[str, Any]]:
                 "query": r.get("query"),
                 "outline_nature": r.get("outline_nature"),
                 "scenario": r.get("scenario"),
+                "parts": parts,
                 "warnings": len(r.get("warnings") or []),
             }
         )

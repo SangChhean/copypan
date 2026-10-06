@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { ArrowLeftOutlined, CopyOutlined, DownloadOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { message } from "ant-design-vue";
@@ -39,6 +39,7 @@ onMounted(async () => {
   } catch {
     meta.value = null;
   }
+  loadHistory();
 });
 
 // ---------- 生成 ----------
@@ -73,6 +74,8 @@ async function generate() {
       { headers, timeout: 300000 }
     );
     result.value = res.data;
+    viewingHistory.value = false;
+    loadHistory();
   } catch (e) {
     errorMsg.value = errText(e, "生成失败");
   } finally {
@@ -187,12 +190,17 @@ function statsRows(stats) {
 }
 
 // ---------- 导出 ----------
-async function exportMarkdown() {
+function exportMarkdown() {
   const no = topicNo.value.trim();
   if (!no) {
     message.warning("请先填写篇题编号");
     return;
   }
+  return exportTopic(no);
+}
+
+async function exportTopic(no) {
+  if (!no) return;
   const headers = getAuthHeaders();
   if (!headers) return;
   try {
@@ -206,6 +214,80 @@ async function exportMarkdown() {
   } catch (e) {
     message.error(errText(e, "导出失败"));
   }
+}
+
+// ---------- 历史记录（每次生成后端自动保存，页面随时回看） ----------
+const history = ref([]);
+const historyLoading = ref(false);
+const historyFilter = ref("");
+const viewingHistory = ref(false);
+
+const historyRows = computed(() => {
+  const kw = historyFilter.value.trim().toLowerCase();
+  const rows = [...history.value].reverse(); // 新的在前
+  if (!kw) return rows;
+  return rows.filter((r) =>
+    [r.record_id, r.topic_no, r.query, r.outline_nature].some((x) => String(x || "").toLowerCase().includes(kw))
+  );
+});
+
+const historyColumns = [
+  { title: "记录编号", dataIndex: "record_id", key: "record_id", width: 120 },
+  { title: "时间", key: "time", width: 150 },
+  { title: "篇题", key: "query", width: 240 },
+  { title: "纲目性质", key: "nature", width: 100 },
+  { title: "各条（层次·字数）", key: "parts", width: 330 },
+  { title: "操作", key: "ops", width: 210 },
+];
+
+function fmtTime(t) {
+  return String(t || "").replace("T", " ");
+}
+
+async function loadHistory() {
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  historyLoading.value = true;
+  try {
+    history.value = (await axios.get(`${api}/records`, { headers })).data?.records || [];
+  } catch (e) {
+    message.error(errText(e, "读取历史记录失败"));
+  } finally {
+    historyLoading.value = false;
+  }
+}
+
+async function fetchRecord(rid) {
+  const headers = getAuthHeaders();
+  if (!headers) return null;
+  try {
+    return (await axios.get(`${api}/records/${encodeURIComponent(rid)}`, { headers })).data;
+  } catch (e) {
+    message.error(errText(e, "读取记录失败"));
+    return null;
+  }
+}
+
+async function openRecord(rid) {
+  const rec = await fetchRecord(rid);
+  if (!rec) return;
+  result.value = rec;
+  viewingHistory.value = true;
+  errorMsg.value = "";
+  await nextTick();
+  document.getElementById("v40-result-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function loadParams(rid) {
+  const rec = await fetchRecord(rid);
+  if (!rec) return;
+  topicNo.value = rec.topic_no && rec.topic_no !== "NA" ? rec.topic_no : "";
+  query.value = rec.query || "";
+  nature.value = NATURES.includes(rec.outline_nature) ? rec.outline_nature : undefined;
+  audience.value = rec.audience || "";
+  excerpt.value = rec.reference_excerpt || "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  message.success("已载入到上方参数，可直接重新生成");
 }
 
 // ---------- 词条分层统计（任意文字） ----------
@@ -299,8 +381,10 @@ async function runTermStats() {
     <div v-if="loading" class="loading-box"><a-spin /> 正在调用 {{ meta?.model || "模型" }}…</div>
 
     <template v-if="result">
+      <div id="v40-result-anchor"></div>
       <a-card size="small" class="block" :title="`结果　${result.record_id || ''}`">
         <div class="tags">
+          <a-tag v-if="viewingHistory" color="red">历史记录（{{ fmtTime(result.time) }}）</a-tag>
           <a-tag color="blue">{{ result.version }}</a-tag>
           <a-tag :color="layerColor(result.outline_nature)">纲目性质：{{ result.outline_nature }}</a-tag>
           <a-tag>情境 {{ result.scenario || "—" }}</a-tag>
@@ -410,6 +494,52 @@ async function runTermStats() {
         </a-collapse-panel>
       </a-collapse>
     </template>
+
+    <a-card size="small" class="block">
+      <template #title>
+        历史记录 <a-tag>{{ history.length }} 条</a-tag>
+        <span class="small muted">每次生成后端自动保存（back_mic/backend/data/v40_burden/）</span>
+      </template>
+      <template #extra>
+        <a-button size="small" :loading="historyLoading" @click="loadHistory">刷新</a-button>
+      </template>
+      <a-input
+        v-model:value="historyFilter"
+        allow-clear
+        placeholder="按篇题、篇题编号、记录编号或纲目性质筛选"
+        style="margin-bottom: 8px"
+      />
+      <a-table
+        :columns="historyColumns"
+        :data-source="historyRows"
+        row-key="record_id"
+        size="small"
+        :pagination="{ pageSize: 10, showSizeChanger: false }"
+        :scroll="{ x: 1150 }"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'time'">{{ fmtTime(record.time) }}</template>
+          <template v-else-if="column.key === 'query'">
+            <a-tag v-if="record.topic_no && record.topic_no !== 'NA'">{{ record.topic_no }}</a-tag>{{ record.query }}
+          </template>
+          <template v-else-if="column.key === 'nature'">
+            <a-tag :color="layerColor(record.outline_nature)">{{ record.outline_nature }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'parts'">
+            <span class="small">情境 {{ record.scenario || "—" }}：</span>
+            <a-tag v-for="(p, i) in record.parts" :key="i" :color="layerColor(p.layer)">
+              {{ p.layer || "无" }}·{{ p.chars ?? "—" }}字
+            </a-tag>
+            <a-tag v-if="record.warnings" color="red">警示 {{ record.warnings }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'ops'">
+            <a-button type="link" size="small" @click="openRecord(record.record_id)">查看</a-button>
+            <a-button type="link" size="small" @click="loadParams(record.record_id)">载入参数</a-button>
+            <a-button type="link" size="small" @click="exportTopic(record.topic_no)">导出该编号</a-button>
+          </template>
+        </template>
+      </a-table>
+    </a-card>
 
     <a-card size="small" title="词条分层统计（贴入任意文字，如 3.5 的输出或真实纲目）" class="block">
       <a-textarea v-model:value="statsText" :auto-size="{ minRows: 3, maxRows: 10 }" placeholder="贴入文字" />
