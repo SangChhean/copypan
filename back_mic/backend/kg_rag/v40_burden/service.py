@@ -38,6 +38,9 @@ MODEL = "claude-opus-5-5"
 # 360 字 × 3 条的正文约 1100 字，3.5 的 1200 放不下。实测约 2.8 token/字，3 条各写满 360 字约需 3000 token；另有 1/11 的实测因 4096 用完被截断（只出 93 字，疑为先思考耗掉额度），故取 8192；截断会在页面和记录里标出。
 MAX_TOKENS = 8192
 CHAR_LIMIT = 360
+# 情境 B 每条的目标下限。写给模型的下限是 280（模型会略低于所写下限，实测 260 时约一半不到 260），
+# 这里按 260 给警示，只提示不重跑。
+B_MIN_CHARS = 260
 LAYERS = ("外在", "内在", "最内在", "显出的外在")
 VERSION_LABEL = "第1项 纲目性质"
 VERSION_KEY = "item1"
@@ -437,6 +440,8 @@ async def generate(
             c["term_stats"], c["term_hits"] = term_analysis(c["text"]) if c["text"] else (None, [])
             if c["chars"] > CHAR_LIMIT:
                 warnings.append(f"候选{_CAND_ORDER[c['index'] - 1]}共 {c['chars']} 字，超过 {CHAR_LIMIT} 字上限")
+            elif c["text"] and c["chars"] < B_MIN_CHARS:
+                warnings.append(f"候选{_CAND_ORDER[c['index'] - 1]}只有 {c['chars']} 字，低于 {B_MIN_CHARS} 字")
         warnings += check_candidates(cands, nature)
         out["candidates"] = cands
     elif scenario == "A":
