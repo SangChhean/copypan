@@ -17,6 +17,7 @@ backup/
 *.db-shm
 *.db-wal
 back_mic/backend/data/panai4/
+back_mic/backend/data/v40_burden/
 start_all.bat
 start_qa.bat
 status.bat
