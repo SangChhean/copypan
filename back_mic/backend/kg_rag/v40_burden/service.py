@@ -35,8 +35,8 @@ except Exception:  # pragma: no cover - 与 3.5 的兜底写法一致
     claude_client = None
 
 MODEL = "claude-opus-5-5"
-# 360 字 × 3 条的正文约 1100 字，3.5 的 1200 放不下。实测约 2.8 token/字（3 条约 575 字用了 1608 token），3 条各写满 360 字约需 3000 token，故取 4096；截断会在页面和记录里标出。
-MAX_TOKENS = 4096
+# 360 字 × 3 条的正文约 1100 字，3.5 的 1200 放不下。实测约 2.8 token/字，3 条各写满 360 字约需 3000 token；另有 1/11 的实测因 4096 用完被截断（只出 93 字，疑为先思考耗掉额度），故取 8192；截断会在页面和记录里标出。
+MAX_TOKENS = 8192
 CHAR_LIMIT = 360
 LAYERS = ("外在", "内在", "最内在", "显出的外在")
 VERSION_LABEL = "第1项 纲目性质"
@@ -129,6 +129,7 @@ def _call_opus_sync(prompt: str) -> dict[str, Any]:
         }
     return {
         "text": text,
+        "block_types": [str(getattr(b, "type", "")) for b in (msg.content or [])],
         "stop_reason": getattr(msg, "stop_reason", None),
         "actual_model": getattr(msg, "model", None),
         "usage": usage,
@@ -355,6 +356,7 @@ async def generate(
         "temperature": "未传（claude-opus-5-5 不接受）",
         "max_tokens": MAX_TOKENS,
         "stop_reason": called["stop_reason"],
+        "block_types": called["block_types"],
         "truncated": truncated,
         "prompt_template": PROMPT_NAME,
         "prompt_hash": prompt_hash(),
