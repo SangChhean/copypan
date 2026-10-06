@@ -212,6 +212,12 @@ def term_stats(text: str, include_single: bool = False) -> dict[str, Any]:
     return tlc.summarize(tlc.match(text or "", _surface()), include_single)
 
 
+def term_analysis(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """同一次匹配同时给统计和逐词位置（页面据此把本条性质的词标出来）。"""
+    hits = tlc.match(text or "", _surface())
+    return tlc.summarize(hits, False), hits
+
+
 # ---------------------------------------------------------------------------
 # 记录
 # ---------------------------------------------------------------------------
@@ -380,7 +386,7 @@ async def generate(
         cands = parsed["candidates"]
         for c in cands:
             c["chars"] = len(c["text"])
-            c["term_stats"] = term_stats(c["text"]) if c["text"] else None
+            c["term_stats"], c["term_hits"] = term_analysis(c["text"]) if c["text"] else (None, [])
             if c["chars"] > CHAR_LIMIT:
                 warnings.append(f"候选{_CAND_ORDER[c['index'] - 1]}共 {c['chars']} 字，超过 {CHAR_LIMIT} 字上限")
         warnings += check_candidates(cands, nature)
@@ -389,7 +395,7 @@ async def generate(
         res = parsed["result"]
         out["result"] = res
         out["result_chars"] = len(res)
-        out["term_stats_result"] = term_stats(res)
+        out["term_stats_result"], out["term_hits_result"] = term_analysis(res)
         if len(res) > CHAR_LIMIT:
             warnings.append(f"负担说明共 {len(res)} 字，超过 {CHAR_LIMIT} 字上限")
     out["warnings"] = warnings

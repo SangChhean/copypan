@@ -93,6 +93,90 @@ function layerColor(layer) {
   return LAYER_COLORS[layer] || "default";
 }
 
+// 把 ["词（层）", ...] 按层拆成四行；层名取自最后一对全角括号
+function groupTerms(items) {
+  const g = Object.fromEntries(NATURES.map((n) => [n, []]));
+  const other = [];
+  for (const s of items || []) {
+    const m = /^(.*)（([^（）]+)）$/.exec(String(s));
+    if (m && g[m[2]]) g[m[2]].push(m[1]);
+    else other.push(String(s));
+  }
+  const rows = NATURES.map((n) => ({ layer: n, words: g[n] }));
+  if (other.length) rows.push({ layer: "其他", words: other });
+  return rows;
+}
+
+// ---------- 把属于某层的词标出来 ----------
+const markMode = ref("own"); // own 只标本条性质的词 | all 四层都标 | off 不标
+const markSingle = ref(false); // 单字词条（神、主、灵…）误中太多，默认不标
+const LAYER_BG = { 外在: "#bae0ff", 内在: "#d9f7be", 最内在: "#efdbff", 显出的外在: "#ffe7ba" };
+
+function segments(text, hits, ownLayer) {
+  const src = String(text || "");
+  if (markMode.value === "off" || !Array.isArray(hits) || !hits.length) return [{ t: src, layer: null }];
+  const keep = hits
+    .filter((h) => (markSingle.value || !h["单字"]) && (markMode.value === "all" || h["层次"] === ownLayer))
+    .sort((a, b) => a["位置"] - b["位置"]);
+  const out = [];
+  let pos = 0;
+  for (const h of keep) {
+    const s = h["位置"];
+    const e = s + String(h["文字"]).length;
+    if (s < pos) continue;
+    if (s > pos) out.push({ t: src.slice(pos, s), layer: null });
+    out.push({ t: src.slice(s, e), layer: h["层次"] });
+    pos = e;
+  }
+  if (pos < src.length) out.push({ t: src.slice(pos), layer: null });
+  return out;
+}
+
+function escapeHtml(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// 带格式复制：同时放 text/html 与 text/plain，粘贴到 Word 会保留底色和加粗
+async function copyRich(text, hits, ownLayer) {
+  const html =
+    '<p style="line-height:1.9;">' +
+    segments(text, hits, ownLayer)
+      .map((sg) =>
+        sg.layer
+          ? `<span style="background-color:${LAYER_BG[sg.layer]};font-weight:bold;">${escapeHtml(sg.t)}</span>`
+          : escapeHtml(sg.t)
+      )
+      .join("") +
+    "</p>";
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([String(text || "")], { type: "text/plain" }),
+        }),
+      ]);
+    } else {
+      const el = document.createElement("div");
+      el.contentEditable = "true";
+      el.style.cssText = "position:fixed;left:-9999px;top:0;";
+      el.innerHTML = html;
+      document.body.appendChild(el);
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("copy");
+      sel.removeAllRanges();
+      document.body.removeChild(el);
+    }
+    message.success("已复制（带标记，可粘贴到 Word）");
+  } catch (e) {
+    message.error(e?.message || "复制失败");
+  }
+}
+
 function statsRows(stats) {
   if (!stats) return [];
   return NATURES.map((k) => ({
@@ -225,6 +309,19 @@ async function runTermStats() {
           <a-tag>{{ (result.elapsed_ms / 1000).toFixed(1) }} s</a-tag>
           <a-tag v-if="result.cost_usd != null" color="gold">≈${{ result.cost_usd }}</a-tag>
         </div>
+        <div class="mark-bar">
+          <span class="stats-title">标出词条：</span>
+          <a-radio-group v-model:value="markMode" size="small" button-style="solid">
+            <a-radio-button value="own">只标本条性质的词</a-radio-button>
+            <a-radio-button value="all">四层都标</a-radio-button>
+            <a-radio-button value="off">不标</a-radio-button>
+          </a-radio-group>
+          <a-checkbox v-model:checked="markSingle">单字词条也标</a-checkbox>
+          <span class="legend">
+            <mark v-for="n in NATURES" :key="n" class="mk" :style="{ backgroundColor: LAYER_BG[n] }">{{ n }}</mark>
+          </span>
+        </div>
+        <div class="small muted">标记按最大匹配做初筛，可能切错（例如「生命的光照」会切成「生命的光」+「照」），需人工核对。</div>
         <a-alert
           v-for="(w, i) in result.warnings"
           :key="i"
@@ -245,9 +342,18 @@ async function runTermStats() {
             <a-tag>{{ c.chars }} 字</a-tag>
           </template>
           <template #extra>
-            <a-button size="small" @click="copyText(c.text)"><template #icon><CopyOutlined /></template>复制</a-button>
+            <a-button size="small" type="primary" @click="copyRich(c.text, c.term_hits, c.layer)">
+              <template #icon><CopyOutlined /></template>复制（带标记）
+            </a-button>
+            <a-button size="small" style="margin-left: 6px" @click="copyText(c.text)">复制纯文字</a-button>
           </template>
-          <div class="cand-text">{{ c.text || "（空）" }}</div>
+          <div class="cand-text">
+            <template v-for="(sg, i) in segments(c.text, c.term_hits, c.layer)" :key="i">
+              <mark v-if="sg.layer" class="mk" :style="{ backgroundColor: LAYER_BG[sg.layer] }" :title="sg.layer">{{ sg.t }}</mark>
+              <template v-else>{{ sg.t }}</template>
+            </template>
+            <template v-if="!c.text">（空）</template>
+          </div>
           <div v-if="c.term_stats" class="stats">
             <span class="stats-title">词条分层：计入 {{ c.term_stats["计入词条数"] }}</span>
             <a-tag v-for="r in statsRows(c.term_stats)" :key="r.layer" :color="layerColor(r.layer)">
@@ -255,9 +361,15 @@ async function runTermStats() {
             </a-tag>
             <a-collapse ghost size="small">
               <a-collapse-panel key="d" header="计入的词条与单字词条">
-                <div class="small">计入：{{ (c.term_stats["计入的词条"] || []).join("、") || "（无）" }}</div>
-                <div class="small">
-                  单字词条（未计入，需人工核对）：{{ (c.term_stats["单字词条（未计入，需人工核对）"] || []).join("、") || "（无）" }}
+                <div class="term-title">计入的词条</div>
+                <div v-for="row in groupTerms(c.term_stats['计入的词条'])" :key="'c' + row.layer" class="term-row">
+                  <a-tag :color="layerColor(row.layer)">{{ row.layer }} {{ row.words.length }}</a-tag>
+                  <span class="term-words">{{ row.words.join("、") || "（无）" }}</span>
+                </div>
+                <div class="term-title">单字词条（未计入，需人工核对）</div>
+                <div v-for="row in groupTerms(c.term_stats['单字词条（未计入，需人工核对）'])" :key="'s' + row.layer" class="term-row">
+                  <a-tag :color="layerColor(row.layer)">{{ row.layer }} {{ row.words.length }}</a-tag>
+                  <span class="term-words">{{ row.words.join("、") || "（无）" }}</span>
                 </div>
               </a-collapse-panel>
             </a-collapse>
@@ -269,9 +381,17 @@ async function runTermStats() {
       <a-card v-else-if="result.scenario === 'A'" size="small" class="block">
         <template #title>负担说明 <a-tag>{{ result.result_chars }} 字</a-tag></template>
         <template #extra>
-          <a-button size="small" @click="copyText(result.result)"><template #icon><CopyOutlined /></template>复制</a-button>
+          <a-button size="small" type="primary" @click="copyRich(result.result, result.term_hits_result, result.outline_nature)">
+            <template #icon><CopyOutlined /></template>复制（带标记）
+          </a-button>
+          <a-button size="small" style="margin-left: 6px" @click="copyText(result.result)">复制纯文字</a-button>
         </template>
-        <div class="cand-text">{{ result.result }}</div>
+        <div class="cand-text">
+          <template v-for="(sg, i) in segments(result.result, result.term_hits_result, result.outline_nature)" :key="i">
+            <mark v-if="sg.layer" class="mk" :style="{ backgroundColor: LAYER_BG[sg.layer] }" :title="sg.layer">{{ sg.t }}</mark>
+            <template v-else>{{ sg.t }}</template>
+          </template>
+        </div>
         <div v-if="result.term_stats_result" class="stats">
           <span class="stats-title">词条分层：计入 {{ result.term_stats_result["计入词条数"] }}</span>
           <a-tag v-for="r in statsRows(result.term_stats_result)" :key="r.layer" :color="layerColor(r.layer)">
@@ -302,9 +422,15 @@ async function runTermStats() {
         <a-tag v-for="r in statsRows(statsResult)" :key="r.layer" :color="layerColor(r.layer)">
           {{ r.layer }} {{ r.count }}（{{ r.ratio }}%）
         </a-tag>
-        <div class="small">计入：{{ (statsResult["计入的词条"] || []).join("、") || "（无）" }}</div>
-        <div class="small">
-          单字词条（未计入，需人工核对）：{{ (statsResult["单字词条（未计入，需人工核对）"] || []).join("、") || "（无）" }}
+        <div class="term-title">计入的词条</div>
+        <div v-for="row in groupTerms(statsResult['计入的词条'])" :key="'c' + row.layer" class="term-row">
+          <a-tag :color="layerColor(row.layer)">{{ row.layer }} {{ row.words.length }}</a-tag>
+          <span class="term-words">{{ row.words.join("、") || "（无）" }}</span>
+        </div>
+        <div class="term-title">单字词条（未计入，需人工核对）</div>
+        <div v-for="row in groupTerms(statsResult['单字词条（未计入，需人工核对）'])" :key="'s' + row.layer" class="term-row">
+          <a-tag :color="layerColor(row.layer)">{{ row.layer }} {{ row.words.length }}</a-tag>
+          <span class="term-words">{{ row.words.join("、") || "（无）" }}</span>
         </div>
         <div class="small muted">这只是初筛：最大匹配会切错（例如「生命的光照」会切成「生命的光」+「照」），结果要人工核对。</div>
       </div>
@@ -399,6 +525,43 @@ async function runTermStats() {
   font-size: 12px;
   line-height: 1.7;
   word-break: break-all;
+}
+.mark-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 4px;
+  .legend {
+    display: inline-flex;
+    gap: 4px;
+  }
+}
+.mk {
+  font-weight: 600;
+  padding: 0 1px;
+  border-radius: 2px;
+  color: inherit;
+}
+.term-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.65);
+  margin: 6px 0 2px;
+}
+.term-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.8;
+  :deep(.ant-tag) {
+    flex: none;
+    margin-right: 0;
+  }
+  .term-words {
+    word-break: break-all;
+  }
 }
 .muted {
   color: rgba(0, 0, 0, 0.45);
