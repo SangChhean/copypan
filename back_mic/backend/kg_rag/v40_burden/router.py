@@ -72,6 +72,13 @@ async def record_detail(record_id: str):
     return rec
 
 
+@router.delete("/records/{record_id}")
+async def record_delete(record_id: str):
+    if not service.delete_record(record_id):
+        raise HTTPException(status_code=404, detail=f"找不到记录：{record_id}")
+    return {"deleted": record_id, "note": "已移到 data/v40_burden/_deleted，需要时可手动移回"}
+
+
 @router.get("/export")
 async def export(topic_no: str = Query(..., min_length=1, max_length=40)):
     md = service.export_markdown(topic_no)

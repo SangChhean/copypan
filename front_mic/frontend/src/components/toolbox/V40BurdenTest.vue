@@ -237,7 +237,7 @@ const historyColumns = [
   { title: "篇题", key: "query", width: 240 },
   { title: "纲目性质", key: "nature", width: 100 },
   { title: "各条（层次·字数）", key: "parts", width: 330 },
-  { title: "操作", key: "ops", width: 210 },
+  { title: "操作", key: "ops", width: 250 },
 ];
 
 function fmtTime(t) {
@@ -266,6 +266,39 @@ async function fetchRecord(rid) {
     message.error(errText(e, "读取记录失败"));
     return null;
   }
+}
+
+// 删除不是真删：后端把文件移到 data/v40_burden/_deleted，需要时可手动移回
+const selectedRowKeys = ref([]);
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys) => {
+    selectedRowKeys.value = keys;
+  },
+}));
+
+async function deleteRecords(ids) {
+  if (!ids.length) return;
+  const headers = getAuthHeaders();
+  if (!headers) return;
+  let ok = 0;
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      await axios.delete(`${api}/records/${encodeURIComponent(id)}`, { headers });
+      ok++;
+      if (viewingHistory.value && result.value?.record_id === id) {
+        result.value = null;
+        viewingHistory.value = false;
+      }
+    } catch {
+      failed++;
+    }
+  }
+  selectedRowKeys.value = selectedRowKeys.value.filter((k) => !ids.includes(k));
+  const tail = failed ? `，失败 ${failed} 条` : "";
+  (failed ? message.warning : message.success)(`已删除 ${ok} 条${tail}（可在 data/v40_burden/_deleted 找回）`);
+  await loadHistory();
 }
 
 async function openRecord(rid) {
@@ -501,6 +534,17 @@ async function runTermStats() {
         <span class="small muted">每次生成后端自动保存（back_mic/backend/data/v40_burden/）</span>
       </template>
       <template #extra>
+        <a-popconfirm
+          :title="`删除所选 ${selectedRowKeys.length} 条记录？`"
+          ok-text="删除"
+          cancel-text="取消"
+          :disabled="!selectedRowKeys.length"
+          @confirm="deleteRecords(selectedRowKeys)"
+        >
+          <a-button size="small" danger :disabled="!selectedRowKeys.length" style="margin-right: 8px">
+            删除所选（{{ selectedRowKeys.length }}）
+          </a-button>
+        </a-popconfirm>
         <a-button size="small" :loading="historyLoading" @click="loadHistory">刷新</a-button>
       </template>
       <a-input
@@ -513,9 +557,10 @@ async function runTermStats() {
         :columns="historyColumns"
         :data-source="historyRows"
         row-key="record_id"
+        :row-selection="rowSelection"
         size="small"
         :pagination="{ pageSize: 10, showSizeChanger: false }"
-        :scroll="{ x: 1150 }"
+        :scroll="{ x: 1200 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'time'">{{ fmtTime(record.time) }}</template>
@@ -536,6 +581,14 @@ async function runTermStats() {
             <a-button type="link" size="small" @click="openRecord(record.record_id)">查看</a-button>
             <a-button type="link" size="small" @click="loadParams(record.record_id)">载入参数</a-button>
             <a-button type="link" size="small" @click="exportTopic(record.topic_no)">导出该编号</a-button>
+            <a-popconfirm
+              title="删除这条记录？（会移到 _deleted 文件夹，可找回）"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="deleteRecords([record.record_id])"
+            >
+              <a-button type="link" size="small" danger>删除</a-button>
+            </a-popconfirm>
           </template>
         </template>
       </a-table>

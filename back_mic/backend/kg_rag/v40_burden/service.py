@@ -43,6 +43,8 @@ VERSION_LABEL = "第1项 纲目性质"
 VERSION_KEY = "item1"
 
 _RECORD_DIR = Path(__file__).resolve().parents[2] / "data" / "v40_burden"
+# 删除不是真删：移到这里，需要时可手动移回；整个文件夹删掉才是彻底清除。
+_DELETED_DIR = _RECORD_DIR / "_deleted"
 _TERMS_PATH = Path(__file__).resolve().parent / "terms_2373.json"
 _record_lock = threading.Lock()
 
@@ -230,8 +232,15 @@ def _safe_topic_no(raw: str | None) -> str:
 
 def _next_record_id(topic_no: str) -> str:
     _RECORD_DIR.mkdir(parents=True, exist_ok=True)
-    pat = re.compile(rf"^{re.escape(topic_no)}-{VERSION_KEY}-(\d+)\.json$")
-    nums = [int(m.group(1)) for p in _RECORD_DIR.glob(f"{topic_no}-{VERSION_KEY}-*.json") if (m := pat.match(p.name))]
+    # 已删除的记录也算在内，避免新记录沿用旧编号造成混淆
+    pat = re.compile(rf"^{re.escape(topic_no)}-{VERSION_KEY}-(\d+)(?:\.\d+)?\.json$")
+    nums = [
+        int(m.group(1))
+        for d in (_RECORD_DIR, _DELETED_DIR)
+        if d.exists()
+        for p in d.glob(f"{topic_no}-{VERSION_KEY}-*.json")
+        if (m := pat.match(p.name))
+    ]
     return f"{topic_no}-{VERSION_KEY}-{(max(nums) if nums else 0) + 1}"
 
 
@@ -258,6 +267,23 @@ def get_record(record_id: str) -> dict[str, Any] | None:
         return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return None
+
+
+def delete_record(record_id: str) -> bool:
+    """把记录移到 _deleted 文件夹（可找回）。编号格式不符或不存在返回 False。"""
+    rid = (record_id or "").strip()
+    if not _RID_RE.match(rid):
+        return False
+    with _record_lock:
+        src = _RECORD_DIR / f"{rid}.json"
+        if not src.is_file():
+            return False
+        _DELETED_DIR.mkdir(parents=True, exist_ok=True)
+        dest = _DELETED_DIR / f"{rid}.json"
+        if dest.exists():
+            dest = _DELETED_DIR / f"{rid}.{int(time.time())}.json"
+        src.replace(dest)
+    return True
 
 
 def list_records(topic_no: str | None = None) -> list[dict[str, Any]]:
