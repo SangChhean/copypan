@@ -2057,13 +2057,13 @@ const onAISearch = async () => {
                 >跳过负担说明</a>
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
-                <span>原稿请贴这里</span>
+                <span>负担的重点请贴这里</span>
                 <textarea
                   class="ai-burden-textarea"
                   rows="3"
                   v-model="referenceExcerpt"
                   :disabled="loadingAI || burdenGenLoading || burdenPhaseReady"
-                  placeholder="有原稿直接生成负担说明，无原稿可生成三个负担说明以供选择"
+                  placeholder="有提供负担的重点直接生成负担说明，没有提供负担的重点可生成三个负担说明以供选择"
                 ></textarea>
               </label>
               <div class="ai-burden-btn-wrap">
@@ -2075,11 +2075,11 @@ const onAISearch = async () => {
                 >生成负担说明</a-button>
               </div>
               <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="ai-burden-gen-out">
-                <div class="ai-burden-gen-label">情境 A</div>
+                <div class="ai-burden-gen-label">有提供负担的重点</div>
                 <div class="ai-burden-gen-text">{{ burdenGenLineA }}</div>
               </div>
               <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="ai-burden-gen-out">
-                <div class="ai-burden-gen-label">情境 B</div>
+                <div class="ai-burden-gen-label">没有提供负担的重点</div>
                 <a-radio-group
                   v-model:value="burdenSelectedIdx"
                   class="ai-burden-radio-group"

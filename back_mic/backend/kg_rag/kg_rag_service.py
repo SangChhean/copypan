@@ -497,6 +497,20 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
     return {"scenario": "B", "candidates": [], "error": "解析失败", "debug": {"reason": "no_pattern_matched"}}
 
 
+def _trace_burden(record: dict) -> None:
+    """只记录、不影响功能：把负担说明这一次调用的完整提示词、模型原样回答、解析结果写到 logs/burden_trace/。"""
+    try:
+        import json as _json
+        from datetime import datetime as _dt
+        d = Path(__file__).resolve().parents[1] / "logs" / "burden_trace"
+        d.mkdir(parents=True, exist_ok=True)
+        record = {"time": _dt.now().strftime("%Y-%m-%d %H:%M:%S"), **record}
+        with open(d / f"burden-{_dt.now():%Y%m%d}.jsonl", "a", encoding="utf-8") as f:
+            f.write(_json.dumps(record, ensure_ascii=False) + chr(10))
+    except Exception:
+        pass
+
+
 def _parse_step1_layers(
     text: str, outline_nature: str = "一般性"
 ) -> tuple[list[str], list[str], list[str], str]:
@@ -2227,6 +2241,18 @@ class KgRagService:
             raw_text[:500],
         )
         parsed = _parse_burden_generation_output(raw_text)
+        _trace_burden(
+            {
+                "step": "generate_burden",
+                "input": {"query": query_v, "outline_nature": outline_v, "audience": audience_v, "reference_excerpt": excerpt_v},
+                "llm": {"model": model, "temperature": 0.3, "max_tokens": _max_tokens_for_model(model, 1200)},
+                "system_prompt": BURDEN_DESCRIPTION_SYSTEM,
+                "user_prompt": prompt,
+                "raw_response": raw_text,
+                "usage": usage,
+                "parsed": parsed,
+            }
+        )
         logger.info(
             "[KG-RAG BURDEN DEBUG] parsed: scenario=%s has_error=%s keys=%s",
             parsed.get("scenario"),

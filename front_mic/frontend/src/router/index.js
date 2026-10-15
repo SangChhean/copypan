@@ -126,6 +126,12 @@ const routes = [
     component: () => import("../components/toolbox/V40BurdenTest.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/panai35-test",
+    name: "Panai35Test",
+    component: () => import("../components/toolbox/Panai35Test.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

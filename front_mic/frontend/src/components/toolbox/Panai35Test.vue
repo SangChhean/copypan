@@ -1,0 +1,4319 @@
+<!-- 【PanAI 新测试台】（原名【3.5测试用】）由 Search.vue 的「AI纲目制作面板」复制生成（只有 3.5；接口走 /api/t35test；历史记录用独立的 localStorage 键）。 -->
+<script setup>
+import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useStore } from "../../store/index";
+import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined, ArrowLeftOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
+import { tip } from "../utils/Dialog";
+import { message } from "ant-design-vue";
+
+const plainOptions = [
+  { lab: "模糊", val: "a" },
+  { lab: "平衡", val: "b" },
+  { lab: "精确", val: "c" },
+];
+const { selectedIndex, hilights, refid, openMsg, role } = storeToRefs(useStore());
+// 【3.5测试用】本页自己的显示状态（0=什么都不显示；3/4/5/6 含义与主站一致）
+const showInfo = ref(0);
+
+const selVar1 = ref("a");
+const selVar2 = ref("a");
+const inputVar = ref("");
+const search_cat = ref("a");
+const results = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const run = ref(false);
+const pageSizeOptions = ["10", "20", "30", "40", "50"];
+const inputDis = ref(false);
+const indexshow = [
+  `"属灵的教育也该如此，但我们的科学方法在哪里？我们如何能把圣经的真理，整理出一个系统，当人有心要学习时，可以深入浅出，大小有序，上下连贯，甚至左右相通，前后也没有难处。若是能作到这样，是何等的好。"（李常受文集一九八七年第一册，结常存的果子，第八章）`,
+  `"神的话好比拼图。原来，所有的拼图片都是分散的，所要呈现的图画也不明朗。人需要花时间一片接一片的拿起来，仔细思考，并且拼凑在一起。所有的拼图片都拼在一起之后，完整的图画就会出现。神把祂的话这样排列，奥秘又很有意义。"（李常受文集一九七一年第三册，在基督的生命里得救并照着灵而行以建造基督的身体，第三章）`,
+  `"（在主的恢复中）你们有的人听我讲道，听到今天（一九八六年）也有三十七年了。当年你们都还是年轻的小弟兄、小姊妹，大都还没有结婚；但是现在你们的儿女都大学毕业了，他们好多人还作了长老。他们还没有出生，你们就已经在这里听我讲道；但是听到今天，你们连小学都没有毕业，原因何在？人类的教育研究出一套制度，需要小学六年、中学六年、大学四年，并且每一年的课程都编得好好地。一个人只要按着这套课程循序渐进的读过，十六年后铁定大学毕业，并且能有系统的把人类中间的常识吸收到他里面。然而这三十七年来，我们在这天花板下讲道给你们听，都是兴之所至，也没有什么系统。所以听到今天，叫你们说一说因信称义，你们一句话也说不出来。这就好像你听了三十七年数学，也知道三加二等于五；可是要你去教别人，就不会教了。"（李常受文集一九八四年第四册，速兴起传福音，第七章）`,
+  `"今天的难处是，我们对真理的认识不够，不会介绍真理。到过香港的人都知道，那些卖珠宝玉器的，都会把贵价的珠宝拿出来给人看，等人动心之后，自然愿意出价来买。我们这些基督徒常很愚笨，不懂得拿出真理的宝贝来给人看。我们家里的宝贝实在是多，但我们拿不出来，就因为我们平日的追求和装备不够。因这缘故，我们一定要在召会的聚会里，开辟各种教育课程，教弟兄姊妹在基本上受真理的薰陶，然后出去接触人，个个都有功用。一个国家要强盛，必须教育普及，百姓都受高等教育，这样国家自然强。因为有了教育作底子，作什么就都不难。我们既是为着主的见证，若是我们的真理不强，没有底子，对人说什么都是枉然。反之，有了真理的装备，我们无论说什么，人都会得益处。"（李常受文集一九八五年第五册，为神说话，第七章）`,
+  `"我们若要个个传讲真理，尽功用，为着这样的繁增，一定要有分级教育。如此才能培养出传讲真理的人，主日聚会就不怕没有人站讲台，供应话语。弟兄们要带头传讲主的话，众圣徒才有榜样跟随；他们看见后，也会出去对别人传讲。这个风气一开，结果就是众圣徒都能对外讲说主的话；无论是传扬基督、讲解圣经、或释放真理，三、五年后，就会把我们所在地的区域都讲遍了。这是主的作法。我们所交通的，不是要变作教条，叫人一条一条的奉行。我们是盼望众人，将这些交通带回去参考，并且多有祷告。若是有人参考过、祷告之后，在主面前找出更高明的作法，那是最好。原则上，无论如何我们总要帮助圣徒，个个都明白真理。神愿意万人得救，也愿意万人完全认识真理。不仅如此，我们还要帮助圣徒都出去，个个都能作申言者，为主说话。"（李常受文集一九八五年第五册，为神说话，第六章）`,
+  `"所以，我这一次来，就愿意把这件事和你们交通清楚，起码我该忠心的告诉你们，我们的程度的确不行。我们要有自觉，知道我们的不行，不要再去谈是非对错的事，那些是不值一题的；值得我们谈论的，乃是我们对真理的认识。要知道，召会的工作起码有百分之五十以上都是教育性的，所以，这一面作得差，就是我们的亏欠和失败。为此，我们今后在这一点上一定要竭力追求。" （李常受文集一九九〇年第二册，神新约经纶中的奥秘，附加的话（一））`,
+  `"照着目前的安排，我们在教导和牧养上，有个人的一面，也有团体的一面。往后主日上午若要实行分级真理教育，需要很多会教导的人。我们是盼望所有的人都在话语上下功夫，这样自然能产生出牧养。从前主日几百人的大聚会，都是一人讲。现在作分级真理教育，有分级、分班，班里又分小组；这样，许多人都能尽上功用，也就能产生牧养，使牧养的人渐渐增多。"（李常受文集一九八五年第四册，同心合意实行神命定之路，第二章）`,
+  `"我也很坦白说，分级教育很难，因为这里有召会、会所、小排，你怎么分级法？我们也不能铁定的像办教育一样，从小学办起。把小学、初中、高中、大学分得那么清楚。办一所学校，先要把学校建筑起来，要有课室、办公室。以后还得有一班人马，还有教员，还得招生，还有教科书。这个学校才能办得蒸蒸日上，才能成功。在我看，我们学生不成问题；但是在什么地方，怎么作法，这成了很大的问题。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
+  `"现在，我里头有两个重担：一个是改制，不是已往聚个大聚会就了事；改制，十之八、九要采取现代的教育制度。现代的教育制度：六年小学，三年初中，三年高中，四年大学，二年研究所。这个制度乃是人类六千年各国实施而有的结论。所以今天在地上，没有一个国家不用这一套教育制度，这是铁定的，这是定律。目前我们带得救的人有很多，但是得救以后如何教育他们？怎样训练他们，栽培他们？这成了很大的问题。我接到你们的电话和你们的来信说，前几周，你们这里有福音周，大家出去传福音，总共带了一千一百零四人受浸。这很好，但是受浸完了怎么办？受浸完了就把他们带来这里，拢总在这里聚会，这铁定是不行的。因此我们就得趁机会教育他们。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
+  `"写出各级的教材来：我觉得材料都有了，但是还需要写出教材来，写出课本来才可以；生命读经有好多丰富，但那还不是教材；你们都读过书，我相信你们也有人作过教员；比如说，数学这一门，材料有了，现在需要有人会写，把重点和路线写出来；六年小学给他们什么东西？国中要给他什么东西？高中又加多一些，大专又加多一些，这数学要一直加的；我们中间不缺少东西，但也必须把教材写出来，不能笼统地写。我们从前是大家吃大锅饭，得救五十八年和得救十八天统统来吃这一锅饭，我们还以这个为夸口，但我们吃来吃去，老的没有了，少的也不长；你们好多人还没有生出来的时候，人数就比今天还多；这样的工我们不能再作了；我们不改制也得改制，因为推不动了；所以这在我身上是一个重担。当然，我没有这么多工夫去作，就得产生弟兄姊妹去作；我们材料都有，但是我们还要出教材，就是出教科书；而生命读经和别的书，都是图书馆里面的书，照样可以作，可以参考，学生也可以去读，我们这样作才能长命；在我看，传福音是不成问题，现在成问题的是怎么养法？不只养，还得教；但怎么教法？现在成了大问题，这就是我们已过失败的点；我盼望你们都了解，今后没有所谓的同工和长老，我们希望个个都是先知，个个都是使徒，个个都是传福音的，个个都是教师，个个都是牧师；现在大家都要来说话，我们今后非生机不可。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
+  `"在各种聚会中，我们都不轻忽主的话。擘饼聚会可选实用、简要、精粹的信息，让众人祷读、享受，然后分享、作见证；这使主满意，也叫我们得供应。祷告聚会可选关于事奉的信息，让大家清楚事奉的基本属灵原则。至于家中聚会，除了交通、祷告、唱诗、彼此介绍，也该有一篇短的造就信息，让初信者得着栽培。我们不愿意人只是来聚会，对主的话却一无所识，得不着供应；盼望每次的聚会，都有主的话释放到弟兄姊妹里面。这样，每周三篇信息的滋养，加上真理课程有系统、扎实、教育性的教导，就能使圣徒得着帮助并成全。教导时，也要带领圣徒学习看重点。以约翰三章十六节为例，说到神将祂的独生子赐给我们，就要学习点出'赐'这个重点，带圣徒一再读'赐给他们'，加重读、重复读，学习把这个重点指出来。不需要你们特别花工夫去讲解，自然圣徒们就知道重点是什么。我们都必须看见，我们的讲不值钱；只有把主的话拿出来给大家祷读，并且点出重点，那才是有功效的。这样，就给众人有尽功用的机会，而不会闲站。这需要你们在聚会中，一直带领弟兄姊妹操练。我相信最多半年，台北召会就能出来一个规范。"（李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十七章、第十一章）`,
+  `"为这缘故，我觉得有负担召聚这次紧急训练。在美国几乎所有的召会都已听见在台湾所发生的事。你们听见一些事，又听了录音带以后，也许就开始模仿。那是不管用的。你必须领悟这系列中第七册的内容是基本、独一的项目。没有这点，我们就不合格；我们没有立场，甚至没有权利模仿在远东所发生的事。我也要向你们众人指明，家中聚会是什么，全时间是什么，真理课程的教导又是什么。每一项都是难事，不是这么容易完成的。不要轻易模仿，仅仅模仿不管用，只会破坏并危害主的整个行动。现在是迫切、生死的关头。这完全在于你所在之地的长老、助手和同工，要来在一起祷告，找出一条路，得着一位或更多的人，责成他们为每种聚会预备信息，就是活的话。你若有心作，这就不是难事，因为我们在职事的一切信息中有烹调的材料。"（李常受文集一九八六年第一册，长老训练，第八册—主当前行动的命脉，第四章）`,
+  `"我不愿为所有的召会预备这样的信息，嘱咐众召会读同样的信息。在美国的许多召会，各召会每主日都需要不同种类的属灵帮助。在主日，不同的召会需要不同的供应。你不能将同样的饭食，供应病房中的每个人。对那些胃有毛病的人，你需要供应某种饭食；对那些心脏有问题的人，你需要供应另一种饭食。你必须有不同的饭食，以喂养不同的人。身为你们所在之地的长老，只有你们才知道你们的家人需要怎样的食物，别人不知道你们家人的需要。这事我考虑得相当多，我觉得必须由每个地方召会个别来作。家庭的烹煮必须由各家个别来作。虽然在原则上，所有的地方召会该是同样的，但在这一面，所有的召会无法是同样的。"（李常受文集一九八六年第一册，长老训练，第八册—主当前行动的命脉，第四章）`,
+  `"同工、长老们必须为家中聚会慎选材料。你们一定要花足够的工夫，多方祷告，仔细观察弟兄姊妹的光景，了解（各种）的需要，知道他们聚会的情形，然后再从我们的书报里，寻找适当的材料。就如一个母亲，为家人安排饭食，总要多面顾到他们的光景。有时家人生病了，就要为他预备特别的食物；有时季节转换了，也要有合宜的采购。这些都要研究，都得有一点常识。马太二十四章四十五节说，忠信又精明的奴仆，能按时分粮给神的儿女。这里所说'按时分粮'意义很深，不只要按着时节分给不同的食物，也要按着各人的需要预备不同的食物。这都是必须花工夫研究的事。有时你碰到初信者，也不管他的情形如何，就自顾自的讲起七十个七。你所讲的是神的话不错，但你这一分粮，不是喂养他，而是杀死他。神的话乃是生命；但给你用得不当，就成了杀死人的东西，把人的胃口弄坏了。这样一来，人就不会渴慕聚会了，因为他听到的道，对他没有益处。也许我形容得太过，但我是要给你们看见，你们必须本着'按时分粮'的原则，预备各种聚会的追求信息。这件事非常关系各种聚会的进展。聚会是否使人得益处，是否吸引人，而使人渴慕参加，全在乎这件事。"（李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十一章）`,
+  `"我一直在考虑，在排聚集用什么材料教导人最好。我们有生命课程和真理课程。虽然这些课程写得非常好，我觉得它们不很合式，因为内容太多了，新人不易消化。甚至晨兴圣言也可能不适合在排聚集里的新人。用太多食物喂养人是不好的；我们必须给他们合式的分量。在希伯来五章十二至十四节，保罗提到两种食物，就是奶和干粮。我们不该试图用干粮喂孩子。因此，我们需要有人劳苦，为排聚集编写一些合式的材料，可用作奶来喂养新人。为了使排聚集里的教导和交通有益处，需要有一些材料作为指引。我盼望有些弟兄们被主兴起来，为着排聚集编写一些合式的材料。"（李常受文集一九九一至一九九二年第三册，关于活力排之急切需要的交通，第四章）`,
+  `"我们还预备要写二百四十题的生命信息。不是以课合为卷，乃是以辑的方式，每一辑十二篇；二十辑就二百四十篇，都是短短的信息。虽然信息题目，尚不能说全有了，但开头的已经有了。我们盼望主若许可，明年能出版第一辑或第二辑。我们这样忙碌的出版文字，相信大家都不会有安逸的日子。然而，我们也要看见，我们若都过安逸的日子，是作不出工作来的。"（李常受文集一九八七年第一册，结常存的果子，第十五章）`,
+];
+
+const cats = {
+  a: "全部",
+  b: "书名",
+  c: "总题",
+  d: "篇题",
+  e: "标题",
+  f: "大纲",
+  g: "摘录",
+  h: "大本",
+  i: "经文",
+  j: "注解",
+  k: "系列",
+  l: "纲目",
+  m: "禁用",
+};
+
+const get_cats = (val) => {
+  let arr = [];
+  for (let item of val) {
+    arr.push({ lab: cats[item], val: item });
+  }
+  return arr;
+};
+
+const showCats = computed(() => {
+  let arr = [];
+  let idx = selectedIndex.value[0];
+
+  if (idx == "0") arr = get_cats("abde");
+  else if (idx == "1") arr = get_cats("ij");
+  else if (idx == "2") arr = get_cats("ade");
+  else if (idx == "3") arr = get_cats("abde");
+  else if (idx == "4") arr = get_cats("abde");
+  else if (idx == "5") arr = get_cats("ade");
+  else if (idx == "6") arr = get_cats("h");
+  else if (idx == "7") arr = get_cats("acdf");
+  else arr = get_cats("m");
+
+  selVar2.value = arr[0].val;
+  return arr;
+});
+
+const showCatsOne = [
+  { lab: "A类", val: "a" },
+  { lab: "B类", val: "b" },
+];
+
+const status = ref("");
+const placeholder = ref("输入搜索内容");
+
+// AI 问答相关状态
+const loadingAI = ref(false);
+const aiResult = ref(null);
+const showAISources = ref(false); // 是否显示引用来源
+const showAIAnswer = ref(false); // 是否显示AI答案
+const aiLoadingText = ref("AI 正在分析问题..."); // 加载提示文本
+// 暂封英文纲目功能，测试通过后改为 true
+const ENGLISH_OUTLINE_FEATURE_ENABLED = true;
+const includeEnglishOutline = ref(false); // 是否同时生成英文纲目
+const answerEn = ref(null); // 英文纲目
+const titleEn = ref(null); // 英文标题
+const loadingEnglish = ref(false); // 正在生成英文纲目
+const errorEnglish = ref(null); // 英文纲目生成失败信息
+const aiAnswerEnCopied = ref(false); // 英文复制状态
+
+const includeTraditionalOutline = ref(false); // 是否同时生成繁体纲目
+const answerZhTw = ref(null); // 台湾繁体纲目
+const loadingTraditional = ref(false); // 正在生成繁体纲目
+const errorTraditional = ref(null); // 繁体纲目生成失败信息
+const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
+
+// KG-RAG 返回结构化数据
+const aiMeta = reactive({
+  revelation: [],
+  inner: [],
+  experience: [],
+  practice: [],
+  skeleton: null,
+  mainSources: [],
+  totalElapsedMs: null,
+  totalCostUsd: null,
+  cached: false,
+  cacheKey: null,
+});
+
+// 刷格式并下载（DOCX/PDF）
+const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
+const downloadFormatsZh = ref([]);
+const downloadFormatsEn = ref([]);
+const downloadFormatsZhTw = ref([]);
+const downloadingZh = ref(false);
+const downloadingEn = ref(false);
+const downloadingZhTw = ref(false);
+
+const aiPanelVisible = ref(true);
+/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；3.5 全索引 */
+const aiMode = ref("3.5"); // "2.0" | "3.0" | "3.5"
+const aiModeDisplayText = computed(() => "PanAI 新测试台");
+const KG_RAG_HISTORY_KEY = "t35test_history";
+const EVAL_PREFILL_KEY = "t35test_eval_prefill";
+const router = useRouter();
+const route = useRoute();
+const AI_NATURE_OPTIONS = ["综合性", "真理启示", "内在素质", "生命经历", "实行应用"];
+const aiForm = reactive({
+  outlineTopic: "",
+  burdenDescription: "",
+  specialNeeds: "",
+});
+const aiFormValid = computed(() => {
+  const outline = aiForm.outlineTopic.trim().length > 0;
+  const nature = aiForm.specialNeeds.trim().length > 0;
+  return outline && nature;
+});
+
+// ---------- AI 生成负担说明 ----------
+const referenceExcerpt = ref("");
+const burdenPhaseReady = ref(false);
+const burdenGenLoading = ref(false);
+const burdenGenScenario = ref(null); // 'A' | 'B' | null
+const burdenGenCandidates = ref([]);
+const burdenSelectedIdx = ref(0);
+const burdenGenLineA = ref("");
+const burdenGenReasoning = ref(""); // 模型输出的思考过程（新测试台）
+const burdenReasoningOpen = ref(false); // 思考过程折叠面板是否展开
+/** 跳过「跳过负担说明」后隐藏整块面板，直到纲目主题与跳过时不一致 */
+const burdenHiddenBySkip = ref(false);
+const burdenSkipTopicSnapshot = ref("");
+
+const showBurdenPhasePanel = computed(() => {
+  if (!burdenHiddenBySkip.value) return true;
+  return aiForm.outlineTopic.trim() !== burdenSkipTopicSnapshot.value;
+});
+
+watch(
+  () => aiForm.outlineTopic,
+  () => {
+    if (
+      burdenHiddenBySkip.value &&
+      aiForm.outlineTopic.trim() !== burdenSkipTopicSnapshot.value
+    ) {
+      burdenHiddenBySkip.value = false;
+    }
+  }
+);
+
+watch(
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, referenceExcerpt.value],
+  () => {
+    burdenPhaseReady.value = false;
+    burdenGenScenario.value = null;
+    burdenGenCandidates.value = [];
+    burdenGenLineA.value = "";
+    burdenGenReasoning.value = "";
+  }
+);
+
+watch(burdenSelectedIdx, (idx) => {
+  if (burdenGenScenario.value !== "B") return;
+  const c = burdenGenCandidates.value[idx];
+  if (c != null && String(c).trim() !== "") {
+    aiForm.burdenDescription = c;
+  }
+});
+
+function skipBurdenPhase() {
+  if (burdenPhaseReady.value) return;
+  aiForm.burdenDescription = "";
+  burdenPhaseReady.value = true;
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenGenReasoning.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenSkipTopicSnapshot.value = aiForm.outlineTopic.trim();
+  burdenHiddenBySkip.value = true;
+}
+
+function confirmBurdenPhase() {
+  if (burdenPhaseReady.value) return;
+  burdenPhaseReady.value = true;
+}
+
+async function onGenerateBurden() {
+  if (!aiForm.outlineTopic.trim() || !aiForm.specialNeeds.trim()) {
+    tip("请先填写主题和纲目性质");
+    return;
+  }
+  burdenGenLoading.value = true;
+  try {
+    const res = await axios.post("/api/t35test/generate_burden", {
+      query: aiForm.outlineTopic.trim(),
+      outline_nature: aiForm.specialNeeds.trim(),
+      reference_excerpt: referenceExcerpt.value.trim(),
+    });
+    const d = res.data || {};
+    console.debug("[KG-RAG BURDEN DEBUG] generate_burden response:", d);
+    // 页面显示统一叫「负担的重点」（Prompt 里仍叫「摘录」，以后再一起统一）
+    burdenGenReasoning.value = d.reasoning != null ? String(d.reasoning).trim().replaceAll("摘录", "负担的重点") : "";
+    if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
+      burdenGenScenario.value = "A";
+      const line = String(d.result).trim();
+      burdenGenLineA.value = line;
+      aiForm.burdenDescription = line;
+      return;
+    }
+    if (d.scenario === "B" && d.candidates && d.candidates.length) {
+      burdenGenScenario.value = "B";
+      burdenGenCandidates.value = d.candidates.slice(0, 3);
+      burdenSelectedIdx.value = 0;
+      const first = burdenGenCandidates.value[0];
+      aiForm.burdenDescription = first != null ? String(first).trim() : "";
+      return;
+    }
+    tip(d.error || "生成失败");
+    burdenGenScenario.value = null;
+  } catch (e) {
+    console.error("[KG-RAG BURDEN DEBUG] generate_burden error:", {
+      message: e?.message,
+      response: e?.response?.data,
+      status: e?.response?.status,
+    });
+    tip(e.response?.data?.error || e.message || "生成失败");
+    burdenGenScenario.value = null;
+  } finally {
+    burdenGenLoading.value = false;
+  }
+}
+
+// ---------- 两阶段概念抽取 ----------
+const conceptStage = ref("idle"); // idle | candidates_ready
+const conceptLoading = ref(false);
+const conceptCandidates = ref(null);
+const selectedRevelation = ref([]);
+const selectedInner = ref([]); // 内在素质（词汇待资料库上传）
+const selectedExperience = ref([]);
+const selectedPractice = ref([]);
+/** 概念来源：ai = 勾选候选；manual = 三层 tag 手动输入（互斥） */
+const conceptMode = ref("ai"); // 'ai' | 'manual'
+const manualRevelation = ref([]);
+const manualInner = ref([]);
+const manualExperience = ref([]);
+const manualPractice = ref([]);
+const manualConceptOptions = reactive({
+  revelation: [],
+  inner: [],
+  experience: [],
+  practice: [],
+});
+const manualConceptLoading = reactive({
+  revelation: false,
+  inner: false,
+  experience: false,
+  practice: false,
+});
+const manualConceptSearchValue = reactive({
+  revelation: "",
+  inner: "",
+  experience: "",
+  practice: "",
+});
+const manualConceptTimers = {
+  revelation: null,
+  inner: null,
+  experience: null,
+  practice: null,
+};
+const conceptSearchKeyword = ref("");
+const conceptSearchOptions = ref([]);
+const conceptSearchLoading = ref(false);
+const conceptSearchOpen = ref(false);
+let conceptSearchTimer = null;
+const historyDrawerOpen = ref(false);
+const historyList = ref([]);
+const currentRecordId = ref(null);
+const isMobileView = ref(false);
+
+function updateIsMobileView() {
+  isMobileView.value = window.innerWidth <= 768;
+}
+
+/** 骨架 path_evidence 展示：去掉末尾「（N跳）」（兼容旧缓存 / 旧模型输出） */
+function formatPathEvidenceDisplay(pe) {
+  if (pe == null || pe === "") return "";
+  return String(pe).replace(/（\d+跳）\s*$/u, "").trim();
+}
+
+function resetAiConceptState() {
+  conceptStage.value = "idle";
+  conceptCandidates.value = null;
+  selectedRevelation.value = [];
+  selectedInner.value = [];
+  selectedExperience.value = [];
+  selectedPractice.value = [];
+}
+function resetManualConceptState() {
+  manualRevelation.value = [];
+  manualInner.value = [];
+  manualExperience.value = [];
+  manualPractice.value = [];
+  manualConceptSearchValue.inner = "";
+  manualConceptSearchValue.revelation = "";
+  manualConceptSearchValue.experience = "";
+  manualConceptSearchValue.practice = "";
+  manualConceptOptions.revelation = [];
+  manualConceptOptions.inner = [];
+  manualConceptOptions.experience = [];
+  manualConceptOptions.practice = [];
+}
+function setConceptMode(mode) {
+  if (conceptMode.value === mode) return;
+  conceptMode.value = mode;
+  if (mode === "manual") {
+    resetAiConceptState();
+  } else {
+    resetManualConceptState();
+  }
+}
+
+function ensureAiConceptBuckets() {
+  if (!conceptCandidates.value) {
+    conceptCandidates.value = { revelation: [], inner: [], experience: [], practice: [] };
+  }
+  if (!Array.isArray(conceptCandidates.value.revelation)) conceptCandidates.value.revelation = [];
+  if (!Array.isArray(conceptCandidates.value.inner)) conceptCandidates.value.inner = [];
+  if (!Array.isArray(conceptCandidates.value.experience)) conceptCandidates.value.experience = [];
+  if (!Array.isArray(conceptCandidates.value.practice)) conceptCandidates.value.practice = [];
+  if (conceptStage.value === "idle") {
+    conceptStage.value = "candidates_ready";
+  }
+}
+
+function onSelectConceptSearchOption(value) {
+  const word = String(value || "").trim();
+  if (!word) return;
+  conceptSearchKeyword.value = word;
+  conceptSearchOpen.value = false;
+  conceptSearchOptions.value = [];
+}
+
+async function fetchConceptSearchOptions(keyword) {
+  const key = String(keyword || "").trim();
+  if (!key) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+    return;
+  }
+  conceptSearchLoading.value = true;
+  try {
+    const res = await axios.get("/api/t35test/concepts/search", {
+      params: { q: key, limit: 20 },
+    });
+    const rows = Array.isArray(res.data?.results) ? res.data.results : [];
+    conceptSearchOptions.value = rows.map((item) => ({ value: String(item) }));
+    conceptSearchOpen.value = conceptSearchOptions.value.length > 0;
+  } catch (e) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+  } finally {
+    conceptSearchLoading.value = false;
+  }
+}
+
+async function fetchManualConceptOptions(layer, keyword) {
+  const key = String(keyword || "").trim();
+  // 内在素质用「最内在的词汇」，资料库还没上传，先不搜图谱概念（避免给出不对的候选）
+  if (layer === "inner") {
+    manualConceptOptions.inner = [];
+    return;
+  }
+  if (!key) {
+    manualConceptOptions[layer] = [];
+    return;
+  }
+  manualConceptLoading[layer] = true;
+  try {
+    const res = await axios.get("/api/t35test/concepts/search", {
+      params: { q: key, limit: 20 },
+    });
+    const rows = Array.isArray(res.data?.results) ? res.data.results : [];
+    const selectedSet = new Set(
+      (layer === "revelation"
+        ? manualRevelation.value
+        : layer === "inner"
+          ? manualInner.value
+          : layer === "experience"
+            ? manualExperience.value
+            : manualPractice.value
+      ).map((x) => String(x).trim()).filter(Boolean)
+    );
+    manualConceptOptions[layer] = rows
+      .map((item) => String(item).trim())
+      .filter((item) => item && !selectedSet.has(item))
+      .map((item) => ({ value: item }));
+  } catch (e) {
+    manualConceptOptions[layer] = [];
+  } finally {
+    manualConceptLoading[layer] = false;
+  }
+}
+
+function onManualConceptSearch(layer, value) {
+  const key = String(value || "").trim();
+  manualConceptSearchValue[layer] = String(value || "");
+  if (manualConceptTimers[layer]) clearTimeout(manualConceptTimers[layer]);
+  if (!key) {
+    manualConceptOptions[layer] = [];
+    return;
+  }
+  manualConceptTimers[layer] = setTimeout(() => {
+    fetchManualConceptOptions(layer, key);
+  }, 300);
+}
+
+function onManualConceptSelect(layer) {
+  manualConceptSearchValue[layer] = "";
+  manualConceptOptions[layer] = [];
+}
+
+function addManualConceptValue(layer, value) {
+  const v = String(value || "").trim();
+  if (!v) return;
+  const target =
+    layer === "revelation"
+      ? manualRevelation.value
+      : layer === "inner"
+        ? manualInner.value
+        : layer === "experience"
+          ? manualExperience.value
+          : manualPractice.value;
+  if (!target.includes(v)) target.push(v);
+}
+
+function onManualConceptInputKeydown(layer, event) {
+  if (event.key !== "Enter") return;
+  const inputValue = String(manualConceptSearchValue[layer] || "").trim();
+  if (!inputValue) return;
+  event.preventDefault();
+  addManualConceptValue(layer, inputValue);
+  onManualConceptSelect(layer);
+}
+
+watch(
+  () => conceptMode.value,
+  () => {
+    conceptSearchKeyword.value = "";
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+  }
+);
+
+watch(conceptSearchKeyword, (val) => {
+  if (conceptSearchTimer) clearTimeout(conceptSearchTimer);
+  const key = String(val || "").trim();
+  if (!key) {
+    conceptSearchOptions.value = [];
+    conceptSearchOpen.value = false;
+    return;
+  }
+  conceptSearchTimer = setTimeout(() => {
+    fetchConceptSearchOptions(key);
+  }, 300);
+});
+
+watch(
+  () => [aiForm.outlineTopic, aiForm.specialNeeds, aiForm.burdenDescription],
+  () => {
+    if (conceptStage.value !== "idle") {
+      resetAiConceptState();
+    }
+    if (
+      manualRevelation.value.length ||
+      manualInner.value.length ||
+      manualExperience.value.length ||
+      manualPractice.value.length
+    ) {
+      resetManualConceptState();
+    }
+  }
+);
+
+async function extractConcepts() {
+  const q = aiForm.outlineTopic.trim();
+  if (!q) { tip("请填写纲目主题"); return; }
+  if (!burdenPhaseReady.value) {
+    tip("请先完成负担说明阶段（点「确认，开始推荐重点」）");
+    return;
+  }
+  conceptLoading.value = true;
+  try {
+    const res = await axios.post("/api/t35test/extract_concepts", {
+      query: q,
+      outline_nature: aiForm.specialNeeds.trim(),
+      burden_description: aiForm.burdenDescription.trim(),
+    });
+    const d = res.data || {};
+    conceptCandidates.value = d;
+    selectedRevelation.value = [...(d.revelation || [])];
+    selectedInner.value = [...(d.inner || [])];
+    selectedExperience.value = [...(d.experience || [])];
+    selectedPractice.value = [...(d.practice || [])];
+    conceptStage.value = "candidates_ready";
+  } catch (e) {
+    tip(e.response?.data?.error || e.message || "概念抽取失败");
+  } finally {
+    conceptLoading.value = false;
+  }
+}
+
+const outlineGenerateDisabled = computed(() => {
+  if (aiMode.value === "2.0") return false;
+  if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
+  return selectedRevelation.value.length === 0;
+});
+
+function setAiMode(m) {
+  // 【3.5测试用】只有 3.5：点击 2.0 / 3.0 没有任何反应
+}
+
+
+function resetConceptState() {
+  resetAiConceptState();
+  resetManualConceptState();
+}
+
+function formatHistoryTime(ts) {
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(KG_RAG_HISTORY_KEY);
+    const arr = JSON.parse(raw || "[]");
+    historyList.value = Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    historyList.value = [];
+  }
+}
+
+function persistHistory() {
+  localStorage.setItem(KG_RAG_HISTORY_KEY, JSON.stringify(historyList.value));
+}
+
+const pendingConfirmCount = computed(
+  () => historyList.value.filter((x) => x?.status === "待确认").length
+);
+
+function syncHistoryAnswerSkeleton(answerText) {
+  const query = aiForm.outlineTopic.trim();
+  const record = historyList.value.find(
+    (r) => r.id === currentRecordId.value || r.query === query
+  );
+  if (!record) return;
+
+  if (!currentRecordId.value) currentRecordId.value = record.id;
+  const idx = historyList.value.findIndex((r) => r.id === record.id);
+  if (idx < 0) return;
+
+  historyList.value = historyList.value.map((item, i) =>
+    i === idx
+      ? {
+          ...item,
+          answer: answerText ?? aiResult.value?.answer ?? "",
+          skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+        }
+      : item
+  );
+  persistHistory();
+}
+
+function buildEvalHistoryPayload(evalData) {
+  if (!evalData) return null;
+  return {
+    scored_at: new Date().toLocaleString("zh-CN"),
+    total_score: evalData.total_score,
+    pansai_layer: evalData.pansai_layer ?? {
+      F1: evalData.F1,
+      F2: evalData.F2,
+      F3: evalData.F3,
+      F4: evalData.F4,
+    },
+    theology_layer: evalData.theology_layer ?? {
+      T1: evalData.T1,
+      T2: evalData.T2,
+      T3: evalData.T3,
+      T4: evalData.T4,
+    },
+    synthesis: evalData.synthesis ?? null,
+  };
+}
+
+function writeEvalToHistory() {
+  if (!evalResult.value) return;
+
+  let targetId = currentRecordId.value
+    ?? historyList.value.find((r) => r.query === aiForm.outlineTopic.trim())?.id
+    ?? null;
+
+  if (!targetId) {
+    const cand = conceptCandidates.value || {};
+    const record = {
+      id: Date.now(),
+      createdAt: formatHistoryTime(Date.now()),
+      status: "已生成",
+      query: aiForm.outlineTopic.trim(),
+      outline_nature: aiForm.specialNeeds.trim(),
+      burden_description: aiForm.burdenDescription.trim(),
+      revelation: getConceptListForEval("revelation"),
+      inner: getConceptListForEval("inner"),
+      experience: getConceptListForEval("experience"),
+      practice: getConceptListForEval("practice"),
+      answer: aiResult.value?.answer ?? "",
+      skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+      eval: null,
+    };
+    currentRecordId.value = record.id;
+    historyList.value = [record, ...historyList.value];
+    targetId = record.id;
+  }
+
+  const idx = historyList.value.findIndex((r) => r.id === targetId);
+  if (idx < 0) return;
+
+  currentRecordId.value = targetId;
+  const prev = historyList.value[idx];
+  const next = {
+    ...prev,
+    status: "已生成",
+    answer: aiResult.value?.answer ?? prev.answer ?? "",
+    skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : prev.skeleton ?? [],
+    eval: buildEvalHistoryPayload(evalResult.value),
+  };
+  historyList.value = historyList.value.map((item, i) => (i === idx ? next : item));
+  persistHistory();
+}
+
+function saveCurrentToHistory() {
+  const cand = conceptCandidates.value || {};
+  // 保存 AI 推荐的完整四层，而非仅勾选项（载入后可在手工重点里看到全部）
+  const record = {
+    id: Date.now(),
+    createdAt: formatHistoryTime(Date.now()),
+    status: "待确认",
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: aiForm.specialNeeds.trim(),
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: Array.isArray(cand.revelation) ? [...cand.revelation] : [],
+    inner: Array.isArray(cand.inner) ? [...cand.inner] : [],
+    experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
+    practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
+    answer: aiResult.value?.answer ?? "",
+    skeleton: aiMeta.skeleton ?? [],
+    eval: evalResult.value ? buildEvalHistoryPayload(evalResult.value) : null,
+  };
+  currentRecordId.value = record.id;
+  historyList.value = [record, ...historyList.value];
+  persistHistory();
+  message.success("已保存全部推荐重点到历史记录");
+}
+
+// ---------- 纲目品质评估 ----------
+const evalLoading = ref(false);
+const evalResult = ref(null);
+const skeletonSnapshot = ref([]);
+const outlineEditing = ref(false);
+const outlineEditVisible = ref(false);
+const outlineEditReadonly = ref(false);
+const editableAnswer = ref("");
+const scriptureReplacementItems = ref([]);
+
+const F_EVAL_META = [
+  { key: "F1", title: "F1 重点覆盖度" },
+  { key: "F2", title: "F2 负担吻合度" },
+  { key: "F3", title: "F3 骨架吻合度" },
+  { key: "F4", title: "F4 逻辑连贯性" },
+];
+
+const T1_L_KEYS = ["L1", "L2", "L3", "L4"];
+
+const T1_L_META = [
+  { key: "L1", label: "L1 字句层" },
+  { key: "L2", label: "L2 语境层" },
+  { key: "L3", label: "L3 经纶层" },
+  { key: "L4", label: "L4 异象层" },
+];
+const T2_S_META = [
+  { key: "S1", label: "①神圣启示" },
+  { key: "S2", label: "②结晶意义" },
+  { key: "S3", label: "③内里经历" },
+  { key: "S4", label: "④团体建造" },
+  { key: "S5", label: "⑤实行应用" },
+  { key: "S6", label: "⑥终极目标" },
+];
+const T3_FRAMEWORK_META = {
+  R系: [
+    { key: "R1", label: "R1 启示核心" },
+    { key: "R2", label: "R2 展开纵深" },
+    { key: "R3", label: "R3 经纶骨架" },
+    { key: "R4", label: "R4 异象落点" },
+  ],
+  E系: [
+    { key: "E1", label: "E1 生命核心" },
+    { key: "E2", label: "E2 经历进展" },
+    { key: "E3", label: "E3 主观路径" },
+    { key: "E4", label: "E4 建造目标" },
+  ],
+  P系: [
+    { key: "P1", label: "P1 生命根基" },
+    { key: "P2", label: "P2 路径层次" },
+    { key: "P3", label: "P3 落地实行" },
+    { key: "P4", label: "P4 团体建造" },
+  ],
+};
+
+const SUGGESTED_CONCEPT_LABELS = {
+  revelation: "启示层",
+  inner: "内在素质层",
+  experience: "经历层",
+  practice: "实行层",
+};
+
+function getConceptListForEval(layer) {
+  if (aiMeta[layer]?.length) return [...aiMeta[layer]];
+  if (conceptMode.value === "manual") {
+    if (layer === "revelation") return [...manualRevelation.value];
+    if (layer === "inner") return [...manualInner.value];
+    if (layer === "experience") return [...manualExperience.value];
+    return [...manualPractice.value];
+  }
+  if (layer === "revelation") return [...selectedRevelation.value];
+  if (layer === "inner") return [...selectedInner.value];
+  if (layer === "experience") return [...selectedExperience.value];
+  return [...selectedPractice.value];
+}
+
+function buildEvalPayload(overrides = {}) {
+  const nature = aiForm.specialNeeds.trim();
+  const natureMap = { 应用实行: "实行应用", 综合性: "一般性" }; // 应用实行 是旧历史记录里的旧名
+  return {
+    answer: editableAnswer.value || aiResult.value?.answer || "",
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: natureMap[nature] || nature || "一般性",
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: getConceptListForEval("revelation"),
+    inner: getConceptListForEval("inner"),
+    experience: getConceptListForEval("experience"),
+    practice: getConceptListForEval("practice"),
+    skeleton: skeletonSnapshot.value.length
+      ? [...skeletonSnapshot.value]
+      : Array.isArray(aiMeta.skeleton)
+        ? [...aiMeta.skeleton]
+        : [],
+    ...overrides,
+  };
+}
+
+const evalPansaiLayer = computed(() => evalResult.value?.pansai_layer ?? {});
+const evalTheologyLayer = computed(() => evalResult.value?.theology_layer ?? {});
+const evalT1 = computed(() => evalTheologyLayer.value?.T1 ?? {});
+const evalT2 = computed(() => evalTheologyLayer.value?.T2 ?? {});
+const evalT3 = computed(() => evalTheologyLayer.value?.T3 ?? {});
+const evalT4 = computed(() => evalTheologyLayer.value?.T4 ?? {});
+const evalSynthesis = computed(() => evalResult.value?.synthesis ?? {});
+
+const evalT3Meta = computed(() => {
+  const ft = evalT3.value?.framework_type ?? "E系";
+  return T3_FRAMEWORK_META[ft] ?? T3_FRAMEWORK_META.E系;
+});
+
+const frameworkTypeLabel = computed(() => {
+  const map = {
+    R系: "真理启示",
+    E系: "生命经历",
+    P系: "实行应用",
+  };
+  return map[evalT3.value?.framework_type] ?? evalT3.value?.framework_type;
+});
+
+const evalT1Score10 = computed(() => {
+  const total = evalT1.value?.total ?? 0;
+  return Math.round((total / 40) * 10 * 10) / 10;
+});
+
+const evalT2Score10 = computed(() => {
+  const ws = evalT2.value?.weighted_score ?? 0;
+  return Math.round((ws / 100) * 10 * 10) / 10;
+});
+
+const evalT3Score10 = computed(() => {
+  const total = evalT3.value?.total ?? 0;
+  return Math.round((total / 40) * 10 * 10) / 10;
+});
+
+const evalT4Score10 = computed(() => evalT4.value?.score ?? 0);
+
+const evalImprovementEntries = computed(() => {
+  const notes = evalResult.value?.improvement_note ?? evalResult.value?.improvement_notes;
+  if (notes && typeof notes === "object") {
+    return Object.entries(notes)
+      .filter(([, v]) => v != null && String(v).trim())
+      .map(([dim, note]) => ({ dim, note: String(note) }));
+  }
+  const dims = ["F1", "F2", "F3", "F4", "T1", "T2", "T3", "T4"];
+  return dims
+    .map((dim) => {
+      let block = evalResult.value?.[dim];
+      if (!block && dim.startsWith("F")) block = evalPansaiLayer.value?.[dim];
+      if (!block && dim.startsWith("T")) block = evalTheologyLayer.value?.[dim];
+      return { dim, note: block?.improvement_note };
+    })
+    .filter((x) => x.note != null && String(x.note).trim());
+});
+
+function formatSubScore(score) {
+  if (score == null || score === "" || Number.isNaN(Number(score))) return "—/10";
+  const n = Number(score);
+  const rounded = Math.round(n * 10) / 10;
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${display}/10`;
+}
+
+function evalGapText(gap) {
+  if (gap == null) return null;
+  const s = String(gap).trim();
+  if (!s || s.toLowerCase() === "null" || s === "无") return null;
+  return s;
+}
+
+function extractVerseRef(text) {
+  const s = String(text || "").trim();
+  if (!s) return "";
+  const m = s.match(/[\u4e00-\u9fff]{1,8}[\d一二三四五六七八九十百千两〇零]+[\d:：\-—]*\d*/);
+  if (m) return m[0];
+  return s.split(/[「『《"\s(（]/)[0] || s;
+}
+
+function normalizeScriptureSuggestionItem(item) {
+  if (Array.isArray(item?.suggestions) && item.suggestions.length > 0) {
+    return item;
+  }
+  const suggestions = [];
+  if (item?.skeleton_recommendation) {
+    suggestions.push({
+      source: "骨架推荐",
+      verse: extractVerseRef(item.skeleton_recommendation),
+    });
+  }
+  if (item?.ai_suggestion) {
+    suggestions.push({
+      source: "AI推荐",
+      verse: extractVerseRef(item.ai_suggestion),
+    });
+  }
+  return { ...item, suggestions };
+}
+
+function applyScriptureReplacements(suggestions, answer) {
+  if (!suggestions || suggestions.length === 0) {
+    return { answer, replaced: 0 };
+  }
+
+  let result = answer;
+  let replaced = 0;
+
+  for (const raw of suggestions) {
+    const s = normalizeScriptureSuggestionItem(raw);
+    if (!s.current_verse || !s.suggestions || s.suggestions.length === 0) continue;
+
+    const replacement =
+      s.suggestions.find((x) => x.source === "骨架推荐") ?? s.suggestions[0];
+    if (!replacement?.verse) continue;
+
+    const escaped = s.current_verse.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "g");
+    const next = result.replace(regex, replacement.verse);
+    if (next !== result) {
+      replaced += 1;
+      result = next;
+    }
+  }
+
+  return { answer: result, replaced };
+}
+
+function replaceSingleVerseInAnswer(currentVerse, replacementVerse, answer, originalText = "") {
+  if (!currentVerse || !replacementVerse) return answer;
+  const lines = answer.split("\n");
+  let replaced = false;
+  const newLines = lines.map((line) => {
+    if (replaced) return line;
+    const hasVerse = line.includes(currentVerse);
+    if (!hasVerse) return line;
+    // 若有 originalText，要求该行也包含 originalText 的前15字（避免截断影响）
+    if (originalText) {
+      const anchor = originalText.trim().slice(0, 15);
+      if (anchor && !line.includes(anchor)) return line;
+    }
+    // 只替换第一个匹配的行，且只替换行内第一个 currentVerse
+    replaced = true;
+    return line.replace(currentVerse, replacementVerse);
+  });
+  if (!replaced) return answer; // 匹配失败，原样返回
+  return newLines.join("\n");
+}
+
+function formatScriptureReplacementItems(suggestions) {
+  return (suggestions || []).map((raw) => ({
+    location: raw.location ?? "",
+    original_text: raw.original_text ?? "",
+    current_verse: raw.current_verse ?? "",
+    ai_suggestion: raw.ai_suggestion ?? "",
+    reason: raw.reason ?? "",
+    decided: false,
+    accepted: false,
+  }));
+}
+
+function acceptScriptureReplacement(index) {
+  const item = scriptureReplacementItems.value[index];
+  if (!item || item.decided) return;
+  const replacement =
+    extractVerseRef(item.ai_suggestion) || String(item.ai_suggestion || "").trim();
+  if (!replacement) return;
+  const base = editableAnswer.value || aiResult.value?.answer || "";
+  const next = replaceSingleVerseInAnswer(
+    item.current_verse,
+    replacement,
+    base,
+    item.original_text
+  );
+  if (next === base) {
+    tip("找不到对应经文，请手动修改纲目");
+    return;
+  }
+  editableAnswer.value = next;
+  if (aiResult.value) {
+    aiResult.value = { ...aiResult.value, answer: next };
+  }
+  item.decided = true;
+  item.accepted = true;
+  syncHistoryAnswerSkeleton(next);
+}
+
+function rejectScriptureReplacement(index) {
+  const item = scriptureReplacementItems.value[index];
+  if (!item || item.decided) return;
+  item.decided = true;
+  item.accepted = false;
+}
+
+function clearOutdatedGaps(evalData) {
+  const t1 = evalData?.theology_layer?.T1 ?? evalData?.T1;
+  if (!t1) return;
+  const obsoleteKeywords = ["建议替换", "建议改用", "宜换用", "可换用", "建议用"];
+  const layers = ["L1", "L2", "L3", "L4"];
+  for (const layer of layers) {
+    if (t1[layer]?.gap) {
+      const hasObsolete = obsoleteKeywords.some((kw) => t1[layer].gap.includes(kw));
+      if (hasObsolete) t1[layer].gap = null;
+    }
+  }
+}
+
+function formatScore10(value, divisor = 1) {
+  if (value == null || value === "" || Number.isNaN(Number(value))) return "—/10";
+  const n = Number(value) / divisor;
+  const rounded = Math.round(n * 10) / 10;
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${display}/10`;
+}
+
+function evalFScore10(key) {
+  const block = evalPansaiLayer.value?.[key] ?? evalResult.value?.[key];
+  if (!block || block.error || block.score == null) return "—/10";
+  return formatScore10(block.score, 0.5);
+}
+
+function evalDimScore(key) {
+  return evalFScore10(key);
+}
+
+function evalHasBlock(key) {
+  const block = key.startsWith("T")
+    ? evalTheologyLayer.value?.[key]
+    : evalPansaiLayer.value?.[key] ?? evalResult.value?.[key];
+  return block && !block.error;
+}
+
+async function runOutlineEval() {
+  const answerText = aiResult.value?.answer;
+  if (!answerText) {
+    tip("请先生成纲目");
+    return;
+  }
+  syncHistoryAnswerSkeleton(answerText);
+  evalLoading.value = true;
+  try {
+    const token = localStorage.getItem("token");
+    if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const payload = buildEvalPayload({ answer: aiResult.value?.answer ?? "" });
+    const res = await axios.post("/api/t35test/eval/outline", payload, { timeout: 600000 });
+    evalResult.value = res.data;
+    editableAnswer.value = answerText;
+    scriptureReplacementItems.value = [];
+
+    const suggestions = res.data?.scripture_suggestions || [];
+    if (suggestions.length > 0) {
+      scriptureReplacementItems.value = formatScriptureReplacementItems(suggestions);
+    }
+
+    skeletonSnapshot.value = Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [];
+    writeEvalToHistory();
+    message.success("纲目评估完成");
+  } catch (e) {
+    const detail = e?.response?.data?.detail || e?.message || "评估失败";
+    tip(typeof detail === "string" ? detail : JSON.stringify(detail));
+  } finally {
+    evalLoading.value = false;
+  }
+}
+
+function toggleOutlineEdit() {
+  if (outlineEditing.value) {
+    outlineEditing.value = false;
+    outlineEditReadonly.value = true;
+    if (aiResult.value) {
+      aiResult.value = { ...aiResult.value, answer: editableAnswer.value };
+    }
+    return;
+  }
+  outlineEditVisible.value = true;
+  outlineEditing.value = true;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = editableAnswer.value || aiResult.value?.answer || "";
+  nextTick(() => {
+    document.getElementById("outline-edit-textarea")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+function buildCurrentEvalRecord() {
+  return {
+    query: aiForm.outlineTopic.trim(),
+    outline_nature: aiForm.specialNeeds.trim(),
+    burden_description: aiForm.burdenDescription.trim(),
+    revelation: getConceptListForEval("revelation"),
+    inner: getConceptListForEval("inner"),
+    experience: getConceptListForEval("experience"),
+    practice: getConceptListForEval("practice"),
+  };
+}
+
+function getF1SuggestedConcepts() {
+  return (
+    evalResult.value?.pansai_layer?.F1?.suggested_concepts
+    ?? evalResult.value?.F1?.suggested_concepts
+    ?? null
+  );
+}
+
+function pickConceptLayer(suggested, layer, fallback) {
+  const fromSuggested = suggested?.[layer];
+  if (Array.isArray(fromSuggested) && fromSuggested.length > 0) {
+    return [...fromSuggested];
+  }
+  return Array.isArray(fallback) ? [...fallback] : [];
+}
+
+async function applyEvalPrefill() {
+  const raw = sessionStorage.getItem(EVAL_PREFILL_KEY);
+  if (!raw) return false;
+  sessionStorage.removeItem(EVAL_PREFILL_KEY);
+
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+
+  aiResult.value = null;
+  evalResult.value = null;
+  scriptureReplacementItems.value = [];
+  skeletonSnapshot.value = [];
+  outlineEditing.value = false;
+  outlineEditVisible.value = false;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = "";
+  showInfo.value = 1;
+
+  referenceExcerpt.value = "";
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenGenReasoning.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenHiddenBySkip.value = false;
+  burdenSkipTopicSnapshot.value = "";
+
+  aiForm.outlineTopic = data.query || "";
+  aiForm.specialNeeds = data.outline_nature === "应用实行" ? "实行应用" : (data.outline_nature || "");
+  aiForm.burdenDescription = data.burden_description || "";
+  burdenPhaseReady.value = true;
+
+  resetConceptState();
+  conceptMode.value = "manual";
+  manualRevelation.value = [...(data.revelation || [])];
+  manualInner.value = [...(data.inner || [])];
+  manualExperience.value = [...(data.experience || [])];
+  manualPractice.value = [...(data.practice || [])];
+
+  aiPanelVisible.value = true;
+  inputVar.value = "";
+  status.value = "";
+
+  await nextTick();
+  document.querySelector(".ai-meta-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+function onRegenerateWithConcepts() {
+  const currentRecord = buildCurrentEvalRecord();
+  const suggested = getF1SuggestedConcepts();
+  const prefillData = {
+    query: currentRecord.query,
+    outline_nature: currentRecord.outline_nature,
+    burden_description: currentRecord.burden_description,
+    revelation: pickConceptLayer(suggested, "revelation", currentRecord.revelation),
+    inner: pickConceptLayer(suggested, "inner", currentRecord.inner),
+    experience: pickConceptLayer(suggested, "experience", currentRecord.experience),
+    practice: pickConceptLayer(suggested, "practice", currentRecord.practice),
+  };
+  sessionStorage.setItem(EVAL_PREFILL_KEY, JSON.stringify(prefillData));
+  router.push({ path: "/panai35-test", query: { prefill: "true" } });
+}
+
+function setHistoryStatus(id, status) {
+  historyList.value = historyList.value.map((item) =>
+    item.id === id ? { ...item, status } : item
+  );
+  persistHistory();
+}
+
+function deleteHistoryRecord(id) {
+  historyList.value = historyList.value.filter((item) => item.id !== id);
+  persistHistory();
+}
+
+async function loadHistoryRecord(item) {
+  aiForm.outlineTopic = "";
+  aiForm.specialNeeds = "";
+  aiForm.burdenDescription = "";
+  referenceExcerpt.value = "";
+  burdenPhaseReady.value = false;
+  burdenGenScenario.value = null;
+  burdenGenCandidates.value = [];
+  burdenGenLineA.value = "";
+  burdenGenReasoning.value = "";
+  burdenSelectedIdx.value = 0;
+  burdenHiddenBySkip.value = false;
+  burdenSkipTopicSnapshot.value = "";
+  resetConceptState();
+  conceptMode.value = "manual";
+  aiForm.outlineTopic = item.query || "";
+  aiForm.specialNeeds = item.outline_nature === "应用实行" ? "实行应用" : (item.outline_nature || "");
+  aiForm.burdenDescription = item.burden_description || "";
+  currentRecordId.value = item.id;
+  historyDrawerOpen.value = false;
+  await nextTick();
+  burdenPhaseReady.value = true;
+  manualRevelation.value = [...(item.revelation || [])];
+  manualInner.value = [...(item.inner || [])];
+  manualExperience.value = [...(item.experience || [])];
+  manualPractice.value = [...(item.practice || [])];
+  console.log("载入后状态", {
+    outlineTopic: aiForm.outlineTopic,
+    specialNeeds: aiForm.specialNeeds,
+    burdenPhaseReady: burdenPhaseReady.value,
+    conceptMode: conceptMode.value,
+    manualRevelation: manualRevelation.value,
+    aiFormValid: aiFormValid.value,
+    outlineGenerateDisabled: outlineGenerateDisabled.value
+  });
+}
+
+onMounted(() => {
+  updateIsMobileView();
+  window.addEventListener("resize", updateIsMobileView);
+  loadHistory();
+  if (sessionStorage.getItem(EVAL_PREFILL_KEY)) {
+    applyEvalPrefill();
+    if (route.query.prefill) {
+      router.replace({ path: "/panai35-test", query: {} });
+    }
+  }
+});
+
+watch(
+  () => route.query.prefill,
+  (val) => {
+    if (val === "true" || val === true) {
+      applyEvalPrefill();
+      router.replace({ path: "/panai35-test", query: {} });
+    }
+  }
+);
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateIsMobileView);
+});
+
+// AI 回答复制（包含标题）
+const aiAnswerCopied = ref(false);
+const copyAiAnswer = async () => {
+  const text = aiResult.value?.answer;
+  if (!text) return;
+  // 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  try {
+    await navigator.clipboard.writeText(fullText);
+    aiAnswerCopied.value = true;
+    tip("已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
+// 英文纲目复制（包含标题）
+const copyAiAnswerEn = async () => {
+  const text = answerEn.value;
+  if (!text) return;
+  // 优先使用英文标题，否则使用生成时保存的中文标题
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  try {
+    await navigator.clipboard.writeText(fullText);
+    aiAnswerEnCopied.value = true;
+    tip("英文纲目已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerEnCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
+// 请求翻译中文纲目为英文（用户勾选「同时生成英文纲目」后调用）
+const fetchTranslate = async (chineseOutline) => {
+  if (!chineseOutline || !chineseOutline.trim()) return;
+  loadingEnglish.value = true;
+  errorEnglish.value = null;
+  answerEn.value = null;
+  titleEn.value = null;
+  try {
+    const res = await axios.post(
+      "/api/t35test/translate_outline",
+      { 
+        chinese_outline: chineseOutline,
+        outline_topic: aiForm.outlineTopic.trim() || null
+      },
+      { timeout: 120000 }
+    );
+    const data = res.data;
+    if (data.answer_en) {
+      answerEn.value = data.answer_en;
+      titleEn.value = (data.title_en && data.title_en.trim()) ? data.title_en.trim() : null;
+      if (!titleEn.value) {
+        console.warn("英文标题翻译未返回，将使用中文标题");
+      }
+      if (aiMeta.cacheKey) {
+        axios.post("/api/t35test/cache_translation", {
+          cache_key: aiMeta.cacheKey,
+          field: "answer_en",
+          value: data.answer_en,
+        }).catch(() => {});
+      }
+    } else {
+      errorEnglish.value = data.error || "英文纲目生成失败";
+    }
+  } catch (err) {
+    errorEnglish.value = err.response?.data?.detail || err.message || "翻译请求失败，请稍后重试";
+  } finally {
+    loadingEnglish.value = false;
+  }
+};
+
+// 请求简体纲目转台湾繁体（用户勾选「同时生成繁体纲目」后调用）
+const fetchTraditionalOutline = async (simplifiedOutline) => {
+  if (!simplifiedOutline || !simplifiedOutline.trim()) return;
+  loadingTraditional.value = true;
+  errorTraditional.value = null;
+  answerZhTw.value = null;
+  try {
+    const res = await axios.post(
+      "/api/t35test/outline_to_traditional",
+      { content: simplifiedOutline },
+      { timeout: 60000 }
+    );
+    const data = res.data;
+    if (data.answer_zh_tw) {
+      answerZhTw.value = data.answer_zh_tw;
+      if (aiMeta.cacheKey) {
+        axios.post("/api/t35test/cache_translation", {
+          cache_key: aiMeta.cacheKey,
+          field: "answer_zh_tw",
+          value: data.answer_zh_tw,
+        }).catch(() => {});
+      }
+    } else {
+      errorTraditional.value = data.error || "繁体纲目生成失败";
+    }
+  } catch (err) {
+    errorTraditional.value = err.response?.data?.detail || err.message || "简转繁请求失败，请稍后重试";
+  } finally {
+    loadingTraditional.value = false;
+  }
+};
+
+// 繁体纲目复制（包含标题）
+const copyAiAnswerZhTw = async () => {
+  const text = answerZhTw.value;
+  if (!text) return;
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  try {
+    await navigator.clipboard.writeText(fullText);
+    aiAnswerZhTwCopied.value = true;
+    tip("繁体纲目已复制到剪贴板");
+    setTimeout(() => {
+      aiAnswerZhTwCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    tip("复制失败");
+  }
+};
+
+// 刷格式并下载（中文纲目）
+const downloadFormattedZh = async () => {
+  const text = aiResult.value?.answer;
+  if (!text || downloadFormatsZh.value.length === 0) {
+    if (!text) tip("请先完成纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingZh.value = true;
+  try {
+    const orderedZh = ["docx", "pdf"].filter((f) => downloadFormatsZh.value.includes(f));
+    for (const format of orderedZh) {
+      const res = await fetch(`${apiBase}/api/t35test/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "en2zh", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, false);
+    }
+    if (downloadFormatsZh.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingZh.value = false;
+  }
+};
+
+// 刷格式并下载（英文纲目）
+const downloadFormattedEn = async () => {
+  const text = answerEn.value;
+  if (!text || downloadFormatsEn.value.length === 0) {
+    if (!text) tip("请先完成英文纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingEn.value = true;
+  try {
+    const orderedEn = ["docx", "pdf"].filter((f) => downloadFormatsEn.value.includes(f));
+    for (const format of orderedEn) {
+      const res = await fetch(`${apiBase}/api/t35test/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "zh2en", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, true);
+    }
+    if (downloadFormatsEn.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingEn.value = false;
+  }
+};
+
+// 刷格式并下载（繁体纲目）
+const downloadFormattedZhTw = async () => {
+  const text = answerZhTw.value;
+  if (!text || downloadFormatsZhTw.value.length === 0) {
+    if (!text) tip("请先完成繁体纲目生成");
+    else tip("请至少选择一种下载格式");
+    return;
+  }
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  downloadingZhTw.value = true;
+  try {
+    const orderedZhTw = ["docx", "pdf"].filter((f) => downloadFormatsZhTw.value.includes(f));
+    for (const format of orderedZhTw) {
+      const res = await fetch(`${apiBase}/api/t35test/format_outline_only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ direction: "zh_cn2tw", translated_text: fullText, output_format: format }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        tip((data.detail || data.error) || "格式化失败");
+        continue;
+      }
+      doDownload(data, format, false);
+    }
+    if (downloadFormatsZhTw.value.length > 0) tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  } finally {
+    downloadingZhTw.value = false;
+  }
+};
+
+// 通用：根据接口返回触发 DOCX/PDF 下载（移动端与桌面端均使用下载）
+function doDownload(data, format, isEn) {
+  const defaultName = isEn ? "outline_en" : "outline_zh";
+  if (format === "docx" && data.docx_base64) {
+    const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bin], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = data.filename || `${defaultName}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } else if (format === "pdf") {
+    if (data.pdf_base64) {
+      const bin = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bin], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename || `${defaultName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (data.docx_base64) {
+      const bin = Uint8Array.from(atob(data.docx_base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bin], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = (data.filename || defaultName).replace(".pdf", ".docx");
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      tip("PDF 转换失败，已下载 DOCX");
+    }
+  }
+}
+
+async function downloadEvalDocx() {
+  const text = editableAnswer.value;
+  if (!text?.trim()) {
+    tip("请先完成纲目评估");
+    return;
+  }
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  const fullText = title ? `${title}\n\n${text}` : text;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.hash = "/login";
+    return;
+  }
+  try {
+    const res = await fetch(`${apiBase}/api/t35test/format_outline_only`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ direction: "en2zh", translated_text: fullText, output_format: "docx" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      tip((data.detail || data.error) || "格式化失败");
+      return;
+    }
+    doDownload(data, "docx", false);
+    tip("下载完成");
+  } catch (e) {
+    tip(e?.message || "下载失败");
+  }
+}
+
+// 仅将 AI 回答中的大点（壹、贰、叁/参…拾、拾壹、拾贰…贰拾、贰壹、贰贰…）整行加粗；「参考与参读资料：」及之后不加粗
+const aiAnswerFormatted = computed(() => {
+  const raw = aiResult.value?.answer;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  // 「参考与参读资料：」及之后不加粗
+  const refIdx = withBr.search(/参考与参读资料[：:]/i);
+  const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
+  const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
+  // 只匹配大点：壹、贰、叁/参、肆…拾、拾壹、拾贰…贰拾、贰壹、贰贰… 整行（纲目后可为顿号、逗号、全角空格、半角空格、制表符等）
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|贰[、，\u3000\t ]|(?:叁|参)[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陆[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹贰叁参肆伍陆柒捌玖][、，\u3000\t ]|贰[拾壹贰叁参肆伍陆柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g;
+  const s = toBold.replace(big, "$1$2<strong>$3</strong>");
+  const content = s + afterRef;
+  // 添加标题（如果有）- 使用生成时保存的标题，而不是当前输入框的值
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
+});
+
+// 繁体纲目格式化（换行转 br，大点壹貳參…加粗，「參考與參讀資料：」及之后不加粗）
+const aiAnswerZhTwFormatted = computed(() => {
+  const raw = answerZhTw.value;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  const refIdx = withBr.search(/參考與參讀資料[：:]/i);
+  const toBold = refIdx >= 0 ? withBr.slice(0, refIdx) : withBr;
+  const afterRef = refIdx >= 0 ? withBr.slice(refIdx) : "";
+  // 繁体大点：壹、貳、參、肆、伍、陸、柒、捌、玖、拾、拾壹…貳拾、貳壹…
+  const big = /(^|<br>)([\s#*]*)((?:壹[、，\u3000\t ]|貳[、，\u3000\t ]|參[、，\u3000\t ]|肆[、，\u3000\t ]|伍[、，\u3000\t ]|陸[、，\u3000\t ]|柒[、，\u3000\t ]|捌[、，\u3000\t ]|玖[、，\u3000\t ]|拾[、，\u3000\t ]|拾[壹貳參肆伍陸柒捌玖][、，\u3000\t ]|貳[拾壹貳參肆伍陸柒捌玖][、，\u3000\t ])[^<]*?)(?=<br>|$)/g;
+  const s = toBold.replace(big, "$1$2<strong>$3</strong>");
+  const content = s + afterRef;
+  const title = aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
+});
+
+// 英文纲目格式化（换行转 br，只有英文大点加粗，其他星号去掉）
+const aiAnswerEnFormatted = computed(() => {
+  const raw = answerEn.value;
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const withBr = escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+  // 英文大点罗马数字：I–X(1–10)、XI–XX(11–20)，支持加粗
+  const romanMajor = "(?:XX|X(?:I{0,3}|IV|VI{0,3}|IX)?|I{1,3}|IV|VI{0,3}|IX|X)";
+  // 先处理带星号的英文大点（**I.**、**XI.** 等）加粗
+  const withBoldStars = withBr.replace(new RegExp(`\\*\\*(${romanMajor}[\\.:]\\s*[^<]*?)\\*\\*`, "g"), "<strong>$1</strong>");
+  // 将剩余的 **文本** 去掉星号，只保留文本（不加粗）
+  const withoutBold = withBoldStars.replace(/\*\*([^*]+?)\*\*/g, "$1");
+  // 将 Markdown 的 *文本*（斜体）去掉星号，只保留文本
+  const withoutItalic = withoutBold.replace(/\*([^*]+?)\*/g, "$1");
+  // 直接匹配英文大点（I–X、XI–XX）加粗（不依赖星号）
+  const bigEn = new RegExp(`(^|<br>)([\\s#*]*)(${romanMajor}[\\.:]\\s*[^<]*?)(?=<br>|$)`, "g");
+  const content = withoutItalic.replace(bigEn, "$1$2<strong>$3</strong>");
+  // 添加标题（如果有）- 优先使用英文标题，否则使用生成时保存的中文标题
+  const title = titleEn.value || aiResult.value?.outlineTopic || aiForm.outlineTopic.trim();
+  if (title) {
+    const titleEscaped = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<div style="text-align: center; font-weight: bold; margin-bottom: 16px;">${titleEscaped}</div>${content}`;
+  }
+  return content;
+});
+
+// ─── 引用来源：索引类型判断与格式化 ───
+
+function getSourceType(chunkId) {
+  if (!chunkId) return "unknown";
+  if (chunkId.startsWith("firewall:") || chunkId.startsWith("防火墙")) return "firewall";
+  if (chunkId.startsWith("life_")) return "life";
+  if (chunkId.startsWith("cwwl_")) return "cwwl";
+  if (chunkId.startsWith("cwwn_")) return "cwwn";
+  if (chunkId.startsWith("others_")) return "others";
+  if (chunkId.startsWith("bib_")) return "bib";
+  if (chunkId.startsWith("map_note_")) return "map_note";
+  if (chunkId.startsWith("map_7feasts_")) return "map_7feasts";
+  if (chunkId.startsWith("map_pano")) return "map_pano";
+  if (chunkId.startsWith("map_dictionary")) return "map_dictionary";
+  return "unknown";
+}
+
+const SOURCE_TYPE_LABELS = {
+  firewall:       { label: "防火墙",         color: "#f50" },
+  life:           { label: "生命读经",       color: "#2db7f5" },
+  cwwl:           { label: "李常受文集",     color: "#87d068" },
+  cwwn:           { label: "倪柝声文集",     color: "#9254de" },
+  others:         { label: "其他",           color: "#13c2c2" },
+  bib:            { label: "圣经",           color: "#fa8c16" },
+  map_note:       { label: "注解纲目",       color: "#597ef7" },
+  map_7feasts:    { label: "节期纲目",       color: "#f759ab" },
+  map_pano:       { label: "清明上河图",     color: "#36cfc9" },
+  map_dictionary: { label: "主恢复真理词典", color: "#ff85c0" },
+  unknown:        { label: "其他",           color: "#d9d9d9" },
+};
+
+function getSourceLabel(chunkId) {
+  return SOURCE_TYPE_LABELS[getSourceType(chunkId)] || SOURCE_TYPE_LABELS.unknown;
+}
+
+function formatSourceTitle(src) {
+  const type = getSourceType(src.chunk_id);
+
+  if (type === "firewall") {
+    return src.chunk_id.replace(/^firewall:/, "");
+  }
+
+  if (type === "bib") {
+    const sz = src.source_zh || src.chunk_id;
+    return sz.replace(/^[（(]/, "").replace(/[）)]$/, "");
+  }
+
+  const parts = [];
+  if (src.book_title) parts.push(src.book_title);
+  if (src.message_title) parts.push(src.message_title);
+  return parts.join("，") || src.chunk_id;
+}
+
+const toggleAiPanel = () => {
+  aiPanelVisible.value = !aiPanelVisible.value;
+  if (aiPanelVisible.value) {
+    inputVar.value = "";
+    status.value = "";
+  }
+};
+
+const buildKgRagParams = () => ({
+  outline_nature: aiForm.specialNeeds.trim(),
+  burden_description: aiForm.burdenDescription.trim(),
+  depth: "general",
+});
+
+const onSearch = (inp) => {
+  if (!run.value) run.value = true;
+  showInfo.value = 4;
+  let input = inputVar.value.trim();
+
+  if (input == "") {
+    status.value = "error";
+    placeholder.value = "搜索内容不能为空";
+    showInfo.value = 3;
+    return;
+  }
+
+  let index = selectedIndex.value[0];
+  let cat1 = selVar1.value;
+  let cat2 = selVar2.value;
+  let model = search_cat.value;
+  let cp = currentPage.value;
+  let ps = pageSize.value;
+
+  if (selVar2.value == "m") {
+    showInfo.value = 3;
+    inputDis.value = true;
+    return;
+  }
+
+  let sta = "";
+  if (index == "0") sta = cat1;
+  else sta = index;
+
+  hilights.value = input.split(/ +/g);
+
+  let args = `${sta}-${cat2}-${model}-${cp}-${ps}`;
+  let formData = new FormData();
+  formData.append("input", input);
+  formData.append("args", args);
+
+  let token = localStorage.getItem("token") || null;
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  axios
+    .post("/api/search", formData)
+    .then((res) => {
+      let data = res.data;
+      total.value = data.total;
+      results.value = data.msg;
+      if (data.msg == "pass") return;
+      if (total.value == 0) {
+        showInfo.value = 3;
+      } else {
+        showInfo.value = 2;
+      }
+    })
+    .catch((err) => {
+      if (err?.response?.status == 401) {
+        window.location.hash = "/login";
+      }
+      showInfo.value = 3;
+    });
+};
+
+const onChange = () => {
+  status.value = "";
+  placeholder.value = "输入搜索内容";
+};
+
+const openmsg = (val) => {
+  if (!val) return;
+  refid.value = val;
+  openMsg.value = !openMsg.value;
+};
+
+const onChangePage = (page, pageSize) => {
+  onSearch("");
+};
+
+const showSizeChange = (current, size) => {
+  onSearch("");
+};
+
+watch([selVar1, selVar2, search_cat, selectedIndex], () => {
+  if (selVar2.value == "m") {
+    inputDis.value = true;
+  } else {
+    inputDis.value = false;
+    onSearch("");
+  }
+  currentPage.value = 1;
+});
+
+const change_icon = (val) => {
+  let dom = document.getElementById(val);
+  let span1 = dom.getElementsByTagName("span")[0];
+  let span2 = dom.getElementsByTagName("span")[1];
+
+  span1.setAttribute("style", "display: none");
+  span2.setAttribute("style", "display: inline-block");
+
+  setTimeout(() => {
+    span1.setAttribute("style", "display: inline-block");
+    span2.setAttribute("style", "display: none");
+  }, 2000);
+};
+
+const copyText = (val) => {
+  if (!val) return;
+  val = val.replace(/<[^>]*>/g, "");
+  navigator.clipboard.writeText(val);
+  tip("复制成功");
+};
+
+const copyTextAndChnageIcon = (val, id) => {
+  copyText(val);
+  change_icon(id);
+};
+
+const addTag = (val) => {
+  let arr = [];
+  let cid = val[0][1];
+  let index = cid.split("_")[0];
+  console.log(index);
+  if (["life", "cwwn"].includes(index)) {
+    arr.push(["查看整篇", cid]);
+    arr.push(["只看大纲", cid + "-outline"]);
+    arr.push(["只看标题", cid + "-heading"]);
+    return arr;
+  } else return val;
+};
+
+/** 统一解析 KG-RAG 响应（缓存命中 / 未命中） */
+function parseKgRagResponse(data) {
+  const isCached = !!data.cached;
+  const result = {
+    answer: data.answer || null,
+    outlineTopic: aiForm.outlineTopic.trim(),
+    cached: isCached,
+    cacheKey: data.cache_key || null,
+    revelation: [],
+    inner: [],
+    experience: [],
+    practice: [],
+    skeleton: null,
+    mainSources: [],
+    totalElapsedMs: null,
+    totalCostUsd: null,
+    answerEn: null,
+    answerZhTw: null,
+  };
+  if (isCached) {
+    result.revelation = data.revelation || [];
+    result.inner = data.inner || [];
+    result.experience = data.experience || [];
+    result.practice = data.practice || [];
+    result.skeleton = data.skeleton || null;
+    result.mainSources = data.main_sources || [];
+    result.totalElapsedMs = data.total_elapsed_ms ?? null;
+    result.totalCostUsd = data.total_cost_usd ?? null;
+    result.answerEn = data.answer_en || null;
+    result.answerZhTw = data.answer_zh_tw || null;
+  } else {
+    const s1 = data.steps?.step1 || {};
+    const s2 = data.steps?.step2 || {};
+    const s3 = data.steps?.step3 || {};
+    const usage = data.llm_usage || {};
+    result.revelation = s1.revelation || [];
+    result.inner = s1.inner || [];
+    result.experience = s1.experience || [];
+    result.practice = s1.practice || [];
+    result.skeleton = s2.skeleton || null;
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || [])];
+    result.mainSources = allResults.map(r => ({
+      chunk_id: r.chunk_id || "",
+      book_title: r.book_title || "",
+      source_zh: r.source_zh || "",
+      message_title: r.message_title || "",
+      text_preview: (() => {
+        const t = r.text || "";
+        return t.length > 200 ? t.slice(0, 200) + "…" : t;
+      })(),
+    }));
+    result.totalElapsedMs = usage.total_elapsed_ms ?? null;
+    result.totalCostUsd = (usage.totals || {}).cost_usd ?? null;
+  }
+  console.log("parsed answer:", result?.answer, "raw data keys:", Object.keys(data));
+  return result;
+}
+
+// AI 纲目生成（单次调用 KG-RAG）
+const onAISearch = async () => {
+  const question = aiForm.outlineTopic.trim();
+
+  if (!question || !aiFormValid.value) {
+    tip("请至少填写纲目主题并选择纲目性质");
+    return;
+  }
+  if (aiMode.value !== "2.0" && !burdenPhaseReady.value) {
+    tip("请先完成负担说明阶段（点「确认，开始推荐重点」）");
+    return;
+  }
+
+  loadingAI.value = true;
+  showInfo.value = 6;
+  aiResult.value = null;
+  evalResult.value = null;
+  scriptureReplacementItems.value = [];
+  skeletonSnapshot.value = [];
+  outlineEditing.value = false;
+  outlineEditVisible.value = false;
+  outlineEditReadonly.value = false;
+  editableAnswer.value = "";
+  answerEn.value = null;
+  errorEnglish.value = null;
+  answerZhTw.value = null;
+  errorTraditional.value = null;
+  showAISources.value = false;
+  showAIAnswer.value = false;
+  aiLoadingText.value = "✨ AI 纲目生成中…";
+  Object.assign(aiMeta, { revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
+
+  try {
+    const qParams = buildKgRagParams();
+    if (
+      conceptMode.value === "manual" &&
+      manualRevelation.value.length > 0
+    ) {
+      qParams.preset_revelation = [...manualRevelation.value];
+      qParams.preset_inner = [...manualInner.value];
+      qParams.preset_experience = [...manualExperience.value];
+      qParams.preset_practice = [...manualPractice.value];
+    } else if (
+      conceptMode.value === "ai" &&
+      conceptStage.value === "candidates_ready" &&
+      conceptCandidates.value &&
+      selectedRevelation.value.length > 0
+    ) {
+      qParams.preset_revelation = [...selectedRevelation.value];
+      qParams.preset_inner = [...selectedInner.value];
+      qParams.preset_experience = [...selectedExperience.value];
+      qParams.preset_practice = [...selectedPractice.value];
+    }
+    const res = await axios.post(
+      "/api/t35test/query",
+      { query: question, params: qParams, mode: aiMode.value },
+      { timeout: 300000 }
+    );
+    const data = res.data;
+    if (!data.answer) {
+      tip(data.error || "纲目生成失败，请稍后重试");
+      showInfo.value = 3;
+      return;
+    }
+
+    const parsed = parseKgRagResponse(data);
+    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
+    Object.assign(aiMeta, {
+      revelation: parsed.revelation,
+      inner: parsed.inner,
+      experience: parsed.experience,
+      practice: parsed.practice,
+      skeleton: parsed.skeleton,
+      mainSources: parsed.mainSources,
+      totalElapsedMs: parsed.totalElapsedMs,
+      totalCostUsd: parsed.totalCostUsd,
+      cached: parsed.cached,
+      cacheKey: parsed.cacheKey,
+    });
+
+    showInfo.value = 5;
+    showAISources.value = true;
+    showAIAnswer.value = true;
+
+    if (parsed.cached) {
+      aiLoadingText.value = "已找到缓存结果";
+    }
+
+    // 缓存命中且已有翻译时直接展示
+    if (parsed.cached && parsed.answerEn) {
+      answerEn.value = parsed.answerEn;
+    } else if (includeEnglishOutline.value) {
+      fetchTranslate(parsed.answer);
+    }
+    if (parsed.cached && parsed.answerZhTw) {
+      answerZhTw.value = parsed.answerZhTw;
+    } else if (includeTraditionalOutline.value) {
+      fetchTraditionalOutline(parsed.answer);
+    }
+
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  } catch (err) {
+    console.error("AI纲目生成失败:", err);
+    const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
+    const msg = isTimeout
+      ? "请求超时，AI 生成时间较长，请稍后重试"
+      : (err.response?.data?.detail || err.response?.data?.error || "AI纲目生成失败，请稍后重试");
+    tip(msg);
+    showInfo.value = 3;
+  } finally {
+    loadingAI.value = false;
+    resetConceptState();
+  }
+};
+
+// 【PanAI 新测试台】返回工具箱
+function goBackToTools() {
+  try {
+    router.push("/tools");
+  } catch (e) {
+    window.location.hash = "/tools";
+  }
+}
+
+</script>
+
+<template>
+  <div class="t35-header">
+    <div class="t35-header-left" @click="goBackToTools" title="返回工具箱">
+      <ArrowLeftOutlined class="t35-header-back" />
+      <span class="t35-header-backtext">返回</span>
+    </div>
+    <div class="t35-header-title">PanAI 新测试台</div>
+    <div class="t35-header-right"></div>
+  </div>
+  <div class="search-box t35-box">
+    <div class="search-bar">
+      <transition name="ai-meta-panel">
+        <div v-if="aiPanelVisible" class="ai-meta-panel">
+          <div class="ai-meta-grid">
+            <label class="ai-meta-field full">
+              <span>纲目主题*（必填）</span>
+              <a-textarea
+                v-model:value="aiForm.outlineTopic"
+                :disabled="loadingAI"
+                placeholder="纲目的题目"
+                :auto-size="{ minRows: 1, maxRows: 4 }"
+              />
+            </label>
+            <div class="ai-meta-field full">
+              <span>纲目性质*（必选）</span>
+              <div class="ai-nature-btns">
+                <button
+                  type="button"
+                  v-for="opt in AI_NATURE_OPTIONS"
+                  :key="opt"
+                  :class="['ai-nature-btn', { active: aiForm.specialNeeds === opt }]"
+                  :disabled="loadingAI"
+                  @click="aiForm.specialNeeds = aiForm.specialNeeds === opt ? '' : opt"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+            </div>
+            <div v-if="showBurdenPhasePanel && aiMode !== '2.0'" class="ai-meta-field full ai-burden-phase">
+              <div class="ai-burden-phase-head">
+                <span class="ai-burden-phase-title">负担说明的生成</span>
+              </div>
+              <label class="ai-meta-field full ai-burden-phase-inner">
+                <span>负担的重点请贴这里（80字以内）</span>
+                <textarea
+                  class="ai-burden-textarea"
+                  rows="3"
+                  v-model="referenceExcerpt"
+                  :disabled="loadingAI || burdenGenLoading || burdenPhaseReady"
+                  placeholder="有提供负担的重点直接生成负担说明，没有提供负担的重点可生成四个负担说明以供选择"
+                ></textarea>
+              </label>
+              <div class="ai-burden-btn-wrap">
+                <a-button
+                  block
+                  :loading="burdenGenLoading"
+                  :disabled="loadingAI || burdenGenLoading || !aiFormValid || burdenPhaseReady"
+                  @click="onGenerateBurden"
+                >生成负担说明</a-button>
+              </div>
+              <div v-if="burdenGenReasoning" class="ai-burden-reasoning">
+                <div
+                  class="ai-burden-reasoning-head"
+                  @click="burdenReasoningOpen = !burdenReasoningOpen"
+                >
+                  <span>{{ burdenReasoningOpen ? "▼" : "▶" }} 查看要点依据</span>
+                </div>
+                <div v-if="burdenReasoningOpen" class="ai-burden-reasoning-body">{{ burdenGenReasoning }}</div>
+              </div>
+              <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="ai-burden-gen-out">
+                <div class="ai-burden-gen-label">有负担的重点</div>
+                <div class="ai-burden-gen-text">{{ burdenGenLineA }}</div>
+              </div>
+              <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="ai-burden-gen-out">
+                <div class="ai-burden-gen-label">没有负担的重点</div>
+                <a-radio-group
+                  v-model:value="burdenSelectedIdx"
+                  class="ai-burden-radio-group"
+                  :disabled="burdenPhaseReady"
+                >
+                  <div
+                    v-for="(c, i) in burdenGenCandidates"
+                    :key="i"
+                    class="ai-burden-radio-line"
+                  >
+                    <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
+                    <span class="ai-burden-cand-body">{{ c }}</span>
+                  </div>
+                </a-radio-group>
+              </div>
+              <label class="ai-meta-field full ai-burden-phase-inner">
+                <span>生成的负担说明</span>
+                <a-textarea
+                  class="ai-burden-textarea"
+                  v-model:value="aiForm.burdenDescription"
+                  :disabled="loadingAI || burdenPhaseReady"
+                  placeholder="在此输入或编辑负担说明，也可留空"
+                  :auto-size="{ minRows: 2, maxRows: 8 }"
+                />
+              </label>
+              <div class="ai-burden-btn-wrap">
+                <a-button block :disabled="loadingAI || burdenPhaseReady" @click="confirmBurdenPhase">确认，开始推荐重点</a-button>
+              </div>
+            </div>
+          </div>
+            <div class="ai-panel-actions">
+            <!-- 2.0 模式：简单负担说明输入框 -->
+            <div v-if="aiMode === '2.0'" class="ai-meta-field full">
+              <span>负担说明60字（选填）</span>
+              <a-textarea
+                v-model:value="aiForm.burdenDescription"
+                :auto-size="{ minRows: 2, maxRows: 8 }"
+                placeholder="约60字概括纲目摘要，说明纲目负担"
+                :disabled="loadingAI"
+              />
+            </div>
+            <template v-if="aiMode !== '2.0'">
+            <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
+            <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（生成或填写负担说明后，点「确认，开始推荐重点」）</div>
+            <div v-else class="concept-mode-toggle">
+              <a-button
+                :type="conceptMode === 'ai' ? 'primary' : 'default'"
+                @click="setConceptMode('ai')"
+              >推荐重点</a-button>
+              <a-button
+                :type="conceptMode === 'manual' ? 'primary' : 'default'"
+                @click="setConceptMode('manual')"
+              >输入重点</a-button>
+            </div>
+            <div class="ai-concept-panel ai-concept-search-panel">
+              <div class="ai-concept-search">
+                <span class="ai-concept-label">搜索图谱中重点</span>
+                  <a-auto-complete
+                    v-model:value="conceptSearchKeyword"
+                    :options="conceptSearchOptions"
+                    :open="conceptSearchOpen"
+                    :not-found-content="conceptSearchLoading ? '搜索中…' : '暂无匹配'"
+                    placeholder=""
+                    allow-clear
+                    @select="onSelectConceptSearchOption"
+                  />
+              </div>
+            </div>
+            <!-- AI：勾选候选（不可自由输入） -->
+            <div
+              v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
+              class="ai-concept-panel"
+            >
+              <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">真理启示</span>
+                <a-checkbox-group
+                  v-model:value="selectedRevelation"
+                  :options="conceptCandidates.revelation"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div v-else class="ai-concept-empty">（启示层无候选）</div>
+              <div class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">内在素质</span>
+                <a-checkbox-group
+                  v-if="(conceptCandidates.inner || []).length"
+                  v-model:value="selectedInner"
+                  :options="conceptCandidates.inner"
+                  class="ai-concept-checks"
+                />
+                <span v-else class="ai-concept-empty">（内在素质层无候选）</span>
+              </div>
+              <div v-if="(conceptCandidates.experience || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">生命经历</span>
+                <a-checkbox-group
+                  v-model:value="selectedExperience"
+                  :options="conceptCandidates.experience"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div v-if="(conceptCandidates.practice || []).length" class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">实行应用</span>
+                <a-checkbox-group
+                  v-model:value="selectedPractice"
+                  :options="conceptCandidates.practice"
+                  class="ai-concept-checks"
+                />
+              </div>
+              <div class="ai-history-save-row">
+                <a-button size="small" @click="saveCurrentToHistory">保存记录</a-button>
+              </div>
+            </div>
+            <!-- 人工：四层 tag -->
+            <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
+              <div class="ai-concept-hint">直接输入重点，回车添加，× 删除。</div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">真理启示</span>
+                <a-select
+                  v-model:value="manualRevelation"
+                  v-model:searchValue="manualConceptSearchValue.revelation"
+                  mode="multiple"
+                  class="ai-concept-tags ai-concept-tags--revelation"
+                  :options="manualConceptOptions.revelation"
+                  :loading="manualConceptLoading.revelation"
+                  :filter-option="false"
+                  placeholder=""
+                  @search="(v) => onManualConceptSearch('revelation', v)"
+                  @select="() => onManualConceptSelect('revelation')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('revelation', e)"
+                  allow-clear
+                />
+              </div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">内在素质</span>
+                <a-select
+                  v-model:value="manualInner"
+                  v-model:searchValue="manualConceptSearchValue.inner"
+                  mode="multiple"
+                  class="ai-concept-tags ai-concept-tags--inner"
+                  :options="manualConceptOptions.inner"
+                  :filter-option="false"
+                  placeholder="词汇待资料库上传，目前可直接输入、回车添加"
+                  @search="(v) => onManualConceptSearch('inner', v)"
+                  @select="() => onManualConceptSelect('inner')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('inner', e)"
+                  allow-clear
+                />
+              </div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">生命经历</span>
+                <a-select
+                  v-model:value="manualExperience"
+                  v-model:searchValue="manualConceptSearchValue.experience"
+                  mode="multiple"
+                  class="ai-concept-tags ai-concept-tags--experience"
+                  :options="manualConceptOptions.experience"
+                  :loading="manualConceptLoading.experience"
+                  :filter-option="false"
+                  placeholder=""
+                  @search="(v) => onManualConceptSearch('experience', v)"
+                  @select="() => onManualConceptSelect('experience')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('experience', e)"
+                  allow-clear
+                />
+              </div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">实行应用</span>
+                <a-select
+                  v-model:value="manualPractice"
+                  v-model:searchValue="manualConceptSearchValue.practice"
+                  mode="multiple"
+                  class="ai-concept-tags ai-concept-tags--practice"
+                  :options="manualConceptOptions.practice"
+                  :loading="manualConceptLoading.practice"
+                  :filter-option="false"
+                  placeholder=""
+                  @search="(v) => onManualConceptSearch('practice', v)"
+                  @select="() => onManualConceptSelect('practice')"
+                  @inputKeyDown="(e) => onManualConceptInputKeydown('practice', e)"
+                  allow-clear
+                />
+              </div>
+            </div>
+            </template>
+            <div class="ai-panel-cta">
+              <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
+              <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
+              <a-button
+                v-if="aiMode !== '2.0' && conceptMode === 'ai' && conceptStage === 'idle'"
+                :loading="conceptLoading"
+                :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
+                @click="extractConcepts"
+              >
+                {{ conceptLoading ? "推荐中…" : "推荐重点" }}
+              </a-button>
+              <a-button
+                v-else-if="
+                  aiMode === '2.0' ||
+                  conceptMode === 'manual' ||
+                  (conceptMode === 'ai' && conceptStage === 'candidates_ready')
+                "
+                type="primary"
+                :loading="loadingAI"
+                :disabled="
+                  loadingAI ||
+                  (aiMode !== '2.0' && !burdenPhaseReady) ||
+                  outlineGenerateDisabled
+                "
+                @click="onAISearch"
+              >
+                {{ loadingAI ? "生成中…" : "生成纲目" }}
+              </a-button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </div>
+  <a-divider style="margin: 30px 0 10px 0"></a-divider>
+  <!-- AI 正在思考的加载动画 -->
+  <div class="ai-loading-container" v-if="showInfo == 6">
+    <div class="ai-loading">
+      <div class="ai-loading-card">
+        <div class="loading-content">
+          <a-spin size="large">
+            <template #indicator>
+              <div class="custom-spinner">
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+                <div class="spinner-dot"></div>
+              </div>
+            </template>
+          </a-spin>
+          <div class="loading-text">{{ aiLoadingText }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 问答结果显示 -->
+  <div class="ai-result" v-if="showInfo == 5 && aiResult">
+    <a-alert type="success" show-icon>
+      <template #message>
+        <span style="font-size: 16px">✨ <strong style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ aiModeDisplayText }}</strong> 纲目生成完成</span>
+      </template>
+    </a-alert>
+    <a-divider style="margin: 10px 0"></a-divider>
+
+    <!-- 信息栏：耗时 / 费用 / 缓存 / 概念 / 骨架 -->
+    <div class="kg-info-bar">
+      <div class="kg-info-stats">
+        <span v-if="aiMeta.totalElapsedMs != null">⏱ 耗时 <strong>{{ (aiMeta.totalElapsedMs / 1000).toFixed(1) }}s</strong></span>
+        <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
+        <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
+      </div>
+      <div class="kg-info-row">📌 真理启示：{{ aiMeta.revelation.length ? aiMeta.revelation.join("、") : "无" }}</div>
+      <div class="kg-info-row">📌 内在素质：{{ (aiMeta.inner || []).length ? aiMeta.inner.join("、") : "无" }}</div>
+      <div class="kg-info-row">📌 生命经历：{{ aiMeta.experience.length ? aiMeta.experience.join("、") : "无" }}</div>
+      <div class="kg-info-row">📌 实行应用：{{ aiMeta.practice.length ? aiMeta.practice.join("、") : "无" }}</div>
+      <div v-if="aiMeta.skeleton && aiMeta.skeleton.length" class="kg-info-row">
+        <div>🦴 骨架：</div>
+        <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">
+          {{ typeof item === 'object' ? item.step : item }}
+          <span v-if="item && typeof item === 'object' && item.path_evidence" class="kg-skeleton-evidence">↳ {{ formatPathEvidenceDisplay(item.path_evidence) }}</span>
+          <span v-if="item && typeof item === 'object' && item.scripture_anchor" class="kg-skeleton-evidence">📖 {{ item.scripture_anchor }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kg-outline-divider">─── 纲目正文 ───</div>
+
+    <!-- 中文纲目 -->
+    <transition name="slide-down">
+      <div v-if="showAIAnswer" class="ai-answer-card">
+        <div class="ai-answer-header">
+          <span style="font-weight: bold; color: #667eea;">📝 中文纲目</span>
+          <a-button type="text" size="small" @click="copyAiAnswer" class="ai-copy-btn">
+            <CheckOutlined v-if="aiAnswerCopied" style="color: #52c41a;" />
+            <CopyOutlined v-else />
+            {{ aiAnswerCopied ? "已复制" : "复制" }}
+          </a-button>
+        </div>
+        <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
+        <div v-if="aiResult?.answer" class="ai-download-row">
+          <span class="ai-download-label">下载格式：</span>
+          <a-checkbox-group v-model:value="downloadFormatsZh">
+            <a-checkbox value="docx">DOCX</a-checkbox>
+            <a-checkbox value="pdf">PDF</a-checkbox>
+          </a-checkbox-group>
+          <a-button type="primary" size="small" :loading="downloadingZh" :disabled="downloadingZh || downloadFormatsZh.length === 0" @click="downloadFormattedZh">
+            <LoadingOutlined v-if="downloadingZh" spin />
+            <DownloadOutlined v-else />
+            {{ downloadingZh ? "格式化并下载中…" : "刷格式并下载" }}
+          </a-button>
+        </div>
+        <div v-if="aiResult?.answer" class="eval-section">
+          <div class="eval-action-row">
+            <a-button type="primary" size="small" :loading="evalLoading" :disabled="evalLoading" @click="() => runOutlineEval()">
+              <LoadingOutlined v-if="evalLoading" spin />
+              {{ evalLoading ? "评估中…" : "评估纲目" }}
+            </a-button>
+            <span v-if="evalResult && !evalLoading" class="eval-stats">
+              耗时 {{ (evalResult.elapsed_ms / 1000).toFixed(1) }}s · 费用 ${{ Number(evalResult.cost_usd).toFixed(4) }}
+            </span>
+          </div>
+
+          <div v-if="evalResult" class="eval-report">
+            <div v-if="evalImprovementEntries.length" class="eval-improvement-banner">
+              <div class="eval-improvement-title">相较上轮改善说明</div>
+              <div v-for="entry in evalImprovementEntries" :key="entry.dim" class="eval-improvement-item">
+                <strong>{{ entry.dim }}</strong>：{{ entry.note }}
+              </div>
+            </div>
+            <div v-if="scriptureReplacementItems.length" class="eval-scripture-auto-banner">
+              发现 {{ scriptureReplacementItems.length }} 处经文建议，请在下方逐条确认
+            </div>
+            <div class="eval-total-score-card">
+              <div class="eval-total-score-label">综合得分</div>
+              <div class="eval-total-score-value">{{ evalResult.total_score ?? "—" }}<span class="eval-total-score-unit"> / 100</span></div>
+            </div>
+
+            <div class="eval-section-block">
+              <div class="eval-section-title-row">
+                <div class="eval-section-title">F1-F4 生成质量参考</div>
+                <span class="eval-section-hint">不计入综合分</span>
+              </div>
+              <div v-for="item in F_EVAL_META" :key="item.key" class="eval-dim-card">
+                <div class="eval-dim-header">
+                  <strong>{{ item.title }}</strong>
+                  <span class="eval-dim-score">{{ evalDimScore(item.key) }}</span>
+                </div>
+                <div v-if="evalPansaiLayer[item.key]?.error" class="eval-error">{{ evalPansaiLayer[item.key].error }}</div>
+                <template v-else-if="evalHasBlock(item.key)">
+                  <div class="eval-comment">{{ evalPansaiLayer[item.key].comment }}</div>
+                  <div v-if="evalPansaiLayer[item.key].strength" class="eval-strength">亮点：{{ evalPansaiLayer[item.key].strength }}</div>
+                  <div v-if="evalPansaiLayer[item.key].prescription" class="eval-prescription">
+                    ⚠ {{ evalPansaiLayer[item.key].prescription }}
+                  </div>
+                  <div v-if="evalPansaiLayer[item.key]?.improvement_note" class="eval-improvement-note">
+                    改善：{{ evalPansaiLayer[item.key].improvement_note }}
+                  </div>
+                  <div v-if="item.key === 'F1' && getF1SuggestedConcepts()" class="eval-suggested-concepts">
+                    <div class="eval-suggested-title">建议补充概念</div>
+                    <div
+                      v-for="layer in ['revelation', 'inner', 'experience', 'practice']"
+                      :key="layer"
+                      v-show="(getF1SuggestedConcepts()[layer] || []).length"
+                      class="eval-suggested-row"
+                    >
+                      <span class="eval-suggested-label">{{ SUGGESTED_CONCEPT_LABELS[layer] }}：</span>
+                      <span>{{ (getF1SuggestedConcepts()[layer] || []).join("、") }}</span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="eval-section-block">
+              <div class="eval-section-title">神学深度层</div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T1 经文校对</strong><span>{{ evalT1Score10 }}/10</span></div>
+                <div v-if="evalT1?.error" class="eval-error">{{ evalT1.error }}</div>
+                <template v-if="evalHasBlock('T1')">
+                  <div class="eval-meta-tags">
+                    <a-tag v-if="evalT1.apex_level">{{ evalT1.apex_level }}</a-tag>
+                  </div>
+                  <div
+                    v-for="layer in T1_L_META"
+                    :key="layer.key"
+                    class="eval-sub-dim-block"
+                  >
+                    <div class="eval-sub-dim-header">
+                      <span class="eval-sub-dim-label">{{ layer.label }}</span>
+                      <span class="eval-sub-dim-score">{{ formatSubScore(evalT1[layer.key]?.score) }}</span>
+                    </div>
+                    <div v-if="evalT1[layer.key]?.comment" class="eval-sub-dim-comment">
+                      「{{ evalT1[layer.key].comment }}」
+                    </div>
+                    <div v-if="evalGapText(evalT1[layer.key]?.gap)" class="eval-sub-dim-gap">
+                      ⚠ {{ evalGapText(evalT1[layer.key].gap) }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="evalT1.progression != null || evalT1.density != null"
+                    class="eval-extra-metrics"
+                  >
+                    <span v-if="evalT1.progression != null">层次递进性 {{ formatSubScore(evalT1.progression) }}</span>
+                    <span v-if="evalT1.progression != null && evalT1.density != null"> · </span>
+                    <span v-if="evalT1.density != null">经文密度 {{ formatSubScore(evalT1.density) }}</span>
+                  </div>
+                  <div
+                    v-if="evalT1.nature_fit"
+                    class="nature-fit"
+                    :class="evalT1.nature_fit?.fit ? 'fit-ok' : 'fit-warn'"
+                  >
+                    经文风格与纲目性质：
+                    {{ evalT1.nature_fit?.fit ? "✓ 吻合" : "⚠ 偏差" }}
+                    <span v-if="evalT1.nature_fit?.note">— {{ evalT1.nature_fit.note }}</span>
+                  </div>
+                  <div v-if="evalT1.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalT1.summary }}
+                  </div>
+                </template>
+              </div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T2 黄金路径</strong><span>{{ evalT2Score10 }}/10</span></div>
+                <div v-if="evalT2?.error" class="eval-error">{{ evalT2.error }}</div>
+                <template v-if="evalHasBlock('T2')">
+                  <div v-for="item in T2_S_META" :key="item.key" class="eval-sub-item">
+                    <span class="sub-label">{{ item.label }}</span>
+                    <span class="sub-score">{{ evalT2[item.key]?.score ?? "-" }}/10</span>
+                    <p class="sub-comment">{{ evalT2[item.key]?.comment }}</p>
+                    <p v-if="evalT2[item.key]?.gap" class="sub-gap">⚠ {{ evalT2[item.key].gap }}</p>
+                  </div>
+                  <div class="eval-extra-metrics">
+                    加权总分：{{ evalT2.weighted_score ?? "-" }} / 100
+                  </div>
+                  <div v-if="evalT2.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalT2.summary }}
+                  </div>
+                </template>
+              </div>
+
+              <div class="eval-dim-card">
+                <div class="eval-dim-header"><strong>T3 四维分析</strong><span>{{ evalT3Score10 }}/10</span></div>
+                <div v-if="evalT3?.error" class="eval-error">{{ evalT3.error }}</div>
+                <template v-if="evalHasBlock('T3')">
+                  <div class="eval-meta-tags">
+                    <span class="framework-badge">{{ frameworkTypeLabel }}</span>
+                  </div>
+                  <div v-for="item in evalT3Meta" :key="item.key" class="eval-sub-item">
+                    <span class="sub-label">{{ item.label }}</span>
+                    <span class="sub-score">{{ evalT3[item.key]?.score ?? "-" }}/10</span>
+                    <p class="sub-comment">{{ evalT3[item.key]?.comment }}</p>
+                    <p v-if="evalT3[item.key]?.gap" class="sub-gap">⚠ {{ evalT3[item.key].gap }}</p>
+                  </div>
+                  <div class="eval-extra-metrics">
+                    <span>有机连贯度：{{ evalT3.coherence ?? "-" }}/10</span>
+                    <span> · </span>
+                    <span>结构张力度：{{ evalT3.structural_tension ?? "-" }}/10</span>
+                  </div>
+                  <div v-if="evalT3.summary" class="eval-comment eval-summary-line">
+                    总结：{{ evalT3.summary }}
+                  </div>
+                </template>
+              </div>
+
+              <div class="eval-card" id="eval-t4">
+                <div class="card-header">
+                  <span class="card-title">T4 纲目冲击力</span>
+                  <span class="card-score">{{ evalT4Score10 }}/10</span>
+                </div>
+                <template v-if="evalHasBlock('T4')">
+                  <div class="sharpness-type">
+                    {{ evalT4.sharpness_type ?? "" }}
+                  </div>
+                  <p class="t4-comment">{{ evalT4.comment }}</p>
+                  <div v-if="evalT4.supply_paragraph" class="t4-supply">
+                    {{ evalT4.supply_paragraph }}
+                  </div>
+                </template>
+                <div v-else-if="evalT4?.error" class="eval-error">{{ evalT4.error }}</div>
+              </div>
+            </div>
+
+            <div v-if="scriptureReplacementItems.length" class="scripture-review-section">
+              <div class="section-title">经文修改建议</div>
+              <div
+                v-for="(item, index) in scriptureReplacementItems"
+                :key="index"
+                class="scripture-card"
+                :class="{ decided: item.decided }"
+              >
+                <div class="scripture-location">{{ item.location }}</div>
+                <div v-if="item.original_text" class="scripture-original">
+                  <span class="original-label">原文</span>
+                  <p class="original-content">
+                    {{ item.original_text }}
+                  </p>
+                </div>
+                <div class="scripture-row">
+                  <span class="label">原经文</span>
+                  <span class="verse">{{ item.current_verse }}</span>
+                </div>
+                <div class="scripture-row">
+                  <span class="label">建议替换</span>
+                  <span class="verse suggest">{{ item.ai_suggestion }}</span>
+                </div>
+                <div class="scripture-reason">{{ item.reason }}</div>
+                <div v-if="!item.decided" class="scripture-actions">
+                  <button
+                    class="btn-accept"
+                    @click="acceptScriptureReplacement(index)"
+                  >替换</button>
+                  <button
+                    class="btn-reject"
+                    @click="rejectScriptureReplacement(index)"
+                  >保留</button>
+                </div>
+                <div v-else class="scripture-decided">
+                  {{ item.accepted ? "✓ 已替换" : "— 已保留" }}
+                </div>
+              </div>
+            </div>
+
+            <div v-if="evalSynthesis.overall_note" class="synthesis-section">
+              <div class="synthesis-header">
+                <span class="synthesis-title">纲目修改建议</span>
+                <span class="synthesis-note">{{ evalSynthesis.overall_note }}</span>
+              </div>
+
+              <div v-if="evalSynthesis.high_priority?.length" class="priority-group">
+                <div class="priority-label high">需要修改</div>
+                <div
+                  v-for="(item, i) in evalSynthesis.high_priority"
+                  :key="'h' + i"
+                  class="suggestion-card high"
+                >
+                  <div class="suggestion-problem">{{ item.problem }}</div>
+                  <div class="suggestion-body">{{ item.suggestion }}</div>
+                  <div class="suggestion-source">来源：{{ item.source }}</div>
+                </div>
+              </div>
+
+              <div v-if="evalSynthesis.low_priority?.length" class="priority-group">
+                <div class="priority-label low">可以改善</div>
+                <div
+                  v-for="(item, i) in evalSynthesis.low_priority"
+                  :key="'l' + i"
+                  class="suggestion-card low"
+                >
+                  <div class="suggestion-problem">{{ item.problem }}</div>
+                  <div class="suggestion-body">{{ item.suggestion }}</div>
+                  <div class="suggestion-source">来源：{{ item.source }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="eval-bottom-actions">
+              <a-button @click="toggleOutlineEdit">{{ outlineEditing ? "修改完成" : "修改纲目" }}</a-button>
+              <button
+                class="btn-download-docx"
+                :disabled="!editableAnswer"
+                @click="downloadEvalDocx"
+              >刷格式下载</button>
+              <a-button @click="onRegenerateWithConcepts">调整概念后重新生成</a-button>
+            </div>
+            <div v-if="outlineEditVisible" class="outline-edit-wrap report-outline-edit">
+              <a-textarea
+                id="outline-edit-textarea"
+                v-model:value="editableAnswer"
+                :readonly="outlineEditReadonly"
+                :auto-size="{ minRows: 12, maxRows: 28 }"
+                class="outline-edit-textarea editable-answer-textarea"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 英文纲目 -->
+    <div v-if="showAIAnswer && includeEnglishOutline" class="ai-answer-card ai-answer-card-en">
+      <div class="ai-answer-header">
+        <span style="font-weight: bold; color: #667eea;">📝 英文纲目</span>
+        <a-button v-if="answerEn" type="text" size="small" @click="copyAiAnswerEn" class="ai-copy-btn">
+          <CheckOutlined v-if="aiAnswerEnCopied" style="color: #52c41a;" />
+          <CopyOutlined v-else />
+          {{ aiAnswerEnCopied ? "已复制" : "复制" }}
+        </a-button>
+      </div>
+      <div v-if="loadingEnglish" class="ai-answer-content ai-answer-loading-en">
+        <a-spin size="small" /> 正在生成英文纲目…
+      </div>
+      <div v-else-if="errorEnglish" class="ai-answer-content ai-answer-error-en">
+        {{ errorEnglish }}
+      </div>
+      <div v-else-if="answerEn" class="ai-answer-content" v-html="aiAnswerEnFormatted"></div>
+      <div v-if="answerEn" class="ai-download-row">
+        <span class="ai-download-label">下载格式：</span>
+        <a-checkbox-group v-model:value="downloadFormatsEn">
+          <a-checkbox value="docx">DOCX</a-checkbox>
+          <a-checkbox value="pdf">PDF</a-checkbox>
+        </a-checkbox-group>
+        <a-button type="primary" size="small" :loading="downloadingEn" :disabled="downloadingEn || downloadFormatsEn.length === 0" @click="downloadFormattedEn">
+          <LoadingOutlined v-if="downloadingEn" spin />
+          <DownloadOutlined v-else />
+          {{ downloadingEn ? "格式化并下载中…" : "刷格式并下载" }}
+        </a-button>
+      </div>
+    </div>
+
+    <!-- 繁体纲目 -->
+    <div v-if="showAIAnswer && includeTraditionalOutline" class="ai-answer-card ai-answer-card-zh-tw">
+      <div class="ai-answer-header">
+        <span style="font-weight: bold; color: #2d5016;">📝 繁体纲目</span>
+        <a-button v-if="answerZhTw" type="text" size="small" @click="copyAiAnswerZhTw" class="ai-copy-btn">
+          <CheckOutlined v-if="aiAnswerZhTwCopied" style="color: #52c41a;" />
+          <CopyOutlined v-else />
+          {{ aiAnswerZhTwCopied ? "已复制" : "复制" }}
+        </a-button>
+      </div>
+      <div v-if="loadingTraditional" class="ai-answer-content ai-answer-loading-zh-tw">
+        <a-spin size="small" /> 正在生成繁体纲目…
+      </div>
+      <div v-else-if="errorTraditional" class="ai-answer-content ai-answer-error-zh-tw">
+        {{ errorTraditional }}
+      </div>
+      <div v-else-if="answerZhTw" class="ai-answer-content" v-html="aiAnswerZhTwFormatted"></div>
+      <div v-if="answerZhTw" class="ai-download-row">
+        <span class="ai-download-label">下载格式：</span>
+        <a-checkbox-group v-model:value="downloadFormatsZhTw">
+          <a-checkbox value="docx">DOCX</a-checkbox>
+          <a-checkbox value="pdf">PDF</a-checkbox>
+        </a-checkbox-group>
+        <a-button type="primary" size="small" :loading="downloadingZhTw" :disabled="downloadingZhTw || downloadFormatsZhTw.length === 0" @click="downloadFormattedZhTw">
+          <LoadingOutlined v-if="downloadingZhTw" spin />
+          <DownloadOutlined v-else />
+          {{ downloadingZhTw ? "格式化并下载中…" : "刷格式并下载" }}
+        </a-button>
+      </div>
+    </div>
+
+    <!-- 引用来源（可折叠） -->
+    <div v-if="aiMeta.mainSources.length > 0" class="ai-sources">
+      <div class="ai-sources-header" @click="showAISources = !showAISources" style="cursor: pointer;">
+        <span style="font-weight: bold; color: #764ba2;">📚 引用来源 ({{ aiMeta.mainSources.length }} 条) {{ showAISources ? '▼' : '▶' }}</span>
+      </div>
+      <template v-if="showAISources">
+        <a-divider style="margin: 8px 0"></a-divider>
+        <div v-for="(src, idx) in aiMeta.mainSources" :key="idx" class="source-item">
+          <div class="source-title">
+            <span style="font-weight: bold; color: #1677ff;">{{ idx + 1 }}. </span>
+            <a-tag :color="getSourceLabel(src.chunk_id).color" size="small" style="margin-right: 6px;">{{ getSourceLabel(src.chunk_id).label }}</a-tag>
+            <span>{{ formatSourceTitle(src) }}</span>
+          </div>
+          <div v-if="src.text_preview && getSourceType(src.chunk_id) !== 'firewall'"
+               class="source-content"
+               style="color: #666; margin-left: 28px; margin-top: 4px; font-size: 13px; line-height: 1.5;">
+            {{ src.text_preview }}
+          </div>
+        </div>
+      </template>
+    </div>
+    
+    <div style="margin-bottom: 360px"></div>
+  </div>
+  <div v-if="showInfo == 3">
+    <a-result status="404" title="没有搜到任何内容，请换个关键字试试" />
+  </div>
+  <div v-if="showInfo == 4" class="spin">
+    <a-spin tip="加载中……" size="large" />
+  </div>
+  <div v-if="aiPanelVisible" class="history-entry-fixed">
+    <a-badge :count="pendingConfirmCount" :offset="[-2, 2]">
+      <a-button type="primary" @click="historyDrawerOpen = !historyDrawerOpen">暂时保存</a-button>
+    </a-badge>
+  </div>
+  <a-drawer
+    v-model:open="historyDrawerOpen"
+    title="历史记录"
+    placement="right"
+    :width="isMobileView ? '100vw' : 460"
+    :bodyStyle="isMobileView ? { paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' } : {}"
+  >
+    <div v-if="historyList.length === 0" class="history-empty">暂无历史记录</div>
+    <a-collapse v-else>
+      <a-collapse-panel v-for="item in historyList" :key="item.id">
+        <template #header>
+          <div class="history-item-header">
+            <div class="history-item-title">{{ item.query || "（无主题）" }}</div>
+            <a-tag :color="item.status === '待确认' ? 'orange' : item.status === '待生成' ? 'blue' : 'green'">
+              {{ item.status }}
+            </a-tag>
+            <span
+              v-if="item.status === '已生成' && item.eval?.total_score != null"
+              class="history-eval-score"
+            >
+              评估：{{ item.eval.total_score }} / 100
+            </span>
+            <span class="history-item-time">{{ item.createdAt }}</span>
+          </div>
+        </template>
+        <div class="history-item-body">
+          <div>纲目性质：{{ item.outline_nature || "—" }}</div>
+          <div>负担说明：{{ item.burden_description || "—" }}</div>
+          <div>真理启示：{{ (item.revelation || []).join("、") || "—" }}</div>
+          <div>内在素质：{{ (item.inner || []).join("、") || "—" }}</div>
+          <div>生命经历：{{ (item.experience || []).join("、") || "—" }}</div>
+          <div>实行应用：{{ (item.practice || []).join("、") || "—" }}</div>
+          <div class="history-actions">
+            <a-button size="small" @click.stop="loadHistoryRecord(item)">载入</a-button>
+            <a-button size="small" @click="setHistoryStatus(item.id, '待生成')">待生成</a-button>
+            <a-button size="small" @click="setHistoryStatus(item.id, '已生成')">已生成</a-button>
+            <a-button danger size="small" @click="deleteHistoryRecord(item.id)">删除</a-button>
+          </div>
+        </div>
+      </a-collapse-panel>
+    </a-collapse>
+  </a-drawer>
+</template>
+
+<style scoped>
+.spin {
+  text-align: center;
+}
+.up,
+.down {
+  margin: 5px 0;
+}
+.space {
+  margin-bottom: 3px !important;
+}
+.tag,
+.text_tag,
+.tag_footer {
+  cursor: pointer;
+  font-size: 16px;
+}
+.tag_footer {
+  background-color: #fff0f6;
+  color: #8316ff;
+  padding: 0 5px;
+  border-radius: 5px;
+}
+.res-title {
+  color: #1677ff;
+  font-size: 17px;
+}
+.tag:hover {
+  background-color: #8316ff;
+  color: #fff;
+}
+.tag_footer:hover {
+  background-color: rgb(245, 66, 96);
+  color: #fff;
+}
+.res {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: white;
+}
+.textindex {
+  color: #fff;
+  margin-bottom: 5em;
+  text-align: justify;
+}
+.info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 20px;
+}
+.cat {
+  width: 80%;
+  max-width: 960px;
+  background-color: #8316ff;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 20px;
+  margin-bottom: 10px;
+  color: #fff;
+  font-size: 14px;
+}
+.paoma {
+  width: 80%;
+  max-width: 960px;
+  background-color: #1677ff;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 20px;
+}
+.title {
+  color: #1677ff;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.search-box {
+  margin-top: 80px;
+  display: flex;
+  justify-content: center;
+}
+.search-bar {
+  width: 80%;
+  max-width: 1000px;
+}
+.search-result {
+  margin: 0 2em;
+}
+.model {
+  margin-top: 5px;
+  align-items: center;
+}
+
+.ai-mode-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.ai-mode-btn {
+  padding: 5px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #b39ddb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-style: italic;
+  color: #7c3aed;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+}
+.ai-mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: transparent;
+}
+.ai-mode-btn:hover:not(.active):not(:disabled) {
+  background: #f3f0ff;
+  border-color: #7c3aed;
+}
+.ai-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-meta-panel {
+  position: relative;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e6f4ff;
+  background: #fafdff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.08);
+}
+
+.ai-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ai-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.ai-meta-field > span {
+  font-weight: 600;
+  color: #222;
+}
+
+.ai-meta-field.full {
+  grid-column: 1 / -1;
+}
+
+.ai-burden-phase {
+  border: 1px dashed #d3adf7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #faf5ff;
+}
+
+.ai-burden-phase-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ai-burden-phase-title {
+  font-weight: 700;
+  color: #391085;
+}
+
+.ai-burden-skip {
+  font-size: 13px;
+  color: #722ed1;
+}
+.ai-burden-skip--locked {
+  pointer-events: none;
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+.ai-burden-phase-inner {
+  margin-top: 6px;
+}
+
+.ai-burden-btn-wrap {
+  margin-top: 10px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+.ai-burden-btn-wrap :deep(.ant-btn) {
+  min-height: 40px;
+}
+
+.ai-burden-gen-out {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #efdbff;
+}
+
+.ai-burden-reasoning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+}
+
+.ai-burden-reasoning-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-burden-reasoning-body {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #555;
+  white-space: pre-wrap;
+}
+
+.ai-burden-gen-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #722ed1;
+  margin-bottom: 6px;
+}
+
+.ai-burden-gen-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.ai-burden-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-burden-radio-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ai-burden-cand-body {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.ai-meta-field input,
+.ai-meta-field textarea {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s;
+}
+
+.ai-meta-field .ai-burden-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.ai-meta-field .ai-skeleton-textarea {
+  resize: vertical;
+}
+
+.ai-meta-field input:focus,
+.ai-meta-field textarea:focus {
+  outline: none;
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+}
+
+.ai-nature-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-nature-btn {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.ai-nature-btn:hover:not(:disabled):not(.active) {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.ai-nature-btn.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.ai-nature-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-panel-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ai-panel-actions > .ai-concept-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.concept-mode-toggle {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ai-concept-panel {
+  background: #f6f8fc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.ai-concept-search-panel {
+  padding-bottom: 10px;
+}
+.ai-concept-search {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.ai-concept-search :deep(.ant-select),
+.ai-concept-search :deep(.ant-select-selector),
+.ai-concept-search :deep(.ant-input-affix-wrapper),
+.ai-concept-search :deep(.ant-input) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.ai-concept-search :deep(.ant-select),
+.ai-concept-search :deep(.ant-select .ant-select-selector) {
+  min-width: 0;
+}
+.ai-concept-hint {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+}
+.ai-concept-section {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.ai-concept-tags {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+}
+.ai-concept-tags :deep(.ant-select) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+}
+.ai-concept-tags :deep(.ant-select-selector) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 38px;
+}
+.ai-concept-tags :deep(.ant-select-selection-search-input) {
+  color: #222 !important;
+  -webkit-text-fill-color: #222 !important;
+}
+.ai-concept-tags :deep(.ant-select-selection-placeholder) {
+  color: #999 !important;
+}
+/* 人工输入概念：三层 tag 分色 */
+.ai-concept-manual .ai-concept-tags--revelation :deep(.ant-select-selection-item) {
+  background: #ede7f6 !important;
+  border: 1px solid #d1c4e9;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags--inner :deep(.ant-select-selection-item) {
+  background: #e6fffb !important;
+  border: 1px solid #87e8de;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags--experience :deep(.ant-select-selection-item) {
+  background: #e8f5e9 !important;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags--practice :deep(.ant-select-selection-item) {
+  background: #fff9e6 !important;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+}
+.ai-concept-manual .ai-concept-tags :deep(.ant-select-selection-item-remove) {
+  color: rgba(0, 0, 0, 0.45);
+}
+.ai-concept-manual .ai-concept-tags :deep(.ant-select-selection-item-remove:hover) {
+  color: rgba(0, 0, 0, 0.75);
+}
+.ai-concept-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #444;
+  white-space: nowrap;
+}
+.ai-concept-checks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  gap: 4px 10px;
+}
+.ai-concept-empty {
+  color: #aaa;
+  font-size: 12px;
+}
+.ai-history-save-row {
+  margin-top: 10px;
+}
+.ai-concept-warn {
+  color: #fa541c;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.ai-panel-hint {
+  font-size: 13px;
+  color: #fa8c16;
+}
+
+.ai-panel-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ai-panel-cta :deep(.ant-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 200px;
+  padding: 0 32px;
+}
+
+.ai-meta-panel-enter-active,
+.ai-meta-panel-leave-active {
+  transition: all 0.2s ease;
+}
+
+.ai-meta-panel-enter-from,
+.ai-meta-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.text_tag {
+  margin-left: 5px;
+  padding: 3px 12px;
+}
+
+.text_tag:hover {
+  background-color: #1677ff;
+  color: #fff;
+}
+.footer_fix {
+  bottom: 0;
+  position: fixed;
+  width: 100%;
+  background-color: #fff;
+  border-top: 1px solid #e7e7e7;
+  padding: 10px 0;
+  text-align: center;
+  color: #777;
+}
+
+/* AI 问答样式 */
+.ai-result {
+  margin: 0 2em;
+}
+.history-entry-fixed {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1001;
+}
+.history-empty {
+  color: #999;
+}
+.history-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.history-item-title {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+.history-item-time {
+  color: #999;
+  font-size: 12px;
+}
+.history-eval-score {
+  color: #999;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.history-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.history-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* AI 加载动画容器 */
+.ai-loading-container {
+  margin: 0 2em;
+}
+
+.ai-loading {
+  margin: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.ai-result-loading {
+  margin-top: 20px;
+}
+
+.ai-loading-card {
+  background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+  border: 2px solid #667eea;
+  border-radius: 16px;
+  padding: 60px 80px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  }
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.custom-spinner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.spinner-dot {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite;
+}
+
+.spinner-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.spinner-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.spinner-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.loading-text {
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-glow 2s ease-in-out infinite;
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.loading-tips {
+  font-size: 14px;
+  color: #666;
+  margin-top: -5px;
+}
+
+/* 渐进显示过渡效果 */
+.fade-slide-enter-active {
+  animation: fadeSlideIn 0.6s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* AI答案从上方滑入效果 */
+.slide-down-enter-active {
+  animation: slideDownIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideDownIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 淡入淡出效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* AI正在整理答案提示 */
+.ai-preparing {
+  background: linear-gradient(135deg, #ffeaa710 0%, #ffdd5710 100%);
+  border: 2px dashed #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.preparing-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #d97706;
+}
+
+.preparing-spinner {
+  display: flex;
+  gap: 6px;
+}
+
+.preparing-spinner .dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 50%;
+  animation: preparingBounce 1.2s ease-in-out infinite;
+}
+
+.preparing-spinner .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.preparing-spinner .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.preparing-spinner .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes preparingBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+.ai-answer-card {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 28px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.ai-answer-header {
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.ai-copy-btn {
+  color: #667eea;
+  font-size: 14px;
+  background-color: rgba(102, 126, 234, 0.2);
+  border-radius: 6px;
+  padding: 5px 14px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ai-copy-btn:hover {
+  color: #764ba2;
+  background-color: rgba(118, 75, 162, 0.25);
+}
+
+.ai-answer-content {
+  line-height: 1.8;
+  font-size: 16px;
+  color: #333;
+  white-space: pre-wrap;
+}
+.ai-answer-content strong {
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.ai-answer-loading-en,
+.ai-answer-error-en,
+.ai-answer-loading-zh-tw,
+.ai-answer-error-zh-tw {
+  color: #666;
+  padding: 12px 0;
+}
+.ai-answer-error-en,
+.ai-answer-error-zh-tw {
+  color: #c41e3a;
+}
+
+.ai-download-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(102, 126, 234, 0.3);
+}
+.ai-download-row .ai-download-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+.ai-download-row .ant-checkbox-group {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.outline-edit-wrap {
+  margin-top: 12px;
+}
+.report-outline-edit {
+  margin-top: 10px;
+}
+.outline-edit-textarea {
+  font-family: inherit;
+  line-height: 24px;
+}
+.eval-improvement-banner {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.eval-improvement-title {
+  font-weight: 700;
+  color: #ad6800;
+  margin-bottom: 8px;
+}
+.eval-improvement-item {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #614700;
+  margin-top: 4px;
+}
+.eval-improvement-note {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #ad6800;
+  background: #fffbe6;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.eval-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(102, 126, 234, 0.25);
+}
+.eval-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.eval-stats {
+  color: #666;
+  font-size: 13px;
+}
+.eval-report {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.eval-section-block {
+  background: #fafbff;
+  border: 1px solid #e8ecf7;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.eval-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4c5fd7;
+  margin-bottom: 12px;
+}
+.eval-total-score-card {
+  background: linear-gradient(135deg, #667eea12 0%, #764ba212 100%);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.eval-total-score-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.eval-total-score-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #4c5fd7;
+  line-height: 1.2;
+}
+.eval-total-score-unit {
+  font-size: 18px;
+  font-weight: 600;
+  color: #888;
+}
+.eval-scripture-auto-banner {
+  font-size: 13px;
+  color: #237804;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.eval-total-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 14px;
+}
+.eval-dim-card {
+  background: #fff;
+  border: 1px solid #eef1f8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.eval-dim-card:last-child {
+  margin-bottom: 0;
+}
+.eval-dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.eval-dim-score {
+  color: #667eea;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eval-comment,
+.eval-prescription,
+.eval-strength,
+.eval-hint,
+.eval-golden-summary,
+.eval-scripture-reason {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+  margin-top: 6px;
+}
+.eval-prescription {
+  color: #c05621;
+  font-weight: 500;
+}
+.eval-sub-dim-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #eef1f8;
+}
+.eval-sub-dim-block:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.eval-sub-dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.eval-sub-dim-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+.eval-sub-dim-score {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eval-sub-dim-comment {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #555;
+  margin-top: 4px;
+}
+.eval-sub-dim-gap {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c05621;
+  margin-top: 4px;
+  padding-left: 2px;
+}
+.eval-extra-metrics {
+  font-size: 13px;
+  color: #666;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eef1f8;
+}
+.eval-summary-line {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #eef1f8;
+  font-weight: 500;
+}
+.eval-strength {
+  color: #237804;
+}
+.eval-error {
+  color: #c41e3a;
+  font-size: 13px;
+}
+.eval-suggested-concepts {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f6ffed;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.eval-suggested-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.eval-suggested-row {
+  margin-top: 4px;
+}
+.eval-suggested-label {
+  color: #666;
+}
+.eval-meta-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.eval-q-dots,
+.eval-d-rubric {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.eval-dot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.eval-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+  background: transparent;
+}
+.eval-dot.small {
+  width: 10px;
+  height: 10px;
+}
+.eval-dot.filled {
+  background: #667eea;
+}
+.eval-dot-label,
+.eval-d-label {
+  font-size: 11px;
+  color: #888;
+}
+.eval-d-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.eval-list-block {
+  margin-top: 8px;
+  font-size: 14px;
+}
+.eval-list-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.eval-list-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.t4-comment {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #666;
+  margin: 8px 0 0;
+}
+.t4-supply {
+  margin-top: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #3d2c1e;
+  background: linear-gradient(135deg, #fff9f0 0%, #fff4e6 100%);
+  border-left: 4px solid #d48806;
+  border-radius: 0 8px 8px 0;
+}
+.scripture-original {
+  margin: 8px 0 10px;
+  padding: 8px 10px 8px 12px;
+  background: #f5f5f0;
+  border-left: 2px solid #d9d9d9;
+  border-radius: 0 6px 6px 0;
+}
+.scripture-original .original-label {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+.scripture-original .original-content {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #555;
+}
+.eval-bottom-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.btn-download-docx {
+  padding: 4px 15px;
+  font-size: 14px;
+  line-height: 1.5715;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.88);
+  cursor: pointer;
+}
+.btn-download-docx:hover:not(:disabled) {
+  color: #4096ff;
+  border-color: #4096ff;
+}
+.btn-download-docx:disabled {
+  color: rgba(0, 0, 0, 0.25);
+  border-color: #d9d9d9;
+  background: rgba(0, 0, 0, 0.04);
+  cursor: not-allowed;
+}
+
+.ai-sources {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.ai-sources-header {
+  font-size: 17px;
+  margin-bottom: 5px;
+}
+
+.source-item {
+  border-left: 3px solid #764ba2;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  background-color: #fafafa;
+  border-radius: 5px;
+}
+
+.source-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #1677ff;
+}
+
+.source-content {
+  margin: 8px 0;
+  line-height: 1.6;
+  color: #555;
+  font-size: 14px;
+}
+.source-meta {
+  margin-top: 8px;
+}
+
+.claude-payload-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.claude-payload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.claude-payload-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claude-payload-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 13px;
+}
+
+.claude-payload-pre {
+  margin: 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* KG-RAG 信息栏 */
+.kg-info-bar {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+  border: 1px solid #91caff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.kg-info-stats {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.kg-info-stats strong {
+  color: #1a1a2e;
+}
+.kg-info-sep {
+  margin-left: 16px;
+}
+.kg-info-row {
+  font-size: 14px;
+  color: #444;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.kg-skeleton-item {
+  padding-left: 20px;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.7;
+}
+.kg-skeleton-evidence {
+  display: block;
+  font-size: 13px;
+  color: #6090c0;
+  padding-left: 8px;
+  line-height: 1.4;
+}
+.kg-outline-divider {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin: 12px 0 16px;
+  letter-spacing: 2px;
+}
+
+/* ========== 移动端：768px ========== */
+@media (max-width: 768px) {
+  .search-box {
+    margin-top: 56px;
+    padding: 0 12px;
+  }
+  .search-bar {
+    width: 100%;
+    max-width: 100%;
+  }
+  .search-bar .search {
+    width: 100%;
+    max-width: 100%;
+  }
+  .search-bar :deep(.ant-input-search),
+  .search-bar :deep(.ant-input-group) {
+    max-width: 100%;
+  }
+  .search-result,
+  .ai-result,
+  .ai-loading-container {
+    margin: 0 1em;
+  }
+  .model {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .model .ant-radio-group {
+    flex-wrap: wrap;
+  }
+  .model .ant-btn {
+    min-height: 40px;
+  }
+  .cat,
+  .paoma {
+    width: 95%;
+    padding: 14px;
+    font-size: 13px;
+  }
+  .ai-meta-panel {
+    padding: 12px;
+  }
+  .ai-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-panel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-concept-search :deep(.ant-select-selector),
+  .ai-concept-tags :deep(.ant-select-selector) {
+    min-height: 42px;
+  }
+  :deep(.ant-drawer-content-wrapper) {
+    max-width: 100vw !important;
+  }
+  :deep(.ant-drawer-header) {
+    padding-top: calc(16px + env(safe-area-inset-top));
+  }
+  .ai-panel-cta {
+    margin-left: 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-panel-cta :deep(.ant-btn) {
+    width: 100%;
+    min-height: 44px;
+  }
+  .ai-loading-card {
+    padding: 40px 24px;
+  }
+  .loading-text {
+    font-size: 18px;
+  }
+  .ai-answer-card {
+    padding: 20px 14px;
+  }
+  .ai-answer-content {
+    font-size: 15px;
+  }
+  .source-item {
+    padding: 8px 12px;
+  }
+  .res {
+    padding: 8px;
+  }
+}
+
+/* ========== 移动端：480px ========== */
+@media (max-width: 480px) {
+  .search-box {
+    margin-top: 52px;
+    padding: 0 8px;
+  }
+  .search-bar :deep(.ant-input-group-addon) {
+    min-width: 0;
+  }
+  .search-bar :deep(.ant-select) {
+    max-width: 56px;
+  }
+  .search-result,
+  .ai-result,
+  .ai-loading-container {
+    margin: 0 0.5em;
+  }
+  .cat,
+  .paoma {
+    width: 100%;
+    padding: 12px;
+    font-size: 12px;
+  }
+  .ai-meta-panel {
+    padding: 10px;
+  }
+  .ai-nature-btn {
+    padding: 10px 14px;
+    min-height: 44px;
+  }
+  .ai-loading-card {
+    padding: 32px 16px;
+  }
+  .loading-text {
+    font-size: 16px;
+  }
+  .loading-tips {
+    font-size: 13px;
+  }
+  .ai-answer-header {
+    font-size: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ai-answer-content {
+    font-size: 14px;
+  }
+  .ai-sources-header,
+  .source-title {
+    font-size: 15px;
+  }
+  .source-content {
+    font-size: 13px;
+  }
+  .tag,
+  .text_tag,
+  .tag_footer {
+    font-size: 14px;
+  }
+  .res-title {
+    font-size: 15px;
+  }
+}
+
+.t35-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  font-size: large;
+  font-weight: bold;
+  color: #55bbff;
+  background-color: #001529;
+}
+.t35-header-left {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 4px;
+  margin: -6px 0 -6px -4px;
+  user-select: none;
+}
+.t35-header-left:hover .t35-header-back {
+  color: #1677ff;
+  transform: scale(1.1);
+  transition: 0.2s;
+}
+.t35-header-backtext {
+  font-size: 14px;
+}
+.t35-header-title {
+  flex: 1;
+  text-align: center;
+}
+.t35-header-right {
+  width: 64px;
+}
+.t35-box {
+  margin-top: 24px;
+}
+</style>
