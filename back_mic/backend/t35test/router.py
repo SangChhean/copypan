@@ -245,6 +245,7 @@ async def extract_concepts(req: ExtractConceptsRequest):
             "experience": s1.get("experience", []),
             "practice": s1.get("practice", []),
             "reasoning": s1.get("reasoning", ""),
+            "thinking_text": s1.get("thinking_text", ""),
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -271,7 +272,9 @@ def _record_inner_trial(req: "ExtractConceptsRequest", s1: dict) -> None:
             "experience": s1.get("experience", []),
             "practice": s1.get("practice", []),
             "reasoning": s1.get("reasoning", ""),
+            "thinking_text": s1.get("thinking_text", ""),
             "dropped": s1.get("dropped", []),
+            "truncated": s1.get("truncated", []),
             "inner_words_count": s1.get("inner_words_count"),
             "model": s1.get("model"),
             "input_tokens": usage.get("input_tokens"),

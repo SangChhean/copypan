@@ -626,15 +626,17 @@ def _parse_step1_layers(
     outline_nature: str = "综合性",
     concept_set: set[str] | None = None,
     inner_set: set[str] | None = None,
-) -> tuple[list[str], list[str], list[str], list[str], str, list[dict[str, str]]]:
+) -> tuple[list[str], list[str], list[str], list[str], str, list[dict[str, str]], list[dict[str, str]]]:
     """解析 Step 1 返回的 JSON（含 reasoning、revelation、inner、experience、practice）。reasoning 仅写入 Step1 结果，不传入 Step2。
 
     【新测试台】inner 为内在素质层。传入 concept_set / inner_set 时先校验：三层的词须在概念列表里，
-    inner 的词须在最内在词库里，不符合的丢掉并记入 dropped（[{"layer", "word"}]）；再按纲目性质截数量。
-    返回 (revelation, inner, experience, practice, reasoning, dropped)。
+    inner 的词须在最内在词库里，不符合的丢掉并记入 dropped（[{"layer", "word"}]）；再按纲目性质截数量，
+    超出数量上限被切掉的词记入 truncated（[{"layer", "word"}]，与 dropped 分开记，原因不同：
+    dropped 是词不在允许名单里；truncated 是词合法，只是这层选多了，被按上限砍掉尾部）。
+    返回 (revelation, inner, experience, practice, reasoning, dropped, truncated)。
     """
     if not text or not text.strip():
-        return ([], [], [], [], "", [])
+        return ([], [], [], [], "", [], [])
     s = text.strip()
     if s.startswith("```"):
         lines = s.split("\n")
@@ -650,7 +652,7 @@ def _parse_step1_layers(
         recovered = _safe_parse_json(s)
         obj = recovered if recovered else None
     if not obj:
-        return ([], [], [], [], "", [])
+        return ([], [], [], [], "", [], [])
     r_raw = obj.get("reasoning", "")
     reasoning = str(r_raw).strip() if r_raw is not None else ""
 
@@ -695,12 +697,21 @@ def _parse_step1_layers(
     else:
         max_rev, max_inner, max_exp, max_prac = 6, 5, 5, 4
 
-    inner = inner[:max_inner]
-    experience = experience[:max_exp]
-    practice = practice[:max_prac]
+    truncated: list[dict[str, str]] = []
+
+    def _cap(layer: str, words: list[str], limit: int) -> list[str]:
+        if len(words) <= limit:
+            return words
+        for w in words[limit:]:
+            truncated.append({"layer": layer, "word": w})
+        return words[:limit]
+
+    inner = _cap("intrinsic_essence", inner, max_inner)
+    experience = _cap("experience", experience, max_exp)
+    practice = _cap("practice", practice, max_prac)
     max_revelation = min(max_rev, 20 - len(inner) - len(experience) - len(practice))
-    revelation = revelation[:max_revelation]
-    return (revelation, inner, experience, practice, reasoning, dropped)
+    revelation = _cap("revelation", revelation, max_revelation)
+    return (revelation, inner, experience, practice, reasoning, dropped, truncated)
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -930,6 +941,34 @@ def _claude_text_blocks(msg: Any) -> tuple[str, bool]:
     return "".join(parts), has_text_block
 
 
+def _claude_thinking_text(msg: Any) -> str:
+    """【新测试台】拼接 type==thinking 的 block 的实际文字（之前只记 token 数，不读内容）。
+    type==redacted_thinking 时内容是加密的，取不到文字，跳过。"""
+    parts: list[str] = []
+    empty_thinking_dumps: list[Any] = []
+    for block in getattr(msg, "content", None) or []:
+        if getattr(block, "type", None) != "thinking":
+            continue
+        piece = getattr(block, "thinking", None)
+        if piece:
+            parts.append(str(piece))
+        else:
+            # 诊断用：这一个 block 的 type 是 thinking，但取不到文字——当场把它的原始结构记下来
+            # （不能等循环结束再取 block，那时变量已经指向循环的最后一个 block，不一定是这个）。
+            try:
+                dump_fn = getattr(block, "model_dump", None)
+                empty_thinking_dumps.append(dump_fn() if callable(dump_fn) else vars(block))
+            except Exception:
+                empty_thinking_dumps.append(repr(block))
+    text = "\n\n".join(parts)
+    if empty_thinking_dumps:
+        logger.warning(
+            "[KG-RAG DEBUG] Step1 thinking block 存在（%d 个取不到文字），原始内容：%s",
+            len(empty_thinking_dumps), empty_thinking_dumps,
+        )
+    return text
+
+
 async def _call_claude(
     prompt: str,
     model: str,
@@ -994,6 +1033,19 @@ async def _call_claude(
         ot = int(getattr(uobj, "output_tokens", 0) or 0)
         if it or ot:
             usage = {"input_tokens": it, "output_tokens": ot}
+    if diag_step == "step1":
+        # 【新测试台】之前只记 thinking_tokens 数量，这里把思考内容本身也读出来，
+        # 存进 usage（register_llm_usage 只读 input/output_tokens，多一个 key 不影响它）。
+        thinking_text = _claude_thinking_text(msg)
+        if thinking_text:
+            if usage is None:
+                usage = {}
+            usage["thinking_text"] = thinking_text
+            logger.info(
+                "[KG-RAG DEBUG] Step1 thinking (%d 字): %s",
+                len(thinking_text),
+                thinking_text,
+            )
     text, has_text_block = _claude_text_blocks(msg)
     stop_reason = getattr(msg, "stop_reason", None)
     if stop_reason == "max_tokens" and not has_text_block:
@@ -1610,7 +1662,7 @@ class KgRagService:
                         diag_step="step1",
                     )
                     logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
-                    revelation, inner, experience, practice, reasoning, step1_dropped = _parse_step1_layers(
+                    revelation, inner, experience, practice, reasoning, step1_dropped, step1_truncated = _parse_step1_layers(
                         raw1, outline_nature=outline_nature, concept_set=concept_set, inner_set=inner_set
                     )
                     if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
@@ -1620,7 +1672,7 @@ class KgRagService:
                         raw1_fallback, u1_fallback = await _call_kg_rag_llm(
                             step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
                         )
-                        r_fb, i_fb, e_fb, p_fb, reason_fb, d_fb = _parse_step1_layers(
+                        r_fb, i_fb, e_fb, p_fb, reason_fb, d_fb, t_fb = _parse_step1_layers(
                             raw1_fallback, outline_nature=outline_nature,
                             concept_set=concept_set, inner_set=inner_set,
                         )
@@ -1632,6 +1684,7 @@ class KgRagService:
                             raw1, u1 = raw1_fallback, u1_fallback
                             revelation, inner, experience, practice, reasoning = r_fb, i_fb, e_fb, p_fb, reason_fb
                             step1_dropped = d_fb
+                            step1_truncated = t_fb
                             m1 = "gpt-5.4"
                             logger.info(
                                 f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
@@ -1642,7 +1695,8 @@ class KgRagService:
                     )
                     logger.info(
                         f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, inner: {inner}, experience: {experience}, "
-                        f"practice: {practice}, dropped: {step1_dropped}, reasoning: {reasoning[:200] if reasoning else ''}"
+                        f"practice: {practice}, dropped: {step1_dropped}, truncated: {step1_truncated}, "
+                        f"reasoning: {reasoning[:200] if reasoning else ''}"
                     )
                     concepts = []
                     seen = set()
@@ -1666,7 +1720,9 @@ class KgRagService:
                         "inner_scheme": INNER_SCHEME,
                         "inner_words_count": len(inner_words),
                         "dropped": step1_dropped,
+                        "truncated": step1_truncated,
                         "model": m1,
+                        "thinking_text": (u1 or {}).get("thinking_text", ""),
                     }
                     sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
                     if sn1:
