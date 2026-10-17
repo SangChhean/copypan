@@ -172,6 +172,11 @@ const burdenSelectedIdx = ref(0);
 const burdenGenLineA = ref("");
 const burdenGenReasoning = ref(""); // 模型输出的思考过程（新测试台）
 const burdenReasoningOpen = ref(false); // 思考过程折叠面板是否展开
+/** 要点依据逐行加序号「N、」；按实际换行分行，保留原有行内容（含没有负担的重点时按候选分组的行） */
+const burdenGenReasoningNumbered = computed(() => {
+  const lines = (burdenGenReasoning.value || "").split("\n").filter((l) => l.trim() !== "");
+  return lines.map((l, i) => `${i + 1}、${l}`).join("\n");
+});
 /** 跳过「跳过负担说明」后隐藏整块面板，直到纲目主题与跳过时不一致 */
 const burdenHiddenBySkip = ref(false);
 const burdenSkipTopicSnapshot = ref("");
@@ -244,7 +249,7 @@ async function onGenerateBurden() {
     });
     const d = res.data || {};
     console.debug("[KG-RAG BURDEN DEBUG] generate_burden response:", d);
-    // 页面显示统一叫「负担的重点」（Prompt 里仍叫「摘录」，以后再一起统一）
+    // Prompt 已经把「摘录」统一改成「负担的重点」了，这里留一道保险（万一模型偶尔还是吐出旧词）
     burdenGenReasoning.value = d.reasoning != null ? String(d.reasoning).trim().replaceAll("摘录", "负担的重点") : "";
     if (d.scenario === "A" && d.result != null && String(d.result).trim() !== "") {
       burdenGenScenario.value = "A";
@@ -255,7 +260,7 @@ async function onGenerateBurden() {
     }
     if (d.scenario === "B" && d.candidates && d.candidates.length) {
       burdenGenScenario.value = "B";
-      burdenGenCandidates.value = d.candidates.slice(0, 3);
+      burdenGenCandidates.value = d.candidates.slice(0, 4);
       burdenSelectedIdx.value = 0;
       const first = burdenGenCandidates.value[0];
       aiForm.burdenDescription = first != null ? String(first).trim() : "";
@@ -280,6 +285,14 @@ async function onGenerateBurden() {
 const conceptStage = ref("idle"); // idle | candidates_ready
 const conceptLoading = ref(false);
 const conceptCandidates = ref(null);
+const stepThinkingText = ref(""); // Step1 模型的思考文字（英文原文，新测试台，常为空——见说明）
+const stepThinkingTextZh = ref(""); // 上面那段的中文翻译（另外调用翻译模型得到，可能为空）
+const stepThinkingOpen = ref(false);
+const stepDropped = ref([]); // 不在概念列表/最内在词库里，被丢弃的词：[{layer, word}]
+const stepDroppedOpen = ref(false);
+const stepTruncated = ref([]); // 词合法但这层选多了，按数量上限被截掉的词：[{layer, word}]
+const stepTruncatedOpen = ref(false);
+const stepReasoningOpen = ref(false); // 推荐的理由（即 reasoning）折叠面板是否展开
 const selectedRevelation = ref([]);
 const selectedInner = ref([]); // 内在素质（词汇待资料库上传）
 const selectedExperience = ref([]);
@@ -334,9 +347,24 @@ function formatPathEvidenceDisplay(pe) {
   return String(pe).replace(/（\d+跳）\s*$/u, "").trim();
 }
 
+/** 模型思考过程显示用：按空行分段，每段开头加两个全角空格缩进，方便复制粘贴时保留分段和缩进 */
+function indentParagraphs(text) {
+  if (!text) return "";
+  return String(text)
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter((p) => p)
+    .map((p) => "　　" + p)
+    .join("\n\n");
+}
+
 function resetAiConceptState() {
   conceptStage.value = "idle";
   conceptCandidates.value = null;
+  stepThinkingText.value = "";
+  stepThinkingTextZh.value = "";
+  stepDropped.value = [];
+  stepTruncated.value = [];
   selectedRevelation.value = [];
   selectedInner.value = [];
   selectedExperience.value = [];
@@ -544,6 +572,10 @@ async function extractConcepts() {
     });
     const d = res.data || {};
     conceptCandidates.value = d;
+    stepThinkingText.value = d.thinking_text != null ? String(d.thinking_text).trim() : "";
+    stepThinkingTextZh.value = d.thinking_text_zh != null ? String(d.thinking_text_zh).trim() : "";
+    stepDropped.value = Array.isArray(d.dropped) ? d.dropped : [];
+    stepTruncated.value = Array.isArray(d.truncated) ? d.truncated : [];
     selectedRevelation.value = [...(d.revelation || [])];
     selectedInner.value = [...(d.inner || [])];
     selectedExperience.value = [...(d.experience || [])];
@@ -699,6 +731,11 @@ function saveCurrentToHistory() {
     inner: Array.isArray(cand.inner) ? [...cand.inner] : [],
     experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
     practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
+    reasoning: cand.reasoning ?? "", // 之前一直没存，顺带补上
+    thinking_text: stepThinkingText.value || "",
+    thinking_text_zh: stepThinkingTextZh.value || "",
+    dropped: Array.isArray(stepDropped.value) ? [...stepDropped.value] : [],
+    truncated: Array.isArray(stepTruncated.value) ? [...stepTruncated.value] : [],
     answer: aiResult.value?.answer ?? "",
     skeleton: aiMeta.skeleton ?? [],
     eval: evalResult.value ? buildEvalHistoryPayload(evalResult.value) : null,
@@ -2095,7 +2132,7 @@ function goBackToTools() {
                 >
                   <span>{{ burdenReasoningOpen ? "▼" : "▶" }} 查看要点依据</span>
                 </div>
-                <div v-if="burdenReasoningOpen" class="ai-burden-reasoning-body">{{ burdenGenReasoning }}</div>
+                <div v-if="burdenReasoningOpen" class="ai-burden-reasoning-body">{{ burdenGenReasoningNumbered }}</div>
               </div>
               <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="ai-burden-gen-out">
                 <div class="ai-burden-gen-label">有负担的重点</div>
@@ -2113,7 +2150,7 @@ function goBackToTools() {
                     :key="i"
                     class="ai-burden-radio-line"
                   >
-                    <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
+                    <a-radio :value="i">{{ ['真理启示', '内在素质', '生命经历', '实行应用'][i] }}</a-radio>
                     <span class="ai-burden-cand-body">{{ c }}</span>
                   </div>
                 </a-radio-group>
@@ -2176,6 +2213,22 @@ function goBackToTools() {
               v-if="conceptMode === 'ai' && conceptStage === 'candidates_ready' && conceptCandidates"
               class="ai-concept-panel"
             >
+              <div v-if="stepThinkingText" class="ai-burden-reasoning">
+                <div
+                  class="ai-burden-reasoning-head"
+                  @click="stepThinkingOpen = !stepThinkingOpen"
+                >
+                  <span>{{ stepThinkingOpen ? "▼" : "▶" }} 查看模型思考过程</span>
+                </div>
+                <div v-if="stepThinkingOpen" class="ai-burden-reasoning-body">
+                  <div class="ai-concept-label" style="margin-bottom: 4px;">英文原文</div>
+                  <div>{{ indentParagraphs(stepThinkingText) }}</div>
+                  <template v-if="stepThinkingTextZh">
+                    <div class="ai-concept-label" style="margin: 10px 0 4px;">中文翻译</div>
+                    <div>{{ indentParagraphs(stepThinkingTextZh) }}</div>
+                  </template>
+                </div>
+              </div>
               <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
                 <span class="ai-concept-label">真理启示</span>
                 <a-checkbox-group
@@ -2210,6 +2263,39 @@ function goBackToTools() {
                   :options="conceptCandidates.practice"
                   class="ai-concept-checks"
                 />
+              </div>
+              <div v-if="conceptCandidates.reasoning" class="ai-burden-reasoning">
+                <div
+                  class="ai-burden-reasoning-head"
+                  @click="stepReasoningOpen = !stepReasoningOpen"
+                >
+                  <span>{{ stepReasoningOpen ? "▼" : "▶" }} 查看推荐理由</span>
+                </div>
+                <div v-if="stepReasoningOpen" class="ai-burden-reasoning-body">{{ conceptCandidates.reasoning }}</div>
+              </div>
+              <div class="ai-burden-reasoning">
+                <div
+                  class="ai-burden-reasoning-head"
+                  @click="stepDroppedOpen = !stepDroppedOpen"
+                >
+                  <span>{{ stepDroppedOpen ? "▼" : "▶" }} 查看dropped（舍弃的词{{ stepDropped.length ? "，共" + stepDropped.length + "个" : "" }}）</span>
+                </div>
+                <div v-if="stepDroppedOpen" class="ai-burden-reasoning-body">
+                  <div v-if="!stepDropped.length">本次无舍弃的词</div>
+                  <div v-for="(item, idx) in stepDropped" :key="'dropped-' + idx">{{ item.layer }}：{{ item.word }}</div>
+                </div>
+              </div>
+              <div class="ai-burden-reasoning">
+                <div
+                  class="ai-burden-reasoning-head"
+                  @click="stepTruncatedOpen = !stepTruncatedOpen"
+                >
+                  <span>{{ stepTruncatedOpen ? "▼" : "▶" }} 查看被截断的词{{ stepTruncated.length ? "（共" + stepTruncated.length + "个）" : "" }}</span>
+                </div>
+                <div v-if="stepTruncatedOpen" class="ai-burden-reasoning-body">
+                  <div v-if="!stepTruncated.length">本次无被截断的词</div>
+                  <div v-for="(item, idx) in stepTruncated" :key="'truncated-' + idx">{{ item.layer }}：{{ item.word }}</div>
+                </div>
               </div>
               <div class="ai-history-save-row">
                 <a-button size="small" @click="saveCurrentToHistory">保存记录</a-button>

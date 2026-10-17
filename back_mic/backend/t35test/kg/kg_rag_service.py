@@ -49,10 +49,10 @@ QUERY_REWRITE_SYSTEM = "你是一个资深的圣经研究学者，只输出 JSON
 BURDEN_DESCRIPTION_SYSTEM = (
     "你是一个资深的圣经研究学者。"
     "严格只输出规定的内容，不输出其他任何文字、步骤说明、分隔线。"
-    "情境A：只输出两部分——「负担说明：...」，然后「要点依据：」逐行列出要点与摘录依据的对照表。"
-    "情境B：只输出四部分——三行候选"
-    "「候选一（侧重...）：...\\n候选二（侧重...）：...\\n候选三（侧重...）：...」，"
-    "然后「要点依据：」按候选分组列出每条候选的要点方向与理由。"
+    "有负担的重点：只输出两部分——「负担说明：...」，然后「要点依据：」逐行列出要点与负担的重点依据的对照表。"
+    "没有负担的重点：只输出五部分——四行负担说明"
+    "「真理启示：...\\n内在素质：...\\n生命经历：...\\n实行应用：...」，"
+    "然后「要点依据：」按四种负担说明分组列出每条负担说明的要点方向与理由。"
 )
 from t35test.kg.firewall import match_firewall
 from t35test.kg.llm_pricing import pack_llm_usage_response, register_llm_usage
@@ -509,8 +509,12 @@ def _parse_burden_reasoning(text: str) -> str:
     return "\n".join(ln for ln in lines if ln)
 
 
+BURDEN_SCENARIO_B_LABELS = ("真理启示", "内在素质", "生命经历", "实行应用")
+
+
 def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
-    """解析负担说明 LLM 输出：情境 A（负担说明：）或情境 B（候选一～三），外加末尾的「要点依据：」。"""
+    """解析负担说明 LLM 输出：有负担的重点（负担说明：）或没有负担的重点（真理启示/内在素质/生命经历/实行应用四条候选），
+    外加末尾的「要点依据：」。"""
     text = (raw or "").strip()
     logger.info(
         "[KG-RAG BURDEN DEBUG] parse start: raw_len=%s preview=%r",
@@ -525,11 +529,12 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
         len(reasoning),
         reasoning[:300],
     )
-    if "候选一" in text:
+    # 锚定在行首，避免「真理启示」作为普通词汇出现在有负担的重点那条正文里时被误判成没有负担的重点
+    if re.search(rf"(?m)^{re.escape(BURDEN_SCENARIO_B_LABELS[0])}[：:]", text):
         candidates: list[str] = []
-        for label in ("候选一", "候选二", "候选三"):
-            # 候选一：… 或 候选一（侧重…）：…；在「要点依据」标签前截断
-            pat = rf"{re.escape(label)}(?:（侧重[^）]*）)?[：:]\s*(.+?)(?=\n\s*候选[一二三]|\n\s*要点依据|$)"
+        label_alt = "|".join(re.escape(l) for l in BURDEN_SCENARIO_B_LABELS)
+        for label in BURDEN_SCENARIO_B_LABELS:
+            pat = rf"(?m)^{re.escape(label)}[：:]\s*(.+?)(?=\n\s*(?:{label_alt})[：:]|\n\s*要点依据|$)"
             m = re.search(pat, text, re.DOTALL)
             if m:
                 candidates.append(re.sub(r"\s+", " ", m.group(1).strip()))
@@ -541,13 +546,13 @@ def _parse_burden_generation_output(raw: str) -> dict[str, Any]:
         )
         if not any(c.strip() for c in candidates):
             return {"scenario": "B", "candidates": [], "error": "解析失败", "debug": {"reason": "b_candidates_all_empty"}}
-        while len(candidates) < 3:
+        while len(candidates) < 4:
             candidates.append("")
         return {
             "scenario": "B",
-            "candidates": candidates[:3],
+            "candidates": candidates[:4],
             "reasoning": reasoning,
-            "debug": {"reason": "matched_b", "candidate_lens": [len(c or "") for c in candidates[:3]]},
+            "debug": {"reason": "matched_b", "candidate_lens": [len(c or "") for c in candidates[:4]]},
         }
     if "负担说明" in text:
         # 在「要点依据」标签前截断，避免把依据表并入负担说明正文
@@ -969,6 +974,40 @@ def _claude_thinking_text(msg: Any) -> str:
     return text
 
 
+STEP1_THINKING_TRANSLATE_MODEL = "claude-haiku-4-5-20251001"  # 便宜模型，够用；与 MINISTERIALIZE_CLAUDE_MODEL 同款
+
+
+async def _translate_thinking_to_chinese(text: str, glossary: str = "") -> str:
+    """【新测试台】Step1 的 thinking 摘要是模型自己选的英文，翻成中文方便对照（英文原文仍保留，两者都存）。
+    glossary：本次 Step1 用的概念列表 + 最内在词库，专有名词翻译时优先对照这份表，
+    避免译成"上帝""教会"这类不是职事惯用写法的词。翻译失败不影响主流程，返回空字符串。"""
+    if not text or not text.strip():
+        return ""
+    try:
+        glossary_block = (
+            f"\n\n词表（本次选词任务用的词，翻译中出现的专有名词、神学术语如果能在词表里找到对应写法，"
+            f"必须使用词表里的写法，例如用「神」不用「上帝」、用「召会」不用「教会」；词表里没有的词按忠实直译处理）：\n{glossary}"
+            if glossary else ""
+        )
+        # 固定术语对照：intrinsic essence 是四层归类里「内在素质层」的英文名，模型偶尔会写成
+        # intrinsic significance 之类的近似说法，不管英文原文具体怎么写，中文都必须译成「内在素质」。
+        fixed_terms = (
+            "\n\n固定术语对照（不管英文原文具体写法是什么，只要是指这个概念，中文都按这个译）：\n"
+            "intrinsic essence / intrinsic significance → 内在素质"
+        )
+        zh, _usage = await _call_kg_rag_llm(
+            f"将下面这段英文忠实翻译成中文，不要增删内容，不要加任何解释、前缀或引号，只输出翻译结果。"
+            f"{glossary_block}{fixed_terms}\n\n英文原文：\n{text}",
+            STEP1_THINKING_TRANSLATE_MODEL,
+            temperature=0,
+            max_tokens=2000,
+        )
+        return (zh or "").strip()
+    except Exception as e:
+        logger.warning("[KG-RAG DEBUG] Step1 thinking 翻译失败（不影响主流程）: %s", e)
+        return ""
+
+
 async def _call_claude(
     prompt: str,
     model: str,
@@ -1004,6 +1043,12 @@ async def _call_claude(
         # 为避免额度被思考用光而没有正文，给它至少 16000 的输出额度（与 4.0 测试台一致）。Sonnet 5 仍可关闭思考。
         if (model or "").startswith("claude-opus-5"):
             kwargs["max_tokens"] = max(int(kwargs["max_tokens"]), 16000)
+            if diag_step == "step1":
+                # 【新测试台】Step1 推荐重点：要可见思考文字。之前传 {"type":"enabled","budget_tokens":N} 是
+                # 旧版扩展思考的参数形状，这个模型不支持（400）。正确做法参考 panai4/llm.py:133 已验证的写法：
+                # 不指定 thinking 时，接口只回思考签名、thinking 字段是空的；display=summarized 才会带回文字
+                # （注意：是摘要，不是逐字思维链）。
+                kwargs["thinking"] = {"type": "adaptive", "display": "summarized"}
         elif (model or "").startswith("claude-sonnet-5"):
             kwargs["thinking"] = {"type": "disabled"}
         if not _model_omits_temperature(model):
@@ -1708,6 +1753,11 @@ class KgRagService:
                     result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
                 step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
                 if "step1" not in result["steps"]:
+                    step1_thinking_text = (u1 or {}).get("thinking_text", "")
+                    step1_thinking_text_zh = await _translate_thinking_to_chinese(
+                        step1_thinking_text,
+                        glossary=f"{concept_list_text}、{inner_list_text}",
+                    )
                     s1: dict[str, Any] = {
                         "concepts": concepts,
                         "revelation": revelation,
@@ -1722,7 +1772,8 @@ class KgRagService:
                         "dropped": step1_dropped,
                         "truncated": step1_truncated,
                         "model": m1,
-                        "thinking_text": (u1 or {}).get("thinking_text", ""),
+                        "thinking_text": step1_thinking_text,
+                        "thinking_text_zh": step1_thinking_text_zh,
                     }
                     sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
                     if sn1:
@@ -2446,7 +2497,7 @@ class KgRagService:
         reference_excerpt: str = "",
         model: str = "claude-opus-5-5",
     ) -> dict[str, Any]:
-        """根据主题与上下文生成负担说明（情境 A 单条 / 情境 B 三候选）。"""
+        """根据主题与上下文生成负担说明（有负担的重点单条 / 没有负担的重点四候选）。"""
         query_v = (query or "").strip()
         outline_v = (outline_nature or "").strip() or "（未填）"
         audience_v = (audience or "").strip() or "（未填）"
