@@ -168,16 +168,19 @@ def _is_cwwl_year_range(chunk_id: str, start: int, end: int) -> bool:
 
 OUTLINE_NATURE_WEIGHTS: dict[str, list[tuple[Callable[[str, str], bool], float]]] = {
     "综合性": [
-        (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.1),
+        (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.0),
     ],
     "真理启示": [
+        (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.3),
+    ],
+    "内在素质": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.5),
     ],
     "生命经历": [
-        (lambda idx, cid: idx in ("kg-rag_cwwn", "kg-rag_life"), 1.5),
+        (lambda idx, cid: idx in ("kg-rag_cwwn", "kg-rag_life"), 1.3),
     ],
     "实行应用": [
-        (lambda idx, cid: _is_cwwl_year_range(cid, 1985, 1993), 1.5),
+        (lambda idx, cid: _is_cwwl_year_range(cid, 1985, 1993), 1.3),
     ],
 }
 
@@ -631,17 +634,20 @@ def _parse_step1_layers(
     outline_nature: str = "综合性",
     concept_set: set[str] | None = None,
     inner_set: set[str] | None = None,
-) -> tuple[list[str], list[str], list[str], list[str], str, list[dict[str, str]], list[dict[str, str]]]:
-    """解析 Step 1 返回的 JSON（含 reasoning、revelation、inner、experience、practice）。reasoning 仅写入 Step1 结果，不传入 Step2。
+) -> tuple[list[str], list[str], list[str], list[str], str, list[str], list[dict[str, str]], list[dict[str, str]]]:
+    """解析 Step 1 返回的 JSON（含 revelation、inner、experience、practice、summary、key_verses）。summary（小结）仅写入 Step1 结果，不传入 Step2。
+
+    【新测试台】原 reasoning（一句理由）改名为 summary（小结），兼容旧字段 reasoning；
+    key_verses 为可选的关键圣经节出处（最多 3 节），由人工在页面上取舍，目前不传入 Step2 及之后。
 
     【新测试台】inner 为内在素质层。传入 concept_set / inner_set 时先校验：三层的词须在概念列表里，
     inner 的词须在最内在词库里，不符合的丢掉并记入 dropped（[{"layer", "word"}]）；再按纲目性质截数量，
     超出数量上限被切掉的词记入 truncated（[{"layer", "word"}]，与 dropped 分开记，原因不同：
     dropped 是词不在允许名单里；truncated 是词合法，只是这层选多了，被按上限砍掉尾部）。
-    返回 (revelation, inner, experience, practice, reasoning, dropped, truncated)。
+    返回 (revelation, inner, experience, practice, summary, key_verses, dropped, truncated)。
     """
     if not text or not text.strip():
-        return ([], [], [], [], "", [], [])
+        return ([], [], [], [], "", [], [], [])
     s = text.strip()
     if s.startswith("```"):
         lines = s.split("\n")
@@ -657,9 +663,11 @@ def _parse_step1_layers(
         recovered = _safe_parse_json(s)
         obj = recovered if recovered else None
     if not obj:
-        return ([], [], [], [], "", [], [])
-    r_raw = obj.get("reasoning", "")
-    reasoning = str(r_raw).strip() if r_raw is not None else ""
+        return ([], [], [], [], "", [], [], [])
+    r_raw = obj.get("summary")
+    if r_raw is None:
+        r_raw = obj.get("reasoning", "")
+    summary = str(r_raw).strip() if r_raw is not None else ""
 
     def _layer(key: str) -> list[str]:
         raw = obj.get(key, [])
@@ -670,6 +678,7 @@ def _parse_step1_layers(
     inner = _layer("intrinsic_essence") or _layer("inner")
     experience = _layer("experience")
     practice = _layer("practice")
+    key_verses = list(dict.fromkeys(_layer("key_verses")))[:3]
 
     dropped: list[dict[str, str]] = []
 
@@ -716,7 +725,7 @@ def _parse_step1_layers(
     practice = _cap("practice", practice, max_prac)
     max_revelation = min(max_rev, 20 - len(inner) - len(experience) - len(practice))
     revelation = _cap("revelation", revelation, max_revelation)
-    return (revelation, inner, experience, practice, reasoning, dropped, truncated)
+    return (revelation, inner, experience, practice, summary, key_verses, dropped, truncated)
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -1613,7 +1622,8 @@ class KgRagService:
         inner: list[str] = []  # 【新测试台】内在素质层；目前只在推荐重点返回，后面骨架/检索/生成纲目还没接收这一层
         experience: list[str] = []
         practice: list[str] = []
-        reasoning = ""
+        summary = ""  # 小结（原 reasoning）
+        key_verses: list[str] = []  # 【新测试台】可选的关键圣经节，人工取舍；目前不传入 Step2 及之后
         step1_dropped: list[dict[str, str]] = []
         inner_words: list[str] = []
 
@@ -1635,14 +1645,19 @@ class KgRagService:
                 experience = [str(c).strip() for c in preset_experience if str(c).strip()]
                 practice = [str(c).strip() for c in preset_practice if str(c).strip()]
                 concepts = list(dict.fromkeys(revelation + experience + practice))
-                reasoning = "（人工指定概念，跳过 Step 1）"
+                summary = "（人工指定概念，跳过 Step 1）"
+                # 【新测试台】页面上勾选/输入的关键圣经节（可选）：先记进 Step1 结果，暂不放进生成纲目的 Prompt
+                preset_key_verses = p.get("preset_key_verses") or []
+                if isinstance(preset_key_verses, list):
+                    key_verses = [str(v).strip() for v in preset_key_verses if str(v).strip()]
                 step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
                 result["steps"]["step1"] = {
                     "concepts": concepts,
                     "revelation": revelation,
                     "experience": experience,
                     "practice": practice,
-                    "reasoning": reasoning,
+                    "summary": summary,
+                    "key_verses": key_verses,
                     "elapsed_ms": round(step1_elapsed_ms, 1),
                     "raw_response": None,
                     "preset": True,
@@ -1664,7 +1679,7 @@ class KgRagService:
                     "revelation": [],
                     "experience": [],
                     "practice": [],
-                    "reasoning": "",
+                    "summary": "",
                     "elapsed_ms": round(step1_elapsed_ms, 1),
                     "raw_response": None,
                 }
@@ -1707,7 +1722,7 @@ class KgRagService:
                         diag_step="step1",
                     )
                     logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
-                    revelation, inner, experience, practice, reasoning, step1_dropped, step1_truncated = _parse_step1_layers(
+                    revelation, inner, experience, practice, summary, key_verses, step1_dropped, step1_truncated = _parse_step1_layers(
                         raw1, outline_nature=outline_nature, concept_set=concept_set, inner_set=inner_set
                     )
                     if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
@@ -1717,7 +1732,7 @@ class KgRagService:
                         raw1_fallback, u1_fallback = await _call_kg_rag_llm(
                             step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
                         )
-                        r_fb, i_fb, e_fb, p_fb, reason_fb, d_fb, t_fb = _parse_step1_layers(
+                        r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb, d_fb, t_fb = _parse_step1_layers(
                             raw1_fallback, outline_nature=outline_nature,
                             concept_set=concept_set, inner_set=inner_set,
                         )
@@ -1727,7 +1742,7 @@ class KgRagService:
                         )
                         if r_fb or e_fb or p_fb:
                             raw1, u1 = raw1_fallback, u1_fallback
-                            revelation, inner, experience, practice, reasoning = r_fb, i_fb, e_fb, p_fb, reason_fb
+                            revelation, inner, experience, practice, summary, key_verses = r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb
                             step1_dropped = d_fb
                             step1_truncated = t_fb
                             m1 = "gpt-5.4"
@@ -1741,7 +1756,7 @@ class KgRagService:
                     logger.info(
                         f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, inner: {inner}, experience: {experience}, "
                         f"practice: {practice}, dropped: {step1_dropped}, truncated: {step1_truncated}, "
-                        f"reasoning: {reasoning[:200] if reasoning else ''}"
+                        f"key_verses: {key_verses}, summary: {summary[:200] if summary else ''}"
                     )
                     concepts = []
                     seen = set()
@@ -1764,7 +1779,8 @@ class KgRagService:
                         "inner": inner,
                         "experience": experience,
                         "practice": practice,
-                        "reasoning": reasoning,
+                        "summary": summary,
+                        "key_verses": key_verses,
                         "elapsed_ms": round(step1_elapsed_ms, 1),
                         "raw_response": raw1,
                         "inner_scheme": INNER_SCHEME,
@@ -1793,7 +1809,7 @@ class KgRagService:
                 "revelation": [],
                 "experience": [],
                 "practice": [],
-                "reasoning": "",
+                "summary": "",
                 "elapsed_ms": 0.0,
                 "raw_response": None,
             }
@@ -2118,7 +2134,7 @@ class KgRagService:
         logger.info(f"[KG-RAG TRACE] #3 RRF done: merged={len(merged)}")
         main_results = await rerank(merged, query, p["rerank_top_n"])
         logger.info(f"[KG-RAG TRACE] #4 main rerank done: main_results={len(main_results)}")
-        firewall_doc: dict[str, str] | None = await firewall_task
+        firewall_doc: dict[str, Any] | None = await firewall_task
         if firewall_doc:
             logger.info(
                 "[KG-RAG] firewall hit: title=%r note_preview=%s",
@@ -2128,6 +2144,7 @@ class KgRagService:
             result["firewall"] = {
                 "matched": firewall_doc["title"],
                 "note": firewall_doc["note"],
+                "names": firewall_doc.get("names") or [],  # 【新测试台】这个篇题下的《神圣的辩理》词条
             }
         else:
             logger.info("[KG-RAG DEBUG] firewall: full_query no hit (will not inject chunk)")
@@ -2414,7 +2431,8 @@ class KgRagService:
                     "revelation": step1_data.get("revelation", []),
                     "experience": step1_data.get("experience", []),
                     "practice": step1_data.get("practice", []),
-                    "reasoning": step1_data.get("reasoning", ""),
+                    "summary": step1_data.get("summary", ""),
+                    "key_verses": step1_data.get("key_verses", []),
                     "skeleton": (result["steps"].get("step2") or {}).get("skeleton"),
                     "main_sources": _extract_main_sources(
                         (step3_data.get("main_results") or [])

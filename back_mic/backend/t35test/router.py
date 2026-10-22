@@ -69,7 +69,7 @@ def get_service() -> KgRagService:
                 )
             except Exception as mon_e:
                 logger.warning(f"[t35test] Neo4j 连接降级事件记录失败（不影响主流程）: {mon_e}")
-        load_firewall()
+        load_firewall(es_client)
         _service = KgRagService(es_client, _neo4j)
     return _service
 
@@ -244,7 +244,8 @@ async def extract_concepts(req: ExtractConceptsRequest):
             "inner": s1.get("inner", []),
             "experience": s1.get("experience", []),
             "practice": s1.get("practice", []),
-            "reasoning": s1.get("reasoning", ""),
+            "summary": s1.get("summary", ""),  # 小结（原 reasoning）
+            "key_verses": s1.get("key_verses", []),  # 关键圣经节（可选）
             "thinking_text": s1.get("thinking_text", ""),
             "thinking_text_zh": s1.get("thinking_text_zh", ""),
             "dropped": s1.get("dropped", []),
@@ -274,7 +275,8 @@ def _record_inner_trial(req: "ExtractConceptsRequest", s1: dict) -> None:
             "inner": s1.get("inner", []),
             "experience": s1.get("experience", []),
             "practice": s1.get("practice", []),
-            "reasoning": s1.get("reasoning", ""),
+            "summary": s1.get("summary", ""),
+            "key_verses": s1.get("key_verses", []),
             "thinking_text": s1.get("thinking_text", ""),
             "thinking_text_zh": s1.get("thinking_text_zh", ""),
             "dropped": s1.get("dropped", []),

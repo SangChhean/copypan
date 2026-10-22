@@ -292,17 +292,19 @@ const stepDropped = ref([]); // 不在概念列表/最内在词库里，被丢�
 const stepDroppedOpen = ref(false);
 const stepTruncated = ref([]); // 词合法但这层选多了，按数量上限被截掉的词：[{layer, word}]
 const stepTruncatedOpen = ref(false);
-const stepReasoningOpen = ref(false); // 推荐的理由（即 reasoning）折叠面板是否展开
+const stepSummaryOpen = ref(false); // 小结（即 summary，原 reasoning「推荐理由」）折叠面板是否展开
 const selectedRevelation = ref([]);
 const selectedInner = ref([]); // 内在素质（词汇待资料库上传）
 const selectedExperience = ref([]);
 const selectedPractice = ref([]);
+const selectedKeyVerses = ref([]); // 关键圣经节（可选，人工取舍；默认不勾选）
 /** 概念来源：ai = 勾选候选；manual = 三层 tag 手动输入（互斥） */
 const conceptMode = ref("ai"); // 'ai' | 'manual'
 const manualRevelation = ref([]);
 const manualInner = ref([]);
 const manualExperience = ref([]);
 const manualPractice = ref([]);
+const manualKeyVerses = ref([]); // 关键圣经节（可选）
 const manualConceptOptions = reactive({
   revelation: [],
   inner: [],
@@ -369,12 +371,14 @@ function resetAiConceptState() {
   selectedInner.value = [];
   selectedExperience.value = [];
   selectedPractice.value = [];
+  selectedKeyVerses.value = [];
 }
 function resetManualConceptState() {
   manualRevelation.value = [];
   manualInner.value = [];
   manualExperience.value = [];
   manualPractice.value = [];
+  manualKeyVerses.value = [];
   manualConceptSearchValue.inner = "";
   manualConceptSearchValue.revelation = "";
   manualConceptSearchValue.experience = "";
@@ -402,6 +406,7 @@ function ensureAiConceptBuckets() {
   if (!Array.isArray(conceptCandidates.value.inner)) conceptCandidates.value.inner = [];
   if (!Array.isArray(conceptCandidates.value.experience)) conceptCandidates.value.experience = [];
   if (!Array.isArray(conceptCandidates.value.practice)) conceptCandidates.value.practice = [];
+  if (!Array.isArray(conceptCandidates.value.key_verses)) conceptCandidates.value.key_verses = [];
   if (conceptStage.value === "idle") {
     conceptStage.value = "candidates_ready";
   }
@@ -549,7 +554,8 @@ watch(
       manualRevelation.value.length ||
       manualInner.value.length ||
       manualExperience.value.length ||
-      manualPractice.value.length
+      manualPractice.value.length ||
+      manualKeyVerses.value.length
     ) {
       resetManualConceptState();
     }
@@ -580,6 +586,7 @@ async function extractConcepts() {
     selectedInner.value = [...(d.inner || [])];
     selectedExperience.value = [...(d.experience || [])];
     selectedPractice.value = [...(d.practice || [])];
+    selectedKeyVerses.value = []; // 关键圣经节是可选的，由人工根据纲目需求勾选
     conceptStage.value = "candidates_ready";
   } catch (e) {
     tip(e.response?.data?.error || e.message || "概念抽取失败");
@@ -731,7 +738,8 @@ function saveCurrentToHistory() {
     inner: Array.isArray(cand.inner) ? [...cand.inner] : [],
     experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
     practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
-    reasoning: cand.reasoning ?? "", // 之前一直没存，顺带补上
+    key_verses: Array.isArray(cand.key_verses) ? [...cand.key_verses] : [],
+    summary: cand.summary ?? cand.reasoning ?? "", // 小结（旧记录里叫 reasoning）
     thinking_text: stepThinkingText.value || "",
     thinking_text_zh: stepThinkingTextZh.value || "",
     dropped: Array.isArray(stepDropped.value) ? [...stepDropped.value] : [],
@@ -1195,6 +1203,7 @@ async function applyEvalPrefill() {
   manualInner.value = [...(data.inner || [])];
   manualExperience.value = [...(data.experience || [])];
   manualPractice.value = [...(data.practice || [])];
+  manualKeyVerses.value = [...(data.key_verses || [])];
 
   aiPanelVisible.value = true;
   inputVar.value = "";
@@ -1259,6 +1268,7 @@ async function loadHistoryRecord(item) {
   manualInner.value = [...(item.inner || [])];
   manualExperience.value = [...(item.experience || [])];
   manualPractice.value = [...(item.practice || [])];
+  manualKeyVerses.value = [...(item.key_verses || [])];
   console.log("载入后状态", {
     outlineTopic: aiForm.outlineTopic,
     specialNeeds: aiForm.specialNeeds,
@@ -1979,6 +1989,7 @@ const onAISearch = async () => {
       qParams.preset_inner = [...manualInner.value];
       qParams.preset_experience = [...manualExperience.value];
       qParams.preset_practice = [...manualPractice.value];
+      qParams.preset_key_verses = [...manualKeyVerses.value]; // 可选；目前只记录，还没放进生成纲目的 Prompt
     } else if (
       conceptMode.value === "ai" &&
       conceptStage.value === "candidates_ready" &&
@@ -1989,6 +2000,7 @@ const onAISearch = async () => {
       qParams.preset_inner = [...selectedInner.value];
       qParams.preset_experience = [...selectedExperience.value];
       qParams.preset_practice = [...selectedPractice.value];
+      qParams.preset_key_verses = [...selectedKeyVerses.value]; // 可选；目前只记录，还没放进生成纲目的 Prompt
     }
     const res = await axios.post(
       "/api/t35test/query",
@@ -2106,6 +2118,12 @@ function goBackToTools() {
             <div v-if="showBurdenPhasePanel && aiMode !== '2.0'" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
                 <span class="ai-burden-phase-title">负担说明的生成</span>
+                <a
+                  href="#"
+                  class="ai-burden-skip"
+                  :class="{ 'ai-burden-skip--locked': burdenPhaseReady }"
+                  @click.prevent="skipBurdenPhase"
+                >跳过负担说明</a>
               </div>
               <label class="ai-meta-field full ai-burden-phase-inner">
                 <span>负担的重点请贴这里（80字以内）</span>
@@ -2183,7 +2201,7 @@ function goBackToTools() {
             </div>
             <template v-if="aiMode !== '2.0'">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
-            <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（生成或填写负担说明后，点「确认，开始推荐重点」）</div>
+            <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（跳过负担说明，或生成/填写负担说明后，点「确认，开始推荐重点」）</div>
             <div v-else class="concept-mode-toggle">
               <a-button
                 :type="conceptMode === 'ai' ? 'primary' : 'default'"
@@ -2264,14 +2282,24 @@ function goBackToTools() {
                   class="ai-concept-checks"
                 />
               </div>
-              <div v-if="conceptCandidates.reasoning" class="ai-burden-reasoning">
+              <div class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
+                <a-checkbox-group
+                  v-if="(conceptCandidates.key_verses || []).length"
+                  v-model:value="selectedKeyVerses"
+                  :options="conceptCandidates.key_verses"
+                  class="ai-concept-checks"
+                />
+                <span v-else class="ai-concept-empty">（本题没有推荐关键圣经节）</span>
+              </div>
+              <div v-if="conceptCandidates.summary || conceptCandidates.reasoning" class="ai-burden-reasoning">
                 <div
                   class="ai-burden-reasoning-head"
-                  @click="stepReasoningOpen = !stepReasoningOpen"
+                  @click="stepSummaryOpen = !stepSummaryOpen"
                 >
-                  <span>{{ stepReasoningOpen ? "▼" : "▶" }} 查看推荐理由</span>
+                  <span>{{ stepSummaryOpen ? "▼" : "▶" }} 查看小结</span>
                 </div>
-                <div v-if="stepReasoningOpen" class="ai-burden-reasoning-body">{{ conceptCandidates.reasoning }}</div>
+                <div v-if="stepSummaryOpen" class="ai-burden-reasoning-body">{{ conceptCandidates.summary || conceptCandidates.reasoning }}</div>
               </div>
               <div class="ai-burden-reasoning">
                 <div
@@ -2368,6 +2396,17 @@ function goBackToTools() {
                   @search="(v) => onManualConceptSearch('practice', v)"
                   @select="() => onManualConceptSelect('practice')"
                   @inputKeyDown="(e) => onManualConceptInputKeydown('practice', e)"
+                  allow-clear
+                />
+              </div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
+                <a-select
+                  v-model:value="manualKeyVerses"
+                  mode="tags"
+                  class="ai-concept-tags"
+                  :open="false"
+                  placeholder="如：弗四16，回车添加"
                   allow-clear
                 />
               </div>
@@ -3352,6 +3391,11 @@ function goBackToTools() {
 }
 .ai-concept-empty {
   color: #aaa;
+  font-size: 12px;
+}
+.ai-concept-optional {
+  font-weight: 400;
+  color: #999;
   font-size: 12px;
 }
 .ai-history-save-row {

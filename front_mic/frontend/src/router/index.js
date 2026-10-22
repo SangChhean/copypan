@@ -121,12 +121,6 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: "/v40-burden-test",
-    name: "V40BurdenTest",
-    component: () => import("../components/toolbox/V40BurdenTest.vue"),
-    meta: { requiresAuth: true },
-  },
-  {
     path: "/panai35-test",
     name: "Panai35Test",
     component: () => import("../components/toolbox/Panai35Test.vue"),

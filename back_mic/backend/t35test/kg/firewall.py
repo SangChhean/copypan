@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-"""防火墙：职事文档标题匹配与上下文注入。"""
+"""防火墙：《神圣的辩理》篇题匹配与上下文注入（新测试台）。"""
 from __future__ import annotations
 
 import json
 import logging
-import re
-from pathlib import Path
 from typing import Any
 
 from t35test.kg.llm_pricing import register_llm_usage
 
 logger = logging.getLogger("t35test")
 
-_backend_dir = Path(__file__).resolve().parents[2]
-_rules_path = _backend_dir / "firewall_rules.json"
-_docs_path = _backend_dir / "firewall.json"
+# 【新测试台】防火墙资料换成《神圣的辩理》（ES 索引 panai_new_dispute，73 个篇题；词条索引表记 187 个词条）。
+# 名字仍叫防火墙；命中后放进上下文的是「篇题 + 简短说明」，不再放全文。
+DISPUTE_INDEX = "panai_new_dispute"
 
-_firewall_data: dict[str, dict[str, str]] = {}
+_es_client: Any = None
+_firewall_data: dict[str, dict[str, Any]] = {}
 _firewall_titles: list[str] = []
 
 FIREWALL_MATCH_PROMPT = """以下是 {count} 个标题：
@@ -35,85 +34,67 @@ FIREWALL_MATCH_PROMPT = """以下是 {count} 个标题：
 未命中时只返回 JSON：{{"matched": null}}
 不得有任何其他文字、解释或 markdown。"""
 
-# 与 kg_rag_service 中 Step5 等一致，防火墙匹配走 Sonnet 标准价
 FIREWALL_MATCH_MODEL = "claude-opus-5-5"
 
 
-def load_firewall() -> None:
-    """启动时加载 firewall_rules.json 与 firewall.json。"""
-    global _firewall_data, _firewall_titles
+def load_firewall(es: Any = None) -> None:
+    """启动时从 ES 读《神圣的辩理》：每个篇题一条（说明取该篇题的 description，词条名一并记下）。
+    读取失败或索引为空时不报错，防火墙本次不生效；之后 match_firewall 会再试着读一次。"""
+    global _es_client, _firewall_data, _firewall_titles
+    if es is not None:
+        _es_client = es
     _firewall_data = {}
     _firewall_titles = []
-
-    rules_map: dict[str, str] = {}
-    if _rules_path.is_file():
-        with open(_rules_path, encoding="utf-8") as f:
-            raw = json.load(f)
-        if isinstance(raw, list):
-            for item in raw:
-                if isinstance(item, dict):
-                    t = str(item.get("title", "")).strip()
-                    n = str(item.get("note", "")).strip()
-                    if t:
-                        rules_map[t] = n
-    else:
-        logger.warning("[firewall] missing %s", _rules_path)
-
-    if not _docs_path.is_file():
-        logger.warning("[firewall] missing %s", _docs_path)
-        logger.info("[firewall] loaded 0 documents (no firewall.json)")
+    if _es_client is None:
+        logger.warning("[firewall] no ES client, loaded 0 titles")
+        return
+    try:
+        resp = _es_client.search(
+            index=DISPUTE_INDEX,
+            body={
+                "size": 1000,
+                "query": {"match_all": {}},
+                "_source": ["name", "title", "description"],
+            },
+        )
+    except Exception as e:
+        logger.warning("[firewall] read %s failed, loaded 0 titles: %s", DISPUTE_INDEX, e)
         return
 
-    with open(_docs_path, encoding="utf-8") as f:
-        docs = json.load(f)
-    if not isinstance(docs, list):
-        logger.warning("[firewall] firewall.json is not a list")
-        return
-
-    prefix_re = re.compile(r"^第.+?题\s*")
-
-    for doc in docs:
-        if not isinstance(doc, dict):
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = hit.get("_source") or {}
+        title = str(src.get("title") or "").strip()
+        if not title:
             continue
-        msg = doc.get("msg")
-        if not isinstance(msg, list):
-            continue
-        long_title = ""
-        for m in msg:
-            if not isinstance(m, dict):
-                continue
-            if m.get("type") == "title":
-                long_title = str(m.get("text", "")).strip()
-                break
-        if not long_title:
-            continue
-        short_title = prefix_re.sub("", long_title).strip()
-        lines: list[str] = []
-        for m in msg:
-            if not isinstance(m, dict):
-                continue
-            if m.get("type") == "bookname":
-                continue
-            tx = m.get("text")
-            if tx is not None and str(tx).strip():
-                lines.append(str(tx).strip())
-        full_text = "\n".join(lines)
-        note = rules_map.get(short_title, "")
-        _firewall_data[short_title] = {
-            "title": short_title,
-            "note": note,
-            "full_text": full_text,
-        }
-        _firewall_titles.append(short_title)
+        name = str(src.get("name") or "").strip()
+        desc = str(src.get("description") or "").strip()
+        doc = _firewall_data.get(title)
+        if doc is None:
+            doc = {"title": title, "note": desc, "names": []}
+            _firewall_data[title] = doc
+            _firewall_titles.append(title)
+        elif not doc["note"] and desc:
+            doc["note"] = desc
+        if name and name not in doc["names"]:
+            doc["names"].append(name)
 
-    logger.info("[firewall] loaded %s firewall documents", len(_firewall_titles))
+    _firewall_titles.sort()
+    for doc in _firewall_data.values():
+        # 命中后插到检索结果最前面的内容：篇题 + 简短说明
+        doc["full_text"] = f"篇题：{doc['title']}\n说明：{doc['note']}" if doc["note"] else f"篇题：{doc['title']}"
+    logger.info(
+        "[firewall] loaded %s titles / %s names from %s",
+        len(_firewall_titles),
+        sum(len(d["names"]) for d in _firewall_data.values()),
+        DISPUTE_INDEX,
+    )
 
 
 def get_firewall_titles() -> list[str]:
     return list(_firewall_titles)
 
 
-def get_firewall_doc(title: str) -> dict[str, str] | None:
+def get_firewall_doc(title: str) -> dict[str, Any] | None:
     if not title or not title.strip():
         return None
     return _firewall_data.get(title.strip())
@@ -150,8 +131,10 @@ async def match_firewall(
     判断用户主题是否命中防火墙。
     llm_caller: async function(prompt, model, temperature, max_tokens) -> (text, usage)
     llm_calls: 若提供，则将本次调用的 token/费用并入 KG-RAG 计价列表（step 名为 firewall）。
-    返回: {"title": str, "note": str, "full_text": str} 或 None
+    返回: {"title": str, "note": str, "full_text": str, "names": list[str]} 或 None
     """
+    if not _firewall_titles and _es_client is not None:
+        load_firewall()
     if not _firewall_titles:
         logger.info("[KG-RAG DEBUG] firewall: skip match (no titles loaded)")
         return None
@@ -205,6 +188,7 @@ async def match_firewall(
                 "title": doc["title"],
                 "note": doc["note"],
                 "full_text": doc["full_text"],
+                "names": list(doc.get("names") or []),
             }
         logger.warning("[firewall] LLM returned unmatched title: %r", ms)
         logger.info("[KG-RAG DEBUG] firewall: no match (title not in local map)")
