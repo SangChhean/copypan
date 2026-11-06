@@ -39,6 +39,20 @@
         </div>
       </div>
 
+      <div
+        class="feature-card cn-home-card amana-card"
+        :class="{ 'amana-loading': amanaLoading }"
+        @click="openAmana"
+      >
+        <div class="card-top">
+          <div class="card-icon">
+            <BookOutlined />
+          </div>
+        </div>
+        <div class="card-title cn-card-title">Amana书库</div>
+        <div class="card-desc cn-card-desc">日常追求与真理追求一站阅读：晨兴、圣经、生命读经按当天进度自动打开，支持朗读、分类搜索与AI问答</div>
+      </div>
+
       <div class="home-section">
         <div class="card-grid">
           <div
@@ -71,12 +85,15 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { BookOutlined } from '@ant-design/icons-vue'
 import { features } from '@/data/homeFeatures.js'
 import http from '@/utils/http.js'
+import { AuthExpiredError, authFetch, getToken, handleUnauthorized, isTokenExpired } from '@/utils/auth.js'
 
 const router = useRouter()
 const usage = ref(null)
 const ministryCarouselRef = ref(null)
+const amanaLoading = ref(false)
 
 const HOME_ORDER = ['materials', 'toolbox', 'ministry-search', 'qa', 'roundtable-reading', 'outline']
 const homeFeatures = computed(() =>
@@ -101,6 +118,54 @@ function onTouchEnd(item, e) {
     return
   }
   go(item)
+}
+
+function openAmana() {
+  // 防重复点击必须在 window.open 之前：loading 期间再点一次直接丢弃，不会打开第二个空白页
+  if (amanaLoading.value) return
+
+  // 路由守卫用的同一套本地过期检查（含 30 秒余量）：本地已知过期就不开空白页，直接去登录
+  if (isTokenExpired(getToken())) {
+    handleUnauthorized()
+    return
+  }
+
+  const w = window.open('', '_blank')
+  if (!w) {
+    message.warning('请允许本站打开新窗口')
+    return
+  }
+  amanaLoading.value = true
+  // 用 authFetch({ throwOnUnauthorized: true })而不是全局 http 实例：
+  // 全局 401 处理会让 promise 永久挂起（见 auth.js abortOnUnauthorized 注释），
+  // 这里必须在服务端 401（token 本地未过期但被拒）时关闭已打开的空白页，
+  // 所以借用 QAPage 处理流式请求时同样的"只对这次请求抛错"方式，不改全局拦截器。
+  authFetch('/api/cn/amana/enter_url', { throwOnUnauthorized: true })
+    .then(async (res) => {
+      if (!res.ok) {
+        w.close()
+        message.error('Amana书库暂时无法打开，请稍后再试')
+        return
+      }
+      const data = await res.json()
+      const url = data?.url
+      if (!url) {
+        w.close()
+        message.error('Amana书库暂时无法打开，请稍后再试')
+        return
+      }
+      w.opener = null
+      w.location.href = url
+    })
+    .catch((err) => {
+      w.close()
+      // 登录失效：authFetch 内部已调用 handleUnauthorized 完成提示与跳转，这里静默退出即可
+      if (err instanceof AuthExpiredError) return
+      message.error('Amana书库暂时无法打开，请稍后再试')
+    })
+    .finally(() => {
+      amanaLoading.value = false
+    })
 }
 
 function quotaText(key) {
@@ -222,6 +287,17 @@ onMounted(() => {
 .card-desc {
   color: var(--cn-text-secondary);
   line-height: 1.55;
+}
+
+// Amana 卡片复用 .feature-card / .card-top / .card-icon / .card-title / .card-desc
+// 的全部尺寸、内边距、字号（含 640px 断点下的响应式规则），这里只补两条它独有的差异：
+// 不参与 2 列网格、单独占一行；以及点击请求进行中的禁用态。
+.amana-card {
+  margin-bottom: 20px;
+}
+.amana-card.amana-loading {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .home-section {
