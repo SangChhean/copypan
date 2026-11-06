@@ -432,6 +432,7 @@ app.include_router(roundtable_router)
 app.include_router(kg_rag_router)
 app.include_router(panai4_router)
 app.include_router(panai4_sc_router)
+# PanAI 新测试台（/api/t35test）已拆到独立后端 main_t35test.py（端口 8001），不在主站进程里跑
 app.include_router(feast_router)
 
 # 注册API路由器
