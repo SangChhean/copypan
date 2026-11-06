@@ -1,0 +1,51 @@
+﻿ M back_mic/backend/panai4/outline/config.py
+ M docs/3a_export.json
+ M "docs/panai4_graph/2372\344\270\252\350\257\215\346\235\241\357\274\210\345\267\262\347\241\256\345\256\232\344\270\200\344\270\200\345\257\271\345\272\224\344\270\272concept\350\212\202\347\202\271\357\274\211.txt"
+ M "docs/panai4_graph/2373\344\270\252\350\257\215\346\235\241\357\274\210\345\267\262\347\241\256\345\256\232\344\270\200\344\270\200\345\257\271\345\272\224\344\270\272concept\350\212\202\347\202\271\357\274\211.txt"
+ M "docs/panai4_graph/\344\270\273\346\201\242\345\244\215\347\234\237\347\220\206\350\257\215\345\205\270_\346\240\207\347\255\276\346\230\240\345\260\204_\345\267\262\346\240\241\345\257\271 (1).json"
+ M "docs/panai4_graph/\344\270\273\346\201\242\345\244\215\347\234\237\347\220\206\350\257\215\345\205\270_\350\257\215\346\235\241\344\270\273\345\271\262\346\236\235\345\255\220\346\230\240\345\260\204 (1).json"
+ M "docs/panai4_graph/\350\257\215\346\235\241\344\270\211\346\241\243\345\210\206\347\261\273.json"
+ M docs/panai4_sc/null_terms.csv
+?? back_mic/backend/panai4/outline/apply_life_fix.py
+?? back_mic/backend/panai4/outline/config.py.bak_20261106
+?? back_mic/backend/panai4/outline/probe_12490_assets.py
+?? back_mic/backend/panai4/outline/probe_life_fixlist.py
+?? back_mic/backend/panai4/outline/probe_life_fixlist_v2.py
+?? back_mic/backend/panai4/outline/probe_life_fixlist_v3.py
+?? back_mic/backend/panai4/outline/probe_life_in_12490.py
+?? back_mic/backend/panai4/outline/probe_life_in_12490_r2.py
+?? back_mic/backend/panai4/outline/probe_life_outline.py
+?? back_mic/backend/panai4/outline/probe_life_outline2.py
+?? docs/panai4_es/archive/12490_assets_check.md
+?? docs/panai4_es/archive/_git_status_raw.txt
+?? docs/panai4_es/archive/life_12490_fix_final.csv
+?? docs/panai4_es/archive/life_12490_fix_final_v4.csv
+?? docs/panai4_es/archive/life_12490_fix_list.csv
+?? docs/panai4_es/archive/life_12490_fix_list.md
+?? docs/panai4_es/archive/life_12490_fix_list_v2.csv
+?? docs/panai4_es/archive/life_12490_fix_list_v2.md
+?? docs/panai4_es/archive/life_12490_fix_list_v3.csv
+?? docs/panai4_es/archive/life_12490_fix_list_v3.md
+?? docs/panai4_es/archive/life_12490_fix_review.csv
+?? docs/panai4_es/archive/life_fix_stage01.md
+?? docs/panai4_es/archive/life_fix_stage2_assemble.md
+?? docs/panai4_es/archive/life_fix_stage2_embed.md
+?? docs/panai4_es/archive/life_fix_stage2_prepare.md
+?? docs/panai4_es/archive/life_fix_stage2_reconcile.md
+?? docs/panai4_es/archive/life_fix_stage2_rollback_local.md
+?? docs/panai4_es/archive/life_fix_stage2_summary.md
+?? docs/panai4_es/archive/life_fix_stage2_verify_vec.md
+?? docs/panai4_es/archive/life_fix_stage2_write_local.md
+?? docs/panai4_es/archive/life_fix_stage3_precheck.md
+?? docs/panai4_es/archive/life_fix_stage3_remote_backup.md
+?? docs/panai4_es/archive/life_fix_stage3_remote_check.md
+?? docs/panai4_es/archive/life_fix_stage3_remote_reconcile.md
+?? docs/panai4_es/archive/life_fix_stage3_remote_write.md
+?? docs/panai4_es/archive/life_fix_stage3_summary.md
+?? docs/panai4_es/archive/life_in_12490_check.md
+?? docs/panai4_es/archive/life_in_12490_check2.md
+?? docs/panai4_es/archive/life_outline_pairing.csv
+?? docs/panai4_es/archive/life_outline_probe.md
+?? docs/panai4_es/archive/life_outline_probe2.md
+?? docs/panai4_es/archive/life_text_life_diff.csv
+?? docs/panai4_es/archive/task2_book_overrides.md

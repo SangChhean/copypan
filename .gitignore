@@ -53,3 +53,6 @@ back_anshifenliang/data/zhi_shi_html/
 back_mic/backend/data/enhanced_translate/pool.jsonl
 back_mic/backend/data/enhanced_translate/pool.jsonl.bak
 back_mic/backend/data/enhanced_translate/source_pool.jsonl
+
+# 图谱标注内容（体积大，不进 git；服务器上另行部署）
+back_mic/backend/panai4/data/graph_annotations/*.json

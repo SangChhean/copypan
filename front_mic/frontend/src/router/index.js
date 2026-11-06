@@ -114,12 +114,6 @@ const routes = [
     component: () => import("../components/toolbox/KgRagTest.vue"),
     meta: { requiresAuth: true },
   },
-  {
-    path: "/panai4-test",
-    name: "PanAI4Test",
-    component: () => import("../components/toolbox/PanAI4Test.vue"),
-    meta: { requiresAuth: true },
-  },
 ];
 
 const router = createRouter({
