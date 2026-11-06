@@ -3,7 +3,8 @@
 
 用法（在 back_mic/backend 下，等同于原来的 uvicorn main:app --host 0.0.0.0 --port 8000）：
     python run_backend.py
-可选：--app main:app --host 0.0.0.0 --port 8000 --app-dir <目录>
+可选：--app main:app --host 0.0.0.0 --port 8000 --app-dir <目录> --log-prefix backend
+新测试台（独立进程）：python run_backend.py --app main_t35test:app --port 8001 --log-prefix t35test
 
 除了 uvicorn 与业务代码打出来的日志，还会额外记录“后端为什么停了”：
   - 启动时间、进程号、父进程号
@@ -125,10 +126,12 @@ def main() -> None:
     ap.add_argument("--host", default=os.environ.get("BACKEND_HOST", "0.0.0.0"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("BACKEND_PORT", "8000")))
     ap.add_argument("--app-dir", default=str(HERE))
+    # 日志文件名前缀：主站默认 backend-日期.log；新测试台用 --log-prefix t35test 写到 t35test-日期.log
+    ap.add_argument("--log-prefix", default=os.environ.get("BACKEND_LOG_PREFIX", "backend"))
     args = ap.parse_args()
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = LOG_DIR / f"backend-{datetime.date.today():%Y%m%d}.log"
+    log_path = LOG_DIR / f"{args.log_prefix}-{datetime.date.today():%Y%m%d}.log"
     _fh = open(log_path, "a", encoding="utf-8", buffering=1)
     sys.stdout = Tee(sys.__stdout__, _fh)
     sys.stderr = Tee(sys.__stderr__, _fh)

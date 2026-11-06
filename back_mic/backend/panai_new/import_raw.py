@@ -27,7 +27,7 @@ DATA_DIR = Path(os.environ.get("PANAI_NEW_DATA_DIR") or "A:/PanAI新测试台资
 
 F_CATEGORY = "2373词条内在意义分类-完整资料.json"
 F_MUTUAL = "彼此互相词条分类-完整资料.json"
-F_SHENGJI = "生机进展的关联（词条及其标注）完整资料.json"
+F_SHENGJI = "生机关联的进展（词条及其标注）完整资料.json"
 F_HISTORY = "从历史进展的差异看高峰时期的内涵（词条及其标注）完整资料.json"
 F_DISPUTE = "神圣的辩理（词条及其标注）完整资料.json"
 F_PANO = "上河图目录catalog_clean.json"
