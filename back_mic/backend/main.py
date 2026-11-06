@@ -424,6 +424,7 @@ app.include_router(progress_outline_entry_router)
 app.include_router(roundtable_router)
 # KG-RAG 测试工作台（仅管理员）
 app.include_router(kg_rag_router)
+# PanAI 新测试台（/api/t35test）已拆到独立后端 main_t35test.py（端口 8001），不在主站进程里跑
 app.include_router(feast_router)
 
 # 注册API路由器
