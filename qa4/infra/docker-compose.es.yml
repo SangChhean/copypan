@@ -1,5 +1,7 @@
 # qa4 Elasticsearch 独立 compose（与 Neo4j 文件拆分，避免互相牵连变量）
 # 密码仅通过环境变量注入，本文件不得出现密码字面量。
+# mem_limit / memswap_limit：默认 ${QA4_ES_MEM_LIMIT:-0} → compose 渲染为不限制（本机行为不变）；
+# 服务器建议 export QA4_ES_MEM_LIMIT=4g（与 memswap 相同，禁止该容器用 swap）。
 name: qa4
 
 services:
@@ -23,4 +25,6 @@ services:
     volumes:
       - ${QA4_ES_DATA_DIR:?请设置 QA4_ES_DATA_DIR}:/usr/share/elasticsearch/data
       - ./ik_config:/usr/share/elasticsearch/config/analysis-ik:ro
+    mem_limit: ${QA4_ES_MEM_LIMIT:-0}
+    memswap_limit: ${QA4_ES_MEM_LIMIT:-0}
     restart: unless-stopped

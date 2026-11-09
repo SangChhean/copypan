@@ -47,7 +47,11 @@ from es_verify import (  # noqa: E402
     ReadOnlyError,
 )
 
-DEFAULT_LOG_DIR = Path(r"G:\PanAI4.0专用\logs")
+# 优先 QA4_LOG_DIR（与 es_verify / es_import 一致）
+DEFAULT_LOG_DIR = Path(
+    os.environ.get("QA4_LOG_DIR")
+    or (r"G:\PanAI4.0专用\logs" if os.name == "nt" else "/opt/qa4_logs")
+)
 CONTENT_FAIL_SUFFIXES = [
     "outline_12490",
     "outline_feasts",

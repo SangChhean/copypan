@@ -290,3 +290,32 @@ IK 文件哈希与分词结果全部一致。
 3. 对 `docker-compose.es.yml` 不设 `QA4_ES_DATA_DIR` → 仍失败，提示「请设置 QA4_ES_DATA_DIR」（仅影响 ES 文件）。
 
 未执行 compose up/down；未改动任何容器运行状态。
+
+---
+
+## 7. Git 换行与 SHA256SUMS（C-5 修正）
+
+### 7.1 问题
+
+`SHA256SUMS_ik_config.txt` / `SHA256SUMS_ik_plugin.txt` 记录的是 **`docker cp` 出来的原始字节** 的 SHA256。  
+本机若按「文本」检出/提交，Git 会把工作区 CRLF 在入库时转成 LF，**仓库 blob ≠ 原始字节**。服务器 clone 得到 LF 后，用清单核对会出现约 10/13 个 `ik_config` 文件哈希不符（如 `stopword.dic` / `suffix.dic` / `surname.dic` 等）。
+
+说明：§5.3 当时「文件哈希全部一致」是 **运行中容器 ↔ 本机工作区** 的对照（正确）；它**不能**保证「仓库索引 blob ↔ SHA256SUMS」一致。此前若写过「仓库与 docker cp 逐字节一致」而未区分工作区/索引，应以此节为准更正理解。
+
+### 7.2 修复（已做，未 commit）
+
+`qa4/.gitattributes`：
+
+```text
+*.sh text eol=lf
+infra/ik_config/** -text
+infra/ik_plugin/** -text
+```
+
+（`.gitattributes` 位于 `qa4/`，路径相对该目录；**不要**再对整个 `infra/**` 强制 `eol=lf`。）
+
+对 `ik_config` / `ik_plugin` 执行 `git add --renormalize`，使**索引**存入与工作区一致的原始字节；再用 `git show :<path>` 取索引 blob 与两份 SHA256SUMS 逐项比对：**全部匹配**（config 13/13，plugin 9/9）。
+
+### 7.3 DATA_MANIFEST
+
+`DATA_MANIFEST.md` 只记载外置大数据包的 SHA256，**未**声称 IK 词典/插件与仓库逐字节一致 → **无需更正**。

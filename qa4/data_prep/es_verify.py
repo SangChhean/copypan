@@ -28,7 +28,11 @@ from typing import Any, Callable, Iterable, Iterator
 
 HERE = Path(__file__).resolve().parent
 QUERIES_PATH = HERE.parent / "eval" / "es_verify_queries.json"
-DEFAULT_LOG_DIR = Path(r"G:\PanAI4.0专用\logs")
+# 优先 QA4_LOG_DIR；未设置时 Windows 本机默认，Linux 回退 /opt/qa4_logs
+DEFAULT_LOG_DIR = Path(
+    os.environ.get("QA4_LOG_DIR")
+    or (r"G:\PanAI4.0专用\logs" if os.name == "nt" else "/opt/qa4_logs")
+)
 SOURCE_PREFIX = "panai4_"
 TARGET_PREFIX = "qa4_"
 QA4_CLUSTER = "qa4"

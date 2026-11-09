@@ -1,5 +1,7 @@
 # qa4 Neo4j 独立 compose（与 ES 文件拆分，避免互相牵连变量）
 # 密码仅通过环境变量注入，本文件不得出现密码字面量。
+# mem_limit / memswap_limit：默认 ${QA4_NEO4J_MEM_LIMIT:-0} → compose 渲染为不限制；
+# 服务器建议 export QA4_NEO4J_MEM_LIMIT=2g（与 memswap 相同，禁止该容器用 swap）。
 name: qa4
 
 services:
@@ -17,6 +19,8 @@ services:
       NEO4J_server_memory_heap_initial__size: ${QA4_NEO4J_HEAP:-1G}
       NEO4J_server_memory_heap_max__size: ${QA4_NEO4J_HEAP:-1G}
       NEO4J_server_memory_pagecache_size: ${QA4_NEO4J_PAGECACHE:-512M}
+    mem_limit: ${QA4_NEO4J_MEM_LIMIT:-0}
+    memswap_limit: ${QA4_NEO4J_MEM_LIMIT:-0}
     restart: unless-stopped
 
 volumes:

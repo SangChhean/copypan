@@ -1,0 +1,6 @@
+# Shell scripts: LF on all platforms
+*.sh text eol=lf
+
+# IK artifacts: store exact docker-cp bytes; no EOL conversion
+infra/ik_config/** -text
+infra/ik_plugin/** -text

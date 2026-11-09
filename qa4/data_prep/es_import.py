@@ -8,6 +8,11 @@
 
 密码只从环境变量 QA4_ES_PASSWORD 读取，无命令行密码参数；日志不得出现密码。
 默认目标 http://127.0.0.1:9202 ，用户 elastic，HTTP 无 SSL。
+
+第三方依赖（非标准库）：
+  - elasticsearch（官方 Python 客户端，含 elasticsearch.helpers.bulk）
+    服务器已验证可用版本示例：elasticsearch==8.19.3
+  其余均为 Python 标准库。
 """
 
 from __future__ import annotations
@@ -32,7 +37,11 @@ except ImportError:
     raise
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_LOG_DIR = Path(r"G:\PanAI4.0专用\logs")
+# 日志目录：优先环境变量 QA4_LOG_DIR；未设置时 Windows 本机默认，Linux 回退 /opt/qa4_logs
+DEFAULT_LOG_DIR = Path(
+    os.environ.get("QA4_LOG_DIR")
+    or (r"G:\PanAI4.0专用\logs" if os.name == "nt" else "/opt/qa4_logs")
+)
 SOURCE_PREFIX = "panai4_"
 DEFAULT_INDEX_PREFIX = "qa4_"
 DEFAULT_ES_URL = "http://127.0.0.1:9202"
@@ -643,7 +652,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--log-file",
         default=None,
-        help="日志路径（默认 G:\\PanAI4.0专用\\logs\\qa4_import_<时间戳>.log）",
+        help="日志路径（默认 $QA4_LOG_DIR/qa4_import_<时间戳>.log）",
     )
     p.add_argument(
         "--self-test",
