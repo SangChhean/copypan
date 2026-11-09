@@ -1,0 +1,27 @@
+# qa4 Neo4j 独立 compose（与 ES 文件拆分，避免互相牵连变量）
+# 密码仅通过环境变量注入，本文件不得出现密码字面量。
+name: qa4
+
+services:
+  qa4-neo4j:
+    image: neo4j:5.26.28
+    container_name: qa4-neo4j
+    ports:
+      - "127.0.0.1:7476:7474"
+      - "127.0.0.1:7689:7687"
+    volumes:
+      - qa4_neo4j_data:/data
+      - qa4_neo4j_logs:/logs
+    environment:
+      NEO4J_AUTH: neo4j/${QA4_NEO4J_PASSWORD}
+      NEO4J_server_memory_heap_initial__size: ${QA4_NEO4J_HEAP:-1G}
+      NEO4J_server_memory_heap_max__size: ${QA4_NEO4J_HEAP:-1G}
+      NEO4J_server_memory_pagecache_size: ${QA4_NEO4J_PAGECACHE:-512M}
+    restart: unless-stopped
+
+volumes:
+  qa4_neo4j_data:
+    name: qa4_neo4j_data
+    external: true
+  qa4_neo4j_logs:
+    name: qa4_neo4j_logs

@@ -1,0 +1,27 @@
+# 密钥与本地环境
+.env
+.env.*
+!.env.example
+
+# 图谱 / 导出大数据
+*.dump
+*.jsonl
+# 评估题集允许提交 jsonl
+!eval/**/*.jsonl
+
+# 本地数据目录（仅 qa4/data，不误伤 backend/data 等）
+/data/
+
+# 图谱大 JSON（外置）
+graph_annotations/*.json
+**/graph_annotations/*.json
+
+# Python / Node 构建产物
+__pycache__/
+*.py[cod]
+node_modules/
+dist/
+
+# 日志
+*.log
+logs/

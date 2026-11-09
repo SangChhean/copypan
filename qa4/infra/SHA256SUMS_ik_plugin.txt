@@ -1,0 +1,14 @@
+# IK plugin analysis-ik
+# source: docker cp from elasticsearch8:/usr/share/elasticsearch/plugins/analysis-ik
+# date: 2026-11-09
+# algorithm: SHA256
+
+e599d5318e97aa48f42136a2927e6dfa4e8881dff0e6c8e3109ddbbff51d7b7d  commons-codec-1.11.jar
+daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636  commons-logging-1.2.jar
+a8bb79edbcbc5bc778b212daf41541331febdd9eb4358b276f4a8f79a5427ab0  elasticsearch-analysis-ik-8.19.0.jar
+07ff0cbd446303aa432789af47048845ce10cd1d3f0cf4126a647ce4ebfd7a76  entitlement-policy.yaml
+6fe9026a566c6a5001608cf3fc32196641f6c1e5e1986d1037ccdbd5f31ef743  httpclient-4.5.13.jar
+e06e89d40943245fcfa39ec537cdbfce3762aecde8f9c597780d2b00c2b43424  httpcore-4.4.13.jar
+2d4050f58394ee513c8546463ac3ede25f2a66518a590a0fbaa3b8a5dc777e80  ik-core-1.0.jar
+f4dda573456f1d5fb106501b9f3cdb3168074717450640d4deed9616a83c618a  plugin-descriptor.properties
+11a8ad5adc9f9aac2431c2ccdd9b0eb314f3a97ed90a214b04bd55733d3d6bdb  plugin-security.policy

@@ -1,0 +1,26 @@
+# qa4 Elasticsearch 独立 compose（与 Neo4j 文件拆分，避免互相牵连变量）
+# 密码仅通过环境变量注入，本文件不得出现密码字面量。
+name: qa4
+
+services:
+  qa4-es:
+    build:
+      context: .
+      dockerfile: Dockerfile.es
+    image: qa4-es:8.19.0-ik
+    container_name: qa4-es
+    ports:
+      - "127.0.0.1:9202:9200"
+    environment:
+      node.name: qa4-es
+      cluster.name: qa4
+      network.host: "0.0.0.0"
+      discovery.type: single-node
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"
+      ELASTIC_PASSWORD: ${QA4_ES_PASSWORD}
+      ES_JAVA_OPTS: -Xms${QA4_ES_HEAP:-2g} -Xmx${QA4_ES_HEAP:-2g}
+    volumes:
+      - ${QA4_ES_DATA_DIR:?请设置 QA4_ES_DATA_DIR}:/usr/share/elasticsearch/data
+      - ./ik_config:/usr/share/elasticsearch/config/analysis-ik:ro
+    restart: unless-stopped

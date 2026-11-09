@@ -1,0 +1,102 @@
+{
+  "_comment": "校验用固定查询（BM25 对照），不是评测集 / 不是业务搜索体验题。仅用于 qa4_* 与 panai4_* 的只读一致性验证。",
+  "_usage": "es_verify.py 按 group 对对应索引做 match 查询取 top-10。",
+  "groups": {
+    "outline": {
+      "applies_to_suffixes": ["outline_12490", "outline_feasts"],
+      "field_hint": "text",
+      "queries": [
+        "神的经纶",
+        "基督的身体",
+        "生命的流",
+        "那灵的运行",
+        "召会的建造",
+        "主的恢复",
+        "真理的亮光",
+        "祷告的职事",
+        "成全圣徒",
+        "新耶路撒冷"
+      ]
+    },
+    "text_*": {
+      "applies_to_suffixes": ["text_life", "text_cwwl", "text_cwwn", "text_others"],
+      "field_hint": "text",
+      "queries": [
+        "三一神",
+        "神圣的生命",
+        "变化与成熟",
+        "经历基督",
+        "住在主里面",
+        "十字架的道路",
+        "内里的人",
+        "属灵的争战",
+        "供应生命",
+        "与主成为一灵"
+      ]
+    },
+    "map_note": {
+      "applies_to_suffixes": ["map_note"],
+      "field_hint": "text",
+      "queries": [
+        "约翰福音",
+        "罗马书",
+        "创世记",
+        "启示录",
+        "马太福音",
+        "以弗所书",
+        "诗篇",
+        "希伯来书",
+        "哥林多前书",
+        "使徒行传"
+      ]
+    },
+    "bible": {
+      "applies_to_suffixes": ["bible"],
+      "field_hint": "text",
+      "queries": [
+        "起初神创造",
+        "道成了肉身",
+        "神爱世人",
+        "你们要去使万民作我的门徒",
+        "圣灵降临",
+        "因信称义",
+        "基督是头",
+        "新约的执事",
+        "生命树",
+        "羔羊的婚筵"
+      ]
+    },
+    "hymns": {
+      "applies_to_suffixes": ["hymns"],
+      "field_hint": "text",
+      "queries": [
+        "奇异恩典",
+        "主啊我心爱你",
+        "何等的大爱",
+        "跟随主",
+        "赞美我神",
+        "十字架",
+        "荣耀的呼召",
+        "安静主前",
+        "复兴我们",
+        "主你是我异象"
+      ]
+    },
+    "pano_catalog": {
+      "applies_to_suffixes": ["pano_catalog"],
+      "field_hint": "text",
+      "queries": [
+        "生命课程",
+        "真理课程",
+        "成全训练",
+        "召会生活",
+        "福音",
+        "青年",
+        "全时间",
+        "圣经真理",
+        "属灵追求",
+        "服事"
+      ]
+    }
+  }
+}
