@@ -11,7 +11,7 @@ const stats = ref(null);
 const legacyStats = ref(null);
 const errMsg = ref("");
 
-const NATURE_ORDER = ["一般性", "高真理浓度", "高生命浓度", "重实行应用"];
+const NATURE_ORDER = ["综合性", "真理启示", "生命经历", "实行应用"];
 
 const fetchStats = () => {
   showSpin.value = true;
@@ -52,21 +52,12 @@ const natureRows = computed(() => {
 const modeRows = computed(() => {
   const mc = stats.value?.mode_counts || {};
   const total = stats.value?.total_queries || 0;
-  return ["新版方式一", "新版方式二", "旧版"].map((name) => ({
+  return ["PanAI 2.0", "PanAI 3.0", "PanAI 3.5", "全备供应纲目制作", "其他"].map((name) => ({
     key: name,
     name,
     count: mc[name] || 0,
     pct: total ? ((mc[name] || 0) / total * 100).toFixed(1) : "0.0",
   }));
-});
-
-const depthRows = computed(() => {
-  const dc = stats.value?.depth_counts || {};
-  const total = stats.value?.total_queries || 0;
-  return [
-    { key: "general", name: "普通", count: dc.general || 0, pct: total ? ((dc.general || 0) / total * 100).toFixed(1) : "0.0" },
-    { key: "deep", name: "深度", count: dc.deep || 0, pct: total ? ((dc.deep || 0) / total * 100).toFixed(1) : "0.0" },
-  ];
 });
 
 const dailyColumns = [
@@ -81,8 +72,7 @@ const retrievalLogColumns = [
   { title: "总检索", dataIndex: "total", width: 90, align: "right" },
   { title: "使用", dataIndex: "used", width: 80, align: "right" },
   { title: "浪费率", dataIndex: "waste_rate", width: 90, align: "right", customRender: ({ text }) => text != null ? text + "%" : "-" },
-  { title: "模式", dataIndex: "mode", width: 100, ellipsis: true },
-  { title: "深度", dataIndex: "depth", width: 80, align: "center", customRender: ({ text }) => text === "deep" ? "深度" : (text === "general" ? "普通" : (text || "-")) },
+  { title: "模式", dataIndex: "mode", width: 140, ellipsis: true },
   { title: "负担说明", dataIndex: "burden", width: 90, align: "center", customRender: ({ text }) => text === "是" ? "是" : (text === "否" ? "否" : (text || "-")) },
 ];
 
@@ -242,22 +232,10 @@ onMounted(() => {
         </a-card>
       </div>
       <div class="section">
-        <h3>使用模式分布</h3>
+        <h3>使用分布</h3>
         <a-card size="small" class="dist-card">
           <div class="dist-list">
             <div v-for="row in modeRows" :key="row.key" class="dist-row">
-              <span class="dist-name">{{ row.name }}</span>
-              <span class="dist-count">{{ row.count }} 次</span>
-              <span class="dist-pct">{{ row.pct }}%</span>
-            </div>
-          </div>
-        </a-card>
-      </div>
-      <div class="section">
-        <h3>深度模式分布</h3>
-        <a-card size="small" class="dist-card">
-          <div class="dist-list">
-            <div v-for="row in depthRows" :key="row.key" class="dist-row">
               <span class="dist-name">{{ row.name }}</span>
               <span class="dist-count">{{ row.count }} 次</span>
               <span class="dist-pct">{{ row.pct }}%</span>
