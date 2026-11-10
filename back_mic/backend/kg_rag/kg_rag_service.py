@@ -2158,7 +2158,6 @@ class KgRagService:
             output_tokens = int(totals.get("output_tokens") or 0)
 
             outline_nature = req_params.get("outline_nature") or "一般性"
-            depth = "深度" if (req_params.get("depth") == "deep") else "普通"
             burden_description = req_params.get("burden_description") or ""
             burden_flag = "是" if str(burden_description).strip() else "否"
 
@@ -2170,8 +2169,8 @@ class KgRagService:
                 output_tokens=output_tokens,
                 cost=cost,
                 special_needs=outline_nature,
-                mode="KG-RAG",
-                depth=depth,
+                mode=mode,
+                source=req_params.get("source"),
                 api_type="claude",
             )
 
@@ -2190,8 +2189,7 @@ class KgRagService:
                     total=total_retrieved,
                     used=used_count,
                     waste_rate=waste_rate,
-                    mode="KG-RAG",
-                    depth=depth,
+                    mode=monitoring.usage_label(mode, req_params.get("source")),
                     burden=burden_flag,
                 )
         except Exception as e:

@@ -125,7 +125,6 @@ async def get_stats_detail(days: int = Query(7, ge=1, le=30, description="统计
             "avg_response_time_ms": stats.get("avg_response_time_ms", 0.0),
             "nature_counts": stats.get("nature_counts", {}),
             "mode_counts": stats.get("mode_counts", {}),
-            "depth_counts": stats.get("depth_counts", {}),
             "daily": stats.get("daily", []),
         }
 

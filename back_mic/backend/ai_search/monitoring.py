@@ -91,14 +91,27 @@ class AIMonitoring:
             + (output_tokens / 1_000_000) * PRICE_OUTPUT_PER_MILLION
         )
 
-    NATURE_KEYS = ("一般性", "高真理浓度", "高生命浓度", "重实行应用")
+    NATURE_KEYS = ("综合性", "真理启示", "生命经历", "实行应用")
+    # 前端/后端传入的纲目性质值 → 统计分类
+    NATURE_ALIASES = {"一般性": "综合性", "应用实行": "实行应用"}
+    USAGE_KEYS = ("PanAI 2.0", "PanAI 3.0", "PanAI 3.5", "全备供应纲目制作", "其他")
 
     def _normalize_nature(self, special_needs: Optional[str]) -> str:
-        """纲目性质归一化为四种之一，用于统计。"""
+        """纲目性质归一化为四种之一，用于统计；空值或不认识的值记为综合性。"""
         if not special_needs or not isinstance(special_needs, str):
-            return "一般性"
+            return "综合性"
         s = special_needs.strip()
-        return s if s in self.NATURE_KEYS else "一般性"
+        s = self.NATURE_ALIASES.get(s, s)
+        return s if s in self.NATURE_KEYS else "综合性"
+
+    def usage_label(self, mode: Any, source: Optional[str] = None) -> str:
+        """使用分布分类：全备供应纲目制作 / PanAI 2.0 / 3.0 / 3.5 / 其他。"""
+        if source == "cn":
+            return "全备供应纲目制作"
+        m = str(mode).strip() if mode is not None else ""
+        if m in ("2.0", "3.0", "3.5"):
+            return f"PanAI {m}"
+        return "其他"
 
     def record_query(
         self,
@@ -109,8 +122,8 @@ class AIMonitoring:
         output_tokens: int = 0,
         cost: Optional[float] = None,
         special_needs: Optional[str] = None,
-        mode: str = "旧版",
-        depth: str = "general",
+        mode: str = "",
+        source: Optional[str] = None,
         api_type: str = "claude",
     ) -> None:
         """
@@ -121,7 +134,9 @@ class AIMonitoring:
         :param input_tokens: 输入 token 数
         :param output_tokens: 输出 token 数
         :param cost: 费用（美元）；为 None 时根据 input/output tokens 计算
-        :param special_needs: 纲目性质（一般性/高真理浓度/高生命浓度/重实行应用），用于统计占比
+        :param special_needs: 纲目性质（综合性/真理启示/生命经历/实行应用；一般性→综合性、应用实行→实行应用），用于统计占比
+        :param mode: 生成模式（"2.0"/"3.0"/"3.5"），与 source 一起换算为使用分布分类
+        :param source: 请求来源；"cn" 表示全备供应纲目制作
         """
         if not self.redis:
             return
@@ -134,8 +149,7 @@ class AIMonitoring:
             pipe = self.redis.pipeline()
             pipe.hincrby(KEY_STATS, "total_queries", 1)
             pipe.hincrby(KEY_STATS, f"nature_{nature}", 1)
-            pipe.hincrby(KEY_STATS, f"mode_{mode}", 1)
-            pipe.hincrby(KEY_STATS, f"depth_{depth}", 1)
+            pipe.hincrby(KEY_STATS, f"mode_{self.usage_label(mode, source)}", 1)
             pipe.hincrby(KEY_STATS, f"api_{api_type}", 1)
             if cache_hit:
                 pipe.hincrby(KEY_STATS, "cache_hits", 1)
@@ -205,8 +219,8 @@ class AIMonitoring:
         total: int,
         used: int,
         waste_rate: float,
-        mode: str = "旧版",
-        depth: str = "general",
+        mode: str = "",
+        depth: Optional[str] = None,
         burden: str = "否",
         avg_rerank_score: Optional[float] = None,
     ) -> None:
@@ -219,6 +233,7 @@ class AIMonitoring:
         :param avg_rerank_score: 可选，本次检索涉及的精排平均分；为 None 时不写入该字段
             （None 与 0 语义不同：None 表示本次没有可用的精排分数，不代表分数为 0）
         """
+        # depth 已不再统计，保留参数仅为兼容旧调用方（如增强式翻译）
         if not self.redis:
             return
         try:
@@ -229,7 +244,6 @@ class AIMonitoring:
                 "used": used,
                 "waste_rate": waste_rate,
                 "mode": mode,
-                "depth": depth,
                 "burden": burden,
             }
             if avg_rerank_score is not None:
@@ -321,8 +335,7 @@ class AIMonitoring:
                 "avg_response_time_ms": 0.0,
                 "total_cost": 0.0,
                 "nature_counts": {k: 0 for k in AIMonitoring.NATURE_KEYS},
-                "mode_counts": {"新版方式一": 0, "新版方式二": 0, "旧版": 0},
-                "depth_counts": {"general": 0, "deep": 0},
+                "mode_counts": {k: 0 for k in AIMonitoring.USAGE_KEYS},
                 "daily": [],
                 "retrieval_log": [],
                 "message": "Redis 未启用，无统计数据",
@@ -379,15 +392,8 @@ class AIMonitoring:
             retrieval_log = self.get_recent_retrieval_log(limit=50)
             # 纲目性质统计：四种性质的查询次数
             nature_counts = {k: int(raw.get(f"nature_{k}", 0) or 0) for k in self.NATURE_KEYS}
-            mode_counts = {
-                "新版方式一": int(raw.get("mode_新版方式一", 0) or 0),
-                "新版方式二": int(raw.get("mode_新版方式二", 0) or 0),
-                "旧版": int(raw.get("mode_旧版", 0) or 0),
-            }
-            depth_counts = {
-                "general": int(raw.get("depth_general", 0) or 0),
-                "deep": int(raw.get("depth_deep", 0) or 0),
-            }
+            # 使用分布：PanAI 2.0 / 3.0 / 3.5 / 全备供应纲目制作 / 其他
+            mode_counts = {k: int(raw.get(f"mode_{k}", 0) or 0) for k in self.USAGE_KEYS}
             tool_stats = {
                 "total_cost": float(raw.get("tool_total_cost") or 0),
                 "total_input_tokens": int(raw.get("tool_total_input_tokens") or 0),
@@ -411,7 +417,6 @@ class AIMonitoring:
                 "total_cost": round(total_cost, 4),
                 "nature_counts": nature_counts,
                 "mode_counts": mode_counts,
-                "depth_counts": depth_counts,
                 "tool_stats": tool_stats,
                 "daily": daily,
                 "retrieval_log": retrieval_log,
@@ -424,9 +429,8 @@ class AIMonitoring:
                 "avg_response_time_ms": 0.0,
                 "total_cost": 0.0,
                 "daily": [],
-                "nature_counts": {"一般性": 0, "高真理浓度": 0, "高生命浓度": 0, "重实行应用": 0},
-                "mode_counts": {"新版方式一": 0, "新版方式二": 0, "旧版": 0},
-                "depth_counts": {"general": 0, "deep": 0},
+                "nature_counts": {k: 0 for k in AIMonitoring.NATURE_KEYS},
+                "mode_counts": {k: 0 for k in AIMonitoring.USAGE_KEYS},
                 "tool_stats": {
                     "total_cost": 0.0,
                     "total_input_tokens": 0,

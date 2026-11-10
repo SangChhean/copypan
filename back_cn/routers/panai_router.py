@@ -122,6 +122,7 @@ async def cn_kg_rag_query(request: Request, body: KgRagQueryBody):
     params.setdefault("burden_description", "")
     params.setdefault("outline_nature", "一般性")
     params["depth"] = "general"
+    params["source"] = "cn"
 
     service = request.app.state.kg_rag_service
     try:
