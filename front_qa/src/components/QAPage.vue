@@ -709,6 +709,26 @@ function stripAnswerPlain(text) {
     .trim()
 }
 
+/** 复制前去掉答案正文里的书目块（按最早出现的标记切开） */
+function cutBibliography(text) {
+  if (!text) return ''
+  let cutAt = -1
+  const consider = (i) => {
+    if (i !== -1 && (cutAt === -1 || i < cutAt)) cutAt = i
+  }
+  consider(text.indexOf('【引用书目】'))
+  consider(text.indexOf('【引用書目】'))
+  consider(text.indexOf('[References]'))
+  const m = /(?:^|\n)References\b/.exec(text)
+  if (m) {
+    let i = m.index
+    if (text[i] === '\n') i += 1
+    consider(i)
+  }
+  if (cutAt === -1) return text
+  return text.slice(0, cutAt).replace(/[ \t\r\n]+$/, '')
+}
+
 const router = useRouter()
 const question = ref('')
 const textareaKey = ref(0)
@@ -1738,7 +1758,7 @@ async function copyAnswer(msg) {
   try {
     const rawAnswer = displayAnswer(msg)
     const srcs = displaySources(msg)
-    const cleanAnswer = stripAnswerPlain(rawAnswer || '')
+    const cleanAnswer = stripAnswerPlain(cutBibliography(rawAnswer || ''))
     const sourcesHeader = msg.currentLang === 'en' ? 'References' : '【引用书目】'
     const sourcesText = srcs && srcs.length
       ? `\n\n${sourcesHeader}\n` + srcs.join('\n')
