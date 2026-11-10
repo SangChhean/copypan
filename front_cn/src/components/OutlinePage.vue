@@ -118,10 +118,10 @@ const outlineUsage = ref(null)
 const outlineMeta = ref({ cached: false, cacheKey: null })
 
 const natureOptions = [
-  { value: '一般性', label: '一般性' },
+  { value: '一般性', label: '综合性' },
   { value: '真理启示', label: '真理启示' },
   { value: '生命经历', label: '生命经历' },
-  { value: '应用实行', label: '应用实行' },
+  { value: '应用实行', label: '实行应用' },
 ]
 
 const nonEmptyBurdenPoints = computed(() =>
