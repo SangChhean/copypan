@@ -148,6 +148,8 @@ const EVAL_PREFILL_KEY = "eval_prefill";
 const router = useRouter();
 const route = useRoute();
 const AI_NATURE_OPTIONS = ["一般性", "真理启示", "生命经历", "应用实行"];
+const AI_NATURE_LABELS = { 一般性: "综合性", 应用实行: "实行应用" };
+const natureLabel = (v) => AI_NATURE_LABELS[v] || v;
 const aiForm = reactive({
   outlineTopic: "",
   burdenDescription: "",
@@ -731,9 +733,9 @@ const T3_FRAMEWORK_META = {
 };
 
 const SUGGESTED_CONCEPT_LABELS = {
-  revelation: "启示层",
-  experience: "经历层",
-  practice: "实行层",
+  revelation: "真理启示",
+  experience: "生命经历",
+  practice: "实行应用",
 };
 
 function getConceptListForEval(layer) {
@@ -2042,7 +2044,7 @@ const onAISearch = async () => {
                   :disabled="loadingAI"
                   @click="aiForm.specialNeeds = aiForm.specialNeeds === opt ? '' : opt"
                 >
-                  {{ opt }}
+                  {{ natureLabel(opt) }}
                 </button>
               </div>
             </div>
@@ -2063,7 +2065,7 @@ const onAISearch = async () => {
                   rows="3"
                   v-model="referenceExcerpt"
                   :disabled="loadingAI || burdenGenLoading || burdenPhaseReady"
-                  placeholder="有提供负担的重点直接生成负担说明，没有提供负担的重点可生成三个负担说明以供选择"
+                  placeholder="有负担的重点直接生成负担说明，无负担的重点可生成三个负担说明以供选择"
                 ></textarea>
               </label>
               <div class="ai-burden-btn-wrap">
@@ -2075,11 +2077,11 @@ const onAISearch = async () => {
                 >生成负担说明</a-button>
               </div>
               <div v-if="burdenGenScenario === 'A' && burdenGenLineA" class="ai-burden-gen-out">
-                <div class="ai-burden-gen-label">有提供负担的重点</div>
+                <div class="ai-burden-gen-label">有负担的重点</div>
                 <div class="ai-burden-gen-text">{{ burdenGenLineA }}</div>
               </div>
               <div v-if="burdenGenScenario === 'B' && burdenGenCandidates.length" class="ai-burden-gen-out">
-                <div class="ai-burden-gen-label">没有提供负担的重点</div>
+                <div class="ai-burden-gen-label">没有负担的重点</div>
                 <a-radio-group
                   v-model:value="burdenSelectedIdx"
                   class="ai-burden-radio-group"
@@ -2090,7 +2092,7 @@ const onAISearch = async () => {
                     :key="i"
                     class="ai-burden-radio-line"
                   >
-                    <a-radio :value="i">候选{{ ['一', '二', '三'][i] }}</a-radio>
+                    <a-radio :value="i">{{ ['真理启示', '生命经历', '实行应用'][i] }}</a-radio>
                     <span class="ai-burden-cand-body">{{ c }}</span>
                   </div>
                 </a-radio-group>
@@ -2161,7 +2163,7 @@ const onAISearch = async () => {
                   class="ai-concept-checks"
                 />
               </div>
-              <div v-else class="ai-concept-empty">（启示层无候选）</div>
+              <div v-else class="ai-concept-empty">（真理启示无候选）</div>
               <div v-if="(conceptCandidates.experience || []).length" class="ai-concept-section ai-concept-checkwrap">
                 <span class="ai-concept-label">生命经历</span>
                 <a-checkbox-group
@@ -2171,7 +2173,7 @@ const onAISearch = async () => {
                 />
               </div>
               <div v-if="(conceptCandidates.practice || []).length" class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">应用实行</span>
+                <span class="ai-concept-label">实行应用</span>
                 <a-checkbox-group
                   v-model:value="selectedPractice"
                   :options="conceptCandidates.practice"
@@ -2220,7 +2222,7 @@ const onAISearch = async () => {
                 />
               </div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">应用实行</span>
+                <span class="ai-concept-label">实行应用</span>
                 <a-select
                   v-model:value="manualPractice"
                   v-model:searchValue="manualConceptSearchValue.practice"
@@ -2368,9 +2370,6 @@ const onAISearch = async () => {
             </template>
           </a-spin>
           <div class="loading-text">{{ aiLoadingText }}</div>
-          <div class="loading-tips">
-            <span>正在使用一般模式</span>
-          </div>
         </div>
       </div>
     </div>
@@ -2392,9 +2391,9 @@ const onAISearch = async () => {
         <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
         <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
       </div>
-      <div v-if="aiMeta.revelation.length" class="kg-info-row">📌 启示层：{{ aiMeta.revelation.join("、") }}</div>
-      <div v-if="aiMeta.experience.length" class="kg-info-row">📌 经历层：{{ aiMeta.experience.join("、") }}</div>
-      <div v-if="aiMeta.practice.length" class="kg-info-row">📌 实行层：{{ aiMeta.practice.join("、") }}</div>
+      <div v-if="aiMeta.revelation.length" class="kg-info-row">📌 真理启示：{{ aiMeta.revelation.join("、") }}</div>
+      <div v-if="aiMeta.experience.length" class="kg-info-row">📌 生命经历：{{ aiMeta.experience.join("、") }}</div>
+      <div v-if="aiMeta.practice.length" class="kg-info-row">📌 实行应用：{{ aiMeta.practice.join("、") }}</div>
       <div v-if="aiMeta.skeleton && aiMeta.skeleton.length" class="kg-info-row">
         <div>🦴 骨架：</div>
         <div v-for="(item, i) in aiMeta.skeleton" :key="i" class="kg-skeleton-item">
@@ -2823,11 +2822,11 @@ const onAISearch = async () => {
           </div>
         </template>
         <div class="history-item-body">
-          <div>纲目性质：{{ item.outline_nature || "—" }}</div>
+          <div>纲目性质：{{ item.outline_nature ? natureLabel(item.outline_nature) : "—" }}</div>
           <div>负担说明：{{ item.burden_description || "—" }}</div>
           <div>真理启示：{{ (item.revelation || []).join("、") || "—" }}</div>
           <div>生命经历：{{ (item.experience || []).join("、") || "—" }}</div>
-          <div>应用实行：{{ (item.practice || []).join("、") || "—" }}</div>
+          <div>实行应用：{{ (item.practice || []).join("、") || "—" }}</div>
           <div class="history-actions">
             <a-button size="small" @click.stop="loadHistoryRecord(item)">载入</a-button>
             <a-button size="small" @click="setHistoryStatus(item.id, '待生成')">待生成</a-button>
