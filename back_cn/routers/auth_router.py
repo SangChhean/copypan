@@ -2,7 +2,7 @@
 """CN 站用户注册/登录与管理员用户管理接口。"""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, field_validator
 
 from back_cn.auth import (
@@ -13,6 +13,7 @@ from back_cn.auth import (
     delete_user,
     get_current_user,
     get_daily_usage,
+    get_usage_stats,
     get_user,
     get_user_feature_limits,
     list_invite_codes,
@@ -168,6 +169,21 @@ async def delete_user_api(username: str, _: bool = Depends(verify_admin_access))
 @router.get("/invites")
 async def invites(_: bool = Depends(verify_admin_access)):
     return {"items": list_invite_codes()}
+
+
+@router.get("/usage_stats")
+async def usage_stats(
+    start_date: str | None = Query(None, description="开始日期 YYYY-MM-DD（北京时间，含当天），不传为不限"),
+    end_date: str | None = Query(None, description="结束日期 YYYY-MM-DD（北京时间，含当天），不传为不限"),
+    feature: str | None = Query(None, description="功能 key，不传为全部"),
+    username: str | None = Query(None, max_length=100, description="用户名模糊匹配"),
+    _: bool = Depends(verify_admin_access),
+):
+    """管理后台「使用统计」：按 usage_logs 汇总各限次功能的使用次数（退还自动抵消）。"""
+    try:
+        return get_usage_stats(start_date, end_date, feature, username)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/users/{username}/limit")

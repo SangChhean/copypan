@@ -113,6 +113,123 @@
               </div>
             </a-tab-pane>
 
+            <a-tab-pane key="usage" tab="使用统计">
+              <div class="admin-usage-since">
+                <template v-if="usageStats?.since">统计自 {{ usageStats.since }} 起</template>
+                <template v-else-if="usageStats">暂无使用记录（从本功能上线起开始统计）</template>
+              </div>
+
+              <div class="admin-usage-filters">
+                <a-radio-group v-model:value="usageRange" button-style="solid" @change="loadUsageStats">
+                  <a-radio-button value="month">本月</a-radio-button>
+                  <a-radio-button value="3months">近3个月</a-radio-button>
+                  <a-radio-button value="all">全部</a-radio-button>
+                  <a-radio-button value="custom">自定义</a-radio-button>
+                </a-radio-group>
+                <template v-if="usageRange === 'custom'">
+                  <a-date-picker v-model:value="usageCustomStart" value-format="YYYY-MM-DD" placeholder="开始日期" />
+                  <span class="admin-usage-sep">至</span>
+                  <a-date-picker v-model:value="usageCustomEnd" value-format="YYYY-MM-DD" placeholder="结束日期" />
+                </template>
+                <a-select
+                  v-model:value="usageFeature"
+                  :options="usageFeatureOptions"
+                  style="width: 190px"
+                  @change="loadUsageStats"
+                />
+                <a-input-search
+                  v-model:value="usageUsername"
+                  placeholder="搜索用户名"
+                  allow-clear
+                  style="width: 180px"
+                  @search="loadUsageStats"
+                />
+                <a-button :loading="usageLoading" @click="loadUsageStats">查询</a-button>
+                <a-button type="primary" :disabled="!usageStats?.by_user?.length" @click="exportUsageCsv">
+                  导出 CSV
+                </a-button>
+              </div>
+              <div v-if="usageError" class="admin-error">{{ usageError }}</div>
+
+              <div class="admin-usage-block">
+                <div class="admin-section-title">
+                  功能总览
+                  <span class="admin-section-sub">（{{ usageRangeText }}，合计 {{ usageStats?.grand_total ?? 0 }} 次）</span>
+                </div>
+                <div class="admin-stat-grid">
+                  <div v-for="f in usageVisibleFeatures" :key="f.key" class="admin-stat-card">
+                    <div class="admin-stat-value">{{ usageStats?.totals?.[f.key] ?? 0 }}</div>
+                    <div class="admin-stat-label">{{ f.label }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-usage-block">
+                <div class="admin-section-title">
+                  用户统计
+                  <span class="admin-section-sub">（点击表头排序）</span>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table cn-admin-table admin-usage-table">
+                    <thead>
+                      <tr>
+                        <th
+                          v-for="col in usageUserColumns"
+                          :key="col.key"
+                          class="admin-usage-sortable"
+                          :class="{ 'admin-usage-num': col.key !== 'username' }"
+                          @click="toggleUsageSort(col.key)"
+                        >
+                          {{ col.title }}<span class="admin-usage-sort-mark">{{ usageSortMark(col.key) }}</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="usageLoading">
+                        <td :colspan="usageUserColumns.length" class="admin-table-empty">加载中...</td>
+                      </tr>
+                      <tr v-else-if="!sortedUsageUsers.length">
+                        <td :colspan="usageUserColumns.length" class="admin-table-empty">暂无数据</td>
+                      </tr>
+                      <tr v-else v-for="row in sortedUsageUsers" :key="row.username">
+                        <td>{{ row.username }}</td>
+                        <td v-for="f in usageVisibleFeatures" :key="f.key" class="admin-usage-num">{{ row.counts[f.key] }}</td>
+                        <td class="admin-usage-num admin-usage-total">{{ row.total }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-usage-block">
+                <div class="admin-section-title">月度趋势</div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table cn-admin-table admin-usage-table">
+                    <thead>
+                      <tr>
+                        <th>月份</th>
+                        <th v-for="f in usageVisibleFeatures" :key="f.key" class="admin-usage-num">{{ f.label }}</th>
+                        <th class="admin-usage-num">合计</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="usageLoading">
+                        <td :colspan="usageVisibleFeatures.length + 2" class="admin-table-empty">加载中...</td>
+                      </tr>
+                      <tr v-else-if="!usageStats?.by_month?.length">
+                        <td :colspan="usageVisibleFeatures.length + 2" class="admin-table-empty">暂无数据</td>
+                      </tr>
+                      <tr v-else v-for="row in usageStats.by_month" :key="row.month">
+                        <td>{{ row.month }}</td>
+                        <td v-for="f in usageVisibleFeatures" :key="f.key" class="admin-usage-num">{{ row.counts[f.key] }}</td>
+                        <td class="admin-usage-num admin-usage-total">{{ row.total }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </a-tab-pane>
+
             <a-tab-pane key="cache" tab="缓存">
               <div class="admin-cache-row">
                 <span class="admin-cache-desc">清除所有 <code>cn:cache:*</code> 缓存</span>
@@ -1166,9 +1283,144 @@ async function deleteAllFiles() {
   }
 }
 
+// ===== 使用统计 =====
+const usageStats = ref(null)
+const usageLoading = ref(false)
+const usageError = ref('')
+const usageRange = ref('month')
+const usageCustomStart = ref(null)
+const usageCustomEnd = ref(null)
+const usageFeature = ref('')
+const usageUsername = ref('')
+const usageSortKey = ref('total')
+const usageSortOrder = ref('desc')
+
+// 功能中文名一律取后端 FEATURE_LABELS（接口返回的 features）
+const usageFeatures = computed(() => usageStats.value?.features || [])
+const usageFeatureOptions = computed(() => [
+  { value: '', label: '全部功能' },
+  ...usageFeatures.value.map((f) => ({ value: f.key, label: f.label })),
+])
+const usageVisibleFeatures = computed(() => {
+  const key = usageStats.value?.filters?.feature
+  return key ? usageFeatures.value.filter((f) => f.key === key) : usageFeatures.value
+})
+const usageUserColumns = computed(() => [
+  { key: 'username', title: '用户名' },
+  ...usageVisibleFeatures.value.map((f) => ({ key: f.key, title: f.label })),
+  { key: 'total', title: '合计' },
+])
+
+// 与后端 daily_date 一致，按北京时间（UTC+8）算「今天」
+function beijingToday() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+}
+
+function usageDateRange() {
+  const today = beijingToday()
+  if (usageRange.value === 'month') return { start: `${today.slice(0, 7)}-01`, end: today }
+  if (usageRange.value === '3months') {
+    let y = Number(today.slice(0, 4))
+    let m = Number(today.slice(5, 7)) - 2
+    if (m < 1) { m += 12; y -= 1 }
+    return { start: `${y}-${String(m).padStart(2, '0')}-01`, end: today }
+  }
+  if (usageRange.value === 'custom') return { start: usageCustomStart.value || null, end: usageCustomEnd.value || null }
+  return { start: null, end: null }
+}
+
+const usageRangeText = computed(() => {
+  const f = usageStats.value?.filters
+  if (!f || (!f.start_date && !f.end_date)) return '全部时间'
+  return `${f.start_date || '最早'} 至 ${f.end_date || '今天'}`
+})
+
+async function loadUsageStats() {
+  const { start, end } = usageDateRange()
+  const params = {}
+  if (start) params.start_date = start
+  if (end) params.end_date = end
+  if (usageFeature.value) params.feature = usageFeature.value
+  if (usageUsername.value.trim()) params.username = usageUsername.value.trim()
+  usageLoading.value = true
+  usageError.value = ''
+  try {
+    const res = await http.get('/api/cn/auth/usage_stats', { params })
+    usageStats.value = res.data
+  } catch (e) {
+    const status = e.response?.status
+    if (status === 403) usageError.value = '需要管理员权限'
+    else usageError.value = e.response?.data?.detail || `使用统计加载失败（${status || '网络错误'}）`
+  } finally {
+    usageLoading.value = false
+  }
+}
+
+function toggleUsageSort(key) {
+  if (usageSortKey.value === key) {
+    usageSortOrder.value = usageSortOrder.value === 'desc' ? 'asc' : 'desc'
+  } else {
+    usageSortKey.value = key
+    usageSortOrder.value = key === 'username' ? 'asc' : 'desc'
+  }
+}
+
+function usageSortMark(key) {
+  if (usageSortKey.value !== key) return ''
+  return usageSortOrder.value === 'desc' ? ' ↓' : ' ↑'
+}
+
+const sortedUsageUsers = computed(() => {
+  const rows = [...(usageStats.value?.by_user || [])]
+  const key = usageSortKey.value
+  const dir = usageSortOrder.value === 'desc' ? -1 : 1
+  const val = (r) => (key === 'username' ? r.username : key === 'total' ? r.total : (r.counts[key] ?? 0))
+  rows.sort((a, b) => {
+    const va = val(a)
+    const vb = val(b)
+    if (va === vb) return a.username.localeCompare(b.username)
+    if (key === 'username') return dir * String(va).localeCompare(String(vb))
+    return dir * (va - vb)
+  })
+  return rows
+})
+
+function csvCell(value) {
+  let s = String(value ?? '')
+  // 防止 Excel 把 = + - @ 开头的内容当公式执行
+  if (/^[=+\-@]/.test(s)) s = `'${s}`
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+function exportUsageCsv() {
+  const cols = usageUserColumns.value
+  const lines = [cols.map((c) => csvCell(c.title)).join(',')]
+  for (const row of sortedUsageUsers.value) {
+    lines.push(cols.map((c) => csvCell(
+      c.key === 'username' ? row.username : c.key === 'total' ? row.total : row.counts[c.key],
+    )).join(','))
+  }
+  // UTF-8 BOM：Excel 直接双击打开时中文不乱码
+  const blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `使用统计_用户_${usageRangeText.value.replace(/\s+/g, '')}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+
+watch([usageCustomStart, usageCustomEnd], () => {
+  if (usageRange.value === 'custom') loadUsageStats()
+})
+
 watch(activeTab, (tab) => {
   if (tab === 'materials') {
     loadMatCategories().then(loadMatFiles)
+  }
+  if (tab === 'usage') {
+    loadUsageStats()
   }
 })
 
@@ -1382,6 +1634,47 @@ onMounted(() => {
 }
 .admin-user-limit-btn {
   margin-right: 8px;
+}
+
+/* 使用统计 */
+.admin-usage-since {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+.admin-usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.admin-usage-sep {
+  color: var(--color-text-secondary);
+}
+.admin-usage-block {
+  margin-top: 24px;
+}
+.admin-usage-table {
+  th, td {
+    white-space: nowrap;
+  }
+  .admin-usage-num {
+    text-align: right;
+  }
+  .admin-usage-total {
+    font-weight: 600;
+  }
+}
+.admin-usage-sortable {
+  cursor: pointer;
+  user-select: none;
+  &:hover {
+    color: #1B6CA8;
+  }
+}
+.admin-usage-sort-mark {
+  color: #1B6CA8;
 }
 .admin-mat-card {
   margin-bottom: 16px;
