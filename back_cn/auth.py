@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from zoneinfo import ZoneInfo
 
 import bcrypt
@@ -32,10 +33,10 @@ FEATURES = (
 
 FEATURE_LABELS: dict[str, str] = {
     "outline": "纲目制作",
-    "translate": "翻译",
+    "translate": "纲目翻译",
     "qa": "职事问答",
     "burden": "负担说明",
-    "asr": "语音识别",
+    "asr": "语音转写",
     "roundtable": "小排材料制作",
     "ministry_pursuit": "职事书报追求材料制作",
     "es_search": "职事信息搜寻",
@@ -77,8 +78,8 @@ def _update_feature_counts(
     )
 
 
-def _today() -> str:
-    """按上海时区取当天日期（YYYY-MM-DD）。
+def _beijing_now() -> datetime:
+    """当前上海时间。
 
     Windows 上若未安装 tzdata，ZoneInfo('Asia/Shanghai') 会失败；
     此时回退到固定 UTC+8，避免配额相关接口全部 500。
@@ -87,7 +88,17 @@ def _today() -> str:
         tz = ZoneInfo("Asia/Shanghai")
     except Exception:
         tz = timezone(timedelta(hours=8))
-    return datetime.now(tz).strftime("%Y-%m-%d")
+    return datetime.now(tz)
+
+
+def _today() -> str:
+    """按上海时区取当天日期（YYYY-MM-DD）。"""
+    return _beijing_now().strftime("%Y-%m-%d")
+
+
+def _now_str() -> str:
+    """按上海时区取当前时间（YYYY-MM-DD HH:MM:SS）；usage_logs.created_at 用，与 daily_date 同一时区。"""
+    return _beijing_now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _hash_password(password: str) -> str:
@@ -101,10 +112,40 @@ def _verify_password(password: str, hashed: str) -> bool:
         return False
 
 
+# 等待其它连接释放锁的最长秒数（sqlite3 默认 5 秒）；扣费事务通常只持锁几毫秒
+DB_TIMEOUT_SECONDS = 10
+
+
 def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=DB_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+@contextmanager
+def _immediate_transaction() -> Iterator[sqlite3.Connection]:
+    """BEGIN IMMEDIATE 写事务：一开始就拿写锁，事务内「读额度 → 判断 → 扣费/退还 → 写记录」是原子的，
+    并发请求不会同时通过额度检查。正常结束 COMMIT；任何异常先 ROLLBACK 再原样抛出。"""
+    conn = _connect()
+    conn.isolation_level = None  # 关闭 sqlite3 模块的隐式事务，由这里显式控制
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            yield conn
+        except BaseException:
+            conn.execute("ROLLBACK")
+            raise
+        conn.execute("COMMIT")
+    finally:
+        conn.close()
+
+
+def _insert_usage_log(conn: sqlite3.Connection, username: str, feature: str, amount: int) -> None:
+    """写一条使用记录（扣费为正、退还为负）；只记用户名/功能/数量/时间，不记任何用户输入。"""
+    conn.execute(
+        "INSERT INTO usage_logs (username, feature, amount, created_at) VALUES (?, ?, ?, ?)",
+        (username, feature, amount, _now_str()),
+    )
 
 
 def init_db() -> None:
@@ -189,6 +230,24 @@ def init_db() -> None:
             )
             """
         )
+        # 使用记录：每次扣费 +amount、每次实际退还 -amount；created_at 为北京时间
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS usage_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                feature TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_usage_logs_feature_time ON usage_logs (feature, created_at)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_usage_logs_user_time ON usage_logs (username, created_at)"
+        )
         conn.commit()
     print("[CN] materials tables ready")
 
@@ -207,9 +266,8 @@ def check_and_increment_daily_usage(
     if not isinstance(amount, int) or amount < 1:
         raise ValueError(f"amount 必须为正整数，收到: {amount!r}")
 
-    today = _today()
-    conn = _connect()
-    try:
+    with _immediate_transaction() as conn:
+        today = _today()
         row = conn.execute(
             f"""
             SELECT daily_date, {_feature_count_limit_select_sql()}
@@ -232,19 +290,19 @@ def check_and_increment_daily_usage(
         limit = limits[feature]
 
         if limit != -1 and used + amount > limit:
+            # 额度不足：不扣费、不写记录
             return {"allowed": False, "used": used, "limit": limit, "feature": feature}
 
         counts[feature] = used + amount
         _update_feature_counts(conn, username, date_str, counts)
-        conn.commit()
+        # 与扣费在同一事务：写记录失败则扣费一并回滚
+        _insert_usage_log(conn, username, feature, amount)
         return {
             "allowed": True,
             "used": counts[feature],
             "limit": limit,
             "feature": feature,
         }
-    finally:
-        conn.close()
 
 
 def refund_daily_usage(username: str, feature: str, amount: int = 1) -> None:
@@ -259,9 +317,8 @@ def refund_daily_usage(username: str, feature: str, amount: int = 1) -> None:
     if amount == 0:
         return
 
-    today = _today()
-    conn = _connect()
-    try:
+    with _immediate_transaction() as conn:
+        today = _today()
         row = conn.execute(
             f"""
             SELECT daily_date, {_feature_count_limit_select_sql()}
@@ -279,11 +336,13 @@ def refund_daily_usage(username: str, feature: str, amount: int = 1) -> None:
             counts = {f: 0 for f in FEATURES}
             date_str = today
 
-        counts[feature] = max(0, counts[feature] - amount)
+        before = counts[feature]
+        counts[feature] = max(0, before - amount)
         _update_feature_counts(conn, username, date_str, counts)
-        conn.commit()
-    finally:
-        conn.close()
+        # 按实际退还量记录（计数不低于 0 的截断、跨天清零都会让实际值小于 amount）；为 0 不写
+        refunded = before - counts[feature]
+        if refunded > 0:
+            _insert_usage_log(conn, username, feature, -refunded)
 
 
 def get_daily_usage(username: str) -> dict:
@@ -605,3 +664,113 @@ def list_invite_codes() -> list[dict]:
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def _parse_date_param(value: str | None, name: str) -> str | None:
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except ValueError as e:
+        raise ValueError(f"{name} 格式应为 YYYY-MM-DD") from e
+
+
+def get_usage_stats(
+    start_date: str | None = None,
+    end_date: str | None = None,
+    feature: str | None = None,
+    username: str | None = None,
+) -> dict[str, Any]:
+    """汇总 usage_logs（按 amount 求和，退还的负数自动抵消）。
+
+    start_date / end_date：YYYY-MM-DD（北京时间，含首尾两天），不传为不限；
+    feature：FEATURES 中的 key，不传为全部；username：模糊匹配，不传为全部。
+    参数不合法时抛 ValueError。
+    """
+    start = _parse_date_param(start_date, "start_date")
+    end = _parse_date_param(end_date, "end_date")
+    if start and end and start > end:
+        raise ValueError("开始日期不能晚于结束日期")
+    feature = (feature or "").strip() or None
+    if feature is not None and feature not in FEATURES:
+        raise ValueError(f"未知 feature: {feature!r}")
+    username = (username or "").strip() or None
+
+    where: list[str] = []
+    params: list[Any] = []
+    if start:
+        where.append("created_at >= ?")
+        params.append(f"{start} 00:00:00")
+    if end:
+        where.append("created_at <= ?")
+        params.append(f"{end} 23:59:59")
+    if feature:
+        where.append("feature = ?")
+        params.append(feature)
+    if username:
+        escaped = username.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        where.append("username LIKE ? ESCAPE '\\'")
+        params.append(f"%{escaped}%")
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+
+    conn = _connect()
+    try:
+        since_row = conn.execute("SELECT MIN(created_at) AS t FROM usage_logs").fetchone()
+        user_rows = conn.execute(
+            f"""
+            SELECT username, feature, SUM(amount) AS n
+            FROM usage_logs {where_sql}
+            GROUP BY username, feature
+            """,
+            params,
+        ).fetchall()
+        month_rows = conn.execute(
+            f"""
+            SELECT substr(created_at, 1, 7) AS month, feature, SUM(amount) AS n
+            FROM usage_logs {where_sql}
+            GROUP BY month, feature
+            """,
+            params,
+        ).fetchall()
+    finally:
+        conn.close()
+
+    def _empty_counts() -> dict[str, int]:
+        return {f: 0 for f in FEATURES}
+
+    totals = _empty_counts()
+    by_user: dict[str, dict[str, int]] = {}
+    for r in user_rows:
+        if r["feature"] not in totals:  # 已从 FEATURES 移除的历史 key 不参与统计
+            continue
+        by_user.setdefault(r["username"], _empty_counts())[r["feature"]] += r["n"]
+        totals[r["feature"]] += r["n"]
+
+    by_month: dict[str, dict[str, int]] = {}
+    for r in month_rows:
+        if r["feature"] not in totals:
+            continue
+        by_month.setdefault(r["month"], _empty_counts())[r["feature"]] += r["n"]
+
+    users_list = [
+        {"username": u, "counts": c, "total": sum(c.values())}
+        for u, c in by_user.items()
+        if any(c.values())  # 扣了又全部退还、净次数为 0 的用户不列出
+    ]
+    users_list.sort(key=lambda x: (-x["total"], x["username"]))
+    months_list = [
+        {"month": m, "counts": c, "total": sum(c.values())}
+        for m, c in sorted(by_month.items())
+    ]
+
+    since = since_row["t"] if since_row else None
+    return {
+        "since": since[:10] if since else None,
+        "features": [{"key": f, "label": FEATURE_LABELS.get(f, f)} for f in FEATURES],
+        "filters": {"start_date": start, "end_date": end, "feature": feature, "username": username},
+        "totals": totals,
+        "grand_total": sum(totals.values()),
+        "by_user": users_list,
+        "by_month": months_list,
+    }
