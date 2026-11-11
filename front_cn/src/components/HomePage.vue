@@ -95,7 +95,7 @@ const usage = ref(null)
 const ministryCarouselRef = ref(null)
 const amanaLoading = ref(false)
 
-const HOME_ORDER = ['materials', 'toolbox', 'ministry-search', 'qa', 'roundtable-reading', 'outline']
+const HOME_ORDER = ['materials', 'toolbox', 'ministry-search', 'qa', 'roundtable-reading'] // 纲目制作已下线；恢复时在末尾加回 'outline'
 const homeFeatures = computed(() =>
   HOME_ORDER.map(key => features.find(f => f.key === key)).filter(Boolean)
 )

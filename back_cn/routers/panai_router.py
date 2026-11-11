@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -79,8 +80,15 @@ class TranslateOutlineBody(BaseModel):
     outline_topic: Optional[str] = Field(None, max_length=200)
 
 
+def _outline_enabled() -> bool:
+    """纲目制作开关：back_cn/.env 中 OUTLINE_ENABLED=true 才开放；未设置视为下线。"""
+    return os.getenv("OUTLINE_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+
+
 @router.post("/api/cn/panai/generate_burden")
 async def cn_generate_burden(request: Request, body: GenerateBurdenBody):
+    if not _outline_enabled():
+        raise HTTPException(status_code=503, detail="纲目制作暂停使用")
     username = _require_user(request)
     usage = check_and_increment_daily_usage(username, "burden")
     if not usage["allowed"]:
@@ -104,6 +112,8 @@ async def cn_generate_burden(request: Request, body: GenerateBurdenBody):
 
 @router.post("/api/kg_rag/query")
 async def cn_kg_rag_query(request: Request, body: KgRagQueryBody):
+    if not _outline_enabled():
+        raise HTTPException(status_code=503, detail="纲目制作暂停使用")
     username = _require_user(request)
     usage = check_and_increment_daily_usage(username, "outline")
     if not usage["allowed"]:

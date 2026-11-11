@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { bindRouter, clearAuth, getToken, isAdmin, isTokenExpired, notifyAuthExpired } from '@/utils/auth.js'
+import { toastWarning } from '@/utils/Dialog.js'
 
 const routes = [
   {
@@ -25,6 +26,11 @@ const routes = [
   {
     path: '/outline',
     component: () => import('@/components/OutlinePage.vue'),
+    // 纲目制作已下线：直接访问时跳回首页并提示；恢复时删除此 beforeEnter
+    beforeEnter: () => {
+      toastWarning('纲目制作暂停使用')
+      return '/'
+    },
   },
   {
     path: '/bibco',
