@@ -16,6 +16,10 @@ const plainOptions = [
 ];
 const { selectedIndex, showInfo, hilights, refid, openMsg, role } = storeToRefs(useStore());
 
+// panaiOnly：#/panai 纲目页使用，只显示 AI 纲目面板及其结果，不显示搜索相关区块
+const props = defineProps({ panaiOnly: { type: Boolean, default: false } });
+const SHOW_AI_PANEL_BUTTON = false; // 首页“AI纲目制作面板”按钮，改为 true 可恢复
+
 const selVar1 = ref("a");
 const selVar2 = ref("a");
 const inputVar = ref("");
@@ -139,7 +143,7 @@ const downloadingZh = ref(false);
 const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
-const aiPanelVisible = ref(false);
+const aiPanelVisible = ref(props.panaiOnly);
 /** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；3.5 全索引 */
 const aiMode = ref("3.5"); // 页面只显示 PanAI 3.0（实际为 3.5 流程）；取值 "2.0" | "3.0" | "3.5"
 const AI_MODE_LABEL = { "3.5": "PanAI 3.0" };
@@ -1144,7 +1148,7 @@ function onRegenerateWithConcepts() {
     practice: pickConceptLayer(suggested, "practice", currentRecord.practice),
   };
   sessionStorage.setItem(EVAL_PREFILL_KEY, JSON.stringify(prefillData));
-  router.push({ path: "/", query: { prefill: "true" } });
+  router.push({ path: props.panaiOnly ? "/panai" : "/", query: { prefill: "true" } });
 }
 
 function setHistoryStatus(id, status) {
@@ -1198,10 +1202,12 @@ onMounted(() => {
   updateIsMobileView();
   window.addEventListener("resize", updateIsMobileView);
   loadHistory();
+  // 纲目模式：showInfo 是全局 store 状态，进入时重置为 1（1 号块在纲目模式下隐藏，等于空闲）
+  if (props.panaiOnly) showInfo.value = 1;
   if (sessionStorage.getItem(EVAL_PREFILL_KEY)) {
     applyEvalPrefill();
     if (route.query.prefill) {
-      router.replace({ path: "/", query: {} });
+      router.replace({ path: route.path, query: {} });
     }
   }
 });
@@ -1211,7 +1217,7 @@ watch(
   (val) => {
     if (val === "true" || val === true) {
       applyEvalPrefill();
-      router.replace({ path: "/", query: {} });
+      router.replace({ path: route.path, query: {} });
     }
   }
 );
@@ -1755,6 +1761,7 @@ const showSizeChange = (current, size) => {
 };
 
 watch([selVar1, selVar2, search_cat, selectedIndex], () => {
+  if (props.panaiOnly) return; // 纲目模式不搜索：避免切类别时把全局 showInfo 改成 3
   if (selVar2.value == "m") {
     inputDis.value = true;
   } else {
@@ -1976,7 +1983,7 @@ const onAISearch = async () => {
 <template>
   <div class="search-box">
     <div class="search-bar">
-      <div class="search">
+      <div v-if="!panaiOnly" class="search">
         <a-input-search
           :disabled="inputDis || aiPanelVisible"
           v-model:value="inputVar"
@@ -1998,12 +2005,13 @@ const onAISearch = async () => {
           </template>
         </a-input-search>
       </div>
-      <div class="model">
+      <div v-if="!panaiOnly" class="model">
         <a-radio-group v-model:value="search_cat" button-style="solid">
           <a-radio-button v-for="item in plainOptions" :value="item.val">{{ item.lab }}</a-radio-button>
         </a-radio-group>
-        <a-button 
-          type="primary" 
+        <a-button
+          v-if="SHOW_AI_PANEL_BUTTON"
+          type="primary"
           :loading="loadingAI" 
           @click="toggleAiPanel" 
           style="margin-left: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
@@ -2025,7 +2033,7 @@ const onAISearch = async () => {
               PanAI {{ m }}
             </button>
           </div>
-          <div v-else class="ai-mode-switcher">
+          <div v-else-if="!panaiOnly" class="ai-mode-switcher">
             <span class="ai-mode-btn active ai-mode-btn--fixed">{{ aiModeDisplayText }}</span>
           </div>
           <div class="ai-meta-grid">
@@ -2279,8 +2287,8 @@ const onAISearch = async () => {
       </transition>
     </div>
   </div>
-  <a-divider style="margin: 30px 0 10px 0"></a-divider>
-  <div class="info" v-if="showInfo == 1">
+  <a-divider v-if="!panaiOnly" style="margin: 30px 0 10px 0"></a-divider>
+  <div class="info" v-if="!panaiOnly && showInfo == 1">
     <div class="cat">
       <div>A类：经文、注解、生命读经、倪文集、李文集、其他</div>
       <div>B类：A类、诗歌、节期纲目</div>
@@ -2294,7 +2302,7 @@ const onAISearch = async () => {
     <div style="margin-bottom: 80px"></div>
     <!-- <div class="footer_fix">© 臺灣福音書房 | © Living Stream Ministry</div> -->
   </div>
-  <div class="search-result" v-if="showInfo == 2">
+  <div class="search-result" v-if="!panaiOnly && showInfo == 2">
     <a-alert type="success" show-icon>
       <template #message>
         <span style="font-size: 16px">
@@ -2789,13 +2797,13 @@ const onAISearch = async () => {
     
     <div style="margin-bottom: 360px"></div>
   </div>
-  <div v-if="showInfo == 3">
+  <div v-if="!panaiOnly && showInfo == 3">
     <a-result status="404" title="没有搜到任何内容，请换个关键字试试" />
   </div>
-  <div v-if="showInfo == 4" class="spin">
+  <div v-if="!panaiOnly && showInfo == 4" class="spin">
     <a-spin tip="加载中……" size="large" />
   </div>
-  <ShowRes />
+  <ShowRes v-if="!panaiOnly" />
   <div v-if="aiPanelVisible" class="history-entry-fixed">
     <a-badge :count="pendingConfirmCount" :offset="[-2, 2]">
       <a-button type="primary" @click="historyDrawerOpen = !historyDrawerOpen">暂时保存</a-button>

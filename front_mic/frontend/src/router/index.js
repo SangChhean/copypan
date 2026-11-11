@@ -6,6 +6,10 @@ const routes = [
     component: () => import("../components/Index.vue"),
   },
   {
+    path: "/panai",
+    component: () => import("../components/PanaiPage.vue"),
+  },
+  {
     path: "/login",
     component: () => import("../components/user/Login.vue"),
   },
