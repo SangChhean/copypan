@@ -49,15 +49,22 @@ const natureRows = computed(() => {
   }));
 });
 
+// 仅前端显示映射：后端统计键不变（PanAI 3.5 对外显示为 PanAI 3.0）
+const USAGE_LABEL = { "PanAI 3.5": "PanAI 3.0", "PanAI 3.0": "旧版 3.0", "PanAI 2.0": "旧版 2.0" };
+const usageLabel = (v) => USAGE_LABEL[v] || v;
+
+// 使用分布只显示两行：PanAI 3.0（后端 PanAI 3.5）与 其他（全备供应、旧版 2.0/3.0、其他 合计）
 const modeRows = computed(() => {
   const mc = stats.value?.mode_counts || {};
   const total = stats.value?.total_queries || 0;
-  return ["PanAI 2.0", "PanAI 3.0", "PanAI 3.5", "全备供应纲目制作", "其他"].map((name) => ({
-    key: name,
-    name,
-    count: mc[name] || 0,
-    pct: total ? ((mc[name] || 0) / total * 100).toFixed(1) : "0.0",
-  }));
+  const pct = (count) => (total ? (count / total * 100).toFixed(1) : "0.0");
+  const mainCount = mc["PanAI 3.5"] || 0;
+  const otherCount =
+    (mc["全备供应纲目制作"] || 0) + (mc["PanAI 2.0"] || 0) + (mc["PanAI 3.0"] || 0) + (mc["其他"] || 0);
+  return [
+    { key: "PanAI 3.5", name: "PanAI 3.0", count: mainCount, pct: pct(mainCount) },
+    { key: "其他", name: "其他", count: otherCount, pct: pct(otherCount) },
+  ];
 });
 
 const dailyColumns = [
@@ -72,7 +79,7 @@ const retrievalLogColumns = [
   { title: "总检索", dataIndex: "total", width: 90, align: "right" },
   { title: "使用", dataIndex: "used", width: 80, align: "right" },
   { title: "浪费率", dataIndex: "waste_rate", width: 90, align: "right", customRender: ({ text }) => text != null ? text + "%" : "-" },
-  { title: "模式", dataIndex: "mode", width: 140, ellipsis: true },
+  { title: "模式", dataIndex: "mode", width: 140, ellipsis: true, customRender: ({ text }) => usageLabel(text) || "-" },
   { title: "负担说明", dataIndex: "burden", width: 90, align: "center", customRender: ({ text }) => text === "是" ? "是" : (text === "否" ? "否" : (text || "-")) },
 ];
 
