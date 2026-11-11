@@ -39,25 +39,26 @@
         </div>
       </div>
 
-      <div
-        class="feature-card cn-home-card amana-card"
-        :class="{ 'amana-loading': amanaLoading }"
-        @click="openAmana"
-      >
-        <div class="card-top">
-          <div class="card-icon">
-            <BookOutlined />
-          </div>
-        </div>
-        <div class="card-title cn-card-title">Amana书库</div>
-        <div class="card-desc cn-card-desc">日常追求与真理追求一站阅读：晨兴、圣经、生命读经按当天进度自动打开，支持朗读、分类搜索与AI问答</div>
-      </div>
-
       <div class="home-section">
         <div class="card-grid">
+          <template v-for="item in homeFeatures" :key="item.key">
+          <!-- Amana书库：网格里的普通卡片，点击逻辑见 openAmana；不带真实链接、不显示配额角标 -->
           <div
-            v-for="item in homeFeatures"
-            :key="item.key"
+            v-if="item.key === AMANA_KEY"
+            class="feature-card cn-home-card"
+            :class="{ 'amana-loading': amanaLoading }"
+            @click="openAmana"
+          >
+            <div class="card-top">
+              <div class="card-icon">
+                <BookOutlined />
+              </div>
+            </div>
+            <div class="card-title cn-card-title">Amana书库</div>
+            <div class="card-desc cn-card-desc">日常追求与真理追求一站阅读</div>
+          </div>
+          <div
+            v-else
             class="feature-card cn-home-card"
             :class="{ disabled: item.building }"
             @touchstart="onTouchStart($event)"
@@ -75,6 +76,7 @@
             <div class="card-title cn-card-title">{{ item.title }}</div>
             <div class="card-desc cn-card-desc">{{ item.desc }}</div>
           </div>
+          </template>
         </div>
       </div>
     </main>
@@ -95,9 +97,12 @@ const usage = ref(null)
 const ministryCarouselRef = ref(null)
 const amanaLoading = ref(false)
 
-const HOME_ORDER = ['materials', 'toolbox', 'ministry-search', 'qa', 'roundtable-reading'] // 纲目制作已下线；恢复时在末尾加回 'outline'
+// 3 行 × 2 列：资料下载｜Amana书库 / 职事信息搜寻｜职事问答 / 小排生命读经材料制作｜工具箱
+// 纲目制作已下线；恢复时在末尾加回 'outline'
+const AMANA_KEY = 'amana' // 首页专用占位，不在 homeFeatures.js 中，卡片内容与点击逻辑在本文件
+const HOME_ORDER = ['materials', AMANA_KEY, 'ministry-search', 'qa', 'roundtable-reading', 'toolbox']
 const homeFeatures = computed(() =>
-  HOME_ORDER.map(key => features.find(f => f.key === key)).filter(Boolean)
+  HOME_ORDER.map(key => (key === AMANA_KEY ? { key } : features.find(f => f.key === key))).filter(Boolean)
 )
 
 let touchStartX = 0
@@ -237,6 +242,7 @@ onMounted(() => {
 .card-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr; // 各行等高：窄屏下某张卡片标题换行时，6 张卡片仍保持同样大小
   gap: 20px;
 }
 
@@ -289,13 +295,8 @@ onMounted(() => {
   line-height: 1.55;
 }
 
-// Amana 卡片复用 .feature-card / .card-top / .card-icon / .card-title / .card-desc
-// 的全部尺寸、内边距、字号（含 640px 断点下的响应式规则），这里只补两条它独有的差异：
-// 不参与 2 列网格、单独占一行；以及点击请求进行中的禁用态。
-.amana-card {
-  margin-bottom: 20px;
-}
-.amana-card.amana-loading {
+// Amana 卡片点击请求进行中的禁用态（其余样式与网格内其他卡片完全一致）
+.feature-card.amana-loading {
   opacity: 0.55;
   cursor: not-allowed;
 }
