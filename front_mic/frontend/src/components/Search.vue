@@ -141,8 +141,10 @@ const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(false);
 /** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；3.5 全索引 */
-const aiMode = ref("3.0"); // "2.0" | "3.0" | "3.5"
-const aiModeDisplayText = computed(() => `Pan AI ${aiMode.value || "3.0"}`);
+const aiMode = ref("3.5"); // 页面只显示 PanAI 3.0（实际为 3.5 流程）；取值 "2.0" | "3.0" | "3.5"
+const AI_MODE_LABEL = { "3.5": "PanAI 3.0" };
+const SHOW_MODE_SWITCHER = false; // 改为 true 可恢复 2.0/3.0/3.5 三个版本按钮
+const aiModeDisplayText = computed(() => AI_MODE_LABEL[aiMode.value] || `PanAI ${aiMode.value || "3.5"}`);
 const KG_RAG_HISTORY_KEY = "kg_rag_history";
 const EVAL_PREFILL_KEY = "eval_prefill";
 const router = useRouter();
@@ -2011,7 +2013,7 @@ const onAISearch = async () => {
       </div>
       <transition name="ai-meta-panel">
         <div v-if="aiPanelVisible" class="ai-meta-panel">
-          <div class="ai-mode-switcher">
+          <div v-if="SHOW_MODE_SWITCHER" class="ai-mode-switcher">
             <button
               v-for="m in ['2.0', '3.0', '3.5']"
               :key="m"
@@ -2022,6 +2024,9 @@ const onAISearch = async () => {
             >
               PanAI {{ m }}
             </button>
+          </div>
+          <div v-else class="ai-mode-switcher">
+            <span class="ai-mode-btn active ai-mode-btn--fixed">{{ aiModeDisplayText }}</span>
           </div>
           <div class="ai-meta-grid">
             <label class="ai-meta-field full">
@@ -2965,6 +2970,9 @@ const onAISearch = async () => {
 .ai-mode-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.ai-mode-btn--fixed {
+  cursor: default;
 }
 
 .ai-meta-panel {
