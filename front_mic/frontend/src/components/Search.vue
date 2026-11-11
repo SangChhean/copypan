@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute, onBeforeRouteLeave } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useStore } from "../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { tip } from "./utils/Dialog";
-import { message } from "ant-design-vue";
+import { message, Modal } from "ant-design-vue";
 import ShowRes from "./tools/ShowRes.vue";
 
 const plainOptions = [
@@ -1201,9 +1201,12 @@ async function loadHistoryRecord(item) {
 onMounted(() => {
   updateIsMobileView();
   window.addEventListener("resize", updateIsMobileView);
+  window.addEventListener("beforeunload", onBeforeUnload);
   loadHistory();
   // 纲目模式：showInfo 是全局 store 状态，进入时重置为 1（1 号块在纲目模式下隐藏，等于空闲）
   if (props.panaiOnly) showInfo.value = 1;
+  // 首页兜底：5/6 是 AI 结果/生成中，首页本实例没有对应数据，回到首页介绍
+  if (!props.panaiOnly && (showInfo.value === 5 || showInfo.value === 6)) showInfo.value = 1;
   if (sessionStorage.getItem(EVAL_PREFILL_KEY)) {
     applyEvalPrefill();
     if (route.query.prefill) {
@@ -1222,8 +1225,36 @@ watch(
   }
 );
 
+// 组件已卸载（如生成中确认离开 #/panai）后，未完成的异步请求不再写全局 store
+let isUnmounted = false;
+
 onUnmounted(() => {
+  isUnmounted = true;
+  // 离开纲目页：全局 showInfo 一律回到首页介绍（含生成失败留下的 3）
+  if (props.panaiOnly) showInfo.value = 1;
   window.removeEventListener("resize", updateIsMobileView);
+  window.removeEventListener("beforeunload", onBeforeUnload);
+});
+
+// 纲目模式生成中离开确认：路由跳转（含 Header 各入口）用 Modal 确认；刷新/关闭由 beforeunload 弹浏览器自带提示
+function onBeforeUnload(e) {
+  if (!props.panaiOnly || !loadingAI.value) return;
+  e.preventDefault();
+  e.returnValue = "";
+}
+
+onBeforeRouteLeave(() => {
+  if (!props.panaiOnly || !loadingAI.value) return true;
+  return new Promise((resolve) =>
+    Modal.confirm({
+      title: "纲目正在生成",
+      content: "离开后将看不到本次结果，确定离开吗？",
+      okText: "离开",
+      cancelText: "留在本页",
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false),
+    })
+  );
 });
 
 // AI 回答复制（包含标题）
@@ -1924,7 +1955,7 @@ const onAISearch = async () => {
     const data = res.data;
     if (!data.answer) {
       tip(data.error || "纲目生成失败，请稍后重试");
-      showInfo.value = 3;
+      if (!isUnmounted) showInfo.value = 3;
       return;
     }
 
@@ -1942,7 +1973,7 @@ const onAISearch = async () => {
       cacheKey: parsed.cacheKey,
     });
 
-    showInfo.value = 5;
+    if (!isUnmounted) showInfo.value = 5;
     showAISources.value = true;
     showAIAnswer.value = true;
 
@@ -1963,6 +1994,7 @@ const onAISearch = async () => {
     }
 
     setTimeout(() => {
+      if (isUnmounted) return; // 已离开本页：不去滚动别的页面
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
   } catch (err) {
@@ -1972,7 +2004,7 @@ const onAISearch = async () => {
       ? "请求超时，AI 生成时间较长，请稍后重试"
       : (err.response?.data?.detail || err.response?.data?.error || "AI纲目生成失败，请稍后重试");
     tip(msg);
-    showInfo.value = 3;
+    if (!isUnmounted) showInfo.value = 3;
   } finally {
     loadingAI.value = false;
     resetConceptState();
@@ -2033,7 +2065,7 @@ const onAISearch = async () => {
               PanAI {{ m }}
             </button>
           </div>
-          <div v-else-if="!panaiOnly" class="ai-mode-switcher">
+          <div v-else class="ai-mode-switcher">
             <span class="ai-mode-btn active ai-mode-btn--fixed">{{ aiModeDisplayText }}</span>
           </div>
           <div class="ai-meta-grid">
