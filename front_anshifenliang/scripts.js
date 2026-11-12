@@ -1357,12 +1357,14 @@ async function handleLocalDictionaryMatch(userMessage) {
     function getQaDict() {
         return {
             ...(window.shu_ling_wen_da || {}),
+            ...(window.shen_de_ming || {}),
             ...(window.xiao_bai_ke || {}),
         };
     }
 
     function getQaSource(key) {
         if (window.xiao_bai_ke && window.xiao_bai_ke[key] !== undefined) return 'xiao_bai_ke';
+        if (window.shen_de_ming && window.shen_de_ming[key] !== undefined) return 'shen_de_ming';
         if (window.shu_ling_wen_da && window.shu_ling_wen_da[key] !== undefined) return 'shu_ling_wen_da';
         return 'xiao_bai_ke';
     }
@@ -2465,7 +2467,8 @@ document.addEventListener('click', function(event) {
         'jing_jie_wen_da': window.jing_jie_wen_da,
         'bible_verse': window.bibleVerse,
         'xiao_bai_ke': window.xiao_bai_ke,
-        'shu_ling_wen_da': window.shu_ling_wen_da
+        'shu_ling_wen_da': window.shu_ling_wen_da,
+        'shen_de_ming': window.shen_de_ming
     };
 
     const dict = dictMap[source];

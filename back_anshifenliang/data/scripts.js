@@ -1670,6 +1670,20 @@ async function handleLocalDictionaryMatch(userMessage) {
     console.log("🔍 原始输入：", originalInput);
     console.log("🎯 清洗后匹配关键词（简体）：", rawInput);
 
+    // 问答数据源：xiao_bai_ke + shen_de_ming（同名时 xiao_bai_ke 优先，旧资料结果不变）
+    function getQaDict() {
+        return {
+            ...(window.shen_de_ming || {}),
+            ...(window.xiao_bai_ke || {}),
+        };
+    }
+
+    function getQaSource(key) {
+        if (window.xiao_bai_ke && window.xiao_bai_ke[key] !== undefined) return 'xiao_bai_ke';
+        if (window.shen_de_ming && window.shen_de_ming[key] !== undefined) return 'shen_de_ming';
+        return 'xiao_bai_ke';
+    }
+
     const categories = [
         {
             name: '诗歌',
@@ -1956,10 +1970,10 @@ async function handleLocalDictionaryMatch(userMessage) {
         },
         {
             name: '问答',
-            data: window.xiao_bai_ke,
+            data: getQaDict,
             condition: selectedCategory === '问答' || !selectedCategory,
             render: (k, v) =>
-                `<p><span class="data-title">${k}</span> <button class="view-original" data-source="xiao_bai_ke" data-title="${k}">查看全文</button></p>${v.slice(0, 180)}……`
+                `<p><span class="data-title">${k}</span> <button class="view-original" data-source="${getQaSource(k)}" data-title="${k}">查看全文</button></p>${v.slice(0, 180)}……`
         }
     ];
 
@@ -2819,7 +2833,8 @@ document.addEventListener('click', function(event) {
         'zhu_jie_wen_da': window.zhu_jie_wen_da,
         'jing_jie_wen_da': window.jing_jie_wen_da,
         'bible_verse': window.bibleVerse,
-        'xiao_bai_ke': window.xiao_bai_ke
+        'xiao_bai_ke': window.xiao_bai_ke,
+        'shen_de_ming': window.shen_de_ming
     };
 
     const dict = dictMap[source];
