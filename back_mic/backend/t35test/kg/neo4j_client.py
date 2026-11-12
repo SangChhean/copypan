@@ -3,10 +3,10 @@
 import os
 from typing import Any
 
-# 环境变量，合理默认
-NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "")
+# 【4.0】新测试台只连 4.0 图谱 neo4j-v4（.env 的 NEO4J_V4_*），不连 3.0 的旧图谱（NEO4J_*）。
+# 词条节点标签 Truth_Point；8 个括号内节点（same_as 有值）不进选词名单。
+TP = "Truth_Point"
+INNER_CATEGORY = "最内在"  # intrinsic_significance 为「最内在」的 133 个词只给内在素质层
 
 # 跳数范围，用于 Cypher [*..N] 拼接前校验
 MIN_HOPS, MAX_HOPS = 1, 5
@@ -21,11 +21,13 @@ class Neo4jClient:
     """
 
     def __init__(self) -> None:
-        self._uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-        self._user = os.environ.get("NEO4J_USER", "neo4j")
-        self._password = os.environ.get("NEO4J_PASSWORD", "")
+        # 不设默认值：没配置 NEO4J_V4_* 就连不上、图谱功能降级为空，绝不会退回去连 3.0 的旧图谱
+        self._uri = os.environ.get("NEO4J_V4_URI", "")
+        self._user = os.environ.get("NEO4J_V4_USER", "")
+        self._password = os.environ.get("NEO4J_V4_PASSWORD", "")
         self._driver = None
         self._concept_names: list[str] = []
+        self._inner_words: list[str] = []
         self._available: bool = False
         # 最近一次 startup() 连接失败的原因；仅供调用方在启动失败后自行上报监控使用。
         # 本类本身不依赖 ai_search.monitoring（见类文档"核心原则"），保持零业务依赖。
@@ -39,6 +41,8 @@ class Neo4jClient:
         self._last_connect_error = None
         try:
             from neo4j import GraphDatabase
+            if not self._uri:
+                raise RuntimeError(".env 未配置 NEO4J_V4_URI（4.0 图谱）")
             driver = GraphDatabase.driver(
                 self._uri,
                 auth=(self._user, self._password),
@@ -82,15 +86,17 @@ class Neo4jClient:
         self._available = False
 
     def refresh_concept_names(self) -> None:
-        """从 Neo4j 查询所有 Concept 的 name，构建供 Step 1 Prompt 使用的概念名列表。"""
+        """从 neo4j-v4 读选词名单：2,372 个词条（不含 8 个括号内节点），以及其中「最内在」的 133 个词。"""
         if not self._available or self._driver is None:
             return
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 result = session.run(
-                    "MATCH (c:Concept) RETURN c.name AS name ORDER BY c.name"
+                    f"MATCH (c:{TP}) WHERE c.same_as IS NULL "
+                    "RETURN c.name AS name, c.intrinsic_significance AS sig ORDER BY c.name"
                 )
                 names: list[str] = []
+                inner: list[str] = []
                 for record in result:
                     name = record.get("name")
                     if name is None:
@@ -99,18 +105,62 @@ class Neo4jClient:
                     if not name_str:
                         continue
                     names.append(name_str)
+                    if record.get("sig") == INNER_CATEGORY:
+                        inner.append(name_str)
                 self._concept_names = names
-                print(f"[KG-RAG] Concept name 列表已加载: {len(self._concept_names)} 个概念节点")
+                self._inner_words = inner
+                print(f"[KG-RAG] 4.0 选词名单已加载: {len(names)} 个词条，其中最内在 {len(inner)} 个")
         except Exception as e:
-            print(f"[KG-RAG] 加载 Concept name 列表失败: {e}")
+            print(f"[KG-RAG] 加载 4.0 选词名单失败: {e}")
             self._concept_names = []
+            self._inner_words = []
 
     def get_concept_names(self) -> list[str]:
-        """返回 Concept name 列表副本，供 Step 1 Prompt 注入。"""
+        """返回 2,372 个词条名的副本（含最内在 133 个），供 Step 1 Prompt 注入。"""
         return list(self._concept_names)
 
+    def get_inner_words(self) -> list[str]:
+        """返回最内在 133 个词的副本（内在素质层专用）。"""
+        return list(self._inner_words)
+
+    def get_mutual_phrases(self, names: list[str]) -> dict[str, str]:
+        """【4.0】彼此互相：按词名取图谱 mutuality 标注（短语，如"爱"→"彼此相爱"）。没有标注的词不出现在结果里。"""
+        names = [n for n in dict.fromkeys(names or []) if n]
+        if not self._available or self._driver is None or not names:
+            return {}
+        try:
+            with self._driver.session(default_access_mode="READ") as session:
+                result = session.run(
+                    f"MATCH (c:{TP}) WHERE c.name IN $names AND c.mutuality IS NOT NULL "
+                    "RETURN c.name AS name, c.mutuality AS m",
+                    names=names,
+                )
+                return {r["name"]: str(r["m"]).strip() for r in result if str(r["m"] or "").strip()}
+        except Exception as e:
+            print(f"[KG-RAG] 读取彼此互相失败: {e}")
+            return {}
+
+    def get_divine_arguments(self) -> list[dict[str, Any]]:
+        """【4.0 防火墙】读词条上的「神圣的辩理」标注（devine_argument，JSON 字符串）。
+        返回 [{"name": 词条名, "same_as": 括号节点所指或 None, "raw": JSON 字符串}]；未连接或出错返回 []。"""
+        if not self._available or self._driver is None:
+            return []
+        try:
+            with self._driver.session(default_access_mode="READ") as session:
+                result = session.run(
+                    f"MATCH (c:{TP}) WHERE c.devine_argument IS NOT NULL "
+                    "RETURN c.name AS name, c.same_as AS same_as, c.devine_argument AS raw"
+                )
+                return [
+                    {"name": r.get("name"), "same_as": r.get("same_as"), "raw": r.get("raw")}
+                    for r in result
+                ]
+        except Exception as e:
+            print(f"[KG-RAG] 读取神圣的辩理失败: {e}")
+            return []
+
     def search_concepts_by_name(self, keyword: str, limit: int = 20) -> list[str]:
-        """模糊搜索包含 keyword 的 Concept.name，返回名称列表。"""
+        """「输入重点」下拉提示：在 4.0 的 2,372 个词条里按名称模糊搜索（不含 8 个括号内节点）。"""
         if not self._available or self._driver is None:
             return []
         key = (keyword or "").strip()
@@ -118,10 +168,10 @@ class Neo4jClient:
             return []
         n = max(1, min(int(limit or 20), 100))
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 result = session.run(
                     "WITH toLower($keyword) AS kw "
-                    "MATCH (c:Concept) "
+                    f"MATCH (c:{TP}) WHERE c.same_as IS NULL "
                     "WITH c, kw, toLower(c.name) AS lower_name "
                     "WHERE kw <> '' AND lower_name CONTAINS kw "
                     "WITH c.name AS name, kw, lower_name, "
@@ -145,6 +195,39 @@ class Neo4jClient:
             print(f"[KG-RAG] search_concepts_by_name 失败: {e}")
             return []
 
+    def search_truth_points_by_name(self, keyword: str, limit: int = 20) -> list[str]:
+        """「搜索图谱中重点」：在 neo4j-v4 的 2,372 个词条里按名称模糊搜索（不含 8 个括号内节点）。"""
+        key = (keyword or "").strip()
+        if not key:
+            return []
+        n = max(1, min(int(limit or 20), 100))
+        if not self._available or self._driver is None:
+            return []
+        try:
+            with self._driver.session(default_access_mode="READ") as session:
+                result = session.run(
+                    "WITH toLower($keyword) AS kw "
+                    "MATCH (c:Truth_Point) "
+                    "WHERE c.same_as IS NULL "
+                    "WITH c, kw, toLower(c.name) AS lower_name "
+                    "WHERE lower_name CONTAINS kw "
+                    "WITH c.name AS name, lower_name, kw, "
+                    "CASE "
+                    "  WHEN lower_name = kw THEN 0 "
+                    "  WHEN lower_name STARTS WITH kw THEN 1 "
+                    "  ELSE 2 "
+                    "END AS match_rank "
+                    "RETURN name "
+                    "ORDER BY match_rank ASC, abs(size(name) - size($keyword)) ASC, size(name) ASC, name ASC "
+                    "LIMIT $limit",
+                    keyword=key,
+                    limit=n,
+                )
+                return [str(r["name"]).strip() for r in result if r["name"]]
+        except Exception as e:
+            print(f"[KG-RAG] search_truth_points_by_name 失败: {e}")
+            return []
+
     def get_neighbors(self, concept_name: str) -> list[dict[str, Any]]:
         """单概念 1 跳出边邻居（c → related），同一 neighbor 多条边时按类型合并。
         每条记录包含：
@@ -156,9 +239,9 @@ class Neo4jClient:
             return []
         key = concept_name.strip()
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 out_result = session.run(
-                    "MATCH (c:Concept {name: $name})-[r]->(related:Concept) "
+                    "MATCH (c:Truth_Point {name: $name})-[r]->(related:Truth_Point) "
                     "RETURN related.name AS neighbor, type(r) AS relation_type",
                     name=key,
                 )
@@ -206,9 +289,9 @@ class Neo4jClient:
         if len(names) < 2:
             return []
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 q1 = (
-                    "MATCH (a:Concept)-[r]->(b:Concept) "
+                    "MATCH (a:Truth_Point)-[r]->(b:Truth_Point) "
                     "WHERE a.name IN $names AND b.name IN $names AND a.name <> b.name "
                     "RETURN a.name AS from_name, type(r) AS relation, b.name AS to_name"
                 )
@@ -254,9 +337,9 @@ class Neo4jClient:
             return []
         n = self._clamp_hops(max_hops)
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 query = (
-                    f"MATCH path = (a:Concept {{name: $n1}})-[*..{n}]-(b:Concept {{name: $n2}}) "
+                    f"MATCH path = (a:Truth_Point {{name: $n1}})-[*..{n}]-(b:Truth_Point {{name: $n2}}) "
                     "WITH path, [nd IN nodes(path) | nd.name] AS path_nodes "
                     "RETURN path_nodes, "
                     "[idx IN range(0, length(path)-1) | {"
@@ -287,9 +370,9 @@ class Neo4jClient:
             return None
         n = self._clamp_hops(max_hops)
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 query = (
-                    f"MATCH path = shortestPath((a:Concept {{name: $n1}})-[*..{n}]-(b:Concept {{name: $n2}})) "
+                    f"MATCH path = shortestPath((a:Truth_Point {{name: $n1}})-[*..{n}]-(b:Truth_Point {{name: $n2}})) "
                     "WITH path, [nd IN nodes(path) | nd.name] AS path_nodes "
                     "RETURN path_nodes, "
                     "[idx IN range(0, length(path)-1) | {"
@@ -318,9 +401,9 @@ class Neo4jClient:
             return 0
         n = self._clamp_hops(max_hops)
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 query = (
-                    f"MATCH path = (a:Concept {{name: $n1}})-[*..{n}]-(b:Concept {{name: $n2}}) "
+                    f"MATCH path = (a:Truth_Point {{name: $n1}})-[*..{n}]-(b:Truth_Point {{name: $n2}}) "
                     "RETURN count(path) AS path_count"
                 )
                 result = session.run(
@@ -338,7 +421,7 @@ class Neo4jClient:
 
     def get_key_verses(self, concept_names: list[str]) -> dict[str, list[tuple[str, str]]]:
         """查询概念列表通过 SUPPORTED_BY 关系连接的 Scripture 节点。
-        返回 {概念名: [(id, text), ...]}，id 为 Scripture 节点唯一键（经卷简称节号等），
+        返回 {概念名: [(ref, text), ...]}，ref 为 4.0 图谱 Scripture 节点的经文出处（如「书一1」），
         text 为节点正文。无结果或不可用时返回空 dict。
         """
         if not self._available or self._driver is None or not concept_names:
@@ -347,11 +430,11 @@ class Neo4jClient:
         if not names:
             return {}
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 result = session.run(
-                    "MATCH (c:Concept)-[:SUPPORTED_BY]->(s:Scripture) "
+                    "MATCH (c:Truth_Point)-[:SUPPORTED_BY]->(s:Scripture) "
                     "WHERE c.name IN $names "
-                    "RETURN c.name AS concept, s.id AS sid, s.text AS stext",
+                    "RETURN c.name AS concept, s.ref AS sid, s.text AS stext",
                     names=names,
                 )
                 out: dict[str, list[tuple[str, str]]] = {}
@@ -372,15 +455,15 @@ class Neo4jClient:
     ) -> bool:
         """创建 Scripture 节点（MERGE）并建立 Concept→SUPPORTED_BY→Scripture 关系。
         成功返回 True，失败或不可用返回 False。
+        【4.0】图谱数据不改：新测试台连的是 neo4j-v4，这里一律不写入，直接返回 False。
         """
-        if not self._available or self._driver is None:
-            return False
+        return False
         concept = concept_name.strip()
         sid = id.strip()
         if not concept or not sid:
             return False
         try:
-            with self._driver.session() as session:
+            with self._driver.session(default_access_mode="READ") as session:
                 session.run(
                     "MERGE (s:Scripture {id: $sid}) "
                     "SET s.text_short = $text_short, s.text_full = $text_full "
@@ -408,8 +491,8 @@ class Neo4jClient:
                 "concept_name_count": 0,
             }
         try:
-            with self._driver.session() as session:
-                r1 = session.run("MATCH (c:Concept) RETURN count(c) AS concept_count")
+            with self._driver.session(default_access_mode="READ") as session:
+                r1 = session.run("MATCH (c:Truth_Point) WHERE c.same_as IS NULL RETURN count(c) AS concept_count")
                 concept_count = 0
                 rec = r1.single()
                 if rec and rec["concept_count"] is not None:

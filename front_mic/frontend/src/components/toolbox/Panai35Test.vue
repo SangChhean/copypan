@@ -2,101 +2,15 @@
 <script setup>
 import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { storeToRefs } from "pinia";
-import { useStore } from "../../store/index";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined, ArrowLeftOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { tip } from "../utils/Dialog";
 import { message } from "ant-design-vue";
 
-const plainOptions = [
-  { lab: "模糊", val: "a" },
-  { lab: "平衡", val: "b" },
-  { lab: "精确", val: "c" },
-];
-const { selectedIndex, hilights, refid, openMsg, role } = storeToRefs(useStore());
 // 【3.5测试用】本页自己的显示状态（0=什么都不显示；3/4/5/6 含义与主站一致）
+// 【4.0】从 3.0 页面复制来的关键词搜索（调用主站 /api/search）及其变量、引文已于 2026-11-11 删除
 const showInfo = ref(0);
 
-const selVar1 = ref("a");
-const selVar2 = ref("a");
-const inputVar = ref("");
-const search_cat = ref("a");
-const results = ref([]);
-const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(10);
-const run = ref(false);
-const pageSizeOptions = ["10", "20", "30", "40", "50"];
-const inputDis = ref(false);
-const indexshow = [
-  `"属灵的教育也该如此，但我们的科学方法在哪里？我们如何能把圣经的真理，整理出一个系统，当人有心要学习时，可以深入浅出，大小有序，上下连贯，甚至左右相通，前后也没有难处。若是能作到这样，是何等的好。"（李常受文集一九八七年第一册，结常存的果子，第八章）`,
-  `"神的话好比拼图。原来，所有的拼图片都是分散的，所要呈现的图画也不明朗。人需要花时间一片接一片的拿起来，仔细思考，并且拼凑在一起。所有的拼图片都拼在一起之后，完整的图画就会出现。神把祂的话这样排列，奥秘又很有意义。"（李常受文集一九七一年第三册，在基督的生命里得救并照着灵而行以建造基督的身体，第三章）`,
-  `"（在主的恢复中）你们有的人听我讲道，听到今天（一九八六年）也有三十七年了。当年你们都还是年轻的小弟兄、小姊妹，大都还没有结婚；但是现在你们的儿女都大学毕业了，他们好多人还作了长老。他们还没有出生，你们就已经在这里听我讲道；但是听到今天，你们连小学都没有毕业，原因何在？人类的教育研究出一套制度，需要小学六年、中学六年、大学四年，并且每一年的课程都编得好好地。一个人只要按着这套课程循序渐进的读过，十六年后铁定大学毕业，并且能有系统的把人类中间的常识吸收到他里面。然而这三十七年来，我们在这天花板下讲道给你们听，都是兴之所至，也没有什么系统。所以听到今天，叫你们说一说因信称义，你们一句话也说不出来。这就好像你听了三十七年数学，也知道三加二等于五；可是要你去教别人，就不会教了。"（李常受文集一九八四年第四册，速兴起传福音，第七章）`,
-  `"今天的难处是，我们对真理的认识不够，不会介绍真理。到过香港的人都知道，那些卖珠宝玉器的，都会把贵价的珠宝拿出来给人看，等人动心之后，自然愿意出价来买。我们这些基督徒常很愚笨，不懂得拿出真理的宝贝来给人看。我们家里的宝贝实在是多，但我们拿不出来，就因为我们平日的追求和装备不够。因这缘故，我们一定要在召会的聚会里，开辟各种教育课程，教弟兄姊妹在基本上受真理的薰陶，然后出去接触人，个个都有功用。一个国家要强盛，必须教育普及，百姓都受高等教育，这样国家自然强。因为有了教育作底子，作什么就都不难。我们既是为着主的见证，若是我们的真理不强，没有底子，对人说什么都是枉然。反之，有了真理的装备，我们无论说什么，人都会得益处。"（李常受文集一九八五年第五册，为神说话，第七章）`,
-  `"我们若要个个传讲真理，尽功用，为着这样的繁增，一定要有分级教育。如此才能培养出传讲真理的人，主日聚会就不怕没有人站讲台，供应话语。弟兄们要带头传讲主的话，众圣徒才有榜样跟随；他们看见后，也会出去对别人传讲。这个风气一开，结果就是众圣徒都能对外讲说主的话；无论是传扬基督、讲解圣经、或释放真理，三、五年后，就会把我们所在地的区域都讲遍了。这是主的作法。我们所交通的，不是要变作教条，叫人一条一条的奉行。我们是盼望众人，将这些交通带回去参考，并且多有祷告。若是有人参考过、祷告之后，在主面前找出更高明的作法，那是最好。原则上，无论如何我们总要帮助圣徒，个个都明白真理。神愿意万人得救，也愿意万人完全认识真理。不仅如此，我们还要帮助圣徒都出去，个个都能作申言者，为主说话。"（李常受文集一九八五年第五册，为神说话，第六章）`,
-  `"所以，我这一次来，就愿意把这件事和你们交通清楚，起码我该忠心的告诉你们，我们的程度的确不行。我们要有自觉，知道我们的不行，不要再去谈是非对错的事，那些是不值一题的；值得我们谈论的，乃是我们对真理的认识。要知道，召会的工作起码有百分之五十以上都是教育性的，所以，这一面作得差，就是我们的亏欠和失败。为此，我们今后在这一点上一定要竭力追求。" （李常受文集一九九〇年第二册，神新约经纶中的奥秘，附加的话（一））`,
-  `"照着目前的安排，我们在教导和牧养上，有个人的一面，也有团体的一面。往后主日上午若要实行分级真理教育，需要很多会教导的人。我们是盼望所有的人都在话语上下功夫，这样自然能产生出牧养。从前主日几百人的大聚会，都是一人讲。现在作分级真理教育，有分级、分班，班里又分小组；这样，许多人都能尽上功用，也就能产生牧养，使牧养的人渐渐增多。"（李常受文集一九八五年第四册，同心合意实行神命定之路，第二章）`,
-  `"我也很坦白说，分级教育很难，因为这里有召会、会所、小排，你怎么分级法？我们也不能铁定的像办教育一样，从小学办起。把小学、初中、高中、大学分得那么清楚。办一所学校，先要把学校建筑起来，要有课室、办公室。以后还得有一班人马，还有教员，还得招生，还有教科书。这个学校才能办得蒸蒸日上，才能成功。在我看，我们学生不成问题；但是在什么地方，怎么作法，这成了很大的问题。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
-  `"现在，我里头有两个重担：一个是改制，不是已往聚个大聚会就了事；改制，十之八、九要采取现代的教育制度。现代的教育制度：六年小学，三年初中，三年高中，四年大学，二年研究所。这个制度乃是人类六千年各国实施而有的结论。所以今天在地上，没有一个国家不用这一套教育制度，这是铁定的，这是定律。目前我们带得救的人有很多，但是得救以后如何教育他们？怎样训练他们，栽培他们？这成了很大的问题。我接到你们的电话和你们的来信说，前几周，你们这里有福音周，大家出去传福音，总共带了一千一百零四人受浸。这很好，但是受浸完了怎么办？受浸完了就把他们带来这里，拢总在这里聚会，这铁定是不行的。因此我们就得趁机会教育他们。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
-  `"写出各级的教材来：我觉得材料都有了，但是还需要写出教材来，写出课本来才可以；生命读经有好多丰富，但那还不是教材；你们都读过书，我相信你们也有人作过教员；比如说，数学这一门，材料有了，现在需要有人会写，把重点和路线写出来；六年小学给他们什么东西？国中要给他什么东西？高中又加多一些，大专又加多一些，这数学要一直加的；我们中间不缺少东西，但也必须把教材写出来，不能笼统地写。我们从前是大家吃大锅饭，得救五十八年和得救十八天统统来吃这一锅饭，我们还以这个为夸口，但我们吃来吃去，老的没有了，少的也不长；你们好多人还没有生出来的时候，人数就比今天还多；这样的工我们不能再作了；我们不改制也得改制，因为推不动了；所以这在我身上是一个重担。当然，我没有这么多工夫去作，就得产生弟兄姊妹去作；我们材料都有，但是我们还要出教材，就是出教科书；而生命读经和别的书，都是图书馆里面的书，照样可以作，可以参考，学生也可以去读，我们这样作才能长命；在我看，传福音是不成问题，现在成问题的是怎么养法？不只养，还得教；但怎么教法？现在成了大问题，这就是我们已过失败的点；我盼望你们都了解，今后没有所谓的同工和长老，我们希望个个都是先知，个个都是使徒，个个都是传福音的，个个都是教师，个个都是牧师；现在大家都要来说话，我们今后非生机不可。"（李常受文集一九八五年第四册，人人要说神的话，第一章）`,
-  `"在各种聚会中，我们都不轻忽主的话。擘饼聚会可选实用、简要、精粹的信息，让众人祷读、享受，然后分享、作见证；这使主满意，也叫我们得供应。祷告聚会可选关于事奉的信息，让大家清楚事奉的基本属灵原则。至于家中聚会，除了交通、祷告、唱诗、彼此介绍，也该有一篇短的造就信息，让初信者得着栽培。我们不愿意人只是来聚会，对主的话却一无所识，得不着供应；盼望每次的聚会，都有主的话释放到弟兄姊妹里面。这样，每周三篇信息的滋养，加上真理课程有系统、扎实、教育性的教导，就能使圣徒得着帮助并成全。教导时，也要带领圣徒学习看重点。以约翰三章十六节为例，说到神将祂的独生子赐给我们，就要学习点出'赐'这个重点，带圣徒一再读'赐给他们'，加重读、重复读，学习把这个重点指出来。不需要你们特别花工夫去讲解，自然圣徒们就知道重点是什么。我们都必须看见，我们的讲不值钱；只有把主的话拿出来给大家祷读，并且点出重点，那才是有功效的。这样，就给众人有尽功用的机会，而不会闲站。这需要你们在聚会中，一直带领弟兄姊妹操练。我相信最多半年，台北召会就能出来一个规范。"（李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十七章、第十一章）`,
-  `"为这缘故，我觉得有负担召聚这次紧急训练。在美国几乎所有的召会都已听见在台湾所发生的事。你们听见一些事，又听了录音带以后，也许就开始模仿。那是不管用的。你必须领悟这系列中第七册的内容是基本、独一的项目。没有这点，我们就不合格；我们没有立场，甚至没有权利模仿在远东所发生的事。我也要向你们众人指明，家中聚会是什么，全时间是什么，真理课程的教导又是什么。每一项都是难事，不是这么容易完成的。不要轻易模仿，仅仅模仿不管用，只会破坏并危害主的整个行动。现在是迫切、生死的关头。这完全在于你所在之地的长老、助手和同工，要来在一起祷告，找出一条路，得着一位或更多的人，责成他们为每种聚会预备信息，就是活的话。你若有心作，这就不是难事，因为我们在职事的一切信息中有烹调的材料。"（李常受文集一九八六年第一册，长老训练，第八册—主当前行动的命脉，第四章）`,
-  `"我不愿为所有的召会预备这样的信息，嘱咐众召会读同样的信息。在美国的许多召会，各召会每主日都需要不同种类的属灵帮助。在主日，不同的召会需要不同的供应。你不能将同样的饭食，供应病房中的每个人。对那些胃有毛病的人，你需要供应某种饭食；对那些心脏有问题的人，你需要供应另一种饭食。你必须有不同的饭食，以喂养不同的人。身为你们所在之地的长老，只有你们才知道你们的家人需要怎样的食物，别人不知道你们家人的需要。这事我考虑得相当多，我觉得必须由每个地方召会个别来作。家庭的烹煮必须由各家个别来作。虽然在原则上，所有的地方召会该是同样的，但在这一面，所有的召会无法是同样的。"（李常受文集一九八六年第一册，长老训练，第八册—主当前行动的命脉，第四章）`,
-  `"同工、长老们必须为家中聚会慎选材料。你们一定要花足够的工夫，多方祷告，仔细观察弟兄姊妹的光景，了解（各种）的需要，知道他们聚会的情形，然后再从我们的书报里，寻找适当的材料。就如一个母亲，为家人安排饭食，总要多面顾到他们的光景。有时家人生病了，就要为他预备特别的食物；有时季节转换了，也要有合宜的采购。这些都要研究，都得有一点常识。马太二十四章四十五节说，忠信又精明的奴仆，能按时分粮给神的儿女。这里所说'按时分粮'意义很深，不只要按着时节分给不同的食物，也要按着各人的需要预备不同的食物。这都是必须花工夫研究的事。有时你碰到初信者，也不管他的情形如何，就自顾自的讲起七十个七。你所讲的是神的话不错，但你这一分粮，不是喂养他，而是杀死他。神的话乃是生命；但给你用得不当，就成了杀死人的东西，把人的胃口弄坏了。这样一来，人就不会渴慕聚会了，因为他听到的道，对他没有益处。也许我形容得太过，但我是要给你们看见，你们必须本着'按时分粮'的原则，预备各种聚会的追求信息。这件事非常关系各种聚会的进展。聚会是否使人得益处，是否吸引人，而使人渴慕参加，全在乎这件事。"（李常受文集一九八六年第二册，主恢复中划时代的带领，第一册—新路实行的异象与具体步骤，第十一章）`,
-  `"我一直在考虑，在排聚集用什么材料教导人最好。我们有生命课程和真理课程。虽然这些课程写得非常好，我觉得它们不很合式，因为内容太多了，新人不易消化。甚至晨兴圣言也可能不适合在排聚集里的新人。用太多食物喂养人是不好的；我们必须给他们合式的分量。在希伯来五章十二至十四节，保罗提到两种食物，就是奶和干粮。我们不该试图用干粮喂孩子。因此，我们需要有人劳苦，为排聚集编写一些合式的材料，可用作奶来喂养新人。为了使排聚集里的教导和交通有益处，需要有一些材料作为指引。我盼望有些弟兄们被主兴起来，为着排聚集编写一些合式的材料。"（李常受文集一九九一至一九九二年第三册，关于活力排之急切需要的交通，第四章）`,
-  `"我们还预备要写二百四十题的生命信息。不是以课合为卷，乃是以辑的方式，每一辑十二篇；二十辑就二百四十篇，都是短短的信息。虽然信息题目，尚不能说全有了，但开头的已经有了。我们盼望主若许可，明年能出版第一辑或第二辑。我们这样忙碌的出版文字，相信大家都不会有安逸的日子。然而，我们也要看见，我们若都过安逸的日子，是作不出工作来的。"（李常受文集一九八七年第一册，结常存的果子，第十五章）`,
-];
-
-const cats = {
-  a: "全部",
-  b: "书名",
-  c: "总题",
-  d: "篇题",
-  e: "标题",
-  f: "大纲",
-  g: "摘录",
-  h: "大本",
-  i: "经文",
-  j: "注解",
-  k: "系列",
-  l: "纲目",
-  m: "禁用",
-};
-
-const get_cats = (val) => {
-  let arr = [];
-  for (let item of val) {
-    arr.push({ lab: cats[item], val: item });
-  }
-  return arr;
-};
-
-const showCats = computed(() => {
-  let arr = [];
-  let idx = selectedIndex.value[0];
-
-  if (idx == "0") arr = get_cats("abde");
-  else if (idx == "1") arr = get_cats("ij");
-  else if (idx == "2") arr = get_cats("ade");
-  else if (idx == "3") arr = get_cats("abde");
-  else if (idx == "4") arr = get_cats("abde");
-  else if (idx == "5") arr = get_cats("ade");
-  else if (idx == "6") arr = get_cats("h");
-  else if (idx == "7") arr = get_cats("acdf");
-  else arr = get_cats("m");
-
-  selVar2.value = arr[0].val;
-  return arr;
-});
-
-const showCatsOne = [
-  { lab: "A类", val: "a" },
-  { lab: "B类", val: "b" },
-];
-
-const status = ref("");
-const placeholder = ref("输入搜索内容");
 
 // AI 问答相关状态
 const loadingAI = ref(false);
@@ -143,8 +57,8 @@ const downloadingEn = ref(false);
 const downloadingZhTw = ref(false);
 
 const aiPanelVisible = ref(true);
-/** KG-RAG 索引/管线版本：2.0 双路检索；3.0 概念+骨架+路3；3.5 全索引 */
-const aiMode = ref("3.5"); // "2.0" | "3.0" | "3.5"
+/** 【4.0】只有一条流程（原 2.0 / 3.0 模式已于 2026-11-11 删除，原名“3.5”改名“4.0”） */
+const PIPELINE_MODE = "4.0";
 const aiModeDisplayText = computed(() => "PanAI 新测试台");
 const KG_RAG_HISTORY_KEY = "t35test_history";
 const EVAL_PREFILL_KEY = "t35test_eval_prefill";
@@ -429,7 +343,7 @@ async function fetchConceptSearchOptions(keyword) {
   }
   conceptSearchLoading.value = true;
   try {
-    const res = await axios.get("/api/t35test/concepts/search", {
+    const res = await axios.get("/api/t35test/concepts/search_v4", {
       params: { q: key, limit: 20 },
     });
     const rows = Array.isArray(res.data?.results) ? res.data.results : [];
@@ -596,7 +510,6 @@ async function extractConcepts() {
 }
 
 const outlineGenerateDisabled = computed(() => {
-  if (aiMode.value === "2.0") return false;
   if (conceptMode.value === "manual") return manualRevelation.value.length === 0;
   return selectedRevelation.value.length === 0;
 });
@@ -1082,38 +995,7 @@ function evalHasBlock(key) {
   return block && !block.error;
 }
 
-async function runOutlineEval() {
-  const answerText = aiResult.value?.answer;
-  if (!answerText) {
-    tip("请先生成纲目");
-    return;
-  }
-  syncHistoryAnswerSkeleton(answerText);
-  evalLoading.value = true;
-  try {
-    const token = localStorage.getItem("token");
-    if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    const payload = buildEvalPayload({ answer: aiResult.value?.answer ?? "" });
-    const res = await axios.post("/api/t35test/eval/outline", payload, { timeout: 600000 });
-    evalResult.value = res.data;
-    editableAnswer.value = answerText;
-    scriptureReplacementItems.value = [];
-
-    const suggestions = res.data?.scripture_suggestions || [];
-    if (suggestions.length > 0) {
-      scriptureReplacementItems.value = formatScriptureReplacementItems(suggestions);
-    }
-
-    skeletonSnapshot.value = Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [];
-    writeEvalToHistory();
-    message.success("纲目评估完成");
-  } catch (e) {
-    const detail = e?.response?.data?.detail || e?.message || "评估失败";
-    tip(typeof detail === "string" ? detail : JSON.stringify(detail));
-  } finally {
-    evalLoading.value = false;
-  }
-}
+// 【4.0】runOutlineEval（调用 /api/t35test/eval/outline）已删除
 
 function toggleOutlineEdit() {
   if (outlineEditing.value) {
@@ -1206,8 +1088,6 @@ async function applyEvalPrefill() {
   manualKeyVerses.value = [...(data.key_verses || [])];
 
   aiPanelVisible.value = true;
-  inputVar.value = "";
-  status.value = "";
 
   await nextTick();
   document.querySelector(".ai-meta-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1457,7 +1337,11 @@ const downloadFormattedZh = async () => {
       const res = await fetch(`${apiBase}/api/t35test/format_outline_only`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ direction: "en2zh", translated_text: fullText, output_format: format }),
+        body: JSON.stringify({
+          direction: "en2zh",
+          translated_text: fullText,
+          output_format: format,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1700,6 +1584,14 @@ const aiAnswerEnFormatted = computed(() => {
 function getSourceType(chunkId) {
   if (!chunkId) return "unknown";
   if (chunkId.startsWith("firewall:") || chunkId.startsWith("防火墙")) return "firewall";
+  // 【4.0】新编号
+  if (chunkId.startsWith("gm12490_")) return "gm12490";
+  if (chunkId.startsWith("gmfeasts_")) return "gmfeasts";
+  if (chunkId.startsWith("gmbible_")) return "gmbible";
+  if (chunkId.startsWith("gmhymns_")) return "gmhymns";
+  if (chunkId.startsWith("pano_")) return "pano_catalog";
+  if (chunkId.startsWith("mutual:")) return "mutual"; // 【4.0】彼此互相
+  if (chunkId.startsWith("3a:")) return "dict_3a"; // 【4.0】真理辞典 3a
   if (chunkId.startsWith("life_")) return "life";
   if (chunkId.startsWith("cwwl_")) return "cwwl";
   if (chunkId.startsWith("cwwn_")) return "cwwn";
@@ -1723,6 +1615,13 @@ const SOURCE_TYPE_LABELS = {
   map_7feasts:    { label: "节期纲目",       color: "#f759ab" },
   map_pano:       { label: "清明上河图",     color: "#36cfc9" },
   map_dictionary: { label: "主恢复真理词典", color: "#ff85c0" },
+  gm12490:        { label: "倪李文集纲目",   color: "#73d13d" },
+  gmfeasts:       { label: "节期纲目",       color: "#f759ab" },
+  gmbible:        { label: "圣经",           color: "#fa8c16" },
+  gmhymns:        { label: "诗歌",           color: "#ffc53d" },
+  pano_catalog:   { label: "清明上河图目录", color: "#36cfc9" },
+  mutual:         { label: "彼此互相",       color: "#08979c" }, // 【4.0】
+  dict_3a:        { label: "3a",             color: "#cf1322" }, // 【4.0】真理辞典 3a
   unknown:        { label: "其他",           color: "#d9d9d9" },
 };
 
@@ -1734,8 +1633,12 @@ function formatSourceTitle(src) {
   const type = getSourceType(src.chunk_id);
 
   if (type === "firewall") {
-    return src.chunk_id.replace(/^firewall:/, "");
+    // 【4.0】后端带「（整篇）」或「（一句说明）」+ 篇题
+    return src.display_title || src.chunk_id.replace(/^firewall:/, "");
   }
+
+  // 【4.0】后端按库算好的出处（原文/注解取 source_zh，纲目取 text 开头出处，圣经取书名节号，诗歌取首名，目录取 path_text+篇题）
+  if (src.display_title) return src.display_title;
 
   if (type === "bib") {
     const sz = src.source_zh || src.chunk_id;
@@ -1748,146 +1651,11 @@ function formatSourceTitle(src) {
   return parts.join("，") || src.chunk_id;
 }
 
-const toggleAiPanel = () => {
-  aiPanelVisible.value = !aiPanelVisible.value;
-  if (aiPanelVisible.value) {
-    inputVar.value = "";
-    status.value = "";
-  }
-};
-
 const buildKgRagParams = () => ({
   outline_nature: aiForm.specialNeeds.trim(),
   burden_description: aiForm.burdenDescription.trim(),
   depth: "general",
 });
-
-const onSearch = (inp) => {
-  if (!run.value) run.value = true;
-  showInfo.value = 4;
-  let input = inputVar.value.trim();
-
-  if (input == "") {
-    status.value = "error";
-    placeholder.value = "搜索内容不能为空";
-    showInfo.value = 3;
-    return;
-  }
-
-  let index = selectedIndex.value[0];
-  let cat1 = selVar1.value;
-  let cat2 = selVar2.value;
-  let model = search_cat.value;
-  let cp = currentPage.value;
-  let ps = pageSize.value;
-
-  if (selVar2.value == "m") {
-    showInfo.value = 3;
-    inputDis.value = true;
-    return;
-  }
-
-  let sta = "";
-  if (index == "0") sta = cat1;
-  else sta = index;
-
-  hilights.value = input.split(/ +/g);
-
-  let args = `${sta}-${cat2}-${model}-${cp}-${ps}`;
-  let formData = new FormData();
-  formData.append("input", input);
-  formData.append("args", args);
-
-  let token = localStorage.getItem("token") || null;
-  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  axios
-    .post("/api/search", formData)
-    .then((res) => {
-      let data = res.data;
-      total.value = data.total;
-      results.value = data.msg;
-      if (data.msg == "pass") return;
-      if (total.value == 0) {
-        showInfo.value = 3;
-      } else {
-        showInfo.value = 2;
-      }
-    })
-    .catch((err) => {
-      if (err?.response?.status == 401) {
-        window.location.hash = "/login";
-      }
-      showInfo.value = 3;
-    });
-};
-
-const onChange = () => {
-  status.value = "";
-  placeholder.value = "输入搜索内容";
-};
-
-const openmsg = (val) => {
-  if (!val) return;
-  refid.value = val;
-  openMsg.value = !openMsg.value;
-};
-
-const onChangePage = (page, pageSize) => {
-  onSearch("");
-};
-
-const showSizeChange = (current, size) => {
-  onSearch("");
-};
-
-watch([selVar1, selVar2, search_cat, selectedIndex], () => {
-  if (selVar2.value == "m") {
-    inputDis.value = true;
-  } else {
-    inputDis.value = false;
-    onSearch("");
-  }
-  currentPage.value = 1;
-});
-
-const change_icon = (val) => {
-  let dom = document.getElementById(val);
-  let span1 = dom.getElementsByTagName("span")[0];
-  let span2 = dom.getElementsByTagName("span")[1];
-
-  span1.setAttribute("style", "display: none");
-  span2.setAttribute("style", "display: inline-block");
-
-  setTimeout(() => {
-    span1.setAttribute("style", "display: inline-block");
-    span2.setAttribute("style", "display: none");
-  }, 2000);
-};
-
-const copyText = (val) => {
-  if (!val) return;
-  val = val.replace(/<[^>]*>/g, "");
-  navigator.clipboard.writeText(val);
-  tip("复制成功");
-};
-
-const copyTextAndChnageIcon = (val, id) => {
-  copyText(val);
-  change_icon(id);
-};
-
-const addTag = (val) => {
-  let arr = [];
-  let cid = val[0][1];
-  let index = cid.split("_")[0];
-  console.log(index);
-  if (["life", "cwwn"].includes(index)) {
-    arr.push(["查看整篇", cid]);
-    arr.push(["只看大纲", cid + "-outline"]);
-    arr.push(["只看标题", cid + "-heading"]);
-    return arr;
-  } else return val;
-};
 
 /** 统一解析 KG-RAG 响应（缓存命中 / 未命中） */
 function parseKgRagResponse(data) {
@@ -1929,12 +1697,14 @@ function parseKgRagResponse(data) {
     result.experience = s1.experience || [];
     result.practice = s1.practice || [];
     result.skeleton = s2.skeleton || null;
-    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || [])];
+    // 【4.0】清明上河图目录的 20 条也算进引用来源
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.mutual_results || []), ...(s3.dict_results || [])]; // 【4.0】dict_results = 真理辞典 3a
     result.mainSources = allResults.map(r => ({
       chunk_id: r.chunk_id || "",
       book_title: r.book_title || "",
       source_zh: r.source_zh || "",
       message_title: r.message_title || "",
+      display_title: r.display_title || "",
       text_preview: (() => {
         const t = r.text || "";
         return t.length > 200 ? t.slice(0, 200) + "…" : t;
@@ -1955,7 +1725,7 @@ const onAISearch = async () => {
     tip("请至少填写纲目主题并选择纲目性质");
     return;
   }
-  if (aiMode.value !== "2.0" && !burdenPhaseReady.value) {
+  if (!burdenPhaseReady.value) {
     tip("请先完成负担说明阶段（点「确认，开始推荐重点」）");
     return;
   }
@@ -2004,7 +1774,7 @@ const onAISearch = async () => {
     }
     const res = await axios.post(
       "/api/t35test/query",
-      { query: question, params: qParams, mode: aiMode.value },
+      { query: question, params: qParams, mode: PIPELINE_MODE },
       { timeout: 300000 }
     );
     const data = res.data;
@@ -2115,7 +1885,7 @@ function goBackToTools() {
                 </button>
               </div>
             </div>
-            <div v-if="showBurdenPhasePanel && aiMode !== '2.0'" class="ai-meta-field full ai-burden-phase">
+            <div v-if="showBurdenPhasePanel" class="ai-meta-field full ai-burden-phase">
               <div class="ai-burden-phase-head">
                 <span class="ai-burden-phase-title">负担说明的生成</span>
                 <a
@@ -2189,17 +1959,6 @@ function goBackToTools() {
             </div>
           </div>
             <div class="ai-panel-actions">
-            <!-- 2.0 模式：简单负担说明输入框 -->
-            <div v-if="aiMode === '2.0'" class="ai-meta-field full">
-              <span>负担说明60字（选填）</span>
-              <a-textarea
-                v-model:value="aiForm.burdenDescription"
-                :auto-size="{ minRows: 2, maxRows: 8 }"
-                placeholder="约60字概括纲目摘要，说明纲目负担"
-                :disabled="loadingAI"
-              />
-            </div>
-            <template v-if="aiMode !== '2.0'">
             <div class="ai-panel-hint" v-if="!aiFormValid">请至少填写纲目主题并选择纲目性质后再开始制作</div>
             <div class="ai-panel-hint" v-else-if="!burdenPhaseReady">请先完成负担说明步骤（跳过负担说明，或生成/填写负担说明后，点「确认，开始推荐重点」）</div>
             <div v-else class="concept-mode-toggle">
@@ -2247,6 +2006,16 @@ function goBackToTools() {
                   </template>
                 </div>
               </div>
+              <div class="ai-concept-section ai-concept-checkwrap">
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
+                <a-checkbox-group
+                  v-if="(conceptCandidates.key_verses || []).length"
+                  v-model:value="selectedKeyVerses"
+                  :options="conceptCandidates.key_verses"
+                  class="ai-concept-checks"
+                />
+                <span v-else class="ai-concept-empty">（本题没有推荐关键圣经节）</span>
+              </div>
               <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
                 <span class="ai-concept-label">真理启示</span>
                 <a-checkbox-group
@@ -2281,16 +2050,6 @@ function goBackToTools() {
                   :options="conceptCandidates.practice"
                   class="ai-concept-checks"
                 />
-              </div>
-              <div class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
-                <a-checkbox-group
-                  v-if="(conceptCandidates.key_verses || []).length"
-                  v-model:value="selectedKeyVerses"
-                  :options="conceptCandidates.key_verses"
-                  class="ai-concept-checks"
-                />
-                <span v-else class="ai-concept-empty">（本题没有推荐关键圣经节）</span>
               </div>
               <div v-if="conceptCandidates.summary || conceptCandidates.reasoning" class="ai-burden-reasoning">
                 <div
@@ -2332,6 +2091,17 @@ function goBackToTools() {
             <!-- 人工：四层 tag -->
             <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
               <div class="ai-concept-hint">直接输入重点，回车添加，× 删除。</div>
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
+                <a-select
+                  v-model:value="manualKeyVerses"
+                  mode="tags"
+                  class="ai-concept-tags"
+                  :open="false"
+                  placeholder="如：弗四16，回车添加"
+                  allow-clear
+                />
+              </div>
               <div class="ai-concept-section">
                 <span class="ai-concept-label">真理启示</span>
                 <a-select
@@ -2399,24 +2169,12 @@ function goBackToTools() {
                   allow-clear
                 />
               </div>
-              <div class="ai-concept-section">
-                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
-                <a-select
-                  v-model:value="manualKeyVerses"
-                  mode="tags"
-                  class="ai-concept-tags"
-                  :open="false"
-                  placeholder="如：弗四16，回车添加"
-                  allow-clear
-                />
-              </div>
             </div>
-            </template>
             <div class="ai-panel-cta">
               <a-checkbox v-model:checked="includeEnglishOutline" :disabled="!ENGLISH_OUTLINE_FEATURE_ENABLED || loadingAI" style="margin-right: 12px;">同时生成英文纲目</a-checkbox>
               <a-checkbox v-model:checked="includeTraditionalOutline" :disabled="loadingAI" style="margin-right: 12px;">同时生成繁体纲目</a-checkbox>
               <a-button
-                v-if="aiMode !== '2.0' && conceptMode === 'ai' && conceptStage === 'idle'"
+                v-if="conceptMode === 'ai' && conceptStage === 'idle'"
                 :loading="conceptLoading"
                 :disabled="conceptLoading || !aiFormValid || !burdenPhaseReady"
                 @click="extractConcepts"
@@ -2425,7 +2183,6 @@ function goBackToTools() {
               </a-button>
               <a-button
                 v-else-if="
-                  aiMode === '2.0' ||
                   conceptMode === 'manual' ||
                   (conceptMode === 'ai' && conceptStage === 'candidates_ready')
                 "
@@ -2433,7 +2190,7 @@ function goBackToTools() {
                 :loading="loadingAI"
                 :disabled="
                   loadingAI ||
-                  (aiMode !== '2.0' && !burdenPhaseReady) ||
+                  !burdenPhaseReady ||
                   outlineGenerateDisabled
                 "
                 @click="onAISearch"
@@ -2523,271 +2280,7 @@ function goBackToTools() {
             {{ downloadingZh ? "格式化并下载中…" : "刷格式并下载" }}
           </a-button>
         </div>
-        <div v-if="aiResult?.answer" class="eval-section">
-          <div class="eval-action-row">
-            <a-button type="primary" size="small" :loading="evalLoading" :disabled="evalLoading" @click="() => runOutlineEval()">
-              <LoadingOutlined v-if="evalLoading" spin />
-              {{ evalLoading ? "评估中…" : "评估纲目" }}
-            </a-button>
-            <span v-if="evalResult && !evalLoading" class="eval-stats">
-              耗时 {{ (evalResult.elapsed_ms / 1000).toFixed(1) }}s · 费用 ${{ Number(evalResult.cost_usd).toFixed(4) }}
-            </span>
-          </div>
-
-          <div v-if="evalResult" class="eval-report">
-            <div v-if="evalImprovementEntries.length" class="eval-improvement-banner">
-              <div class="eval-improvement-title">相较上轮改善说明</div>
-              <div v-for="entry in evalImprovementEntries" :key="entry.dim" class="eval-improvement-item">
-                <strong>{{ entry.dim }}</strong>：{{ entry.note }}
-              </div>
-            </div>
-            <div v-if="scriptureReplacementItems.length" class="eval-scripture-auto-banner">
-              发现 {{ scriptureReplacementItems.length }} 处经文建议，请在下方逐条确认
-            </div>
-            <div class="eval-total-score-card">
-              <div class="eval-total-score-label">综合得分</div>
-              <div class="eval-total-score-value">{{ evalResult.total_score ?? "—" }}<span class="eval-total-score-unit"> / 100</span></div>
-            </div>
-
-            <div class="eval-section-block">
-              <div class="eval-section-title-row">
-                <div class="eval-section-title">F1-F4 生成质量参考</div>
-                <span class="eval-section-hint">不计入综合分</span>
-              </div>
-              <div v-for="item in F_EVAL_META" :key="item.key" class="eval-dim-card">
-                <div class="eval-dim-header">
-                  <strong>{{ item.title }}</strong>
-                  <span class="eval-dim-score">{{ evalDimScore(item.key) }}</span>
-                </div>
-                <div v-if="evalPansaiLayer[item.key]?.error" class="eval-error">{{ evalPansaiLayer[item.key].error }}</div>
-                <template v-else-if="evalHasBlock(item.key)">
-                  <div class="eval-comment">{{ evalPansaiLayer[item.key].comment }}</div>
-                  <div v-if="evalPansaiLayer[item.key].strength" class="eval-strength">亮点：{{ evalPansaiLayer[item.key].strength }}</div>
-                  <div v-if="evalPansaiLayer[item.key].prescription" class="eval-prescription">
-                    ⚠ {{ evalPansaiLayer[item.key].prescription }}
-                  </div>
-                  <div v-if="evalPansaiLayer[item.key]?.improvement_note" class="eval-improvement-note">
-                    改善：{{ evalPansaiLayer[item.key].improvement_note }}
-                  </div>
-                  <div v-if="item.key === 'F1' && getF1SuggestedConcepts()" class="eval-suggested-concepts">
-                    <div class="eval-suggested-title">建议补充概念</div>
-                    <div
-                      v-for="layer in ['revelation', 'inner', 'experience', 'practice']"
-                      :key="layer"
-                      v-show="(getF1SuggestedConcepts()[layer] || []).length"
-                      class="eval-suggested-row"
-                    >
-                      <span class="eval-suggested-label">{{ SUGGESTED_CONCEPT_LABELS[layer] }}：</span>
-                      <span>{{ (getF1SuggestedConcepts()[layer] || []).join("、") }}</span>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </div>
-
-            <div class="eval-section-block">
-              <div class="eval-section-title">神学深度层</div>
-
-              <div class="eval-dim-card">
-                <div class="eval-dim-header"><strong>T1 经文校对</strong><span>{{ evalT1Score10 }}/10</span></div>
-                <div v-if="evalT1?.error" class="eval-error">{{ evalT1.error }}</div>
-                <template v-if="evalHasBlock('T1')">
-                  <div class="eval-meta-tags">
-                    <a-tag v-if="evalT1.apex_level">{{ evalT1.apex_level }}</a-tag>
-                  </div>
-                  <div
-                    v-for="layer in T1_L_META"
-                    :key="layer.key"
-                    class="eval-sub-dim-block"
-                  >
-                    <div class="eval-sub-dim-header">
-                      <span class="eval-sub-dim-label">{{ layer.label }}</span>
-                      <span class="eval-sub-dim-score">{{ formatSubScore(evalT1[layer.key]?.score) }}</span>
-                    </div>
-                    <div v-if="evalT1[layer.key]?.comment" class="eval-sub-dim-comment">
-                      「{{ evalT1[layer.key].comment }}」
-                    </div>
-                    <div v-if="evalGapText(evalT1[layer.key]?.gap)" class="eval-sub-dim-gap">
-                      ⚠ {{ evalGapText(evalT1[layer.key].gap) }}
-                    </div>
-                  </div>
-                  <div
-                    v-if="evalT1.progression != null || evalT1.density != null"
-                    class="eval-extra-metrics"
-                  >
-                    <span v-if="evalT1.progression != null">层次递进性 {{ formatSubScore(evalT1.progression) }}</span>
-                    <span v-if="evalT1.progression != null && evalT1.density != null"> · </span>
-                    <span v-if="evalT1.density != null">经文密度 {{ formatSubScore(evalT1.density) }}</span>
-                  </div>
-                  <div
-                    v-if="evalT1.nature_fit"
-                    class="nature-fit"
-                    :class="evalT1.nature_fit?.fit ? 'fit-ok' : 'fit-warn'"
-                  >
-                    经文风格与纲目性质：
-                    {{ evalT1.nature_fit?.fit ? "✓ 吻合" : "⚠ 偏差" }}
-                    <span v-if="evalT1.nature_fit?.note">— {{ evalT1.nature_fit.note }}</span>
-                  </div>
-                  <div v-if="evalT1.summary" class="eval-comment eval-summary-line">
-                    总结：{{ evalT1.summary }}
-                  </div>
-                </template>
-              </div>
-
-              <div class="eval-dim-card">
-                <div class="eval-dim-header"><strong>T2 黄金路径</strong><span>{{ evalT2Score10 }}/10</span></div>
-                <div v-if="evalT2?.error" class="eval-error">{{ evalT2.error }}</div>
-                <template v-if="evalHasBlock('T2')">
-                  <div v-for="item in T2_S_META" :key="item.key" class="eval-sub-item">
-                    <span class="sub-label">{{ item.label }}</span>
-                    <span class="sub-score">{{ evalT2[item.key]?.score ?? "-" }}/10</span>
-                    <p class="sub-comment">{{ evalT2[item.key]?.comment }}</p>
-                    <p v-if="evalT2[item.key]?.gap" class="sub-gap">⚠ {{ evalT2[item.key].gap }}</p>
-                  </div>
-                  <div class="eval-extra-metrics">
-                    加权总分：{{ evalT2.weighted_score ?? "-" }} / 100
-                  </div>
-                  <div v-if="evalT2.summary" class="eval-comment eval-summary-line">
-                    总结：{{ evalT2.summary }}
-                  </div>
-                </template>
-              </div>
-
-              <div class="eval-dim-card">
-                <div class="eval-dim-header"><strong>T3 四维分析</strong><span>{{ evalT3Score10 }}/10</span></div>
-                <div v-if="evalT3?.error" class="eval-error">{{ evalT3.error }}</div>
-                <template v-if="evalHasBlock('T3')">
-                  <div class="eval-meta-tags">
-                    <span class="framework-badge">{{ frameworkTypeLabel }}</span>
-                  </div>
-                  <div v-for="item in evalT3Meta" :key="item.key" class="eval-sub-item">
-                    <span class="sub-label">{{ item.label }}</span>
-                    <span class="sub-score">{{ evalT3[item.key]?.score ?? "-" }}/10</span>
-                    <p class="sub-comment">{{ evalT3[item.key]?.comment }}</p>
-                    <p v-if="evalT3[item.key]?.gap" class="sub-gap">⚠ {{ evalT3[item.key].gap }}</p>
-                  </div>
-                  <div class="eval-extra-metrics">
-                    <span>有机连贯度：{{ evalT3.coherence ?? "-" }}/10</span>
-                    <span> · </span>
-                    <span>结构张力度：{{ evalT3.structural_tension ?? "-" }}/10</span>
-                  </div>
-                  <div v-if="evalT3.summary" class="eval-comment eval-summary-line">
-                    总结：{{ evalT3.summary }}
-                  </div>
-                </template>
-              </div>
-
-              <div class="eval-card" id="eval-t4">
-                <div class="card-header">
-                  <span class="card-title">T4 纲目冲击力</span>
-                  <span class="card-score">{{ evalT4Score10 }}/10</span>
-                </div>
-                <template v-if="evalHasBlock('T4')">
-                  <div class="sharpness-type">
-                    {{ evalT4.sharpness_type ?? "" }}
-                  </div>
-                  <p class="t4-comment">{{ evalT4.comment }}</p>
-                  <div v-if="evalT4.supply_paragraph" class="t4-supply">
-                    {{ evalT4.supply_paragraph }}
-                  </div>
-                </template>
-                <div v-else-if="evalT4?.error" class="eval-error">{{ evalT4.error }}</div>
-              </div>
-            </div>
-
-            <div v-if="scriptureReplacementItems.length" class="scripture-review-section">
-              <div class="section-title">经文修改建议</div>
-              <div
-                v-for="(item, index) in scriptureReplacementItems"
-                :key="index"
-                class="scripture-card"
-                :class="{ decided: item.decided }"
-              >
-                <div class="scripture-location">{{ item.location }}</div>
-                <div v-if="item.original_text" class="scripture-original">
-                  <span class="original-label">原文</span>
-                  <p class="original-content">
-                    {{ item.original_text }}
-                  </p>
-                </div>
-                <div class="scripture-row">
-                  <span class="label">原经文</span>
-                  <span class="verse">{{ item.current_verse }}</span>
-                </div>
-                <div class="scripture-row">
-                  <span class="label">建议替换</span>
-                  <span class="verse suggest">{{ item.ai_suggestion }}</span>
-                </div>
-                <div class="scripture-reason">{{ item.reason }}</div>
-                <div v-if="!item.decided" class="scripture-actions">
-                  <button
-                    class="btn-accept"
-                    @click="acceptScriptureReplacement(index)"
-                  >替换</button>
-                  <button
-                    class="btn-reject"
-                    @click="rejectScriptureReplacement(index)"
-                  >保留</button>
-                </div>
-                <div v-else class="scripture-decided">
-                  {{ item.accepted ? "✓ 已替换" : "— 已保留" }}
-                </div>
-              </div>
-            </div>
-
-            <div v-if="evalSynthesis.overall_note" class="synthesis-section">
-              <div class="synthesis-header">
-                <span class="synthesis-title">纲目修改建议</span>
-                <span class="synthesis-note">{{ evalSynthesis.overall_note }}</span>
-              </div>
-
-              <div v-if="evalSynthesis.high_priority?.length" class="priority-group">
-                <div class="priority-label high">需要修改</div>
-                <div
-                  v-for="(item, i) in evalSynthesis.high_priority"
-                  :key="'h' + i"
-                  class="suggestion-card high"
-                >
-                  <div class="suggestion-problem">{{ item.problem }}</div>
-                  <div class="suggestion-body">{{ item.suggestion }}</div>
-                  <div class="suggestion-source">来源：{{ item.source }}</div>
-                </div>
-              </div>
-
-              <div v-if="evalSynthesis.low_priority?.length" class="priority-group">
-                <div class="priority-label low">可以改善</div>
-                <div
-                  v-for="(item, i) in evalSynthesis.low_priority"
-                  :key="'l' + i"
-                  class="suggestion-card low"
-                >
-                  <div class="suggestion-problem">{{ item.problem }}</div>
-                  <div class="suggestion-body">{{ item.suggestion }}</div>
-                  <div class="suggestion-source">来源：{{ item.source }}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="eval-bottom-actions">
-              <a-button @click="toggleOutlineEdit">{{ outlineEditing ? "修改完成" : "修改纲目" }}</a-button>
-              <button
-                class="btn-download-docx"
-                :disabled="!editableAnswer"
-                @click="downloadEvalDocx"
-              >刷格式下载</button>
-              <a-button @click="onRegenerateWithConcepts">调整概念后重新生成</a-button>
-            </div>
-            <div v-if="outlineEditVisible" class="outline-edit-wrap report-outline-edit">
-              <a-textarea
-                id="outline-edit-textarea"
-                v-model:value="editableAnswer"
-                :readonly="outlineEditReadonly"
-                :auto-size="{ minRows: 12, maxRows: 28 }"
-                class="outline-edit-textarea editable-answer-textarea"
-              />
-            </div>
-          </div>
-        </div>
+        <!-- 【4.0】纲目评估已删除（2026-11-11 用户要求） -->
       </div>
     </transition>
 
@@ -2904,12 +2397,6 @@ function goBackToTools() {
             <a-tag :color="item.status === '待确认' ? 'orange' : item.status === '待生成' ? 'blue' : 'green'">
               {{ item.status }}
             </a-tag>
-            <span
-              v-if="item.status === '已生成' && item.eval?.total_score != null"
-              class="history-eval-score"
-            >
-              评估：{{ item.eval.total_score }} / 100
-            </span>
             <span class="history-item-time">{{ item.createdAt }}</span>
           </div>
         </template>

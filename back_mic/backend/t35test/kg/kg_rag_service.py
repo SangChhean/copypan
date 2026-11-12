@@ -28,11 +28,10 @@ from t35test.kg.prompts import (
     BURDEN_DESCRIPTION_PROMPT,
     STEP1_CONCEPT_EXTRACTION,
     FIREWALL_INSTRUCTION,
+    FIREWALL_MENTION_INSTRUCTION,
     STEP2_SKELETON_BUILD,
     QUERY_REWRITE,
-    STEP5_GENERATION,
     STEP5_GENERATION_V4,
-    STEP5_GENERATION_FLAT,
     STEP5_GENERATION_FLAT_V4,
 )
 from .bird_view_prompts import (
@@ -54,7 +53,9 @@ BURDEN_DESCRIPTION_SYSTEM = (
     "「真理启示：...\\n内在素质：...\\n生命经历：...\\n实行应用：...」，"
     "然后「要点依据：」按四种负担说明分组列出每条负担说明的要点方向与理由。"
 )
+from t35test.burden_library import apply_excerpt_clause, apply_no_excerpt_clause, load_verified_library
 from t35test.kg.firewall import match_firewall
+from t35test.kg.dictionary_3a3b import format_dict_block, select_dict_chunks  # 【4.0】真理辞典 3a
 from t35test.kg.llm_pricing import pack_llm_usage_response, register_llm_usage
 
 
@@ -76,6 +77,7 @@ from t35test.kg.retrieval import (
     rrf_merge,
     rerank,
     skeleton_route_search,
+    pano_catalog_search,
 )
 
 DEFAULT_PARAMS = {
@@ -86,7 +88,7 @@ DEFAULT_PARAMS = {
     "bm25_weight": 1.0,
     "dense_weight": 1.0,
     "rerank_top_n": 15,
-    "skeleton_route_top_k": 45,
+    "skeleton_route_top_k": 60,  # 【4.0】四层每个词约 3 条，总量 60（3.0 为三层 45）
     "skeleton_route_max_per_node": 15,  # 路3 每扩展节点去重后并入 expanded_results 的条数上限
     "temperature": 0.3,
     "skip_query_rewrite": False,
@@ -105,13 +107,65 @@ DEFAULT_PARAMS = {
 }
 
 CACHE_TTL = 604800  # 7 天
+_CACHE_MODE_TAG = "3.5"  # 【4.0】缓存键里的流程标记沿用改名前的 "3.5"，改名不影响已有缓存
 
-_INDICES_BASE = ",".join([
-    "kg-rag_life", "kg-rag_cwwl", "kg-rag_cwwn",
-    "kg-rag_others", "kg-rag_bib", "kg-rag_map_note",
-    "kg-rag_7feasts",
-])
-_INDICES_FULL = _INDICES_BASE + ",kg-rag_pano,kg-rag_dictionary"
+# 【4.0】3.0 旧库名清单（_INDICES_BASE/_INDICES_FULL）与纲目职事化程序已于 2026-11-11 删除；4.0 只查 PANAI4_INDEX_CONFIG 里的库。
+
+# ---------------------------------------------------------------------------
+# 【4.0】索引配置表：三路检索只查这九个 4.0 库（不查 3.0 的 kg-rag_*）。
+# 向量字段名有两种（原因：用一个字段查全部库不报错，但另一组的 5 个库一条都回不来），
+# 所以向量路在一个请求里同时写两个字段，九个库一次查完，ES 数据不用改。
+# ---------------------------------------------------------------------------
+PANAI4_INDEX_CONFIG: dict[str, dict[str, str]] = {
+    "panai4_text_life":      {"vector": "text_vector", "label": "生命读经原文"},
+    "panai4_text_cwwl":      {"vector": "text_vector", "label": "李文集原文"},
+    "panai4_text_cwwn":      {"vector": "text_vector", "label": "倪文集原文"},
+    "panai4_text_others":    {"vector": "text_vector", "label": "其他"},
+    "panai4_map_note":       {"vector": "text_vector", "label": "圣经注解"},
+    "panai4_outline_12490":  {"vector": "embedding",   "label": "倪李文集纲目"},
+    "panai4_outline_feasts": {"vector": "embedding",   "label": "节期纲目"},
+    "panai4_bible":          {"vector": "embedding",   "label": "圣经"},
+    "panai4_hymns":          {"vector": "embedding",   "label": "诗歌"},
+}
+_INDICES_V4 = ",".join(PANAI4_INDEX_CONFIG)
+_VECTOR_FIELDS_V4 = tuple(dict.fromkeys(c["vector"] for c in PANAI4_INDEX_CONFIG.values()))
+
+# 清明上河图目录：单独查一路（关键词），排除目录层节点，取前 20 条（暂定）；不进 RRF 和精排
+PANO_CATALOG_INDEX = "panai4_pano_catalog"
+PANO_CATALOG_TOP_K = 20
+
+
+def _concat_four_layers(
+    revelation: list[str],
+    inner: list[str],
+    experience: list[str],
+    practice: list[str],
+) -> list[str]:
+    """【4.0】四层词唯一的拼接方法：真理启示 → 内在素质 → 生命经历 → 实行应用，去重保序。
+    龙骨（Step2 的 deep_indices 编号）、路 3、生成纲目都用这一个函数，保证编号对应一致。"""
+    return list(dict.fromkeys(
+        [str(c).strip() for c in (revelation or []) + (inner or []) + (experience or []) + (practice or [])
+         if str(c).strip()]
+    ))
+
+
+def _format_catalog_block(catalog_results: list[dict]) -> str:
+    """【4.0】生成纲目 Prompt 里单独的一段：清明上河图目录的相关篇题（只有篇题，没有内容）。没有结果时不放这一段。"""
+    if not catalog_results:
+        return ""
+    lines = ["## 相关篇题（清明上河图目录）", "以下是职事信息中与本主题相关的篇题，只有篇题、没有内容，供参考："]
+    for c in catalog_results:
+        lines.append(f"[{c.get('node_id') or c.get('chunk_id') or ''}] {_display_title(c)}")
+    return "\n" + "\n".join(lines) + "\n"
+
+
+def _format_mutual_block(mutual_results: list[dict]) -> str:
+    """【4.0】生成纲目 Prompt 里单独的一段：彼此互相（用户 2026-11-11 确认的文字）。选中的词都没有这类标注时不放。"""
+    if not mutual_results:
+        return ""
+    lines = ["## 彼此互相", "以下是本主题所选词条中，与信徒彼此之间相关的说法，供参考："]
+    lines += [f"- {c['text']}" for c in mutual_results]
+    return "\n" + "\n".join(lines) + "\n"
 
 
 def _make_cache_key(
@@ -124,11 +178,33 @@ def _make_cache_key(
     revelation_joined: str = "",
     experience_joined: str = "",
     practice_joined: str = "",
+    inner_joined: str = "",
 ) -> str:
-    """query + outline_nature + burden_description + audience + depth + mode + revelation_joined + experience_joined + practice_joined 拼接 SHA256，返回 Redis key。"""
-    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}"
+    """query + outline_nature + burden_description + audience + depth + mode + 四层词 拼接 SHA256，返回 Redis key。
+    【4.0】前缀 panai4:cache:（接 4.0 资料前的旧结果用 t35test:cache:，换前缀后不会再被读到）。"""
+    raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}|{inner_joined}"
+    raw += "|dict3a"  # 【4.0】3a 正式放入后的标记：不读放 3a 之前（及研究开关时）的旧结果
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    return f"t35test:cache:{h}"
+    return f"panai4:cache:{h}"
+
+
+def _display_title(d: dict) -> str:
+    """【4.0】引用来源里显示的出处（按库取）：
+    原文/注解取 source_zh；纲目取 text 开头的出处；圣经取书名+节号；诗歌取 name；目录取 path_text+篇题。"""
+    idx = str(d.get("_index") or "")
+    text = str(d.get("text") or "")
+    if idx == PANO_CATALOG_INDEX:
+        parts = [str(d.get(k) or "").strip() for k in ("path_text", "msg_label", "title")]
+        return "　".join(x for x in parts if x)
+    if idx.startswith("panai4_text_") or idx == "panai4_map_note":
+        return str(d.get("source_zh") or "").strip().strip("（）()")
+    if idx.startswith("panai4_outline_"):
+        return text.split("\n\n", 1)[0].strip()  # 纲目 text 开头一行是出处，之后空一行才是正文
+    if idx == "panai4_bible":
+        return f"{d.get('book_title') or ''} {d.get('verse_range') or ''}".strip()
+    if idx == "panai4_hymns":
+        return str(d.get("name") or "").strip()
+    return ""
 
 
 def _extract_main_sources(main_results: list[dict]) -> list[dict]:
@@ -142,6 +218,7 @@ def _extract_main_sources(main_results: list[dict]) -> list[dict]:
             "book_title": d.get("book_title", ""),
             "source_zh": d.get("source_zh", ""),
             "message_title": d.get("message_title", ""),
+            "display_title": d.get("display_title") or _display_title(d),
             "text_preview": preview,
         })
     return out
@@ -177,7 +254,7 @@ OUTLINE_NATURE_WEIGHTS: dict[str, list[tuple[Callable[[str, str], bool], float]]
         (lambda idx, cid: _is_cwwl_year_range(cid, 1994, 1997), 1.5),
     ],
     "生命经历": [
-        (lambda idx, cid: idx in ("kg-rag_cwwn", "kg-rag_life"), 1.3),
+        (lambda idx, cid: idx in ("panai4_text_cwwn", "panai4_text_life"), 1.3),  # 【4.0】改认 4.0 的库名
     ],
     "实行应用": [
         (lambda idx, cid: _is_cwwl_year_range(cid, 1985, 1993), 1.3),
@@ -281,53 +358,19 @@ def _resolve_step1_model(p: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 【新测试台】内在素质层：最内在词库（133 个最内在词，来自已导入的 panai_new_term_category）
+# 【新测试台】内在素质层：最内在词库（133 个最内在词）
+# 【4.0】改读 neo4j-v4（intrinsic_significance=最内在），见 neo4j_client.get_inner_words；
+#        旧的 _load_inner_words（读 ES panai_new_term_category）已删除，4.0 不再读 panai_new_*。
 # INNER_SCHEME 决定与旧图谱同名的词怎么处理（每轮开跑前切换）：
 #   A：最内在词只给内在素质层用，从概念列表里拿掉同名的（正式方案）
 #   B：两边都留，由模型判断放哪层
 #   C：两边都留，Prompt 规定同名的优先归内在素质层
 # ---------------------------------------------------------------------------
-INNER_INDEX = "panai_new_term_category"
 INNER_CATEGORY = "最内在"
 INNER_SCHEME = "A"
 INNER_SCHEME_RULES = {
     "C": "若某个词同时出现在概念列表和最内在词库中,优先归入 intrinsic_essence。\n",
 }
-_INNER_WORDS_CACHE: list[str] = []
-
-
-def _load_inner_words(es: Any) -> list[str]:
-    """读最内在词库（按词条序号排序，去重）；读到后缓存在内存里。读取失败返回空列表且不缓存。"""
-    global _INNER_WORDS_CACHE
-    if _INNER_WORDS_CACHE:
-        return _INNER_WORDS_CACHE
-    try:
-        resp = es.search(
-            index=INNER_INDEX,
-            body={
-                "size": 1000,
-                "query": {"bool": {"filter": [
-                    {"term": {"doc_type": "word"}},
-                    {"term": {"category": INNER_CATEGORY}},
-                ]}},
-                "sort": [{"term_no": "asc"}],
-                "_source": ["name"],
-            },
-        )
-    except Exception as e:
-        logger.warning("[t35test INNER] 读取最内在词库失败，内在素质层本次没有候选: %s", e)
-        return []
-    words: list[str] = []
-    for hit in (resp.get("hits") or {}).get("hits") or []:
-        name = str((hit.get("_source") or {}).get("name") or "").strip()
-        if name and name not in words:
-            words.append(name)
-    if words:
-        _INNER_WORDS_CACHE = words
-        logger.info("[t35test INNER] 最内在词库已载入：%s 个词", len(words))
-    return words
-
-
 class Step5TruncatedError(RuntimeError):
     """stop_reason=max_tokens 且响应里没有 text block。同模型同参数再试不会产生正文。"""
 
@@ -361,6 +404,11 @@ def _format_skeleton(skeleton: list[dict] | None) -> str:
     )
 
 
+def _is_v4_chunk(c: dict) -> bool:
+    """【4.0】来自 4.0 库的段落：text 开头已带出处，给模型只写 chunk_id + text，不再拼书名篇题（避免重复）。"""
+    return str(c.get("_index") or "").startswith("panai4_")
+
+
 def _format_chunks(chunks: list[dict]) -> str:
     """格式化段落列表为 Prompt 文本。"""
     out = []
@@ -378,6 +426,8 @@ def _format_chunks(chunks: list[dict]) -> str:
             line1 += f" {msg_title}"
         if sec:
             line1 += f" {sec}"
+        if _is_v4_chunk(c):
+            line1 = f"[{chunk_id}]"
         out.append(line1)
         out.append(text.strip() if text else "")
         out.append("---")
@@ -399,6 +449,8 @@ def _format_expanded_chunks(chunks: list[dict]) -> str:
             line1 += f" 第{msg}篇"
         if msg_title:
             line1 += f" {msg_title}"
+        if _is_v4_chunk(c):
+            line1 = f"[{chunk_id}] (扩展自: {expanded_from})"
         out.append(line1)
         out.append(text.strip() if text else "")
         out.append("---")
@@ -417,6 +469,8 @@ def _format_chunk_line(c: dict, max_text: int = 300) -> str:
         header += f" 第{msg}篇"
     if msg_title:
         header += f" {msg_title}"
+    if _is_v4_chunk(c):
+        header = f"[{chunk_id}]"
     preview = text if len(text) <= max_text else text[:max_text] + "…"
     return f"{header}\n{preview}"
 
@@ -983,7 +1037,7 @@ def _claude_thinking_text(msg: Any) -> str:
     return text
 
 
-STEP1_THINKING_TRANSLATE_MODEL = "claude-haiku-4-5-20251001"  # 便宜模型，够用；与 MINISTERIALIZE_CLAUDE_MODEL 同款
+STEP1_THINKING_TRANSLATE_MODEL = "claude-haiku-4-5-20251001"  # 便宜模型，够用
 
 
 async def _translate_thinking_to_chinese(text: str, glossary: str = "") -> str:
@@ -1025,6 +1079,7 @@ async def _call_claude(
     system: str | None = None,
     *,
     diag_step: str | None = None,
+    user_prefix: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """
     封装 Claude API 调用。复用 ai_search 的 Claude 客户端（CLAUDE_API_KEY）。
@@ -1046,7 +1101,15 @@ async def _call_claude(
             model=model,
             max_tokens=max_tokens,
             system=system or "你是一位专业、精确的助手。请严格按要求的格式输出。",
-            messages=[{"role": "user", "content": prompt}],
+            # user_prefix（负担说明的词库）作为单独一段放在 Prompt 之前；不传时请求与原来完全相同
+            messages=[{
+                "role": "user",
+                "content": (
+                    [{"type": "text", "text": user_prefix}, {"type": "text", "text": prompt}]
+                    if user_prefix
+                    else prompt
+                ),
+            }],
         )
         # 【新测试台】Opus 5.5 不支持关闭思考（会 400），不传 thinking 即可；它的思考计入 max_tokens，
         # 为避免额度被思考用光而没有正文，给它至少 16000 的输出额度（与 4.0 测试台一致）。Sonnet 5 仍可关闭思考。
@@ -1347,7 +1410,7 @@ class KgRagService:
             self.redis = redis_client
         except Exception:
             self.redis = None
-        self.index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_FULL)
+        self.index = _INDICES_V4  # 【4.0】只查 4.0 的九个库；不读 KG_RAG_ES_INDEX，避免被指回 3.0 的库
 
     async def _run_step2(
         self,
@@ -1359,11 +1422,13 @@ class KgRagService:
         p: dict,
         llm_calls: list[dict[str, Any]],
         burden_description: str = "",
+        inner: list[str] | None = None,
     ) -> dict[str, Any]:
-        """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 为 Step1 三层概念并集。"""
+        """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 为 Step1 四层概念并集（【4.0】含内在素质层）。"""
+        inner = list(inner or [])
         paths: list[dict] = []
         skeleton: list[str] | None = None
-        expanded_nodes = list(dict.fromkeys(revelation + experience + practice))
+        expanded_nodes = _concat_four_layers(revelation, inner, experience, practice)
         graph_error: str | None = None
         llm_elapsed_ms_step2 = 0.0
         prompt_out: str | None = None
@@ -1400,7 +1465,7 @@ class KgRagService:
             }
 
         paths_text = _format_paths_text(paths)
-        key_verses_raw = self.neo4j.get_key_verses(revelation + experience + practice)
+        key_verses_raw = self.neo4j.get_key_verses(expanded_nodes)
         key_verses_text = _format_key_verses_text(key_verses_raw)
         logger.info(f"[KG-RAG DEBUG] Step2 key_verses_text:\n{key_verses_text}")
         bd = (burden_description or "").strip()
@@ -1411,6 +1476,7 @@ class KgRagService:
             outline_nature=outline_nature,
             intrinsic_burden_text=intrinsic_burden_text,
             revelation_json=json.dumps(revelation, ensure_ascii=False),
+            inner_json=json.dumps(inner, ensure_ascii=False),
             experience_json=json.dumps(experience, ensure_ascii=False),
             practice_json=json.dumps(practice, ensure_ascii=False),
             paths_text=paths_text,
@@ -1512,7 +1578,7 @@ class KgRagService:
             "inner_reason": inner_reason,
         }
 
-    async def full_query(self, query: str, params: dict | None = None, mode: str = "3.0") -> dict:
+    async def full_query(self, query: str, params: dict | None = None, mode: str = "4.0") -> dict:
         """全流程：Step 1→2→3→4→5，返回最终回答与每步中间结果。"""
         p = {**DEFAULT_PARAMS, **(params or {})}
         result = {"query": query, "params": p, "steps": {}, "answer": None}
@@ -1534,13 +1600,11 @@ class KgRagService:
         burden_description = str(p.get("burden_description") or "").strip()
         audience = str(p.get("audience") or "").strip()
 
-        # ── Mode 选择（2.0 / 3.0 / 3.5）──
-        # 3.5 使用全索引与 STEP5_GENERATION_V4 / STEP5_GENERATION_FLAT_V4（常量名不改）。
-        mode = str(mode or "3.0").strip()
-        if mode == "3.5":
-            active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_FULL)
-        else:
-            active_index = os.environ.get("KG_RAG_ES_INDEX", _INDICES_BASE)
+        # 【4.0】只有一条流程：原来的 2.0 / 3.0 分岔已于 2026-11-11 删除，原名“3.5”的这条改名“4.0”。
+        # mode 参数只为兼容旧请求而保留，传什么都走 4.0；生成纲目一律用 STEP5_GENERATION_V4 / STEP5_GENERATION_FLAT_V4。
+        mode = "4.0"
+        # 【4.0】不分 mode，一律只查 4.0 的九个库（不读 KG_RAG_ES_INDEX，避免被指回 3.0 的 kg-rag_*）
+        active_index = _INDICES_V4
 
         result["params_used"] = {
             "outline_nature": outline_nature,
@@ -1554,6 +1618,12 @@ class KgRagService:
         preset_revelation = p.get("preset_revelation") or []
         preset_experience = p.get("preset_experience") or []
         preset_practice = p.get("preset_practice") or []
+        preset_inner = p.get("preset_inner") or []  # 【4.0】内在素质层（前端早已传入，之前后端没读）
+        inner_joined = (
+            "|".join(sorted(str(c).strip() for c in preset_inner if str(c).strip()))
+            if isinstance(preset_inner, list)
+            else ""
+        )
         revelation_joined = (
             "|".join(sorted(str(c).strip() for c in preset_revelation if str(c).strip()))
             if isinstance(preset_revelation, list)
@@ -1575,10 +1645,11 @@ class KgRagService:
             burden_description,
             audience,
             depth,
-            mode,
+            _CACHE_MODE_TAG,  # 【4.0】沿用改名前的标记，已有缓存照样读得到
             revelation_joined,
             experience_joined,
             practice_joined,
+            inner_joined,
         )
         skip_cache = bool(p.get("skip_cache"))
         if self.redis and not skip_cache:
@@ -1605,18 +1676,6 @@ class KgRagService:
             match_firewall(query, _call_kg_rag_llm, llm_calls=llm_calls)
         )
 
-        # ── 2.0 模式：跳过 Step1 / Step2 / 路3，直接进入检索 ──
-        skip_kg = (mode == "2.0")
-
-        # ── 2.0 模式：放大检索参数（无路3补偿）──
-        if skip_kg:
-            if depth == "deep":
-                p["bm25_top_k"] = 120
-                p["rerank_top_n"] = 100
-            else:
-                p["bm25_top_k"] = 60
-                p["rerank_top_n"] = 60
-
         concepts = []
         revelation: list[str] = []
         inner: list[str] = []  # 【新测试台】内在素质层；目前只在推荐重点返回，后面骨架/检索/生成纲目还没接收这一层
@@ -1627,199 +1686,184 @@ class KgRagService:
         step1_dropped: list[dict[str, str]] = []
         inner_words: list[str] = []
 
-        if not skip_kg:
-            # Step 1: 概念抽取（skip_skeleton_route 时与 Step2 一并跳过，不走路3 骨架时无需图谱概念）
-            step1_start = asyncio.get_event_loop().time()
-            step1_elapsed_ms = 0.0
-            raw1 = ""
-            u1: dict[str, int] | None = None
-            m1 = _resolve_step1_model(p)
+        # Step 1: 概念抽取（skip_skeleton_route 时与 Step2 一并跳过，不走路3 骨架时无需图谱概念）
+        step1_start = asyncio.get_event_loop().time()
+        step1_elapsed_ms = 0.0
+        raw1 = ""
+        u1: dict[str, int] | None = None
+        m1 = _resolve_step1_model(p)
 
-            if (
-                isinstance(preset_revelation, list)
-                and isinstance(preset_experience, list)
-                and isinstance(preset_practice, list)
-                and preset_revelation
-            ):
-                revelation = [str(c).strip() for c in preset_revelation if str(c).strip()]
-                experience = [str(c).strip() for c in preset_experience if str(c).strip()]
-                practice = [str(c).strip() for c in preset_practice if str(c).strip()]
-                concepts = list(dict.fromkeys(revelation + experience + practice))
-                summary = "（人工指定概念，跳过 Step 1）"
-                # 【新测试台】页面上勾选/输入的关键圣经节（可选）：先记进 Step1 结果，暂不放进生成纲目的 Prompt
-                preset_key_verses = p.get("preset_key_verses") or []
-                if isinstance(preset_key_verses, list):
-                    key_verses = [str(v).strip() for v in preset_key_verses if str(v).strip()]
-                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-                result["steps"]["step1"] = {
-                    "concepts": concepts,
-                    "revelation": revelation,
-                    "experience": experience,
-                    "practice": practice,
-                    "summary": summary,
-                    "key_verses": key_verses,
-                    "elapsed_ms": round(step1_elapsed_ms, 1),
-                    "raw_response": None,
-                    "preset": True,
-                }
-                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-                logger.info(
-                    "[KG-RAG] Step 1 skipped: using preset revelation=%s experience=%s practice=%s",
-                    revelation,
-                    experience,
-                    practice,
-                )
-            elif p.get("skip_skeleton_route"):
-                logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
-                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-                result["steps"]["step1"] = {
-                    "skipped": True,
-                    "reason": "skip_skeleton_route",
-                    "concepts": [],
-                    "revelation": [],
-                    "experience": [],
-                    "practice": [],
-                    "summary": "",
-                    "elapsed_ms": round(step1_elapsed_ms, 1),
-                    "raw_response": None,
-                }
-                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-            else:
-                try:
-                    concept_names = self.neo4j.get_concept_names()
-                    # 【新测试台】最内在词库；方案 A 时把同名的从概念列表里拿掉
-                    inner_words = await asyncio.to_thread(_load_inner_words, self.es)
-                    inner_set = set(inner_words)
-                    if INNER_SCHEME == "A":
-                        concept_names = [c for c in concept_names if c not in inner_set]
-                    concept_set = set(concept_names)
-                    concept_list_text = "、".join(concept_names)
-                    inner_list_text = "、".join(inner_words) if inner_words else "（无）"
-                    logger.info(
-                        "[t35test INNER] scheme=%s concept_list=%s inner_list=%s",
-                        INNER_SCHEME, len(concept_names), len(inner_words),
-                    )
-                    burden_line = (
-                        f"\n信息负担说明：{burden_description}"
-                        if (burden_description or "").strip()
-                        else ""
-                    )
-                    step1_prompt = STEP1_CONCEPT_EXTRACTION.format(
-                        query=query,
-                        outline_nature=outline_nature,
-                        burden_line=burden_line,
-                        concept_list=concept_list_text,
-                        inner_list=inner_list_text,
-                        inner_scheme_rule=INNER_SCHEME_RULES.get(INNER_SCHEME, ""),
-                    )
-                    logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
-                    step1_extract_start = asyncio.get_event_loop().time()
-                    logger.info(
-                        f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
-                    )
-                    raw1, u1 = await _call_kg_rag_llm(
-                        step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800),
-                        diag_step="step1",
-                    )
-                    logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
-                    revelation, inner, experience, practice, summary, key_verses, step1_dropped, step1_truncated = _parse_step1_layers(
-                        raw1, outline_nature=outline_nature, concept_set=concept_set, inner_set=inner_set
-                    )
-                    if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
-                        logger.info(
-                            "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
-                        )
-                        raw1_fallback, u1_fallback = await _call_kg_rag_llm(
-                            step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
-                        )
-                        r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb, d_fb, t_fb = _parse_step1_layers(
-                            raw1_fallback, outline_nature=outline_nature,
-                            concept_set=concept_set, inner_set=inner_set,
-                        )
-                        logger.info(
-                            f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
-                            f"preview={(raw1_fallback or '')[:300]}"
-                        )
-                        if r_fb or e_fb or p_fb:
-                            raw1, u1 = raw1_fallback, u1_fallback
-                            revelation, inner, experience, practice, summary, key_verses = r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb
-                            step1_dropped = d_fb
-                            step1_truncated = t_fb
-                            m1 = "gpt-5.4"
-                            logger.info(
-                                f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
-                            )
-                    step1_extract_elapsed_ms = (asyncio.get_event_loop().time() - step1_extract_start) * 1000
-                    logger.info(
-                        f"[KG-RAG DEBUG] Step1 extraction_parse elapsed_ms={step1_extract_elapsed_ms:.1f}"
-                    )
-                    logger.info(
-                        f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, inner: {inner}, experience: {experience}, "
-                        f"practice: {practice}, dropped: {step1_dropped}, truncated: {step1_truncated}, "
-                        f"key_verses: {key_verses}, summary: {summary[:200] if summary else ''}"
-                    )
-                    concepts = []
-                    seen = set()
-                    for c in revelation + experience + practice:
-                        if c not in seen:
-                            seen.add(c)
-                            concepts.append(c)
-                except Exception as e:
-                    result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
-                step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
-                if "step1" not in result["steps"]:
-                    step1_thinking_text = (u1 or {}).get("thinking_text", "")
-                    step1_thinking_text_zh = await _translate_thinking_to_chinese(
-                        step1_thinking_text,
-                        glossary=f"{concept_list_text}、{inner_list_text}",
-                    )
-                    s1: dict[str, Any] = {
-                        "concepts": concepts,
-                        "revelation": revelation,
-                        "inner": inner,
-                        "experience": experience,
-                        "practice": practice,
-                        "summary": summary,
-                        "key_verses": key_verses,
-                        "elapsed_ms": round(step1_elapsed_ms, 1),
-                        "raw_response": raw1,
-                        "inner_scheme": INNER_SCHEME,
-                        "inner_words_count": len(inner_words),
-                        "dropped": step1_dropped,
-                        "truncated": step1_truncated,
-                        "model": m1,
-                        "thinking_text": step1_thinking_text,
-                        "thinking_text_zh": step1_thinking_text_zh,
-                    }
-                    sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
-                    if sn1:
-                        s1["llm_usage"] = sn1
-                        logger.info(
-                            f"[KG-RAG LLM] step1 model={m1} billing={sn1['billing_model']} "
-                            f"in={sn1['input_tokens']} out={sn1['output_tokens']} cost_usd≈{sn1['cost_usd']}"
-                        )
-                    result["steps"]["step1"] = s1
-                step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
-        else:
-            logger.info("[KG-RAG DEBUG] mode 2.0: skip Step1")
+        if (
+            isinstance(preset_revelation, list)
+            and isinstance(preset_experience, list)
+            and isinstance(preset_practice, list)
+            and preset_revelation
+        ):
+            revelation = [str(c).strip() for c in preset_revelation if str(c).strip()]
+            experience = [str(c).strip() for c in preset_experience if str(c).strip()]
+            practice = [str(c).strip() for c in preset_practice if str(c).strip()]
+            inner = (
+                [str(c).strip() for c in preset_inner if str(c).strip()]
+                if isinstance(preset_inner, list) else []
+            )
+            concepts = _concat_four_layers(revelation, inner, experience, practice)
+            summary = "（人工指定概念，跳过 Step 1）"
+            # 【新测试台】页面上勾选/输入的关键圣经节（可选）：先记进 Step1 结果，暂不放进生成纲目的 Prompt
+            preset_key_verses = p.get("preset_key_verses") or []
+            if isinstance(preset_key_verses, list):
+                key_verses = [str(v).strip() for v in preset_key_verses if str(v).strip()]
+            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+            result["steps"]["step1"] = {
+                "concepts": concepts,
+                "revelation": revelation,
+                "inner": inner,
+                "experience": experience,
+                "practice": practice,
+                "summary": summary,
+                "key_verses": key_verses,
+                "elapsed_ms": round(step1_elapsed_ms, 1),
+                "raw_response": None,
+                "preset": True,
+            }
+            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+            logger.info(
+                "[KG-RAG] Step 1 skipped: using preset revelation=%s inner=%s experience=%s practice=%s",
+                revelation,
+                inner,
+                experience,
+                practice,
+            )
+        elif p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step1 概念抽取")
+            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
             result["steps"]["step1"] = {
                 "skipped": True,
-                "reason": "mode_2.0",
+                "reason": "skip_skeleton_route",
                 "concepts": [],
                 "revelation": [],
                 "experience": [],
                 "practice": [],
                 "summary": "",
-                "elapsed_ms": 0.0,
+                "elapsed_ms": round(step1_elapsed_ms, 1),
                 "raw_response": None,
             }
-            step_elapsed_ms["step1"] = 0.0
-
-
+            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
+        else:
+            try:
+                concept_names = self.neo4j.get_concept_names()
+                # 【新测试台】最内在词库；方案 A 时把同名的从概念列表里拿掉
+                # 【4.0】名单都来自 neo4j-v4：2,372 个词条，最内在 133 个只给内在素质层，其余 2,239 个给另外三层
+                inner_words = self.neo4j.get_inner_words()
+                inner_set = set(inner_words)
+                if INNER_SCHEME == "A":
+                    concept_names = [c for c in concept_names if c not in inner_set]
+                concept_set = set(concept_names)
+                concept_list_text = "、".join(concept_names)
+                inner_list_text = "、".join(inner_words) if inner_words else "（无）"
+                logger.info(
+                    "[t35test INNER] scheme=%s concept_list=%s inner_list=%s",
+                    INNER_SCHEME, len(concept_names), len(inner_words),
+                )
+                burden_line = (
+                    f"\n信息负担说明：{burden_description}"
+                    if (burden_description or "").strip()
+                    else ""
+                )
+                step1_prompt = STEP1_CONCEPT_EXTRACTION.format(
+                    query=query,
+                    outline_nature=outline_nature,
+                    burden_line=burden_line,
+                    concept_list=concept_list_text,
+                    inner_list=inner_list_text,
+                    inner_scheme_rule=INNER_SCHEME_RULES.get(INNER_SCHEME, ""),
+                )
+                logger.info(f"[KG-RAG DEBUG] Step1 prompt (with concept list): {step1_prompt}")
+                step1_extract_start = asyncio.get_event_loop().time()
+                logger.info(
+                    f"[KG-RAG DEBUG] Step1 LLM 即将调用，model={m1}，prompt 前100字：{step1_prompt[:100]}"
+                )
+                raw1, u1 = await _call_kg_rag_llm(
+                    step1_prompt, m1, temperature=0, max_tokens=_max_tokens_for_model(m1, 800),
+                    diag_step="step1",
+                )
+                logger.info("[KG-RAG DEBUG] Step1 LLM 调用完成")
+                revelation, inner, experience, practice, summary, key_verses, step1_dropped, step1_truncated = _parse_step1_layers(
+                    raw1, outline_nature=outline_nature, concept_set=concept_set, inner_set=inner_set
+                )
+                if not revelation and not experience and not practice and (m1 or "").strip().lower() == "gpt-5.4-thinking":
+                    logger.info(
+                        "[KG-RAG DEBUG] Step1 gpt-5.4-thinking returned empty layers, retry once with gpt-5.4"
+                    )
+                    raw1_fallback, u1_fallback = await _call_kg_rag_llm(
+                        step1_prompt, "gpt-5.4", temperature=0, max_tokens=800
+                    )
+                    r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb, d_fb, t_fb = _parse_step1_layers(
+                        raw1_fallback, outline_nature=outline_nature,
+                        concept_set=concept_set, inner_set=inner_set,
+                    )
+                    logger.info(
+                        f"[KG-RAG DEBUG] Step1 fallback raw stats: chars={len(raw1_fallback or '')}, "
+                        f"preview={(raw1_fallback or '')[:300]}"
+                    )
+                    if r_fb or e_fb or p_fb:
+                        raw1, u1 = raw1_fallback, u1_fallback
+                        revelation, inner, experience, practice, summary, key_verses = r_fb, i_fb, e_fb, p_fb, sum_fb, kv_fb
+                        step1_dropped = d_fb
+                        step1_truncated = t_fb
+                        m1 = "gpt-5.4"
+                        logger.info(
+                            f"[KG-RAG DEBUG] Step1 fallback success: revelation={revelation}, experience={experience}, practice={practice}"
+                        )
+                step1_extract_elapsed_ms = (asyncio.get_event_loop().time() - step1_extract_start) * 1000
+                logger.info(
+                    f"[KG-RAG DEBUG] Step1 extraction_parse elapsed_ms={step1_extract_elapsed_ms:.1f}"
+                )
+                logger.info(
+                    f"[KG-RAG DEBUG] Step 1 revelation: {revelation}, inner: {inner}, experience: {experience}, "
+                    f"practice: {practice}, dropped: {step1_dropped}, truncated: {step1_truncated}, "
+                    f"key_verses: {key_verses}, summary: {summary[:200] if summary else ''}"
+                )
+                concepts = _concat_four_layers(revelation, inner, experience, practice)
+            except Exception as e:
+                result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
+            step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
+            if "step1" not in result["steps"]:
+                step1_thinking_text = (u1 or {}).get("thinking_text", "")
+                step1_thinking_text_zh = await _translate_thinking_to_chinese(
+                    step1_thinking_text,
+                    glossary=f"{concept_list_text}、{inner_list_text}",
+                )
+                s1: dict[str, Any] = {
+                    "concepts": concepts,
+                    "revelation": revelation,
+                    "inner": inner,
+                    "experience": experience,
+                    "practice": practice,
+                    "summary": summary,
+                    "key_verses": key_verses,
+                    "elapsed_ms": round(step1_elapsed_ms, 1),
+                    "raw_response": raw1,
+                    "inner_scheme": INNER_SCHEME,
+                    "inner_words_count": len(inner_words),
+                    "dropped": step1_dropped,
+                    "truncated": step1_truncated,
+                    "model": m1,
+                    "thinking_text": step1_thinking_text,
+                    "thinking_text_zh": step1_thinking_text_zh,
+                }
+                sn1 = register_llm_usage(llm_calls, step="step1", request_model=m1, usage=u1)
+                if sn1:
+                    s1["llm_usage"] = sn1
+                    logger.info(
+                        f"[KG-RAG LLM] step1 model={m1} billing={sn1['billing_model']} "
+                        f"in={sn1['input_tokens']} out={sn1['output_tokens']} cost_usd≈{sn1['cost_usd']}"
+                    )
+                result["steps"]["step1"] = s1
+            step_elapsed_ms["step1"] = round(step1_elapsed_ms, 1)
         normalized = concepts
 
-        if p.get("skip_skeleton_route") or skip_kg:
-            logger.info("[KG-RAG DEBUG] skip_skeleton_route or mode 2.0: Step1/2 已跳过，进入 Step3")
+        if p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] skip_skeleton_route: Step2 已跳过，进入 Step3")
         else:
             logger.info("[KG-RAG DEBUG] Step 1 done: concepts go directly to Step2")
 
@@ -1833,7 +1877,7 @@ class KgRagService:
                 "paths": [],
                 "paths_count": 0,
                 "skeleton": None,
-                "expanded_nodes": list(dict.fromkeys(revelation + experience + practice)),
+                "expanded_nodes": _concat_four_layers(revelation, inner, experience, practice),
                 "elapsed_ms": 0.0,
             }
             result["steps"]["step3"] = {
@@ -1909,17 +1953,18 @@ class KgRagService:
                 p,
                 llm_calls,
                 burden_description=burden_description,
+                inner=inner,
             )
             dt_ms = (asyncio.get_event_loop().time() - t0) * 1000
             return s2, dt_ms
 
         step2_start = asyncio.get_event_loop().time()
-        if p.get("skip_skeleton_route") or skip_kg:
-            logger.info("[KG-RAG DEBUG] skip_skeleton_route or mode 2.0: 跳过 Step2")
+        if p.get("skip_skeleton_route"):
+            logger.info("[KG-RAG DEBUG] skip_skeleton_route: 跳过 Step2")
             step2_end = asyncio.get_event_loop().time()
             paths = []
             skeleton = None
-            expanded_nodes = [] if skip_kg else list(dict.fromkeys(revelation + experience + practice))
+            expanded_nodes = _concat_four_layers(revelation, inner, experience, practice)
             step2_body = {
                 "paths": [],
                 "paths_count": 0,
@@ -1927,10 +1972,10 @@ class KgRagService:
                 "expanded_nodes": expanded_nodes,
                 "elapsed_ms": round((step2_end - step2_start) * 1000, 1),
                 "skipped": True,
-                "reason": "mode_2.0" if skip_kg else "skip_skeleton_route",
+                "reason": "skip_skeleton_route",
             }
             result["steps"]["step2"] = step2_body
-            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route or mode 2.0)")
+            logger.info("[KG-RAG DEBUG] Step2 skipped (skip_skeleton_route)")
             if not p.get("skip_query_rewrite"):
                 rewritten_queries, query_rewrite_parsed_ok, u_rw = await _run_query_rewrite()
         else:
@@ -2042,10 +2087,15 @@ class KgRagService:
         # "ES 调用本身失败被静默降级"——这是本次改动里对 retrieval.py 做的唯一最小改动
         # （新增可选 errors 形参，默认 None 时行为与改动前完全一致）。
         es_call_errors: list[str] = []
+        # 【4.0】清明上河图目录单独一路（关键词，前 20 条），和三路检索同时跑，不进 RRF 和精排
+        catalog_task = asyncio.create_task(
+            pano_catalog_search(self.es, query, PANO_CATALOG_INDEX, PANO_CATALOG_TOP_K, errors=es_call_errors)
+        )
         bm25_task = bm25_search(self.es, query, active_index, bm25_fetch_size, errors=es_call_errors)
         dense_tasks = [
             dense_search(
-                self.es, rq, active_index, dense_fetch_size, p["num_candidates"], errors=es_call_errors
+                self.es, rq, active_index, dense_fetch_size, p["num_candidates"], errors=es_call_errors,
+                vector_fields=_VECTOR_FIELDS_V4,
             )
             for rq in dense_query_list
         ]
@@ -2054,13 +2104,19 @@ class KgRagService:
         if expanded_nodes and not p.get("skip_skeleton_route"):
             route3_tasks = [
                 skeleton_route_search(
-                    self.es, node, query, active_index, sk_top_k, outline_nature, errors=es_call_errors
+                    self.es, node, query, active_index, sk_top_k, outline_nature, errors=es_call_errors,
+                    vector_fields=_VECTOR_FIELDS_V4,
                 )
                 for node in expanded_nodes
             ]
         logger.info(f"[KG-RAG TRACE] #1 gather start: bm25=1, dense={len(dense_tasks)}, route3={len(route3_tasks)}")
         results = await asyncio.gather(bm25_task, *dense_tasks, *route3_tasks)
         logger.info(f"[KG-RAG TRACE] #2 gather done: total_results={len(results)}")
+        catalog_results = await catalog_task
+        for _c in catalog_results:
+            _c["display_title"] = _display_title(_c)
+        catalog_block = _format_catalog_block(catalog_results)
+        logger.info(f"[KG-RAG TRACE] #2b pano catalog done: {len(catalog_results)} 条")
 
         # 仅当这一批 ES 调用里确实存在可判定的失败/异常时才记一条降级事件；
         # "正常查询但没有结果"不会出现在 es_call_errors 里，不会误记。
@@ -2134,33 +2190,49 @@ class KgRagService:
         logger.info(f"[KG-RAG TRACE] #3 RRF done: merged={len(merged)}")
         main_results = await rerank(merged, query, p["rerank_top_n"])
         logger.info(f"[KG-RAG TRACE] #4 main rerank done: main_results={len(main_results)}")
+        # 【4.0】防火墙三档：命中-主要内容放整篇纲目，命中-只是提到放一句说明，未命中不放；不限篇数/个数
         firewall_doc: dict[str, Any] | None = await firewall_task
-        if firewall_doc:
+        fw_main: list[dict[str, Any]] = list((firewall_doc or {}).get("main") or [])
+        fw_mentioned: list[dict[str, Any]] = list((firewall_doc or {}).get("mentioned") or [])
+        if fw_main or fw_mentioned:
             logger.info(
-                "[KG-RAG] firewall hit: title=%r note_preview=%s",
-                firewall_doc.get("title"),
-                (firewall_doc.get("note") or "")[:80],
+                "[KG-RAG] firewall hit: main=%r mentioned=%r",
+                [d["title"] for d in fw_main],
+                [d["title"] for d in fw_mentioned],
             )
             result["firewall"] = {
-                "matched": firewall_doc["title"],
-                "note": firewall_doc["note"],
-                "names": firewall_doc.get("names") or [],  # 【新测试台】这个篇题下的《神圣的辩理》词条
+                "main": [{"title": d["title"], "names": d.get("names") or []} for d in fw_main],
+                "mentioned": [
+                    {"title": d["title"], "note": d.get("note") or "", "names": d.get("names") or []}
+                    for d in fw_mentioned
+                ],
             }
+            fw_chunks: list[dict[str, Any]] = []
+            for d in fw_main:
+                fw_chunks.append({
+                    "chunk_id": f"firewall:{d['title']}",
+                    "text": f"篇题：{d['title']}\n{d.get('outline') or ''}".strip(),
+                    "source": "防火墙（整篇）：" + d["title"],
+                    "display_title": "（整篇）" + d["title"],
+                    "score": 1e12,
+                })
+            for d in fw_mentioned:
+                note = d.get("note") or ""
+                fw_chunks.append({
+                    "chunk_id": f"firewall:{d['title']}",
+                    "text": f"篇题：{d['title']}\n说明：{note}" if note else f"篇题：{d['title']}",
+                    "source": "防火墙（一句说明）：" + d["title"],
+                    "display_title": "（一句说明）" + d["title"],
+                    "score": 1e12,
+                })
+            main_results = fw_chunks + list(main_results)
+            logger.info(
+                "[KG-RAG DEBUG] firewall: injected %s chunks first in main_results, text chars=%s",
+                len(fw_chunks),
+                sum(len(c["text"]) for c in fw_chunks),
+            )
         else:
             logger.info("[KG-RAG DEBUG] firewall: full_query no hit (will not inject chunk)")
-        if firewall_doc:
-            fw_chunk: dict[str, Any] = {
-                "chunk_id": f"firewall:{firewall_doc['title']}",
-                "text": firewall_doc["full_text"],
-                "source": "防火墙：" + firewall_doc["title"],
-                "score": 1e12,
-            }
-            main_results = [fw_chunk] + list(main_results)
-            logger.info(
-                "[KG-RAG DEBUG] firewall: full_query injected first main_result title=%r text_field_chars=%s",
-                firewall_doc["title"],
-                len(firewall_doc.get("full_text") or ""),
-            )
 
         expanded_results = []
         # 路3 每节点并入 expanded_results 的条数：skeleton_route_top_k // deep 概念数（skeleton_route_max_per_node 保留在 params 中供测试台等手动场景，此处不参与计算）
@@ -2187,6 +2259,36 @@ class KgRagService:
             "route3_weighted": route3_weighted_total,
         }
 
+        # 【4.0】引用来源显示的出处（按库取），前端直接用 display_title
+        for _d in list(main_results) + list(expanded_results):
+            if not _d.get("display_title"):
+                _d["display_title"] = _display_title(_d)
+
+        # 【4.0】真理辞典 3a（2026-11-12 定：只要 3a，一直放）：只放生成纲目（单独一段），不进龙骨、不进三路检索；算进引用来源
+        dict_results: list[dict[str, Any]] = []
+        try:
+            dict_results = await select_dict_chunks(
+                _concat_four_layers(revelation, inner, experience, practice), query,
+            )
+        except Exception as e:
+            logger.warning("[3a] select failed, 本次不放 3a: %s", e)
+            dict_results = []
+        dict_block = format_dict_block(dict_results)
+
+        # 【4.0】彼此互相：选中的四层词里带 mutuality 标注的，短语直接放进生成纲目（单独一段），算进引用来源；不进龙骨、不经三路检索
+        mutual_results: list[dict[str, Any]] = []
+        _words = _concat_four_layers(revelation, inner, experience, practice)
+        _mp = await asyncio.to_thread(self.neo4j.get_mutual_phrases, _words)
+        for _w in _words:
+            if _w in _mp:
+                mutual_results.append({
+                    "chunk_id": f"mutual:{_w}",
+                    "text": f"{_w}：{_mp[_w]}",
+                    "display_title": f"{_w}：{_mp[_w]}",
+                    "source": "mutual",
+                })
+        mutual_block = _format_mutual_block(mutual_results)
+
         step3_body: dict[str, Any] = {
             "rewritten_queries": rewritten_queries,
             "dense_queries": dense_query_list,
@@ -2195,6 +2297,9 @@ class KgRagService:
             "rrf_count": len(merged),
             "main_results": main_results,
             "expanded_results": expanded_results,
+            "catalog_results": catalog_results,  # 【4.0】清明上河图目录（算进引用来源）
+            "mutual_results": mutual_results,  # 【4.0】彼此互相（算进引用来源）
+            "dict_results": dict_results,  # 【4.0】真理辞典 3a（算进引用来源）
             "bm25_results": bm25_results,
             "dense_results": dense_results,
         }
@@ -2211,12 +2316,17 @@ class KgRagService:
 
         # Step 4: Prompt 构建（骨架式 / 平铺式共用 base_prompt，再统一追加防火墙指示到 step5_prompt）
         fw_tail = ""
-        if firewall_doc:
-            fw_title = firewall_doc["title"]
-            fw_note = firewall_doc["note"]
-            fw_tail = "\n\n" + FIREWALL_INSTRUCTION.format(
-                fw_title=fw_title, fw_note=fw_note
-            )
+        fw_parts: list[str] = []
+        if fw_main:
+            fw_parts.append(FIREWALL_INSTRUCTION.format(
+                fw_title="」「".join(d["title"] for d in fw_main)
+            ))
+        if fw_mentioned:
+            fw_parts.append(FIREWALL_MENTION_INSTRUCTION.format(
+                fw_lines="\n".join(f"- 「{d['title']}」：{d.get('note') or ''}" for d in fw_mentioned)
+            ))
+        if fw_parts:
+            fw_tail = "\n\n" + "\n".join(fw_parts)
             logger.info(
                 "[KG-RAG DEBUG] firewall: Step5 fw_tail chars=%s (will append to both skeleton and flat)",
                 len(fw_tail),
@@ -2228,30 +2338,26 @@ class KgRagService:
             metadata_lines.append(f"负担说明：{burden_description.strip()}")
         metadata_block = "\n".join(metadata_lines)
 
+        # 【4.0】四层词统一用 _concat_four_layers 拼接：龙骨 deep_indices 的编号与这里一一对应
+        four_layers = _concat_four_layers(revelation, inner, experience, practice)
         if skeleton:
             skeleton_with_chunks = _build_skeleton_bound_prompt_block(
-                skeleton, expanded_results, list(dict.fromkeys(revelation + experience + practice)), main_results,
+                skeleton, expanded_results, four_layers, main_results,
             )
             ctx_head = skeleton_with_chunks[:500] if len(skeleton_with_chunks) > 500 else skeleton_with_chunks
             logger.info(
                 "[KG-RAG DEBUG] Step5 context (skeleton_with_chunks) first_500_chars: %r",
                 ctx_head,
             )
-            if mode == "3.5":
-                concepts_list = revelation + experience + practice
-                concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
-                base_prompt = STEP5_GENERATION_V4.format(
-                    query=query,
-                    metadata_block=metadata_block,
-                    concepts=concepts_text,
-                    skeleton_with_chunks=skeleton_with_chunks,
-                )
-            else:
-                base_prompt = STEP5_GENERATION.format(
-                    query=query,
-                    metadata_block=metadata_block,
-                    skeleton_with_chunks=skeleton_with_chunks,
-                )
+            concepts_list = four_layers
+            concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
+            base_prompt = STEP5_GENERATION_V4.format(
+                query=query,
+                metadata_block=metadata_block,
+                concepts=concepts_text,
+                skeleton_with_chunks=skeleton_with_chunks,
+                catalog_block=catalog_block + mutual_block + dict_block,  # 目录之后依次接彼此互相、3a（模板不改）
+            )
             prompt_type = "skeleton"
         else:
             all_chunks = main_results + expanded_results
@@ -2261,21 +2367,15 @@ class KgRagService:
                 "[KG-RAG DEBUG] Step5 context (flat main+expanded) first_300_chars: %r",
                 ctx_head_flat,
             )
-            if mode == "3.5":
-                concepts_list = revelation + experience + practice
-                concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
-                base_prompt = STEP5_GENERATION_FLAT_V4.format(
-                    query=query,
-                    metadata_block=metadata_block,
-                    concepts=concepts_text,
-                    chunks=chunks_text,
-                )
-            else:
-                base_prompt = STEP5_GENERATION_FLAT.format(
-                    query=query,
-                    metadata_block=metadata_block,
-                    chunks=chunks_text,
-                )
+            concepts_list = four_layers
+            concepts_text = "、".join(concepts_list) if concepts_list else "（无）"
+            base_prompt = STEP5_GENERATION_FLAT_V4.format(
+                query=query,
+                metadata_block=metadata_block,
+                concepts=concepts_text,
+                chunks=chunks_text,
+                catalog_block=catalog_block + mutual_block + dict_block,  # 目录之后依次接彼此互相、3a（模板不改）
+            )
             prompt_type = "flat"
         step5_prompt = base_prompt + fw_tail
         logger.info(f"[KG-RAG TRACE] #6 step4 prompt built: len={len(step5_prompt)}")
@@ -2429,6 +2529,7 @@ class KgRagService:
                 cache_value = {
                     "answer": result["answer"],
                     "revelation": step1_data.get("revelation", []),
+                    "inner": step1_data.get("inner", []),
                     "experience": step1_data.get("experience", []),
                     "practice": step1_data.get("practice", []),
                     "summary": step1_data.get("summary", ""),
@@ -2437,6 +2538,9 @@ class KgRagService:
                     "main_sources": _extract_main_sources(
                         (step3_data.get("main_results") or [])
                         + (step3_data.get("expanded_results") or [])
+                        + (step3_data.get("catalog_results") or [])
+                        + (step3_data.get("mutual_results") or [])  # 【4.0】彼此互相
+                        + (step3_data.get("dict_results") or [])  # 【4.0】真理辞典 3a
                     ),
                     "total_elapsed_ms": llm_usage.get("total_elapsed_ms"),
                     "total_cost_usd": (llm_usage.get("totals") or {}).get("cost_usd"),
@@ -2515,16 +2619,23 @@ class KgRagService:
         reference_excerpt: str = "",
         model: str = "claude-opus-5-5",
     ) -> dict[str, Any]:
-        """根据主题与上下文生成负担说明（有负担的重点单条 / 没有负担的重点四候选）。"""
+        """根据主题与上下文生成负担说明（有负担的重点单条 / 没有负担的重点四候选）。
+
+        两种情况每次都带最内在 133 词（词库读不到或数量不对时报错，不生成）。
+        """
         query_v = (query or "").strip()
         outline_v = (outline_nature or "").strip() or "（未填）"
         audience_v = (audience or "").strip() or "（未填）"
         excerpt_v = (reference_excerpt or "").strip() or "（空）"
-        prompt = BURDEN_DESCRIPTION_PROMPT.format(
-            query=query_v,
-            outline_nature=outline_v,
-            audience=audience_v,
-            reference_excerpt=excerpt_v,
+        library_text, _checked, _words = await asyncio.to_thread(load_verified_library)
+        prompt_transform = apply_excerpt_clause if excerpt_v != "（空）" else apply_no_excerpt_clause
+        prompt = prompt_transform(
+            BURDEN_DESCRIPTION_PROMPT.format(
+                query=query_v,
+                outline_nature=outline_v,
+                audience=audience_v,
+                reference_excerpt=excerpt_v,
+            )
         )
         logger.info(
             "[KG-RAG BURDEN DEBUG] request: query_len=%s outline=%r audience=%r excerpt_len=%s prompt_len=%s",
@@ -2534,14 +2645,15 @@ class KgRagService:
             len(excerpt_v if excerpt_v != "（空）" else ""),
             len(prompt),
         )
-        raw, usage = await _call_kg_rag_llm(
+        # 【新测试台】负担说明/候选之外现在还要输出「要点依据」对照表，比原来多出一截，
+        # 把非 Opus 模型的基础额度调到 4500（Opus 5 系列仍会在 _call_claude 里 floor 到至少 16000）。
+        raw, usage = await _call_claude(
             prompt,
             model,
             temperature=0.3,
-            # 【新测试台】负担说明/候选之外现在还要输出「要点依据」对照表，比原来多出一截，
-            # 把非 Opus 模型的基础额度调到 4500（Opus 5 系列仍会在 _call_claude 里 floor 到至少 16000）。
             max_tokens=_max_tokens_for_model(model, 4500),
             system=BURDEN_DESCRIPTION_SYSTEM,
+            user_prefix=library_text,
         )
         raw_text = raw or ""
         logger.info(
@@ -2694,387 +2806,3 @@ class KgRagService:
         except Exception as e:
             logger.warning(f"[KG-RAG CACHE] update_cache_translation error: {e}")
             return False
-
-    async def build_prompt_preview(self, query: str, params: dict | None = None) -> dict:
-        """执行 Step 1→4，返回构建好的 Prompt，不执行 Step 5。"""
-        full = await self.full_query(
-            query, {**(params or {}), "skip_generation": True}, mode="3.0"
-        )
-        full["steps"].pop("step5", None)
-        full["answer"] = None
-        return full
-
-
-# ---------------------------------------------------------------------------
-# 纲目职事化：逐条检索 + 重排 + Claude 抽句
-# ---------------------------------------------------------------------------
-
-MINISTERIALIZE_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
-MINISTERIALIZE_JUDGE_MODEL = "claude-haiku-4-5-20251001"
-_MINISTERIALIZE_PREFIX_RE = re.compile(
-    r"^[壹貳贰參叄叁参肆伍陸陆柒捌玖拾一二三四五六七八九十\da-z（）()]+[\t　]"
-)
-# 圣经 66 卷常用简称单字集（旧约+新约拆字去重，供 _BOOK_PAT 字符类使用）
-_BIBLE_BOOKS_66 = (
-    "创出利民申书士得撒上撒下王上王下代上代下拉尼斯伯诗箴传歌赛耶哀结但"
-    "何珥摩俄拿弥鸿哈番该亚玛"
-    "太可路约徒罗林前林后加弗腓西帖前帖后提前提后多门来雅彼前彼后约壹约贰约叁犹启"
-    "参"  # 参书（纲目参考，非 66 卷正典简称）
-)
-_BIBLE_BOOKS = "".join(dict.fromkeys(_BIBLE_BOOKS_66))  # 去重保序
-_BOOK_PAT = rf"[{_BIBLE_BOOKS}]{{1,4}}"
-_CHAP_PAT = r"[\d一二三四五六七八九十百～~\-至、\s]+"
-_REF_UNIT = rf"(?:{_BOOK_PAT})?{_CHAP_PAT}"  # 书卷名可选，支持「十四34」纯章节
-_SCRIPTURE_REF_RE = re.compile(
-    rf"(—{_BOOK_PAT}{_CHAP_PAT}(?:[,，；;]{_REF_UNIT})*[：:。]?\s*)$"
-)
-_PURE_VERSE_RE = re.compile(r"(—[\d～~\-至、\s\d]+节[。：:]?\s*)$")
-
-
-def _find_scripture_suffix(rest: str) -> tuple[str, str]:
-    """从 rest 里识别经文 suffix，返回 (body, suffix)。"""
-    matches = list(_SCRIPTURE_REF_RE.finditer(rest))
-    if matches:
-        m = matches[-1]
-        return rest[: m.start()], m.group(0)
-    m = _PURE_VERSE_RE.search(rest)
-    if m:
-        return rest[: m.start()], m.group(0)
-    return rest, ""
-
-
-MINISTERIALIZE_PROMPT_TEMPLATE = """你是一个职事语言抽取助手。
-
-任务：从下方职事摘录中，找出语义最贴近纲目条目的一句原文，直接返回该句，不得改写、不得添加任何解释。
-
-判断标准：
-- 返回的句子必须与纲目条目语义高度吻合，核心意思基本一致
-- 如果两段摘录中都没有语义足够贴近的句子，只返回空字符串，不要强行抽取
-- 返回的句子中，分句之间只能用中文分号（；）连接，不得出现中文句号（。）
-- 若语义不够贴近，返回空字符串。
-
-重要规则：若原纲目中某些内容在上述摘录中找不到对应原文，请将该部分原样保留，不得删除、截短或替换；最终输出必须包含原纲目的所有实质内容，不得遗漏任何子句。
-
-纲目条目：{line}
-
-摘录一：{excerpt1}
-
-摘录二：{excerpt2}
-
-只输出抽取的原句（或空字符串），不得输出任何分析过程、自问检查、解释说明或标记符号。
-"""
-
-
-def _parse_outline_line(line: str) -> tuple[str, str, str]:
-    """
-    返回 (prefix, body, suffix)
-    prefix: 行首编号+分隔符，如 "壹\t"
-    suffix: 经文引用后缀，如 "—哀三22~23："，没有则为 ""
-    body: 中间正文
-    """
-    text = line
-    m = _MINISTERIALIZE_PREFIX_RE.match(text)
-    if m:
-        prefix = m.group(0)
-        rest = text[m.end() :]
-    else:
-        prefix = ""
-        rest = text
-
-    body, suffix = _find_scripture_suffix(rest)
-
-    return prefix, body, suffix
-
-
-def _assemble_outline_line(prefix: str, body: str, suffix: str) -> str:
-    result_body = re.sub(r"[。，、；：,;.]+$", "", body.strip())
-    result_body = result_body.replace("。", "；")  # 兜底：正文内句号改分号
-    return prefix + result_body + suffix
-
-
-def _overlap_ratio(a: str, b: str) -> float:
-    if not a or not b:
-        return 0.0
-    chars_a = set(a)
-    chars_b = set(b)
-    return len(chars_a & chars_b) / max(len(chars_a), len(chars_b))
-
-
-def _is_minor_edit(a: str, b: str, threshold: int = 5) -> bool:
-    """判断两个字符串是否只有微小差异（编辑距离≤threshold）"""
-    if a == b:
-        return False  # 完全相同走 original，不走这里
-    len_a, len_b = len(a), len(b)
-    if abs(len_a - len_b) > threshold:
-        return False
-    prev = list(range(len_b + 1))
-    for i in range(1, len_a + 1):
-        curr = [i] + [0] * len_b
-        for j in range(1, len_b + 1):
-            if a[i - 1] == b[j - 1]:
-                curr[j] = prev[j - 1]
-            else:
-                curr[j] = 1 + min(prev[j], curr[j - 1], prev[j - 1])
-        if min(curr) > threshold:
-            return False
-        prev = curr
-    return prev[len_b] <= threshold
-
-
-async def _judge_ministerialize_status(
-    original_body: str, claude_output: str
-) -> tuple[str, dict[str, int] | None]:
-    """
-    用 Claude Haiku 判断职事化结果的状态。
-    返回值：('original' | 'minor' | 'replaced' | 'manual', usage)
-    """
-    prompt = f"""你是一位熟悉职事书写作风格的编辑助手。请判断「替换后纲目」相对于「原纲目」的修改程度，返回以下四种状态之一：
-
-original：替换后纲目与原纲目完全相同，或仅有标点符号差异。
-minor：替换后纲目对原纲目做了轻微调整——例如增删衔接词、连接词、语气助词，或个别字词微调，但核心内容与表述方式基本不变，原纲目的主体句子在替换后仍清晰可见。
-replaced：替换后纲目对原纲目有实质性改写——核心表述被重新组织、概括或改写，已不是原句的轻微变体。
-manual：替换后纲目与原纲目几乎无关，或替换后内容明显不是从职事信息原文提取的。
-
-原纲目：{original_body}
-替换后纲目：{claude_output}
-
-只输出一个词：original、minor、replaced 或 manual，不要有任何其他内容。"""
-
-    try:
-        output, usage = await _call_claude(
-            prompt,
-            MINISTERIALIZE_JUDGE_MODEL,
-            temperature=0,
-            max_tokens=10,
-            system="你是一位专业编辑助手，只输出一个判断词。",
-        )
-        status = (output or "").strip().lower()
-        if status in ("original", "minor", "replaced", "manual"):
-            return status, usage
-        logger.warning("[职事化判断] Haiku 返回非预期值: %s，fallback 到 replaced", status)
-        return "replaced", usage
-    except Exception as e:
-        logger.warning("[职事化判断] Haiku 调用失败: %s，fallback 到 replaced", e)
-        return "replaced", None
-
-
-async def _ministerialize_one_line(es_client: Any, line: str, index: int) -> dict:
-    """单条纲目：解析结构 → BM25/Dense 仅用 body → 拼回 prefix/suffix。"""
-    prefix, body, suffix = _parse_outline_line(line)
-    body_stripped = body.strip()
-    sonnet_input_tokens = 0
-    sonnet_output_tokens = 0
-    haiku_input_tokens = 0
-    haiku_output_tokens = 0
-
-    def _add_sonnet_usage(u: dict[str, int] | None) -> None:
-        nonlocal sonnet_input_tokens, sonnet_output_tokens
-        if u:
-            sonnet_input_tokens += int(u.get("input_tokens", 0) or 0)
-            sonnet_output_tokens += int(u.get("output_tokens", 0) or 0)
-
-    def _add_haiku_usage(u: dict[str, int] | None) -> None:
-        nonlocal haiku_input_tokens, haiku_output_tokens
-        if u:
-            haiku_input_tokens += int(u.get("input_tokens", 0) or 0)
-            haiku_output_tokens += int(u.get("output_tokens", 0) or 0)
-
-    def _usage_out() -> dict[str, int]:
-        return {
-            "sonnet_input": sonnet_input_tokens,
-            "sonnet_output": sonnet_output_tokens,
-            "haiku_input": haiku_input_tokens,
-            "haiku_output": haiku_output_tokens,
-        }
-
-    def _extract_source(hit: dict) -> str:
-        source_zh = (hit.get("source_zh") or "").strip()
-        if not source_zh:
-            return (hit.get("book_title") or "").strip()
-        s = re.sub(
-            r"，第[零一二三四五六七八九十百千\d]+[段节](?=[）)]*$)",
-            "",
-            source_zh,
-        ).strip()
-        while len(s) >= 2 and (
-            (s[0] == "（" and s[-1] == "）") or (s[0] == "(" and s[-1] == ")")
-        ):
-            s = s[1:-1]
-        return s.strip()
-
-    if not body_stripped:
-        return {
-            "index": index,
-            "original": line,
-            "status": "manual",
-            "result": line,
-            "suggestion": "",
-            "source": "",
-            "usage": _usage_out(),
-        }
-
-    bm25_results = await bm25_search(es_client, body_stripped, _INDICES_BASE, 5)
-    dense_results = await dense_search(es_client, body_stripped, _INDICES_BASE, 20, 100)
-    merged = await rrf_merge(bm25_results, dense_results, k=60, bm25_weight=1.0, dense_weight=1.0)
-    reranked = await rerank(merged, body_stripped, 3)
-
-    if not reranked:
-        return {
-            "index": index,
-            "original": line,
-            "status": "manual",
-            "result": _assemble_outline_line(prefix, body, suffix),
-            "suggestion": "",
-            "source": "",
-            "usage": _usage_out(),
-        }
-
-    top1_source = _extract_source(reranked[0])
-    top1_text = reranked[0].get("text") or ""
-    if body_stripped in top1_text:
-        return {
-            "index": index,
-            "original": line,
-            "status": "original",
-            "result": _assemble_outline_line(prefix, body, suffix),
-            "suggestion": "",
-            "source": top1_source,
-            "usage": _usage_out(),
-        }
-
-    excerpt1 = reranked[0].get("text", "") if len(reranked) > 0 else ""
-    excerpt2 = reranked[1].get("text", "") if len(reranked) > 1 else ""
-    prompt = MINISTERIALIZE_PROMPT_TEMPLATE.format(
-        line=body_stripped,
-        excerpt1=excerpt1,
-        excerpt2=excerpt2,
-    )
-    try:
-        claude_output, _usage = await _call_claude(
-            prompt,
-            MINISTERIALIZE_CLAUDE_MODEL,
-            temperature=0,
-            max_tokens=200,
-            system="你是一位专业、精确的助手。请严格按要求的格式输出。",
-        )
-        _add_sonnet_usage(_usage)
-        raw_output = (claude_output or "").strip()
-        if raw_output and any(m in raw_output for m in ("自问", "检查", "**")):
-            first_line = ""
-            for ln in raw_output.splitlines():
-                ln = ln.strip()
-                if ln:
-                    first_line = ln
-                    break
-            raw_output = first_line
-        output = raw_output
-        if output:
-            clean_output = re.sub(r"[。，、；：,;.]+$", "", output.strip()).strip()
-            if clean_output == body_stripped:
-                return {
-                    "index": index,
-                    "original": line,
-                    "status": "original",
-                    "result": _assemble_outline_line(prefix, body, suffix),
-                    "suggestion": "",
-                    "source": top1_source,
-                    "usage": _usage_out(),
-                }
-            # 用 Haiku 判断语义修改程度
-            status, _jusage = await _judge_ministerialize_status(body_stripped, clean_output)
-            _add_haiku_usage(_jusage)
-            if status == "manual":
-                return {
-                    "index": index,
-                    "original": line,
-                    "status": status,
-                    "result": _assemble_outline_line(prefix, body, suffix),
-                    "suggestion": "",
-                    "source": "",
-                    "usage": _usage_out(),
-                }
-            if status == "minor":
-                return {
-                    "index": index,
-                    "original": line,
-                    "status": status,
-                    "result": _assemble_outline_line(prefix, body, suffix),
-                    "suggestion": _assemble_outline_line(prefix, clean_output, suffix),
-                    "source": top1_source,
-                    "usage": _usage_out(),
-                }
-            return {
-                "index": index,
-                "original": line,
-                "status": status,
-                "result": _assemble_outline_line(prefix, clean_output, suffix),
-                "suggestion": "",
-                "source": top1_source,
-                "usage": _usage_out(),
-            }
-    except Exception as e:
-        logger.warning("[纲目职事化] Claude 调用失败 index=%s: %s", index, e)
-
-    return {
-        "index": index,
-        "original": line,
-        "status": "manual",
-        "result": _assemble_outline_line(prefix, body, suffix),
-        "suggestion": "",
-        "source": "",
-        "usage": _usage_out(),
-    }
-
-
-async def ministerialize_outline(lines: list[str]) -> dict:
-    """
-    纲目职事化：对每条非空纲目并发执行检索与抽句，保持原始行号顺序返回。
-    返回 results、汇总 usage（Sonnet/Haiku 分列）与分模型单价计算的 cost_usd。
-    """
-    try:
-        from es_config import es as es_client
-    except ImportError:
-        _backend = str(Path(__file__).resolve().parents[2])
-        if _backend not in __import__("sys").path:
-            __import__("sys").path.insert(0, _backend)
-        from es_config import es as es_client
-
-    items = [(i, line) for i, line in enumerate(lines) if (line or "").strip()]
-    if not items:
-        return {
-            "results": [],
-            "usage": {
-                "sonnet_input": 0,
-                "sonnet_output": 0,
-                "haiku_input": 0,
-                "haiku_output": 0,
-            },
-            "cost_usd": 0.0,
-        }
-
-    results = await asyncio.gather(
-        *[_ministerialize_one_line(es_client, line, i) for i, line in items]
-    )
-    sorted_results = sorted(results, key=lambda x: x["index"])
-
-    sonnet_in = sum(r.get("usage", {}).get("sonnet_input", 0) for r in sorted_results)
-    sonnet_out = sum(r.get("usage", {}).get("sonnet_output", 0) for r in sorted_results)
-    haiku_in = sum(r.get("usage", {}).get("haiku_input", 0) for r in sorted_results)
-    haiku_out = sum(r.get("usage", {}).get("haiku_output", 0) for r in sorted_results)
-
-    # 两个模型均为 claude-haiku-4-5: $1/M input, $5/M output
-    cost_usd = ((sonnet_in + haiku_in) * 1 + (sonnet_out + haiku_out) * 5) / 1_000_000
-
-    for r in sorted_results:
-        r.pop("usage", None)
-
-    return {
-        "results": sorted_results,
-        "usage": {
-            "sonnet_input": sonnet_in,
-            "sonnet_output": sonnet_out,
-            "haiku_input": haiku_in,
-            "haiku_output": haiku_out,
-        },
-        "cost_usd": round(cost_usd, 6),
-    }

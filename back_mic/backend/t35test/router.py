@@ -5,7 +5,6 @@
 互不引用、互不影响：
   - KG-RAG 核心：query / generate_burden / extract_concepts / concepts/search / cache_translation
   - 翻译、繁体转换、格式化下载：translate_outline / outline_to_traditional / format_outline_only
-  - 纲目评估：eval/outline
 独立的 prompt、独立的缓存键前缀（t35test:）、独立的单例与监控（监控为空实现，不写入主站统计）。
 共用的只有基础设施和数据：ES、Neo4j、Redis 服务本身，防火墙文档，登录校验。
 """
@@ -27,7 +26,6 @@ from t35test.common import get_monitoring
 from t35test.kg.firewall import load_firewall
 from t35test.kg.kg_rag_service import KgRagService
 from t35test.kg.neo4j_client import Neo4jClient
-from t35test.outline_eval.llm_evaluator import run_evaluation
 from t35test.translate.service import translate_service
 
 router = APIRouter(prefix="/api/t35test", tags=["t35test"], dependencies=[Depends(test_token)])
@@ -69,7 +67,7 @@ def get_service() -> KgRagService:
                 )
             except Exception as mon_e:
                 logger.warning(f"[t35test] Neo4j 连接降级事件记录失败（不影响主流程）: {mon_e}")
-        load_firewall(es_client)
+        load_firewall(_neo4j)  # 【4.0】防火墙改读图谱 neo4j-v4 的「神圣的辩理」标注
         _service = KgRagService(es_client, _neo4j)
     return _service
 
@@ -95,11 +93,11 @@ def _norm_nature(v):
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="查询问题")
     params: Optional[dict] = Field(default=None, description="覆盖默认参数")
-    mode: str = "3.0"
+    mode: str = "4.0"  # 【4.0】只为兼容保留，后端一律走 4.0
 
 
 class CacheTranslationRequest(BaseModel):
-    cache_key: str = Field(..., min_length=1, description="缓存 key（t35test:cache:...）")
+    cache_key: str = Field(..., min_length=1, description="缓存 key（panai4:cache:...）")
     field: str = Field(..., description="要更新的字段：answer_en 或 answer_zh_tw")
     value: str = Field(..., min_length=1, description="翻译后文本")
 
@@ -117,7 +115,7 @@ class ExtractConceptsRequest(BaseModel):
     outline_nature: str = Field(default="综合性", description="纲目性质")
     burden_description: str = Field(default="", description="负担说明")
     audience: str = Field(default="", description="面对对象")
-    mode: str = "3.0"
+    mode: str = "4.0"  # 【4.0】只为兼容保留，后端一律走 4.0
 
 
 class TranslateOutlineRequest(BaseModel):
@@ -134,19 +132,6 @@ class FormatOutlineRequest(BaseModel):
 
 class OutlineToTraditionalRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=100_000, description="简体纲目全文")
-
-
-class EvalRequest(BaseModel):
-    answer: str
-    query: str
-    outline_nature: str
-    burden_description: str = ""
-    revelation: list[str] = []
-    experience: list[str] = []
-    practice: list[str] = []
-    skeleton: list[dict[str, Any]] = []
-    answer_v1: str | None = None
-    eval_v1: dict[str, Any] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +281,18 @@ def _record_inner_trial(req: "ExtractConceptsRequest", s1: dict) -> None:
         logger.warning("[t35test INNER] 记录推荐结果失败（不影响返回）: %s", e)
 
 
+@router.get("/concepts/search_v4")
+async def search_truth_points(
+    q: str = Query("", description="词条关键词"),
+    limit: int = Query(20, ge=1, le=100, description="返回数量上限"),
+):
+    """「搜索图谱中重点」：按关键词搜索 neo4j-v4 的 2,372 个词条名称。"""
+    key = (q or "").strip()
+    if not key:
+        return {"results": []}
+    return {"results": get_neo4j().search_truth_points_by_name(key, limit=limit)}
+
+
 @router.get("/concepts/search")
 async def search_concepts(
     q: str = Query("", description="概念关键词"),
@@ -374,30 +371,4 @@ async def format_outline_only(request: FormatOutlineRequest):
         logger.error(f"format_outline_only 失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ---------------------------------------------------------------------------
-# 纲目评估
-# ---------------------------------------------------------------------------
-def _to_request_data(body: EvalRequest) -> dict[str, Any]:
-    return {
-        "answer": body.answer,
-        "query": body.query,
-        "outline_nature": _norm_nature(body.outline_nature),
-        "burden_description": body.burden_description,
-        "revelation": "\n".join(body.revelation),
-        "experience": "\n".join(body.experience),
-        "practice": "\n".join(body.practice),
-        "skeleton": body.skeleton,
-    }
-
-
-@router.post("/eval/outline", summary="纲目品质评估（F1-F4 + T1-T4）")
-async def evaluate_outline(body: EvalRequest) -> dict[str, Any]:
-    try:
-        is_second_eval = body.eval_v1 is not None
-        return await run_evaluation(_to_request_data(body), is_second_eval=is_second_eval, eval_v1=body.eval_v1)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("t35test outline_eval 失败: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+# 【4.0】纲目评估（/eval/outline 与 t35test/outline_eval）已于 2026-11-11 按用户要求删除；主站 3.0 的评估不受影响。
