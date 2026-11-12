@@ -59,6 +59,8 @@ async def bm25_search(
             "section_title",
             "paragraph_type",
             "tokens",
+            "verse_range",  # 【4.0】圣经：节号
+            "name",  # 【4.0】诗歌：首名
         ],
     }
     try:
@@ -87,9 +89,12 @@ async def dense_search(
     top_k: int = 30,
     num_candidates: int = 100,
     errors: list[str] | None = None,
+    vector_fields: tuple[str, ...] = ("embedding",),
 ) -> list[dict[str, Any]]:
     """
     路2：向量 kNN 检索。使用 embedding_adapter.get_embedding(profile="kg_rag") 生成查询向量。
+    【4.0】vector_fields：4.0 的库向量字段名有 embedding / text_vector 两种，多于一个时
+    在同一个请求里写多个 knn 子句，一次查完所有库（每条文档只有其中一个字段，分数不会叠加）。
     :param es: Elasticsearch 客户端实例
     :param query_text: 查询文本（改写后的 Query，会记录到每条结果的 rewritten_query 字段）
     :param index: 索引名
@@ -109,14 +114,18 @@ async def dense_search(
             errors.append(msg)
         return []
     # ES 全局 size 默认 10；不设 size 时即使 knn.k=30，hits 仍可能被截成 10 条
-    body = {
-        "size": top_k,
-        "knn": {
-            "field": "embedding",
+    knn_clauses = [
+        {
+            "field": f,
             "query_vector": query_vector,
             "k": top_k,
             "num_candidates": num_candidates,
-        },
+        }
+        for f in (vector_fields or ("embedding",))
+    ]
+    body = {
+        "size": top_k,
+        "knn": knn_clauses[0] if len(knn_clauses) == 1 else knn_clauses,
         "_source": [
             "chunk_id",
             "text",
@@ -130,6 +139,8 @@ async def dense_search(
             "section_title",
             "paragraph_type",
             "tokens",
+            "verse_range",  # 【4.0】圣经：节号
+            "name",  # 【4.0】诗歌：首名
         ],
     }
     try:
@@ -247,6 +258,7 @@ async def skeleton_route_search(
     top_k: int = 5,
     outline_nature: str = "综合性",
     errors: list[str] | None = None,
+    vector_fields: tuple[str, ...] = ("embedding",),
 ) -> list[dict[str, Any]]:
     """
     路3：为单个骨架扩展节点执行「原始 Query + 节点名」的 BM25 + Dense → RRF → 纲目加权截断 → Reranker → Top-K。
@@ -268,7 +280,7 @@ async def skeleton_route_search(
     bm25_hits = await bm25_search(es, combined_query, index, top_k=route3_fetch_size, errors=_sub_errors)
     dense_hits = await dense_search(
         es, combined_query, index, top_k=route3_fetch_size, num_candidates=min(300, route3_fetch_size * 3),
-        errors=_sub_errors,
+        errors=_sub_errors, vector_fields=vector_fields,
     )
     if _sub_errors and errors is not None:
         errors.append(f"路3[node={node_name}] 检索失败: " + "; ".join(_sub_errors))
@@ -282,3 +294,48 @@ async def skeleton_route_search(
         doc["expanded_from"] = node_name
         doc["source"] = "skeleton_route"
     return reranked
+
+
+async def pano_catalog_search(
+    es: Any,
+    query: str,
+    index: str,
+    top_k: int = 20,
+    errors: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """
+    【4.0】清明上河图目录：单独一路关键词搜索，排除目录层节点（node_type=dir），取前 top_k 条。
+    不进 RRF 和精排、不占正文名额；结果放进生成纲目 Prompt 的单独一段，并算进引用来源。
+    原因：目录每条只有几十字的篇题，没有内容，关键词搜索又偏爱短文，和正文放一起会挤掉正文。
+    编号用 node_id（同时写进 chunk_id，方便引用来源统一显示）。
+    """
+    if top_k <= 0 or not (query or "").strip():
+        return []
+    body = {
+        "size": top_k,
+        "query": {
+            "bool": {
+                "must": [{"match": {"text": {"query": query, "analyzer": "ik_smart"}}}],
+                "must_not": [{"term": {"node_type": "dir"}}],
+            }
+        },
+        "_source": ["node_id", "node_type", "path_text", "msg_label", "title", "text"],
+    }
+    try:
+        resp = await asyncio.to_thread(es.search, index=index, body=body)
+    except Exception as e:
+        msg = f"清明上河图目录检索失败 (query={query[:30]!r}): {e}"
+        print(f"[KG-RAG] {msg}")
+        if errors is not None:
+            errors.append(msg)
+        return []
+    out = []
+    for hit in (resp.get("hits") or {}).get("hits") or []:
+        src = (hit.get("_source") or {}).copy()
+        src["score"] = float(hit.get("_score") or 0.0)
+        src["source"] = "pano_catalog"
+        src["_index"] = hit.get("_index") or ""
+        src["node_id"] = src.get("node_id") or hit.get("_id", "")
+        src["chunk_id"] = src["node_id"]
+        out.append(src)
+    return out

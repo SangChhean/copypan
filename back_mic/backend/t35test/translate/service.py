@@ -201,7 +201,7 @@ class TranslateService:
         if len(outline) > MAX_OUTLINE_LENGTH:
             return {"answer_en": None, "title_en": None, "error": f"中文纲目过长（最多 {MAX_OUTLINE_LENGTH} 字）"}
 
-        cache_key = f"t35test:translate:{hashlib.sha256(outline.encode()).hexdigest()[:32]}"
+        cache_key = f"panai4:translate:{hashlib.sha256(outline.encode()).hexdigest()[:32]}"
         if use_cache and self.redis:
             try:
                 cached = self.redis.get(cache_key)

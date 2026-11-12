@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""【3.5测试用】独立基础设施：环境变量、Redis、Claude 客户端、监控空实现、纲目代码围栏清理。
+"""【3.5测试用】独立基础设施：环境变量、Redis（4.0 专用容器 redis-v4）、Claude 客户端、监控空实现、纲目代码围栏清理。
 
 与主站 ai_search.ai_service 互不引用。监控是空实现：测试页的调用不写入主站的用量统计。
 """
@@ -16,20 +16,27 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 logger = logging.getLogger("t35test")
 
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+# 4.0 专用 Redis 容器 redis-v4（端口 6380），与 3.0 的 redis（6379）完全分开。
+# 只读 REDIS_V4_*，不读主站的 REDIS_HOST/REDIS_PORT，也不设默认值：
+# 没配置或连不上就不用缓存，绝不会退回去连 3.0 的 Redis。
+REDIS_V4_HOST = os.getenv("REDIS_V4_HOST", "").strip()
+REDIS_V4_PORT = os.getenv("REDIS_V4_PORT", "").strip()
+_REDIS_3_PORT = "6379"  # 3.0 的 Redis 端口，4.0 不允许连
 
-# Redis 可选：未安装或连接失败时仅禁用缓存
 redis_client = None
 try:
+    if not REDIS_V4_HOST or not REDIS_V4_PORT:
+        raise RuntimeError(".env 未配置 REDIS_V4_HOST / REDIS_V4_PORT")
+    if REDIS_V4_PORT == _REDIS_3_PORT:
+        raise RuntimeError(f"REDIS_V4_PORT 不能是 3.0 的 Redis 端口 {_REDIS_3_PORT}")
     import redis
 
-    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    redis_client = redis.Redis(host=REDIS_V4_HOST, port=int(REDIS_V4_PORT), decode_responses=True)
     redis_client.ping()
-    logger.info("[t35test] Redis 连接成功，缓存已启用（键前缀 t35test:）")
+    logger.info(f"[t35test] 4.0 专用 Redis 连接成功（{REDIS_V4_HOST}:{REDIS_V4_PORT}），缓存已启用")
 except Exception as e:
     redis_client = None
-    logger.warning(f"[t35test] Redis 未启用，将跳过缓存: {e}")
+    logger.warning(f"[t35test] 4.0 专用 Redis 未启用，将跳过缓存（不会连 3.0 的 Redis）: {e}")
 
 # Claude 客户端（需配置 CLAUDE_API_KEY）
 try:
