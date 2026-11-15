@@ -36,3 +36,18 @@ app.add_middleware(
 )
 
 app.include_router(t35test_router)
+
+
+# 【并发】调用模型、查 ES、排版等都用 asyncio.to_thread 丢到背景线程执行，每次模型调用会占一条线程直到回来（生成纲目常要一两分钟）。
+# Python 默认线程池只有 min(32, CPU数+4) 条（这台 4 核电脑只有 8 条），三四个人同时生成就会排队、前端超时。
+# 启动时把默认线程池加大；数量可用环境变量 T35TEST_THREADS 调整（默认 64）。
+@app.on_event("startup")
+async def _enlarge_thread_pool() -> None:
+    import asyncio
+    import logging
+    import os
+    from concurrent.futures import ThreadPoolExecutor
+
+    n = int(os.getenv("T35TEST_THREADS", "64"))
+    asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=n, thread_name_prefix="t35test"))
+    logging.getLogger("t35test").info("[并发] 背景线程池：%s 条", n)

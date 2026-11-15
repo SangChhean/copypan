@@ -24,11 +24,14 @@ except ImportError:
     except ImportError:
         claude_client = None
 
+from t35test.kg.verse_ref import normalize_verses, verse_start  # 【新测试台】人工经节统一写法
+from t35test.kg.special_outline import format_high_peak, match_special_outline  # 【新测试台】特殊标注：命中主要内容直接输出现成纲目
 from t35test.kg.prompts import (
     BURDEN_DESCRIPTION_PROMPT,
     STEP1_CONCEPT_EXTRACTION,
     FIREWALL_INSTRUCTION,
     FIREWALL_MENTION_INSTRUCTION,
+    KEY_VERSES_INSTRUCTION,
     STEP2_SKELETON_BUILD,
     QUERY_REWRITE,
     STEP5_GENERATION_V4,
@@ -165,6 +168,116 @@ def _format_mutual_block(mutual_results: list[dict]) -> str:
         return ""
     lines = ["## 彼此互相", "以下是本主题所选词条中，与信徒彼此之间相关的说法，供参考："]
     lines += [f"- {c['text']}" for c in mutual_results]
+    return "\n" + "\n".join(lines) + "\n"
+
+
+# 【新测试台】纲目最后的“参考与参读资料”“说明”等文字一律切掉（2026-11-12 用户要求）
+# 只切“最后一个纲目点之后”出现的这类段落；纲目正文里的字不动。英文纲目（翻译后）的同类段落也切。
+_OUTLINE_POINT_RE = re.compile(
+    r"^\s*(读经[：:]|[壹贰叁肆伍陆柒捌玖拾参]+[\t 　、．.]|[一二三四五六七八九十]+[\t 　、．.]|\d+[\t 　、．.]|[a-zA-Z][\t 　.]"
+    r"|[IVXLC]+\.\s)"
+)
+_OUTLINE_TAIL_RE = re.compile(
+    r"^\s*(参考与参读|参考及参读|参考资料|参读资料|出处与参读|说明|注释|注|备注|附注|小结|总结"
+    r"|References?\b|Further Reading|Notes?\b|Explanation|Remarks?)",
+    re.IGNORECASE,
+)
+
+
+def strip_outline_tail(text: str | None) -> str | None:
+    """把纲目最后一点之后的“参考与参读资料”“说明”等段落切掉，返回切过的纲目（没有就原样返回）。"""
+    if not text:
+        return text
+    lines = text.rstrip().split("\n")
+    last_point = -1
+    for i, line in enumerate(lines):
+        if _OUTLINE_POINT_RE.match(line):
+            last_point = i
+    for i in range(last_point + 1, len(lines)):
+        if _OUTLINE_TAIL_RE.match(lines[i]):
+            return "\n".join(lines[:i]).rstrip()
+    return text
+
+
+# 【新测试台】人工关键圣经节：按每一节检索引用了这节经文的原文（纲目、注解、原文；出处写法如“弗四16”），
+# 单独一段放进生成纲目，让写进大点/中点的经节后面接的是讲这节经文的原句。算进引用来源。
+_VERSE_SEARCH_INDICES = ",".join([
+    "panai4_outline_12490", "panai4_outline_feasts", "panai4_map_note",
+    "panai4_text_cwwl", "panai4_text_life", "panai4_text_cwwn", "panai4_text_others",
+])
+VERSE_TOP_K = 5  # 每一节取几段（暂定）
+
+
+def _verse_pattern(verse: str) -> "re.Pattern[str]":
+    """“林前十二1”不可配到“林前十二13”：后面不能紧接数字。"""
+    return re.compile(re.escape(verse) + r"(?![0-9０-９])")
+
+
+def _verse_snippet(text: str, verse: str) -> str:
+    """纲目/注解：取含这节出处的那一点（一行）；原文：取出处前面一段（讲这节经文的话多在出处前面）。"""
+    pat = _verse_pattern(verse)
+    for line in (text or "").split("\n"):
+        if pat.search(line) and len(line) <= 400:
+            return line.strip()
+    m = pat.search(text or "")
+    if not m:
+        return ""
+    start = max(0, m.start() - 220)
+    return text[start:m.end() + 30].strip()
+
+
+def _search_verse_chunks(es: Any, verse: str, query: str, top_k: int) -> list[dict[str, Any]]:
+    # 范围经节（约十四9～10）也查起头一节（约十四9），资料里常只写其中一节或写成别的范围
+    phrases = list(dict.fromkeys([verse, verse_start(verse)]))
+    body = {
+        "query": {"bool": {
+            "filter": [{"bool": {
+                "should": [{"match_phrase": {"text": ph}} for ph in phrases],
+                "minimum_should_match": 1,
+            }}],
+            "should": [
+                {"match_phrase": {"text": {"query": verse, "boost": 3}}},
+                {"match": {"text": {"query": query, "analyzer": "ik_smart"}}},
+            ],
+        }},
+        "size": top_k * 3,
+        "_source": ["chunk_id", "text", "source_zh", "book_title", "message_title", "author"],
+    }
+    resp = es.search(index=_VERSE_SEARCH_INDICES, body=body)
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for h in resp.get("hits", {}).get("hits", []):
+        d = dict(h.get("_source") or {})
+        d["_index"] = h.get("_index")
+        snip = _verse_snippet(d.get("text") or "", verse) or _verse_snippet(d.get("text") or "", verse_start(verse))
+        if not snip or snip in seen:
+            continue
+        seen.add(snip)
+        d["snippet"] = snip
+        d["verse"] = verse
+        d["display_title"] = f"人工经节 {verse}　" + (_display_title(d) or d.get("book_title") or "")
+        d["chunk_id"] = f"verse:{verse}:{d.get('chunk_id') or len(out)}"
+        out.append(d)
+        if len(out) >= top_k:
+            break
+    return out
+
+
+def _format_verse_block(verse_results: list[dict]) -> str:
+    """生成纲目 Prompt 里单独的一段：人工关键圣经节的相关原文。没有就不放。"""
+    if not verse_results:
+        return ""
+    lines = [
+        "## 人工经节的相关原文",
+        "以下是引用了人工指定关键圣经节的原文。把经节名称写进大点或中点时，后面的句子要从这一节底下挑讲这节经文的原句，逐字引用：",
+    ]
+    cur = None
+    for c in verse_results:
+        if c["verse"] != cur:
+            cur = c["verse"]
+            lines.append(f"### {cur}")
+        src = _display_title(c) or c.get("book_title") or ""
+        lines.append(f"- {c['snippet']}" + (f"（{src}）" if src else ""))
     return "\n" + "\n".join(lines) + "\n"
 
 
@@ -692,7 +805,7 @@ def _parse_step1_layers(
     """解析 Step 1 返回的 JSON（含 revelation、inner、experience、practice、summary、key_verses）。summary（小结）仅写入 Step1 结果，不传入 Step2。
 
     【新测试台】原 reasoning（一句理由）改名为 summary（小结），兼容旧字段 reasoning；
-    key_verses 为可选的关键圣经节出处（最多 3 节），由人工在页面上取舍，目前不传入 Step2 及之后。
+    key_verses：Prompt 已不再要求推荐（2026-11-12 起关键圣经节完全由人工输入），这里只为兼容旧回复仍会读出，调用处不用。
 
     【新测试台】inner 为内在素质层。传入 concept_set / inner_set 时先校验：三层的词须在概念列表里，
     inner 的词须在最内在词库里，不符合的丢掉并记入 dropped（[{"layer", "word"}]）；再按纲目性质截数量，
@@ -1614,6 +1727,17 @@ class KgRagService:
             "mode": mode,
         }
 
+        # 【新测试台】关键圣经节完全由人工输入（2026-11-12 老板定）：不管有没有人工指定四层词，都读这一项；
+        # Step1 不再推荐经节，生成纲目时接在防火墙指示后面放进 Step5 Prompt（见 KEY_VERSES_INSTRUCTION）。
+        # 每个人写经节的方式不同（弗4:16、以弗所书四章十六节……），先统一成资料里的简写（弗四16），见 verse_ref.py；
+        # 认不出的照原样留着放进 Prompt（模型多半看得懂），只是检索不到相关原文。
+        _kv_raw = p.get("preset_key_verses") or []
+        _kv_items = [str(v).strip() for v in _kv_raw if str(v).strip()] if isinstance(_kv_raw, list) else []
+        manual_key_verses, unparsed_key_verses = normalize_verses(_kv_items)
+        manual_key_verses += [v for v in unparsed_key_verses if v not in manual_key_verses]
+        if _kv_items:
+            logger.info("[人工经节] 输入 %s → 统一为 %s；认不出 %s", _kv_items, manual_key_verses, unparsed_key_verses)
+
         # ── Redis 缓存读取 ──
         preset_revelation = p.get("preset_revelation") or []
         preset_experience = p.get("preset_experience") or []
@@ -1651,12 +1775,19 @@ class KgRagService:
             practice_joined,
             inner_joined,
         )
+        if manual_key_verses:  # 【新测试台】经节不同，纲目就不同，不可读到别的经节的缓存
+            # kv3：经节须写进大点/中点内容，并附该节相关原文（11-12 第三版），不读之前版本的旧结果
+            cache_key += ":kv3:" + hashlib.sha256("|".join(manual_key_verses).encode("utf-8")).hexdigest()[:16]
         skip_cache = bool(p.get("skip_cache"))
         if self.redis and not skip_cache:
             try:
                 cached_raw = self.redis.get(cache_key)
                 if cached_raw:
                     cached = json.loads(cached_raw)
+                    cached["answer"] = strip_outline_tail(cached.get("answer"))  # 【新测试台】旧缓存也去掉最后的参考与参读、说明
+                    _sp = cached.get("special") or {}
+                    if _sp.get("type") == "high_peak":  # 【新测试台】直接输出的高峰纲目：按现在的资料和版面重新排，旧格式缓存也更新
+                        cached["answer"] = format_high_peak(_sp.get("word") or "") or cached["answer"]
                     logger.info(f"[KG-RAG CACHE] hit: key={cache_key}")
                     return {
                         "query": query,
@@ -1676,13 +1807,46 @@ class KgRagService:
             match_firewall(query, _call_kg_rag_llm, llm_calls=llm_calls)
         )
 
+        # 【新测试台】特殊标注（从历史进展的差异看高峰时期的内涵）：题目＋负担说明的主要内容命中时，
+        # 直接输出现成纲目，后面的推荐重点、检索、生成都不做（见 special_outline.py）。
+        # 推荐重点（stop_after_step1）不判断，只在生成纲目时判断。
+        _sp_t0 = asyncio.get_event_loop().time()
+        special = None
+        if not p.get("stop_after_step1"):
+            special = await match_special_outline(query, burden_description, _call_kg_rag_llm, llm_calls=llm_calls)
+        step_elapsed_ms["special"] = round((asyncio.get_event_loop().time() - _sp_t0) * 1000, 1)
+        if special:
+            firewall_task.cancel()
+            result["answer"] = special["answer"]
+            result["special"] = {k: special[k] for k in ("type", "label", "word", "reason")}
+            result["steps"]["special"] = dict(result["special"])
+            result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
+            result["cached"] = False
+            result["cache_key"] = cache_key
+            logger.info("[特殊标注] 命中「%s」，直接输出《%s》的现成纲目", special["label"], special["word"])
+            if self.redis:
+                try:
+                    llm_usage = result.get("llm_usage") or {}
+                    self.redis.setex(cache_key, CACHE_TTL, json.dumps({
+                        "answer": result["answer"],
+                        "special": result["special"],
+                        "revelation": [], "inner": [], "experience": [], "practice": [],
+                        "summary": "", "key_verses": [], "skeleton": None, "main_sources": [],
+                        "total_elapsed_ms": llm_usage.get("total_elapsed_ms"),
+                        "total_cost_usd": (llm_usage.get("totals") or {}).get("cost_usd"),
+                        "answer_en": None, "answer_zh_tw": None,
+                    }, ensure_ascii=False))
+                except Exception as e:
+                    logger.warning(f"[KG-RAG CACHE] write error (special): {e}")
+            return result
+
         concepts = []
         revelation: list[str] = []
         inner: list[str] = []  # 【新测试台】内在素质层；目前只在推荐重点返回，后面骨架/检索/生成纲目还没接收这一层
         experience: list[str] = []
         practice: list[str] = []
         summary = ""  # 小结（原 reasoning）
-        key_verses: list[str] = []  # 【新测试台】可选的关键圣经节，人工取舍；目前不传入 Step2 及之后
+        key_verses: list[str] = list(manual_key_verses)  # 【新测试台】关键圣经节只用人工输入的，放进 Step5 Prompt
         step1_dropped: list[dict[str, str]] = []
         inner_words: list[str] = []
 
@@ -1708,10 +1872,6 @@ class KgRagService:
             )
             concepts = _concat_four_layers(revelation, inner, experience, practice)
             summary = "（人工指定概念，跳过 Step 1）"
-            # 【新测试台】页面上勾选/输入的关键圣经节（可选）：先记进 Step1 结果，暂不放进生成纲目的 Prompt
-            preset_key_verses = p.get("preset_key_verses") or []
-            if isinstance(preset_key_verses, list):
-                key_verses = [str(v).strip() for v in preset_key_verses if str(v).strip()]
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
             result["steps"]["step1"] = {
                 "concepts": concepts,
@@ -1823,6 +1983,7 @@ class KgRagService:
                     f"practice: {practice}, dropped: {step1_dropped}, truncated: {step1_truncated}, "
                     f"key_verses: {key_verses}, summary: {summary[:200] if summary else ''}"
                 )
+                key_verses = list(manual_key_verses)  # 【新测试台】不用模型推荐的经节
                 concepts = _concat_four_layers(revelation, inner, experience, practice)
             except Exception as e:
                 result["steps"]["step1"] = {"concepts": [], "raw_response": "", "error": str(e)}
@@ -2289,6 +2450,21 @@ class KgRagService:
                 })
         mutual_block = _format_mutual_block(mutual_results)
 
+        # 【新测试台】人工关键圣经节：每一节检索引用了这节经文的原文，单独一段放进生成纲目
+        verse_results: list[dict[str, Any]] = []
+        if unparsed_key_verses and isinstance(result["steps"].get("step1"), dict):
+            result["steps"]["step1"]["key_verses_unparsed"] = unparsed_key_verses  # 认不出写法的经节
+        for _v in manual_key_verses:
+            if _v in unparsed_key_verses:
+                continue  # 认不出写法，查不到相关原文
+            try:
+                verse_results += await asyncio.to_thread(_search_verse_chunks, self.es, _v, query, VERSE_TOP_K)
+            except Exception as e:
+                logger.warning("[人工经节] %s 检索失败，本节不放相关原文: %s", _v, e)
+        verse_block = _format_verse_block(verse_results)
+        if manual_key_verses:
+            logger.info("[人工经节] %s 相关原文 %s 段", manual_key_verses, len(verse_results))
+
         step3_body: dict[str, Any] = {
             "rewritten_queries": rewritten_queries,
             "dense_queries": dense_query_list,
@@ -2300,6 +2476,7 @@ class KgRagService:
             "catalog_results": catalog_results,  # 【4.0】清明上河图目录（算进引用来源）
             "mutual_results": mutual_results,  # 【4.0】彼此互相（算进引用来源）
             "dict_results": dict_results,  # 【4.0】真理辞典 3a（算进引用来源）
+            "verse_results": verse_results,  # 【新测试台】人工关键圣经节的相关原文（算进引用来源）
             "bm25_results": bm25_results,
             "dense_results": dense_results,
         }
@@ -2356,7 +2533,7 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 skeleton_with_chunks=skeleton_with_chunks,
-                catalog_block=catalog_block + mutual_block + dict_block,  # 目录之后依次接彼此互相、3a（模板不改）
+                catalog_block=catalog_block + mutual_block + dict_block + verse_block,  # 目录之后依次接彼此互相、3a（模板不改）
             )
             prompt_type = "skeleton"
         else:
@@ -2374,10 +2551,14 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 chunks=chunks_text,
-                catalog_block=catalog_block + mutual_block + dict_block,  # 目录之后依次接彼此互相、3a（模板不改）
+                catalog_block=catalog_block + mutual_block + dict_block + verse_block,  # 目录之后依次接彼此互相、3a（模板不改）
             )
             prompt_type = "flat"
-        step5_prompt = base_prompt + fw_tail
+        kv_tail = ""
+        if manual_key_verses:
+            kv_tail = "\n\n" + KEY_VERSES_INSTRUCTION.format(verses="，".join(manual_key_verses))
+            logger.info("[KG-RAG DEBUG] Step5 人工关键圣经节：%s", manual_key_verses)
+        step5_prompt = base_prompt + fw_tail + kv_tail
         logger.info(f"[KG-RAG TRACE] #6 step4 prompt built: len={len(step5_prompt)}")
         result["steps"]["step4"] = {
             "prompt": step5_prompt,
@@ -2466,7 +2647,12 @@ class KgRagService:
 
             step_elapsed_ms["step5"] = round((asyncio.get_event_loop().time() - t5_0) * 1000, 1)
             result["answer"] = gen.strip() if gen else None
+            _ans_before = result["answer"]
+            result["answer"] = strip_outline_tail(result["answer"])  # 【新测试台】去掉最后的参考与参读、说明等文字
             s5: dict[str, Any] = {"answer": result["answer"], "model": used_model}
+            if _ans_before and result["answer"] != _ans_before:
+                s5["removed_tail"] = _ans_before[len(result["answer"]):].strip()  # 切掉的部分留着查看
+                logger.info("[KG-RAG] Step5 纲目最后的附加文字已切掉：%r", s5["removed_tail"][:200])
             sn5 = register_llm_usage(llm_calls, step="step5", request_model=used_model, usage=u5)
             if sn5:
                 s5["llm_usage"] = sn5
@@ -2541,6 +2727,7 @@ class KgRagService:
                         + (step3_data.get("catalog_results") or [])
                         + (step3_data.get("mutual_results") or [])  # 【4.0】彼此互相
                         + (step3_data.get("dict_results") or [])  # 【4.0】真理辞典 3a
+                        + (step3_data.get("verse_results") or [])  # 【新测试台】人工经节相关原文
                     ),
                     "total_elapsed_ms": llm_usage.get("total_elapsed_ms"),
                     "total_cost_usd": (llm_usage.get("totals") or {}).get("cost_usd"),

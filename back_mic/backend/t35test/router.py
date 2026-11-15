@@ -24,7 +24,8 @@ from pydantic import BaseModel, Field
 from user.token import test_token
 from t35test.common import get_monitoring
 from t35test.kg.firewall import load_firewall
-from t35test.kg.kg_rag_service import KgRagService
+from t35test.kg.special_outline import load_special_outlines
+from t35test.kg.kg_rag_service import KgRagService, strip_outline_tail
 from t35test.kg.neo4j_client import Neo4jClient
 from t35test.translate.service import translate_service
 
@@ -68,6 +69,7 @@ def get_service() -> KgRagService:
             except Exception as mon_e:
                 logger.warning(f"[t35test] Neo4j 连接降级事件记录失败（不影响主流程）: {mon_e}")
         load_firewall(_neo4j)  # 【4.0】防火墙改读图谱 neo4j-v4 的「神圣的辩理」标注
+        load_special_outlines(_neo4j)  # 【新测试台】特殊标注（高峰）：命中主要内容直接输出现成纲目
         _service = KgRagService(es_client, _neo4j)
     return _service
 
@@ -346,7 +348,7 @@ async def format_outline_only(request: FormatOutlineRequest):
         result = await asyncio.to_thread(
             translate_service.format_outline_only,
             request.direction,
-            request.translated_text,
+            strip_outline_tail(request.translated_text),  # 【新测试台】刷格式下载前去掉最后的参考与参读、说明
             request.output_format,
             request.is_outline,
         )
