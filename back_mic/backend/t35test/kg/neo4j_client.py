@@ -159,6 +159,22 @@ class Neo4jClient:
             print(f"[KG-RAG] 读取神圣的辩理失败: {e}")
             return []
 
+    def get_high_peak_contents(self) -> list[dict[str, Any]]:
+        """【新测试台】读词条上的「从历史进展的差异看高峰时期的内涵」标注（high_peak_content，JSON 字符串，87 个词）。
+        返回 [{"name": 词条名, "raw": JSON 字符串}]；未连接或出错返回 []。"""
+        if not self._available or self._driver is None:
+            return []
+        try:
+            with self._driver.session(default_access_mode="READ") as session:
+                result = session.run(
+                    f"MATCH (c:{TP}) WHERE c.high_peak_content IS NOT NULL AND c.same_as IS NULL "
+                    "RETURN c.name AS name, c.high_peak_content AS raw"
+                )
+                return [{"name": r.get("name"), "raw": r.get("raw")} for r in result]
+        except Exception as e:
+            print(f"[KG-RAG] 读取高峰标注失败: {e}")
+            return []
+
     def search_concepts_by_name(self, keyword: str, limit: int = 20) -> list[str]:
         """「输入重点」下拉提示：在 4.0 的 2,372 个词条里按名称模糊搜索（不含 8 个括号内节点）。"""
         if not self._available or self._driver is None:

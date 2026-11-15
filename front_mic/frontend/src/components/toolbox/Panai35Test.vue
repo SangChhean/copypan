@@ -211,14 +211,14 @@ const selectedRevelation = ref([]);
 const selectedInner = ref([]); // 内在素质（词汇待资料库上传）
 const selectedExperience = ref([]);
 const selectedPractice = ref([]);
-const selectedKeyVerses = ref([]); // 关键圣经节（可选，人工取舍；默认不勾选）
+const selectedKeyVerses = ref([]); // 关键圣经节（可选）：完全人工输入（2026-11-12 起 AI 不再推荐），生成纲目时放进 Prompt
 /** 概念来源：ai = 勾选候选；manual = 三层 tag 手动输入（互斥） */
 const conceptMode = ref("ai"); // 'ai' | 'manual'
 const manualRevelation = ref([]);
 const manualInner = ref([]);
 const manualExperience = ref([]);
 const manualPractice = ref([]);
-const manualKeyVerses = ref([]); // 关键圣经节（可选）
+const manualKeyVerses = ref([]); // 关键圣经节（可选）：人工输入，生成纲目时放进 Prompt
 const manualConceptOptions = reactive({
   revelation: [],
   inner: [],
@@ -500,7 +500,6 @@ async function extractConcepts() {
     selectedInner.value = [...(d.inner || [])];
     selectedExperience.value = [...(d.experience || [])];
     selectedPractice.value = [...(d.practice || [])];
-    selectedKeyVerses.value = []; // 关键圣经节是可选的，由人工根据纲目需求勾选
     conceptStage.value = "candidates_ready";
   } catch (e) {
     tip(e.response?.data?.error || e.message || "概念抽取失败");
@@ -651,7 +650,7 @@ function saveCurrentToHistory() {
     inner: Array.isArray(cand.inner) ? [...cand.inner] : [],
     experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
     practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
-    key_verses: Array.isArray(cand.key_verses) ? [...cand.key_verses] : [],
+    key_verses: [...(conceptMode.value === "manual" ? manualKeyVerses.value : selectedKeyVerses.value)], // 人工输入的关键圣经节
     summary: cand.summary ?? cand.reasoning ?? "", // 小结（旧记录里叫 reasoning）
     thinking_text: stepThinkingText.value || "",
     thinking_text_zh: stepThinkingTextZh.value || "",
@@ -1675,6 +1674,7 @@ function parseKgRagResponse(data) {
     totalCostUsd: null,
     answerEn: null,
     answerZhTw: null,
+    special: data.special || null, // 特殊标注命中时直接输出的现成纲目：{type, label, word, reason}
   };
   if (isCached) {
     result.revelation = data.revelation || [];
@@ -1696,9 +1696,13 @@ function parseKgRagResponse(data) {
     result.inner = s1.inner || [];
     result.experience = s1.experience || [];
     result.practice = s1.practice || [];
+    if ((s1.key_verses_unparsed || []).length) {
+      // 关键圣经节认不出写法的：照原样放进生成纲目，但查不到引用这节的原文
+      message.warning(`这几处关键圣经节认不出写法，没能查到相关原文：${s1.key_verses_unparsed.join("、")}（请用如“弗四16”“弗4:16”的写法）`, 8);
+    }
     result.skeleton = s2.skeleton || null;
     // 【4.0】清明上河图目录的 20 条也算进引用来源
-    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.mutual_results || []), ...(s3.dict_results || [])]; // 【4.0】dict_results = 真理辞典 3a
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.mutual_results || []), ...(s3.dict_results || []), ...(s3.verse_results || [])]; // 【4.0】dict_results = 真理辞典 3a；verse_results = 人工经节相关原文
     result.mainSources = allResults.map(r => ({
       chunk_id: r.chunk_id || "",
       book_title: r.book_title || "",
@@ -1759,7 +1763,6 @@ const onAISearch = async () => {
       qParams.preset_inner = [...manualInner.value];
       qParams.preset_experience = [...manualExperience.value];
       qParams.preset_practice = [...manualPractice.value];
-      qParams.preset_key_verses = [...manualKeyVerses.value]; // 可选；目前只记录，还没放进生成纲目的 Prompt
     } else if (
       conceptMode.value === "ai" &&
       conceptStage.value === "candidates_ready" &&
@@ -1770,8 +1773,10 @@ const onAISearch = async () => {
       qParams.preset_inner = [...selectedInner.value];
       qParams.preset_experience = [...selectedExperience.value];
       qParams.preset_practice = [...selectedPractice.value];
-      qParams.preset_key_verses = [...selectedKeyVerses.value]; // 可选；目前只记录，还没放进生成纲目的 Prompt
     }
+    // 关键圣经节：人工输入的（可选），后端放进生成纲目的 Prompt（读经一定列入、正文一定用到）
+    const keyVerses = conceptMode.value === "manual" ? manualKeyVerses.value : selectedKeyVerses.value;
+    if (keyVerses.length) qParams.preset_key_verses = [...keyVerses];
     const res = await axios.post(
       "/api/t35test/query",
       { query: question, params: qParams, mode: PIPELINE_MODE },
@@ -1785,7 +1790,7 @@ const onAISearch = async () => {
     }
 
     const parsed = parseKgRagResponse(data);
-    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
+    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic, special: parsed.special };
     Object.assign(aiMeta, {
       revelation: parsed.revelation,
       inner: parsed.inner,
@@ -2006,15 +2011,16 @@ function goBackToTools() {
                   </template>
                 </div>
               </div>
-              <div class="ai-concept-section ai-concept-checkwrap">
-                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
-                <a-checkbox-group
-                  v-if="(conceptCandidates.key_verses || []).length"
+              <div class="ai-concept-section">
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选，人工输入）</span></span>
+                <a-select
                   v-model:value="selectedKeyVerses"
-                  :options="conceptCandidates.key_verses"
-                  class="ai-concept-checks"
+                  mode="tags"
+                  class="ai-concept-tags"
+                  :open="false"
+                  placeholder="如：弗四16，回车添加"
+                  allow-clear
                 />
-                <span v-else class="ai-concept-empty">（本题没有推荐关键圣经节）</span>
               </div>
               <div v-if="(conceptCandidates.revelation || []).length" class="ai-concept-section ai-concept-checkwrap">
                 <span class="ai-concept-label">真理启示</span>
@@ -2092,7 +2098,7 @@ function goBackToTools() {
             <div v-if="conceptMode === 'manual'" class="ai-concept-panel ai-concept-manual">
               <div class="ai-concept-hint">直接输入重点，回车添加，× 删除。</div>
               <div class="ai-concept-section">
-                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选）</span></span>
+                <span class="ai-concept-label">关键圣经节<span class="ai-concept-optional">（可选，人工输入）</span></span>
                 <a-select
                   v-model:value="manualKeyVerses"
                   mode="tags"
@@ -2266,6 +2272,10 @@ function goBackToTools() {
             <CopyOutlined v-else />
             {{ aiAnswerCopied ? "已复制" : "复制" }}
           </a-button>
+        </div>
+        <div v-if="aiResult?.special" class="ai-special-note">
+          已识别为「{{ aiResult.special.label }}」，直接输出《{{ aiResult.special.word }}》的现成纲目（不经生成纲目流程）。
+          <div v-if="aiResult.special.reason" class="ai-special-reason">判断理由：{{ aiResult.special.reason }}</div>
         </div>
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
         <div v-if="aiResult?.answer" class="ai-download-row">
@@ -3197,6 +3207,21 @@ function goBackToTools() {
   }
 }
 
+.ai-special-note {
+  margin: 4px 0 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  color: #ad4e00;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.ai-special-reason {
+  margin-top: 2px;
+  color: #8c6d1f;
+  font-size: 12px;
+}
 .ai-answer-card {
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   border: 2px solid #667eea;
