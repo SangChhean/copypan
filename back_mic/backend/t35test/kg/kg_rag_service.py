@@ -25,7 +25,6 @@ except ImportError:
         claude_client = None
 
 from t35test.kg.verse_ref import normalize_verses, verse_start  # 【新测试台】人工经节统一写法
-from t35test.kg.special_outline import format_high_peak, match_special_outline  # 【新测试台】特殊标注：命中主要内容直接输出现成纲目
 from t35test.kg.prompts import (
     BURDEN_DESCRIPTION_PROMPT,
     STEP1_CONCEPT_EXTRACTION,
@@ -162,14 +161,6 @@ def _format_catalog_block(catalog_results: list[dict]) -> str:
     return "\n" + "\n".join(lines) + "\n"
 
 
-def _format_mutual_block(mutual_results: list[dict]) -> str:
-    """【4.0】生成纲目 Prompt 里单独的一段：彼此互相（用户 2026-11-11 确认的文字）。选中的词都没有这类标注时不放。"""
-    if not mutual_results:
-        return ""
-    lines = ["## 彼此互相", "以下是本主题所选词条中，与信徒彼此之间相关的说法，供参考："]
-    lines += [f"- {c['text']}" for c in mutual_results]
-    return "\n" + "\n".join(lines) + "\n"
-
 
 # 【新测试台】纲目最后的“参考与参读资料”“说明”等文字一律切掉（2026-11-12 用户要求）
 # 只切“最后一个纲目点之后”出现的这类段落；纲目正文里的字不动。英文纲目（翻译后）的同类段落也切。
@@ -297,6 +288,7 @@ def _make_cache_key(
     【4.0】前缀 panai4:cache:（接 4.0 资料前的旧结果用 t35test:cache:，换前缀后不会再被读到）。"""
     raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}|{inner_joined}"
     raw += "|dict3a"  # 【4.0】3a 正式放入后的标记：不读放 3a 之前（及研究开关时）的旧结果
+    raw += "|v20261116"  # 2026-11-16 删除彼此互相、高峰直接输出：不读删除前的旧结果
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"panai4:cache:{h}"
 
@@ -1785,9 +1777,6 @@ class KgRagService:
                 if cached_raw:
                     cached = json.loads(cached_raw)
                     cached["answer"] = strip_outline_tail(cached.get("answer"))  # 【新测试台】旧缓存也去掉最后的参考与参读、说明
-                    _sp = cached.get("special") or {}
-                    if _sp.get("type") == "high_peak":  # 【新测试台】直接输出的高峰纲目：按现在的资料和版面重新排，旧格式缓存也更新
-                        cached["answer"] = format_high_peak(_sp.get("word") or "") or cached["answer"]
                     logger.info(f"[KG-RAG CACHE] hit: key={cache_key}")
                     return {
                         "query": query,
@@ -1806,39 +1795,6 @@ class KgRagService:
         firewall_task = asyncio.create_task(
             match_firewall(query, _call_kg_rag_llm, llm_calls=llm_calls)
         )
-
-        # 【新测试台】特殊标注（从历史进展的差异看高峰时期的内涵）：题目＋负担说明的主要内容命中时，
-        # 直接输出现成纲目，后面的推荐重点、检索、生成都不做（见 special_outline.py）。
-        # 推荐重点（stop_after_step1）不判断，只在生成纲目时判断。
-        _sp_t0 = asyncio.get_event_loop().time()
-        special = None
-        if not p.get("stop_after_step1"):
-            special = await match_special_outline(query, burden_description, _call_kg_rag_llm, llm_calls=llm_calls)
-        step_elapsed_ms["special"] = round((asyncio.get_event_loop().time() - _sp_t0) * 1000, 1)
-        if special:
-            firewall_task.cancel()
-            result["answer"] = special["answer"]
-            result["special"] = {k: special[k] for k in ("type", "label", "word", "reason")}
-            result["steps"]["special"] = dict(result["special"])
-            result["llm_usage"] = _finalize_llm_usage(llm_calls, pipeline_start, step_elapsed_ms)
-            result["cached"] = False
-            result["cache_key"] = cache_key
-            logger.info("[特殊标注] 命中「%s」，直接输出《%s》的现成纲目", special["label"], special["word"])
-            if self.redis:
-                try:
-                    llm_usage = result.get("llm_usage") or {}
-                    self.redis.setex(cache_key, CACHE_TTL, json.dumps({
-                        "answer": result["answer"],
-                        "special": result["special"],
-                        "revelation": [], "inner": [], "experience": [], "practice": [],
-                        "summary": "", "key_verses": [], "skeleton": None, "main_sources": [],
-                        "total_elapsed_ms": llm_usage.get("total_elapsed_ms"),
-                        "total_cost_usd": (llm_usage.get("totals") or {}).get("cost_usd"),
-                        "answer_en": None, "answer_zh_tw": None,
-                    }, ensure_ascii=False))
-                except Exception as e:
-                    logger.warning(f"[KG-RAG CACHE] write error (special): {e}")
-            return result
 
         concepts = []
         revelation: list[str] = []
@@ -2436,19 +2392,6 @@ class KgRagService:
             dict_results = []
         dict_block = format_dict_block(dict_results)
 
-        # 【4.0】彼此互相：选中的四层词里带 mutuality 标注的，短语直接放进生成纲目（单独一段），算进引用来源；不进龙骨、不经三路检索
-        mutual_results: list[dict[str, Any]] = []
-        _words = _concat_four_layers(revelation, inner, experience, practice)
-        _mp = await asyncio.to_thread(self.neo4j.get_mutual_phrases, _words)
-        for _w in _words:
-            if _w in _mp:
-                mutual_results.append({
-                    "chunk_id": f"mutual:{_w}",
-                    "text": f"{_w}：{_mp[_w]}",
-                    "display_title": f"{_w}：{_mp[_w]}",
-                    "source": "mutual",
-                })
-        mutual_block = _format_mutual_block(mutual_results)
 
         # 【新测试台】人工关键圣经节：每一节检索引用了这节经文的原文，单独一段放进生成纲目
         verse_results: list[dict[str, Any]] = []
@@ -2474,7 +2417,6 @@ class KgRagService:
             "main_results": main_results,
             "expanded_results": expanded_results,
             "catalog_results": catalog_results,  # 【4.0】清明上河图目录（算进引用来源）
-            "mutual_results": mutual_results,  # 【4.0】彼此互相（算进引用来源）
             "dict_results": dict_results,  # 【4.0】真理辞典 3a（算进引用来源）
             "verse_results": verse_results,  # 【新测试台】人工关键圣经节的相关原文（算进引用来源）
             "bm25_results": bm25_results,
@@ -2533,7 +2475,7 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 skeleton_with_chunks=skeleton_with_chunks,
-                catalog_block=catalog_block + mutual_block + dict_block + verse_block,  # 目录之后依次接彼此互相、3a（模板不改）
+                catalog_block=catalog_block + dict_block + verse_block,  # 目录之后依次接 3a、人工经节相关原文（模板不改）
             )
             prompt_type = "skeleton"
         else:
@@ -2551,7 +2493,7 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 chunks=chunks_text,
-                catalog_block=catalog_block + mutual_block + dict_block + verse_block,  # 目录之后依次接彼此互相、3a（模板不改）
+                catalog_block=catalog_block + dict_block + verse_block,  # 目录之后依次接 3a、人工经节相关原文（模板不改）
             )
             prompt_type = "flat"
         kv_tail = ""
@@ -2725,7 +2667,6 @@ class KgRagService:
                         (step3_data.get("main_results") or [])
                         + (step3_data.get("expanded_results") or [])
                         + (step3_data.get("catalog_results") or [])
-                        + (step3_data.get("mutual_results") or [])  # 【4.0】彼此互相
                         + (step3_data.get("dict_results") or [])  # 【4.0】真理辞典 3a
                         + (step3_data.get("verse_results") or [])  # 【新测试台】人工经节相关原文
                     ),

@@ -123,23 +123,6 @@ class Neo4jClient:
         """返回最内在 133 个词的副本（内在素质层专用）。"""
         return list(self._inner_words)
 
-    def get_mutual_phrases(self, names: list[str]) -> dict[str, str]:
-        """【4.0】彼此互相：按词名取图谱 mutuality 标注（短语，如"爱"→"彼此相爱"）。没有标注的词不出现在结果里。"""
-        names = [n for n in dict.fromkeys(names or []) if n]
-        if not self._available or self._driver is None or not names:
-            return {}
-        try:
-            with self._driver.session(default_access_mode="READ") as session:
-                result = session.run(
-                    f"MATCH (c:{TP}) WHERE c.name IN $names AND c.mutuality IS NOT NULL "
-                    "RETURN c.name AS name, c.mutuality AS m",
-                    names=names,
-                )
-                return {r["name"]: str(r["m"]).strip() for r in result if str(r["m"] or "").strip()}
-        except Exception as e:
-            print(f"[KG-RAG] 读取彼此互相失败: {e}")
-            return {}
-
     def get_divine_arguments(self) -> list[dict[str, Any]]:
         """【4.0 防火墙】读词条上的「神圣的辩理」标注（devine_argument，JSON 字符串）。
         返回 [{"name": 词条名, "same_as": 括号节点所指或 None, "raw": JSON 字符串}]；未连接或出错返回 []。"""
@@ -157,22 +140,6 @@ class Neo4jClient:
                 ]
         except Exception as e:
             print(f"[KG-RAG] 读取神圣的辩理失败: {e}")
-            return []
-
-    def get_high_peak_contents(self) -> list[dict[str, Any]]:
-        """【新测试台】读词条上的「从历史进展的差异看高峰时期的内涵」标注（high_peak_content，JSON 字符串，87 个词）。
-        返回 [{"name": 词条名, "raw": JSON 字符串}]；未连接或出错返回 []。"""
-        if not self._available or self._driver is None:
-            return []
-        try:
-            with self._driver.session(default_access_mode="READ") as session:
-                result = session.run(
-                    f"MATCH (c:{TP}) WHERE c.high_peak_content IS NOT NULL AND c.same_as IS NULL "
-                    "RETURN c.name AS name, c.high_peak_content AS raw"
-                )
-                return [{"name": r.get("name"), "raw": r.get("raw")} for r in result]
-        except Exception as e:
-            print(f"[KG-RAG] 读取高峰标注失败: {e}")
             return []
 
     def search_concepts_by_name(self, keyword: str, limit: int = 20) -> list[str]:

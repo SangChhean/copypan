@@ -290,7 +290,7 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
             is_header_line = (
                 '版本' in stripped or bool(re.match(r'^第[一二三四五六七八九十]+例（', stripped))
             )
-            if is_header_line or re.match(r'^【[^】]+】$', stripped):  # 【新测试台】高峰纲目的阶段标题不加句号
+            if is_header_line:
                 continue
             if not text.endswith(('。', '！', '？', '…', '"', '\u2019', '：', '』', '）')):
                 text += '。'
@@ -304,9 +304,7 @@ def format_chinese_outline_docx(docx_path: str, traditional_quotes: bool = False
     for para in doc.paragraphs:
         text = para.text
         if text.startswith('一\t') or text.startswith('1\t') or text.startswith('a\t'):
-            if prev_para is not None and re.match(r'^【[^】]+】$', prev_para.text.strip()):
-                pass  # 【新测试台】上一段是高峰纲目的阶段标题，不改成冒号
-            elif prev_para is not None:
+            if prev_para is not None:
                 prev_text = prev_para.text.rstrip()
                 if (
                     prev_text.endswith(('。', '！', '？', '；', '.', '!', '?', ';', ','))
