@@ -79,7 +79,6 @@ from t35test.kg.retrieval import (
     rrf_merge,
     rerank,
     skeleton_route_search,
-    pano_catalog_search,
 )
 
 DEFAULT_PARAMS = {
@@ -132,9 +131,7 @@ PANAI4_INDEX_CONFIG: dict[str, dict[str, str]] = {
 _INDICES_V4 = ",".join(PANAI4_INDEX_CONFIG)
 _VECTOR_FIELDS_V4 = tuple(dict.fromkeys(c["vector"] for c in PANAI4_INDEX_CONFIG.values()))
 
-# 清明上河图目录：单独查一路（关键词），排除目录层节点，取前 20 条（暂定）；不进 RRF 和精排
-PANO_CATALOG_INDEX = "panai4_pano_catalog"
-PANO_CATALOG_TOP_K = 20
+# 清明上河图目录（panai4_pano_catalog）已于 2026-11-16 删除：检索、Prompt 一段、引用来源都不再有
 
 
 def _concat_four_layers(
@@ -150,15 +147,6 @@ def _concat_four_layers(
          if str(c).strip()]
     ))
 
-
-def _format_catalog_block(catalog_results: list[dict]) -> str:
-    """【4.0】生成纲目 Prompt 里单独的一段：清明上河图目录的相关篇题（只有篇题，没有内容）。没有结果时不放这一段。"""
-    if not catalog_results:
-        return ""
-    lines = ["## 相关篇题（清明上河图目录）", "以下是职事信息中与本主题相关的篇题，只有篇题、没有内容，供参考："]
-    for c in catalog_results:
-        lines.append(f"[{c.get('node_id') or c.get('chunk_id') or ''}] {_display_title(c)}")
-    return "\n" + "\n".join(lines) + "\n"
 
 
 
@@ -288,19 +276,16 @@ def _make_cache_key(
     【4.0】前缀 panai4:cache:（接 4.0 资料前的旧结果用 t35test:cache:，换前缀后不会再被读到）。"""
     raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}|{inner_joined}"
     raw += "|dict3a"  # 【4.0】3a 正式放入后的标记：不读放 3a 之前（及研究开关时）的旧结果
-    raw += "|v20261116"  # 2026-11-16 删除彼此互相、高峰直接输出：不读删除前的旧结果
+    raw += "|v20261116c"  # 2026-11-16 删除彼此互相、高峰直接输出、清明上河图目录：不读删除前的旧结果
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"panai4:cache:{h}"
 
 
 def _display_title(d: dict) -> str:
     """【4.0】引用来源里显示的出处（按库取）：
-    原文/注解取 source_zh；纲目取 text 开头的出处；圣经取书名+节号；诗歌取 name；目录取 path_text+篇题。"""
+    原文/注解取 source_zh；纲目取 text 开头的出处；圣经取书名+节号；诗歌取 name。"""
     idx = str(d.get("_index") or "")
     text = str(d.get("text") or "")
-    if idx == PANO_CATALOG_INDEX:
-        parts = [str(d.get(k) or "").strip() for k in ("path_text", "msg_label", "title")]
-        return "　".join(x for x in parts if x)
     if idx.startswith("panai4_text_") or idx == "panai4_map_note":
         return str(d.get("source_zh") or "").strip().strip("（）()")
     if idx.startswith("panai4_outline_"):
@@ -2204,10 +2189,6 @@ class KgRagService:
         # "ES 调用本身失败被静默降级"——这是本次改动里对 retrieval.py 做的唯一最小改动
         # （新增可选 errors 形参，默认 None 时行为与改动前完全一致）。
         es_call_errors: list[str] = []
-        # 【4.0】清明上河图目录单独一路（关键词，前 20 条），和三路检索同时跑，不进 RRF 和精排
-        catalog_task = asyncio.create_task(
-            pano_catalog_search(self.es, query, PANO_CATALOG_INDEX, PANO_CATALOG_TOP_K, errors=es_call_errors)
-        )
         bm25_task = bm25_search(self.es, query, active_index, bm25_fetch_size, errors=es_call_errors)
         dense_tasks = [
             dense_search(
@@ -2229,11 +2210,6 @@ class KgRagService:
         logger.info(f"[KG-RAG TRACE] #1 gather start: bm25=1, dense={len(dense_tasks)}, route3={len(route3_tasks)}")
         results = await asyncio.gather(bm25_task, *dense_tasks, *route3_tasks)
         logger.info(f"[KG-RAG TRACE] #2 gather done: total_results={len(results)}")
-        catalog_results = await catalog_task
-        for _c in catalog_results:
-            _c["display_title"] = _display_title(_c)
-        catalog_block = _format_catalog_block(catalog_results)
-        logger.info(f"[KG-RAG TRACE] #2b pano catalog done: {len(catalog_results)} 条")
 
         # 仅当这一批 ES 调用里确实存在可判定的失败/异常时才记一条降级事件；
         # "正常查询但没有结果"不会出现在 es_call_errors 里，不会误记。
@@ -2416,7 +2392,6 @@ class KgRagService:
             "rrf_count": len(merged),
             "main_results": main_results,
             "expanded_results": expanded_results,
-            "catalog_results": catalog_results,  # 【4.0】清明上河图目录（算进引用来源）
             "dict_results": dict_results,  # 【4.0】真理辞典 3a（算进引用来源）
             "verse_results": verse_results,  # 【新测试台】人工关键圣经节的相关原文（算进引用来源）
             "bm25_results": bm25_results,
@@ -2475,7 +2450,7 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 skeleton_with_chunks=skeleton_with_chunks,
-                catalog_block=catalog_block + dict_block + verse_block,  # 目录之后依次接 3a、人工经节相关原文（模板不改）
+                extra_block=dict_block + verse_block,  # 依次接 3a、人工经节相关原文
             )
             prompt_type = "skeleton"
         else:
@@ -2493,7 +2468,7 @@ class KgRagService:
                 metadata_block=metadata_block,
                 concepts=concepts_text,
                 chunks=chunks_text,
-                catalog_block=catalog_block + dict_block + verse_block,  # 目录之后依次接 3a、人工经节相关原文（模板不改）
+                extra_block=dict_block + verse_block,  # 依次接 3a、人工经节相关原文
             )
             prompt_type = "flat"
         kv_tail = ""
@@ -2666,7 +2641,6 @@ class KgRagService:
                     "main_sources": _extract_main_sources(
                         (step3_data.get("main_results") or [])
                         + (step3_data.get("expanded_results") or [])
-                        + (step3_data.get("catalog_results") or [])
                         + (step3_data.get("dict_results") or [])  # 【4.0】真理辞典 3a
                         + (step3_data.get("verse_results") or [])  # 【新测试台】人工经节相关原文
                     ),

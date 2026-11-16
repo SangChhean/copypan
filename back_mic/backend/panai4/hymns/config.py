@@ -69,7 +69,6 @@ OTHER_PANAI4_EXPECT = {
     "panai4_text_cwwn": 32032,
     "panai4_text_others": 15481,
     "panai4_map_note": 16052,
-    "panai4_pano_catalog": 53151,
 }
 
 SAMPLE_SEED = 20261106
