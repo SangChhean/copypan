@@ -1,6 +1,8 @@
 <!-- 【PanAI 新测试台】（原名【3.5测试用】）由 Search.vue 的「AI纲目制作面板」复制生成（只有 3.5；接口走 /api/t35test；历史记录用独立的 localStorage 键）。 -->
 <script setup>
 import { ref, computed, watch, reactive, onMounted, onUnmounted, nextTick } from "vue";
+// embedded：放进「纲目制作」页（PanAI 4.0 按钮）时为 true，只拿掉顶部「返回／PanAI 新测试台」标题列，其余与工具箱完全一样
+const props = defineProps({ embedded: { type: Boolean, default: false } });
 import { useRouter, useRoute } from "vue-router";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined, ArrowLeftOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
@@ -1588,7 +1590,6 @@ function getSourceType(chunkId) {
   if (chunkId.startsWith("gmfeasts_")) return "gmfeasts";
   if (chunkId.startsWith("gmbible_")) return "gmbible";
   if (chunkId.startsWith("gmhymns_")) return "gmhymns";
-  if (chunkId.startsWith("pano_")) return "pano_catalog";
   if (chunkId.startsWith("3a:")) return "dict_3a"; // 【4.0】真理辞典 3a
   if (chunkId.startsWith("life_")) return "life";
   if (chunkId.startsWith("cwwl_")) return "cwwl";
@@ -1617,7 +1618,6 @@ const SOURCE_TYPE_LABELS = {
   gmfeasts:       { label: "节期纲目",       color: "#f759ab" },
   gmbible:        { label: "圣经",           color: "#fa8c16" },
   gmhymns:        { label: "诗歌",           color: "#ffc53d" },
-  pano_catalog:   { label: "清明上河图目录", color: "#36cfc9" },
   dict_3a:        { label: "3a",             color: "#cf1322" }, // 【4.0】真理辞典 3a
   unknown:        { label: "其他",           color: "#d9d9d9" },
 };
@@ -1698,8 +1698,7 @@ function parseKgRagResponse(data) {
       message.warning(`这几处关键圣经节认不出写法，没能查到相关原文：${s1.key_verses_unparsed.join("、")}（请用如“弗四16”“弗4:16”的写法）`, 8);
     }
     result.skeleton = s2.skeleton || null;
-    // 【4.0】清明上河图目录的 20 条也算进引用来源
-    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.dict_results || []), ...(s3.verse_results || [])]; // 【4.0】dict_results = 真理辞典 3a；verse_results = 人工经节相关原文
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.dict_results || []), ...(s3.verse_results || [])]; // 【4.0】dict_results = 真理辞典 3a；verse_results = 人工经节相关原文
     result.mainSources = allResults.map(r => ({
       chunk_id: r.chunk_id || "",
       book_title: r.book_title || "",
@@ -1850,7 +1849,7 @@ function goBackToTools() {
 </script>
 
 <template>
-  <div class="t35-header">
+  <div v-if="!props.embedded" class="t35-header">
     <div class="t35-header-left" @click="goBackToTools" title="返回工具箱">
       <ArrowLeftOutlined class="t35-header-back" />
       <span class="t35-header-backtext">返回</span>
@@ -1858,10 +1857,12 @@ function goBackToTools() {
     <div class="t35-header-title">PanAI 新测试台</div>
     <div class="t35-header-right"></div>
   </div>
-  <div class="search-box t35-box">
+  <div :class="['search-box', 't35-box', { 't35-box--embedded': props.embedded }]">
     <div class="search-bar">
       <transition name="ai-meta-panel">
         <div v-if="aiPanelVisible" class="ai-meta-panel">
+          <!-- 嵌入「纲目制作」页时，由外面放进 PanAI 3.0／4.0 切换按钮（工具箱里没有，这里就是空的） -->
+          <slot name="panel-top" />
           <div class="ai-meta-grid">
             <label class="ai-meta-field full">
               <span>纲目主题*（必填）</span>
@@ -3932,6 +3933,9 @@ function goBackToTools() {
 }
 .t35-header-right {
   width: 64px;
+}
+.t35-box--embedded {
+  margin-top: 80px !important; /* 和纲目制作页 3.0 面板离顶部的距离一样 */
 }
 .t35-box {
   margin-top: 24px;

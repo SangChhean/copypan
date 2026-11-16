@@ -8,6 +8,9 @@ import axios from "axios";
 import { tip } from "./utils/Dialog";
 import { message, Modal } from "ant-design-vue";
 import ShowRes from "./tools/ShowRes.vue";
+import { defineAsyncComponent } from "vue";
+// 纲目制作页的 PanAI 4.0：直接用工具箱里的测试台组件（同一份程序，两边一致）
+const Panai35Test = defineAsyncComponent(() => import("./toolbox/Panai35Test.vue"));
 
 const plainOptions = [
   { lab: "模糊", val: "a" },
@@ -148,6 +151,14 @@ const aiPanelVisible = ref(props.panaiOnly);
 const aiMode = ref("3.5"); // 页面只显示 PanAI 3.0（实际为 3.5 流程）；取值 "2.0" | "3.0" | "3.5"
 const AI_MODE_LABEL = { "3.5": "PanAI 3.0" };
 const SHOW_MODE_SWITCHER = false; // 改为 true 可恢复 2.0/3.0/3.5 三个版本按钮
+// 纲目制作页（panaiOnly）的 PanAI 3.0／4.0 切换；4.0 第一次点才载入，之后来回切换都保留各自的内容
+const panaiVersion = ref("3.0");
+const panai4Mounted = ref(false);
+const showPanai4 = computed(() => props.panaiOnly && panaiVersion.value === "4.0");
+function setPanaiVersion(v) {
+  panaiVersion.value = v;
+  if (v === "4.0") panai4Mounted.value = true;
+}
 const aiModeDisplayText = computed(() => AI_MODE_LABEL[aiMode.value] || `PanAI ${aiMode.value || "3.5"}`);
 const KG_RAG_HISTORY_KEY = "kg_rag_history";
 const EVAL_PREFILL_KEY = "eval_prefill";
@@ -2013,6 +2024,8 @@ const onAISearch = async () => {
 </script>
 
 <template>
+  <!-- 纲目制作页选 PanAI 4.0 时，3.0 的整块收起来（v-show，3.0 填到一半的内容保留） -->
+  <div v-show="!showPanai4">
   <div class="search-box">
     <div class="search-bar">
       <div v-if="!panaiOnly" class="search">
@@ -2064,6 +2077,10 @@ const onAISearch = async () => {
             >
               PanAI {{ m }}
             </button>
+          </div>
+          <div v-else-if="panaiOnly" class="ai-mode-switcher">
+            <button type="button" :class="['ai-mode-btn', { active: panaiVersion === '3.0' }]" @click="setPanaiVersion('3.0')">PanAI 3.0</button>
+            <button type="button" :class="['ai-mode-btn', { active: panaiVersion === '4.0' }]" @click="setPanaiVersion('4.0')">PanAI 4.0</button>
           </div>
           <div v-else class="ai-mode-switcher">
             <span class="ai-mode-btn active ai-mode-btn--fixed">{{ aiModeDisplayText }}</span>
@@ -2882,6 +2899,18 @@ const onAISearch = async () => {
       </a-collapse-panel>
     </a-collapse>
   </a-drawer>
+  </div>
+  <!-- PanAI 4.0：直接用工具箱里的「PanAI 新测试台」同一个组件，两边程序一致；第一次点 4.0 才载入 -->
+  <div v-if="panaiOnly && panai4Mounted" v-show="showPanai4">
+    <Panai35Test embedded>
+      <template #panel-top>
+        <div class="ai-mode-switcher">
+          <button type="button" :class="['ai-mode-btn', { active: panaiVersion === '3.0' }]" @click="setPanaiVersion('3.0')">PanAI 3.0</button>
+          <button type="button" :class="['ai-mode-btn', { active: panaiVersion === '4.0' }]" @click="setPanaiVersion('4.0')">PanAI 4.0</button>
+        </div>
+      </template>
+    </Panai35Test>
+  </div>
 </template>
 
 <style scoped>
