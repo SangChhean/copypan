@@ -32,6 +32,10 @@ from t35test.kg.prompts import (
     FIREWALL_MENTION_INSTRUCTION,
     KEY_VERSES_INSTRUCTION,
     STEP2_SKELETON_BUILD,
+    INNER_SKELETON_EXTRA,
+    INNER_SKELETON_VERSE_RULE,
+    INNER_OUTLINE_EXTRA,
+    INNER_OUTLINE_VERSE_RULE,
     QUERY_REWRITE,
     STEP5_GENERATION_V4,
     STEP5_GENERATION_FLAT_V4,
@@ -276,7 +280,7 @@ def _make_cache_key(
     【4.0】前缀 panai4:cache:（接 4.0 资料前的旧结果用 t35test:cache:，换前缀后不会再被读到）。"""
     raw = f"{query}|{outline_nature}|{burden_description}|{audience}|{depth}|{mode}|{revelation_joined}|{experience_joined}|{practice_joined}|{inner_joined}"
     raw += "|dict3a"  # 【4.0】3a 正式放入后的标记：不读放 3a 之前（及研究开关时）的旧结果
-    raw += "|v20261116c"  # 2026-11-16 删除彼此互相、高峰直接输出、清明上河图目录：不读删除前的旧结果
+    raw += "|v20261116d"  # 2026-11-16 删除彼此互相、高峰直接输出、清明上河图目录；内在素质三条规定：不读旧结果
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"panai4:cache:{h}"
 
@@ -1513,6 +1517,7 @@ class KgRagService:
         llm_calls: list[dict[str, Any]],
         burden_description: str = "",
         inner: list[str] | None = None,
+        manual_key_verses: list[str] | None = None,
     ) -> dict[str, Any]:
         """图谱路径查询 + 单次 LLM 骨架构建。expanded_nodes 为 Step1 四层概念并集（【4.0】含内在素质层）。"""
         inner = list(inner or [])
@@ -1572,6 +1577,12 @@ class KgRagService:
             paths_text=paths_text,
             key_verses_text=key_verses_text,
         )
+        if outline_nature == "内在素质":  # 【新测试台】2026-11-16：内在素质的三条额外规定（含人工经节各成一步）
+            _kv = list(manual_key_verses or [])
+            step2_prompt += INNER_SKELETON_EXTRA.format(
+                query=query,
+                verse_rule=INNER_SKELETON_VERSE_RULE.format(verses="，".join(_kv)) if _kv else "",
+            )
         prompt_out = step2_prompt
         logger.info(f"[KG-RAG DEBUG] Step2 prompt (first 1200 chars): {step2_prompt[:1200]}")
 
@@ -2056,6 +2067,7 @@ class KgRagService:
                 llm_calls,
                 burden_description=burden_description,
                 inner=inner,
+                manual_key_verses=manual_key_verses,
             )
             dt_ms = (asyncio.get_event_loop().time() - t0) * 1000
             return s2, dt_ms
@@ -2475,7 +2487,14 @@ class KgRagService:
         if manual_key_verses:
             kv_tail = "\n\n" + KEY_VERSES_INSTRUCTION.format(verses="，".join(manual_key_verses))
             logger.info("[KG-RAG DEBUG] Step5 人工关键圣经节：%s", manual_key_verses)
-        step5_prompt = base_prompt + fw_tail + kv_tail
+        inner_tail = ""
+        if outline_nature == "内在素质":  # 【新测试台】2026-11-16：内在素质的三条额外规定（仍逐字取自原文）
+            inner_tail = INNER_OUTLINE_EXTRA.format(
+                query=query,
+                verse_rule=INNER_OUTLINE_VERSE_RULE.format(verses="，".join(manual_key_verses)) if manual_key_verses else "",
+            )
+            logger.info("[KG-RAG DEBUG] Step5 内在素质额外规定：人工经节 %s", manual_key_verses or "（无）")
+        step5_prompt = base_prompt + fw_tail + kv_tail + inner_tail
         logger.info(f"[KG-RAG TRACE] #6 step4 prompt built: len={len(step5_prompt)}")
         result["steps"]["step4"] = {
             "prompt": step5_prompt,
