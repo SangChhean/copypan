@@ -37,6 +37,7 @@ const aiAnswerZhTwCopied = ref(false); // 繁体复制状态
 
 // KG-RAG 返回结构化数据
 const aiMeta = reactive({
+  keyVerses: [], // 这次生成实际用到的关键圣经节（后端统一写法后）
   revelation: [],
   inner: [],
   experience: [],
@@ -569,6 +570,14 @@ function syncHistoryAnswerSkeleton(answerText) {
         }
       : item
   );
+  persistHistory();
+}
+
+// 生成纲目后，把这次用的关键圣经节（输入框里的原样写法，载入时填回输入框）写回当前这条历史记录
+function syncHistoryKeyVerses(verses) {
+  const idx = historyList.value.findIndex((r) => r.id === currentRecordId.value);
+  if (idx < 0) return;
+  historyList.value = historyList.value.map((item, i) => (i === idx ? { ...item, key_verses: verses } : item));
   persistHistory();
 }
 
@@ -1662,6 +1671,7 @@ function parseKgRagResponse(data) {
     outlineTopic: aiForm.outlineTopic.trim(),
     cached: isCached,
     cacheKey: data.cache_key || null,
+    keyVerses: [],
     revelation: [],
     inner: [],
     experience: [],
@@ -1674,6 +1684,7 @@ function parseKgRagResponse(data) {
     answerZhTw: null,
   };
   if (isCached) {
+    result.keyVerses = data.key_verses || [];
     result.revelation = data.revelation || [];
     result.inner = data.inner || [];
     result.experience = data.experience || [];
@@ -1689,6 +1700,7 @@ function parseKgRagResponse(data) {
     const s2 = data.steps?.step2 || {};
     const s3 = data.steps?.step3 || {};
     const usage = data.llm_usage || {};
+    result.keyVerses = s1.key_verses || [];
     result.revelation = s1.revelation || [];
     result.inner = s1.inner || [];
     result.experience = s1.experience || [];
@@ -1747,7 +1759,7 @@ const onAISearch = async () => {
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "✨ AI 纲目生成中…";
-  Object.assign(aiMeta, { revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
+  Object.assign(aiMeta, { keyVerses: [], revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
 
   try {
     const qParams = buildKgRagParams();
@@ -1788,6 +1800,7 @@ const onAISearch = async () => {
     const parsed = parseKgRagResponse(data);
     aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
     Object.assign(aiMeta, {
+      keyVerses: parsed.keyVerses,
       revelation: parsed.revelation,
       inner: parsed.inner,
       experience: parsed.experience,
@@ -1799,6 +1812,7 @@ const onAISearch = async () => {
       cached: parsed.cached,
       cacheKey: parsed.cacheKey,
     });
+    syncHistoryKeyVerses([...keyVerses]); // 先保存记录、后输入经节时，记录里也补上这次用的经节
 
     showInfo.value = 5;
     showAISources.value = true;
@@ -2244,6 +2258,7 @@ function goBackToTools() {
         <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
         <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
       </div>
+      <div class="kg-info-row">📖 关键圣经节：{{ (aiMeta.keyVerses || []).length ? aiMeta.keyVerses.join("、") : "无" }}</div>
       <div class="kg-info-row">📌 真理启示：{{ aiMeta.revelation.length ? aiMeta.revelation.join("、") : "无" }}</div>
       <div class="kg-info-row">📌 内在素质：{{ (aiMeta.inner || []).length ? aiMeta.inner.join("、") : "无" }}</div>
       <div class="kg-info-row">📌 生命经历：{{ aiMeta.experience.length ? aiMeta.experience.join("、") : "无" }}</div>
@@ -2407,6 +2422,7 @@ function goBackToTools() {
         <div class="history-item-body">
           <div>纲目性质：{{ item.outline_nature || "—" }}</div>
           <div>负担说明：{{ item.burden_description || "—" }}</div>
+          <div>关键圣经节：{{ (item.key_verses || []).join("、") || "—" }}</div>
           <div>真理启示：{{ (item.revelation || []).join("、") || "—" }}</div>
           <div>内在素质：{{ (item.inner || []).join("、") || "—" }}</div>
           <div>生命经历：{{ (item.experience || []).join("、") || "—" }}</div>
