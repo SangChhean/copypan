@@ -151,9 +151,9 @@ const aiPanelVisible = ref(props.panaiOnly);
 const aiMode = ref("3.5"); // 页面只显示 PanAI 3.0（实际为 3.5 流程）；取值 "2.0" | "3.0" | "3.5"
 const AI_MODE_LABEL = { "3.5": "PanAI 3.0" };
 const SHOW_MODE_SWITCHER = false; // 改为 true 可恢复 2.0/3.0/3.5 三个版本按钮
-// 纲目制作页（panaiOnly）的 PanAI 3.0／4.0 切换；4.0 第一次点才载入，之后来回切换都保留各自的内容
-const panaiVersion = ref("3.0");
-const panai4Mounted = ref(false);
+// 纲目制作页（panaiOnly）的 PanAI 3.0／4.0 切换；默认 4.0（2026-11-16），一进页面就载入 4.0，之后来回切换都保留各自的内容
+const panaiVersion = ref("4.0");
+const panai4Mounted = ref(true);
 const showPanai4 = computed(() => props.panaiOnly && panaiVersion.value === "4.0");
 function setPanaiVersion(v) {
   panaiVersion.value = v;
