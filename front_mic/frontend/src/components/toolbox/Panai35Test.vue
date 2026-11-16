@@ -1589,7 +1589,6 @@ function getSourceType(chunkId) {
   if (chunkId.startsWith("gmbible_")) return "gmbible";
   if (chunkId.startsWith("gmhymns_")) return "gmhymns";
   if (chunkId.startsWith("pano_")) return "pano_catalog";
-  if (chunkId.startsWith("mutual:")) return "mutual"; // 【4.0】彼此互相
   if (chunkId.startsWith("3a:")) return "dict_3a"; // 【4.0】真理辞典 3a
   if (chunkId.startsWith("life_")) return "life";
   if (chunkId.startsWith("cwwl_")) return "cwwl";
@@ -1619,7 +1618,6 @@ const SOURCE_TYPE_LABELS = {
   gmbible:        { label: "圣经",           color: "#fa8c16" },
   gmhymns:        { label: "诗歌",           color: "#ffc53d" },
   pano_catalog:   { label: "清明上河图目录", color: "#36cfc9" },
-  mutual:         { label: "彼此互相",       color: "#08979c" }, // 【4.0】
   dict_3a:        { label: "3a",             color: "#cf1322" }, // 【4.0】真理辞典 3a
   unknown:        { label: "其他",           color: "#d9d9d9" },
 };
@@ -1674,7 +1672,6 @@ function parseKgRagResponse(data) {
     totalCostUsd: null,
     answerEn: null,
     answerZhTw: null,
-    special: data.special || null, // 特殊标注命中时直接输出的现成纲目：{type, label, word, reason}
   };
   if (isCached) {
     result.revelation = data.revelation || [];
@@ -1702,7 +1699,7 @@ function parseKgRagResponse(data) {
     }
     result.skeleton = s2.skeleton || null;
     // 【4.0】清明上河图目录的 20 条也算进引用来源
-    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.mutual_results || []), ...(s3.dict_results || []), ...(s3.verse_results || [])]; // 【4.0】dict_results = 真理辞典 3a；verse_results = 人工经节相关原文
+    const allResults = [...(s3.main_results || []), ...(s3.expanded_results || []), ...(s3.catalog_results || []), ...(s3.dict_results || []), ...(s3.verse_results || [])]; // 【4.0】dict_results = 真理辞典 3a；verse_results = 人工经节相关原文
     result.mainSources = allResults.map(r => ({
       chunk_id: r.chunk_id || "",
       book_title: r.book_title || "",
@@ -1790,7 +1787,7 @@ const onAISearch = async () => {
     }
 
     const parsed = parseKgRagResponse(data);
-    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic, special: parsed.special };
+    aiResult.value = { answer: parsed.answer, outlineTopic: parsed.outlineTopic };
     Object.assign(aiMeta, {
       revelation: parsed.revelation,
       inner: parsed.inner,
@@ -2272,10 +2269,6 @@ function goBackToTools() {
             <CopyOutlined v-else />
             {{ aiAnswerCopied ? "已复制" : "复制" }}
           </a-button>
-        </div>
-        <div v-if="aiResult?.special" class="ai-special-note">
-          已识别为「{{ aiResult.special.label }}」，直接输出《{{ aiResult.special.word }}》的现成纲目（不经生成纲目流程）。
-          <div v-if="aiResult.special.reason" class="ai-special-reason">判断理由：{{ aiResult.special.reason }}</div>
         </div>
         <div class="ai-answer-content" v-html="aiAnswerFormatted"></div>
         <div v-if="aiResult?.answer" class="ai-download-row">
@@ -3207,21 +3200,6 @@ function goBackToTools() {
   }
 }
 
-.ai-special-note {
-  margin: 4px 0 10px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  color: #ad4e00;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.ai-special-reason {
-  margin-top: 2px;
-  color: #8c6d1f;
-  font-size: 12px;
-}
 .ai-answer-card {
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   border: 2px solid #667eea;
