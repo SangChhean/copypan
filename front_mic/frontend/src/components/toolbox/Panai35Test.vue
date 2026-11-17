@@ -716,7 +716,17 @@ function writeEvalToHistory() {
 
 async function saveCurrentToHistory() {
   const cand = conceptCandidates.value || {};
-  // 保存 AI 推荐的完整四层，而非仅勾选项（载入后可在手工重点里看到全部）
+  // 只保存勾选着的词（取消勾选的不存，载入时也就不会再出现）；顺序按 AI 推荐的原顺序
+  const pickChecked = (layer) => {
+    if (conceptMode.value === "manual") {
+      const m = { revelation: manualRevelation, inner: manualInner, experience: manualExperience, practice: manualPractice };
+      return [...m[layer].value];
+    }
+    const s = { revelation: selectedRevelation, inner: selectedInner, experience: selectedExperience, practice: selectedPractice };
+    const checked = s[layer].value || [];
+    const all = Array.isArray(cand[layer]) ? cand[layer] : [];
+    return [...all.filter((w) => checked.includes(w)), ...checked.filter((w) => !all.includes(w))];
+  };
   const record = {
     id: Date.now(),
     createdAt: formatHistoryTime(Date.now()),
@@ -724,10 +734,10 @@ async function saveCurrentToHistory() {
     query: aiForm.outlineTopic.trim(),
     outline_nature: aiForm.specialNeeds.trim(),
     burden_description: aiForm.burdenDescription.trim(),
-    revelation: Array.isArray(cand.revelation) ? [...cand.revelation] : [],
-    inner: Array.isArray(cand.inner) ? [...cand.inner] : [],
-    experience: Array.isArray(cand.experience) ? [...cand.experience] : [],
-    practice: Array.isArray(cand.practice) ? [...cand.practice] : [],
+    revelation: pickChecked("revelation"),
+    inner: pickChecked("inner"),
+    experience: pickChecked("experience"),
+    practice: pickChecked("practice"),
     key_verses: [...(conceptMode.value === "manual" ? manualKeyVerses.value : selectedKeyVerses.value)], // 人工输入的关键圣经节
     summary: cand.summary ?? cand.reasoning ?? "", // 小结（旧记录里叫 reasoning）
     thinking_text: stepThinkingText.value || "",
@@ -746,7 +756,7 @@ async function saveCurrentToHistory() {
       historyList.value = historyList.value.map((r) => (r.id === record.id ? { ...r, id } : r));
       if (currentRecordId.value === record.id) currentRecordId.value = id;
     }
-    message.success("已保存全部推荐重点到历史记录");
+    message.success("已保存勾选的重点到历史记录");
   } catch (e) {
     historyFail("保存", e);
   }
