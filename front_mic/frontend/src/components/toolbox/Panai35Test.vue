@@ -63,7 +63,9 @@ const aiPanelVisible = ref(true);
 /** 【4.0】只有一条流程（原 2.0 / 3.0 模式已于 2026-11-11 删除，原名“3.5”改名“4.0”） */
 const PIPELINE_MODE = "4.0";
 const aiModeDisplayText = computed(() => "PanAI 新测试台");
-const KG_RAG_HISTORY_KEY = "t35test_history";
+const KG_RAG_HISTORY_KEY = "t35test_history"; // 旧：浏览器本机记录（保留不删，已改存服务器）
+const KG_RAG_HISTORY_MIGRATED_KEY = "t35test_history_migrated"; // 本机旧记录已搬到服务器的标记
+const KG_RAG_DEVICE_KEY = "t35test_device_id"; // 本机编号：服务器上的历史记录按它分开，同一台电脑的窗口共用
 const EVAL_PREFILL_KEY = "t35test_eval_prefill";
 const router = useRouter();
 const route = useRoute();
@@ -532,18 +534,85 @@ function formatHistoryTime(ts) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function loadHistory() {
+// ---------- 历史记录：存在服务器上（/api/t35test/history），按电脑分开 ----------
+// 同一台电脑（同一个浏览器）的几个窗口共用、同步；别的电脑的记录看不到。
+// 以前存在各自浏览器的 localStorage（KG_RAG_HISTORY_KEY）；那份原样保留不删，第一次打开时搬到服务器、记在本机名下（按 id 去重）。
+function getDeviceId() {
+  let id = localStorage.getItem(KG_RAG_DEVICE_KEY);
+  if (!id) {
+    id = (crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`);
+    localStorage.setItem(KG_RAG_DEVICE_KEY, id);
+  }
+  return id;
+}
+
+async function historyApi(method, path = "", body) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${apiBase}/api/t35test/history${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "X-T35-Device": getDeviceId() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function historyFail(action, e) {
+  console.error(`[历史记录] ${action}失败`, e);
+  message.error(`历史记录${action}失败：${e?.message || e}`);
+}
+
+// 本机浏览器里原有的旧记录搬到服务器（只搬一次；浏览器里的那份不删，留作备份）
+async function migrateLocalHistory() {
+  if (localStorage.getItem(KG_RAG_HISTORY_MIGRATED_KEY)) return;
+  let arr = [];
   try {
-    const raw = localStorage.getItem(KG_RAG_HISTORY_KEY);
-    const arr = JSON.parse(raw || "[]");
-    historyList.value = Array.isArray(arr) ? arr : [];
+    arr = JSON.parse(localStorage.getItem(KG_RAG_HISTORY_KEY) || "[]");
+  } catch {
+    arr = [];
+  }
+  if (Array.isArray(arr) && arr.length > 0) {
+    const res = await historyApi("POST", "/import", { records: arr });
+    if (res.added) message.success(`已把本机原有的 ${res.added} 条历史记录搬到新的记录方式（本机几个窗口共用）`);
+  }
+  localStorage.setItem(KG_RAG_HISTORY_MIGRATED_KEY, String(Date.now()));
+}
+
+async function loadHistory() {
+  try {
+    await migrateLocalHistory();
   } catch (e) {
-    historyList.value = [];
+    historyFail("搬移本机旧记录", e); // 下次打开会再试
+  }
+  try {
+    const data = await historyApi("GET");
+    historyList.value = Array.isArray(data.records) ? data.records : [];
+  } catch (e) {
+    historyFail("读取", e);
   }
 }
 
-function persistHistory() {
-  localStorage.setItem(KG_RAG_HISTORY_KEY, JSON.stringify(historyList.value));
+// 新增一条到服务器；撞号时服务器会换 id，这里跟着改
+async function createHistoryRemote(record) {
+  try {
+    const { id } = await historyApi("POST", "", { record });
+    if (id && id !== record.id) {
+      historyList.value = historyList.value.map((r) => (r.id === record.id ? { ...r, id } : r));
+      if (currentRecordId.value === record.id) currentRecordId.value = id;
+    }
+  } catch (e) {
+    historyFail("保存", e);
+  }
+}
+
+// 只改这一条的这几个字段
+async function updateHistoryRemote(id, fields) {
+  try {
+    await historyApi("PATCH", `/${id}`, { fields });
+  } catch (e) {
+    historyFail("修改", e);
+  }
 }
 
 const pendingConfirmCount = computed(
@@ -561,16 +630,12 @@ function syncHistoryAnswerSkeleton(answerText) {
   const idx = historyList.value.findIndex((r) => r.id === record.id);
   if (idx < 0) return;
 
-  historyList.value = historyList.value.map((item, i) =>
-    i === idx
-      ? {
-          ...item,
-          answer: answerText ?? aiResult.value?.answer ?? "",
-          skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
-        }
-      : item
-  );
-  persistHistory();
+  const fields = {
+    answer: answerText ?? aiResult.value?.answer ?? "",
+    skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+  };
+  historyList.value = historyList.value.map((item, i) => (i === idx ? { ...item, ...fields } : item));
+  updateHistoryRemote(record.id, fields);
 }
 
 // 生成纲目后，把这次用的关键圣经节（输入框里的原样写法，载入时填回输入框）写回当前这条历史记录
@@ -578,7 +643,7 @@ function syncHistoryKeyVerses(verses) {
   const idx = historyList.value.findIndex((r) => r.id === currentRecordId.value);
   if (idx < 0) return;
   historyList.value = historyList.value.map((item, i) => (i === idx ? { ...item, key_verses: verses } : item));
-  persistHistory();
+  updateHistoryRemote(currentRecordId.value, { key_verses: verses });
 }
 
 function buildEvalHistoryPayload(evalData) {
@@ -609,8 +674,14 @@ function writeEvalToHistory() {
     ?? historyList.value.find((r) => r.query === aiForm.outlineTopic.trim())?.id
     ?? null;
 
+  const evalFields = () => ({
+    status: "已生成",
+    answer: aiResult.value?.answer ?? "",
+    skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
+    eval: buildEvalHistoryPayload(evalResult.value),
+  });
+
   if (!targetId) {
-    const cand = conceptCandidates.value || {};
     const record = {
       id: Date.now(),
       createdAt: formatHistoryTime(Date.now()),
@@ -622,13 +693,12 @@ function writeEvalToHistory() {
       inner: getConceptListForEval("inner"),
       experience: getConceptListForEval("experience"),
       practice: getConceptListForEval("practice"),
-      answer: aiResult.value?.answer ?? "",
-      skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : [],
-      eval: null,
+      ...evalFields(),
     };
     currentRecordId.value = record.id;
     historyList.value = [record, ...historyList.value];
-    targetId = record.id;
+    createHistoryRemote(record);
+    return;
   }
 
   const idx = historyList.value.findIndex((r) => r.id === targetId);
@@ -636,18 +706,15 @@ function writeEvalToHistory() {
 
   currentRecordId.value = targetId;
   const prev = historyList.value[idx];
-  const next = {
-    ...prev,
-    status: "已生成",
-    answer: aiResult.value?.answer ?? prev.answer ?? "",
-    skeleton: Array.isArray(aiMeta.skeleton) ? [...aiMeta.skeleton] : prev.skeleton ?? [],
-    eval: buildEvalHistoryPayload(evalResult.value),
-  };
-  historyList.value = historyList.value.map((item, i) => (i === idx ? next : item));
-  persistHistory();
+  const fields = evalFields();
+  // 这次没有纲目/骨架时不送这两项，服务器上原有的保留
+  if (!aiResult.value?.answer) delete fields.answer;
+  if (!Array.isArray(aiMeta.skeleton)) delete fields.skeleton;
+  historyList.value = historyList.value.map((item, i) => (i === idx ? { ...prev, ...fields } : item));
+  updateHistoryRemote(targetId, fields);
 }
 
-function saveCurrentToHistory() {
+async function saveCurrentToHistory() {
   const cand = conceptCandidates.value || {};
   // 保存 AI 推荐的完整四层，而非仅勾选项（载入后可在手工重点里看到全部）
   const record = {
@@ -673,8 +740,16 @@ function saveCurrentToHistory() {
   };
   currentRecordId.value = record.id;
   historyList.value = [record, ...historyList.value];
-  persistHistory();
-  message.success("已保存全部推荐重点到历史记录");
+  try {
+    const { id } = await historyApi("POST", "", { record });
+    if (id && id !== record.id) {
+      historyList.value = historyList.value.map((r) => (r.id === record.id ? { ...r, id } : r));
+      if (currentRecordId.value === record.id) currentRecordId.value = id;
+    }
+    message.success("已保存全部推荐重点到历史记录");
+  } catch (e) {
+    historyFail("保存", e);
+  }
 }
 
 // ---------- 纲目品质评估 ----------
@@ -1124,12 +1199,25 @@ function setHistoryStatus(id, status) {
   historyList.value = historyList.value.map((item) =>
     item.id === id ? { ...item, status } : item
   );
-  persistHistory();
+  updateHistoryRemote(id, { status });
 }
 
-function deleteHistoryRecord(id) {
+async function deleteHistoryRecord(id) {
   historyList.value = historyList.value.filter((item) => item.id !== id);
-  persistHistory();
+  if (currentRecordId.value === id) currentRecordId.value = null;
+  try {
+    await historyApi("DELETE", `/${id}`);
+  } catch (e) {
+    historyFail("删除", e);
+  }
+}
+
+// 打开「历史记录」或切回这个窗口时，重新读一次，看到本机别的窗口刚存的记录
+watch(historyDrawerOpen, (open) => {
+  if (open) loadHistory();
+});
+function onHistoryWindowFocus() {
+  if (document.visibilityState === "visible") loadHistory();
 }
 
 async function loadHistoryRecord(item) {
@@ -1173,6 +1261,7 @@ async function loadHistoryRecord(item) {
 onMounted(() => {
   updateIsMobileView();
   window.addEventListener("resize", updateIsMobileView);
+  document.addEventListener("visibilitychange", onHistoryWindowFocus);
   loadHistory();
   if (sessionStorage.getItem(EVAL_PREFILL_KEY)) {
     applyEvalPrefill();
@@ -1194,6 +1283,7 @@ watch(
 
 onUnmounted(() => {
   window.removeEventListener("resize", updateIsMobileView);
+  document.removeEventListener("visibilitychange", onHistoryWindowFocus);
 });
 
 // AI 回答复制（包含标题）

@@ -372,3 +372,89 @@ async def format_outline_only(request: FormatOutlineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # 【4.0】纲目评估（/eval/outline 与 t35test/outline_eval）已于 2026-11-11 按用户要求删除；主站 3.0 的评估不受影响。
+
+
+# ---------------------------------------------------------------------------
+# 「暂时保存」历史记录：存在服务器上，按电脑分开（t35test/history_store.py）
+# 前端每台电脑的浏览器生成一个本机编号，放在请求头 X-T35-Device；同一台电脑的几个窗口共用、同步，
+# 别的电脑的记录看不到也动不到。
+# ---------------------------------------------------------------------------
+from fastapi import Header  # noqa: E402
+
+from t35test import history_store  # noqa: E402
+
+
+def _device(x_t35_device: Optional[str] = Header(default=None)) -> str:
+    d = (x_t35_device or "").strip()
+    if not (8 <= len(d) <= 64) or not all(c.isalnum() or c == "-" for c in d):
+        raise HTTPException(status_code=400, detail="缺少本机编号，请刷新页面再试")
+    return d
+
+
+class HistoryCreateRequest(BaseModel):
+    record: dict[str, Any]
+
+
+class HistoryImportRequest(BaseModel):
+    records: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class HistoryUpdateRequest(BaseModel):
+    fields: dict[str, Any]
+
+
+@router.get("/history")
+def history_list(device: str = Depends(_device)):
+    """本机的历史记录（新的在前；不带思考过程、纲目全文等大字段）。"""
+    try:
+        return {"records": history_store.list_records(device, light=True)}
+    except Exception as e:
+        logger.error(f"[t35test history] 读取失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"读取历史记录失败：{e}")
+
+
+@router.post("/history")
+def history_create(req: HistoryCreateRequest, userinfo: dict = Depends(test_token), device: str = Depends(_device)):
+    """新增一条（记在本机编号下）；返回实际使用的 id（若撞号会换一个）。"""
+    try:
+        rid = history_store.create_record(req.record, userinfo.get("username", ""), device)
+        return {"id": rid}
+    except Exception as e:
+        logger.error(f"[t35test history] 新增失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"保存历史记录失败：{e}")
+
+
+@router.post("/history/import")
+def history_import(req: HistoryImportRequest, userinfo: dict = Depends(test_token), device: str = Depends(_device)):
+    """把本机浏览器里原有的旧记录搬上来，记在本机编号下（id 已有的跳过，不会重复）。"""
+    try:
+        res = history_store.import_records(req.records, userinfo.get("username", ""), device)
+        logger.info("[t35test history] 导入旧记录 user=%s %s", userinfo.get("username"), res)
+        return res
+    except Exception as e:
+        logger.error(f"[t35test history] 导入失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"导入旧记录失败：{e}")
+
+
+@router.patch("/history/{rid}")
+def history_update(rid: int, req: HistoryUpdateRequest, userinfo: dict = Depends(test_token), device: str = Depends(_device)):
+    """只改传进来的字段；只能改本机的记录。"""
+    try:
+        ok = history_store.update_record(rid, req.fields, userinfo.get("username", ""), device)
+    except Exception as e:
+        logger.error(f"[t35test history] 修改失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"修改历史记录失败：{e}")
+    if not ok:
+        raise HTTPException(status_code=404, detail="这条记录已不存在（可能已被别的窗口删除）")
+    return {"ok": True}
+
+
+@router.delete("/history/{rid}")
+def history_delete(rid: int, device: str = Depends(_device)):
+    """只能删本机的记录。"""
+    try:
+        history_store.delete_record(rid, device)
+        return {"ok": True}
+    except Exception as e:
+        logger.error(f"[t35test history] 删除失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"删除历史记录失败：{e}")
