@@ -1,0 +1,13 @@
+{
+  "_comment": "诗篇带 0（标题节）的写法样例，取自探测 6 B.2 记录的 qa4_bible verse_range 失败样例（只放写法，不放经文）。",
+  "samples": [
+    {"raw": "诗篇三0～8", "chapter": 3, "v_end": 8},
+    {"raw": "诗篇四0～8", "chapter": 4, "v_end": 8},
+    {"raw": "诗篇五0～12", "chapter": 5, "v_end": 12},
+    {"raw": "诗篇六0～10", "chapter": 6, "v_end": 10},
+    {"raw": "诗篇七0～17", "chapter": 7, "v_end": 17},
+    {"raw": "诗篇十一0～7", "chapter": 11, "v_end": 7},
+    {"raw": "诗篇二十0～9", "chapter": 20, "v_end": 9},
+    {"raw": "诗篇三十0～12", "chapter": 30, "v_end": 12}
+  ]
+}

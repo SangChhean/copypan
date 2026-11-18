@@ -1,0 +1,20 @@
+{
+  "_comment": "手工编造的占位段落集，仅供 fake 模式与离线测试。文本均为占位文字，不是经文或职事原文。",
+  "passages": [
+    {"_id": "fx-ol-1", "_logical": "outline_12490", "book_title": "示例纲目甲", "message_title": "第一篇　占位标题", "message_number": 1, "chunk_index": 0, "chunk_total": 2, "author": "李常受", "keywords": ["神的爱", "爱神", "默认"], "text": "占位段落一：这里讨论神的爱，内容只是测试用的占位文字，用来驱动离线流程。"},
+    {"_id": "fx-ol-2", "_logical": "outline_12490", "book_title": "示例纲目甲", "message_title": "第一篇　占位标题", "message_number": 1, "chunk_index": 1, "chunk_total": 2, "author": "李常受", "keywords": ["神的爱", "爱神"], "text": "占位段落二：爱神是对神的爱的回应，此句仅为占位文字。"},
+    {"_id": "fx-cwwl-1", "_logical": "text_cwwl", "book_title": "示例文集一九八七年第一册", "message_title": "第一章　占位", "message_number": 1, "chunk_id": "cwwl_fx-1-1", "source_zh": "（示例文集一九八七年第一册，第一章，第一段）", "author": "李常受", "year": 1987, "keywords": ["神的爱", "召会生活", "经历"], "text": "占位段落三：在召会生活中经历神的爱，这是一段占位文字。"},
+    {"_id": "fx-cwwl-2", "_logical": "text_cwwl", "book_title": "示例文集一九八七年第一册", "message_title": "第一章　占位", "message_number": 1, "chunk_id": "cwwl_fx-1-2", "source_zh": "（示例文集一九八七年第一册，第一章，第二段）", "author": "李常受", "year": 1987, "keywords": ["爱神", "实行"], "text": "占位段落四：实行上爱神需要操练，这是占位文字。"},
+    {"_id": "fx-cwwn-1", "_logical": "text_cwwn", "book_title": "示例倪文集第一册", "message_title": "第一篇　占位", "message_number": 1, "chunk_id": "cwwn_fx-1-1", "source_zh": "（示例倪文集第一册，第一篇，第一段）", "author": "倪柝声", "keywords": ["十字架", "神的爱"], "text": "占位段落五：十字架与神的爱，此为占位文字。"},
+    {"_id": "fx-life-1", "_logical": "text_life", "book_title": "示例书生命读经", "message_title": "第一篇　占位", "message_number": 1, "chunk_id": "life_fx-1-1", "source_zh": "（示例书生命读经，第一篇，第一段）", "author": "李常受", "keywords": ["神的爱", "生命"], "text": "占位段落六：生命读经里的神的爱，占位文字。"},
+    {"_id": "fx-life-2", "_logical": "text_life", "book_title": "示例书生命读经", "message_title": "第一篇　占位", "message_number": 1, "chunk_id": "life_fx-1-2", "source_zh": "（示例书生命读经，第一篇，第二段）", "author": "李常受", "keywords": ["生命"], "text": "占位段落七：生命读经第二段，占位文字。"},
+    {"_id": "fx-life-3", "_logical": "text_life", "book_title": "示例书生命读经", "message_title": "第一篇　占位", "message_number": 1, "chunk_id": "life_fx-1-3", "source_zh": "（示例书生命读经，第一篇，第三段）", "author": "李常受", "keywords": ["生命"], "text": "占位段落八：生命读经第三段，占位文字。"},
+    {"_id": "fx-others-1", "_logical": "text_others", "book_title": "示例总论", "message_title": "第一篇　占位", "message_number": 1, "chunk_id": "others_fx-1-1", "source_zh": "（示例总论，第一篇，第一段）", "author": "李常受", "keywords": ["真理", "神的爱"], "text": "占位段落九：总论里提到神的爱，占位文字。"},
+    {"_id": "fx-map-1", "_logical": "map_note", "book_title": "示例真理题库", "message_title": "第一篇　占位", "message_number": 1, "source_zh": "（恢复本圣经，约三16，注1）", "author": "李常受", "keywords": ["神的爱", "注解"], "text": "占位段落十：注解式的占位文字，涉及神的爱。"},
+    {"_id": "fx-feast-1", "_logical": "outline_feasts", "book_title": "示例特会", "message_title": "占位节期标题", "message_number": 1, "chunk_index": 0, "chunk_total": 1, "year": 1997, "keywords": ["节期", "神的爱"], "text": "占位段落十一：节期纲目的占位文字。"},
+    {"_id": "fx-hymn-1-0", "_logical": "hymns", "series": "诗歌", "hymn_number": 1, "name": "诗歌第1首　占位", "title": "占位", "unit_type": "full", "chunk_index": 0, "chunk_total": 2, "keywords": ["诗歌"], "text": "占位诗歌第一首全文：一　占位歌词甲。二　占位歌词乙。"},
+    {"_id": "fx-hymn-1-1", "_logical": "hymns", "series": "诗歌", "hymn_number": 1, "name": "诗歌第1首　占位", "title": "占位", "unit_type": "stanza", "chunk_index": 1, "chunk_total": 2, "keywords": ["诗歌"], "text": "一　占位歌词甲。"},
+    {"_id": "fx-hymn-b1-0", "_logical": "hymns", "series": "补充本诗歌", "hymn_number": 1, "name": "补充本第1首　占位", "title": "占位", "unit_type": "full", "chunk_index": 0, "chunk_total": 1, "keywords": ["诗歌"], "text": "占位补充本第一首全文。"},
+    {"_id": "fx-bible-1", "_logical": "bible", "book_title": "约翰福音", "verse_range": "三16", "chunk_type": "verses", "keywords": ["神的爱", "经文"], "text": "占位段落：经文块的占位文字（不含真实经文）。"}
+  ]
+}

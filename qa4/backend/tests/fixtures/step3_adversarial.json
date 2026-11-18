@@ -1,0 +1,50 @@
+{
+  "_comment": "step3 对抗输出；供 test_step3_draft_postprocess 使用。不含职事原文。",
+  "cases": [
+    {
+      "id": "bad_json_fence",
+      "raw_text": "```json\n{\"main_type\":\"定义\",\"complex\":false,\"subquestions\":[{\"text\":\"什么是爱\",\"qtype\":\"定义\"}],\"understanding\":\"x\"}\n```",
+      "via": "parse_json_loose"
+    },
+    {
+      "id": "unknown_type",
+      "raw": {
+        "main_type": "未知题型XYZ",
+        "complex": false,
+        "subquestions": [{"text": "什么是爱", "qtype": "未知题型XYZ"}],
+        "understanding": "对抗"
+      }
+    },
+    {
+      "id": "five_subq",
+      "raw": {
+        "main_type": "默认",
+        "complex": true,
+        "subquestions": [
+          {"text": "a", "qtype": "默认"},
+          {"text": "b", "qtype": "默认"},
+          {"text": "c", "qtype": "默认"},
+          {"text": "d", "qtype": "默认"},
+          {"text": "e", "qtype": "默认"}
+        ],
+        "understanding": "五问"
+      }
+    },
+    {
+      "id": "bad_life_book",
+      "raw": {
+        "main_type": "生命读经",
+        "complex": false,
+        "subquestions": [{"text": "取篇", "qtype": "生命读经"}],
+        "understanding": "坏书名",
+        "locator": {"book_title": "不存在的生命读经书名XYZ", "message_number": 1}
+      }
+    },
+    {
+      "id": "missing_fields",
+      "raw": {
+        "main_type": "定义"
+      }
+    }
+  ]
+}
