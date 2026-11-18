@@ -33,7 +33,15 @@ def decide_scope(
     cfg: Optional[dict[str, Any]] = None,
 ) -> ScopeDecision:
     cfg = cfg or retrieval_cfg()
-    qcfg = (cfg.get("qtype_scope") or {}).get(spec.qtype) or (cfg.get("qtype_scope") or {}).get("默认") or {}
+    from pipeline.schemas import behavior_alias
+
+    qmap = cfg.get("qtype_scope") or {}
+    qcfg = (
+        qmap.get(spec.qtype)
+        or qmap.get(behavior_alias(spec.qtype))
+        or qmap.get("默认")
+        or {}
+    )
     dec = ScopeDecision()
     if qcfg.get("scope") == "reverse":
         dec.reverse = True

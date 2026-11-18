@@ -10,9 +10,13 @@
     "召会生活": {"revelation": 4, "intrinsic": 1, "experience": 3, "practice": 4, "total": 8},
     "汇集": {"revelation": 5, "intrinsic": 1, "experience": 2, "practice": 2, "total": 8},
     "发展": {"revelation": 4, "intrinsic": 2, "experience": 2, "practice": 1, "total": 8},
-    "默认": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8}
+    "默认": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8},
+    "真理": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8},
+    "列举": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8},
+    "人物与历史": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8},
+    "预表与象征": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8}
   },
-  "layer1_only_types": ["核实说法", "反找经文"],
+  "layer1_only_types": ["核实说法", "话语检索", "反找经文"],
   "skip_step45_types": ["生命读经", "节期纲目", "注解", "诗歌", "经文"],
   "complex_total_cap": 10,
   "complex_min_per_subquestion": 1,

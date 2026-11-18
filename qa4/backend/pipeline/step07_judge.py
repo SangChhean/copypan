@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 from pipeline.context import RequestContext
-from pipeline.schemas import Passage, Verdict
+from pipeline.schemas import Passage, Verdict, is_layer1_only_type, is_verify_like
 
 OK_SET = {"够", "部分够", "不够"}
 
@@ -31,7 +31,7 @@ def apply_rules(qtype: str, data: dict[str, Any], passages: list[Passage]) -> Ve
     if overall not in OK_SET:
         overall = "够"
     note = ""
-    if qtype == "核实说法":
+    if is_verify_like(qtype):
         if data.get("has_original"):
             overall = "够"
         elif data.get("has_approx"):
@@ -80,12 +80,13 @@ async def run(ctx: RequestContext, deps: Any) -> list[Verdict]:
     for i in normal:
         verdicts[i] = await judge_one(ctx, deps, i, ctx.passages_by_subq.get(i, []))
 
-    # 反找经文 / 核实说法不放宽重试；取具体对象不走本步（编排器跳过）
-    no_retry_types = {"反找经文", "核实说法"}
+    # 反找经文 / 核实说法·话语检索不放宽重试；取具体对象不走本步（编排器跳过）
     need_retry = [
         i
         for i in normal
-        if verdicts[i].overall == "不够" and plan.subquestions[i].qtype not in no_retry_types and plan.main_type not in no_retry_types
+        if verdicts[i].overall == "不够"
+        and not is_layer1_only_type(plan.subquestions[i].qtype)
+        and not is_layer1_only_type(plan.main_type)
     ]
     if need_retry:
         ctx.retried = True

@@ -238,7 +238,12 @@
     "汇集": {"scope": "default"},
     "发展": {"scope": "default"},
     "核实说法": {"scope": "default"},
+    "话语检索": {"scope": "default"},
     "默认": {"scope": "default"},
+    "真理": {"scope": "default"},
+    "列举": {"scope": "default"},
+    "人物与历史": {"scope": "default"},
+    "预表与象征": {"scope": "default"},
     "个人经历": {"scope": "default", "soft_priority": ["text_cwwl", "text_cwwn", "text_life"]},
     "团体实行": {"scope": "default", "soft_priority": ["text_cwwl"], "soft_priority_year_range": [1985, 1993]},
     "召会生活": {

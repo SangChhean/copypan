@@ -16,10 +16,15 @@ class QType(str, Enum):
     团体实行 = "团体实行"
     召会生活 = "召会生活"
     汇集 = "汇集"
-    核实说法 = "核实说法"
+    核实说法 = "核实说法"  # 旧名；与「话语检索」行为等价
     反找经文 = "反找经文"
     发展 = "发展"
-    默认 = "默认"
+    默认 = "默认"  # 旧名；与「真理」行为等价
+    真理 = "真理"
+    列举 = "列举"
+    话语检索 = "话语检索"
+    人物与历史 = "人物与历史"
+    预表与象征 = "预表与象征"
     # 取具体对象
     生命读经 = "生命读经"
     节期纲目 = "节期纲目"
@@ -28,13 +33,44 @@ class QType(str, Enum):
     经文 = "经文"
 
 
-GENERAL_TYPES = {t.value for t in list(QType)[:10]}
 TARGETED_TYPES = {"生命读经", "节期纲目", "注解", "诗歌", "经文"}
+GENERAL_TYPES = {t.value for t in QType if t.value not in TARGETED_TYPES}
+
+# 话语检索 ≡ 核实说法（跳过第 5 步、把关规则、不放宽重试）
+_VERIFY_LIKE = frozenset({"核实说法", "话语检索"})
+# 真理 ≡ 默认；列举/人物与历史/预表与象征本批按默认行为（caps/retrieval），但题型名原样保留
+_DEFAULT_BEHAVIOR = frozenset({"默认", "真理", "列举", "人物与历史", "预表与象征"})
 
 
 def coerce_qtype(v: Any) -> str:
     s = str(v or "").strip()
     return s if s in {t.value for t in QType} else QType.默认.value
+
+
+def is_verify_like(qtype: str) -> bool:
+    """核实说法 / 话语检索：同一条行为路径。"""
+    return (qtype or "").strip() in _VERIFY_LIKE
+
+
+def is_layer1_only_type(qtype: str) -> bool:
+    """跳过第 5 步（仅第 1 层）：核实说法/话语检索/反找经文。"""
+    s = (qtype or "").strip()
+    return is_verify_like(s) or s == "反找经文"
+
+
+def behavior_alias(qtype: str) -> str:
+    """行为别名（caps/retrieval 查表用）。题型名字段本身不要用此函数改写。
+
+    - 话语检索 → 核实说法
+    - 真理 / 列举 / 人物与历史 / 预表与象征 → 默认
+    - 其余原样
+    """
+    s = (qtype or "").strip()
+    if is_verify_like(s):
+        return "核实说法"
+    if s in _DEFAULT_BEHAVIOR:
+        return "默认"
+    return s
 
 
 class Restriction(BaseModel):

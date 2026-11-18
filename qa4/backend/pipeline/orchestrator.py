@@ -242,8 +242,10 @@ async def run_pipeline(
             ctx.layers = await timed(ctx, 4, step04_layer1.run(ctx, deps), await _budget(4))
             yield step_event(4, "完成")
 
-            # ---- 5（核实说法 / 反找经文跳过）----
-            only_l1 = ctx.plan.main_type in {"核实说法", "反找经文"}
+            # ---- 5（核实说法/话语检索 / 反找经文跳过）----
+            from pipeline.schemas import is_layer1_only_type
+
+            only_l1 = is_layer1_only_type(ctx.plan.main_type)
             if only_l1:
                 ctx.record(5, skipped=True, reason=ctx.plan.main_type)
             else:

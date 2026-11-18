@@ -24,8 +24,17 @@ def caps_cfg() -> dict[str, Any]:
 
 
 def caps_for(qtype: str, cfg: dict[str, Any] | None = None) -> dict[str, int]:
+    """按题型取层上限；未知名或未配置时回落「默认」。
+
+    配置里可为新名单独建条目；查表前用 behavior_alias（真理/列举等 → 默认，
+    话语检索 → 核实说法）以复用等价配置。
+    """
+    from pipeline.schemas import behavior_alias
+
     cfg = cfg or caps_cfg()
-    c = (cfg.get("caps") or {}).get(qtype) or (cfg.get("caps") or {}).get("默认") or {}
+    key = behavior_alias(qtype)
+    caps_map = cfg.get("caps") or {}
+    c = caps_map.get(qtype) or caps_map.get(key) or caps_map.get("默认") or {}
     return {k: int(c.get(k, 0)) for k in (*LAYERS, "total")}
 
 
