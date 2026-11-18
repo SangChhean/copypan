@@ -21,9 +21,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from contextlib import contextmanager
+
 from fastapi import Header
 from user.token import require_admin, test_token
 from t35test import usage_store
+from t35test.effort import normalize_effort, reset_effort, set_effort
 from t35test.common import get_monitoring
 from t35test.kg.firewall import load_firewall
 from t35test.kg.kg_rag_service import KgRagService, strip_outline_tail
@@ -101,6 +104,17 @@ class OutlineCtx(BaseModel):
     loaded: bool = False
     device: str = ""
     username: str = ""
+    effort: Optional[str] = None  # 页面「思考程度」：low = Opus 5.5 用低；None = 预设（中）
+
+
+@contextmanager
+def _effort_scope(ctx: "OutlineCtx"):
+    """这次请求里所有 Opus 5.5 调用都用 ctx.effort（None 时什么都不送，和原来一样）。"""
+    token = set_effort(ctx.effort)
+    try:
+        yield
+    finally:
+        reset_effort(token)
 
 
 def _outline_ctx(
@@ -108,6 +122,7 @@ def _outline_ctx(
     x_t35_outline_session: Optional[str] = Header(default=None),
     x_t35_outline_loaded: Optional[str] = Header(default=None),
     x_t35_device: Optional[str] = Header(default=None),
+    x_t35_effort: Optional[str] = Header(default=None),
 ) -> OutlineCtx:
     def _clean(v: Optional[str]) -> str:
         v = (v or "").strip()
@@ -118,6 +133,7 @@ def _outline_ctx(
         loaded=(x_t35_outline_loaded or "").strip() == "1",
         device=_clean(x_t35_device),
         username=userinfo.get("username", ""),
+        effort=normalize_effort(x_t35_effort),
     )
 
 
@@ -136,6 +152,7 @@ async def _record_usage(ctx: OutlineCtx, kind: str, query: str, nature: str, ela
             cached=cached,
             elapsed_ms=elapsed_ms,
             calls=calls,
+            effort=ctx.effort or "",
         )
     except Exception as e:
         logger.warning("[t35test usage] 记录费用失败（不影响返回）: %s", e)
@@ -201,8 +218,11 @@ async def full_query(req: QueryRequest, ctx: OutlineCtx = Depends(_outline_ctx))
         if "outline_nature" in params:
             params["outline_nature"] = _norm_nature(params["outline_nature"])
         t0 = _now_ms()
-        result = await service.full_query(req.query, params, mode=req.mode)
+        with _effort_scope(ctx):
+            result = await service.full_query(req.query, params, mode=req.mode)
         cached = bool((result or {}).get("cached"))
+        if isinstance(result, dict):
+            result["effort"] = ctx.effort or ""  # 页面显示这篇用的思考程度
         await _record_usage(
             ctx, "outline", req.query, params.get("outline_nature") or "", _now_ms() - t0,
             [] if cached else (((result or {}).get("llm_usage") or {}).get("calls") or []),
@@ -226,13 +246,14 @@ async def generate_burden(req: GenerateBurdenRequest, ctx: OutlineCtx = Depends(
             len((req.reference_excerpt or "").strip()),
             req.model,
         )
-        result = await service.generate_burden_description(
-            req.query,
-            outline_nature=_norm_nature(req.outline_nature),
-            audience=req.audience,
-            reference_excerpt=req.reference_excerpt,
-            model=req.model,
-        )
+        with _effort_scope(ctx):
+            result = await service.generate_burden_description(
+                req.query,
+                outline_nature=_norm_nature(req.outline_nature),
+                audience=req.audience,
+                reference_excerpt=req.reference_excerpt,
+                model=req.model,
+            )
         _record_burden_trial(req, result)
         bu = (result or {}).get("llm_usage")
         await _record_usage(
@@ -281,17 +302,18 @@ async def extract_concepts(req: ExtractConceptsRequest, ctx: OutlineCtx = Depend
     service = get_service()
     try:
         t0 = _now_ms()
-        result = await service.full_query(
-            req.query,
-            {
-                "burden_description": req.burden_description,
-                "audience": req.audience,
-                "outline_nature": _norm_nature(req.outline_nature),
-                "stop_after_step1": True,
-                "skip_cache": True,
-            },
-            mode=req.mode,
-        )
+        with _effort_scope(ctx):
+            result = await service.full_query(
+                req.query,
+                {
+                    "burden_description": req.burden_description,
+                    "audience": req.audience,
+                    "outline_nature": _norm_nature(req.outline_nature),
+                    "stop_after_step1": True,
+                    "skip_cache": True,
+                },
+                mode=req.mode,
+            )
         s1 = (result.get("steps") or {}).get("step1") or {}
         _record_inner_trial(req, s1)
         await _record_usage(

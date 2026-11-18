@@ -68,6 +68,9 @@ def _connect() -> sqlite3.Connection:
                         calls TEXT
                     )"""
                 )
+                cols = {r[1] for r in conn.execute("PRAGMA table_info(usage_requests)").fetchall()}
+                if "effort" not in cols:  # 【4.0】思考程度测试：low / 空（= 预设中）
+                    conn.execute("ALTER TABLE usage_requests ADD COLUMN effort TEXT DEFAULT ''")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_session ON usage_requests(session_id)")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_day ON usage_requests(day)")
                 conn.commit()
@@ -87,6 +90,7 @@ def record_request(
     cached: bool,
     elapsed_ms: float,
     calls: list[dict[str, Any]],
+    effort: str = "",
 ) -> None:
     """记一次请求（负担说明 / 推荐重点 / 生成纲目）实际花的钱。"""
     clean = []
@@ -111,8 +115,8 @@ def record_request(
         conn.execute(
             """INSERT INTO usage_requests
                (session_id, ts, day, username, device, kind, query, outline_nature, loaded, cached,
-                elapsed_ms, input_tokens, output_tokens, cost, calls)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                elapsed_ms, input_tokens, output_tokens, cost, calls, effort)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 session_id or "",
                 int(now * 1000),
@@ -129,6 +133,7 @@ def record_request(
                 to,
                 round(tc, 6),
                 json.dumps(clean, ensure_ascii=False),
+                effort or "",
             ),
         )
         conn.commit()
@@ -161,7 +166,7 @@ def _finish_steps(steps: "OrderedDict[str, dict]", keep_empty: bool = False) -> 
     return out
 
 
-_COLS = "session_id, ts, day, username, kind, query, outline_nature, loaded, cached, elapsed_ms, input_tokens, output_tokens, cost, calls"
+_COLS = "session_id, ts, day, username, kind, query, outline_nature, loaded, cached, elapsed_ms, input_tokens, output_tokens, cost, calls, effort"
 
 
 def _summarize_session(rows: list[tuple]) -> dict:
@@ -171,7 +176,7 @@ def _summarize_session(rows: list[tuple]) -> dict:
     total = ti = to = 0.0
     last_outline = None
     for r in rows:
-        (sid, ts, day, user, kind, query, nature, loaded, cached, elapsed, inp, out, cost, calls) = r
+        (sid, ts, day, user, kind, query, nature, loaded, cached, elapsed, inp, out, cost, calls, _eff) = r
         _add_calls(steps, calls)
         if kind in kinds:
             kinds[kind]["count"] += 1
@@ -201,6 +206,8 @@ def _summarize_session(rows: list[tuple]) -> dict:
         "total_cost_usd": round(total, 6),
         "kinds": {k: {"label": KIND_LABELS[k], "count": v["count"], "cost_usd": round(v["cost_usd"], 6)} for k, v in kinds.items()},
         "steps": _finish_steps(steps),
+        # 思考程度：这一篇各次请求用的（低 / 中）；混用时两个都列
+        "effort_label": "、".join(sorted({("低" if (x[14] or "") == "low" else "中") for x in rows}, key=lambda v: v != "低")),
     }
 
 

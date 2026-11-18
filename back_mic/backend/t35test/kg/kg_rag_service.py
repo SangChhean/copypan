@@ -63,6 +63,7 @@ from t35test.burden_library import apply_excerpt_clause, apply_no_excerpt_clause
 from t35test.kg.firewall import match_firewall
 from t35test.kg.dictionary_3a3b import format_dict_block, select_dict_chunks  # 【4.0】真理辞典 3a
 from t35test.kg.llm_pricing import pack_llm_usage_response, register_llm_usage
+from t35test.effort import current_effort  # 【4.0】页面「思考程度」测试开关
 
 
 def _finalize_llm_usage(
@@ -1196,6 +1197,8 @@ async def _call_claude(
     if not client:
         raise RuntimeError("Claude 客户端未配置（请设置 CLAUDE_API_KEY）")
 
+    effort = current_effort()  # 【4.0】页面「思考程度」按钮：选「低」时这次请求的 Opus 5.5 都用 low
+
     def _sync_create():
         kwargs = dict(
             model=model,
@@ -1221,6 +1224,9 @@ async def _call_claude(
                 # 不指定 thinking 时，接口只回思考签名、thinking 字段是空的；display=summarized 才会带回文字
                 # （注意：是摘要，不是逐字思维链）。
                 kwargs["thinking"] = {"type": "adaptive", "display": "summarized"}
+            if effort:
+                # SDK 0.105 还没有 output_config 参数，用 extra_body 原样送给接口（新旧 SDK 都适用）
+                kwargs["extra_body"] = {"output_config": {"effort": effort}}
         elif (model or "").startswith("claude-sonnet-5"):
             kwargs["thinking"] = {"type": "disabled"}
         if not _model_omits_temperature(model):
@@ -1772,6 +1778,8 @@ class KgRagService:
         if manual_key_verses:  # 【新测试台】经节不同，纲目就不同，不可读到别的经节的缓存
             # kv3：经节须写进大点/中点内容，并附该节相关原文（11-12 第三版），不读之前版本的旧结果
             cache_key += ":kv3:" + hashlib.sha256("|".join(manual_key_verses).encode("utf-8")).hexdigest()[:16]
+        if current_effort():  # 【4.0】思考程度「低」生成的纲目另存一份，不和预设「中」的互相读到
+            cache_key += f":effort-{current_effort()}"
         skip_cache = bool(p.get("skip_cache"))
         if self.redis and not skip_cache:
             try:
