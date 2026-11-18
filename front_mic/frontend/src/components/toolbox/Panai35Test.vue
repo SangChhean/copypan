@@ -7,7 +7,7 @@ import { useRouter, useRoute } from "vue-router";
 import { PushpinOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, LoadingOutlined, ArrowLeftOutlined } from "@ant-design/icons-vue";
 import axios from "axios";
 import { tip } from "../utils/Dialog";
-import { message } from "ant-design-vue";
+import { message, Modal } from "ant-design-vue";
 
 // 【3.5测试用】本页自己的显示状态（0=什么都不显示；3/4/5/6 含义与主站一致）
 // 【4.0】从 3.0 页面复制来的关键词搜索（调用主站 /api/search）及其变量、引文已于 2026-11-11 删除
@@ -49,26 +49,70 @@ const aiMeta = reactive({
   cached: false,
   cacheKey: null,
   outlineCost: null, // 【4.0】本篇从头做到尾的完整费用（/api/t35test/usage/session/{id}）
+  effort: "", // 【4.0 测试】这篇用的思考程度（""=中，"low"=低）
 });
 
 // 【4.0】本篇编号：一篇纲目从开始做（负担说明/推荐重点/生成纲目）都带同一个编号，后端按它加总完整费用。
 // 换了主题就算新的一篇；从历史记录载入的标为「载入」（之前步骤的费用不在这一篇里）。
-const outlineSession = reactive({ id: "", topic: "", loaded: false });
+// loadedReason：这一篇为什么只算一部分（old_record=旧记录载入；effort_switch=中途换了思考程度；prefill=带上一篇的重点重做）
+const outlineSession = reactive({ id: "", topic: "", loaded: false, effort: "", loadedReason: "" });
 const costDetailOpen = ref(false);
-function newOutlineSession(topic, loaded = false) {
+// 【4.0】思考程度：""=中（什么都不送，Opus 5.5 预设）；"low"=这一篇所有 Opus 5.5 调用都用低。2026-11-18 用户定：默认选低
+const thinkEffort = ref("low");
+const EFFORT_OPTIONS = [
+  { value: "", label: "中" },
+  { value: "low", label: "低（纲目性质强调真理启示，特别是强调内在素质时使用）" },
+];
+function newOutlineSession(topic, loaded = false, loadedReason = "") {
   outlineSession.id = crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
   outlineSession.topic = (topic || "").trim();
   outlineSession.loaded = loaded;
+  outlineSession.effort = thinkEffort.value;
+  outlineSession.loadedReason = loaded ? loadedReason : "";
+}
+// 【4.0】做到一半改思考程度：先问一下，防止误点。「做到一半」= 这个题目已经按现在的思考程度跑过至少一步
+function pickEffort(value) {
+  if (value === thinkEffort.value) return;
+  const started =
+    !!outlineSession.id &&
+    outlineSession.topic === aiForm.outlineTopic.trim() &&
+    outlineSession.effort !== value;
+  if (!started) {
+    thinkEffort.value = value;
+    return;
+  }
+  const label = value === "low" ? "低" : "中";
+  Modal.confirm({
+    title: `确定要改成「${label}」吗？`,
+    content: `这一篇已经做了几步。改了以后，从你接下来按的那一步开始用「${label}」，之前做好的不会重做；本篇完整费用也从改了以后重新算。`,
+    okText: "确定",
+    cancelText: "取消",
+    onOk: () => {
+      thinkEffort.value = value;
+    },
+  });
 }
 function outlineHeaders() {
   const topic = aiForm.outlineTopic.trim();
-  if (!outlineSession.id || outlineSession.topic !== topic) newOutlineSession(topic, false);
-  return {
+  if (!outlineSession.id || outlineSession.topic !== topic) {
+    newOutlineSession(topic, false);
+  } else if (outlineSession.effort !== thinkEffort.value) {
+    // 同一个题目中途换了思考程度：另算一篇，只算换了以后花的钱（两种思考程度的费用才分得开）
+    newOutlineSession(topic, true, "effort_switch");
+  }
+  const h = {
     "X-T35-Outline-Session": outlineSession.id,
     "X-T35-Outline-Loaded": outlineSession.loaded ? "1" : "0",
     "X-T35-Device": getDeviceId(),
   };
+  if (thinkEffort.value) h["X-T35-Effort"] = thinkEffort.value;
+  return h;
 }
+const LOADED_REASON_TEXT = {
+  old_record: "这条记录是在「载入后接着算费用」上线前存的（或存的时候用的思考程度和现在不同），保存前那些步骤的费用接不上：这里只算载入后实际花的钱。",
+  effort_switch: "这一篇做到一半换了思考程度：这里只算换了以后实际花的钱，换之前的不在里面。",
+  prefill: "这一篇是带着上一篇的重点重新生成的：这里只算这次实际花的钱。",
+};
 async function fetchOutlineCost() {
   if (!outlineSession.id) return;
   try {
@@ -725,6 +769,8 @@ function writeEvalToHistory() {
       experience: getConceptListForEval("experience"),
       practice: getConceptListForEval("practice"),
       ...evalFields(),
+      cost_session: outlineHeaders()["X-T35-Outline-Session"], // 【4.0】本篇编号
+      cost_effort: thinkEffort.value,
     };
     currentRecordId.value = record.id;
     historyList.value = [record, ...historyList.value];
@@ -778,6 +824,8 @@ async function saveCurrentToHistory() {
     answer: aiResult.value?.answer ?? "",
     skeleton: aiMeta.skeleton ?? [],
     eval: evalResult.value ? buildEvalHistoryPayload(evalResult.value) : null,
+    cost_session: outlineHeaders()["X-T35-Outline-Session"], // 【4.0】本篇编号：载入后接着用，前面的花费也算进完整费用
+    cost_effort: thinkEffort.value, // 【4.0 测试】存的时候用的思考程度（""=中，"low"=低）
   };
   currentRecordId.value = record.id;
   historyList.value = [record, ...historyList.value];
@@ -1203,7 +1251,7 @@ async function applyEvalPrefill() {
   aiForm.outlineTopic = data.query || "";
   aiForm.specialNeeds = data.outline_nature === "应用实行" ? "实行应用" : (data.outline_nature || "");
   aiForm.burdenDescription = data.burden_description || "";
-  newOutlineSession(data.query, true); // 带着上一篇的重点重新生成：之前步骤的费用不在这一篇里
+  newOutlineSession(data.query, true, "prefill"); // 带着上一篇的重点重新生成：之前步骤的费用不在这一篇里
   burdenPhaseReady.value = true;
 
   resetConceptState();
@@ -1280,7 +1328,17 @@ async function loadHistoryRecord(item) {
   aiForm.outlineTopic = item.query || "";
   aiForm.specialNeeds = item.outline_nature === "应用实行" ? "实行应用" : (item.outline_nature || "");
   aiForm.burdenDescription = item.burden_description || "";
-  newOutlineSession(item.query, true); // 载入记录：之前步骤的费用不在这一篇里
+  if (item.cost_session && (item.cost_effort || "") === thinkEffort.value) {
+    // 【4.0】记录里存了本篇编号、思考程度也相同：接着用，保存前花的（负担说明、推荐重点等）也算进这一篇的完整费用
+    outlineSession.id = item.cost_session;
+    outlineSession.topic = (item.query || "").trim();
+    outlineSession.loaded = false;
+    outlineSession.effort = thinkEffort.value;
+    outlineSession.loadedReason = "";
+  } else {
+    // 旧记录（没存本篇编号），或现在选的思考程度和存的时候不同：之前步骤的费用接不上，只算载入后的
+    newOutlineSession(item.query, true, "old_record");
+  }
   currentRecordId.value = item.id;
   historyDrawerOpen.value = false;
   await nextTick();
@@ -1892,7 +1950,7 @@ const onAISearch = async () => {
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "✨ AI 纲目生成中…";
-  Object.assign(aiMeta, { keyVerses: [], revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null, outlineCost: null });
+  Object.assign(aiMeta, { keyVerses: [], revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null, outlineCost: null, effort: "" });
   costDetailOpen.value = false;
 
   try {
@@ -1945,6 +2003,7 @@ const onAISearch = async () => {
       totalCostUsd: parsed.totalCostUsd,
       cached: parsed.cached,
       cacheKey: parsed.cacheKey,
+      effort: data.effort || "",
     });
     syncHistoryKeyVerses([...keyVerses]); // 先保存记录、后输入经节时，记录里也补上这次用的经节
     fetchOutlineCost(); // 【4.0】本篇完整费用
@@ -2034,6 +2093,21 @@ function goBackToTools() {
                   @click="aiForm.specialNeeds = aiForm.specialNeeds === opt ? '' : opt"
                 >
                   {{ opt }}
+                </button>
+              </div>
+            </div>
+            <div class="ai-meta-field full">
+              <span>思考程度（选择按钮后，整个纲目制作流程Opus5.5都按照这个思考强度）</span>
+              <div class="ai-nature-btns">
+                <button
+                  type="button"
+                  v-for="opt in EFFORT_OPTIONS"
+                  :key="opt.value || 'medium'"
+                  :class="['ai-nature-btn', { active: thinkEffort === opt.value }]"
+                  :disabled="loadingAI || burdenGenLoading || conceptLoading"
+                  @click="pickEffort(opt.value)"
+                >
+                  {{ opt.label }}
                 </button>
               </div>
             </div>
@@ -2391,9 +2465,11 @@ function goBackToTools() {
         </span>
         <span v-else-if="aiMeta.totalCostUsd != null && !aiMeta.cached" class="kg-info-sep">💰 本次生成 <strong>{{ fmtUsd(aiMeta.totalCostUsd, 2) }}</strong></span>
         <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果（本次生成未花费）</a-tag>
+        <a-tag :color="aiMeta.effort === 'low' ? 'orange' : 'default'" style="margin-left: 8px;">思考程度：{{ aiMeta.effort === "low" ? "低" : "中" }}</a-tag>
       </div>
       <div v-if="aiMeta.outlineCost && costDetailOpen" class="kg-cost-detail">
-        <div v-if="aiMeta.outlineCost.loaded" class="kg-cost-note">这一篇是从历史记录载入的：只算载入后实际花的钱，载入前的步骤不在里面。</div>
+        <div v-if="aiMeta.outlineCost.loaded" class="kg-cost-note">{{ LOADED_REASON_TEXT[outlineSession.loadedReason] || LOADED_REASON_TEXT.old_record }}</div>
+        <div class="kg-cost-note">这一篇用的思考程度：{{ aiMeta.outlineCost.effort_label || "中" }}</div>
         <div>
           <template v-for="(k, i) in ['burden', 'concepts', 'outline']" :key="k">
             <span v-if="i" class="kg-cost-dot"> · </span>

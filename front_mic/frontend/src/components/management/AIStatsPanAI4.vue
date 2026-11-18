@@ -75,6 +75,7 @@ const sessionColumns = [
   { title: "纲目主题", dataIndex: "query", ellipsis: true },
   { title: "账号", dataIndex: "username", width: 90, ellipsis: true },
   { title: "纲目性质", dataIndex: "outline_nature", width: 90 },
+  { title: "思考程度", dataIndex: "effort_label", width: 80, align: "center", customRender: ({ text }) => text || "中" },
   { title: "负担说明", key: "burden", width: 120, align: "right", customRender: ({ record }) => kindText(record, "burden") },
   { title: "推荐重点", key: "concepts", width: 120, align: "right", customRender: ({ record }) => kindText(record, "concepts") },
   { title: "生成纲目", key: "outline", width: 120, align: "right", customRender: ({ record }) => kindText(record, "outline") },
@@ -153,7 +154,7 @@ onMounted(fetchStats);
           bordered
           size="small"
           row-key="session_id"
-          :scroll="{ x: 1100 }"
+          :scroll="{ x: 1180 }"
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'note'">
