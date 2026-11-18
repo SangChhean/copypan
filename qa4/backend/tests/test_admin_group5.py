@@ -4,9 +4,14 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+_BACKEND = Path(__file__).resolve().parents[1]
+if str(_BACKEND) not in sys.path:
+    sys.path.insert(0, str(_BACKEND))
 
 os.environ.setdefault("QA4_LLM_MODE", "fake")
 os.environ.setdefault("QA4_RETRIEVAL_MODE", "fake")
