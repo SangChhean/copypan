@@ -1,0 +1,72 @@
+{
+  "_comment": "每步 CURRENT 指向稳定版；draft 通道由 QA4_PROMPT_CHANNEL=draft 选用 draft:true 版本。placeholder=true 时 live 拒绝真实模型。",
+  "placeholder_marker": "【占位】",
+  "steps": {
+    "step2": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {"file": "step2_v1.0.txt", "variables": ["history", "question"], "placeholder": true},
+        "v0.1": {"file": "step2_v0.1.txt", "variables": ["history", "question"], "placeholder": false, "draft": true}
+      }
+    },
+    "step3": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {"file": "step3_v1.0.txt", "variables": ["question"], "placeholder": true},
+        "v0.1": {
+          "file": "step3_v0.1.txt",
+          "variables": ["question", "rule_hits", "life_book_titles", "feast_list", "scope_options"],
+          "placeholder": false,
+          "draft": true
+        }
+      }
+    },
+    "step4": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {"file": "step4_v1.0.txt", "variables": ["question", "subquestions"], "placeholder": true},
+        "v0.1": {"file": "step4_v0.1.txt", "variables": ["question", "subquestions"], "placeholder": false, "draft": true}
+      }
+    },
+    "step5": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {"file": "step5_v1.0.txt", "variables": ["question", "subquestions", "layer1"], "placeholder": true},
+        "v0.1": {
+          "file": "step5_v0.1.txt",
+          "variables": ["question", "subquestions", "layer1", "caps"],
+          "placeholder": false,
+          "draft": true
+        }
+      }
+    },
+    "step7": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {"file": "step7_v1.0.txt", "variables": ["subquestion", "qtype", "passages"], "placeholder": true},
+        "v0.1": {
+          "file": "step7_v0.1.txt",
+          "variables": ["subquestion", "qtype", "passages", "passage_chars"],
+          "placeholder": false,
+          "draft": true
+        }
+      }
+    },
+    "step8": {
+      "CURRENT": "v1.0",
+      "versions": {
+        "v1.0": {
+          "file": "step8_v1.0.txt",
+          "variables": ["question", "qtype", "understanding", "verdict", "definitions", "layers", "devine", "passages"],
+          "placeholder": true
+        },
+        "v0.1": {
+          "file": "step8_v0.1.txt",
+          "variables": ["question", "qtype", "understanding", "verdict", "definitions", "layers", "devine", "passages"],
+          "placeholder": false,
+          "draft": true
+        }
+      }
+    }
+  }
+}

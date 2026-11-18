@@ -1,0 +1,17 @@
+{
+  "_comment": "另存为 sources.json 后填写本机绝对路径。sources.json 已加入 qa4/.gitignore。缺文件时 gen_lookups 将该项标为「缺来源」，其余照做。",
+  "intrinsic_significance": "填写：桌面 可导入资料\\2 特殊标注\\【intrinsic_significance】2372词条内在意义分类.json",
+  "trunk_branch_map": "填写：仓库 docs\\panai4_graph\\主恢复真理词典_词条主干枝子映射 (1).json",
+  "truth_dictionary_3a3b": "填写：qa4\\data\\graph_annotations\\truth_dictionary_3a3b.json（或等价副本）",
+  "devine_argument": "填写：桌面 可导入资料 下 *devine_argument*.json（name 字段）",
+  "high_peak_content": "填写：桌面 可导入资料\\2 特殊标注\\【high_peak_content】….json",
+  "organic_advance": "填写：新版 organic_advance.json（qa4\\data\\graph_annotations\\organic_advance.json）",
+  "text_cwwl_shards": "填写：panai4_text_cwwl\\shards 目录（*.jsonl）",
+  "outline_12490": "填写：panai4_outline_12490 目录或 chunks json/jsonl",
+  "wenji_volume_draft_csv": "填写：qa4\\notes\\wenji_volume_table_draft.csv（册表列模板与期望 1293 行）",
+  "text_life_shards": "填写：panai4_text_life\\shards 目录",
+  "text_cwwn_shards": "填写：panai4_text_cwwn\\shards 目录",
+  "text_others_shards": "填写：panai4_text_others\\shards 目录",
+  "outline_feasts": "填写：panai4_outline_feasts 目录或 chunks_feasts_vec.json",
+  "hymns": "填写：panai4_hymns 目录或 chunks_hymns_vec.json"
+}

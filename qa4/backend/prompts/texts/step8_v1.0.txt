@@ -1,0 +1,10 @@
+【占位】第 8 步（生成回答）提示词尚未编写。
+输入变量：
+- 问题（改写后）：{question}
+- 题型与限定：{qtype}
+- 理解说明：{understanding}
+- 把关结论：{verdict}
+- 3a 定义：{definitions}
+- 各层词：{layers}
+- 辩理材料：{devine}
+- 段落（带编号）：{passages}
