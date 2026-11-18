@@ -21,7 +21,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from user.token import test_token
+from fastapi import Header
+from user.token import require_admin, test_token
+from t35test import usage_store
 from t35test.common import get_monitoring
 from t35test.kg.firewall import load_firewall
 from t35test.kg.kg_rag_service import KgRagService, strip_outline_tail
@@ -90,6 +92,59 @@ def _norm_nature(v):
     return NATURE_ALIAS.get(t, t)
 
 
+# ---------------------------------------------------------------------------
+# 【4.0】作纲目费用统计：一篇纲目一个「本篇编号」（请求头 X-T35-Outline-Session），
+# 负担说明 / 推荐重点 / 生成纲目每次请求都记下实际花的钱（t35test/usage_store.py）。
+# ---------------------------------------------------------------------------
+class OutlineCtx(BaseModel):
+    session_id: str = ""
+    loaded: bool = False
+    device: str = ""
+    username: str = ""
+
+
+def _outline_ctx(
+    userinfo: dict = Depends(test_token),
+    x_t35_outline_session: Optional[str] = Header(default=None),
+    x_t35_outline_loaded: Optional[str] = Header(default=None),
+    x_t35_device: Optional[str] = Header(default=None),
+) -> OutlineCtx:
+    def _clean(v: Optional[str]) -> str:
+        v = (v or "").strip()
+        return v if (len(v) <= 64 and all(c.isalnum() or c == "-" for c in v)) else ""
+
+    return OutlineCtx(
+        session_id=_clean(x_t35_outline_session),
+        loaded=(x_t35_outline_loaded or "").strip() == "1",
+        device=_clean(x_t35_device),
+        username=userinfo.get("username", ""),
+    )
+
+
+async def _record_usage(ctx: OutlineCtx, kind: str, query: str, nature: str, elapsed_ms: float, calls: list, cached: bool = False) -> None:
+    """记一次请求实际花的钱；没有本篇编号（旧页面）也照记，只是不能按篇加总。出错不影响返回。"""
+    try:
+        await asyncio.to_thread(
+            usage_store.record_request,
+            session_id=ctx.session_id or f"nosession-{int(datetime.now().timestamp() * 1000)}",
+            kind=kind,
+            username=ctx.username,
+            device=ctx.device,
+            query=query,
+            outline_nature=nature,
+            loaded=ctx.loaded,
+            cached=cached,
+            elapsed_ms=elapsed_ms,
+            calls=calls,
+        )
+    except Exception as e:
+        logger.warning("[t35test usage] 记录费用失败（不影响返回）: %s", e)
+
+
+def _now_ms() -> float:
+    return datetime.now().timestamp() * 1000
+
+
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="查询问题")
     params: Optional[dict] = Field(default=None, description="覆盖默认参数")
@@ -138,23 +193,32 @@ class OutlineToTraditionalRequest(BaseModel):
 # KG-RAG 核心
 # ---------------------------------------------------------------------------
 @router.post("/query")
-async def full_query(req: QueryRequest):
+async def full_query(req: QueryRequest, ctx: OutlineCtx = Depends(_outline_ctx)):
     """全流程查询 Step 1→5。"""
     service = get_service()
     try:
         params = dict(req.params or {})
         if "outline_nature" in params:
             params["outline_nature"] = _norm_nature(params["outline_nature"])
-        return await service.full_query(req.query, params, mode=req.mode)
+        t0 = _now_ms()
+        result = await service.full_query(req.query, params, mode=req.mode)
+        cached = bool((result or {}).get("cached"))
+        await _record_usage(
+            ctx, "outline", req.query, params.get("outline_nature") or "", _now_ms() - t0,
+            [] if cached else (((result or {}).get("llm_usage") or {}).get("calls") or []),
+            cached=cached,
+        )
+        return result
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @router.post("/generate_burden")
-async def generate_burden(req: GenerateBurdenRequest):
+async def generate_burden(req: GenerateBurdenRequest, ctx: OutlineCtx = Depends(_outline_ctx)):
     """根据主题与上下文生成负担说明（有负担的重点 → 单条 / 没有负担的重点 → 三候选）。"""
     service = get_service()
     try:
+        t0 = _now_ms()
         logger.info(
             "[t35test BURDEN] /generate_burden req: query_len=%s outline=%r excerpt_len=%s model=%s",
             len((req.query or "").strip()),
@@ -170,6 +234,11 @@ async def generate_burden(req: GenerateBurdenRequest):
             model=req.model,
         )
         _record_burden_trial(req, result)
+        bu = (result or {}).get("llm_usage")
+        await _record_usage(
+            ctx, "burden", req.query, _norm_nature(req.outline_nature or ""), _now_ms() - t0,
+            [{**bu, "step": "generate_burden"}] if isinstance(bu, dict) else [],
+        )
         return result
     except Exception as e:
         logger.exception("[t35test BURDEN] /generate_burden exception")
@@ -207,10 +276,11 @@ def _record_burden_trial(req: "GenerateBurdenRequest", result: dict) -> None:
 
 
 @router.post("/extract_concepts")
-async def extract_concepts(req: ExtractConceptsRequest):
+async def extract_concepts(req: ExtractConceptsRequest, ctx: OutlineCtx = Depends(_outline_ctx)):
     """独立执行 Step 1 概念抽取，返回 revelation / experience / practice 候选列表，供人工筛选。"""
     service = get_service()
     try:
+        t0 = _now_ms()
         result = await service.full_query(
             req.query,
             {
@@ -224,6 +294,10 @@ async def extract_concepts(req: ExtractConceptsRequest):
         )
         s1 = (result.get("steps") or {}).get("step1") or {}
         _record_inner_trial(req, s1)
+        await _record_usage(
+            ctx, "concepts", req.query, _norm_nature(req.outline_nature), _now_ms() - t0,
+            ((result or {}).get("llm_usage") or {}).get("calls") or [],
+        )
         return {
             "revelation": s1.get("revelation", []),
             "inner": s1.get("inner", []),
@@ -379,8 +453,6 @@ async def format_outline_only(request: FormatOutlineRequest):
 # 前端每台电脑的浏览器生成一个本机编号，放在请求头 X-T35-Device；同一台电脑的几个窗口共用、同步，
 # 别的电脑的记录看不到也动不到。
 # ---------------------------------------------------------------------------
-from fastapi import Header  # noqa: E402
-
 from t35test import history_store  # noqa: E402
 
 
@@ -458,3 +530,29 @@ def history_delete(rid: int, device: str = Depends(_device)):
     except Exception as e:
         logger.error(f"[t35test history] 删除失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除历史记录失败：{e}")
+
+
+# ---------------------------------------------------------------------------
+# 【4.0】作纲目费用：页面查本篇完整费用；后台「4.0作纲目」统计（t35test/usage_store.py）
+# ---------------------------------------------------------------------------
+@router.get("/usage/session/{session_id}")
+def usage_session(session_id: str):
+    """这一篇从头做到尾的完整费用（负担说明、推荐重点、生成纲目，重做的也都算进去）和各步骤明细。"""
+    try:
+        s = usage_store.session_summary(session_id)
+    except Exception as e:
+        logger.error(f"[t35test usage] 读取本篇费用失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"读取本篇费用失败：{e}")
+    if not s:
+        raise HTTPException(status_code=404, detail="找不到这一篇的费用记录")
+    return s
+
+
+@router.get("/usage/stats", dependencies=[Depends(require_admin)])
+def usage_stats(days: int = Query(7, ge=1, le=3650)):
+    """后台「4.0作纲目」使用统计（只给管理员）。"""
+    try:
+        return usage_store.stats(days)
+    except Exception as e:
+        logger.error(f"[t35test usage] 统计失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"统计失败：{e}")

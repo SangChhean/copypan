@@ -17,6 +17,7 @@ import AIStatsRoughOutline from "./AIStatsRoughOutline.vue";
 import AIStatsTranslation from "./AIStatsTranslation.vue";
 import AIStatsRoundtable from "./AIStatsRoundtable.vue";
 import AIStatsSummary from "./AIStatsSummary.vue";
+import AIStatsPanAI4 from "./AIStatsPanAI4.vue"; // 【4.0作纲目】使用统计（4.0 测试台自己的统计）
 checkSession("t0");
 
 const fileList = ref([]);
@@ -122,6 +123,12 @@ const items = ref([
       },
       {
         icon: () => h(BarChartOutlined),
+        key: "15",
+        label: "4.0作纲目",
+        title: "panai4",
+      },
+      {
+        icon: () => h(BarChartOutlined),
         key: "10",
         label: "节期纲目",
         title: "feast",
@@ -203,6 +210,7 @@ const navClick = (item: any) => {
           <AIStatsTranslation v-if="key === '12'" />
           <AIStatsRoundtable v-if="key === '13'" />
           <AIStatsSummary v-if="key === '14'" />
+          <AIStatsPanAI4 v-if="key === '15'" />
         </div>
       </a-col>
     </a-row>
