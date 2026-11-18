@@ -1,0 +1,131 @@
+{
+  "script": "qa4/notes/probe6/b_verse.py",
+  "V21_PATH": "C:\\Users\\28121\\Desktop\\get_vers_v2.1.py",
+  "b1_3a_whole_line": {
+    "n_entries_with_reading": 2365,
+    "n_lines_ge1_ref": 2360,
+    "n_refs_total": 23102,
+    "kinds": {
+      "verse_or_range": 23097,
+      "whole_chapter": 5
+    },
+    "n_in_bible_data": 23102,
+    "n_zero_ref_lines": 5,
+    "zero_samples": [
+      "士六~九",
+      "林后三 2~3、6、8",
+      "利一~七38，八14，诗八四",
+      "番一~三",
+      "约十三"
+    ],
+    "miss_heuristic_n": 23,
+    "miss_heuristic_rule": "DIGITISH_RE 匹配章节数字串个数 n；若 n>=3 且 n >= 解析出处数+2，计为疑似遗漏。 DIGITISH_RE=(?:[一二三四五六七八九十百千〇零○]+|\\d+)(?:[～~－—\\-](?:[一二三四五六七八九十百千〇零○]+|\\d+))?",
+    "miss_samples": [
+      {
+        "line30": "启一4，四5，五6，来四16，九12、24，二十11～15，",
+        "n_toks": 16,
+        "digitish_n": 33
+      },
+      {
+        "line30": "太四18~22，十六19，徒二14~41，四4，弗四12，彼",
+        "n_toks": 6,
+        "digitish_n": 14
+      },
+      {
+        "line30": "徒五15，雅六12，七11，约十七21~23，弗四3，六1，",
+        "n_toks": 5,
+        "digitish_n": 14
+      },
+      {
+        "line30": "林前三10、九27，太七21、22、23，彼前一7，启二、三",
+        "n_toks": 11,
+        "digitish_n": 21
+      },
+      {
+        "line30": "但二31~45，四17、25~26，徒十七26，一8，诗六八",
+        "n_toks": 15,
+        "digitish_n": 28
+      }
+    ],
+    "split_note": "整行不切分；每行 start_paragraph + parse_text"
+  },
+  "b2_qa4_bible_fails": {
+    "verses_total": 3625,
+    "v21_fail_n": 116,
+    "fail_book_title_top10": [
+      [
+        "诗篇",
+        116
+      ]
+    ],
+    "chapter_style_counts": {
+      "汉字十位+阿拉伯0（如三0）": 103,
+      "中文数后接0（广义）": 13
+    },
+    "x0_regex": "([一二三四五六七八九])0",
+    "shi0_regex": "十0",
+    "n_matching_x0_regex": 103,
+    "n_matching_shi0_regex": 12,
+    "n_matching_x0_or_shi0": 115,
+    "all_fails_match_x0": false,
+    "note_validate": "VerseParser(validate=bible_data)：节号0会被校验丢掉，与第五轮失败口径一致",
+    "after_normalize_x0_success": 0,
+    "after_normalize_still_fail": 116,
+    "still_fail_top_styles": [
+      {
+        "style": "汉字十位+阿拉伯0（如三0）",
+        "n": 103,
+        "examples": [
+          "诗篇三0～8",
+          "诗篇四0～8",
+          "诗篇五0～12"
+        ]
+      },
+      {
+        "style": "中文数后接0（广义）",
+        "n": 13,
+        "examples": [
+          "诗篇二十0～9",
+          "诗篇三十0～12",
+          "诗篇四十0～17"
+        ]
+      }
+    ],
+    "fail_examples_raw": [
+      "诗篇三0～8",
+      "诗篇四0～8",
+      "诗篇五0～12",
+      "诗篇六0～10",
+      "诗篇七0～17",
+      "诗篇八0～9",
+      "诗篇九0～20",
+      "诗篇十一0～7",
+      "诗篇十二0～8",
+      "诗篇十三0～6"
+    ]
+  },
+  "b3_x0_counts": {
+    "regex": "([一二三四五六七八九])0",
+    "graph_chosen_4851": {
+      "universe": 4851,
+      "n": 0,
+      "examples": [],
+      "regex": "([一二三四五六七八九])0"
+    },
+    "map_note_sample": {
+      "universe": 2000,
+      "seed": 20261116,
+      "n": 0,
+      "examples": [],
+      "regex": "([一二三四五六七八九])0"
+    },
+    "def_3a_reading_lines": {
+      "universe": 2365,
+      "n": 1,
+      "examples": [
+        "王上七16、18~19，太一5、5~16、18、20下~23"
+      ],
+      "regex": "([一二三四五六七八九])0"
+    }
+  }
+}

@@ -1,0 +1,638 @@
+{
+  "script": "qa4/notes/probe5/c_verse_norm.py",
+  "V21_PATH": "C:\\Users\\28121\\Desktop\\get_vers_v2.1.py",
+  "v21_candidates": [
+    {
+      "path": "C:\\Users\\28121\\Desktop\\get_vers_v2.1.py",
+      "size": 35645
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\__pycache__\\get_vers_v2.1.cpython-310.pyc",
+      "size": 28527
+    }
+  ],
+  "v21_api": {
+    "entry": "VerseParser.parse_text / process_data",
+    "call": "p=VerseParser(validate=...); p.start_paragraph(); p.parse_text(text)",
+    "output": "list[{text,verses,start,end}]; verses 如 太5:1-3 或 太5:1_7:29 或 太5",
+    "deps": [
+      "本地正则",
+      "可选 bible 校验器 build_validator",
+      "可选 load_book_map(bible.json)"
+    ],
+    "path": "C:\\Users\\28121\\Desktop\\get_vers_v2.1.py",
+    "size": 35645
+  },
+  "bible_data_books": 66,
+  "bible_data_chapters": 1189,
+  "bible_data_verses": 31103,
+  "smoke": [
+    {
+      "ref": "约三16",
+      "ok3": false,
+      "kind3": "fail",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "约3:16"
+      ]
+    },
+    {
+      "ref": "创一1～3",
+      "ok3": true,
+      "kind3": "verse_or_range",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "创1:1-3"
+      ]
+    },
+    {
+      "ref": "太五至七",
+      "ok3": true,
+      "kind3": "cross_chapter",
+      "ok21": true,
+      "kind21": "cross_chapter",
+      "toks21": []
+    },
+    {
+      "ref": "诗八九26",
+      "ok3": false,
+      "kind3": "fail",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "诗89:26"
+      ]
+    },
+    {
+      "ref": "约翰福音三章十六节",
+      "ok3": true,
+      "kind3": "verse_or_range",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "约3:16"
+      ]
+    },
+    {
+      "ref": "可十四24",
+      "ok3": false,
+      "kind3": "fail",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "可14:24"
+      ]
+    },
+    {
+      "ref": "罗八28",
+      "ok3": false,
+      "kind3": "fail",
+      "ok21": true,
+      "kind21": "verse_or_range",
+      "toks21": [
+        "罗8:28"
+      ]
+    },
+    {
+      "ref": "诗篇一章",
+      "ok3": true,
+      "kind3": "whole_chapter",
+      "ok21": true,
+      "kind21": "whole_chapter",
+      "toks21": [
+        "诗1"
+      ]
+    }
+  ],
+  "3a_split_rule": "取 content_3a 首行；若以「读经：」或「读经:」开头则去掉前缀；再按中文逗号/英文逗号/分号/顿号切开；去空白；空段丢弃。",
+  "3a_entries_with_reading": 2365,
+  "3a_entries_total": 2372,
+  "qa4_bible_verses_n": 3625,
+  "map_note_extractable": 15642,
+  "map_note_sample_n": 2000,
+  "map_note_extract_rule": "去掉外层括号；按逗号切分；丢弃含「恢复本/圣经」的首段与「注N」段；取剩余第一段。",
+  "summaries": {
+    "graph_scripture": {
+      "tag": "graph_scripture",
+      "total": 4851,
+      "v21": {
+        "ok": 4845,
+        "in_bible": 4845,
+        "whole": 0,
+        "cross": 0,
+        "fail": 6
+      },
+      "p30": {
+        "ok": 1543,
+        "in_bible": 1542,
+        "whole": 0,
+        "cross": 0,
+        "fail": 3308
+      },
+      "disagree_n": 3305,
+      "disagree_examples": [
+        {
+          "ref": "诗八九26",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "诗89:26"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "赛六四8",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "赛64:8"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "可十四36",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "可14:36"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "罗八15",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "罗8:15"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "启二一6",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "启21:6"
+          ],
+          "r3": null
+        }
+      ],
+      "fail_v21_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 6,
+          "examples": [
+            "贴后三5",
+            "贴后二3",
+            "贴后三17"
+          ]
+        }
+      ],
+      "fail_p30_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 3143,
+          "examples": [
+            "诗八九26",
+            "赛六四8",
+            "可十四36"
+          ]
+        },
+        {
+          "bucket": "含上下半节",
+          "n": 157,
+          "examples": [
+            "代上二九3",
+            "代下三六15",
+            "王上七19"
+          ]
+        },
+        {
+          "bucket": "其它",
+          "n": 8,
+          "examples": [
+            "约贰2",
+            "犹20",
+            "犹2"
+          ]
+        }
+      ]
+    },
+    "def_3a": {
+      "tag": "def_3a",
+      "total": 23181,
+      "v21": {
+        "ok": 14562,
+        "in_bible": 14562,
+        "whole": 2,
+        "cross": 0,
+        "fail": 8619
+      },
+      "p30": {
+        "ok": 7354,
+        "in_bible": 7342,
+        "whole": 2,
+        "cross": 0,
+        "fail": 15827
+      },
+      "disagree_n": 7327,
+      "disagree_examples": [
+        {
+          "ref": "可十四36",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "可14:36"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "启二二13",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "启22:13"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "来二14",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "来2:14"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "诗一四六1",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "诗146:1"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "徒二十31",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "徒20:31"
+          ],
+          "r3": null
+        }
+      ],
+      "fail_v21_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 4554,
+          "examples": [
+            "一17",
+            "二8",
+            "一8"
+          ]
+        },
+        {
+          "bucket": "其它",
+          "n": 3916,
+          "examples": [
+            "8",
+            "29~33",
+            "16"
+          ]
+        },
+        {
+          "bucket": "疑似整章",
+          "n": 83,
+          "examples": [
+            "创六",
+            "彼前二",
+            "启二~三"
+          ]
+        },
+        {
+          "bucket": "含上下半节",
+          "n": 66,
+          "examples": [
+            "20下~23",
+            "十五16下",
+            "十9~10下"
+          ]
+        }
+      ],
+      "fail_p30_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 11592,
+          "examples": [
+            "可十四36",
+            "启二二13",
+            "一17"
+          ]
+        },
+        {
+          "bucket": "其它",
+          "n": 3943,
+          "examples": [
+            "8",
+            "29~33",
+            "16"
+          ]
+        },
+        {
+          "bucket": "含上下半节",
+          "n": 228,
+          "examples": [
+            "王上十八21",
+            "王上七16",
+            "20下~23"
+          ]
+        },
+        {
+          "bucket": "疑似整章",
+          "n": 62,
+          "examples": [
+            "创六",
+            "彼前二",
+            "启二~三"
+          ]
+        },
+        {
+          "bucket": "含注号",
+          "n": 2,
+          "examples": [
+            "结四八31注1",
+            "创三五10注1"
+          ]
+        }
+      ]
+    },
+    "qa4_bible": {
+      "tag": "qa4_bible",
+      "total": 3625,
+      "v21": {
+        "ok": 3509,
+        "in_bible": 3509,
+        "whole": 0,
+        "cross": 0,
+        "fail": 116
+      },
+      "p30": {
+        "ok": 3285,
+        "in_bible": 3285,
+        "whole": 0,
+        "cross": 0,
+        "fail": 340
+      },
+      "disagree_n": 280,
+      "disagree_examples": [
+        {
+          "ref": "创世记一2下～5",
+          "p30": "verse_or_range",
+          "v21": "verse_or_range",
+          "toks21": [
+            "创1:2-5"
+          ],
+          "r3": "verse"
+        },
+        {
+          "ref": "创世记一26",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "创1:26"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "创世记一27",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "创1:27"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "创世记一28",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "创1:28"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "创世记一31",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "创1:31"
+          ],
+          "r3": null
+        }
+      ],
+      "fail_v21_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 116,
+          "examples": [
+            "诗篇三0～8",
+            "诗篇四0～8",
+            "诗篇五0～12"
+          ]
+        }
+      ],
+      "fail_p30_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 264,
+          "examples": [
+            "创世记一26",
+            "创世记一27",
+            "创世记一28"
+          ]
+        },
+        {
+          "bucket": "含上下半节",
+          "n": 76,
+          "examples": [
+            "创世记二十七27下～41",
+            "士师记三11下～31",
+            "撒母耳记上一21～二11"
+          ]
+        }
+      ]
+    },
+    "map_note": {
+      "tag": "map_note",
+      "total": 2000,
+      "v21": {
+        "ok": 1999,
+        "in_bible": 1999,
+        "whole": 0,
+        "cross": 0,
+        "fail": 1
+      },
+      "p30": {
+        "ok": 746,
+        "in_bible": 744,
+        "whole": 0,
+        "cross": 0,
+        "fail": 1254
+      },
+      "disagree_n": 1255,
+      "disagree_examples": [
+        {
+          "ref": "约十五11",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "约15:11"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "林前十四26",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "林前14:26"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "太十五27",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "太15:27"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "撒下七14",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "撒下7:14"
+          ],
+          "r3": null
+        },
+        {
+          "ref": "出十七12",
+          "p30": "fail",
+          "v21": "verse_or_range",
+          "toks21": [
+            "出17:12"
+          ],
+          "r3": null
+        }
+      ],
+      "fail_v21_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 1,
+          "examples": [
+            "创十二30"
+          ]
+        }
+      ],
+      "fail_p30_top15": [
+        {
+          "bucket": "中文章+阿拉伯节",
+          "n": 1199,
+          "examples": [
+            "约十五11",
+            "林前十四26",
+            "太十五27"
+          ]
+        },
+        {
+          "bucket": "含上下半节",
+          "n": 52,
+          "examples": [
+            "撒下七14",
+            "代上二二3",
+            "王下二15"
+          ]
+        },
+        {
+          "bucket": "其它",
+          "n": 3,
+          "examples": [
+            "约贰1",
+            "门5",
+            "约贰8"
+          ]
+        }
+      ]
+    }
+  },
+  "unified_key_sizes": {
+    "graph_scripture": 4834,
+    "def_3a": 5107,
+    "qa4_bible": 3597,
+    "map_note": 1240,
+    "bible_data": 31103
+  },
+  "unified_vs_bible_data": {
+    "graph_scripture": {
+      "n": 4834,
+      "in_bible_data": 4606,
+      "not_in_bible_data": 228,
+      "note": "keys are (book,chap,v_start,v_end); ranges kept as-is (not expanded)"
+    },
+    "def_3a": {
+      "n": 5107,
+      "in_bible_data": 2984,
+      "not_in_bible_data": 2123,
+      "note": "keys are (book,chap,v_start,v_end); ranges kept as-is (not expanded)"
+    },
+    "qa4_bible": {
+      "n": 3597,
+      "in_bible_data": 420,
+      "not_in_bible_data": 3177,
+      "note": "keys are (book,chap,v_start,v_end); ranges kept as-is (not expanded)"
+    },
+    "map_note": {
+      "n": 1240,
+      "in_bible_data": 1240,
+      "not_in_bible_data": 0,
+      "note": "keys are (book,chap,v_start,v_end); ranges kept as-is (not expanded)"
+    }
+  },
+  "unified_mismatch_types": [
+    {
+      "source": "graph_scripture",
+      "range_not_single": 228,
+      "whole_chapter": 0,
+      "cross_chapter": 0,
+      "parse_fail": 6
+    },
+    {
+      "source": "def_3a",
+      "range_not_single": 4092,
+      "whole_chapter": 2,
+      "cross_chapter": 0,
+      "parse_fail": 8619
+    },
+    {
+      "source": "qa4_bible",
+      "range_not_single": 3177,
+      "whole_chapter": 0,
+      "cross_chapter": 0,
+      "parse_fail": 116
+    },
+    {
+      "source": "map_note",
+      "range_not_single": 0,
+      "whole_chapter": 0,
+      "cross_chapter": 0,
+      "parse_fail": 1
+    }
+  ]
+}

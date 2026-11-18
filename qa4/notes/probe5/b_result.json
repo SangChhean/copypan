@@ -1,0 +1,530 @@
+{
+  "script": "qa4/notes/probe5/b_lexicon.py",
+  "n_files_scanned": 24,
+  "rows": [
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\hymns.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\1 一般标注\\真理词典：3a和3b.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 38,
+      "need_change": false,
+      "name_hits": [
+        "[1136].title=路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\1 一般标注\\节点一般标注.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [
+        "[1136].name=路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【devine_argument】越进入高峰，真理越需要辨明得准确.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【high_peak_content】从历史进展的差异看高峰时期的内涵.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 4,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【intrinsic_significance】2372词条内在意义分类.json",
+      "exists": true,
+      "as_name_路得马丁": 1,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 1,
+      "body_路德马丁": 0,
+      "need_change": true,
+      "name_hits": [
+        ".words[1136].name=路得马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【mutuality】彼此互相.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 84,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展（新）.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\3 边\\29种关系_成立边.json",
+      "exists": true,
+      "as_name_路得马丁": 2,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 2,
+      "body_路德马丁": 0,
+      "need_change": true,
+      "name_hits": [
+        "[28].pairs[520].from=路得马丁",
+        "[28].pairs[521].from=路得马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\3 边\\【relationship】29种关系定义分类.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\2373个词条（已确定一一对应为concept节点）.txt",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 1,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": true,
+      "name_hits": [
+        "L206:城市",
+        "L1138:路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\主恢复真理词典_词条主干枝子映射 (1).json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 1,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": true,
+      "name_hits": [
+        "[1816].name=城市",
+        "[1844].name=路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\主恢复真理词典_标签映射_已校对 (1).json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\12大类与91小类的对应关系.txt",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\2372个词条（已确定一一对应为concept节点）.txt",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 1,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": true,
+      "name_hits": [
+        "L206:城市",
+        "L1138:路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\qa4\\data\\graph_annotations\\organic_advance.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\qa4\\data\\graph_annotations\\truth_dictionary_3a3b.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 38,
+      "need_change": false,
+      "name_hits": [
+        "[1136].title=路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\back_mic\\backend\\panai4\\data\\graph_annotations\\organic_advance.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\back_mic\\backend\\panai4\\data\\graph_annotations\\README.md",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\back_mic\\backend\\panai4\\data\\graph_annotations\\SHA256SUMS.txt",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\back_mic\\backend\\panai4\\data\\graph_annotations\\truth_dictionary_3a3b.json",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 1,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 38,
+      "need_change": false,
+      "name_hits": [
+        "[1136].title=路德马丁"
+      ],
+      "note": ""
+    },
+    {
+      "path": "G:\\copypan\\qa4\\notes\\zui_neizai_133_draft.txt",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 0,
+      "body_路德马丁": 0,
+      "need_change": false,
+      "name_hits": [],
+      "note": "notes_record_only"
+    },
+    {
+      "path": "G:\\copypan\\qa4\\notes\\lexicon_reconcile.csv",
+      "exists": true,
+      "as_name_路得马丁": 0,
+      "as_name_路德马丁": 0,
+      "as_name_城市": 0,
+      "body_路得马丁": 1,
+      "body_路德马丁": 1,
+      "need_change": false,
+      "name_hits": [],
+      "note": "notes_record_only"
+    }
+  ],
+  "set_compare": {
+    "raw_sizes": {
+      "2373清单": 2373,
+      "主干枝映射": 2373,
+      "四档分类": 2372,
+      "truth_dictionary_3a3b": 2372
+    },
+    "norm_sizes": {
+      "2373清单": 2372,
+      "主干枝映射": 2372,
+      "四档分类": 2372,
+      "truth_dictionary_3a3b": 2372
+    },
+    "pairwise_raw": {
+      "2373清单 vs 主干枝映射": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "2373清单 vs 四档分类": {
+        "equal": false,
+        "only_a": [
+          "城市",
+          "路德马丁"
+        ],
+        "only_b": [
+          "路得马丁"
+        ]
+      },
+      "2373清单 vs truth_dictionary_3a3b": {
+        "equal": false,
+        "only_a": [
+          "城市"
+        ],
+        "only_b": []
+      },
+      "主干枝映射 vs 四档分类": {
+        "equal": false,
+        "only_a": [
+          "城市",
+          "路德马丁"
+        ],
+        "only_b": [
+          "路得马丁"
+        ]
+      },
+      "主干枝映射 vs truth_dictionary_3a3b": {
+        "equal": false,
+        "only_a": [
+          "城市"
+        ],
+        "only_b": []
+      },
+      "四档分类 vs truth_dictionary_3a3b": {
+        "equal": false,
+        "only_a": [
+          "路得马丁"
+        ],
+        "only_b": [
+          "路德马丁"
+        ]
+      }
+    },
+    "pairwise_norm": {
+      "2373清单 vs 主干枝映射": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "2373清单 vs 四档分类": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "2373清单 vs truth_dictionary_3a3b": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "主干枝映射 vs 四档分类": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "主干枝映射 vs truth_dictionary_3a3b": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      },
+      "四档分类 vs truth_dictionary_3a3b": {
+        "equal": true,
+        "only_a": [],
+        "only_b": []
+      }
+    },
+    "raw_has": {
+      "2373清单": {
+        "路得马丁": false,
+        "路德马丁": true,
+        "城市": true
+      },
+      "主干枝映射": {
+        "路得马丁": false,
+        "路德马丁": true,
+        "城市": true
+      },
+      "四档分类": {
+        "路得马丁": true,
+        "路德马丁": false,
+        "城市": false
+      },
+      "truth_dictionary_3a3b": {
+        "路得马丁": false,
+        "路德马丁": true,
+        "城市": false
+      }
+    }
+  },
+  "md_mentions": [
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\import_intrinsic_significance.md",
+      "line": 11,
+      "snip": "4. **合并名明细**：[{'src': '产生男孩子（产生得胜者）', 'target': '产生男孩子', 'category': '内在'}, {'sr",
+      "has_路得": true,
+      "has_路德": true,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\import_intrinsic_significance.md",
+      "line": 14,
+      "snip": "7. **脚本**：import_annotation_v2 --mode category-words（复用 v1）。差异：['mode=category-w",
+      "has_路得": true,
+      "has_路德": true,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\import_intrinsic_significance.md",
+      "line": 31,
+      "snip": "- samples: [{'name': '晨晨复兴', 'value': '显出为外在'}, {'name': '产生男孩子', 'value': '内在'}",
+      "has_路得": false,
+      "has_路德": true,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\import_relations_29.md",
+      "line": 10,
+      "snip": "3. **端点映射**：{\"路得马丁\": \"路德马丁\", \"那灵的浇灌（圣灵的浇灌）\": \"那灵的浇灌\", \"晨晨复兴（晨兴）\": \"晨晨复兴\", \"火湖（地狱",
+      "has_路得": true,
+      "has_路德": true,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\import_relations_29.md",
+      "line": 247,
+      "snip": "- luther_samples=[{\"type\": \"LOCATED_IN\", \"from\": \"路德马丁\", \"to\": \"欧洲\", \"present\": ",
+      "has_路得": false,
+      "has_路德": true,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\neo4j_v4_inventory_pre.md",
+      "line": 518,
+      "snip": "- 找不到的前 50：[{\"name\": \"晨晨复兴（晨兴）\", \"count\": 84}, {\"name\": \"那灵的浇灌（圣灵的浇灌）\", \"count\":",
+      "has_路得": true,
+      "has_路德": false,
+      "has_城市": false
+    },
+    {
+      "path": "G:\\copypan\\docs\\panai4_graph\\neo4j_v4_inventory_pre.md",
+      "line": 796,
+      "snip": "- 找不到前 50：[{\"name\": \"产生男孩子（产生得胜者）\", \"count\": 1}, {\"name\": \"晨晨复兴（晨兴）\", \"count\": 1",
+      "has_路得": true,
+      "has_路德": false,
+      "has_城市": false
+    }
+  ],
+  "change_list": [
+    {
+      "file": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【intrinsic_significance】2372词条内在意义分类.json",
+      "loc": ".words[1136].name=路得马丁",
+      "current": "路得马丁",
+      "should": "路德马丁"
+    },
+    {
+      "file": "C:\\Users\\28121\\Desktop\\可导入资料\\3 边\\29种关系_成立边.json",
+      "loc": "[28].pairs[520].from=路得马丁",
+      "current": "路得马丁",
+      "should": "路德马丁"
+    },
+    {
+      "file": "C:\\Users\\28121\\Desktop\\可导入资料\\3 边\\29种关系_成立边.json",
+      "loc": "[28].pairs[521].from=路得马丁",
+      "current": "路得马丁",
+      "should": "路德马丁"
+    },
+    {
+      "file": "G:\\copypan\\docs\\panai4_graph\\2373个词条（已确定一一对应为concept节点）.txt",
+      "loc": "L206:城市",
+      "current": "城市",
+      "should": "删除"
+    },
+    {
+      "file": "G:\\copypan\\docs\\panai4_graph\\主恢复真理词典_词条主干枝子映射 (1).json",
+      "loc": "[1816].name=城市",
+      "current": "城市",
+      "should": "删除"
+    },
+    {
+      "file": "G:\\copypan\\docs\\panai4_graph\\2372个词条（已确定一一对应为concept节点）.txt",
+      "loc": "L206:城市",
+      "current": "城市",
+      "should": "删除"
+    }
+  ]
+}

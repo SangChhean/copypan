@@ -1,0 +1,339 @@
+{
+  "script": "qa4/notes/probe6/c_tiehou.py",
+  "c1_fail_n": 6,
+  "c1_fails": [
+    "贴后三5",
+    "贴后二3",
+    "贴后三17",
+    "贴后二13",
+    "贴后三16",
+    "贴后三1"
+  ],
+  "c1_fail_details": [
+    {
+      "ref": "贴后三5",
+      "terms": [
+        "爱神",
+        "神的爱"
+      ],
+      "row_meta": {
+        "ref": "贴后三5"
+      }
+    },
+    {
+      "ref": "贴后二3",
+      "terms": [
+        "方法"
+      ],
+      "row_meta": {
+        "ref": "贴后二3"
+      }
+    },
+    {
+      "ref": "贴后三17",
+      "terms": [
+        "记号"
+      ],
+      "row_meta": {
+        "ref": "贴后三17"
+      }
+    },
+    {
+      "ref": "贴后二13",
+      "terms": [
+        "那灵的圣别"
+      ],
+      "row_meta": {
+        "ref": "贴后二13"
+      }
+    },
+    {
+      "ref": "贴后三16",
+      "terms": [
+        "平安"
+      ],
+      "row_meta": {
+        "ref": "贴后三16"
+      }
+    },
+    {
+      "ref": "贴后三1",
+      "terms": [
+        "主的话"
+      ],
+      "row_meta": {
+        "ref": "贴后三1"
+      }
+    }
+  ],
+  "c2_fix_collision": [
+    {
+      "ref": "贴后三5",
+      "fixed": "帖后三5",
+      "changed": true,
+      "fixed_already_in_chosen": true,
+      "fixed_parses": true
+    },
+    {
+      "ref": "贴后二3",
+      "fixed": "帖后二3",
+      "changed": true,
+      "fixed_already_in_chosen": false,
+      "fixed_parses": true
+    },
+    {
+      "ref": "贴后三17",
+      "fixed": "帖后三17",
+      "changed": true,
+      "fixed_already_in_chosen": true,
+      "fixed_parses": true
+    },
+    {
+      "ref": "贴后二13",
+      "fixed": "帖后二13",
+      "changed": true,
+      "fixed_already_in_chosen": true,
+      "fixed_parses": true
+    },
+    {
+      "ref": "贴后三16",
+      "fixed": "帖后三16",
+      "changed": true,
+      "fixed_already_in_chosen": false,
+      "fixed_parses": true
+    },
+    {
+      "ref": "贴后三1",
+      "fixed": "帖后三1",
+      "changed": true,
+      "fixed_already_in_chosen": false,
+      "fixed_parses": true
+    }
+  ],
+  "c3_locations": [
+    {
+      "label": "节点一般标注.json",
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\1 一般标注\\节点一般标注.json",
+      "exists": true,
+      "n_in_fields": 7,
+      "n_whole_file": 7,
+      "hits": [
+        {
+          "field": "[15].related_scriptures[2].ref",
+          "snip": "贴后三5"
+        },
+        {
+          "field": "[452].related_scriptures[2].ref",
+          "snip": "贴后二3"
+        },
+        {
+          "field": "[831].related_scriptures[4].ref",
+          "snip": "贴后三17"
+        },
+        {
+          "field": "[1211].related_scriptures[0].ref",
+          "snip": "贴后二13"
+        },
+        {
+          "field": "[1262].related_scriptures[4].ref",
+          "snip": "贴后三16"
+        },
+        {
+          "field": "[1427].related_scriptures[1].ref",
+          "snip": "贴后三5"
+        },
+        {
+          "field": "[2296].related_scriptures[3].ref",
+          "snip": "贴后三1"
+        }
+      ],
+      "fields": [
+        "name",
+        "scripture",
+        "ref",
+        "text",
+        "content"
+      ],
+      "context_samples": [
+        "被召的人。\"\n      },\n      {\n        \"ref\": \"贴后三5",
+        "死亡之路。\"\n      },\n      {\n        \"ref\": \"贴后二3",
+        "显出来了。\"\n      },\n      {\n        \"ref\": \"贴后三17",
+        "_scriptures\": [\n      {\n        \"ref\": \"贴后二13",
+        "生命平安。\"\n      },\n      {\n        \"ref\": \"贴后三16"
+      ]
+    },
+    {
+      "label": "truth_dictionary_3a3b.json",
+      "path": "G:\\copypan\\qa4\\data\\graph_annotations\\truth_dictionary_3a3b.json",
+      "exists": true,
+      "n_in_fields": 1,
+      "n_whole_file": 1,
+      "hits": [
+        {
+          "field": "[695].content_3a",
+          "snip": "读经：罗八30，创十一28，十二1，出二23~25，三7、9"
+        }
+      ],
+      "fields": [
+        "title",
+        "content_3a",
+        "content_3b"
+      ]
+    },
+    {
+      "label": "back_qa/bible_data",
+      "n": 0,
+      "files": []
+    },
+    {
+      "label": "主干枝映射",
+      "path": "G:\\copypan\\docs\\panai4_graph\\主恢复真理词典_词条主干枝子映射 (1).json",
+      "exists": true,
+      "n_in_fields": 0,
+      "n_whole_file": 0,
+      "hits": [],
+      "fields": [
+        "name",
+        "trunk",
+        "branch_directly",
+        "branch_indirectly"
+      ]
+    },
+    {
+      "label": "qa4_bible chunks_bible.json",
+      "path": "G:\\PanAI4.0专用\\索引数据\\panai4_bible\\02_清洗JSON\\chunks_bible.json",
+      "n": 0,
+      "hits": []
+    },
+    {
+      "label": "map_note jsonl",
+      "path": "G:\\PanAI4.0专用\\12490原文JSONL\\kg-rag_map_note.jsonl",
+      "n": 0,
+      "hits": []
+    },
+    {
+      "label": "docs/**/*.md",
+      "n": 1,
+      "hits": [
+        {
+          "path": "G:\\copypan\\docs\\panai4_es\\archive\\docx_checks.md",
+          "line": 306,
+          "snip": "- **经节简称**：只在 B 批的【带经文的纲目】里出现。"
+        }
+      ]
+    },
+    {
+      "label": "import_annotation_scripture_nodes_state.json",
+      "n": 26,
+      "path": "G:\\copypan\\logs\\import_annotation_scripture_nodes_state.json"
+    }
+  ],
+  "c4_v21_book_map": {
+    "帖前_keys": [
+      "帖前",
+      "帖撒罗尼迦前书"
+    ],
+    "帖后_keys": [
+      "帖后",
+      "帖撒罗尼迦后书"
+    ],
+    "keys_containing_贴": [],
+    "keys_containing_帖": [
+      "以斯帖记",
+      "帖前",
+      "帖后",
+      "帖撒罗尼迦前书",
+      "帖撒罗尼迦后书"
+    ]
+  },
+  "c4_parser30": {
+    "from_parser_source_lines": [],
+    "from_bible_data": {
+      "52": {
+        "name_gb": "帖撒罗尼迦前书",
+        "name_big5": "帖撒羅尼迦前書",
+        "abbr_gb": "帖前",
+        "abbr_big5": "帖前",
+        "name_en": "1 Thessalonians",
+        "abbr_en": "1 Thes."
+      },
+      "53": {
+        "name_gb": "帖撒罗尼迦后书",
+        "name_big5": "帖撒羅尼迦後書",
+        "abbr_gb": "帖后",
+        "abbr_big5": "帖後",
+        "name_en": "2 Thessalonians",
+        "abbr_en": "2 Thes."
+      }
+    }
+  },
+  "c5_change_list": [
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后三5",
+      "to": "帖后三5",
+      "linked_terms": [
+        "爱神",
+        "神的爱"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": true
+    },
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后二3",
+      "to": "帖后二3",
+      "linked_terms": [
+        "方法"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": false
+    },
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后三17",
+      "to": "帖后三17",
+      "linked_terms": [
+        "记号"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": true
+    },
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后二13",
+      "to": "帖后二13",
+      "linked_terms": [
+        "那灵的圣别"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": true
+    },
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后三16",
+      "to": "帖后三16",
+      "linked_terms": [
+        "平安"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": false
+    },
+    {
+      "node_hint": "Scripture 节点（以 ref/name=该经节字符串标识）",
+      "property_hint": "name / ref 字符串属性（以 state/导入脚本实际字段为准）",
+      "from": "贴后三1",
+      "to": "帖后三1",
+      "linked_terms": [
+        "主的话"
+      ],
+      "relation_hint": "Truth_Point -[:引用/RELATED]-> Scripture（以图谱实际关系类型为准；本任务不连库）",
+      "collision_if_rename": false
+    }
+  ]
+}

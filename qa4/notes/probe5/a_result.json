@@ -1,0 +1,196 @@
+{
+  "script": "qa4/notes/probe5/a_devine.py",
+  "near_count_files": [
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【devine_argument】越进入高峰，真理越需要辨明得准确.json",
+      "n": 189,
+      "keys": [
+        "content_1",
+        "name"
+      ]
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展.json",
+      "n": 69,
+      "keys": [
+        "content_1",
+        "content_2",
+        "content_3",
+        "content_4",
+        "content_5",
+        "content_6",
+        "name",
+        "series",
+        "stages"
+      ]
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展（新）.json",
+      "n": 70,
+      "keys": [
+        "content",
+        "name",
+        "title"
+      ]
+    }
+  ],
+  "a": {
+    "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【devine_argument】越进入高峰，真理越需要辨明得准确.json",
+    "sha256": "3539cc9f1c035d958f9dc1313d64f0085b61151e4687ccea98971a99f710f4d6",
+    "n": 189,
+    "top_keys": [
+      "content_1",
+      "name"
+    ],
+    "stats": {
+      "n_entries": 189,
+      "n_unique_names": 189,
+      "dup_names": [],
+      "content1_len_dist": {
+        "1": 189
+      },
+      "total_items": 189,
+      "T1_first_titles": 72,
+      "T2_all_titles": 72,
+      "T3_norm_titles": 72,
+      "C1_title_outline": 72,
+      "C2_outline_ws": 72,
+      "non_first_only_titles": [],
+      "n_titles_multi_outline": 0,
+      "title_multi_samples": [],
+      "n_outlines_multi_title": 0,
+      "outline_multi_samples": [],
+      "first_title_list_sample": [
+        "两面极荣耀的真理—我们应当作与神要作",
+        "丧失魂生命",
+        "人人申言",
+        "人的三部分",
+        "什么是主的恢复",
+        "信徒的被提",
+        "十字架的道",
+        "召会作基督的身体",
+        "召会的两面",
+        "召会的合一"
+      ]
+    },
+    "csv": "G:\\copypan\\qa4\\notes\\devine_argument_items_all.csv",
+    "csv_rows": 189
+  },
+  "lex2380": {
+    "class4_n": 2372,
+    "class4_unique": 2372,
+    "set_2380_size": 2380,
+    "set_with_variants_size": 2381,
+    "lude_in_class4": [
+      "路得马丁"
+    ],
+    "has_路德马丁": false,
+    "has_路得马丁": true,
+    "paren_pairs": [
+      [
+        "产生男孩子",
+        "产生得胜者"
+      ],
+      [
+        "晨晨复兴",
+        "晨兴"
+      ],
+      [
+        "妇人",
+        "女人"
+      ],
+      [
+        "挂虑",
+        "忧虑"
+      ],
+      [
+        "火湖",
+        "地狱"
+      ],
+      [
+        "扩大",
+        "显大"
+      ],
+      [
+        "扩增",
+        "扩展"
+      ],
+      [
+        "那灵的浇灌",
+        "圣灵的浇灌"
+      ]
+    ]
+  },
+  "name_vs_2380": {
+    "n_in": 189,
+    "n_out": 0,
+    "out_names": [],
+    "dup_names": [],
+    "lude_spelling_hits": []
+  },
+  "diff_189_187": {
+    "from_md": "import_devine_argument.md discarded=['产生得胜者', '圣灵的浇灌']",
+    "from_state": [
+      "产生得胜者",
+      "圣灵的浇灌"
+    ],
+    "discarded": [
+      "产生得胜者",
+      "圣灵的浇灌"
+    ],
+    "from_md_snip": [
+      "4. **括号词条**：['产生男孩子/产生得胜者: 完全相同 → 丢弃括号内', '那灵的浇灌/圣灵的浇灌: 完全相同 → 丢弃括号内']；丢弃=['产生得胜者', '圣灵的浇灌']；需决定=0。",
+      "5. **写入**：写入=187；丢弃=2；失败=0。",
+      "- 产生男孩子 / 产生得胜者: outer_in=True inner_in=True 比较=完全相同 动作=丢弃括号内",
+      "- 那灵的浇灌 / 圣灵的浇灌: outer_in=True inner_in=True 比较=完全相同 动作=丢弃括号内",
+      "### 拟写入 187；丢弃 ['产生得胜者', '圣灵的浇灌']；长度 {'min': 1334, 'median': 2221, 'max': 6449, 'total_chars': 442547, 'over_32000': 0}",
+      "\"discarded\": [",
+      "\"产生得胜者\",",
+      "\"圣灵的浇灌\""
+    ]
+  },
+  "b": {
+    "path": "G:\\copypan\\qa4\\data\\graph_annotations\\organic_advance.json",
+    "sha256": "2ab34918389a6640bd6d96e1ed9e6f4a19d80e73d3afa574b2dea28dd6cec565",
+    "n": 70,
+    "top_keys": [
+      "content",
+      "name",
+      "title"
+    ],
+    "n_unique_names": 69,
+    "dup_names": [
+      "圣经"
+    ],
+    "n_in_2380": 70,
+    "missing": []
+  },
+  "desk_organic": [
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展.json",
+      "sha256": "63a2320504c535e5b54d6ac8b33e0f76cafdfa5d330edfe9ccbbaa15abfb8178",
+      "n": 69,
+      "keys": [
+        "content_1",
+        "content_2",
+        "content_3",
+        "content_4",
+        "content_5",
+        "content_6",
+        "name",
+        "series",
+        "stages"
+      ]
+    },
+    {
+      "path": "C:\\Users\\28121\\Desktop\\可导入资料\\2 特殊标注\\【organic_advance】生机关联的进展（新）.json",
+      "sha256": "2ab34918389a6640bd6d96e1ed9e6f4a19d80e73d3afa574b2dea28dd6cec565",
+      "n": 70,
+      "keys": [
+        "content",
+        "name",
+        "title"
+      ]
+    }
+  ]
+}
