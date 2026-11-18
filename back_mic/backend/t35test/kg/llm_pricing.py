@@ -46,7 +46,13 @@ def price_per_million_usd(billing_model: str) -> tuple[float, float, str]:
     """
     m = (billing_model or "").strip().lower()
     if m == "claude-opus-5-5":
-        return 4.0, 20.0, "Claude Opus 5.5 标准价 $4/$20 per MTok"
+        return 4.0, 20.0, "Claude Opus 5.5 标准价 $4/$20 per MTok（思考过程算在输出里）"
+    if m == "claude-sonnet-5-5":
+        return 2.0, 10.0, "Claude Sonnet 5.5 标准价 $2/$10 per MTok"
+    if m.startswith("claude-haiku-4-5"):
+        return 1.0, 5.0, "Claude Haiku 4.5 标准价 $1/$5 per MTok"
+    if m.startswith("claude-haiku-5-5"):
+        return 0.10, 0.50, "Claude Haiku 5.5 标准价 $0.10/$0.50 per MTok"
     if m == "claude-opus-4-7":
         return 5.0, 25.0, "Claude Opus 4.7 标准价 $5/$25 per MTok"
     if m == "claude-opus-4-6":

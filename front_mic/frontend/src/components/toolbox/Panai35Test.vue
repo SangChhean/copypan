@@ -48,7 +48,38 @@ const aiMeta = reactive({
   totalCostUsd: null,
   cached: false,
   cacheKey: null,
+  outlineCost: null, // 【4.0】本篇从头做到尾的完整费用（/api/t35test/usage/session/{id}）
 });
+
+// 【4.0】本篇编号：一篇纲目从开始做（负担说明/推荐重点/生成纲目）都带同一个编号，后端按它加总完整费用。
+// 换了主题就算新的一篇；从历史记录载入的标为「载入」（之前步骤的费用不在这一篇里）。
+const outlineSession = reactive({ id: "", topic: "", loaded: false });
+const costDetailOpen = ref(false);
+function newOutlineSession(topic, loaded = false) {
+  outlineSession.id = crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  outlineSession.topic = (topic || "").trim();
+  outlineSession.loaded = loaded;
+}
+function outlineHeaders() {
+  const topic = aiForm.outlineTopic.trim();
+  if (!outlineSession.id || outlineSession.topic !== topic) newOutlineSession(topic, false);
+  return {
+    "X-T35-Outline-Session": outlineSession.id,
+    "X-T35-Outline-Loaded": outlineSession.loaded ? "1" : "0",
+    "X-T35-Device": getDeviceId(),
+  };
+}
+async function fetchOutlineCost() {
+  if (!outlineSession.id) return;
+  try {
+    const res = await axios.get(`/api/t35test/usage/session/${outlineSession.id}`);
+    aiMeta.outlineCost = res.data || null;
+  } catch (e) {
+    console.warn("[费用] 读取本篇完整费用失败", e);
+    aiMeta.outlineCost = null;
+  }
+}
+const fmtUsd = (v, n = 3) => `$${Number(v || 0).toFixed(n)}`;
 
 // 刷格式并下载（DOCX/PDF）
 const apiBase = (import.meta.env && import.meta.env.VITE_API_BASE) || "";
@@ -165,7 +196,7 @@ async function onGenerateBurden() {
       query: aiForm.outlineTopic.trim(),
       outline_nature: aiForm.specialNeeds.trim(),
       reference_excerpt: referenceExcerpt.value.trim(),
-    });
+    }, { headers: outlineHeaders() });
     const d = res.data || {};
     console.debug("[KG-RAG BURDEN DEBUG] generate_burden response:", d);
     // Prompt 已经把「摘录」统一改成「负担的重点」了，这里留一道保险（万一模型偶尔还是吐出旧词）
@@ -494,7 +525,7 @@ async function extractConcepts() {
       query: q,
       outline_nature: aiForm.specialNeeds.trim(),
       burden_description: aiForm.burdenDescription.trim(),
-    });
+    }, { headers: outlineHeaders() });
     const d = res.data || {};
     conceptCandidates.value = d;
     stepThinkingText.value = d.thinking_text != null ? String(d.thinking_text).trim() : "";
@@ -1172,6 +1203,7 @@ async function applyEvalPrefill() {
   aiForm.outlineTopic = data.query || "";
   aiForm.specialNeeds = data.outline_nature === "应用实行" ? "实行应用" : (data.outline_nature || "");
   aiForm.burdenDescription = data.burden_description || "";
+  newOutlineSession(data.query, true); // 带着上一篇的重点重新生成：之前步骤的费用不在这一篇里
   burdenPhaseReady.value = true;
 
   resetConceptState();
@@ -1248,6 +1280,7 @@ async function loadHistoryRecord(item) {
   aiForm.outlineTopic = item.query || "";
   aiForm.specialNeeds = item.outline_nature === "应用实行" ? "实行应用" : (item.outline_nature || "");
   aiForm.burdenDescription = item.burden_description || "";
+  newOutlineSession(item.query, true); // 载入记录：之前步骤的费用不在这一篇里
   currentRecordId.value = item.id;
   historyDrawerOpen.value = false;
   await nextTick();
@@ -1859,7 +1892,8 @@ const onAISearch = async () => {
   showAISources.value = false;
   showAIAnswer.value = false;
   aiLoadingText.value = "✨ AI 纲目生成中…";
-  Object.assign(aiMeta, { keyVerses: [], revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null });
+  Object.assign(aiMeta, { keyVerses: [], revelation: [], inner: [], experience: [], practice: [], skeleton: null, mainSources: [], totalElapsedMs: null, totalCostUsd: null, cached: false, cacheKey: null, outlineCost: null });
+  costDetailOpen.value = false;
 
   try {
     const qParams = buildKgRagParams();
@@ -1888,7 +1922,7 @@ const onAISearch = async () => {
     const res = await axios.post(
       "/api/t35test/query",
       { query: question, params: qParams, mode: PIPELINE_MODE },
-      { timeout: 300000 }
+      { timeout: 300000, headers: outlineHeaders() }
     );
     const data = res.data;
     if (!data.answer) {
@@ -1913,6 +1947,7 @@ const onAISearch = async () => {
       cacheKey: parsed.cacheKey,
     });
     syncHistoryKeyVerses([...keyVerses]); // 先保存记录、后输入经节时，记录里也补上这次用的经节
+    fetchOutlineCost(); // 【4.0】本篇完整费用
 
     showInfo.value = 5;
     showAISources.value = true;
@@ -2355,8 +2390,25 @@ function goBackToTools() {
     <div class="kg-info-bar">
       <div class="kg-info-stats">
         <span v-if="aiMeta.totalElapsedMs != null">⏱ 耗时 <strong>{{ (aiMeta.totalElapsedMs / 1000).toFixed(1) }}s</strong></span>
-        <span v-if="aiMeta.totalCostUsd != null" class="kg-info-sep">💰 <strong>${{ Number(aiMeta.totalCostUsd).toFixed(2) }}</strong></span>
-        <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果</a-tag>
+        <span v-if="aiMeta.outlineCost" class="kg-info-sep">
+          💰 本篇完整费用 <strong>{{ fmtUsd(aiMeta.outlineCost.total_cost_usd, 2) }}</strong>
+          <a class="kg-cost-toggle" @click="costDetailOpen = !costDetailOpen">{{ costDetailOpen ? "收起明细" : "明细" }}</a>
+        </span>
+        <span v-else-if="aiMeta.totalCostUsd != null && !aiMeta.cached" class="kg-info-sep">💰 本次生成 <strong>{{ fmtUsd(aiMeta.totalCostUsd, 2) }}</strong></span>
+        <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果（本次生成未花费）</a-tag>
+      </div>
+      <div v-if="aiMeta.outlineCost && costDetailOpen" class="kg-cost-detail">
+        <div v-if="aiMeta.outlineCost.loaded" class="kg-cost-note">这一篇是从历史记录载入的：只算载入后实际花的钱，载入前的步骤不在里面。</div>
+        <div>
+          <template v-for="(k, i) in ['burden', 'concepts', 'outline']" :key="k">
+            <span v-if="i" class="kg-cost-dot"> · </span>
+            {{ aiMeta.outlineCost.kinds[k].label }} {{ aiMeta.outlineCost.kinds[k].count }} 次 {{ fmtUsd(aiMeta.outlineCost.kinds[k].cost_usd) }}
+          </template>
+        </div>
+        <div class="kg-cost-steps">
+          <span v-for="s in aiMeta.outlineCost.steps" :key="s.step" class="kg-cost-step">{{ s.label }}<template v-if="s.count > 1"> ×{{ s.count }}</template> {{ fmtUsd(s.cost_usd) }}</span>
+        </div>
+        <div class="kg-cost-note">按 Opus 5.5 标准价（输入 $4、输出 $20 / 百万 token，思考过程算输出）；思考过程翻译用 Haiku 4.5（$1/$5）。重做的次数都算在内。</div>
       </div>
       <div class="kg-info-row">📖 关键圣经节：{{ (aiMeta.keyVerses || []).length ? aiMeta.keyVerses.join("、") : "无" }}</div>
       <div class="kg-info-row">📌 真理启示：{{ aiMeta.revelation.length ? aiMeta.revelation.join("、") : "无" }}</div>
@@ -3831,6 +3883,30 @@ function goBackToTools() {
 }
 .kg-info-sep {
   margin-left: 16px;
+}
+.kg-cost-toggle {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #1677ff;
+  cursor: pointer;
+}
+.kg-cost-detail {
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #444;
+  background: #f7f8fa;
+  border-radius: 6px;
+  line-height: 1.7;
+}
+.kg-cost-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.kg-cost-note {
+  color: #888;
+  font-size: 12px;
 }
 .kg-info-row {
   font-size: 14px;

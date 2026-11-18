@@ -1134,7 +1134,9 @@ def _claude_thinking_text(msg: Any) -> str:
 STEP1_THINKING_TRANSLATE_MODEL = "claude-haiku-4-5-20251001"  # 便宜模型，够用
 
 
-async def _translate_thinking_to_chinese(text: str, glossary: str = "") -> str:
+async def _translate_thinking_to_chinese(
+    text: str, glossary: str = "", llm_calls: list[dict[str, Any]] | None = None
+) -> str:
     """【新测试台】Step1 的 thinking 摘要是模型自己选的英文，翻成中文方便对照（英文原文仍保留，两者都存）。
     glossary：本次 Step1 用的概念列表 + 最内在词库，专有名词翻译时优先对照这份表，
     避免译成"上帝""教会"这类不是职事惯用写法的词。翻译失败不影响主流程，返回空字符串。"""
@@ -1159,6 +1161,10 @@ async def _translate_thinking_to_chinese(text: str, glossary: str = "") -> str:
             temperature=0,
             max_tokens=2000,
         )
+        if llm_calls is not None:  # 【4.0】翻译也要计费（以前没算进去）
+            register_llm_usage(
+                llm_calls, step="step1_translate", request_model=STEP1_THINKING_TRANSLATE_MODEL, usage=_usage
+            )
         return (zh or "").strip()
     except Exception as e:
         logger.warning("[KG-RAG DEBUG] Step1 thinking 翻译失败（不影响主流程）: %s", e)
@@ -1945,6 +1951,7 @@ class KgRagService:
                 step1_thinking_text_zh = await _translate_thinking_to_chinese(
                     step1_thinking_text,
                     glossary=f"{concept_list_text}、{inner_list_text}",
+                    llm_calls=llm_calls,
                 )
                 s1: dict[str, Any] = {
                     "concepts": concepts,
