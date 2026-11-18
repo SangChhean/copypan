@@ -725,6 +725,7 @@ function writeEvalToHistory() {
       experience: getConceptListForEval("experience"),
       practice: getConceptListForEval("practice"),
       ...evalFields(),
+      cost_session: outlineHeaders()["X-T35-Outline-Session"], // 【4.0】本篇编号
     };
     currentRecordId.value = record.id;
     historyList.value = [record, ...historyList.value];
@@ -778,6 +779,7 @@ async function saveCurrentToHistory() {
     answer: aiResult.value?.answer ?? "",
     skeleton: aiMeta.skeleton ?? [],
     eval: evalResult.value ? buildEvalHistoryPayload(evalResult.value) : null,
+    cost_session: outlineHeaders()["X-T35-Outline-Session"], // 【4.0】本篇编号：载入后接着用，前面的花费也算进完整费用
   };
   currentRecordId.value = record.id;
   historyList.value = [record, ...historyList.value];
@@ -1280,7 +1282,14 @@ async function loadHistoryRecord(item) {
   aiForm.outlineTopic = item.query || "";
   aiForm.specialNeeds = item.outline_nature === "应用实行" ? "实行应用" : (item.outline_nature || "");
   aiForm.burdenDescription = item.burden_description || "";
-  newOutlineSession(item.query, true); // 载入记录：之前步骤的费用不在这一篇里
+  if (item.cost_session) {
+    // 【4.0】记录里存了本篇编号：接着用，保存前花的（负担说明、推荐重点等）也算进这一篇的完整费用
+    outlineSession.id = item.cost_session;
+    outlineSession.topic = (item.query || "").trim();
+    outlineSession.loaded = false;
+  } else {
+    newOutlineSession(item.query, true); // 旧记录（没存本篇编号）：之前步骤的费用接不上，只算载入后的
+  }
   currentRecordId.value = item.id;
   historyDrawerOpen.value = false;
   await nextTick();
@@ -2393,7 +2402,7 @@ function goBackToTools() {
         <a-tag v-if="aiMeta.cached" color="green" style="margin-left: 8px;">缓存结果（本次生成未花费）</a-tag>
       </div>
       <div v-if="aiMeta.outlineCost && costDetailOpen" class="kg-cost-detail">
-        <div v-if="aiMeta.outlineCost.loaded" class="kg-cost-note">这一篇是从历史记录载入的：只算载入后实际花的钱，载入前的步骤不在里面。</div>
+        <div v-if="aiMeta.outlineCost.loaded" class="kg-cost-note">这条记录是在「载入后接着算费用」上线前存的，保存前那些步骤的费用接不上：这里只算载入后实际花的钱。</div>
         <div>
           <template v-for="(k, i) in ['burden', 'concepts', 'outline']" :key="k">
             <span v-if="i" class="kg-cost-dot"> · </span>
