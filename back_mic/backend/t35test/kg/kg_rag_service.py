@@ -1948,11 +1948,9 @@ class KgRagService:
             step1_elapsed_ms = (asyncio.get_event_loop().time() - step1_start) * 1000
             if "step1" not in result["steps"]:
                 step1_thinking_text = (u1 or {}).get("thinking_text", "")
-                step1_thinking_text_zh = await _translate_thinking_to_chinese(
-                    step1_thinking_text,
-                    glossary=f"{concept_list_text}、{inner_list_text}",
-                    llm_calls=llm_calls,
-                )
+                # 【4.0】2026-11-18 按用户要求去掉思考过程翻译（省一次 Haiku 调用），页面只显示英文原文；
+                # thinking_text_zh 字段留着（空字符串），旧前端/历史记录不受影响。
+                step1_thinking_text_zh = ""
                 s1: dict[str, Any] = {
                     "concepts": concepts,
                     "revelation": revelation,
