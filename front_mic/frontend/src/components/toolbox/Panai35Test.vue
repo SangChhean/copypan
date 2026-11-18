@@ -2150,12 +2150,7 @@ function goBackToTools() {
                   <span>{{ stepThinkingOpen ? "▼" : "▶" }} 查看模型思考过程</span>
                 </div>
                 <div v-if="stepThinkingOpen" class="ai-burden-reasoning-body">
-                  <div class="ai-concept-label" style="margin-bottom: 4px;">英文原文</div>
                   <div>{{ indentParagraphs(stepThinkingText) }}</div>
-                  <template v-if="stepThinkingTextZh">
-                    <div class="ai-concept-label" style="margin: 10px 0 4px;">中文翻译</div>
-                    <div>{{ indentParagraphs(stepThinkingTextZh) }}</div>
-                  </template>
                 </div>
               </div>
               <div class="ai-concept-section">
@@ -2408,7 +2403,7 @@ function goBackToTools() {
         <div class="kg-cost-steps">
           <span v-for="s in aiMeta.outlineCost.steps" :key="s.step" class="kg-cost-step">{{ s.label }}<template v-if="s.count > 1"> ×{{ s.count }}</template> {{ fmtUsd(s.cost_usd) }}</span>
         </div>
-        <div class="kg-cost-note">按 Opus 5.5 标准价（输入 $4、输出 $20 / 百万 token，思考过程算输出）；思考过程翻译用 Haiku 4.5（$1/$5）。重做的次数都算在内。</div>
+        <div class="kg-cost-note">按 Opus 5.5 标准价（输入 $4、输出 $20 / 百万 token，思考过程算输出）。重做的次数都算在内。</div>
       </div>
       <div class="kg-info-row">📖 关键圣经节：{{ (aiMeta.keyVerses || []).length ? aiMeta.keyVerses.join("、") : "无" }}</div>
       <div class="kg-info-row">📌 真理启示：{{ aiMeta.revelation.length ? aiMeta.revelation.join("、") : "无" }}</div>
