@@ -1,0 +1,19 @@
+{
+  "_comment": "模型计价（美元 / 百万 token）。数值待 Srey 核实后填写；status=待核实 时 --live 拒绝启动。",
+  "status": "已核实",
+  "unit": "USD_per_million_tokens",
+  "models": {
+    "claude-haiku-5-5": {
+      "input": 0.5,
+      "output": 2.5,
+      "cache_write_5m": 0.625,
+      "cache_read": 0.05
+    },
+    "claude-sonnet-5-5": {
+      "input": 2,
+      "output": 10,
+      "cache_write_5m": 2.5,
+      "cache_read": 0.1
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "_comment": "第 5 步各层个数上限，顺序：真理启示 / 内在素质 / 生命经历 / 实行应用；total 为合计。第 1 层另计（layer1_*）。",
+  "layer_order": ["revelation", "intrinsic", "experience", "practice"],
+  "layer_names": {"revelation": "真理启示", "intrinsic": "内在素质", "experience": "生命经历", "practice": "实行应用"},
+  "caps": {
+    "定义": {"revelation": 4, "intrinsic": 3, "experience": 2, "practice": 2, "total": 8},
+    "比较": {"revelation": 4, "intrinsic": 2, "experience": 2, "practice": 1, "total": 8, "_note": "两个对象各自至少 1 个词：截断永不删某对象仅剩词；未覆盖则 warning=compare_object_uncovered 且把关最多部分够【暂定】"},
+    "个人经历": {"revelation": 2, "intrinsic": 2, "experience": 4, "practice": 3, "total": 8},
+    "团体实行": {"revelation": 3, "intrinsic": 1, "experience": 2, "practice": 4, "total": 8},
+    "召会生活": {"revelation": 4, "intrinsic": 1, "experience": 3, "practice": 4, "total": 8},
+    "汇集": {"revelation": 5, "intrinsic": 1, "experience": 2, "practice": 2, "total": 8},
+    "发展": {"revelation": 4, "intrinsic": 2, "experience": 2, "practice": 1, "total": 8},
+    "默认": {"revelation": 3, "intrinsic": 2, "experience": 2, "practice": 2, "total": 8}
+  },
+  "layer1_only_types": ["核实说法", "反找经文"],
+  "skip_step45_types": ["生命读经", "节期纲目", "注解", "诗歌", "经文"],
+  "complex_total_cap": 10,
+  "complex_min_per_subquestion": 1,
+  "layer1_per_subquestion": 3,
+  "layer1_per_subquestion_compare": 4,
+  "layer1_whole_question": 8,
+  "truncate_rule": "先裁上限最小的层里排最后的词；上限相同时取顺序靠后的层【暂定】"
+}

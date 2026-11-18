@@ -1,0 +1,16 @@
+{
+  "_comment": "经节规范化配置。psalm_verse0_as_title：诗篇第 0 节（标题节）按第 1 节处理并标 flags=含标题【暂定】。",
+  "psalm_verse0_as_title": true,
+  "psalm_book_std": "诗",
+  "title_flag": "含标题",
+  "reading_line_prefixes": ["读经：", "读经:"],
+  "miss_heuristic": {
+    "_comment": "照搬 qa4/notes/probe6/b_verse.py 的 heuristic_miss：按 ，,、；; 切段，统计含章节数字串的段数 seg_n；seg_n>=min_segments 且 seg_n>=n_refs+min_gap 计疑似遗漏",
+    "split_chars": "，,、；;",
+    "min_segments": 3,
+    "min_gap": 2
+  },
+  "expand_max_default": 200,
+  "max_chapters": 10,
+  "max_verses": 200
+}

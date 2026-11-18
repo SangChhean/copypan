@@ -1,0 +1,22 @@
+{
+  "_comment_scripture": "Scripture 写 4848（图谱修订包应用后）；修订包应用前为 4851",
+  "es_total": 414082,
+  "es": {
+    "outline_12490": 55841,
+    "outline_feasts": 11110,
+    "bible": 3691,
+    "text_life": 39463,
+    "text_cwwl": 178107,
+    "text_cwwn": 32032,
+    "text_others": 15481,
+    "map_note": 16052,
+    "pano_catalog": 53151,
+    "hymns": 9154
+  },
+  "neo4j": {
+    "Truth_Point": 2380,
+    "Branch": 91,
+    "Trunk": 12,
+    "Scripture": 4848
+  }
+}

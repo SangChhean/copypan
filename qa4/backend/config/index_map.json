@@ -1,0 +1,15 @@
+{
+  "_comment": "逻辑名 → 本机/服务器 qa4-es 实际索引名与向量字段。源数据包为 panai4_*，导入目标前缀 qa4_（见 qa4/data_prep/es_import.py）。",
+  "indices": {
+    "outline_12490": {"index": "qa4_outline_12490", "vector_field": "embedding"},
+    "outline_feasts": {"index": "qa4_outline_feasts", "vector_field": "embedding"},
+    "bible": {"index": "qa4_bible", "vector_field": "embedding"},
+    "hymns": {"index": "qa4_hymns", "vector_field": "embedding"},
+    "text_life": {"index": "qa4_text_life", "vector_field": "text_vector"},
+    "text_cwwl": {"index": "qa4_text_cwwl", "vector_field": "text_vector"},
+    "text_cwwn": {"index": "qa4_text_cwwn", "vector_field": "text_vector"},
+    "text_others": {"index": "qa4_text_others", "vector_field": "text_vector"},
+    "map_note": {"index": "qa4_map_note", "vector_field": "text_vector"},
+    "pano_catalog": {"index": "qa4_pano_catalog", "vector_field": null}
+  }
+}

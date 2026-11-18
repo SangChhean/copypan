@@ -1,0 +1,26 @@
+# qa4 专用 Redis（与其它 compose 项目隔离）
+# 项目名 / 容器名：qa4-redis
+# 本机默认无密码；可选密码见 README（勿把口令写进本文件）。
+name: qa4-redis
+
+services:
+  qa4-redis:
+    image: redis:7
+    container_name: qa4-redis
+    ports:
+      - "127.0.0.1:${QA4_REDIS_HOST_PORT:-6381}:6379"
+    volumes:
+      - qa4_redis_data:/data
+    command:
+      - redis-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
+    restart: unless-stopped
+
+volumes:
+  qa4_redis_data:
+    name: qa4_redis_data

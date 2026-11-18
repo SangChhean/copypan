@@ -1,0 +1,28 @@
+{
+  "_comment": "阶段 1b 模型策略。haiku 默认 disabled；sonnet 默认 omit（不传 thinking）。",
+  "roles": {
+    "haiku": {
+      "thinking": {
+        "mode": "disabled"
+      },
+      "allow_default_thinking": false
+    },
+    "sonnet": {
+      "thinking": {
+        "mode": "omit"
+      },
+      "allow_default_thinking": false
+    }
+  },
+  "steps": {
+    "default": { "max_tokens": 2048 },
+    "json": { "max_tokens": 2000 },
+    "smoke_json": { "max_tokens": 512 },
+    "smoke_stream": { "max_tokens": 512 },
+    "smoke_truncate": { "max_tokens": 5 }
+  },
+  "cache": {
+    "default_ttl": "5m"
+  },
+  "json_retry": 1
+}

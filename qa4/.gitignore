@@ -11,6 +11,8 @@
 
 # 本地数据目录（仅 qa4/data，不误伤 backend/data 等）
 /data/
+# 经文原文（约 100MB；manifest 同在 data/ 下，亦不进 git）
+/data/bible_data/
 
 # 图谱大 JSON（外置）
 graph_annotations/*.json

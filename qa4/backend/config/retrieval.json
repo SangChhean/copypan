@@ -1,0 +1,273 @@
+{
+  "_comment": "检索字段对照与参数。字段依据：qa4/data_prep/es_import.py 的 mapping（verified=true 表示有建索引脚本依据，仍待 verify_stage2_live.py 在线核对）；verified=false 为推断。",
+  "basis": [
+    "qa4/data_prep/es_import.py OUTLINE_MAPPING / BIBLE_MAPPING / HYMNS_MAPPING / inherit_mapping / PANO_MAPPING",
+    "qa4/notes/qa4_backend_build_probe_2.md A.1、B.2、D.3",
+    "qa4/backend/config/index_map.json",
+    "本机数据包 G:/PanAI4.0专用/qa4_import_src/es/data 抽样（chunk_id、source_zh、series、chunk_index 形态）"
+  ],
+  "indices": {
+    "outline_12490": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "embedding",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "year": {"name": "year", "verified": true},
+        "year_end": {"name": "year_end", "verified": true},
+        "order": {"name": "chunk_index", "verified": true},
+        "total": {"name": "chunk_total", "verified": true}
+      },
+      "order_base": 1,
+      "filters": {
+        "book_title": {"name": "book_title", "verified": true, "_note": "keyword 主字段"},
+        "author": {"name": "author", "verified": true}
+      }
+    },
+    "outline_feasts": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "embedding",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "year": {"name": "year", "verified": true},
+        "month": {"name": "month", "verified": true},
+        "conference": {"name": "conference", "verified": true},
+        "order": {"name": "chunk_index", "verified": true},
+        "total": {"name": "chunk_total", "verified": true}
+      },
+      "order_base": 1,
+      "filters": {
+        "book_title": {"name": "book_title", "verified": true},
+        "year": {"name": "year", "verified": true}
+      },
+      "feast_locate": {
+        "_comment": "节期定位：lookups/feasts.json 的 (year, month_code) → name；name 作为 book_title 精确取【暂定】",
+        "book_title_equals_feast_name": {"verified": false}
+      }
+    },
+    "bible": {
+      "searchable": true,
+      "default_scope": false,
+      "text_field": "text",
+      "vector_field": "embedding",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "book_no": {"name": "book_no", "verified": true},
+        "verse_range": {"name": "verse_range", "verified": true},
+        "chunk_type": {"name": "chunk_type", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "order": {"name": "chunk_index", "verified": true},
+        "total": {"name": "chunk_total", "verified": true}
+      },
+      "filters": {
+        "book_title": {"name": "book_title", "verified": true},
+        "chunk_type": {"name": "chunk_type", "verified": true}
+      }
+    },
+    "hymns": {
+      "searchable": true,
+      "default_scope": false,
+      "text_field": "text",
+      "vector_field": "embedding",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "series": {"name": "series", "verified": true},
+        "hymn_number": {"name": "hymn_number", "verified": true},
+        "name": {"name": "name", "verified": true},
+        "title": {"name": "title", "verified": true},
+        "unit_type": {"name": "unit_type", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "order": {"name": "chunk_index", "verified": true},
+        "total": {"name": "chunk_total", "verified": true}
+      },
+      "filters": {
+        "series": {"name": "series", "verified": true},
+        "hymn_number": {"name": "hymn_number", "verified": true}
+      },
+      "default_series": "诗歌",
+      "full_chunk_index": 0,
+      "order_base": 0,
+      "full_unit_type": {"value": "full", "verified": false}
+    },
+    "text_life": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "text_vector",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "section_title": {"name": "section_title", "verified": true},
+        "source_zh": {"name": "source_zh", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "order": {
+          "name": "chunk_id",
+          "derive": "trailing_int",
+          "verified": true,
+          "_note": "以 chunk_id 末尾数字排序；断档为源编号特性（kg_rag chunking 跳过 heading/空段、短段合并进 original_ids），不代表缺失。依据：docs/panai4_es/archive/inherit_probe.md；back_mic/.../chunking_full.py Pass1/Pass2；qa4/notes/stage2_patch3_notes.md"
+        }
+      },
+      "filters": {
+        "book_title": {"name": "book_title.keyword", "verified": true},
+        "author": {"name": "author", "verified": true}
+      }
+    },
+    "text_cwwl": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "text_vector",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "section_title": {"name": "section_title", "verified": true},
+        "source_zh": {"name": "source_zh", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "year": {"name": "year", "verified": true},
+        "message_key": {"name": "message_key", "verified": true},
+        "order": {
+          "name": "chunk_id",
+          "derive": "trailing_int",
+          "verified": true,
+          "_note": "同 text_life：末尾数字排序；断档为源编号特性，不代表缺失"
+        }
+      },
+      "filters": {
+        "book_title": {"name": "book_title.keyword", "verified": true},
+        "author": {"name": "author", "verified": true}
+      }
+    },
+    "text_cwwn": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "text_vector",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "section_title": {"name": "section_title", "verified": true},
+        "source_zh": {"name": "source_zh", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "message_key": {"name": "message_key", "verified": true}
+      },
+      "filters": {
+        "book_title": {"name": "book_title.keyword", "verified": true},
+        "author": {"name": "author", "verified": true}
+      }
+    },
+    "text_others": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "text_vector",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "section_title": {"name": "section_title", "verified": true},
+        "source_zh": {"name": "source_zh", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "message_key": {"name": "message_key", "verified": true}
+      },
+      "filters": {
+        "book_title": {"name": "book_title.keyword", "verified": true},
+        "author": {"name": "author", "verified": true}
+      }
+    },
+    "map_note": {
+      "searchable": true,
+      "text_field": "text",
+      "vector_field": "text_vector",
+      "fields": {
+        "id": {"name": "chunk_id", "verified": true},
+        "book_title": {"name": "book_title", "verified": true},
+        "message_title": {"name": "message_title", "verified": true},
+        "message_number": {"name": "message_number", "verified": true},
+        "source_zh": {"name": "source_zh", "verified": true},
+        "author": {"name": "author", "verified": true},
+        "message_key": {"name": "message_key", "verified": true}
+      },
+      "filters": {
+        "book_title": {"name": "book_title.keyword", "verified": true}
+      },
+      "note_key_regex": "注\\s*(\\d+)"
+    },
+    "pano_catalog": {
+      "searchable": false,
+      "text_field": "text",
+      "vector_field": null,
+      "fields": {
+        "id": {"name": "node_id", "verified": true},
+        "name": {"name": "name", "verified": true}
+      },
+      "filters": {}
+    }
+  },
+  "params": {
+    "bm25_size": 30,
+    "knn_k": 30,
+    "knn_num_candidates": 200,
+    "rrf_k": 60,
+    "rerank_top": 40,
+    "per_subquestion_cap": 20,
+    "whole_question_cap": 60,
+    "unsplit_question_cap": 45,
+    "per_message_cap": 3,
+    "layer1_phrase_boost": 2.0,
+    "targeted_max_size": 2000
+  },
+  "default_scope": ["outline_12490", "outline_feasts", "text_life", "text_cwwl", "text_cwwn", "text_others", "map_note"],
+  "qtype_scope": {
+    "定义": {"scope": "default"},
+    "比较": {"scope": "default"},
+    "汇集": {"scope": "default"},
+    "发展": {"scope": "default"},
+    "核实说法": {"scope": "default"},
+    "默认": {"scope": "default"},
+    "个人经历": {"scope": "default", "soft_priority": ["text_cwwl", "text_cwwn", "text_life"]},
+    "团体实行": {"scope": "default", "soft_priority": ["text_cwwl"], "soft_priority_year_range": [1985, 1993]},
+    "召会生活": {
+      "scope": "default",
+      "angles": {
+        "处理与实行": {"soft_priority": ["text_cwwl"], "soft_priority_year_range": [1985, 1993]},
+        "真理原则": {"soft_priority": ["outline_12490", "text_cwwl"]},
+        "经文根据": {"soft_priority": ["map_note", "text_life"]},
+        "个人经历与操练": {"soft_priority": ["text_cwwl", "text_cwwn", "text_life"]}
+      }
+    },
+    "反找经文": {"scope": "reverse", "sources": ["graph", "3a", "bible_vector"]}
+  },
+  "author_rules": {
+    "倪柝声": ["text_cwwn"],
+    "李常受": ["text_cwwl", "text_life", "text_others"],
+    "_excluded_from_author_filter": ["map_note", "outline_12490", "outline_feasts"],
+    "_note": "作者限定为硬过滤：只查列出的索引；注解不参与；纲目与节期默认不参与【暂定：作者限定时不查纲目/节期】"
+  },
+  "year_rules": {
+    "applies_to": ["text_cwwl"],
+    "_note": "年代限定为硬过滤，只对 text_cwwl 生效；用 lookups/wenji_year_table.json 年标记→书名清单换成 book_title terms；无年份的 61 个书名永不参与【暂定：年代限定时只查 text_cwwl】"
+  },
+  "conflicts": [
+    {"author": "倪柝声", "with": "year", "flag": "职事信息里没有"},
+    {"scope_has": "outline_feasts_only", "with": "author", "flag": "职事信息里没有"}
+  ],
+  "reverse": {
+    "bible_vector_when_below": 3,
+    "bible_vector_top": 10
+  }
+}

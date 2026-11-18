@@ -1,0 +1,61 @@
+{
+  "_comment": "流水线参数（初始值，可调）。",
+  "request_timeout_s": 180,
+  "step_timeouts_s": {
+    "step2": 20,
+    "step3": 30,
+    "step4": 30,
+    "step5": 60,
+    "step6": 60,
+    "step7": 60,
+    "step8": 150
+  },
+  "history_turns": 3,
+  "history_answer_chars": 300,
+  "cache_ttl_s": 259200,
+  "cache_not_found_ttl_s": 86400,
+  "cache_prefix": "cache:",
+  "cache_alias_prefix": "cache_alias:",
+  "heartbeat_s": 10,
+  "step7_passage_chars": 600,
+  "subquestion_concurrency": 4,
+  "max_subquestions": 4,
+  "definition_max_chars": 1500,
+  "devine_max_items": 2,
+  "step8_max_tokens": 6000,
+  "step8_summary_max_tokens": 1500,
+  "json_max_tokens": 2000,
+  "traces": {
+    "store_question_text": true,
+    "retention_days": 90,
+    "_note": "方案 A：默认存问题原文/截断上文/改写后问题；仅管理接口可读"
+  },
+  "traces_retention_days": 90,
+  "monitor_key": "monitor:traces",
+  "monitor_cap": 5000,
+  "direct_chunk_chars": 800,
+  "unverified_quote_mark": "〔未核实〕",
+  "not_found_message": "职事信息里没有找到足以回答这个问题的材料。",
+  "placeholder_unready_message": "提示词尚未就绪",
+  "fake_passages_path": "tests/fixtures/fake_passages.json",
+  "fake_devine_path": "tests/fixtures/fake_devine.json",
+  "rule_preplan_enabled": true,
+  "lexicon_names_path": "",
+  "rule_pure_residual_max": 4,
+  "rule_request_words": [
+    "请帮我", "请", "帮我", "给我", "麻烦", "查一下", "看一下", "看看",
+    "读一下", "打开", "调出", "显示", "取出", "找出",
+    "的内容", "原文", "全文", "经文", "经节", "出处",
+    "一下下", "一下", "谢谢",
+    "查", "看", "读", "取", "找"
+  ],
+  "rule_block_keywords": [
+    "注解", "注释", "脚注", "生命读经", "节期", "纲目", "特会",
+    "是什么意思", "怎样讲", "怎么讲", "讲什么", "什么意思", "如何解释", "解释一下"
+  ],
+  "lyrics_too_short_message": "请多给几个字，方便在诗歌里查找。",
+  "lyrics_too_common_message": "这句在太多首诗歌里出现，请再补几个字以便缩小范围。",
+  "lyrics_choose_preamble": "找到多首可能的诗歌，请选择要看的一首：",
+  "hymn_truncated_message": "识别到的首数较多，已按上限截断。",
+  "hymn_fallback_message_template": "大本没有第{n}首，显示的是补充本第{n}首。"
+}
