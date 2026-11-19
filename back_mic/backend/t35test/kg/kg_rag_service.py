@@ -1183,19 +1183,19 @@ async def _call_claude(
     user_prefix: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """
-    封装 Claude API 调用。复用 ai_search 的 Claude 客户端（CLAUDE_API_KEY）。
+    封装 Claude API 调用。用 t35test.common 的 Claude 客户端（4.0 专用 key：CLAUDE_API_KEY_4.0）。
     参考：back_mic/backend/ai_search/ai_service.py 第 177 行 claude_client、第 62-66 行 messages.create。
     """
     client = claude_client
     if not client:
         try:
             import anthropic
-            api_key = os.environ.get("CLAUDE_API_KEY")
+            api_key = (os.environ.get("CLAUDE_API_KEY_4.0") or "").strip()  # 4.0 专用 key，不退回主站的 CLAUDE_API_KEY
             client = anthropic.Anthropic(api_key=api_key) if api_key else None
         except Exception:
             client = None
     if not client:
-        raise RuntimeError("Claude 客户端未配置（请设置 CLAUDE_API_KEY）")
+        raise RuntimeError("Claude 客户端未配置（请在 .env 设置 CLAUDE_API_KEY_4.0）")
 
     effort = current_effort()  # 【4.0】页面「思考程度」按钮：选「低」时这次请求的 Opus 5.5 都用 low
 
