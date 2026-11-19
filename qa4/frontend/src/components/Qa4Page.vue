@@ -115,26 +115,29 @@
             <div
               v-if="displayHtml(m) && !m.notFoundMsg && m.intent !== 'hymn'"
               class="qa-answer-body"
+              :data-msg-id="m.id"
               :class="{ 'qa-answer-fade': m.currentLang && m.currentLang !== 'zh' }"
               v-html="displayHtml(m)"
             ></div>
             <div
               v-if="displayHtml(m) && !m.notFoundMsg && m.intent === 'hymn'"
               class="qa-answer-body hymn-ministry"
+              :data-msg-id="m.id"
               :class="{ 'qa-answer-fade': m.currentLang && m.currentLang !== 'zh' }"
               v-html="displayHtml(m)"
             ></div>
 
             <div v-if="displayBib(m)" class="qa-sources">
-              <div class="qa-sources-title">引用书目</div>
+              <div class="qa-sources-title">{{ sourcesTitle(m.currentLang || 'zh') }}</div>
               <pre class="qa-sources-body">{{ displayBib(m) }}</pre>
             </div>
 
-            <div v-if="m.doneMeta" class="qa-meta">
+            <div v-if="m.doneMeta && !m.loading" class="qa-meta">
               <span v-if="m.doneMeta.cache_hit" class="qa-meta-badge qa-meta-cache">缓存</span>
               <span v-if="m.doneMeta.degraded" class="qa-meta-badge qa-meta-degraded">已降级</span>
               <span v-if="m.doneMeta.lyrics_status" class="qa-meta-time">歌词：{{ m.doneMeta.lyrics_status }}</span>
-              <span v-if="m.doneMeta.elapsed_s" class="qa-meta-time">{{ m.doneMeta.elapsed_s }}s</span>
+              <span v-if="m.elapsed != null && m.elapsed !== ''" class="qa-meta-time">{{ m.elapsed }}s</span>
+              <span class="qa-meta-cost">${{ Number(m.cost || 0).toFixed(4) }}</span>
             </div>
             <div v-if="m.doneMeta && showDevMeta" class="qa-meta detail-line">
               <button type="button" class="linkish" @click="m.showDetail = !m.showDetail">
@@ -379,7 +382,59 @@ import {
   formatDirectTitle,
   formatNotFoundMessage,
   planSubquestions,
+  doneAnswerText,
 } from '../utils/streamState.js'
+import { sourcesTitle, switchMessageLang } from '../utils/langSwitch.js'
+import {
+  freezeElapsedOnFirstToken,
+  resolveAnswerElapsed,
+} from '../utils/answerMeta.js'
+import { createTypewriter, citeSupNoRenumber } from '../utils/typewriter.js'
+
+/** 当前问答打字机；新问题 / 卸载时 clear。 */
+let activeTypewriter = null
+
+function clearActiveTypewriter() {
+  if (activeTypewriter) {
+    activeTypewriter.clear()
+    activeTypewriter = null
+  }
+}
+
+function renderTypingHtml(text) {
+  return decorateAnswerHtml(citeSupNoRenumber(text))
+}
+
+/** 对齐 3.0：经 messages 里的 Proxy 读写，避免改 push 前的原始对象不触发视图更新。 */
+function messageRowById(id) {
+  const idx = messages.value.findIndex((m) => m.id === id)
+  return idx === -1 ? null : messages.value[idx]
+}
+
+function applyFinalAnswer(asst, st, ev) {
+  const row = messageRowById(asst.id) || asst
+  const finalText = doneAnswerText(ev)
+  const text =
+    finalText != null && (String(finalText).trim() !== '' || !st.text)
+      ? String(finalText)
+      : st.text || ''
+  const cites = (ev && ev.citations) || []
+  if (ev && ev.not_found) {
+    row.notFoundMsg = formatNotFoundMessage(ev, st.text)
+    row.html = ''
+    row.plain = ''
+    row.plainDisplay = ''
+    row.bibliography = ''
+    row.sourceItems = []
+  } else {
+    const { body, plainBody, bibliography, sourceItems } = renderCitationsMarkdown(text, cites)
+    row.html = decorateAnswerHtml(body)
+    row.plain = text
+    row.plainDisplay = plainBody
+    row.bibliography = bibliography
+    row.sourceItems = sourceItems || []
+  }
+}
 
 function displaySeries(c) {
   const zh = c.series_zh || ''
@@ -478,6 +533,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  clearActiveTypewriter()
   stopRecordingCleanup()
   stopTTS()
 })
@@ -499,6 +555,7 @@ function goAdmin() {
 }
 
 function newConversation() {
+  clearActiveTypewriter()
   window.location.reload()
 }
 
@@ -574,30 +631,32 @@ function updateSubqProgress(asst, st) {
   asst.subqProgress = prog
 }
 
+/** 与 3.0 displayAnswer 一致：按 currentLang 从原文 / translatedAnswers 取。 */
 function displayHtml(m) {
-  if (m.currentLang && m.currentLang !== 'zh' && m.translatedHtml) return m.translatedHtml
-  return m.html || ''
+  if (!m.currentLang || m.currentLang === 'zh') return m.html || ''
+  const tr = m.translatedAnswers?.[m.currentLang]
+  if (tr?.answer) return decorateAnswerHtml(tr.answer)
+  return m.translatedHtml || m.html || ''
 }
 
 function displayBib(m) {
-  if (m.currentLang && m.currentLang !== 'zh' && m.translatedBib != null) return m.translatedBib
-  return m.bibliography || ''
+  if (!m.currentLang || m.currentLang === 'zh') return m.bibliography || ''
+  const tr = m.translatedAnswers?.[m.currentLang]
+  if (tr && Array.isArray(tr.sources)) return tr.sources.join('\n')
+  return m.translatedBib != null ? m.translatedBib : m.bibliography || ''
 }
 
 function displayPlain(m) {
-  if (m.currentLang && m.currentLang !== 'zh' && m.translatedPlain) return m.translatedPlain
-  return m.notFoundMsg || m.plain || ''
-}
-
-function sourceLines(m) {
-  const bib = (m.bibliography || '').trim()
-  if (!bib) return []
-  return bib.split(/\n+/).map((s) => s.trim()).filter(Boolean)
+  if (!m.currentLang || m.currentLang === 'zh') return m.notFoundMsg || m.plain || ''
+  const tr = m.translatedAnswers?.[m.currentLang]
+  if (tr?.answer) return tr.answer
+  return m.translatedPlain || m.notFoundMsg || m.plain || ''
 }
 
 async function submit() {
   const q = input.value.trim()
   if (!q || loading.value) return
+  clearActiveTypewriter()
   input.value = ''
   asrError.value = false
   const uid = seq++
@@ -613,7 +672,9 @@ async function submit() {
     subqProgress: {},
     html: '',
     plain: '',
+    plainDisplay: '',
     bibliography: '',
+    sourceItems: [],
     directHtml: '',
     intent: null,
     verse: null,
@@ -624,6 +685,8 @@ async function submit() {
     hymnGenerating: false,
     choose: null,
     doneMeta: null,
+    elapsed: '',
+    cost: 0,
     notFoundMsg: '',
     showDetail: false,
     error: null,
@@ -641,8 +704,40 @@ async function submit() {
   messages.value.push(asst)
   loading.value = true
   let st = createStreamState()
+  const sendTime = Date.now()
+  let firstTokenReceived = false
+  let usedTypewriter = false
+  const tw = createTypewriter({
+    // 对齐 3.0 startTypewriter：经 messages.value[idx] 写 answer/html，触发响应式
+    onChar: (text) => {
+      const row = messageRowById(asst.id)
+      if (!row) return
+      row.plain = text
+      row.plainDisplay = text
+      row.html = renderTypingHtml(text)
+      if (row.intent !== 'bible' && row.intent !== 'hymn') scrollBottom()
+      try {
+        if (
+          typeof localStorage !== 'undefined' &&
+          localStorage.getItem('qa4_debug_stream') === '1' &&
+          text.length > 0 &&
+          text.length % 50 === 0
+        ) {
+          const displayed = text.length
+          nextTick(() => {
+            const el = mainEl.value?.querySelector?.(`.qa-answer-body[data-msg-id="${asst.id}"]`)
+            const pageLen = el ? String(el.textContent || '').length : -1
+            console.log(`[qa4-typewriter] displayed=${displayed}，页面正文的实际字数=${pageLen}`)
+          })
+        }
+      } catch {
+        /* ignore */
+      }
+    },
+  })
+  activeTypewriter = tw
   try {
-    await streamAsk(q, historyPayload(), (ev) => {
+    await streamAsk(q, historyPayload(), async (ev) => {
       st = applyEvent(st, ev)
       if (ev.event === 'step') {
         asst.stepHint = `步骤 ${ev.step}` + (ev.subq != null ? ` · 子问题 ${ev.subq}` : '')
@@ -652,12 +747,28 @@ async function submit() {
         asst.plan = ev
         asst.subqList = planSubquestions(ev)
       }
-      if (ev.event === 'token' || ev.event === 'done') {
-        const cites = (st.done && st.done.citations) || []
-        const { body, bibliography } = renderCitationsMarkdown(st.text, cites)
-        asst.html = decorateAnswerHtml(body)
-        asst.plain = st.text
-        asst.bibliography = bibliography
+      if (ev.event === 'token') {
+        // 时间口径不变：首 token 事件定格
+        if (!firstTokenReceived) {
+          firstTokenReceived = true
+          asst.elapsed = freezeElapsedOnFirstToken(asst.elapsed, sendTime)
+        }
+        // 对齐 3.0 1586–1626：拆字入队 + startTypewriter；仅有 token 才打字
+        usedTypewriter = true
+        {
+          const row = messageRowById(asst.id)
+          if (row) row.loading = false
+        }
+        tw.push(ev.text || '')
+        try {
+          if (typeof localStorage !== 'undefined' && localStorage.getItem('qa4_debug_stream') === '1') {
+            console.log(
+              `[qa4-typewriter] push len=${String(ev.text || '').length} queue=${tw.getQueueLength()} displayed=${tw.getDisplayed().length}`,
+            )
+          }
+        } catch {
+          /* ignore */
+        }
       }
       if (ev.event === 'direct') {
         asst.directHtml = renderDirectHtml(st.directs)
@@ -682,23 +793,42 @@ async function submit() {
         asst.hymnData = st.hymnData
       }
       if (ev.event === 'choose') asst.choose = ev
-      if (ev.event === 'error') asst.error = ev.message || '出错'
+      if (ev.event === 'error') {
+        if (ev.invalidate_streamed) {
+          tw.stop()
+          asst.html = ''
+          asst.plain = ''
+          asst.plainDisplay = ''
+        }
+        asst.error = ev.message || '出错'
+      }
       if (ev.event === 'done') {
-        asst.doneMeta = ev
-        asst.loading = false
+        // 对齐 3.0 1627–1636：等队列空 → stopTypewriter → 再收尾
+        if (usedTypewriter && activeTypewriter === tw) {
+          await tw.waitUntilEmpty()
+          tw.stop()
+        }
+        if (!firstTokenReceived) {
+          asst.elapsed = resolveAnswerElapsed({
+            firstTokenElapsed: asst.elapsed,
+            elapsedMs: ev.elapsed_ms,
+          })
+        }
+        asst.cost = Number(ev.cost) || 0
         asst.bibleGenerating = false
         asst.hymnGenerating = false
+        // 必要差别：最终正文带引用重编号 / 〔未核实〕 / 书目
+        // 3.0 若已有 typed answer 则保留；qa4 需用 done.answer 做核对后正文
+        applyFinalAnswer(asst, st, ev)
+        asst.doneMeta = ev
+        asst.loading = false
         incrementDailyUsageLocal()
-        if (ev.not_found) {
-          asst.notFoundMsg = formatNotFoundMessage(ev, st.text)
-          asst.html = ''
-        }
       }
-      // 经文/诗歌不强制滚到底，便于读折叠区
       if (asst.intent !== 'bible' && asst.intent !== 'hymn') scrollBottom()
     })
     refreshDailyUsage()
   } catch (e) {
+    clearActiveTypewriter()
     const msg = e.message || String(e)
     asst.error = msg
     if (e instanceof ApiHttpError && e.status === 429) {
@@ -706,6 +836,10 @@ async function submit() {
       refreshDailyUsage()
     }
   } finally {
+    if (activeTypewriter === tw) {
+      tw.clear()
+      activeTypewriter = null
+    }
     asst.loading = false
     loading.value = false
     scrollBottom()
@@ -747,48 +881,16 @@ async function copyAnswer(m) {
   }
 }
 
+/** 与 3.0 switchLang 对齐：繁/英从原始简体出发；回简体不调接口。 */
 async function switchLang(m, lang) {
-  if (!m || m.translating) return
-  if (lang === m.currentLang) return
-  stopTTS()
-  if (lang === 'zh') {
-    m.currentLang = 'zh'
-    m.translatedPlain = ''
-    m.translatedHtml = ''
-    m.translatedBib = ''
-    return
-  }
-  if (m.translatedAnswers && m.translatedAnswers[lang]) {
-    const cached = m.translatedAnswers[lang]
-    m.translatedPlain = cached.answer || ''
-    m.translatedHtml = decorateAnswerHtml(m.translatedPlain)
-    m.translatedBib = Array.isArray(cached.sources) ? cached.sources.join('\n') : m.bibliography || ''
-    m.currentLang = lang
-    return
-  }
-  const text = m.plain || m.notFoundMsg || ''
-  if (!text.trim()) return
-  m.translating = true
   try {
-    const cacheKey = (m.doneMeta && m.doneMeta.request_id) || ''
-    const data = await translateAnswer({
-      text,
-      sources: sourceLines(m),
-      targetLang: lang,
-      question: m.question || '',
-      cacheKey,
+    await switchMessageLang(m, lang, {
+      translate: translateAnswer,
+      decorateHtml: decorateAnswerHtml,
+      stopTts: stopTTS,
     })
-    const answer = data.answer || data.text || ''
-    const sources = Array.isArray(data.sources) ? data.sources : []
-    m.translatedAnswers[lang] = { answer, sources }
-    m.translatedPlain = answer
-    m.translatedHtml = decorateAnswerHtml(answer)
-    m.translatedBib = sources.length ? sources.join('\n') : m.bibliography || ''
-    m.currentLang = lang
   } catch (e) {
     message.error((e && e.message) || '翻译失败')
-  } finally {
-    m.translating = false
   }
 }
 
@@ -1359,7 +1461,8 @@ async function stopAndTranscribe() {
   background: #fff7e6;
   color: #d48806;
 }
-.qa-meta-time {
+.qa-meta-time,
+.qa-meta-cost {
   font-size: 11px;
   color: var(--color-text-secondary);
 }

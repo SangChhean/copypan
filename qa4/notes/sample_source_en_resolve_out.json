@@ -1,0 +1,122 @@
+[
+  {
+    "label": "生命读经",
+    "index": "qa4_text_life",
+    "book_title": "列王纪生命读经",
+    "message_title": "第六篇　所罗门作王（四）",
+    "message_number": 6,
+    "source_en_raw": "(Life-study of Kings, msg. 6)",
+    "source_zh_raw": "（列王记生命读经，第六篇，第六段）",
+    "resolved": "[1] Life-study of Kings, msg. 6",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "生命课程",
+    "index": "qa4_text_others",
+    "book_title": "生命课程",
+    "message_title": "第一课　知道得救了",
+    "message_number": 1,
+    "source_en_raw": "(Life Lesson, lsn. 1)",
+    "source_zh_raw": "（生命课程，第一课，第五段）",
+    "resolved": "[1] Life Lesson, lsn. 1",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "真理课程",
+    "index": "qa4_text_others",
+    "book_title": "真理课程",
+    "message_title": "第三十课　但以理书中关于人类政权的预言",
+    "message_number": 30,
+    "source_en_raw": "(Truth Lessons, Level 4, vol. 2, lsn. 30)",
+    "source_zh_raw": "（真理课程，四级卷二，第三十课，第三十段）",
+    "resolved": "[1] Truth Lessons, Level 4, vol. 2, lsn. 30",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "圣经真理题库",
+    "index": "qa4_text_others",
+    "book_title": null,
+    "message_title": null,
+    "message_number": null,
+    "source_en_raw": null,
+    "source_zh_raw": null,
+    "resolved": "[1]",
+    "path": "zh",
+    "path_label": "保留中文"
+  },
+  {
+    "label": "新约总论",
+    "index": "qa4_text_others",
+    "book_title": "新约总论",
+    "message_title": "第三百七十篇　在书信中的经历并享受基督（七六）",
+    "message_number": 370,
+    "source_en_raw": "(The Conclusion of the New Testament, msg. 370)",
+    "source_zh_raw": "（新约总论，第三百七十篇，第四十段）",
+    "resolved": "[1] The Conclusion of the New Testament, msg. 370",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "倪柝声文集",
+    "index": "qa4_text_cwwn",
+    "book_title": "倪柝声文集第三辑第十六册",
+    "message_title": "主恢复中成熟的带领（卷二）第三十　篇　教会全体的事奉--主恢复中成熟的带领（卷二）",
+    "message_number": 9,
+    "source_en_raw": "(CWWN, vol. 62, \"Matured Leadings in the Lord's Recovery (2),\" CHAPTER THIRTY)",
+    "source_zh_raw": "（倪柝声文集第三辑第十六册，主恢复中成熟的带领（卷二），第三十　篇　教会全体的事奉--主恢复中成熟的带领（卷二），第五段）",
+    "resolved": "[1] CWWN, vol. 62, \"Matured Leadings in the Lord's Recovery (2),\" CHAPTER THIRTY",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "李常受文集",
+    "index": "qa4_text_cwwl",
+    "book_title": "李常受文集一九九〇年第二册",
+    "message_title": "神新约经纶中的奥秘附加的话（一）",
+    "message_number": 3,
+    "source_en_raw": "(CWWL, 1990, vol. 2, \"The Mysteries in God's New Testament Economy,\" )",
+    "source_zh_raw": "（李常受文集一九九〇年第二册，神新约经纶中的奥秘，附加的话（一），第一段）",
+    "resolved": "[1] CWWL, 1990, vol. 2, \"The Mysteries in God's New Testament Economy,\"",
+    "path": "source_en",
+    "path_label": "用了 source_en"
+  },
+  {
+    "label": "2015年冬季训练",
+    "index": "qa4_outline_feasts",
+    "book_title": "2015年冬季训练",
+    "message_title": "遮罪盖—平息处",
+    "message_number": 2,
+    "source_en_raw": null,
+    "source_zh_raw": null,
+    "resolved": "[1] 2015 WT, msg. 2",
+    "path": "rule",
+    "path_label": "用了规则"
+  },
+  {
+    "label": "2014年国殇节特会",
+    "index": "qa4_outline_feasts",
+    "book_title": "2014年国殇节特会",
+    "message_title": "管制并支配的异象—神经纶的异象",
+    "message_number": 1,
+    "source_en_raw": null,
+    "source_zh_raw": null,
+    "resolved": "[1] 2014 MDC, msg. 1",
+    "path": "rule",
+    "path_label": "用了规则"
+  },
+  {
+    "label": "节期纲目一条",
+    "index": "qa4_outline_feasts",
+    "book_title": "1997年感恩节特会",
+    "message_title": "加强基督生机的救恩",
+    "message_number": 2,
+    "source_en_raw": null,
+    "source_zh_raw": null,
+    "resolved": "[1] 1997 TGC, msg. 2",
+    "path": "rule",
+    "path_label": "用了规则"
+  }
+]

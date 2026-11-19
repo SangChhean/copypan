@@ -11,6 +11,9 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
+import time
 from typing import Any, AsyncIterator
 
 from pipeline.citations import build_citations, mark_unverified, verify_quotes
@@ -19,6 +22,16 @@ from pipeline.schemas import Answer, Passage
 from pipeline.step07_judge import format_passages, kept_passages
 
 SUMMARY_TYPES = {"生命读经", "节期纲目"}
+logger = logging.getLogger("qa4.step8")
+
+
+def _step8_token_log_enabled() -> bool:
+    return (os.environ.get("QA4_LOG_STEP8_TOKENS") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def fallback_text(passages: list[Passage]) -> str:
@@ -82,12 +95,44 @@ async def run(ctx: RequestContext, deps: Any) -> AsyncIterator[dict[str, Any]]:
     passages = kept_passages(ctx) or list(ctx.passages)
     prompt = build_prompt(ctx, deps, passages)
     parts: list[str] = []
+    log_tok = _step8_token_log_enabled()
+    t0 = time.perf_counter()
+    token_times: list[float] = []
     try:
         async for delta in deps.llm.stream(
             "sonnet", "", [{"role": "user", "content": prompt}], step="step8", max_tokens=int(deps.cfg.get("step8_max_tokens", 6000))
         ):
             parts.append(delta)
+            if log_tok:
+                token_times.append(time.perf_counter() - t0)
             yield {"event": "token", "text": delta}
+        if log_tok:
+            n = len(token_times)
+            span = (token_times[-1] - token_times[0]) if n >= 2 else 0.0
+            first5 = [round(x, 4) for x in token_times[:5]]
+            # 直接 print：不依赖 logger 配置，uvicorn 控制台可见
+            print(
+                f"[QA4_LOG_STEP8_TOKENS] request={(ctx.request_id or '')[:8]} "
+                f"count={n} span_s={span:.4f} first5_s={first5}",
+                flush=True,
+            )
+            logger.info(
+                "step8 tokens request=%s count=%s span_s=%.4f first5_s=%s",
+                (ctx.request_id or "")[:8],
+                n,
+                span,
+                first5,
+            )
+            ctx.record(
+                8,
+                token_log={
+                    "count": n,
+                    "span_s": round(span, 4),
+                    "first5_s": first5,
+                    "first_s": round(token_times[0], 4) if token_times else None,
+                    "last_s": round(token_times[-1], 4) if token_times else None,
+                },
+            )
         ctx.note_llm("step8", getattr(deps.llm, "last_stream_result", None))
         ctx.answer = finalize(ctx, deps, "".join(parts), passages)
     except Exception as e:

@@ -181,7 +181,7 @@ def analyze_orders(
 
 def _block(doc: dict[str, Any], logical: str, cfg: Optional[dict] = None) -> dict[str, Any]:
     tf = index_cfg(logical, cfg).get("text_field") or "text"
-    return {
+    out = {
         "index": logical,
         "id": doc.get("_id") or doc.get("chunk_id"),
         "order": order_value(doc, logical, cfg),
@@ -190,6 +190,12 @@ def _block(doc: dict[str, Any], logical: str, cfg: Optional[dict] = None) -> dic
         "message_number": doc.get("message_number"),
         "text": doc.get(tf) or "",
     }
+    # source_en / source_zh 从 _source 直取（常为 index:false）
+    for k in ("source_zh", "source_en"):
+        v = doc.get(k)
+        if v not in (None, ""):
+            out[k] = v
+    return out
 
 
 class TargetedFetcher:
@@ -579,6 +585,7 @@ class TargetedFetcher:
                     "book_title": p.book_title,
                     "message_title": p.message_title,
                     "source_zh": p.location.get("source_zh"),
+                    "source_en": p.location.get("source_en"),
                     "text": p.text,
                 }
             )

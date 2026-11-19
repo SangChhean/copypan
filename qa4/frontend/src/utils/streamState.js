@@ -102,20 +102,50 @@ export function renderCitationsMarkdown(text, citations) {
     }
   }
   const origToDisp = new Map(order.map((n, i) => [n, i + 1]))
+  const plainBody = src.replace(/\[(\d+)\]/g, (_, nStr) => {
+    const orig = Number(nStr)
+    const disp = origToDisp.get(orig)
+    if (disp == null) return `[${nStr}]`
+    return `[${disp}]`
+  })
   const body = src.replace(/\[(\d+)\]/g, (_, nStr) => {
     const orig = Number(nStr)
     const disp = origToDisp.get(orig)
     if (disp == null) return `[${nStr}]`
     return `<sup class="cite" data-n="${orig}">[${disp}]</sup>`
   })
-  const bibliography = order
-    .map((orig, i) => {
-      const c = byOrig.get(orig) || { n: orig }
-      const disp = i + 1
-      return `[${disp}] ${c.book_title || ''} ${c.message_title || ''}`.trim()
-    })
-    .join('\n')
-  return { body, bibliography, origToDisp: Object.fromEntries(origToDisp) }
+  const sourceItems = order.map((orig, i) => {
+    const c = byOrig.get(orig) || { n: orig }
+    const disp = i + 1
+    const loc = (c && c.location) || {}
+    const index = (c && c.index) || ''
+    // map_note 对齐 3.0：书目用 source_zh（恢复本注释）；空则回退 book+message
+    let zhBody = `${c.book_title || ''} ${c.message_title || ''}`.trim()
+    if (index === 'map_note') {
+      const raw = String(loc.source_zh || '').trim()
+      const cleaned = raw.replace(/^[（(]+/, '').replace(/[）)]+$/, '').trim()
+      if (cleaned) zhBody = cleaned
+    }
+    const zh = `[${disp}] ${zhBody}`.trim()
+    return {
+      n: disp,
+      zh,
+      en: (c.source_en || loc.source_en || '').trim(),
+      source_zh: (loc.source_zh || '').trim(),
+      book_title: c.book_title || '',
+      message_title: c.message_title || '',
+      message_number: loc.message_number != null ? loc.message_number : null,
+      index,
+    }
+  })
+  const bibliography = sourceItems.map((s) => s.zh).join('\n')
+  return {
+    body,
+    plainBody,
+    bibliography,
+    sourceItems,
+    origToDisp: Object.fromEntries(origToDisp),
+  }
 }
 
 function decorateInline(chunk) {

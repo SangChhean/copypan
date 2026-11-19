@@ -1,0 +1,506 @@
+[
+  {
+    "label": "生命读经",
+    "logical": "text_life",
+    "index": "qa4_text_life",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "book_title",
+      "chars",
+      "chunk_id",
+      "corpus",
+      "en",
+      "message_key",
+      "message_number",
+      "message_title",
+      "original_ids",
+      "paragraph_type",
+      "section_title",
+      "source_en",
+      "source_index",
+      "source_zh",
+      "text",
+      "text_vector"
+    ],
+    "fields": {
+      "source_en": {
+        "present": true,
+        "type": "text"
+      },
+      "source_zh": {
+        "present": true,
+        "type": "text"
+      },
+      "en": {
+        "present": true,
+        "type": "text"
+      },
+      "book_title": {
+        "present": true,
+        "type": "text"
+      },
+      "message_title": {
+        "present": true,
+        "type": "text"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": false
+      }
+    },
+    "samples": [
+      {
+        "source_en": "(Life-study of Kings, msg. 6)",
+        "source_zh": "（列王记生命读经，第六篇，第六段）",
+        "en": "Solomon's palaces were built with the same materials as those for the temple. This indicates that hi",
+        "book_title": "列王纪生命读经",
+        "message_title": "第六篇　所罗门作王（四）",
+        "name": null,
+        "title": null,
+        "year": null
+      },
+      {
+        "source_en": "(Life-study of Kings, msg. 6)",
+        "source_zh": "（列王记生命读经，第六篇，第十段）",
+        "en": "In typology the king's palaces and God's temple were separate, whereas in the New Testament reality ",
+        "book_title": "列王纪生命读经",
+        "message_title": "第六篇　所罗门作王（四）",
+        "name": null,
+        "title": null,
+        "year": null
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 39463
+    }
+  },
+  {
+    "label": "新约总论",
+    "logical": "text_others",
+    "index": "qa4_text_others",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "book_title",
+      "chars",
+      "chunk_id",
+      "corpus",
+      "en",
+      "message_key",
+      "message_number",
+      "message_title",
+      "original_ids",
+      "paragraph_type",
+      "section_title",
+      "source_en",
+      "source_index",
+      "source_zh",
+      "text",
+      "text_vector"
+    ],
+    "fields": {
+      "source_en": {
+        "present": true,
+        "type": "text"
+      },
+      "source_zh": {
+        "present": true,
+        "type": "text"
+      },
+      "en": {
+        "present": true,
+        "type": "text"
+      },
+      "book_title": {
+        "present": true,
+        "type": "text"
+      },
+      "message_title": {
+        "present": true,
+        "type": "text"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": false
+      }
+    },
+    "samples": [
+      {
+        "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)",
+        "source_zh": "（真理课程，四级卷二，第三十课，第三十段）",
+        "en": "The great image in chapter 2 has four parts. The first part is the head, the second is the breast an",
+        "book_title": "真理课程",
+        "message_title": "第三十课　但以理书中关于人类政权的预言",
+        "name": null,
+        "title": null,
+        "year": null
+      },
+      {
+        "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)",
+        "source_zh": "（真理课程，四级卷二，第三十课，第三十一段）",
+        "en": "We need to pay attention to the relationship between these four chapters in Daniel. The four beasts ",
+        "book_title": "真理课程",
+        "message_title": "第三十课　但以理书中关于人类政权的预言",
+        "name": null,
+        "title": null,
+        "year": null
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 15481
+    }
+  },
+  {
+    "label": "倪柝声文集",
+    "logical": "text_cwwn",
+    "index": "qa4_text_cwwn",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "book_title",
+      "chars",
+      "chunk_id",
+      "corpus",
+      "en",
+      "message_key",
+      "message_number",
+      "message_title",
+      "original_ids",
+      "paragraph_type",
+      "section_title",
+      "source_en",
+      "source_index",
+      "source_zh",
+      "text",
+      "text_vector"
+    ],
+    "fields": {
+      "source_en": {
+        "present": true,
+        "type": "text"
+      },
+      "source_zh": {
+        "present": true,
+        "type": "text"
+      },
+      "en": {
+        "present": true,
+        "type": "text"
+      },
+      "book_title": {
+        "present": true,
+        "type": "text"
+      },
+      "message_title": {
+        "present": true,
+        "type": "text"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": false
+      }
+    },
+    "samples": [
+      {
+        "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)",
+        "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）",
+        "en": "Presently, we have eleven brothers who are quite successful in their business. I hope that they will",
+        "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+        "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+        "name": null,
+        "title": null,
+        "year": null
+      },
+      {
+        "source_en": "(CWWN, vol. 42, \"Conferences, Messages, and Fellowship (2),\" msg. 47)",
+        "source_zh": "（倪柝声文集第二辑第二十二册，特会、信息、及谈话记录（卷二），第四十七篇，第二十四段）",
+        "en": "The Acts of the Apostles is a book of \"acting,\" not a book of \"sitting.\" The workers of the Lord sho",
+        "book_title": "倪柝声文集第二辑第二十二册，特会、信息、及谈话记录（卷二）",
+        "message_title": "第四十七篇　同工谈论会--特会、信息、及谈话记录（卷二）",
+        "name": null,
+        "title": null,
+        "year": null
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 32032
+    }
+  },
+  {
+    "label": "李常受文集",
+    "logical": "text_cwwl",
+    "index": "qa4_text_cwwl",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "book_title",
+      "chars",
+      "chunk_id",
+      "corpus",
+      "en",
+      "message_key",
+      "message_number",
+      "message_title",
+      "original_ids",
+      "paragraph_type",
+      "section_title",
+      "source_en",
+      "source_index",
+      "source_zh",
+      "text",
+      "text_vector",
+      "year"
+    ],
+    "fields": {
+      "source_en": {
+        "present": true,
+        "type": "text"
+      },
+      "source_zh": {
+        "present": true,
+        "type": "text"
+      },
+      "en": {
+        "present": true,
+        "type": "text"
+      },
+      "book_title": {
+        "present": true,
+        "type": "text"
+      },
+      "message_title": {
+        "present": true,
+        "type": "text"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": true,
+        "type": "integer"
+      }
+    },
+    "samples": [
+      {
+        "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)",
+        "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）",
+        "en": "[Editor’s note: The following is a letter written to an elder in hall three of the church in Taipei.",
+        "book_title": "李常受文集信函与拾遗第一册，其他信函",
+        "message_title": "第一章",
+        "name": null,
+        "title": null,
+        "year": "1998"
+      },
+      {
+        "source_en": "(CWWL, 1990, vol. 3, \"A Deeper Study of the Divine Dispensing,\" ch. 3)",
+        "source_zh": "（李常受文集一九九〇年第三册，关于神圣分赐更深的研读，第三章，第十四段）",
+        "en": "In the New Testament, the first book that speaks expressly about this subject is the Gospel of John.",
+        "book_title": "李常受文集一九九〇年第三册，关于神圣分赐更深的研读",
+        "message_title": "第三章　经过过程之三一神，终极成为生命之灵的律",
+        "name": null,
+        "title": null,
+        "year": "1990"
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 178107
+    }
+  },
+  {
+    "label": "节期纲目",
+    "logical": "outline_feasts",
+    "index": "qa4_outline_feasts",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "batch",
+      "book_path",
+      "book_title",
+      "chunk_id",
+      "chunk_index",
+      "chunk_total",
+      "conference",
+      "embedding",
+      "message_key",
+      "message_number",
+      "message_title",
+      "min_level",
+      "month",
+      "para_nos",
+      "paragraph_type",
+      "part_name",
+      "part_no",
+      "point_count",
+      "source_path",
+      "text",
+      "tokens",
+      "year",
+      "year_end"
+    ],
+    "fields": {
+      "source_en": {
+        "present": false
+      },
+      "source_zh": {
+        "present": false
+      },
+      "en": {
+        "present": false
+      },
+      "book_title": {
+        "present": true,
+        "type": "keyword"
+      },
+      "message_title": {
+        "present": true,
+        "type": "keyword"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": true,
+        "type": "integer"
+      }
+    },
+    "samples": [
+      {
+        "source_en": null,
+        "source_zh": null,
+        "en": null,
+        "book_title": "1997年感恩节特会",
+        "message_title": "加强基督生机的救恩",
+        "name": null,
+        "title": null,
+        "year": "1997"
+      },
+      {
+        "source_en": null,
+        "source_zh": null,
+        "en": null,
+        "book_title": "1997年感恩节特会",
+        "message_title": "加强基督生机的救恩",
+        "name": null,
+        "title": null,
+        "year": "1997"
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 11110
+    }
+  },
+  {
+    "label": "一二四九〇纲目",
+    "logical": "outline_12490",
+    "index": "qa4_outline_12490",
+    "exists": true,
+    "all_fields": [
+      "author",
+      "batch",
+      "book_path",
+      "book_title",
+      "chunk_id",
+      "chunk_index",
+      "chunk_total",
+      "conference",
+      "embedding",
+      "message_key",
+      "message_number",
+      "message_title",
+      "min_level",
+      "month",
+      "para_nos",
+      "paragraph_type",
+      "part_name",
+      "part_no",
+      "point_count",
+      "source_path",
+      "text",
+      "tokens",
+      "year",
+      "year_end"
+    ],
+    "fields": {
+      "source_en": {
+        "present": false
+      },
+      "source_zh": {
+        "present": false
+      },
+      "en": {
+        "present": false
+      },
+      "book_title": {
+        "present": true,
+        "type": "keyword"
+      },
+      "message_title": {
+        "present": true,
+        "type": "keyword"
+      },
+      "name": {
+        "present": false
+      },
+      "title": {
+        "present": false
+      },
+      "year": {
+        "present": true,
+        "type": "integer"
+      }
+    },
+    "samples": [
+      {
+        "source_en": null,
+        "source_zh": null,
+        "en": null,
+        "book_title": "倪柝声文集第一辑第一册，灵修指微",
+        "message_title": "灵魂体的分别",
+        "name": null,
+        "title": null,
+        "year": null
+      },
+      {
+        "source_en": null,
+        "source_zh": null,
+        "en": null,
+        "book_title": "倪柝声文集第一辑第一册，灵修指微",
+        "message_title": "灵魂体的分别",
+        "name": null,
+        "title": null,
+        "year": null
+      }
+    ],
+    "source_en_nonempty_approx": {
+      "exists_field_count": 0,
+      "total": 55841
+    }
+  }
+]

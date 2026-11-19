@@ -181,7 +181,9 @@ class TraceStore:
             return int(conn.execute("SELECT COUNT(*) FROM qa4_traces").fetchone()[0])
 
     def stats(self, limit: int = 5000) -> dict[str, Any]:
-        """对照 3.0 /api/qa/stats：从 SQLite traces 聚合（费用字段 qa4 未落库时为 0）。"""
+        """对照 3.0 /api/qa/stats：从 SQLite traces 聚合费用与耗时。"""
+        from core.pricing import cost_usd_from_record
+
         lim = max(1, min(int(limit), 20000))
         with self._lock, self._connect() as conn:
             rows = conn.execute(
@@ -214,6 +216,7 @@ class TraceStore:
             if r.get("elapsed_ms") is not None
         ]
         avg_elapsed = round(sum(elapsed_vals) / len(elapsed_vals)) if elapsed_vals else 0
+        total_cost = round(sum(cost_usd_from_record(r) for r in found_non_cache), 4)
 
         fail_out = []
         for r in step_fail[:20]:
@@ -227,7 +230,7 @@ class TraceStore:
                     "question": (r.get("question_text") or r.get("question_preview") or "")[:120],
                     "ts": ts_s,
                     "total_elapsed_ms": int(r.get("elapsed_ms") or 0),
-                    "total_cost_usd": 0.0,
+                    "total_cost_usd": cost_usd_from_record(r),
                     "request_id": r.get("request_id"),
                 }
             )
@@ -236,7 +239,7 @@ class TraceStore:
             "total_requests": total,
             "cache_hit_rate": round(cache_hits / total, 4) if total else 0,
             "found_rate_new": round(found_count / len(found_non_cache), 4) if found_non_cache else 0,
-            "total_cost_usd": 0.0,  # qa4 traces 未存 USD；保留字段对齐 3.0 UI
+            "total_cost_usd": total_cost,
             "avg_elapsed_ms": avg_elapsed,
             "step_fail_records": fail_out,
         }

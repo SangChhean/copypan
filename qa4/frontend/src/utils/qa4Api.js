@@ -106,28 +106,31 @@ export async function fetchDailyUsage() {
   }
 }
 
-/** 解析 SSE：data: {...}\n\n */
+/**
+ * 解析 SSE：data: {...}\n\n
+ * 对齐 3.0 QAPage：TextDecoder stream、\r\n→\n、按 \n\n 切事件、边读边 yield（不等整响应结束）。
+ */
 export async function* readSse(response) {
   const reader = response.body.getReader()
-  const dec = new TextDecoder()
-  let buf = ''
+  const decoder = new TextDecoder()
+  let buffer = ''
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    buf += dec.decode(value, { stream: true })
-    let idx
-    while ((idx = buf.indexOf('\n\n')) >= 0) {
-      const chunk = buf.slice(0, idx)
-      buf = buf.slice(idx + 2)
-      for (const line of chunk.split('\n')) {
-        if (line.startsWith('data:')) {
-          const raw = line.slice(5).trim()
-          if (!raw || raw === '[DONE]') continue
-          try {
-            yield JSON.parse(raw)
-          } catch {
-            /* ignore heartbeat garbage */
-          }
+    buffer += decoder.decode(value, { stream: true })
+    buffer = buffer.replace(/\r\n/g, '\n')
+    let sepIdx
+    while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+      const rawEvent = buffer.slice(0, sepIdx)
+      buffer = buffer.slice(sepIdx + 2)
+      for (const line of rawEvent.split('\n')) {
+        if (!line.startsWith('data:')) continue
+        const raw = line.startsWith('data: ') ? line.slice(6).trim() : line.slice(5).trim()
+        if (!raw || raw === '[DONE]') continue
+        try {
+          yield JSON.parse(raw)
+        } catch {
+          /* ignore heartbeat / garbage */
         }
       }
     }
@@ -140,6 +143,17 @@ export class ApiHttpError extends Error {
     this.name = 'ApiHttpError'
     this.status = status
   }
+}
+
+function _debugStreamEnabled() {
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('qa4_debug_stream') === '1') {
+      return true
+    }
+  } catch {
+    /* ignore */
+  }
+  return false
 }
 
 export async function streamAsk(question, history, onEvent) {
@@ -162,8 +176,30 @@ export async function streamAsk(question, history, onEvent) {
       (r.status === 429 ? '今日问答次数已达上限，请明天再来' : `HTTP ${r.status}`)
     throw new ApiHttpError(msg, r.status)
   }
+  const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  let tokenN = 0
+  let firstTokenAt = null
   for await (const ev of readSse(r)) {
-    onEvent(ev)
+    // 每次事件再读开关，避免页面加载时定死
+    if (_debugStreamEnabled() && ev && (ev.event === 'token' || ev.type === 'token')) {
+      tokenN += 1
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      if (firstTokenAt == null) firstTokenAt = now
+      console.log(
+        `[qa4-stream] token#${tokenN} +${(now - t0).toFixed(1)}ms sinceStart +${(now - firstTokenAt).toFixed(1)}ms sinceFirst len=${String(ev.text || '').length}`,
+        (ev.text || '').slice(0, 40),
+      )
+    }
+    if (_debugStreamEnabled() && ev && (ev.event === 'done' || ev.type === 'done')) {
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      console.log(
+        `[qa4-stream] done +${(now - t0).toFixed(1)}ms tokens=${tokenN} spanFirstToDone=${
+          firstTokenAt != null ? (now - firstTokenAt).toFixed(1) : 'n/a'
+        }ms`,
+      )
+    }
+    // 对齐 3.0：done 分支可 await 打字机清空，须等回调完成
+    await onEvent(ev)
   }
 }
 

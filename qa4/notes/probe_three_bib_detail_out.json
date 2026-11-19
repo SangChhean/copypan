@@ -1,0 +1,100 @@
+[
+  {
+    "book": "李常受文集一九五四年第三册，福音题纲",
+    "message": "钉十字架的基督",
+    "indices": {
+      "qa4_outline_12490": {
+        "hits": 0,
+        "samples": []
+      },
+      "qa4_text_cwwl": {
+        "hits": 0,
+        "samples": []
+      }
+    }
+  },
+  {
+    "book": "李常受文集一九五四年第三册，福音题纲",
+    "message": "问中之问",
+    "indices": {
+      "qa4_outline_12490": {
+        "hits": 0,
+        "samples": []
+      },
+      "qa4_text_cwwl": {
+        "hits": 0,
+        "samples": []
+      }
+    }
+  },
+  {
+    "book": "李常受文集一九七一年第二册，极大的奥秘—基督与召会",
+    "message": "基督是谁（一）",
+    "indices": {
+      "qa4_outline_12490": {
+        "hits": 0,
+        "samples": []
+      },
+      "qa4_text_cwwl": {
+        "hits": 14,
+        "samples": [
+          {
+            "chunk_id": "cwwl_1971-2-7#1-3",
+            "message_title": "第一章　基督是谁（一）",
+            "has_source_en_key": true,
+            "source_en": "(CWWL, 1971, vol. 2, \"The Great Mystery—Christ and the Church,\" ch. 1)",
+            "has_source_zh_key": true,
+            "source_zh": "（李常受文集一九七一年第二册，极大的奥秘—基督与召会，第一章，第二段）",
+            "field_keys": [
+              "author",
+              "book_title",
+              "chars",
+              "chunk_id",
+              "corpus",
+              "en",
+              "message_key",
+              "message_number",
+              "message_title",
+              "original_ids",
+              "paragraph_type",
+              "source_en",
+              "source_index",
+              "source_zh",
+              "text",
+              "text_vector",
+              "year"
+            ]
+          },
+          {
+            "chunk_id": "cwwl_1971-2-7#1-6",
+            "message_title": "第一章　基督是谁（一）",
+            "has_source_en_key": true,
+            "source_en": "(CWWL, 1971, vol. 2, \"The Great Mystery—Christ and the Church,\" ch. 1)",
+            "has_source_zh_key": true,
+            "source_zh": "（李常受文集一九七一年第二册，极大的奥秘—基督与召会，第一章，第五段）",
+            "field_keys": [
+              "author",
+              "book_title",
+              "chars",
+              "chunk_id",
+              "corpus",
+              "en",
+              "message_key",
+              "message_number",
+              "message_title",
+              "original_ids",
+              "paragraph_type",
+              "section_title",
+              "source_en",
+              "source_index",
+              "source_zh",
+              "text",
+              "text_vector",
+              "year"
+            ]
+          }
+        ]
+      }
+    }
+  }
+]

@@ -270,6 +270,7 @@
                   {{ (t.question_preview || t.request_id || '').slice(0, 80) }}
                 </li>
               </ul>
+              <p v-if="esFailLabels.length" class="admin-es-fail">检索失败：{{ esFailLabels.join('、') }}</p>
               <pre v-if="traceDetail" class="admin-trace-detail">{{ traceDetailText }}</pre>
             </a-tab-pane>
           </a-tabs>
@@ -332,6 +333,20 @@ const traceDetailText = computed(() => {
     if (/secret|password|token|key/i.test(k) && k !== 'request_id') delete d[k]
   }
   return JSON.stringify(d, null, 2)
+})
+
+const esFailLabels = computed(() => {
+  const raw = traceDetail.value?.item || traceDetail.value || {}
+  const fails = Array.isArray(raw.es_failures) ? raw.es_failures : []
+  const names = []
+  const seen = new Set()
+  for (const f of fails) {
+    const name = (f && (f.logical || f.index)) || ''
+    if (!name || seen.has(name)) continue
+    seen.add(name)
+    names.push(name)
+  }
+  return names
 })
 
 function pct(val) {

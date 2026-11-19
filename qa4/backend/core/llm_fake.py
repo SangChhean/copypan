@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import time
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterator, Optional
@@ -521,8 +522,21 @@ class PipelineFakeLLM:
             n1 = 1
         n2 = f"另一段也提到相关内容「{found[1][1].strip()[:12]}」[{found[1][0]}]。" if len(found) >= 2 else "以上为占位回答。"
         q = f"「{quote}」" if quote else "〔归纳〕材料要点如下。"
-        # 与 step8_v0.1 版式一致：## 总标题 / ### 小标题（供前端 a-title / a-sub）
-        return f"## 占位总标题\n{q}[{n1}]。\n### 材料要点\n{n2}"
+        # 与 step8_v0.1 版式一致；正文加长约 300 字，便于开发服观察打字机（约 60 块 × 5 字）
+        pad = (
+            "召会是基督的身体，是那在万有中充满万有者的丰满。"
+            "我们需要在灵里被充满，在召会生活中经历基督作生命，"
+            "并在真理上得着供应，好叫众肢体彼此相顾、互相成全。"
+            "主的恢复重在基督与召会；我们每天借着祷读主话、呼求主名，"
+            "就能被更新而变化，模成神儿子的形像，团体地彰显三一神。"
+            "这不是仅仅道理的认识，乃是生命的经历与实行；"
+            "当我们照着灵而行，就能实际地活出神人调和的生活。"
+        )
+        body = f"## 占位总标题\n{q}[{n1}]。\n### 材料要点\n{n2}\n### 补充说明\n{pad}"
+        # 约 300 字（不足则再填，过长则截断）
+        while len(body) < 300:
+            body += "我们继续在召会中追求主。"
+        return body[:320]
 
     # ---------------- 接口 ----------------
     async def complete(self, role, system, messages, *, step, max_tokens=None, cache=None) -> LLMResult:
@@ -558,8 +572,15 @@ class PipelineFakeLLM:
         content = _content_of(system, messages)
         self.calls.append({"op": "stream", "role": role, "step": step, "content": content})
         text = self._step8_text(content)
-        chunks = [text[i : i + 6] for i in range(0, len(text), 6)]
+        # 约 60 块：按 5 字切（300 字 → 60 块）
+        chunk_size = 5
+        chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)] or [""]
         ttft = None
+        # 默认 0（单测快）。开发服 / restart_qa4.bat fake 设 QA4_FAKE_STREAM_DELAY_MS=25。
+        try:
+            delay_ms = float(os.environ.get("QA4_FAKE_STREAM_DELAY_MS", "0") or "0")
+        except ValueError:
+            delay_ms = 0.0
         for i, ch in enumerate(chunks):
             if ttft is None:
                 ttft = round(time.perf_counter() - t0, 4)
@@ -569,6 +590,9 @@ class PipelineFakeLLM:
                     message="fake step8 mid-stream failure",
                     meta={"role": role, "step": step, "usage": {"output_tokens": 3}},
                 )
-            await asyncio.sleep(0)
+            if delay_ms > 0:
+                await asyncio.sleep(delay_ms / 1000.0)
+            else:
+                await asyncio.sleep(0)
             yield ch
         self.last_stream_result = self._result(role, step, text, t0, ttft)

@@ -150,17 +150,76 @@ describe('streamState', () => {
 
   it('citations_renumber_by_first_appearance_and_drop_unused', () => {
     const text = '先引「乙」[3] 再引「甲」[1] 又引[3]'
-    const { body, bibliography, origToDisp } = renderCitationsMarkdown(text, [
-      { n: 1, book_title: '甲书' },
+    const { body, plainBody, bibliography, sourceItems, origToDisp } = renderCitationsMarkdown(text, [
+      { n: 1, book_title: '甲书', source_en: '(Book A)', index: 'text_cwwl' },
       { n: 2, book_title: '未引用' },
-      { n: 3, book_title: '乙书', message_title: '篇三' },
+      {
+        n: 3,
+        book_title: '乙书',
+        message_title: '篇三',
+        source_en: '(Book B, msg. 3)',
+        index: 'text_life',
+        location: { source_zh: '（乙书，第三篇）', message_number: 3 },
+      },
     ])
     // 显示顺序：首次 [3]→[1]，[1]→[2]
     expect(origToDisp).toEqual({ 3: 1, 1: 2 })
     expect(body).toContain('data-n="3">[1]</sup>')
     expect(body).toContain('data-n="1">[2]</sup>')
+    expect(plainBody).toBe('先引「乙」[1] 再引「甲」[2] 又引[1]')
     expect(bibliography.split('\n')).toEqual(['[1] 乙书 篇三', '[2] 甲书'])
     expect(bibliography).not.toContain('未引用')
+    expect(sourceItems[0]).toMatchObject({
+      n: 1,
+      zh: '[1] 乙书 篇三',
+      en: '(Book B, msg. 3)',
+      source_zh: '（乙书，第三篇）',
+      message_number: 3,
+    })
+    expect(sourceItems[1]).toMatchObject({ n: 2, zh: '[2] 甲书', en: '(Book A)' })
+  })
+
+  it('map_note_bib_uses_source_zh_with_fallback', () => {
+    const text = '注甲[1] 注乙[2] 题库空[3] 文集[4]'
+    const { bibliography, sourceItems } = renderCitationsMarkdown(text, [
+      {
+        n: 1,
+        index: 'map_note',
+        book_title: '圣经真理题库，第一系列　圣经—神的话',
+        message_title: '第一篇　更美之约',
+        location: { source_zh: '（恢复本圣经，来八6，注2）' },
+      },
+      {
+        n: 2,
+        index: 'map_note',
+        book_title: '圣经真理题库，第二系列',
+        message_title: '第二篇',
+        location: { source_zh: '（恢复本圣经，可十四24，注1）' },
+      },
+      {
+        n: 3,
+        index: 'map_note',
+        book_title: '圣经真理题库，空出处系列',
+        message_title: '某一篇',
+        location: { source_zh: '' },
+      },
+      {
+        n: 4,
+        index: 'text_cwwl',
+        book_title: '李常受文集一九五四年第三册，福音题纲',
+        message_title: '第六十六题',
+        location: { source_zh: '（李常受文集一九五四年第三册，福音题纲，第六十六题，第二段）' },
+      },
+    ])
+    expect(bibliography.split('\n')).toEqual([
+      '[1] 恢复本圣经，来八6，注2',
+      '[2] 恢复本圣经，可十四24，注1',
+      '[3] 圣经真理题库，空出处系列 某一篇',
+      '[4] 李常受文集一九五四年第三册，福音题纲 第六十六题',
+    ])
+    expect(sourceItems[0].source_zh).toContain('来八6')
+    expect(sourceItems[3].zh).toContain('李常受文集')
+    expect(sourceItems[3].zh).not.toContain('恢复本')
   })
 
   it('history_truncate_to_three_turns', () => {

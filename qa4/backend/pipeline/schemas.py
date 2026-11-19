@@ -212,6 +212,8 @@ class Citation(BaseModel):
     index: str = ""
     years: Optional[list[int]] = None
     out_of_range: bool = False
+    # 段落 _source.source_en；旧缓存缺此字段时译书目走规则/保留中文
+    source_en: Optional[str] = None
 
 
 class QuoteCheck(BaseModel):
@@ -254,7 +256,9 @@ class TraceRecord(BaseModel):
     cache_hit: bool = False
     degraded: bool = False
     degraded_reasons: list[str] = Field(default_factory=list)
+    es_failures: list[dict[str, Any]] = Field(default_factory=list)
     not_found: bool = False
     main_type: str = ""
     elapsed_ms: int = 0
+    total_cost_usd: float = 0.0
     warnings: list[str] = Field(default_factory=list)

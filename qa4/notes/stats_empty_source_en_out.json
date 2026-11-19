@@ -1,0 +1,269 @@
+[
+  {
+    "index": "qa4_text_cwwl",
+    "total": 178107,
+    "nonempty_source_en": 178107,
+    "empty_or_missing_source_en": 0,
+    "missing_key": 0,
+    "empty_pct": 0.0,
+    "top_books_by_empty": [],
+    "empty_samples": [],
+    "n_books_with_any_empty": 0,
+    "n_books_total": 1186
+  },
+  {
+    "index": "qa4_text_life",
+    "total": 39463,
+    "nonempty_source_en": 39463,
+    "empty_or_missing_source_en": 0,
+    "missing_key": 0,
+    "empty_pct": 0.0,
+    "top_books_by_empty": [],
+    "empty_samples": [],
+    "n_books_with_any_empty": 0,
+    "n_books_total": 63
+  },
+  {
+    "index": "qa4_text_cwwn",
+    "total": 32032,
+    "nonempty_source_en": 32032,
+    "empty_or_missing_source_en": 0,
+    "missing_key": 0,
+    "empty_pct": 0.0,
+    "top_books_by_empty": [],
+    "empty_samples": [],
+    "n_books_with_any_empty": 0,
+    "n_books_total": 106
+  },
+  {
+    "index": "qa4_text_others",
+    "total": 15481,
+    "nonempty_source_en": 15481,
+    "empty_or_missing_source_en": 0,
+    "missing_key": 0,
+    "empty_pct": 0.0,
+    "top_books_by_empty": [],
+    "empty_samples": [],
+    "n_books_with_any_empty": 0,
+    "n_books_total": 3
+  },
+  {
+    "index": "qa4_map_note",
+    "total": 16052,
+    "nonempty_source_en": 0,
+    "empty_or_missing_source_en": 16052,
+    "missing_key": 0,
+    "empty_pct": 100.0,
+    "top_books_by_empty": [
+      {
+        "book_title": "圣经真理题库，第二十一系列　基督徒的生活，基督徒的生活",
+        "empty": 599,
+        "total": 599,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，圣经—神的话，圣经各卷简介",
+        "empty": 487,
+        "total": 487,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十四系列　未分类",
+        "empty": 406,
+        "total": 406,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十系列　撒但的混乱，罪",
+        "empty": 377,
+        "total": 377,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十三系列　人名、地名、数目字，人名，旧约人名",
+        "empty": 325,
+        "total": 325,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第五系列　管家的职分，事奉",
+        "empty": 318,
+        "total": 318,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十系列　生命的认识与经历，生命的认识",
+        "empty": 290,
+        "total": 290,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第八系列　基督，包罗万有的基督",
+        "empty": 274,
+        "total": 274,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十系列　生命的认识与经历，生命的经历",
+        "empty": 260,
+        "total": 260,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十一系列　基督徒的生活，福音",
+        "empty": 257,
+        "total": 257,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十二系列　信徒，人",
+        "empty": 254,
+        "total": 254,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第八系列　基督，祂的身位，对信徒",
+        "empty": 244,
+        "total": 244,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第三系列　神的分赐",
+        "empty": 233,
+        "total": 233,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十三系列　基督的身体，基督的身体",
+        "empty": 223,
+        "total": 223,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第八系列　基督，基督所经过的过程",
+        "empty": 220,
+        "total": 220,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二系列　神的经纶，圣经各卷书中所启示神的经纶",
+        "empty": 217,
+        "total": 217,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第四系列　神的行政，神的行政",
+        "empty": 183,
+        "total": 183,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，律法",
+        "empty": 175,
+        "total": 175,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十三系列　基督的身体，帐幕",
+        "empty": 171,
+        "total": 171,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十三系列　人名、地名、数目字，地名",
+        "empty": 157,
+        "total": 157,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二系列　神的经纶，三一神永远的定旨",
+        "empty": 156,
+        "total": 156,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第八系列　基督，基督的来临",
+        "empty": 156,
+        "total": 156,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第七系列　三一神，祂的工作，在新的经纶里",
+        "empty": 155,
+        "total": 155,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十一系列　基督徒的生活，初信",
+        "empty": 153,
+        "total": 153,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第九系列　那灵，祂的工作",
+        "empty": 150,
+        "total": 150,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十四系列　召会，召会是基督的身体",
+        "empty": 147,
+        "total": 147,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十九系列　团体的彰显，团体的彰显",
+        "empty": 141,
+        "total": 141,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第二十一系列　基督徒的生活，属灵的操练",
+        "empty": 140,
+        "total": 140,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十六系列　国度，国度的各面",
+        "empty": 139,
+        "total": 139,
+        "empty_pct": 100.0
+      },
+      {
+        "book_title": "圣经真理题库，第十四系列　召会，召会的堕落",
+        "empty": 133,
+        "total": 133,
+        "empty_pct": 100.0
+      }
+    ],
+    "empty_samples": [
+      {
+        "chunk_id": "map_note_75-1-1_c1",
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+        "reason": "empty_value"
+      },
+      {
+        "chunk_id": "map_note_75-1-1_c2",
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+        "reason": "empty_value"
+      },
+      {
+        "chunk_id": "map_note_75-1-1_c3",
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+        "reason": "empty_value"
+      },
+      {
+        "chunk_id": "map_note_75-1-1_c4",
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+        "reason": "empty_value"
+      },
+      {
+        "chunk_id": "map_note_75-1-1_c5",
+        "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+        "reason": "empty_value"
+      }
+    ],
+    "n_books_with_any_empty": 309,
+    "n_books_total": 309
+  }
+]

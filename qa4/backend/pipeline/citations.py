@@ -42,6 +42,11 @@ def build_citations(text: str, passages: list[Passage], *, years_by_n: dict[int,
         if years is None and p.meta.get("year"):
             y = int(p.meta["year"])
             years = [y, int(p.meta.get("year_end") or y)]
+        src_en = p.location.get("source_en") or p.meta.get("source_en")
+        if src_en in (None, ""):
+            src_en = None
+        else:
+            src_en = str(src_en)
         cites.append(
             Citation(
                 n=n,
@@ -50,6 +55,7 @@ def build_citations(text: str, passages: list[Passage], *, years_by_n: dict[int,
                 location=dict(p.location),
                 index=p.index,
                 years=years,
+                source_en=src_en,
             )
         )
     return cites, invalid

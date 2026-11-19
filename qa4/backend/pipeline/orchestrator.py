@@ -30,6 +30,8 @@ logger = logging.getLogger("qa4.pipeline")
 
 
 def _done_payload(ctx: RequestContext) -> dict[str, Any]:
+    from core.pricing import estimate_total_cost_usd
+
     ans = ctx.answer
     return {
         "event": "done",
@@ -41,6 +43,7 @@ def _done_payload(ctx: RequestContext) -> dict[str, Any]:
         "degraded_reasons": list(ctx.degraded_reasons),
         "not_found": bool(ctx.not_found or ans.not_found),
         "elapsed_ms": ctx.elapsed_ms(),
+        "cost": estimate_total_cost_usd(ctx.tokens, ctx.models),
         "request_id": ctx.request_id,
         "main_type": ctx.plan.main_type if ctx.plan else "",
         "premise_note": ans.premise_note,

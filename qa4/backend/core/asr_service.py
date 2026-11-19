@@ -22,11 +22,13 @@ _CORRECTIONS = Path(__file__).resolve().parents[1] / "asr_corrections.json"
 def _get_openai():
     global _client
     if _client is None:
-        from openai import AsyncOpenAI
-
+        # 先查密钥再 import：缺 key 时返回明确 RuntimeError（路由 → 503），
+        # 避免本机未装 openai 包时变成 ModuleNotFoundError → 500。
         api_key = (os.environ.get("OPENAI_API_KEY") or os.environ.get("QA4_OPENAI_API_KEY") or "").strip()
         if not api_key:
             raise RuntimeError("未配置 OPENAI_API_KEY")
+        from openai import AsyncOpenAI
+
         _client = AsyncOpenAI(api_key=api_key)
     return _client
 

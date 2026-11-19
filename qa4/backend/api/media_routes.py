@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
@@ -21,7 +21,8 @@ router = APIRouter(prefix="/api", tags=["media"])
 
 class TranslateRequest(BaseModel):
     text: str = ""
-    sources: list[str] = Field(default_factory=list)
+    # 字符串（旧）或 {n, zh, en, source_zh, book_title, message_number}
+    sources: list[Any] = Field(default_factory=list)
     target_lang: str  # zh_tw | en
     question: str = ""
     cache_key: str = ""

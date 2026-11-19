@@ -31,10 +31,22 @@ def to_passage(d: dict[str, Any], cfg: Optional[dict] = None) -> Passage:
         return d.get(name.split(".")[0]) if name else None
 
     loc: dict[str, Any] = {}
-    for key in ("message_number", "section_title", "source_zh", "verse_range", "hymn_number", "series", "order"):
+    for key in (
+        "message_number",
+        "section_title",
+        "source_zh",
+        "source_en",
+        "verse_range",
+        "hymn_number",
+        "series",
+        "order",
+    ):
         v = f(key)
         if v not in (None, ""):
             loc[key] = v
+    # source_en 在 mapping 中常为 index:false；若配置未声明字段名，仍从 _source 直取
+    if "source_en" not in loc and d.get("source_en") not in (None, ""):
+        loc["source_en"] = d.get("source_en")
     meta: dict[str, Any] = {}
     for key in ("author", "year", "year_end", "message_key", "conference", "month", "chunk_type", "unit_type", "total"):
         v = f(key)
@@ -94,6 +106,7 @@ class RetrievalService:
             coverage.setdefault("degraded_reasons", []).append(f"embed:{type(e).__name__}")
         tasks = []
         labels = []
+        fails = coverage.setdefault("es_failures", [])
         for lg in indices:
             terms = terms_by_index.get(lg) or {}
             tasks.append(
@@ -109,6 +122,7 @@ class RetrievalService:
                         phrase_boost=self.p.get("layer1_phrase_boost", 2.0),
                         cfg=self.cfg,
                     ),
+                    failures_out=fails,
                 )
             )
             labels.append((lg, "bm25"))
@@ -122,7 +136,7 @@ class RetrievalService:
                     cfg=self.cfg,
                 )
                 if body is not None:
-                    tasks.append(run_search(self.es, lg, body))
+                    tasks.append(run_search(self.es, lg, body, failures_out=fails))
                     labels.append((lg, "knn"))
         results = await asyncio.gather(*tasks)
         lists = []

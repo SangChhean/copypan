@@ -9,9 +9,37 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.pricing import estimate_total_cost_usd
 from pipeline.context import RequestContext
 from pipeline.schemas import TraceRecord
 from pipeline.textutil import qhash
+
+
+
+def collect_es_failures(retrieval_cov: dict[str, Any]) -> list[dict[str, Any]]:
+    """从各子问题 coverage.es_failures 汇总（按 logical+status+type 去重）。"""
+    out: list[dict[str, Any]] = []
+    seen: set[tuple[Any, Any, Any]] = set()
+    for sub in (retrieval_cov or {}).values():
+        if not isinstance(sub, dict):
+            continue
+        cov = sub.get("coverage") if isinstance(sub.get("coverage"), dict) else {}
+        for f in cov.get("es_failures") or []:
+            if not isinstance(f, dict):
+                continue
+            key = (f.get("logical"), f.get("status"), f.get("type"))
+            if key in seen:
+                continue
+            seen.add(key)
+            entry = {
+                "logical": f.get("logical"),
+                "status": f.get("status"),
+                "type": f.get("type"),
+            }
+            if f.get("index"):
+                entry["index"] = f.get("index")
+            out.append(entry)
+    return out
 
 
 def build_trace(ctx: RequestContext, deps: Any) -> dict[str, Any]:
@@ -19,6 +47,7 @@ def build_trace(ctx: RequestContext, deps: Any) -> dict[str, Any]:
     store_text = bool((deps.cfg.get("traces") or {}).get("store_question_text", True))
     # 有送入第 2 步的上文才记改写后问题（失败回退时仍记原问题，便于对照）
     rewritten = ctx.question if ctx.history_for_rewrite else ""
+    es_failures = collect_es_failures(ctx.retrieval_cov)
     rec = TraceRecord(
         request_id=ctx.request_id,
         question_hash=qhash(ctx.question_orig),
@@ -38,9 +67,11 @@ def build_trace(ctx: RequestContext, deps: Any) -> dict[str, Any]:
         cache_hit=ctx.cache_hit,
         degraded=ctx.degraded or ctx.answer.degraded,
         degraded_reasons=list(ctx.degraded_reasons),
+        es_failures=es_failures,
         not_found=ctx.not_found or ctx.answer.not_found,
         main_type=plan.main_type if plan else "",
         elapsed_ms=ctx.elapsed_ms(),
+        total_cost_usd=estimate_total_cost_usd(ctx.tokens, ctx.models),
         warnings=list(ctx.warnings),
     )
     data = rec.model_dump()

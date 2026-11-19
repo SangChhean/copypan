@@ -84,7 +84,9 @@ class SeededFakeEs:
         self.url = "fake-seeded"
         self.index_map = {}
         self.last_ping_error = self._ping.last_ping_error
-        self._search = merge_seeded_search_es([])
+        # 完整 fake_passages + 定向种子；勿传 []（会跳过 fixture，只剩 outline/hymns，
+        # 在 outline_12490 searchable=false 时一般问答会空）
+        self._search = merge_seeded_search_es(None)
 
     def ping(self) -> bool:
         ok = self._ping.ping()
@@ -121,6 +123,8 @@ def main() -> int:
     os.environ.setdefault("QA4_ADMIN_TOKEN", ADMIN)
     os.environ.setdefault("QA4_DAILY_LIMIT_DEFAULT", "100")
     os.environ.setdefault("QA4_RATE_LIMIT_PER_MINUTE", "1000")
+    # 假流式默认每块 25ms，否则 sleep(0) 会让全部 token 挤在同一瞬间
+    os.environ.setdefault("QA4_FAKE_STREAM_DELAY_MS", "25")
     # 不读真实 anthropic key
     os.environ.pop("QA4_ANTHROPIC_API_KEY", None)
 
