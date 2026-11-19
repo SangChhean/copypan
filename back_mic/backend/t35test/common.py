@@ -15,7 +15,10 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 logger = logging.getLogger("t35test")
 
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+# 4.0 作纲目专用的 Claude API key（2026-11-19 换用新 key）：只读 .env 里的 CLAUDE_API_KEY_4.0，
+# 不读主站的 CLAUDE_API_KEY，也不退回去用它；没配置就报错，不会悄悄花到 3.0 的 key 上。
+CLAUDE_API_KEY_ENV = "CLAUDE_API_KEY_4.0"
+CLAUDE_API_KEY = (os.getenv(CLAUDE_API_KEY_ENV) or "").strip()
 # 4.0 专用 Redis 容器 redis-v4（端口 6380），与 3.0 的 redis（6379）完全分开。
 # 只读 REDIS_V4_*，不读主站的 REDIS_HOST/REDIS_PORT，也不设默认值：
 # 没配置或连不上就不用缓存，绝不会退回去连 3.0 的 Redis。
@@ -38,7 +41,7 @@ except Exception as e:
     redis_client = None
     logger.warning(f"[t35test] 4.0 专用 Redis 未启用，将跳过缓存（不会连 3.0 的 Redis）: {e}")
 
-# Claude 客户端（需配置 CLAUDE_API_KEY）
+# Claude 客户端（需配置 CLAUDE_API_KEY_4.0）
 try:
     import anthropic
 
