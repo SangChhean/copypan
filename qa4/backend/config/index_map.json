@@ -9,7 +9,6 @@
     "text_cwwl": {"index": "qa4_text_cwwl", "vector_field": "text_vector"},
     "text_cwwn": {"index": "qa4_text_cwwn", "vector_field": "text_vector"},
     "text_others": {"index": "qa4_text_others", "vector_field": "text_vector"},
-    "map_note": {"index": "qa4_map_note", "vector_field": "text_vector"},
-    "pano_catalog": {"index": "qa4_pano_catalog", "vector_field": null}
+    "map_note": {"index": "qa4_map_note", "vector_field": "text_vector"}
   }
 }

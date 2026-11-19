@@ -1,6 +1,7 @@
 {
   "_comment_scripture": "Scripture 写 4848（图谱修订包应用后）；修订包应用前为 4851",
-  "es_total": 414082,
+  "_comment_es": "2026-11-19 起不含 pano_catalog（已从 qa4-es 删除）；原合计 414082 = 360931 + 53151",
+  "es_total": 360931,
   "es": {
     "outline_12490": 55841,
     "outline_feasts": 11110,
@@ -10,7 +11,6 @@
     "text_cwwn": 32032,
     "text_others": 15481,
     "map_note": 16052,
-    "pano_catalog": 53151,
     "hymns": 9154
   },
   "neo4j": {

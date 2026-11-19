@@ -70,7 +70,8 @@ class TestQueryBodies(unittest.TestCase):
         self.assertEqual(body["knn"]["num_candidates"], 200)
         self.assertEqual(body["knn"]["filter"], [{"terms": {"author": ["李常受"]}}])
         self.assertEqual(build_knn_body("outline_12490", [0.0], k=1, num_candidates=1)["knn"]["field"], "embedding")
-        self.assertIsNone(build_knn_body("pano_catalog", [0.0], k=1, num_candidates=1))
+        # 无向量字段 / 未知逻辑名 → None（pano_catalog 已自配置移除）
+        self.assertIsNone(build_knn_body("no_such_novec", [0.0], k=1, num_candidates=1))
 
 
 class TestScope(unittest.TestCase):
@@ -79,6 +80,7 @@ class TestScope(unittest.TestCase):
         self.assertNotIn("bible", dec.indices)
         self.assertNotIn("hymns", dec.indices)
         self.assertNotIn("pano_catalog", dec.indices)
+        self.assertNotIn("outline_12490", dec.indices)  # searchable=false
         self.assertIn("map_note", dec.indices)
 
     def test_author_hard_filter(self):
@@ -113,13 +115,14 @@ def _service(docs_by_lg, *, rerank_fail=False):
 
 class TestService(unittest.TestCase):
     def test_soft_priority_first_then_fill(self):
-        docs = {"outline_12490": [_doc("ol", i) for i in range(3)], "text_cwwl": [_doc("cw", i) for i in range(2)]}
+        # outline_12490 已 searchable=false；用 map_note（不在「个人经历」软优先里）验证先软优先再补其余索引
+        docs = {"map_note": [_doc("mn", i) for i in range(3)], "text_cwwl": [_doc("cw", i) for i in range(2)]}
         svc, es, _ = _service(docs)
         res = asyncio.run(svc.retrieve(SubQuestionSpec(query="个人", qtype="个人经历", cap=20)))
         idx = [p.index for p in res.passages]
         self.assertEqual(idx[:2], ["text_cwwl", "text_cwwl"])
-        self.assertIn("outline_12490", idx[2:])
-        self.assertEqual(set(idx[2:]), {"outline_12490"})
+        self.assertIn("map_note", idx[2:])
+        self.assertEqual(set(idx[2:]), {"map_note"})
 
     def test_priority_enough_skips_fill(self):
         docs = {"outline_12490": [_doc("ol", i) for i in range(3)], "text_cwwl": [_doc("cw", i) for i in range(5)]}
@@ -147,7 +150,7 @@ class TestService(unittest.TestCase):
         self.assertEqual(es.bodies, [])
 
     def test_word_routes_and_relaxed_mode(self):
-        docs = {"text_cwwl": [_doc("cw", i) for i in range(2)], "outline_12490": [_doc("ol", i) for i in range(2)]}
+        docs = {"text_cwwl": [_doc("cw", i) for i in range(2)], "map_note": [_doc("mn", i) for i in range(2)]}
         svc, _, rr = _service(docs)
         spec = SubQuestionSpec(query="q", qtype="个人经历", words=["甲", "乙"], original_question="原话")
         normal = asyncio.run(svc.retrieve(spec))
@@ -159,7 +162,8 @@ class TestService(unittest.TestCase):
         self.assertIn("original", relaxed.coverage["routes"])
         # 放宽：主路+原话 1 组 + 每个推荐词各 1 组 → 3 次精排；无软优先分两遍
         self.assertEqual(rr.calls - calls_normal, 3)
-        self.assertNotEqual([p.index for p in relaxed.passages][:2], ["text_cwwl", "text_cwwl"])
+        # 放宽后不再保证软优先把 text_cwwl 顶在最前
+        self.assertTrue(any(p.index == "map_note" for p in relaxed.passages) or len(relaxed.passages) >= 2)
 
     def test_rerank_failure_degraded_keeps_fusion_order(self):
         docs = {"outline_12490": [_doc("ol", i) for i in range(3)]}

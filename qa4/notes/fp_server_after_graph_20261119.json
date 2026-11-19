@@ -1,0 +1,273 @@
+{
+  "errors": [],
+  "es": {
+    "indices": {
+      "qa4_bible": {
+        "doc_count": 3691,
+        "mapping_sha256": "76361419566d9b31c123d9a640e994534516f3fd09cc422bc1b025a5f3dcc0f2",
+        "sample_content_sha256": "c5a8cbd60f80a464aa7c261eeff16cf0a91af38200fd287c1d921ff59058cd27",
+        "sample_ids_sha256": "f6fc54750c2d5fd9350cb02ef1d4f99f02341f3eddc908d3fc141e49e2983b96",
+        "sample_n": 200,
+        "sample_pool": 3691,
+        "sample_stride_k": 18
+      },
+      "qa4_hymns": {
+        "doc_count": 9154,
+        "mapping_sha256": "cc9344f921a0355efda7075a5394b88eb989a9f294894d34b72f3e2c796f3fda",
+        "sample_content_sha256": "f5dc87c6f8e73eebb39ac27bd7cdd26a7dffde1b4822d3525941eab5f6289aac",
+        "sample_ids_sha256": "1b43173b1db3cad0dcda42d57220e9d0da08cb5035ce3edfb0c7838989222355",
+        "sample_n": 200,
+        "sample_pool": 9154,
+        "sample_stride_k": 45
+      },
+      "qa4_map_note": {
+        "doc_count": 16052,
+        "mapping_sha256": "fc7d03f64113e275b2e674fe5b47234bc48b76ce34abc24fb69346ef321c3dd4",
+        "sample_content_sha256": "0d98bb2375724eee11b62aa6009ad0412ad47c01e0dda12252da7827e11685bf",
+        "sample_ids_sha256": "ae3e18337e09f3d0db6fcc402bdb0670f1ff4acab00c4edc643bc54271aecfa5",
+        "sample_n": 200,
+        "sample_pool": 16052,
+        "sample_stride_k": 80
+      },
+      "qa4_outline_12490": {
+        "doc_count": 55841,
+        "mapping_sha256": "aa949bbe9620cb28437f68c51148e5a904c731af1d4dcd9a956631a81ce498b8",
+        "sample_content_sha256": "7e366d46b38fea5b801897ae864fb396660ff6f7b3fae4b11683b92323365fdd",
+        "sample_ids_sha256": "064738395dcf34bca8de141ef5928660d37e9fc043f954c6bb230d816b6f6b4e",
+        "sample_n": 200,
+        "sample_pool": 55841,
+        "sample_stride_k": 279
+      },
+      "qa4_outline_feasts": {
+        "doc_count": 11110,
+        "mapping_sha256": "aa949bbe9620cb28437f68c51148e5a904c731af1d4dcd9a956631a81ce498b8",
+        "sample_content_sha256": "54d5f6ed435794dbed65298fee239c5f469541f4d5d107c25b07b9f7ff6de871",
+        "sample_ids_sha256": "dc7b85ee2b14792f9ba583abbb5f1fbb5a1d7e01f8eff975c2fe5abf5b57b121",
+        "sample_n": 200,
+        "sample_pool": 11110,
+        "sample_stride_k": 55
+      },
+      "qa4_text_cwwl": {
+        "doc_count": 178107,
+        "mapping_sha256": "f5049658960bc20cc0cae92de8fca6b985762aaee5ab11d67a1d2e3fc14bf1b9",
+        "sample_content_sha256": "bd2b72f393b70816a18be6f3a43b3a525664feece91ebd76bbee7912ccffefb9",
+        "sample_ids_sha256": "cdd67c6613a7c1ee94f4941868f3fee15f51afed7e8c5c59e0de8472e2c8b798",
+        "sample_n": 200,
+        "sample_pool": 178107,
+        "sample_stride_k": 890
+      },
+      "qa4_text_cwwn": {
+        "doc_count": 32032,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "2e15f6e30aa5ac09fc21c269f0d1cc43b9456237c213e111b54d3a848666d42e",
+        "sample_ids_sha256": "d906c0842ff0aa52e63808e802d1a49e143c489b658d48ccabec6bc1dec4f0a0",
+        "sample_n": 200,
+        "sample_pool": 32032,
+        "sample_stride_k": 160
+      },
+      "qa4_text_life": {
+        "doc_count": 39463,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "86edec5a6734856046d17ae395a691db962bcb687ecd618cdb7f75a9463b643b",
+        "sample_ids_sha256": "f6d245908dd0c80cb7471d68bcf3ac354f36e376726fe0221741adbcd3a6c85e",
+        "sample_n": 200,
+        "sample_pool": 39463,
+        "sample_stride_k": 197
+      },
+      "qa4_text_others": {
+        "doc_count": 15481,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "4f9c0e9f83cf9cdf507a07d892e0c972bc096dd74c7435360bdaea1fc7c3a9aa",
+        "sample_ids_sha256": "a173ba1e278e0d86b9f8df2d3ca398ebe7f9a988e52423fa138c92e3d45d6994",
+        "sample_n": 200,
+        "sample_pool": 15481,
+        "sample_stride_k": 77
+      }
+    },
+    "sample_n_target": 200,
+    "sample_rule": "sorted_id_stride_v2",
+    "url_host": "127.0.0.1:9202"
+  },
+  "generated_at_unix": 1795095779,
+  "host_hint": "",
+  "neo4j": {
+    "bracket_inner_nodes": 8,
+    "constraints": [
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Branch"
+        ],
+        "name": "branch_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Scripture"
+        ],
+        "name": "scripture_ref",
+        "properties": [
+          "ref"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Trunk"
+        ],
+        "name": "trunk_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Truth_Point"
+        ],
+        "name": "truth_point_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      }
+    ],
+    "http_url_host": "127.0.0.1:7476",
+    "indexes": [
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Branch"
+        ],
+        "name": "branch_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [],
+        "name": "index_343aff4e",
+        "properties": [],
+        "state": "ONLINE",
+        "type": "LOOKUP"
+      },
+      {
+        "entityType": "RELATIONSHIP",
+        "labelsOrTypes": [],
+        "name": "index_f7700477",
+        "properties": [],
+        "state": "ONLINE",
+        "type": "LOOKUP"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Scripture"
+        ],
+        "name": "scripture_ref",
+        "properties": [
+          "ref"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Trunk"
+        ],
+        "name": "trunk_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Truth_Point"
+        ],
+        "name": "truth_point_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      }
+    ],
+    "labels": {
+      "Branch": 91,
+      "Scripture": 4848,
+      "Trunk": 12,
+      "Truth_Point": 2380
+    },
+    "mutuality_on_bracket_inner": 0,
+    "node_total": 7331,
+    "prop_nonempty": {
+      "definition_3a": 2380,
+      "definition_3b": 2070,
+      "devine_argument": 189,
+      "greek_terms": 2265,
+      "hebrew_terms": 1527,
+      "high_peak_content": 87,
+      "intrinsic_significance": 2380,
+      "mutuality": 0,
+      "name": 2483,
+      "name_en": 2380,
+      "organic_advance": 69,
+      "same_as": 8
+    },
+    "rel_total": 52426,
+    "rel_types": {
+      "BECOMES": 470,
+      "BELONGS_TO_TRUNK": 2380,
+      "BUILT_INTO": 451,
+      "BY_MEANS_OF": 2044,
+      "CAUSES": 1097,
+      "COINHERES_WITH": 278,
+      "CONSUMMATED_IN": 190,
+      "CONTAINS": 491,
+      "CO_WITH": 1376,
+      "DISPENSED_INTO": 2155,
+      "EMBODIED_IN_REALIZED_AS": 196,
+      "EQUIVALENT_TO": 1189,
+      "EXPERIENCES_ENJOYS": 7854,
+      "EXPRESSES": 2174,
+      "GRAFTING": 91,
+      "IN": 1059,
+      "INCORPORATED_WITH": 141,
+      "INDWELLS": 1194,
+      "IS_A": 226,
+      "LEADS_TO": 2797,
+      "LOCATED_IN": 657,
+      "MINGLED_WITH": 295,
+      "OF_BRANCH_DIRECTLY": 2380,
+      "OF_BRANCH_INDIRECTLY": 1676,
+      "OPPOSES_CONTRASTS_WITH": 733,
+      "OUT_OF": 728,
+      "PRACTICED_AS": 3668,
+      "PROCESSED_THROUGH": 532,
+      "REVEALS": 1385,
+      "SIMULTANEOUS_WITH": 220,
+      "SPREADS": 904,
+      "SUPPORTED_BY": 9803,
+      "TYPIFIES": 663,
+      "UNITED_WITH": 929
+    },
+    "scripture_nodes": 4848,
+    "via": "http"
+  },
+  "sample_n": 200,
+  "sample_rule": "sorted_id_stride_v2",
+  "schema": "qa4_es_neo4j_fingerprint_v2"
+}

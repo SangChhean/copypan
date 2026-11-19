@@ -1,0 +1,253 @@
+{
+  "errors": [],
+  "es": {
+    "indices": {
+      "qa4_bible": {
+        "doc_count": 3691,
+        "mapping_sha256": "76361419566d9b31c123d9a640e994534516f3fd09cc422bc1b025a5f3dcc0f2",
+        "sample_content_sha256": "ecc622af68602f3e61bd4cda867fd4b13e1ffe507f449299ded1ab7f69ec16b9",
+        "sample_n": 200,
+        "sample_pool": 3691
+      },
+      "qa4_hymns": {
+        "doc_count": 9154,
+        "mapping_sha256": "cc9344f921a0355efda7075a5394b88eb989a9f294894d34b72f3e2c796f3fda",
+        "sample_content_sha256": "5271cf5c61ad0901e6636856832fd8d7af5e966941d64c0994e5e366914e379b",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_map_note": {
+        "doc_count": 16052,
+        "mapping_sha256": "fc7d03f64113e275b2e674fe5b47234bc48b76ce34abc24fb69346ef321c3dd4",
+        "sample_content_sha256": "ae8d534ac6704f55378f14151901c5900b8862a2b03df5415b635140c5b8d2b0",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_outline_12490": {
+        "doc_count": 55841,
+        "mapping_sha256": "aa949bbe9620cb28437f68c51148e5a904c731af1d4dcd9a956631a81ce498b8",
+        "sample_content_sha256": "eb011e0719b87d19fc7b51ffdb9940647304d242e4cc348f7c0e7e306210ac30",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_outline_feasts": {
+        "doc_count": 11110,
+        "mapping_sha256": "aa949bbe9620cb28437f68c51148e5a904c731af1d4dcd9a956631a81ce498b8",
+        "sample_content_sha256": "19e43660cf5b5cdcd87b0d7d6e04a552a65c2b15e63e22aff1ba9b417b2eaa30",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_text_cwwl": {
+        "doc_count": 178107,
+        "mapping_sha256": "f5049658960bc20cc0cae92de8fca6b985762aaee5ab11d67a1d2e3fc14bf1b9",
+        "sample_content_sha256": "7aa4129ece97d37f9bfd4d8849a888f3afea1e93738920167842f46bf9cdce7f",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_text_cwwn": {
+        "doc_count": 32032,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "c17a543cd1acdc0fea176c5c93fb177b8421d5e91324909b5cde2add4705a3b4",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_text_life": {
+        "doc_count": 39463,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "9ac9c646364e8d0cc900455d483fa5de0d4ba77b18440f8452e06a6e3176d350",
+        "sample_n": 200,
+        "sample_pool": 5000
+      },
+      "qa4_text_others": {
+        "doc_count": 15481,
+        "mapping_sha256": "a6ba84665056591f8d5f5c352705184b22258c5fa8e40e6c8a1e03f13071d4dd",
+        "sample_content_sha256": "311b85e52919e0eb1223cfda92c4a5829c7edef910b84e56a219bb137fef86dc",
+        "sample_n": 200,
+        "sample_pool": 5000
+      }
+    },
+    "url_host": "127.0.0.1:9202"
+  },
+  "generated_at_unix": 1795093115,
+  "host_hint": "SANGCHHEANSLAPT",
+  "neo4j": {
+    "bracket_inner_nodes": 8,
+    "constraints": [
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Branch"
+        ],
+        "name": "branch_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Scripture"
+        ],
+        "name": "scripture_ref",
+        "properties": [
+          "ref"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Trunk"
+        ],
+        "name": "trunk_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Truth_Point"
+        ],
+        "name": "truth_point_name",
+        "properties": [
+          "name"
+        ],
+        "type": "UNIQUENESS"
+      }
+    ],
+    "http_url_host": "127.0.0.1:7476",
+    "indexes": [
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Branch"
+        ],
+        "name": "branch_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [],
+        "name": "index_343aff4e",
+        "properties": [],
+        "state": "ONLINE",
+        "type": "LOOKUP"
+      },
+      {
+        "entityType": "RELATIONSHIP",
+        "labelsOrTypes": [],
+        "name": "index_f7700477",
+        "properties": [],
+        "state": "ONLINE",
+        "type": "LOOKUP"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Scripture"
+        ],
+        "name": "scripture_ref",
+        "properties": [
+          "ref"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Trunk"
+        ],
+        "name": "trunk_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      },
+      {
+        "entityType": "NODE",
+        "labelsOrTypes": [
+          "Truth_Point"
+        ],
+        "name": "truth_point_name",
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "type": "RANGE"
+      }
+    ],
+    "labels": {
+      "Branch": 91,
+      "Scripture": 4848,
+      "Trunk": 12,
+      "Truth_Point": 2380
+    },
+    "mutuality_on_bracket_inner": 0,
+    "node_total": 7331,
+    "prop_nonempty": {
+      "definition_3a": 2380,
+      "definition_3b": 2070,
+      "devine_argument": 189,
+      "greek_terms": 2265,
+      "hebrew_terms": 1527,
+      "high_peak_content": 87,
+      "intrinsic_significance": 2380,
+      "mutuality": 0,
+      "name": 2483,
+      "name_en": 2380,
+      "organic_advance": 69,
+      "same_as": 8
+    },
+    "rel_total": 52426,
+    "rel_types": {
+      "BECOMES": 470,
+      "BELONGS_TO_TRUNK": 2380,
+      "BUILT_INTO": 451,
+      "BY_MEANS_OF": 2044,
+      "CAUSES": 1097,
+      "COINHERES_WITH": 278,
+      "CONSUMMATED_IN": 190,
+      "CONTAINS": 491,
+      "CO_WITH": 1376,
+      "DISPENSED_INTO": 2155,
+      "EMBODIED_IN_REALIZED_AS": 196,
+      "EQUIVALENT_TO": 1189,
+      "EXPERIENCES_ENJOYS": 7854,
+      "EXPRESSES": 2174,
+      "GRAFTING": 91,
+      "IN": 1059,
+      "INCORPORATED_WITH": 141,
+      "INDWELLS": 1194,
+      "IS_A": 226,
+      "LEADS_TO": 2797,
+      "LOCATED_IN": 657,
+      "MINGLED_WITH": 295,
+      "OF_BRANCH_DIRECTLY": 2380,
+      "OF_BRANCH_INDIRECTLY": 1676,
+      "OPPOSES_CONTRASTS_WITH": 733,
+      "OUT_OF": 728,
+      "PRACTICED_AS": 3668,
+      "PROCESSED_THROUGH": 532,
+      "REVEALS": 1385,
+      "SIMULTANEOUS_WITH": 220,
+      "SPREADS": 904,
+      "SUPPORTED_BY": 9803,
+      "TYPIFIES": 663,
+      "UNITED_WITH": 929
+    },
+    "scripture_nodes": 4848,
+    "via": "http"
+  },
+  "sample_n": 200,
+  "sample_seed": "qa4-fingerprint-v1",
+  "schema": "qa4_es_neo4j_fingerprint_v1"
+}

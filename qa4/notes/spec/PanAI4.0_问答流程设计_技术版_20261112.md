@@ -510,6 +510,7 @@
 ### 服务器待办（见交接文档）
 - 更换 ES 与 neo4j 的密码等。密码只由 Srey 自己输入，不贴给助手或 Cursor，不写进 .env、命令行或 git。
 - 【11-16 新增】图谱修订、organic_advance 与修正后 3a 的重新上传、专用 qa4-redis，见后端构建方案第十四节。
+- 【11-19 已完成】本机与服务器已删除 `qa4_pano_catalog` 与节点属性 `mutuality`；服务器图谱已用 dump `5D82F173…6B695` 重载（7331 / 52426 / Scripture 4848 / 4 约束 / 索引 ONLINE），指纹与本机 0 差异。11-09 原 dump 在 `/opt/qa4_data/graph`（另有 `neo4j.dump.20261109.bak`），新 dump 在 `/opt/qa4_data/graph_20261119b`。`qa4_outline_12490` 暂留（`targeted.life_study()` 仍依赖）。详见 `notes/stage7_server_checklist.md`、`notes/remove_pano_mutuality_20261119.md`。
 
 ---
 

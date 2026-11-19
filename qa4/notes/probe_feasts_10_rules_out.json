@@ -1,0 +1,79 @@
+{
+  "picked": [
+    {
+      "kw": "国殇",
+      "book_title": "2007年国殇节特会",
+      "message_title": "借着看见、经历、并应用十二件紧要的事，顾到基督身体的一",
+      "message_number": 3,
+      "zh": "2007年国殇节特会，第3篇",
+      "en": "2007 MDC, msg. 3",
+      "ok": true
+    },
+    {
+      "kw": "冬季训练",
+      "book_title": "1997年冬季训练",
+      "message_title": "钉十字架的基督是我们的一切，为着我们在召会中一切的生活",
+      "message_number": 1,
+      "zh": "1997年冬季训练，第1篇",
+      "en": "1997 WT, msg. 1",
+      "ok": true
+    },
+    {
+      "kw": "感恩节",
+      "book_title": "2013年感恩节特会",
+      "message_title": "生命的修补职事",
+      "message_number": 1,
+      "zh": "2013年感恩节特会，第1篇",
+      "en": "2013 TGC, msg. 1",
+      "ok": true
+    },
+    {
+      "kw": "华语",
+      "book_title": "2013年国际华语特会",
+      "message_title": "新约中关于基督的概览",
+      "message_number": 1,
+      "zh": "2013年国际华语特会，第1篇",
+      "en": "2013 ICSC, msg. 1",
+      "ok": true
+    },
+    {
+      "kw": "夏季训练",
+      "book_title": "1997年夏季训练",
+      "message_title": "使徒的教训—神在新约中的整个说话，关于神新约的经纶",
+      "message_number": 1,
+      "zh": "1997年夏季训练，第1篇",
+      "en": "1997 ST, msg. 1",
+      "ok": true
+    },
+    {
+      "kw": "春季长老",
+      "book_title": "2001年春季长老训练",
+      "message_title": "一个新人的更新",
+      "message_number": 3,
+      "zh": "2001年春季长老训练，第3篇",
+      "en": "2001 ITERO-Spring, msg. 3",
+      "ok": true
+    },
+    {
+      "kw": "秋季长老",
+      "book_title": "2015年秋季长老训练",
+      "message_title": "神经纶的恢复",
+      "message_number": 1,
+      "zh": "2015年秋季长老训练，第1篇",
+      "en": "2015 ITERO-Fall, msg. 1",
+      "ok": true
+    },
+    {
+      "kw": "全时间",
+      "book_title": "2002年安那翰全时间训练",
+      "message_title": "受苦并寻求之圣民在圣所中所得的启示",
+      "message_number": 19,
+      "zh": "2002年安那翰全时间训练，第19篇",
+      "en": "2002 FTTA, msg. 19",
+      "ok": true
+    }
+  ],
+  "fail_title_examples": [],
+  "n_ok": 8,
+  "n_fail": 0
+}

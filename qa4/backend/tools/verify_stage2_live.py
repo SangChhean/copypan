@@ -110,7 +110,7 @@ def check_mappings(es, rcfg) -> dict:
             if not fname:
                 continue
             ok = fname in props
-            if fname and lg != "pano_catalog" and label == "vector_field" and ok:
+            if fname and label == "vector_field" and ok:
                 t = props[fname].get("type")
                 dims = props[fname].get("dims")
                 ok = t == "dense_vector" and dims == 1024

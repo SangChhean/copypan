@@ -6,7 +6,7 @@
 | 名称 | 路径 | 大小（字节） | SHA256 | 说明 |
 |------|------|--------------|--------|------|
 | neo4j.dump | `G:\PanAI4.0专用\图谱上线\neo4j.dump` | 10,507,204 | `B5B0C10C657E0FF03309A6D21603DC11B3152D66037F499EAD266948721089C4` | PanAI 4.0 图谱 dump；与本机 `neo4j-v4` 基线一致 |
-| PanAI4.0_ES数据包_20261107.zip | `G:\PanAI4.0专用\数据包\PanAI4.0_ES数据包_20261107.zip` | 2,764,415,696 | `A61457CDBFAF33EA34F082A0014A0DB6673CAF0CDEC509EAD6B2A4A59C8FD21B` | ES 十索引导入包（含 `es/import_to_local_es.py`） |
+| PanAI4.0_ES数据包_20261107.zip | `G:\PanAI4.0专用\数据包\PanAI4.0_ES数据包_20261107.zip` | 2,764,415,696 | `A61457CDBFAF33EA34F082A0014A0DB6673CAF0CDEC509EAD6B2A4A59C8FD21B` | ES 原十索引导入包（含 `es/import_to_local_es.py`）；2026-11-19 起运行中的 qa4-es 默认九索引合计 360931，不含已删的 `qa4_pano_catalog`（包内仍可重建） |
 | PanAI4.0_图谱数据包_20261107.zip | `G:\PanAI4.0专用\数据包\PanAI4.0_图谱数据包_20261107.zip` | 29,298,212 | `4803ADB9E8EDECCA06F4DA7F76066BCD2A473F5C67AC7BBA4E1A5B6C27ACAAA9` | 图谱 dump + 两份 graph_annotations JSON + load 脚本 |
 | organic_advance.json（源） | `G:\copypan\back_mic\backend\panai4\data\graph_annotations\organic_advance.json` | 38,800,482 | `63A2320504C535E5B54D6AC8B33E0F76CAFDFA5D330EDFE9CCBBAA15ABFB8178` | 图谱外置大 JSON（业务仓源） |
 | truth_dictionary_3a3b.json（源） | `G:\copypan\back_mic\backend\panai4\data\graph_annotations\truth_dictionary_3a3b.json` | 31,627,640 | `98721FD096CBDB1E10080089D22FEDBA3A7973EB0F2C7B2F9BC14B66F3E7DAC1` | 图谱外置大 JSON（业务仓源） |

@@ -87,7 +87,7 @@ curl http://127.0.0.1:8030/readyz
 
 ## 索引实际名与向量字段
 
-见 `qa4/backend/config/index_map.json`：逻辑名 → `qa4_*` 实际索引；outline/bible/hymns 用 `embedding`，text_*/map_note 用 `text_vector`，pano_catalog 无向量。源包为 `panai4_*`，导入目标前缀 `qa4_`（`qa4/data_prep/es_import.py`）。
+见 `qa4/backend/config/index_map.json`：逻辑名 → `qa4_*` 实际索引；outline/bible/hymns 用 `embedding`，text_*/map_note 用 `text_vector`。九索引合计 360931（2026-11-19 起不含已删除的 `qa4_pano_catalog`）。源包为 `panai4_*`，导入目标前缀 `qa4_`（`qa4/data_prep/es_import.py`）。
 
 ## 测试
 

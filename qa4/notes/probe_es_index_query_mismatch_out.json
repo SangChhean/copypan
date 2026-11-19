@@ -1,0 +1,830 @@
+[
+  {
+    "logical": "text_cwwl",
+    "index": "qa4_text_cwwl",
+    "exists": true,
+    "count": 178107,
+    "fields": {
+      "author": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "book_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "book_title.keyword": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chars": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chunk_id": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "corpus": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "en": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_key": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_number": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "original_ids": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "paragraph_type": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "section_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "source_en": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "source_index": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "source_zh": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "text": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "text_vector": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "year": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      }
+    },
+    "bm25": {
+      "body": {
+        "size": 3,
+        "query": {
+          "bool": {
+            "must": [
+              {
+                "match": {
+                  "text": {
+                    "query": "包罗万有的基督"
+                  }
+                }
+              }
+            ],
+            "should": [
+              {
+                "match_phrase": {
+                  "text": {
+                    "query": "包罗万有的基督",
+                    "boost": 2.0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "_source": [
+          "author",
+          "book_title",
+          "chunk_id",
+          "message_key",
+          "message_number",
+          "message_title",
+          "section_title",
+          "source_zh",
+          "text",
+          "year"
+        ]
+      },
+      "query_fields": [
+        "author",
+        "book_title",
+        "chunk_id",
+        "message_key",
+        "message_number",
+        "message_title",
+        "section_title",
+        "source_zh",
+        "text",
+        "year"
+      ],
+      "ok": true,
+      "hits": 3,
+      "total": 1836
+    },
+    "knn": {
+      "body_meta": {
+        "has_body": true,
+        "vector_field": "text_vector",
+        "dims_used": 1024,
+        "size": 3,
+        "knn_field": "text_vector"
+      },
+      "query_fields": [
+        "text_vector"
+      ],
+      "ok": true,
+      "hits": 3
+    },
+    "field_compare": {
+      "bm25": [
+        {
+          "field": "author",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "book_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "chunk_id",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_key",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_number",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "section_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "source_zh",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "text",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "year",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        }
+      ],
+      "knn": [
+        {
+          "field": "text_vector",
+          "ok": true,
+          "note": "dense_vector dims=1024",
+          "kind": "knn"
+        }
+      ]
+    },
+    "mismatched_or_missing_fields": []
+  },
+  {
+    "logical": "outline_12490",
+    "index": "qa4_outline_12490",
+    "exists": true,
+    "count": 55841,
+    "fields": {
+      "author": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "batch": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "book_path": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "book_title": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "book_title.text": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "chunk_id": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chunk_index": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chunk_total": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "conference": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_key": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_number": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_title": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_title.text": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "min_level": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "month": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "para_nos": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "paragraph_type": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "part_name": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "part_no": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "point_count": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "source_path": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "text": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "tokens": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "year": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "year_end": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      }
+    },
+    "bm25": {
+      "body": {
+        "size": 3,
+        "query": {
+          "bool": {
+            "must": [
+              {
+                "match": {
+                  "text": {
+                    "query": "包罗万有的基督"
+                  }
+                }
+              }
+            ],
+            "should": [
+              {
+                "match_phrase": {
+                  "text": {
+                    "query": "包罗万有的基督",
+                    "boost": 2.0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "_source": [
+          "author",
+          "book_title",
+          "chunk_id",
+          "chunk_index",
+          "chunk_total",
+          "message_key",
+          "message_number",
+          "message_title",
+          "text",
+          "year",
+          "year_end"
+        ]
+      },
+      "query_fields": [
+        "author",
+        "book_title",
+        "chunk_id",
+        "chunk_index",
+        "chunk_total",
+        "message_key",
+        "message_number",
+        "message_title",
+        "text",
+        "year",
+        "year_end"
+      ],
+      "ok": true,
+      "hits": 3,
+      "total": 632
+    },
+    "knn": {
+      "body_meta": {
+        "has_body": true,
+        "vector_field": "embedding",
+        "dims_used": 1024,
+        "size": 3,
+        "knn_field": "embedding"
+      },
+      "query_fields": [
+        "embedding"
+      ],
+      "ok": true,
+      "hits": 3
+    },
+    "field_compare": {
+      "bm25": [
+        {
+          "field": "author",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "book_title",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "chunk_id",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "chunk_index",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "chunk_total",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_key",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_number",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_title",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "text",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "year",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "year_end",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        }
+      ],
+      "knn": [
+        {
+          "field": "embedding",
+          "ok": true,
+          "note": "dense_vector dims=1024",
+          "kind": "knn"
+        }
+      ]
+    },
+    "mismatched_or_missing_fields": []
+  },
+  {
+    "logical": "text_life",
+    "index": "qa4_text_life",
+    "exists": true,
+    "count": 39463,
+    "fields": {
+      "author": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "book_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "book_title.keyword": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chars": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "chunk_id": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "corpus": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "en": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_key": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_number": {
+        "type": "integer",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "message_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "original_ids": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "paragraph_type": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "section_title": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "source_en": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "source_index": {
+        "type": "keyword",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "source_zh": {
+        "type": "text",
+        "dims": null,
+        "analyzer": null,
+        "search_analyzer": null
+      },
+      "text": {
+        "type": "text",
+        "dims": null,
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "text_vector": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "analyzer": null,
+        "search_analyzer": null
+      }
+    },
+    "bm25": {
+      "body": {
+        "size": 3,
+        "query": {
+          "bool": {
+            "must": [
+              {
+                "match": {
+                  "text": {
+                    "query": "包罗万有的基督"
+                  }
+                }
+              }
+            ],
+            "should": [
+              {
+                "match_phrase": {
+                  "text": {
+                    "query": "包罗万有的基督",
+                    "boost": 2.0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "_source": [
+          "author",
+          "book_title",
+          "chunk_id",
+          "message_key",
+          "message_number",
+          "message_title",
+          "section_title",
+          "source_zh",
+          "text"
+        ]
+      },
+      "query_fields": [
+        "author",
+        "book_title",
+        "chunk_id",
+        "message_key",
+        "message_number",
+        "message_title",
+        "section_title",
+        "source_zh",
+        "text"
+      ],
+      "ok": true,
+      "hits": 3,
+      "total": 438
+    },
+    "knn": {
+      "body_meta": {
+        "has_body": true,
+        "vector_field": "text_vector",
+        "dims_used": 1024,
+        "size": 3,
+        "knn_field": "text_vector"
+      },
+      "query_fields": [
+        "text_vector"
+      ],
+      "ok": true,
+      "hits": 3
+    },
+    "field_compare": {
+      "bm25": [
+        {
+          "field": "author",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "book_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "chunk_id",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_key",
+          "ok": true,
+          "note": "type='keyword'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_number",
+          "ok": true,
+          "note": "type='integer'",
+          "kind": "bm25"
+        },
+        {
+          "field": "message_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "section_title",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "source_zh",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        },
+        {
+          "field": "text",
+          "ok": true,
+          "note": "type='text'",
+          "kind": "bm25"
+        }
+      ],
+      "knn": [
+        {
+          "field": "text_vector",
+          "ok": true,
+          "note": "dense_vector dims=1024",
+          "kind": "knn"
+        }
+      ]
+    },
+    "mismatched_or_missing_fields": []
+  }
+]

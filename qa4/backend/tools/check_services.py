@@ -145,7 +145,7 @@ def evaluate_es(
     """文档数 + mapping 向量字段核对。
 
     - 有 vector_field：须存在、type=dense_vector、dims=1024；否则 not_ready
-    - pano_catalog（vector_field 空）：不要求向量字段
+    - vector_field 为空时：不要求向量字段（历史 pano_catalog；现配置已无该项）
     - 仅文档数不符：degraded
     - 索引缺失：not_ready
     """

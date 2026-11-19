@@ -1,5 +1,14 @@
 # 阶段 7 · 服务器部署检查清单（摘录）
 
+## 2026-11-19 图谱 / ES 同步状态（已完成）
+
+- **`qa4_pano_catalog`、`mutuality` 已在本机与服务器删除**（九索引合计 360931；图谱 `mutuality` 非空为 0）。
+- **服务器图谱**已于 2026-11-19 用本机 dump（SHA256 `5D82F173…6B695`）重新载入：nodes **7331** / rels **52426** / Scripture **4848** / **4** 约束 / 索引 **ONLINE**；指纹与本机 `fp_now2.json` **0 差异**（见 `fp_server_after_graph_20261119.json`）。
+- **Dump 位置（服务器）**：原始 11-09 dump 仍在 `/opt/qa4_data/graph`（另有 `neo4j.dump.20261109.bak`）；新 dump 在 `/opt/qa4_data/graph_20261119b`。`graph_load.sh` 的 `EXPECTED_SHA` 已改为 20261119b。
+- **`qa4_outline_12490` 暂留**：`retrieval/targeted.py` 的 `life_study()` 仍依赖该索引。
+
+载入步骤见 `server_graph_load_20261119b.md`；本机删除记录见 `remove_pano_mutuality_20261119.md`。
+
 ## 本机免登录开关
 
 - **服务器环境文件里绝不能有 `QA4_DEV_AUTOLOGIN`；部署前用 grep 检查为 0。**

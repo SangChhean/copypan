@@ -1,0 +1,37 @@
+{
+  "a": "G:\\copypan\\qa4\\notes\\fp_before_mutuality_20261119.json",
+  "b": "G:\\copypan\\qa4\\notes\\fp_after_mutuality_20261119.json",
+  "diff_count": 6,
+  "diffs": [
+    {
+      "path": "es.indices.qa4_pano_catalog.doc_count",
+      "before": 53151,
+      "after": "__MISSING__"
+    },
+    {
+      "path": "es.indices.qa4_pano_catalog.mapping_sha256",
+      "before": "03f1e88bc1a7db0862e09a6a2bb1e8959f1544d2b526e87cf14f3efa95b6da35",
+      "after": "__MISSING__"
+    },
+    {
+      "path": "es.indices.qa4_pano_catalog.sample_content_sha256",
+      "before": "8d98b6554dc0b3e828b0755fa4787b3e0302634f20d7c93105c8fdd36c97091f",
+      "after": "__MISSING__"
+    },
+    {
+      "path": "es.indices.qa4_pano_catalog.sample_n",
+      "before": 200,
+      "after": "__MISSING__"
+    },
+    {
+      "path": "es.indices.qa4_pano_catalog.sample_pool",
+      "before": 5000,
+      "after": "__MISSING__"
+    },
+    {
+      "path": "neo4j.prop_nonempty.mutuality",
+      "before": 116,
+      "after": 0
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "map_note": [
+    {
+      "chunk_id": "map_note_75-1-1_c1",
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，可十四24，注1）",
+      "source_en": "",
+      "qa4_bib_display": "[n] 圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联 第一篇　更美之约",
+      "rule_en": "Holy Bible Recovery Version, Mark 14:24, footnote 1"
+    },
+    {
+      "chunk_id": "map_note_75-1-1_c2",
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，来八6，注2）",
+      "source_en": "",
+      "qa4_bib_display": "[n] 圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联 第一篇　更美之约",
+      "rule_en": "Holy Bible Recovery Version, Heb. 8:6, footnote 2"
+    },
+    {
+      "chunk_id": "map_note_75-1-1_c3",
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，来十三20，注2）",
+      "source_en": "",
+      "qa4_bib_display": "[n] 圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联 第一篇　更美之约",
+      "rule_en": "Holy Bible Recovery Version, Heb. 13:20, footnote 2"
+    },
+    {
+      "chunk_id": "map_note_75-1-1_c4",
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，来九16，注1）",
+      "source_en": "",
+      "qa4_bib_display": "[n] 圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联 第一篇　更美之约",
+      "rule_en": "Holy Bible Recovery Version, Heb. 9:16, footnote 1"
+    },
+    {
+      "chunk_id": "map_note_75-1-1_c5",
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，来八12，注1）",
+      "source_en": "",
+      "qa4_bib_display": "[n] 圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联 第一篇　更美之约",
+      "rule_en": "Holy Bible Recovery Version, Heb. 8:12, footnote 1"
+    }
+  ],
+  "feasts": [
+    {
+      "book_title": "1997年感恩节特会",
+      "message_title": "加强基督生机的救恩",
+      "message_number": 2,
+      "year": 1997,
+      "rule_input": "1997年感恩节特会，第2篇",
+      "rule_en": "1997 TGC, msg. 2"
+    },
+    {
+      "book_title": "1997年冬季训练",
+      "message_title": "钉十字架的基督是我们的一切，为着我们在召会中一切的生活",
+      "message_number": 1,
+      "year": 1997,
+      "rule_input": "1997年冬季训练，第1篇",
+      "rule_en": "1997 WT, msg. 1"
+    }
+  ]
+}

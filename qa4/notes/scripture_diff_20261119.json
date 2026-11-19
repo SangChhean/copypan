@@ -1,0 +1,37 @@
+{
+  "local_n": 4848,
+  "server_n": 4851,
+  "only_server": [
+    "贴后三1",
+    "贴后三16",
+    "贴后三17",
+    "贴后三5",
+    "贴后二13",
+    "贴后二3"
+  ],
+  "only_local": [
+    "帖后三1",
+    "帖后三16",
+    "帖后二3"
+  ],
+  "count_mismatch": [
+    {
+      "ref": "帖后三17",
+      "local_n": 3,
+      "server_n": 2
+    },
+    {
+      "ref": "帖后三5",
+      "local_n": 4,
+      "server_n": 2
+    },
+    {
+      "ref": "帖后二13",
+      "local_n": 5,
+      "server_n": 4
+    }
+  ],
+  "only_server_n": 6,
+  "only_local_n": 3,
+  "count_mismatch_n": 3
+}

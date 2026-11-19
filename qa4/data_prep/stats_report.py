@@ -35,7 +35,7 @@ DEFAULT_ES_URL = "http://127.0.0.1:9202"
 DEFAULT_NEO4J_URI = "bolt://127.0.0.1:7689"
 DEFAULT_NEO4J_USER = "neo4j"
 QA4_CLUSTER = "qa4"
-EXPECTED_ES_TOTAL = 414082
+EXPECTED_ES_TOTAL = 360931  # 九索引；原含 pano_catalog 时为 414082
 EXPECTED_NODE_TOTAL = 7334
 EXPECTED_REL_TOTAL = 52426
 EXPECTED_LABELS = {
@@ -95,7 +95,6 @@ QA4_INDICES = (
     "qa4_text_cwwn",
     "qa4_text_others",
     "qa4_map_note",
-    "qa4_pano_catalog",
 )
 
 # 禁止在输出/日志中出现取值的字段名（仅报类型/非空计数）
@@ -1031,7 +1030,7 @@ def collect_es(es: ReadOnlyES, log: logging.Logger) -> dict[str, Any]:
         "total_docs": total_docs,
         "expected_total_docs": EXPECTED_ES_TOTAL,
         "self_check": {
-            "sum_equals_414082": check_ok,
+            "sum_equals_360931": check_ok,
             "sum": total_docs,
         },
     }
@@ -1110,7 +1109,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(
         f"- ES 十索引条数之和 {esc.get('sum')} "
         f"= {EXPECTED_ES_TOTAL} → "
-        f"**{'通过' if esc.get('sum_equals_414082') else '失败'}**"
+        f"**{'通过' if esc.get('sum_equals_360931') else '失败'}**"
     )
     lines.append("")
 
@@ -1611,7 +1610,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         f"ES total_docs={es_stats.get('total_docs')} "
-        f"self_check={es_stats['self_check']['sum_equals_414082']}"
+        f"self_check={es_stats['self_check']['sum_equals_360931']}"
     )
     print(f"JSON size={size} bytes")
     if mismatches:

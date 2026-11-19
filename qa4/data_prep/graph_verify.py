@@ -39,7 +39,7 @@ ANNOTATION_FIELDS: tuple[str, ...] = (
     "hebrew_terms",
     "intrinsic_significance",
     "devine_argument",
-    "mutuality",
+    # mutuality：2026-11-19 已从 qa4-neo4j 移除；back_mic 旧导入脚本仍可能写此字段
     "organic_advance",
     "high_peak_content",
     "definition_3a",

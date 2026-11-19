@@ -8,7 +8,8 @@
   ],
   "indices": {
     "outline_12490": {
-      "searchable": true,
+      "searchable": false,
+      "_note_searchable": "2026-11-19 关闭默认检索；改 true 可开回。定向取篇 life_study 仍硬编码查此索引。",
       "text_field": "text",
       "vector_field": "embedding",
       "fields": {
@@ -111,6 +112,7 @@
         "message_number": {"name": "message_number", "verified": true},
         "section_title": {"name": "section_title", "verified": true},
         "source_zh": {"name": "source_zh", "verified": true},
+        "source_en": {"name": "source_en", "verified": true, "_note": "index:false，经 _source 取值，勿用字段查询"},
         "author": {"name": "author", "verified": true},
         "message_key": {"name": "message_key", "verified": true},
         "order": {
@@ -136,6 +138,7 @@
         "message_number": {"name": "message_number", "verified": true},
         "section_title": {"name": "section_title", "verified": true},
         "source_zh": {"name": "source_zh", "verified": true},
+        "source_en": {"name": "source_en", "verified": true, "_note": "index:false，经 _source 取值"},
         "author": {"name": "author", "verified": true},
         "year": {"name": "year", "verified": true},
         "message_key": {"name": "message_key", "verified": true},
@@ -162,6 +165,7 @@
         "message_number": {"name": "message_number", "verified": true},
         "section_title": {"name": "section_title", "verified": true},
         "source_zh": {"name": "source_zh", "verified": true},
+        "source_en": {"name": "source_en", "verified": true, "_note": "index:false，经 _source 取值"},
         "author": {"name": "author", "verified": true},
         "message_key": {"name": "message_key", "verified": true}
       },
@@ -181,6 +185,7 @@
         "message_number": {"name": "message_number", "verified": true},
         "section_title": {"name": "section_title", "verified": true},
         "source_zh": {"name": "source_zh", "verified": true},
+        "source_en": {"name": "source_en", "verified": true, "_note": "index:false，经 _source 取值"},
         "author": {"name": "author", "verified": true},
         "message_key": {"name": "message_key", "verified": true}
       },
@@ -199,6 +204,7 @@
         "message_title": {"name": "message_title", "verified": true},
         "message_number": {"name": "message_number", "verified": true},
         "source_zh": {"name": "source_zh", "verified": true},
+        "source_en": {"name": "source_en", "verified": true, "_note": "index:false，经 _source 取值"},
         "author": {"name": "author", "verified": true},
         "message_key": {"name": "message_key", "verified": true}
       },
@@ -206,16 +212,6 @@
         "book_title": {"name": "book_title.keyword", "verified": true}
       },
       "note_key_regex": "注\\s*(\\d+)"
-    },
-    "pano_catalog": {
-      "searchable": false,
-      "text_field": "text",
-      "vector_field": null,
-      "fields": {
-        "id": {"name": "node_id", "verified": true},
-        "name": {"name": "name", "verified": true}
-      },
-      "filters": {}
     }
   },
   "params": {

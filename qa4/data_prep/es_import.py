@@ -306,14 +306,7 @@ INDEX_SPECS: dict[str, dict[str, Any]] = {
         "mapping": inherit_mapping(has_year=False, has_section=False),
         "files_glob": "shards/*.jsonl",
     },
-    "panai4_pano_catalog": {
-        "expect": 53151,
-        "vec_field": None,
-        "id_field": "node_id",
-        "kind": "pano_jsonl",
-        "mapping": PANO_MAPPING,
-        "files": ["docs.jsonl"],
-    },
+    # panai4_pano_catalog 已于 2026-11-19 从 qa4-es 目标集移除（可重建见数据包 docs.jsonl）
 }
 
 
@@ -536,8 +529,8 @@ def offline_plan(
         )
     log.info(f"MANIFEST 期望文档数合计 = {total_docs}")
     log.info(f"文件总字节 = {total_bytes}")
-    if total_docs != 414082 and set(indices) == set(INDEX_SPECS.keys()):
-        log.error(f"期望文档数之和应为 414082，实际 {total_docs}")
+    if total_docs != 360931 and set(indices) == set(INDEX_SPECS.keys()):
+        log.error(f"期望文档数之和应为 360931，实际 {total_docs}")
         return 1
     return 0
 

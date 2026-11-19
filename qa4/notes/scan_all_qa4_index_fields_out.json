@@ -1,0 +1,801 @@
+[
+  {
+    "index": "qa4_bible",
+    "total": 3691,
+    "scanned": 3691,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": false,
+      "source_en": false
+    },
+    "counts": {
+      "book_title": {
+        "present": 3691,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 3691,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 3691
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 3691
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "出埃及记",
+          "message_title": "二　对吗哪─属天粮食─的经历　十六1～36",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "出埃及记",
+          "message_title": "二　对吗哪─属天粮食─的经历　十六1～36",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "出埃及记",
+          "message_title": "二　对吗哪─属天粮食─的经历　十六1～36",
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_en": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "出埃及记",
+          "message_title": "二　对吗哪─属天粮食─的经历　十六1～36",
+          "source_zh": null,
+          "source_en": null
+        }
+      }
+    },
+    "any_sample": {
+      "book_title": "出埃及记",
+      "message_title": "二　对吗哪─属天粮食─的经历　十六1～36"
+    }
+  },
+  {
+    "index": "qa4_hymns",
+    "total": 9154,
+    "scanned": 9154,
+    "in_mapping": {
+      "book_title": false,
+      "message_title": false,
+      "source_zh": false,
+      "source_en": false
+    },
+    "counts": {
+      "book_title": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 9154
+      },
+      "message_title": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 9154
+      },
+      "source_zh": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 9154
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 9154
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "message_title": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_zh": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_en": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      }
+    },
+    "any_sample": {}
+  },
+  {
+    "index": "qa4_map_note",
+    "total": 16052,
+    "scanned": 16052,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": true,
+      "source_en": true
+    },
+    "counts": {
+      "book_title": {
+        "present": 16052,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 16052,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 15642,
+        "empty": 410,
+        "missing_key": 0
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 16052,
+        "missing_key": 0
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+          "message_title": "第一篇　更美之约",
+          "source_zh": "（恢复本圣经，可十四24，注1）",
+          "source_en": ""
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+          "message_title": "第一篇　更美之约",
+          "source_zh": "（恢复本圣经，可十四24，注1）",
+          "source_en": ""
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": {
+          "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+          "message_title": "第一篇　更美之约",
+          "source_zh": "（恢复本圣经，可十四24，注1）",
+          "source_en": ""
+        },
+        "empty": {
+          "book_title": "圣经真理题库，第五系列　管家的职分，事奉",
+          "message_title": "第五篇　灵与灵的事奉",
+          "source_zh": "",
+          "source_en": ""
+        },
+        "missing_key": null
+      },
+      "source_en": {
+        "present": null,
+        "empty": {
+          "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+          "message_title": "第一篇　更美之约",
+          "source_zh": "（恢复本圣经，可十四24，注1）",
+          "source_en": ""
+        },
+        "missing_key": null
+      }
+    },
+    "any_sample": {
+      "book_title": "圣经真理题库，第一系列　圣经—神的话，旧约与新约的关联",
+      "source_en": "",
+      "message_title": "第一篇　更美之约",
+      "source_zh": "（恢复本圣经，可十四24，注1）"
+    }
+  },
+  {
+    "index": "qa4_outline_12490",
+    "total": 55841,
+    "scanned": 55841,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": false,
+      "source_en": false
+    },
+    "counts": {
+      "book_title": {
+        "present": 55841,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 55841,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 55841
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 55841
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "倪柝声文集第一辑第一册，灵修指微",
+          "message_title": "灵魂体的分别",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "倪柝声文集第一辑第一册，灵修指微",
+          "message_title": "灵魂体的分别",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "倪柝声文集第一辑第一册，灵修指微",
+          "message_title": "灵魂体的分别",
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_en": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "倪柝声文集第一辑第一册，灵修指微",
+          "message_title": "灵魂体的分别",
+          "source_zh": null,
+          "source_en": null
+        }
+      }
+    },
+    "any_sample": {
+      "book_title": "倪柝声文集第一辑第一册，灵修指微",
+      "message_title": "灵魂体的分别"
+    }
+  },
+  {
+    "index": "qa4_outline_feasts",
+    "total": 11110,
+    "scanned": 11110,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": false,
+      "source_en": false
+    },
+    "counts": {
+      "book_title": {
+        "present": 11110,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 11110,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 11110
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 11110
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "1997年感恩节特会",
+          "message_title": "加强基督生机的救恩",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "1997年感恩节特会",
+          "message_title": "加强基督生机的救恩",
+          "source_zh": null,
+          "source_en": null
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "1997年感恩节特会",
+          "message_title": "加强基督生机的救恩",
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_en": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": "1997年感恩节特会",
+          "message_title": "加强基督生机的救恩",
+          "source_zh": null,
+          "source_en": null
+        }
+      }
+    },
+    "any_sample": {
+      "book_title": "1997年感恩节特会",
+      "message_title": "加强基督生机的救恩"
+    }
+  },
+  {
+    "index": "qa4_pano_catalog",
+    "total": 53151,
+    "scanned": 53151,
+    "in_mapping": {
+      "book_title": false,
+      "message_title": false,
+      "source_zh": false,
+      "source_en": false
+    },
+    "counts": {
+      "book_title": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 53151
+      },
+      "message_title": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 53151
+      },
+      "source_zh": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 53151
+      },
+      "source_en": {
+        "present": 0,
+        "empty": 0,
+        "missing_key": 53151
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "message_title": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_zh": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      },
+      "source_en": {
+        "present": null,
+        "empty": null,
+        "missing_key": {
+          "book_title": null,
+          "message_title": null,
+          "source_zh": null,
+          "source_en": null
+        }
+      }
+    },
+    "any_sample": {}
+  },
+  {
+    "index": "qa4_text_cwwl",
+    "total": 178107,
+    "scanned": 178107,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": true,
+      "source_en": true
+    },
+    "counts": {
+      "book_title": {
+        "present": 178107,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 178107,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 178107,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_en": {
+        "present": 178107,
+        "empty": 0,
+        "missing_key": 0
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "李常受文集信函与拾遗第一册，其他信函",
+          "message_title": "第一章",
+          "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）",
+          "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "李常受文集信函与拾遗第一册，其他信函",
+          "message_title": "第一章",
+          "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）",
+          "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": {
+          "book_title": "李常受文集信函与拾遗第一册，其他信函",
+          "message_title": "第一章",
+          "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）",
+          "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_en": {
+        "present": {
+          "book_title": "李常受文集信函与拾遗第一册，其他信函",
+          "message_title": "第一章",
+          "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）",
+          "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)"
+        },
+        "empty": null,
+        "missing_key": null
+      }
+    },
+    "any_sample": {
+      "book_title": "李常受文集信函与拾遗第一册，其他信函",
+      "source_en": "(CWWL, Letters & Gleanings, vol. 1, \"Miscellaneous Letters,\" ch. 1, par. 1807)",
+      "message_title": "第一章",
+      "source_zh": "（李常受文集信函与拾遗第一册，其他信函，第一章，第一千八百零七段）"
+    }
+  },
+  {
+    "index": "qa4_text_cwwn",
+    "total": 32032,
+    "scanned": 32032,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": true,
+      "source_en": true
+    },
+    "counts": {
+      "book_title": {
+        "present": 32032,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 32032,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 32032,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_en": {
+        "present": 32032,
+        "empty": 0,
+        "missing_key": 0
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+          "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+          "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）",
+          "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+          "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+          "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）",
+          "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": {
+          "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+          "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+          "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）",
+          "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_en": {
+        "present": {
+          "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+          "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+          "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）",
+          "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)"
+        },
+        "empty": null,
+        "missing_key": null
+      }
+    },
+    "any_sample": {
+      "book_title": "倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一）",
+      "source_en": "(CWWN, vol. 61, \"Matured Leadings in the Lord's Recovery (1),\" msg. 21)",
+      "message_title": "第二十一篇　事奉交通（二）--主恢复中成熟的带领（卷一）",
+      "source_zh": "（倪柝声文集第三辑第十五册，主恢复中成熟的带领（卷一），第二十一篇，第四十三段）"
+    }
+  },
+  {
+    "index": "qa4_text_life",
+    "total": 39463,
+    "scanned": 39463,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": true,
+      "source_en": true
+    },
+    "counts": {
+      "book_title": {
+        "present": 39463,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 39463,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 39463,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_en": {
+        "present": 39463,
+        "empty": 0,
+        "missing_key": 0
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "列王纪生命读经",
+          "message_title": "第六篇　所罗门作王（四）",
+          "source_zh": "（列王记生命读经，第六篇，第六段）",
+          "source_en": "(Life-study of Kings, msg. 6)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "列王纪生命读经",
+          "message_title": "第六篇　所罗门作王（四）",
+          "source_zh": "（列王记生命读经，第六篇，第六段）",
+          "source_en": "(Life-study of Kings, msg. 6)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": {
+          "book_title": "列王纪生命读经",
+          "message_title": "第六篇　所罗门作王（四）",
+          "source_zh": "（列王记生命读经，第六篇，第六段）",
+          "source_en": "(Life-study of Kings, msg. 6)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_en": {
+        "present": {
+          "book_title": "列王纪生命读经",
+          "message_title": "第六篇　所罗门作王（四）",
+          "source_zh": "（列王记生命读经，第六篇，第六段）",
+          "source_en": "(Life-study of Kings, msg. 6)"
+        },
+        "empty": null,
+        "missing_key": null
+      }
+    },
+    "any_sample": {
+      "book_title": "列王纪生命读经",
+      "source_en": "(Life-study of Kings, msg. 6)",
+      "message_title": "第六篇　所罗门作王（四）",
+      "source_zh": "（列王记生命读经，第六篇，第六段）"
+    }
+  },
+  {
+    "index": "qa4_text_others",
+    "total": 15481,
+    "scanned": 15481,
+    "in_mapping": {
+      "book_title": true,
+      "message_title": true,
+      "source_zh": true,
+      "source_en": true
+    },
+    "counts": {
+      "book_title": {
+        "present": 15481,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "message_title": {
+        "present": 15481,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_zh": {
+        "present": 15481,
+        "empty": 0,
+        "missing_key": 0
+      },
+      "source_en": {
+        "present": 15481,
+        "empty": 0,
+        "missing_key": 0
+      }
+    },
+    "samples_by_status": {
+      "book_title": {
+        "present": {
+          "book_title": "真理课程",
+          "message_title": "第三十课　但以理书中关于人类政权的预言",
+          "source_zh": "（真理课程，四级卷二，第三十课，第三十段）",
+          "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "message_title": {
+        "present": {
+          "book_title": "真理课程",
+          "message_title": "第三十课　但以理书中关于人类政权的预言",
+          "source_zh": "（真理课程，四级卷二，第三十课，第三十段）",
+          "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_zh": {
+        "present": {
+          "book_title": "真理课程",
+          "message_title": "第三十课　但以理书中关于人类政权的预言",
+          "source_zh": "（真理课程，四级卷二，第三十课，第三十段）",
+          "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)"
+        },
+        "empty": null,
+        "missing_key": null
+      },
+      "source_en": {
+        "present": {
+          "book_title": "真理课程",
+          "message_title": "第三十课　但以理书中关于人类政权的预言",
+          "source_zh": "（真理课程，四级卷二，第三十课，第三十段）",
+          "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)"
+        },
+        "empty": null,
+        "missing_key": null
+      }
+    },
+    "any_sample": {
+      "book_title": "真理课程",
+      "source_en": "(Truth Lessons, Level 4, vol. 2, lsn. 30)",
+      "message_title": "第三十课　但以理书中关于人类政权的预言",
+      "source_zh": "（真理课程，四级卷二，第三十课，第三十段）"
+    }
+  }
+]

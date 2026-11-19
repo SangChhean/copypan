@@ -42,10 +42,10 @@ def main() -> int:
 
         rc = retrieval_cfg()
         idx = rc.get("indices") or {}
-        check("retrieval.json 十个索引", len(idx) == 10, f"n={len(idx)}")
+        check("retrieval.json 九个索引", len(idx) == 9, f"n={len(idx)}")
         need = {"bm25_size", "knn_k", "knn_num_candidates", "rrf_k", "rerank_top", "per_subquestion_cap", "whole_question_cap", "unsplit_question_cap", "per_message_cap"}
         check("retrieval.json 检索参数齐全", need <= set(rc.get("params") or {}), str(sorted(need - set(rc.get("params") or {}))))
-        check("pano_catalog 不参与检索", (idx.get("pano_catalog") or {}).get("searchable") is False)
+        check("retrieval.json 不含 pano_catalog", "pano_catalog" not in idx)
         ds = set(rc.get("default_scope") or [])
         check("默认库不含 bible/hymns/pano_catalog", not ({"bible", "hymns", "pano_catalog"} & ds))
     except Exception as e:

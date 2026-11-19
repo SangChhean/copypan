@@ -34,7 +34,6 @@ SOURCE_ID_FIELD: dict[str, str] = {
     "outline_feasts": "chunk_id",
     "bible": "chunk_id",
     "hymns": "chunk_id",
-    "pano_catalog": "node_id",
 }
 SOURCE_TEXT_FIELD: dict[str, str] = {
     "text_life": "text",

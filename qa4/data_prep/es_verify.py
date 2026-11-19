@@ -66,7 +66,6 @@ INDEX_PAIRS: dict[str, dict[str, Any]] = {
     "text_cwwn": {"expect": 32032, "vec_field": "text_vector", "full_vec": False},
     "text_others": {"expect": 15481, "vec_field": "text_vector", "full_vec": False},
     "map_note": {"expect": 16052, "vec_field": "text_vector", "full_vec": False},
-    "pano_catalog": {"expect": 53151, "vec_field": None, "full_vec": False},
 }
 
 WRITE_METHOD_NAMES = frozenset(
@@ -1639,16 +1638,12 @@ def run_self_test(log: logging.Logger) -> int:
         }
     old.seed_index("panai4_hymns", vec_field="embedding", docs=docs)
     new.seed_index("qa4_hymns", vec_field="embedding", docs=docs)
-    # 再做一个无向量的 pano 小集
-    pdocs = {f"n{i}": {"node_id": f"n{i}", "text": f"生命课程 {i}"} for i in range(10)}
-    old.seed_index("panai4_pano_catalog", vec_field=None, docs=pdocs)
-    new.seed_index("qa4_pano_catalog", vec_field=None, docs=pdocs)
 
     queries = json.loads(QUERIES_PATH.read_text(encoding="utf-8"))
     old_ro, new_ro = make_readonly(old), make_readonly(new)
     assert_clusters(old_ro, new_ro, log)
 
-    for suffix in ("hymns", "pano_catalog"):
+    for suffix in ("hymns",):
         res = verify_pair(
             old_ro,
             new_ro,
@@ -2029,10 +2024,10 @@ def main(argv: list[str] | None = None) -> int:
         summary["indices"][suffix] = block
 
     if set(suffixes) == set(INDEX_PAIRS.keys()):
-        tot_ok = summary["total_count_old"] == 414082 and summary["total_count_new"] == 414082
+        tot_ok = summary["total_count_old"] == 360931 and summary["total_count_new"] == 360931
         log.info(
             f"[total_count] old={summary['total_count_old']} new={summary['total_count_new']} "
-            f"expect=414082 -> {'PASS' if tot_ok else 'FAIL'}"
+            f"expect=360931 -> {'PASS' if tot_ok else 'FAIL'}"
         )
         if not tot_ok:
             any_fail = True
